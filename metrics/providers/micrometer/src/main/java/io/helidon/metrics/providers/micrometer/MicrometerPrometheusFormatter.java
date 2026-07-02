@@ -26,7 +26,6 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Meter;
@@ -81,7 +80,7 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                 };
         resultMediaType = builder.resultMediaType;
         meterRegistry = Objects.requireNonNullElseGet(builder.meterRegistry,
-                                                      () -> Services.get(MetricsFactory.class).globalRegistry());
+                                                      () -> Services.get(MeterRegistry.class));
     }
 
     /**
@@ -237,7 +236,7 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         return result;
     }
 
-    private static Optional<PrometheusMeterRegistry> prometheusMeterRegistry(MeterRegistry meterRegistry) {
+    static Optional<PrometheusMeterRegistry> prometheusMeterRegistry(MeterRegistry meterRegistry) {
         io.micrometer.core.instrument.MeterRegistry mMeterRegistry =
                 meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
         if (mMeterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {

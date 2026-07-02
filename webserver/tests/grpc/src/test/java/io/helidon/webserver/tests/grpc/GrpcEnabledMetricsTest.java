@@ -51,8 +51,7 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
     }
 
     @AfterAll
-    static void checkMetrics(MetricsFactory metricsFactory) {
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+    static void checkMetrics(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
         Tag okTag = okStatusTag(metricsFactory);
 
         for (Tag tag : grpcMethodTags(metricsFactory)) {

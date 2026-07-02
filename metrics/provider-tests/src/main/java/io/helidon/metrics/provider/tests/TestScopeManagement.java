@@ -26,7 +26,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
-import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 
@@ -50,8 +49,7 @@ class TestScopeManagement {
                                  .clearDefaultValue())
                 .build();
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-        MeterRegistry reg = metricsFactory.globalRegistry();
-        configureSystemTags(metricsConfig);
+        MeterRegistry reg = metricsFactory.createMeterRegistry(metricsConfig);
 
         // We explicitly set the scope for the counter and not for the timer.
         // With no default scope set in the config used to initialBuilders the MeterRegistry, only the counter will have a scope.
@@ -92,7 +90,6 @@ class TestScopeManagement {
                 .build();
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         MeterRegistry reg = metricsFactory.createMeterRegistry(metricsConfig);
-        configureSystemTags(metricsConfig);
 
         // The config sets a default scope value of def-scope. So the counter gets its explicit setting
         // and the timer gets the default scope value because it has no explicit setting.
@@ -138,17 +135,11 @@ class TestScopeManagement {
     @Test
     void checkDefaultScope() {
         MetricsConfig metricsConfig = MetricsConfig.create(); // Make sure to use the defaults, not leftovers from earlier tests
-        Services.get(MetricsFactory.class).globalRegistry(metricsConfig);
-        configureSystemTags(metricsConfig);
-
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         Counter counter = metricsFactory
-                .globalRegistry()
+                .createMeterRegistry(metricsConfig)
                 .getOrCreate(metricsFactory.counterBuilder("defaultScopedCounter"));
         assertThat("Unspecified scope", counter.scope(), OptionalMatcher.optionalValue(is(Meter.Scope.DEFAULT)));
     }
 
-    private static void configureSystemTags(MetricsConfig metricsConfig) {
-        SystemTagsManager.create(metricsConfig);
-    }
 }

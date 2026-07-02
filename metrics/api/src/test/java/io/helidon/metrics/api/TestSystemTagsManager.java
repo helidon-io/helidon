@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -165,9 +166,57 @@ class TestSystemTagsManager {
     }
 
     @Test
+    void customSystemTagsManagerUsesProvidedFactory() {
+        AtomicBoolean tagCreated = new AtomicBoolean();
+        MetricsFactory metricsFactory = new NoOpMetricsFactory() {
+            @Override
+            public Tag tagCreate(String key, String value) {
+                tagCreated.set(true);
+                return super.tagCreate(key, value);
+            }
+        };
+        Config mConfig = Config.just(ConfigSources.create(GLOBAL_ONLY_TAGS_SETTINGS)).get("metrics");
+        SystemTagsManager manager = SystemTagsManager.create(MetricsConfig.create(mConfig), metricsFactory);
+
+        manager.displayTags();
+
+        assertThat("Provided factory used for creating tags", tagCreated.get(), is(true));
+    }
+
+    @Test
+    void customSystemTagsManagerUsesProvidedConfigForReservedNames() {
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .appTagName("customApp")
+                .scoping(ScopingConfig.builder()
+                                 .tagName("customScope"))
+                .build();
+        SystemTagsManager manager = SystemTagsManager.create(metricsConfig, new NoOpMetricsFactory());
+
+        assertThat("Reserved names come from the provided metrics config",
+                   Set.copyOf(manager.reservedTagNamesUsed(Set.of("customApp", "customScope", "other"))),
+                   is(Set.of("customApp", "customScope")));
+    }
+
+    @Test
     @SuppressWarnings("removal")
     void legacyInstanceRejectsNullConfig() {
         assertThrows(NullPointerException.class, () -> SystemTagsManager.instance(null));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void legacyMutationMethodsDoNotChangeSharedManager() {
+        SystemTagsManager shared = Services.get(SystemTagsManager.class);
+        AtomicBoolean changed = new AtomicBoolean();
+
+        SystemTagsManager.onChange(ignored -> changed.set(true));
+        SystemTagsManager custom = SystemTagsManager.create(MetricsConfig.create());
+
+        assertThat("Configured legacy instance",
+                   SystemTagsManager.instance(MetricsConfig.create()),
+                   sameInstance(shared));
+        assertThat("Custom system tags manager", custom, not(sameInstance(shared)));
+        assertThat("Ignored change listener", changed.get(), is(false));
     }
 
     @Test

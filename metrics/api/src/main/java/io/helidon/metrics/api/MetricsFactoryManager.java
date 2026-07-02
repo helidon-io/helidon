@@ -17,14 +17,12 @@ package io.helidon.metrics.api;
 
 import java.lang.System.Logger.Level;
 import java.util.Collection;
-import java.util.ServiceLoader;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Creates {@link io.helidon.metrics.api.MetricsFactory} instances using a highest-weight implementation of
@@ -43,28 +41,25 @@ class MetricsFactoryManager {
      * @param rootConfig the root config node to use in creating the metrics factory
      * @return new metrics factory
      */
-    static MetricsFactory create(Config rootConfig) {
-        MetricsConfig metricsConfig = MetricsConfig.create(rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY));
-        Collection<MetricsProgrammaticConfig> metricsConfigOverrides =
-                HelidonServiceLoader.builder(ServiceLoader.load(MetricsProgrammaticConfig.class))
-                        .addService(new SeMetricsProgrammaticConfig(), Weighted.DEFAULT_WEIGHT - 50)
-                        .build()
-                        .asList()
-                        .reversed();
+    static MetricsFactory create(Config rootConfig, ServiceRegistry serviceRegistry) {
+        MetricsConfig metricsConfig = MetricsConfig.create(selectMetricsConfigNode(rootConfig));
+        Collection<MetricsProgrammaticConfig> metricsConfigOverrides = serviceRegistry
+                .all(MetricsProgrammaticConfig.class)
+                .reversed();
         for (MetricsProgrammaticConfig programmaticConfig : metricsConfigOverrides) {
             metricsConfig = programmaticConfig.apply(metricsConfig);
         }
 
-        MetricsFactoryProvider metricsFactoryProvider =
-                HelidonServiceLoader.builder(ServiceLoader.load(MetricsFactoryProvider.class))
-                        .addService(NoOpMetricsFactoryProvider.create(), Double.MIN_VALUE)
-                        .build()
-                        .iterator()
-                        .next();
+        MetricsFactoryProvider metricsFactoryProvider = serviceRegistry.first(MetricsFactoryProvider.class)
+                .orElseGet(NoOpMetricsFactoryProvider::create);
         LOGGER.log(Level.DEBUG, "Loaded metrics factory provider: {0}", metricsFactoryProvider.getClass().getName());
 
-        Collection<MetersProvider> meterProviders = HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
-                .asList();
-        return metricsFactoryProvider.create(rootConfig, metricsConfig, meterProviders);
+        Collection<MetersProvider> meterProviders = serviceRegistry.all(MetersProvider.class);
+        return metricsFactoryProvider.create(rootConfig, metricsConfig, meterProviders, serviceRegistry);
+    }
+
+    private static Config selectMetricsConfigNode(Config rootConfig) {
+        Config metricsConfig = rootConfig.get("server.features.observe.observers.metrics");
+        return metricsConfig.exists() ? metricsConfig : rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY);
     }
 }

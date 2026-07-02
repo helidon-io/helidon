@@ -23,12 +23,9 @@ import java.io.UncheckedIOException;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.socket.HelidonSocket;
@@ -51,7 +48,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
@@ -106,8 +102,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                                    Timer callDuration,
                                    DistributionSummary sentMessageSize,
                                    DistributionSummary recvMessageSize) { }
-
-    private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
     private final GrpcClientImpl grpcClient;
     private final GrpcChannel grpcChannel;
@@ -486,9 +480,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         String baseUri = grpcChannel.baseUri().toString();
         String methodName = methodDescriptor.getFullMethodName();
 
-        methodMetrics = METHOD_METRICS.get().computeIfAbsent(baseUri + methodName, uri -> {
-            MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-            MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        methodMetrics = grpcChannel.methodMetrics().computeIfAbsent(baseUri + methodName, uri -> {
+            MetricsFactory metricsFactory = grpcChannel.metricsFactory();
+            MeterRegistry meterRegistry = grpcChannel.meterRegistry();
 
             Tag okTag = metricsFactory.tagCreate("grpc.status", "OK");
             Tag grpcMethod = metricsFactory.tagCreate("grpc.method", methodName);

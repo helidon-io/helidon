@@ -56,10 +56,12 @@ class ThroughputLimitMetricsTest {
 
     private final WebClient webClient;
     private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
 
-    ThroughputLimitMetricsTest(WebClient webClient, MetricsFactory metricsFactory) {
+    ThroughputLimitMetricsTest(WebClient webClient, MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
         this.webClient = webClient;
         this.metricsFactory = metricsFactory;
+        this.meterRegistry = meterRegistry;
     }
 
     @SetUpServer
@@ -95,7 +97,6 @@ class ThroughputLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
         Optional<Timer> rtt = timer(meterRegistry);
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));

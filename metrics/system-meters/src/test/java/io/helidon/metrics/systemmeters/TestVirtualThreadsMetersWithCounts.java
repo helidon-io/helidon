@@ -16,7 +16,7 @@
 package io.helidon.metrics.systemmeters;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
-import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.SystemTagsManager;
 
 import org.junit.jupiter.api.Test;
@@ -29,8 +29,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class TestVirtualThreadsMetersWithCounts extends TestVirtualThreadsMetersBase {
 
-    TestVirtualThreadsMetersWithCounts(MetricsFactory metricsFactory, SystemTagsManager systemTagsManager) {
-        super(metricsFactory, systemTagsManager);
+    TestVirtualThreadsMetersWithCounts(MeterRegistry meterRegistry, SystemTagsManager systemTagsManager) {
+        super(meterRegistry, systemTagsManager);
     }
 
     @Test

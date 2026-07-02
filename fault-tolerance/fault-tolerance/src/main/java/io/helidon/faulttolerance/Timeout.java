@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
@@ -46,7 +47,9 @@ public interface Timeout extends FtHandler, RuntimeType.Api<TimeoutConfig> {
      * @return timeout handler
      */
     static Timeout create(TimeoutConfig config) {
-        return new TimeoutImpl(config, LazyValue.create(() -> Services.get(MetricsFactory.class)));
+        return new TimeoutImpl(config,
+                               LazyValue.create(() -> Services.get(MetricsFactory.class)),
+                               LazyValue.create(() -> Services.get(MeterRegistry.class)));
     }
 
     /**

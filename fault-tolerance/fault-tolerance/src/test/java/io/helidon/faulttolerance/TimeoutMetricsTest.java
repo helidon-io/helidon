@@ -19,6 +19,7 @@ package io.helidon.faulttolerance;
 import java.time.Duration;
 
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.testing.junit5.Testing;
@@ -32,9 +33,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testing.Test
 class TimeoutMetricsTest {
     private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
 
-    TimeoutMetricsTest(MetricsFactory metricsFactory) {
+    TimeoutMetricsTest(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
         this.metricsFactory = metricsFactory;
+        this.meterRegistry = meterRegistry;
     }
 
     @BeforeAll
@@ -52,7 +55,7 @@ class TimeoutMetricsTest {
                 .name("quick")      // same name
                 .build();
         timeout.invoke(() -> null);
-        callsCounter = MetricsUtils.counter(metricsFactory,
+        callsCounter = MetricsUtils.counter(meterRegistry,
                                             Timeout.FT_TIMEOUT_CALLS_TOTAL,
                                             MetricsUtils.tag(metricsFactory, "name", "quick"));
         assertThat(callsCounter.count(), is(1L));
@@ -75,7 +78,7 @@ class TimeoutMetricsTest {
                 .name("very_quick")      // same name
                 .build();
         timeout.invoke(() -> null);
-        timer = MetricsUtils.timer(metricsFactory,
+        timer = MetricsUtils.timer(meterRegistry,
                                    Timeout.FT_TIMEOUT_EXECUTIONDURATION,
                                    MetricsUtils.tag(metricsFactory, "name", "very_quick"));
         assertThat(timer.count(), is(1L));

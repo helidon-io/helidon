@@ -15,47 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 import io.helidon.testing.junit5.TestJunitExtension;
 
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-
-import org.junit.jupiter.api.extension.ExtensionContext;
-
 public class MicrometerMetricsTestsJunitExtension extends TestJunitExtension {
-
-    static void clear() {
-
-        // And clear out Micrometer's global registry explicitly to be extra sure.
-        io.micrometer.core.instrument.MeterRegistry mmGlobal = io.micrometer.core.instrument.Metrics.globalRegistry;
-        mmGlobal.clear();
-        if (mmGlobal instanceof CompositeMeterRegistry compositeMeterRegistry) {
-            List.copyOf(compositeMeterRegistry.getRegistries())
-                    .forEach(registry -> {
-                        compositeMeterRegistry.remove(registry);
-                        registry.close();
-                    });
-        }
-
-        int delayMS = 250;
-        int maxSecondsToWait = 5;
-        int iterationsRemaining = (maxSecondsToWait * 1000) / delayMS;
-
-        while (iterationsRemaining > 0 && !mmGlobal.getMeters().isEmpty()) {
-            iterationsRemaining--;
-            try {
-                TimeUnit.MILLISECONDS.sleep(delayMS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Error awaiting clear-out of meter registries to finish", e);
-            }
-        }
-    }
-
-    @Override
-    public void beforeAll(ExtensionContext extensionContext) {
-        super.beforeAll(extensionContext);
-        clear();
-    }
 }

@@ -24,6 +24,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
@@ -64,8 +65,7 @@ class TestPrometheusPerf {
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
 
         for (int loop = 0; loop < loops; loop++) {
-            MeterRegistry meterRegistry = metricsFactory.globalRegistry();
-            meterRegistry.close();
+            MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
 
             Random random = new Random();
             for (int i = 0; i < 400; i++) {

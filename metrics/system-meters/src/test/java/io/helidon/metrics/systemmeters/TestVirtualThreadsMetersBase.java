@@ -21,7 +21,6 @@ import java.util.Optional;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -37,16 +36,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class TestVirtualThreadsMetersBase {
 
-    private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
     private final Iterable<Tag> baseTags;
 
-    TestVirtualThreadsMetersBase(MetricsFactory metricsFactory, SystemTagsManager systemTagsManager) {
-        this.metricsFactory = metricsFactory;
+    TestVirtualThreadsMetersBase(MeterRegistry meterRegistry, SystemTagsManager systemTagsManager) {
+        this.meterRegistry = meterRegistry;
         this.baseTags = systemTagsManager.withScopeTag(List.of(), Optional.of(Meter.Scope.BASE));
     }
 
     MeterRegistry meterRegistry() {
-        return metricsFactory.globalRegistry();
+        return meterRegistry;
     }
 
     Iterable<Tag> baseTags() {

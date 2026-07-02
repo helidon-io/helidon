@@ -39,10 +39,10 @@ public class MetricsTest extends TestParent {
     private final MetricsFactory metricsFactory;
     private final MeterRegistry registry;
 
-    MetricsTest(WebServer server, MetricsFactory metricsFactory) {
+    MetricsTest(WebServer server, MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
         super(server);
         this.metricsFactory = metricsFactory;
-        this.registry = metricsFactory.globalRegistry();
+        this.registry = meterRegistry;
     }
 
     @Test

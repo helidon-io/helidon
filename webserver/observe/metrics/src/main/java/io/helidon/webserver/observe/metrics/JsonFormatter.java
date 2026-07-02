@@ -79,7 +79,7 @@ class JsonFormatter implements MeterRegistryFormatter {
         scopeTagName = builder.scopeTagName;
         metricsConfig = builder.metricsConfig;
         meterRegistry = builder.meterRegistry;
-        systemTagsManager = SystemTagsManager.create(metricsConfig);
+        systemTagsManager = SystemTagsManager.create(metricsConfig, meterRegistry.metricsFactory());
     }
 
     /**

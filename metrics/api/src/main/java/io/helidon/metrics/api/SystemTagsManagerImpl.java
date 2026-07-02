@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,8 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
@@ -35,8 +32,6 @@ import java.util.stream.StreamSupport;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.config.Config;
-import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Services;
 
@@ -55,21 +50,15 @@ import io.helidon.service.registry.Services;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class SystemTagsManagerImpl implements SystemTagsManager {
 
-    private static final Collection<WeakReference<Consumer<SystemTagsManager>>> ON_CHANGE_SUBSCRIBERS = new ArrayList<>();
-    private static final ReentrantReadWriteLock ON_CHANGE_LOCK = new ReentrantReadWriteLock();
-
     private final Map<String, String> systemTagPairs = new TreeMap<>();
     private final Set<String> systemAndScopeTagNames = new HashSet<>(); // tag names for global tags, app, and scope
+    private final MetricsFactory metricsFactory;
 
     /*
-    Defer invoking Tag.create because that could create a infinite recursive loop; Tag.create invokes
-    Services.get(MetricsFactory.class).tagCreate, which could trigger another attempt to instantiate this
-    SystemTagsManagerImpl through the service registry.
+    Defer provider-specific tag creation until the tags are requested. The system tags manager itself is often
+    constructed while its owning meter registry is still being initialized.
      */
-    private final LazyValue<List<Tag>> systemTags = LazyValue.create(() ->
-             systemTagPairs.entrySet().stream()
-                     .map(entry -> Services.get(MetricsFactory.class).tagCreate(entry.getKey(), entry.getValue()))
-                     .toList()); // global tags plus the app
+    private final LazyValue<List<Tag>> systemTags;
     private final Set<String> reservedTagNames;
 
     // tag, if any specified
@@ -77,12 +66,20 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     private String defaultScopeValue;
 
     @Service.Inject
-    SystemTagsManagerImpl(Config config, MetricsProgrammaticConfig programmaticConfig) {
-        this(programmaticConfig.apply(MetricsConfig.create(config.get("metrics"))),
-             programmaticConfig.reservedTagNames());
+    SystemTagsManagerImpl(MetricsFactory metricsFactory) {
+        this(metricsFactory,
+             metricsFactory.metricsConfig());
     }
 
-    private SystemTagsManagerImpl(MetricsConfig metricsConfig, Set<String> reservedTagNames) {
+    private SystemTagsManagerImpl(MetricsFactory metricsFactory,
+                                  MetricsConfig metricsConfig) {
+
+        this.metricsFactory = Objects.requireNonNull(metricsFactory);
+        systemTags = LazyValue.create(() ->
+                                              systemTagPairs.entrySet().stream()
+                                                      .map(entry -> this.metricsFactory.tagCreate(entry.getKey(),
+                                                                                                  entry.getValue()))
+                                                      .toList()); // global tags plus the app
 
         metricsConfig.tags().forEach(tag ->
                                              systemTagPairs.put(tag.key(), tag.value()));
@@ -105,38 +102,19 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         });
         defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
 
-        this.reservedTagNames = reservedTagNames;
+        Set<String> reservedTagNames = new HashSet<>();
+        metricsConfig.appTagName().ifPresent(reservedTagNames::add);
+        metricsConfig.scoping().tagName().ifPresent(reservedTagNames::add);
+        this.reservedTagNames = Set.copyOf(reservedTagNames);
 
-        List<Consumer<SystemTagsManager>> subscribers = new ArrayList<>();
-        ON_CHANGE_LOCK.writeLock().lock();
-        try {
-            ON_CHANGE_SUBSCRIBERS.removeIf(ref -> {
-                Consumer<SystemTagsManager> subscriber = ref.get();
-                if (subscriber == null) {
-                    return true;
-                }
-                subscribers.add(subscriber);
-                return false;
-            });
-        } finally {
-            ON_CHANGE_LOCK.writeLock().unlock();
-        }
-        subscribers.forEach(c -> c.accept(this));
-    }
-
-    static void onChange(Consumer<SystemTagsManager> subscriber) {
-        Objects.requireNonNull(subscriber);
-        ON_CHANGE_LOCK.writeLock().lock();
-        try {
-            ON_CHANGE_SUBSCRIBERS.add(new WeakReference<>(subscriber));
-        } finally {
-            ON_CHANGE_LOCK.writeLock().unlock();
-        }
     }
 
     static SystemTagsManagerImpl create(MetricsConfig metricsConfig) {
-        Set<String> reservedTagNames = Services.get(MetricsProgrammaticConfig.class).reservedTagNames();
-        return new SystemTagsManagerImpl(metricsConfig, reservedTagNames);
+        return create(metricsConfig, Services.get(MetricsFactory.class));
+    }
+
+    static SystemTagsManagerImpl create(MetricsConfig metricsConfig, MetricsFactory metricsFactory) {
+        return new SystemTagsManagerImpl(metricsFactory, metricsConfig);
     }
 
     @Override
@@ -144,8 +122,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return scopeTagName == null
                 ? Optional.empty()
                 : effectiveScope(candidateScope)
-                        .map(sc -> Services.get(MetricsFactory.class).tagCreate(scopeTagName,
-                                                                                 sc));
+                        .map(sc -> metricsFactory.tagCreate(scopeTagName, sc));
     }
 
     @Override
@@ -179,16 +156,14 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
         if (defaultScopeValue != null) {
             tagsMap.put(scopeTagName,
-                        Services.get(MetricsFactory.class).tagCreate(scopeTagName,
-                                                                     defaultScopeValue));
+                        metricsFactory.tagCreate(scopeTagName, defaultScopeValue));
         }
 
         tags.forEach(tag -> tagsMap.put(tag.key(), // If scope is set in a tag, the tag's value overrides the default in the map.
                                         tag));
 
         explicitScope.ifPresent(s -> tagsMap.put(scopeTagName,
-                                                 Services.get(MetricsFactory.class).tagCreate(scopeTagName,
-                                                                                              explicitScope.get())));
+                                                 metricsFactory.tagCreate(scopeTagName, explicitScope.get())));
 
         return tagsMap.values();
     }
@@ -217,7 +192,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     @Override
     public void assignScope(String validScope, Function<Tag, ?> tagSetter) {
         if (scopeTagName != null) {
-            tagSetter.apply(Services.get(MetricsFactory.class).tagCreate(scopeTagName, validScope));
+            tagSetter.apply(metricsFactory.tagCreate(scopeTagName, validScope));
         }
     }
 

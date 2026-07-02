@@ -32,6 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
@@ -57,7 +58,9 @@ class BulkheadImpl implements Bulkhead {
     private Timer waitingDurationMetric;
 
     @Service.Inject
-    BulkheadImpl(BulkheadConfig config, Supplier<MetricsFactory> metricsFactory) {
+    BulkheadImpl(BulkheadConfig config,
+                 Supplier<MetricsFactory> metricsFactory,
+                 Supplier<MeterRegistry> meterRegistry) {
         this.inProgress = new Semaphore(config.limit(), true);
         this.name = config.name().orElseGet(() -> "bulkhead-" + System.identityHashCode(config));
         this.listeners = config.queueListeners();
@@ -70,12 +73,13 @@ class BulkheadImpl implements Bulkhead {
         this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
             var mf = metricsFactory.get();
+            var mr = meterRegistry.get();
             Tag nameTag = MetricsUtils.tag(mf, "name", name);
-            callsCounterMetric = MetricsUtils.counterBuilder(mf, FT_BULKHEAD_CALLS_TOTAL, nameTag);
-            waitingDurationMetric = MetricsUtils.timerBuilder(mf, FT_BULKHEAD_WAITINGDURATION, nameTag);
-            MetricsUtils.gaugeBuilder(mf, FT_BULKHEAD_EXECUTIONSRUNNING, concurrentExecutions::get, nameTag);
-            MetricsUtils.gaugeBuilder(mf, FT_BULKHEAD_EXECUTIONSWAITING, callsWaiting::get, nameTag);
-            MetricsUtils.gaugeBuilder(mf, FT_BULKHEAD_EXECUTIONSREJECTED, callsRejected::get, nameTag);
+            callsCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_BULKHEAD_CALLS_TOTAL, nameTag);
+            waitingDurationMetric = MetricsUtils.timerBuilder(mf, mr, FT_BULKHEAD_WAITINGDURATION, nameTag);
+            MetricsUtils.gaugeBuilder(mf, mr, FT_BULKHEAD_EXECUTIONSRUNNING, concurrentExecutions::get, nameTag);
+            MetricsUtils.gaugeBuilder(mf, mr, FT_BULKHEAD_EXECUTIONSWAITING, callsWaiting::get, nameTag);
+            MetricsUtils.gaugeBuilder(mf, mr, FT_BULKHEAD_EXECUTIONSREJECTED, callsRejected::get, nameTag);
         }
     }
 

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,6 +51,8 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.testing.junit5.Testing;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
@@ -87,7 +90,13 @@ class GrpcProtocolHandlerTest {
         EXECUTOR.close();
     }
 
-    private final GrpcProtocolSelector.Metrics metrics = new GrpcProtocolSelector.Metrics();
+    private final GrpcProtocolSelector.Metrics metrics;
+
+    GrpcProtocolHandlerTest(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+        this.metrics = new GrpcProtocolSelector.Metrics(
+                new AtomicReference<>(new GrpcProtocolSelector.MetricsOwner(metricsFactory, meterRegistry)),
+                new ConcurrentHashMap<>());
+    }
 
     @Test
     @SuppressWarnings("unchecked")

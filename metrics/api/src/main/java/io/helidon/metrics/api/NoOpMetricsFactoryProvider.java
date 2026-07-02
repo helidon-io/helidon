@@ -31,10 +31,6 @@ class NoOpMetricsFactoryProvider implements MetricsFactoryProvider {
 
     @Override
     public MetricsFactory create(Config rootNode, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
-        return NoOpMetricsFactory.create();
-    }
-
-    @Override
-    public void close() {
+        return NoOpMetricsFactory.create(metricsConfig);
     }
 }

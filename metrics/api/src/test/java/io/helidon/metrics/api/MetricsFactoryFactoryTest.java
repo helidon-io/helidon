@@ -15,13 +15,16 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.service.registry.Services;
-
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.metrics.spi.MetersProvider;
+import io.helidon.metrics.spi.MetricsFactoryProvider;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
@@ -48,8 +51,18 @@ class MetricsFactoryFactoryTest {
     }
 
     @Test
+    @SuppressWarnings("removal")
+    void legacyGlobalRegistryAccessReturnsServiceRegistryInstance() {
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+
+        assertThat(metricsFactory.globalRegistry(), sameInstance(meterRegistry));
+        assertThat(metricsFactory.globalRegistry(MetricsConfig.create()), sameInstance(meterRegistry));
+    }
+
+    @Test
     void directFactoryCreatesIndependentInstances() {
-        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG);
+        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG, Services.get(ServiceRegistry.class));
 
         MetricsFactory firstFactory = serviceFactory.get();
         MetricsFactory secondFactory = serviceFactory.get();
@@ -58,8 +71,15 @@ class MetricsFactoryFactoryTest {
     }
 
     @Test
+    void directFactoryUsesObserveMetricsConfig() {
+        MetricsFactory metricsFactory = new MetricsFactoryFactory(ROOT_CONFIG, Services.get(ServiceRegistry.class)).get();
+
+        assertThat(metricsFactory.metricsConfig().appName().orElseThrow(), is("observe-app"));
+    }
+
+    @Test
     void factoryReceivesRootConfig() {
-        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG) {
+        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG, Services.get(ServiceRegistry.class)) {
             @Override
             MetricsFactory createMetricsFactory(Config rootConfig) {
                 assertThat(rootConfig.get("metrics.app-name").asString().get(), is("metrics-app"));
@@ -78,12 +98,29 @@ class MetricsFactoryFactoryTest {
     }
 
     @Test
+    void registryAwareFactoryProviderRejectsNullArguments() {
+        MetricsFactoryProvider provider = (rootConfig, metricsConfig, metersProviders) -> new NoOpMetricsFactory();
+        MetricsConfig metricsConfig = MetricsConfig.create();
+        List<MetersProvider> metersProviders = List.of();
+        ServiceRegistry serviceRegistry = Services.get(ServiceRegistry.class);
+
+        assertThrows(NullPointerException.class,
+                     () -> provider.create(null, metricsConfig, metersProviders, serviceRegistry));
+        assertThrows(NullPointerException.class,
+                     () -> provider.create(Config.empty(), null, metersProviders, serviceRegistry));
+        assertThrows(NullPointerException.class,
+                     () -> provider.create(Config.empty(), metricsConfig, null, serviceRegistry));
+        assertThrows(NullPointerException.class,
+                     () -> provider.create(Config.empty(), metricsConfig, metersProviders, null));
+    }
+
+    @Test
     void preDestroyClosesCreatedFactories() {
         AtomicInteger nextFactory = new AtomicInteger();
         CloseTrackingMetricsFactory firstFactory = new CloseTrackingMetricsFactory();
         CloseTrackingMetricsFactory secondFactory = new CloseTrackingMetricsFactory();
         CloseTrackingMetricsFactory[] factories = {firstFactory, secondFactory};
-        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG) {
+        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG, Services.get(ServiceRegistry.class)) {
             @Override
             MetricsFactory createMetricsFactory(Config rootConfig) {
                 return factories[nextFactory.getAndIncrement()];

@@ -66,7 +66,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
     @Override
     public Clock clock() {
-        return NoOpMetricsFactory.SYSTEM_CLOCK;
+        return factory.clockSystem();
     }
 
     @Override

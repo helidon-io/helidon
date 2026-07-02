@@ -44,7 +44,8 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
                                                       Optional<String> scopeTagName,
                                                       Iterable<String> scopeSelection,
                                                       Iterable<String> nameSelection) {
-        return matches(mediaType, MediaTypes.TEXT_PLAIN) || matches(mediaType, MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+        return (matches(mediaType, MediaTypes.TEXT_PLAIN) || matches(mediaType, MediaTypes.APPLICATION_OPENMETRICS_TEXT))
+                && MicrometerPrometheusFormatter.prometheusMeterRegistry(meterRegistry).isPresent()
                 ? Optional.of(create(mediaType,
                                      metricsConfig,
                                      meterRegistry,

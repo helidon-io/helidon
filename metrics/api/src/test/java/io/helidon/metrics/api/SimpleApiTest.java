@@ -15,8 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import io.helidon.service.registry.Services;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +22,8 @@ import java.util.Set;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ public class SimpleApiTest {
     @BeforeAll
     static void prep() {
         metricsFactory = Services.get(MetricsFactory.class);
-        registry = metricsFactory.globalRegistry();
+        registry = Services.get(MeterRegistry.class);
         assertThat("Global registry", registry, notNullValue());
         counter1 = registry.getOrCreate(metricsFactory.counterBuilder("counter1")
                                                 .description(COUNTER_1_DESC));
@@ -87,9 +87,9 @@ public class SimpleApiTest {
         // This is a bit silly of a test, but it uses the create(config) method on the MetricsFactoryManager so checkstyle
         // won't complain.
         Config config = Config.empty();
-        MetricsFactory mf = MetricsFactoryManager.create(config);
+        MetricsFactory mf = MetricsFactoryManager.create(config, Services.get(ServiceRegistry.class));
 
-        MeterRegistry mr = mf.globalRegistry();
+        MeterRegistry mr = mf.createMeterRegistry(MetricsConfig.create());
         assertThat("No-op registry", mr.meters(), empty());
     }
 }

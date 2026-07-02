@@ -44,7 +44,7 @@ abstract class WebClientMetric implements WebClientService {
 
     WebClientMetric(Builder builder) {
         this.metricsFactory = Services.get(MetricsFactory.class);
-        this.registry = metricsFactory.globalRegistry();
+        this.registry = Services.get(MeterRegistry.class);
         this.methods = builder.methods;
         this.nameFormat = builder.nameFormat;
         this.description = builder.description;

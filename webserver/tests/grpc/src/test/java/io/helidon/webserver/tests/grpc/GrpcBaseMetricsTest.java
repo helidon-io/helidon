@@ -45,8 +45,7 @@ abstract class GrpcBaseMetricsTest extends BaseStringServiceTest {
     }
 
     @BeforeAll
-    static void initialize(MetricsFactory metricsFactory) {
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+    static void initialize(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
         Tag okTag = okStatusTag(metricsFactory);
         for (Tag tag : grpcMethodTags(metricsFactory)) {
             meterRegistry.remove(CALL_STARTED, List.of(tag));

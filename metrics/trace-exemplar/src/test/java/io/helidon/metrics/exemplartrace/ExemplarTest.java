@@ -20,6 +20,7 @@ import java.io.StringReader;
 import java.util.List;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.http1.Http1Client;
@@ -49,8 +50,9 @@ class ExemplarTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
         builder.get("/test", (req, res) -> {
-                        metricsFactory.globalRegistry()
+                        meterRegistry
                                 .getOrCreate(metricsFactory.counterBuilder(COUNTER_NAME))
                                 .increment();
                         res.send();

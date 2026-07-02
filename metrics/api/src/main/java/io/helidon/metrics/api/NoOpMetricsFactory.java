@@ -25,7 +25,7 @@ import java.util.function.ToDoubleFunction;
  */
 class NoOpMetricsFactory implements MetricsFactory {
 
-    static final Clock SYSTEM_CLOCK = new Clock() {
+    private final Clock systemClock = new Clock() {
         @Override
         public <R> R unwrap(Class<? extends R> c) {
             return c.cast(this);
@@ -43,14 +43,19 @@ class NoOpMetricsFactory implements MetricsFactory {
     };
 
     private final MeterRegistry meterRegistry;
-    private final MetricsConfig metricsConfig = MetricsConfig.create();
+    private final MetricsConfig metricsConfig;
 
     NoOpMetricsFactory() {
+        this(MetricsConfig.create());
+    }
+
+    private NoOpMetricsFactory(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
          this.meterRegistry = new NoOpMeterRegistry(this);
     }
 
-    static NoOpMetricsFactory create() {
-        return new NoOpMetricsFactory();
+    static NoOpMetricsFactory create(MetricsConfig metricsConfig) {
+        return new NoOpMetricsFactory(metricsConfig);
     }
 
     @Override
@@ -59,16 +64,6 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     @Override
     public MeterRegistry globalRegistry() {
-        return meterRegistry;
-    }
-
-    @Override
-    public MeterRegistry globalRegistry(MetricsConfig metricsConfig) {
-        return meterRegistry;
-    }
-
-    @Override
-    public MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill) {
         return meterRegistry;
     }
 
@@ -113,7 +108,7 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     @Override
     public Clock clockSystem() {
-        return SYSTEM_CLOCK;
+        return systemClock;
     }
 
     @Override

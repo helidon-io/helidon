@@ -37,18 +37,16 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
-import io.helidon.metrics.spi.MetersProvider;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.search.Search;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 /**
  * Implementation of {@link io.helidon.metrics.api.MeterRegistry} for the Micrometer adapter.
@@ -122,112 +120,33 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.clock = clock;
         this.metricsFactory = metricsFactory;
         this.metricsConfig = metricsConfig;
-        this.systemTagsManager = SystemTagsManager.create(metricsConfig);
+        this.systemTagsManager = SystemTagsManager.create(metricsConfig, metricsFactory);
+        delegate.config()
+                .onMeterAdded(this::onMeterAdded)
+                .onMeterRemoved(this::onMeterRemoved)
+                .meterFilter(new MeterFilter() {
+                    @Override
+                    public Meter.Id map(Meter.Id id) {
+                        Map<String, String> systemTags = systemTagsManager.displayTagPairs();
+                        if (systemTags.isEmpty()) {
+                            return id;
+                        }
+                        List<io.micrometer.core.instrument.Tag> tags = new ArrayList<>();
+                        systemTags.forEach((name, value) ->
+                                                   tags.add(io.micrometer.core.instrument.Tag.of(name, value)));
+                        return id.replaceTags(io.micrometer.core.instrument.Tags.concat(tags,
+                                                                                       id.getTagsAsIterable()));
+                    }
+                });
     }
 
-    static Builder builder(
-            MeterRegistry delegate,
-            MicrometerMetricsFactory metricsFactory) {
-
-        return new Builder(delegate, metricsFactory);
-    }
-
-    /**
-     * Creates a new meter registry which wraps an newly-created Micrometer
-     * {@link io.micrometer.core.instrument.composite.CompositeMeterRegistry} with a Prometheus meter registry
-     * automatically added, using the specified clock.
-     *
-     * @param metricsFactory  metrics factory the new meter registry should use in creating and registering meters
-     * @param clock           default clock to associate with the new meter registry
-     * @param metersProviders providers of built-in meters to be registered upon creation of the meter registry
-     * @return new wrapper around a new Micrometer composite meter registry
-     */
-    static MMeterRegistry create(MicrometerMetricsFactory metricsFactory,
-                                 Clock clock,
-                                 Collection<MetersProvider> metersProviders) {
-        CompositeMeterRegistry delegate = new CompositeMeterRegistry(ClockWrapper.create(clock));
-        // The specified clock is already a Helidon one so pass it directly; no need to wrap it.
-        return create(delegate,
-                      metricsFactory,
-                      metricsFactory.metricsConfig(),
-                      clock,
-                      metersProviders);
-    }
-
-    static MMeterRegistry create(io.micrometer.core.instrument.MeterRegistry delegate,
-                                 MicrometerMetricsFactory metricsFactory,
-                                 MetricsConfig metricsConfig,
-                                 Collection<MetersProvider> metersProviders) {
-
-        return create(delegate, metricsFactory, metricsConfig, MClock.create(delegate.config().clock()), metersProviders);
-    }
-
-    static MMeterRegistry create(io.micrometer.core.instrument.MeterRegistry delegate,
-                                 MicrometerMetricsFactory metricsFactory,
-                                 MetricsConfig metricsConfig,
-                                 Collection<MetersProvider> metersProviders,
-                                 Consumer<io.helidon.metrics.api.Meter> onAddListener,
-                                 Consumer<io.helidon.metrics.api.Meter> onRemoveListener) {
-        MMeterRegistry result = create(delegate, metricsFactory, metricsConfig, MClock.create(delegate.config().clock()));
-        result.onMeterAdded(onAddListener)
-                .onMeterRemoved(onRemoveListener);
-        return applyMetersProvidersToRegistry(metricsFactory, result, metersProviders);
-    }
-
-    static MMeterRegistry create(io.micrometer.core.instrument.MeterRegistry delegate,
-                                 MicrometerMetricsFactory metricsFactory,
-                                 MetricsConfig metricsConfig,
-                                 Clock clock,
-                                 Collection<MetersProvider> metersProviders) {
-
-        return applyMetersProvidersToRegistry(metricsFactory,
-                                              create(delegate,
-                                                     metricsFactory,
-                                                     metricsConfig,
-                                                     clock),
-                                              metersProviders);
-    }
-
-    static MMeterRegistry create(io.micrometer.core.instrument.MeterRegistry delegate,
-                                 MicrometerMetricsFactory metricsFactory,
-                                 MetricsConfig metricsConfig,
-                                 Clock clock) {
-
-        io.micrometer.core.instrument.MeterRegistry preppedDelegate =
-                ensurePrometheusRegistryIsPresent(delegate,
-                                                  metricsFactory.metricsConfig());
-
-        return new MMeterRegistry(preppedDelegate,
-                                  metricsFactory,
-                                  metricsConfig,
-                                  clock);
-    }
-
-    static MMeterRegistry create(io.micrometer.core.instrument.MeterRegistry delegate,
-                                 MicrometerMetricsFactory metricsFactory,
-                                 Collection<MetersProvider> metersProviders) {
-
-        return create(delegate,
-                      metricsFactory,
-                      metricsFactory.metricsConfig(),
-                      MClock.create(delegate.config().clock()),
-                      metersProviders);
-    }
-
-    static MMeterRegistry applyMetersProvidersToRegistry(MetricsFactory factory,
-                                                         MMeterRegistry registry,
-                                                         Collection<MetersProvider> metersProviders) {
-        metersProviders.stream()
-                .flatMap(mp -> mp.meterBuilders(factory).stream())
-                .forEach(registry::getOrCreateUntyped);
-
-        return registry;
+    static Builder builder(MicrometerMetricsFactory metricsFactory) {
+        return new Builder(metricsFactory);
     }
 
     @Override
     public void close() {
         boolean notifyClosed = false;
-        List<Meter> metersToRemove = List.of();
         lock.writeLock().lock();
         try {
             if (closed) {
@@ -237,7 +156,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             notifyClosed = true;
             onAddListeners.clear();
             onRemoveListeners.clear();
-            metersToRemove = List.copyOf(meters.keySet());
             meters.values().forEach(MMeter::markAsDeleted);
             meters.clear();
             buildersByPromMeterId.clear();
@@ -246,29 +164,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         } finally {
             lock.writeLock().unlock();
             if (notifyClosed) {
-                if (registeredWithFactory) {
-                    metricsFactory.onMeterRegistryClosed(this);
-                }
-                MicrometerMetricsFactoryProvider.lockMeterOwnership();
                 try {
-                    for (Meter meter : metersToRemove) {
-                        if (!MicrometerMetricsFactoryProvider.isMeterTracked(meter)) {
-                            delegate.remove(meter);
-                        }
+                    if (registeredWithFactory) {
+                        metricsFactory.onMeterRegistryClosed(this);
                     }
                 } finally {
-                    MicrometerMetricsFactoryProvider.unlockMeterOwnership();
+                    delegate.close();
                 }
             }
-        }
-    }
-
-    boolean tracks(Meter meter) {
-        lock.readLock().lock();
-        try {
-            return meters.containsKey(meter);
-        } finally {
-            lock.readLock().unlock();
         }
     }
 
@@ -518,7 +421,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         in any case.
          */
 
-        MicrometerMetricsFactoryProvider.lockMeterOwnership();
         lock.writeLock().lock();
         try {
             /*
@@ -583,7 +485,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         } finally {
             lock.writeLock().unlock();
-            MicrometerMetricsFactoryProvider.unlockMeterOwnership();
         }
     }
 
@@ -638,21 +539,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return null;
     }
 
-    private static io.micrometer.core.instrument.MeterRegistry ensurePrometheusRegistryIsPresent(
-            io.micrometer.core.instrument.MeterRegistry meterRegistry,
-            MetricsConfig metricsConfig) {
-
-        if (meterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {
-            if (compositeMeterRegistry.getRegistries()
-                    .stream()
-                    .noneMatch(r -> r instanceof PrometheusMeterRegistry)) {
-                compositeMeterRegistry.add(
-                        new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
-            }
-        }
-        return meterRegistry;
-    }
-
     private <M extends Meter,
             HB extends MMeter.Builder<?, M, HB, HM>,
             HM extends MMeter<M>> io.helidon.metrics.api.Meter getOrCreate(HB mBuilder,
@@ -688,7 +574,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
          lock, and recheck what we checked earlier while we had the read lock.
          */
 
-        MicrometerMetricsFactoryProvider.lockMeterOwnership();
         lock.writeLock().lock();
 
         try {
@@ -707,9 +592,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                            + " during creation of new meter " + mBuilder);
             }
 
-            M meter = MicrometerMetricsFactoryProvider.withSystemTags(metricsFactory,
-                                                                      Map.of(),
-                                                                      () -> registration.apply(delegate()));
+            M meter = registration.apply(delegate());
 
             /*
              Normally, the on-add listener will have removed the pending builder in scope, but do so here again if the listener
@@ -734,7 +617,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             return result;
         } finally {
             lock.writeLock().unlock();
-            MicrometerMetricsFactoryProvider.unlockMeterOwnership();
         }
     }
 
@@ -903,24 +785,15 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     static class Builder<B extends Builder<B, R>, R extends MMeterRegistry>
             implements io.helidon.metrics.api.MeterRegistry.Builder<B, R> {
 
-        private final MeterRegistry delegate;
         private final MicrometerMetricsFactory metricsFactory;
-        private final Collection<MetersProvider> metersProviders = new ArrayList<>();
         private MetricsConfig metricsConfig;
         private Optional<Clock> clock = Optional.empty();
         private Optional<Consumer<io.helidon.metrics.api.Meter>> onAddListener = Optional.empty();
         private Optional<Consumer<io.helidon.metrics.api.Meter>> onRemoveListener = Optional.empty();
 
-        private Builder(MeterRegistry delegate, MicrometerMetricsFactory metricsFactory) {
-            this.delegate = delegate;
+        private Builder(MicrometerMetricsFactory metricsFactory) {
             this.metricsFactory = metricsFactory;
             this.metricsConfig = metricsFactory.metricsConfig();
-        }
-
-        B metersProviders(Collection<MetersProvider> metersProviders) {
-            this.metersProviders.clear();
-            this.metersProviders.addAll(metersProviders);
-            return identity();
         }
 
         @Override
@@ -959,15 +832,30 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
 
         MMeterRegistry buildRegistry() {
-            MMeterRegistry result = new MMeterRegistry(delegate,
-                                                       metricsFactory,
-                                                       metricsConfig,
-                                                       clock.orElse(MClock.create(delegate.config().clock())));
+            CompositeMeterRegistry delegate = clock
+                    .map(value -> new CompositeMeterRegistry(ClockWrapper.create(value)))
+                    .orElseGet(CompositeMeterRegistry::new);
+            MMeterRegistry result = null;
+            try {
+                metricsFactory.prepareMeterRegistries(metricsConfig).forEach(delegate::add);
+                MMeterRegistry newRegistry = new MMeterRegistry(delegate,
+                                                                metricsFactory,
+                                                                metricsConfig,
+                                                                clock.orElse(MClock.create(delegate.config().clock())));
+                result = newRegistry;
 
-            onAddListener.ifPresent(result::onMeterAdded);
-            onRemoveListener.ifPresent(result::onMeterRemoved);
+                onAddListener.ifPresent(newRegistry::onMeterAdded);
+                onRemoveListener.ifPresent(newRegistry::onMeterRemoved);
 
-            return applyMetersProvidersToRegistry(metricsFactory, result, metersProviders);
+                return newRegistry;
+            } catch (RuntimeException | Error e) {
+                if (result == null) {
+                    delegate.close();
+                } else {
+                    result.close();
+                }
+                throw e;
+            }
         }
     }
 
