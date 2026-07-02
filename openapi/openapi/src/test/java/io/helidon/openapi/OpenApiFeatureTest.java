@@ -25,15 +25,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 import io.helidon.common.Builder;
+import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
@@ -1076,6 +1079,106 @@ class OpenApiFeatureTest {
         } finally {
             releaseFormat.countDown();
             client.closeResource();
+            webServer.stop();
+        }
+    }
+
+    @Test
+    void formatsAfterConcurrentModelInitializationWithoutLockInversion() throws Exception {
+        CountDownLatch modelLoading = new CountDownLatch(1);
+        CountDownLatch requestReadingModel = new CountDownLatch(1);
+        CountDownLatch continueModelLoading = new CountDownLatch(1);
+        AtomicBoolean lockInverted = new AtomicBoolean();
+        ReentrantLock managerLock = new ReentrantLock();
+        OpenApiManager<String> manager = new OpenApiManager<>() {
+            @Override
+            public String load(String content) {
+                return content;
+            }
+
+            @Override
+            public String format(String model, OpenApiFormat format) {
+                return model;
+            }
+
+            @Override
+            public String name() {
+                return "test";
+            }
+
+            @Override
+            public String type() {
+                return "test";
+            }
+        };
+        LazyValue<Object> delegateModel = LazyValue.create(() -> {
+            modelLoading.countDown();
+            try {
+                if (!continueModelLoading.await(10, TimeUnit.SECONDS)) {
+                    throw new AssertionError("Timed out waiting to continue OpenAPI model loading.");
+                }
+                if (!managerLock.tryLock(2, TimeUnit.SECONDS)) {
+                    lockInverted.set(true);
+                    return "model";
+                }
+                try {
+                    return manager.load("model");
+                } finally {
+                    managerLock.unlock();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError(e);
+            }
+        });
+        AtomicInteger modelReads = new AtomicInteger();
+        LazyValue<Object> model = new LazyValue<>() {
+            @Override
+            public Object get() {
+                if (modelReads.incrementAndGet() == 2) {
+                    requestReadingModel.countDown();
+                }
+                return delegateModel.get();
+            }
+
+            @Override
+            public boolean isLoaded() {
+                return delegateModel.isLoaded();
+            }
+        };
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .webContext("/lock-order")
+                .servicesDiscoverServices(false)
+                .buildPrototype();
+        OpenApiHttpFeature httpFeature = new OpenApiHttpFeature(config,
+                                                                manager,
+                                                                model,
+                                                                managerLock,
+                                                                Optional.empty(),
+                                                                OpenApiFormat.UNSUPPORTED);
+        WebServer webServer = WebServer.builder()
+                .port(0)
+                .routing(routing -> routing.addFeature(httpFeature))
+                .build();
+        WebClient webClient = WebClient.create();
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            webServer.start();
+            var modelInitialization = executor.submit(model::get);
+            assertThat(modelLoading.await(10, TimeUnit.SECONDS), is(true));
+
+            var formattedRequest = executor.submit(() -> webClient.get("http://localhost:" + webServer.port() + "/lock-order")
+                    .accept(MediaTypes.APPLICATION_OPENAPI_YAML)
+                    .request(String.class));
+            assertThat(requestReadingModel.await(10, TimeUnit.SECONDS), is(true));
+            continueModelLoading.countDown();
+
+            modelInitialization.get();
+            assertThat(formattedRequest.get().status(), is(Status.OK_200));
+            assertThat(lockInverted.get(), is(false));
+        } finally {
+            continueModelLoading.countDown();
+            webClient.closeResource();
             webServer.stop();
         }
     }
