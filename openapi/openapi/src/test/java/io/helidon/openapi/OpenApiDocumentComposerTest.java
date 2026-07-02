@@ -75,6 +75,7 @@ class OpenApiDocumentComposerTest {
             info:
               title: Static API
               version: 1.0.0
+            paths: {}
             x-null: null
             """;
 
@@ -527,6 +528,12 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void documentBuilderRejectsNullPathItemMaps() {
+        assertThrows(NullPointerException.class, () -> OpenApiDocument.builder().paths(null));
+        assertThrows(NullPointerException.class, () -> OpenApiDocument.builder().webhooks(null));
+    }
+
+    @Test
     void mergeFailsWhenExplicitNullPathItemConflictsWithSourceValue() {
         Map<String, Object> target = documentWithPathValue("/static", null);
         Map<String, Object> source = documentWithPathValue("/static", pathItem("generatedGet"));
@@ -759,6 +766,7 @@ class OpenApiDocumentComposerTest {
                 .build();
         OpenApiDocument document = OpenApiDocument.builder()
                 .info("Generated API", "1.0.0")
+                .paths(Map.of())
                 .components(components -> components.schema("Item", schema.generateObjectNoKeywords()))
                 .build();
 

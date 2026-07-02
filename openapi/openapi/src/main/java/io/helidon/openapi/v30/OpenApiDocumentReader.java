@@ -18,6 +18,7 @@ package io.helidon.openapi.v30;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -62,18 +63,24 @@ public final class OpenApiDocumentReader {
         object(source, "info", info -> builder.info(info(info)));
         array(source, "servers", servers -> servers.values()
                 .forEach(server -> object(server, value -> builder.server(server(value)))));
-        object(source, "paths", paths -> paths.keysAsStrings()
-                .forEach(path -> {
-                    if (path.startsWith("x-")) {
-                        value(paths, path, value -> builder.pathExtension(path, value));
-                    } else {
-                        object(paths, path, item -> builder.path(path, pathItem(item)));
-                    }
-                }));
-        object(source, "webhooks", webhooks -> webhooks.keysAsStrings()
-                .forEach(name -> object(webhooks,
-                                        name,
-                                        item -> builder.webhook(name, pathItem(item)))));
+        object(source, "paths", paths -> {
+            builder.paths(Map.of());
+            paths.keysAsStrings()
+                    .forEach(path -> {
+                        if (path.startsWith("x-")) {
+                            value(paths, path, value -> builder.pathExtension(path, value));
+                        } else {
+                            object(paths, path, item -> builder.path(path, pathItem(item)));
+                        }
+                    });
+        });
+        object(source, "webhooks", webhooks -> {
+            builder.webhooks(Map.of());
+            webhooks.keysAsStrings()
+                    .forEach(name -> object(webhooks,
+                                            name,
+                                            item -> builder.webhook(name, pathItem(item))));
+        });
         object(source, "components", components -> builder.components(components(components)));
         array(source, "security", security -> security.values()
                 .forEach(requirement -> object(requirement,

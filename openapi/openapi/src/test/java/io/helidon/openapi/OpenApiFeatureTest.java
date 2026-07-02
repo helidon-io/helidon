@@ -787,6 +787,7 @@ class OpenApiFeatureTest {
         OpenApiDocumentSource source = (context, document) -> document
                 .info(OpenApiDocumentContextSupport.resolveExpression(context, "${openapi.title:Generated API}"),
                       "1.0.0")
+                .paths(Map.of())
                 .server(server -> server.url(OpenApiDocumentContextSupport.resolveExpression(
                         context,
                         "https://${openapi.host:localhost}")));
@@ -814,6 +815,7 @@ class OpenApiFeatureTest {
         OpenApiDocumentSource source = (context, document) -> document
                 .info(OpenApiDocumentContextSupport.resolveExpression(context, "${openapi.title:Generated API}"),
                       "1.0.0")
+                .paths(Map.of())
                 .server(server -> server.url(OpenApiDocumentContextSupport.resolveExpression(
                         context,
                         "https://${openapi.host:localhost}")));
@@ -943,7 +945,8 @@ class OpenApiFeatureTest {
                 } else {
                     concurrentDescribe.countDown();
                 }
-                document.info(context.listener(), "1.0.0");
+                document.info(context.listener(), "1.0.0")
+                        .paths(Map.of());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new AssertionError(e);
@@ -1012,7 +1015,8 @@ class OpenApiFeatureTest {
                 } else {
                     concurrentDescribe.countDown();
                 }
-                document.info(context.listener(), "1.0.0");
+                document.info(context.listener(), "1.0.0")
+                        .paths(Map.of());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new AssertionError(e);
@@ -1431,6 +1435,7 @@ class OpenApiFeatureTest {
             info:
               title: Static API
               version: 1.0.0
+            paths: {}
             """;
 
     private static void mergeStaticDocumentUsesRootVersion(Path staticFile, String content) throws IOException {
@@ -1463,6 +1468,7 @@ class OpenApiFeatureTest {
             return OpenApiDocument.builder()
                     .openapi(version)
                     .info("Static API", "1.0.0")
+                    .paths(Map.of())
                     .build();
         }
 

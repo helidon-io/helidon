@@ -4425,6 +4425,21 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Add or merge path items.
+         * <p>
+         * An empty map adds an empty Paths Object.
+         *
+         * @param paths path items keyed by OpenAPI path
+         * @return updated builder
+         */
+        public Builder paths(Map<String, PathItem> paths) {
+            Objects.requireNonNull(paths);
+            object(node, "paths");
+            paths.forEach(this::path);
+            return this;
+        }
+
+        /**
          * Add or merge a path item.
          *
          * @param path OpenAPI path
@@ -4462,6 +4477,21 @@ public final class OpenApiDocument {
          */
         public Builder pathExtension(String name, JsonValue value) {
             OpenApiDocument.extension(object(node, "paths"), name, value);
+            return this;
+        }
+
+        /**
+         * Add or merge webhook path items.
+         * <p>
+         * An empty map adds an empty Webhooks Object.
+         *
+         * @param webhooks webhook path items keyed by name
+         * @return updated builder
+         */
+        public Builder webhooks(Map<String, PathItem> webhooks) {
+            Objects.requireNonNull(webhooks);
+            object(node, "webhooks");
+            webhooks.forEach(this::webhook);
             return this;
         }
 
