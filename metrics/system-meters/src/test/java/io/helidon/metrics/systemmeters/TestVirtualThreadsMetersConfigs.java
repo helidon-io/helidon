@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.resumable.Resumable;
@@ -349,7 +350,7 @@ class TestVirtualThreadsMetersConfigs {
                 .getRecordings()
                 .stream()
                 .map(Recording::getId)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
         private Recording awaitNewRecording() {
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
