@@ -359,14 +359,14 @@ class DeclarativeGrpcTest {
     }
 
     @Test
-    void testDenyAllUnary() {
+    void testInheritedDenyAllUnary() {
         var denied = assertThrows(StatusRuntimeException.class, () -> blockingStub.denyAllGreet(request("Tomas")));
 
         assertThat(denied.getStatus().getCode(), is(Code.PERMISSION_DENIED));
     }
 
     @Test
-    void testRoleValidatorUnary() {
+    void testInheritedRoleValidatorUnary() {
         var request = request("Tomas");
 
         var unauthenticated = assertThrows(StatusRuntimeException.class,
@@ -384,7 +384,7 @@ class DeclarativeGrpcTest {
     }
 
     @Test
-    void testScopeProtectedUnary() {
+    void testInheritedScopeProtectedUnary() {
         var request = request("Tomas");
 
         var unauthenticated = assertThrows(StatusRuntimeException.class,

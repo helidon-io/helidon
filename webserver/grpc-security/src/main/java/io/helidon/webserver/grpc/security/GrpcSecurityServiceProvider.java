@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
 import io.helidon.security.Security;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
 import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
@@ -45,14 +44,7 @@ public class GrpcSecurityServiceProvider implements GrpcServerServiceProvider {
         Optional<Security> security = Contexts.context()
                 .orElseGet(Contexts::globalContext)
                 .get(Security.class);
-        Security securityInstance = security.orElseGet(() -> {
-            Config securityConfig = config.root().get("security");
-            if (!securityConfig.exists()) {
-                throw new ConfigException("gRPC security requires either a configured Security registered with global "
-                                                  + "context, or root security configuration");
-            }
-            return Security.create(securityConfig);
-        });
+        Security securityInstance = security.orElseGet(() -> Security.create(config.root().get("security")));
 
         return GrpcSecurity.create(securityInstance, config);
     }

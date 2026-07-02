@@ -260,9 +260,7 @@ For more information see xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics]
 == Tracing
 
 Tracing in the gRPC client is implemented as a so-called gRPC client service.
-To enable tracing support, you need to list tracing as an available service
-either programmatically or via config, and
-include the following dependency in your project:
+To enable tracing support, include the following dependency in your project:
 
 [source,xml]
 ----
@@ -272,8 +270,8 @@ include the following dependency in your project:
 </dependency>
 ----
 
-Tracing support is loaded via the gRPC client service SPI and made available to
-clients. Using config, we can list it as an available gRPC service as follows:
+Tracing support is discovered from the classpath via the gRPC client service SPI and enabled by default.
+The `grpc-services` configuration is optional and can be used to configure or disable tracing:
 
 [source,yaml]
 ----
@@ -283,7 +281,8 @@ grpc-client:
 ----
 
 At the time of writing, no additional configuration is necessary under the
-`tracing:` section.
+`tracing:` section. Set `grpc-client.grpc-services.tracing.enabled=false` to disable only tracing, or set
+`grpc-client.grpc-services-discover-services=false` to disable automatic discovery of all gRPC client services.
 Finally, a gRPC client instance can be created that is configured with
 tracing support enabled as follows:
 

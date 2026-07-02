@@ -41,7 +41,7 @@ import jakarta.annotation.security.RolesAllowed;
 @RpcServer.Endpoint
 @Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
 @Service.Singleton
-class GreetingEndpoint {
+class GreetingEndpoint implements SecuredGreetingContract {
     @Grpc.Proto
     Descriptors.FileDescriptor proto() {
         return DeclarativeGrpcProto.getDescriptor();
@@ -93,21 +93,18 @@ class GreetingEndpoint {
         return reply(request.getName());
     }
 
-    @Grpc.Unary("DenyAllGreet")
-    @DenyAll
-    GreetingReply denyAllGreet(GreetingRequest request) {
+    @Override
+    public GreetingReply denyAllGreet(GreetingRequest request) {
         return reply(request.getName());
     }
 
-    @Grpc.Unary("RoleValidatorGreet")
-    @RoleValidator.Roles("admin")
-    GreetingReply roleValidatorGreet(GreetingRequest request) {
+    @Override
+    public GreetingReply roleValidatorGreet(GreetingRequest request) {
         return reply(request.getName());
     }
 
-    @Grpc.Unary("ScopeGreet")
-    @ScopeValidator.Scope("admin")
-    GreetingReply scopeGreet(GreetingRequest request) {
+    @Override
+    public GreetingReply scopeGreet(GreetingRequest request) {
         return reply(request.getName());
     }
 
@@ -142,4 +139,18 @@ class GreetingEndpoint {
                 .setMessage("Hello " + name)
                 .build();
     }
+}
+
+interface SecuredGreetingContract {
+    @Grpc.Unary("DenyAllGreet")
+    @DenyAll
+    GreetingReply denyAllGreet(GreetingRequest request);
+
+    @Grpc.Unary("RoleValidatorGreet")
+    @RoleValidator.Roles("admin")
+    GreetingReply roleValidatorGreet(GreetingRequest request);
+
+    @Grpc.Unary("ScopeGreet")
+    @ScopeValidator.Scope("admin")
+    GreetingReply scopeGreet(GreetingRequest request);
 }

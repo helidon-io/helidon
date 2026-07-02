@@ -82,6 +82,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private final AtomicBoolean terminal = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean heartbeatStarted = new AtomicBoolean();
+    private final ReentrantLock demandLock = new ReentrantLock();
     private final ReentrantLock heartbeatLock = new ReentrantLock();
     private final ReentrantLock listenerLock = new ReentrantLock();
     private final ReentrantLock writerLock = new ReentrantLock();
@@ -103,7 +104,13 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     @Override
     public void request(int numMessages) {
         socket().log(LOGGER, DEBUG, "request called %d", numMessages);
-        messageRequest.release(numMessages);
+        demandLock.lock();
+        try {
+            int available = messageRequest.availablePermits();
+            messageRequest.release(Math.min(numMessages, Integer.MAX_VALUE - available));
+        } finally {
+            demandLock.unlock();
+        }
         startReadBarrier.countDown();
     }
 
@@ -151,7 +158,14 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         clientStream().onReset(rstStream -> {
             resetFailure = new Http2Exception(rstStream.errorCode(),
                                               "Reset of " + clientStream().streamId() + " stream received");
-            messageRequest.release();
+            demandLock.lock();
+            try {
+                if (messageRequest.availablePermits() == 0) {
+                    messageRequest.release();
+                }
+            } finally {
+                demandLock.unlock();
+            }
             startReadBarrier.countDown();
         });
         if (heartbeatPeriod().compareTo(Duration.ZERO) <= 0) {

@@ -17,9 +17,14 @@
 package io.helidon.webserver.grpc.validation;
 
 import java.io.InputStream;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.validation.ValidationException;
+import io.helidon.webserver.grpc.GrpcRouting;
 
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -35,6 +40,84 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 class GrpcValidationTest {
     private static final Metadata.Key<String> DETAIL = Metadata.Key.of("test-detail",
                                                                        Metadata.ASCII_STRING_MARSHALLER);
+
+    @Test
+    void discoversValidationFromClasspathByDefault() {
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(Config.empty())
+                .build();
+
+        assertEquals(1, routing.interceptors()
+                .stream()
+                .filter(GrpcValidation.class::isInstance)
+                .count());
+    }
+
+    @Test
+    void discoversValidationWhenAnotherServiceIsExcluded() {
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(Config.empty())
+                .addExcludedServiceName("other")
+                .build();
+
+        assertEquals(1, routing.interceptors()
+                .stream()
+                .filter(GrpcValidation.class::isInstance)
+                .count());
+    }
+
+    @Test
+    void disablesClasspathDiscoveryByConfiguration() {
+        Config config = Config.just(ConfigSources.create(Map.of("grpc.grpc-services-discover-services", "false")));
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(config)
+                .build();
+
+        assertEquals(0, routing.interceptors()
+                .stream()
+                .filter(GrpcValidation.class::isInstance)
+                .count());
+    }
+
+    @Test
+    void mergesLegacyAndCurrentServiceConfigurationBeforeDiscovery() {
+        Config legacyDisable = Config.just(ConfigSources.create(Map.of(
+                "server.protocols.grpc.grpc-services.validation.enabled", "false",
+                "grpc.enable-metrics", "true",
+                "grpc.grpc-services-discover-services", "true")));
+        GrpcRouting legacyDisableRouting = GrpcRouting.builder()
+                .config(legacyDisable)
+                .build();
+
+        assertEquals(0, legacyDisableRouting.interceptors()
+                .stream()
+                .filter(GrpcValidation.class::isInstance)
+                .count());
+
+        Config currentOverride = Config.just(ConfigSources.create(Map.of(
+                "server.protocols.grpc.grpc-services.validation.enabled", "true",
+                "grpc.grpc-services.validation.enabled", "false")));
+        GrpcRouting currentOverrideRouting = GrpcRouting.builder()
+                .config(currentOverride)
+                .build();
+
+        assertEquals(0, currentOverrideRouting.interceptors()
+                .stream()
+                .filter(GrpcValidation.class::isInstance)
+                .count());
+
+        Config distinctNames = Config.just(ConfigSources.create(Map.of(
+                "server.protocols.grpc.grpc-services.legacy-validation.type", "validation",
+                "grpc.grpc-services.current-validation.type", "validation")));
+        GrpcRouting distinctNamesRouting = GrpcRouting.builder()
+                .config(distinctNames)
+                .build();
+
+        assertEquals(2, distinctNamesRouting.interceptors()
+                .stream()
+                .filter(GrpcValidation.class::isInstance)
+                .count());
+    }
 
     @Test
     void mapsAsynchronousValidationFailureAndPreservesTrailers() {
@@ -98,6 +181,7 @@ class GrpcValidationTest {
     @Test
     void mapsSynchronousListenerValidationFailure() {
         TestServerCall call = new TestServerCall();
+        AtomicInteger completeCount = new AtomicInteger();
         ServerCallHandler<String, String> handler = new ServerCallHandler<>() {
             @Override
             public ServerCall.Listener<String> startCall(ServerCall<String, String> ignoredCall, Metadata ignoredHeaders) {
@@ -106,15 +190,70 @@ class GrpcValidationTest {
                     public void onHalfClose() {
                         throw new ValidationException("invalid listener");
                     }
+
+                    @Override
+                    public void onComplete() {
+                        completeCount.incrementAndGet();
+                    }
                 };
             }
         };
 
         ServerCall.Listener<String> listener = GrpcValidation.create().interceptCall(call, new Metadata(), handler);
         listener.onHalfClose();
+        listener.onComplete();
 
         assertEquals(Status.Code.INVALID_ARGUMENT, call.status.get().getCode());
         assertEquals("invalid listener", call.status.get().getDescription());
+        assertEquals(1, call.closeCount.get());
+        assertEquals(1, completeCount.get());
+    }
+
+    @Test
+    void suppressesNonterminalCallbacksAfterValidationFailureAndForwardsCancellation() {
+        TestServerCall call = new TestServerCall();
+        AtomicInteger halfCloseCount = new AtomicInteger();
+        AtomicInteger readyCount = new AtomicInteger();
+        AtomicInteger cancelCount = new AtomicInteger();
+        ServerCallHandler<String, String> handler = new ServerCallHandler<>() {
+            @Override
+            public ServerCall.Listener<String> startCall(ServerCall<String, String> ignoredCall, Metadata ignoredHeaders) {
+                return new ServerCall.Listener<>() {
+                    @Override
+                    public void onMessage(String message) {
+                        throw new ValidationException("invalid message");
+                    }
+
+                    @Override
+                    public void onHalfClose() {
+                        halfCloseCount.incrementAndGet();
+                    }
+
+                    @Override
+                    public void onReady() {
+                        readyCount.incrementAndGet();
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        cancelCount.incrementAndGet();
+                    }
+                };
+            }
+        };
+
+        ServerCall.Listener<String> listener = GrpcValidation.create().interceptCall(call, new Metadata(), handler);
+        listener.onMessage("invalid");
+        listener.onHalfClose();
+        listener.onReady();
+        listener.onCancel();
+
+        assertEquals(Status.Code.INVALID_ARGUMENT, call.status.get().getCode());
+        assertEquals("invalid message", call.status.get().getDescription());
+        assertEquals(1, call.closeCount.get());
+        assertEquals(0, halfCloseCount.get());
+        assertEquals(0, readyCount.get());
+        assertEquals(1, cancelCount.get());
     }
 
     private static ServerCallHandler<String, String> capturingHandler(
@@ -130,6 +269,7 @@ class GrpcValidationTest {
     }
 
     private static final class TestServerCall extends ServerCall<String, String> {
+        private final AtomicInteger closeCount = new AtomicInteger();
         private final AtomicReference<Status> status = new AtomicReference<>();
         private final AtomicReference<Metadata> trailers = new AtomicReference<>();
 
@@ -147,6 +287,7 @@ class GrpcValidationTest {
 
         @Override
         public void close(Status status, Metadata trailers) {
+            closeCount.incrementAndGet();
             this.status.set(status);
             this.trailers.set(trailers);
         }

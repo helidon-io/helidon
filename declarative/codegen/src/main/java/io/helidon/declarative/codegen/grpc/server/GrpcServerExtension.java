@@ -61,6 +61,7 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURIT
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ROLES_ALLOWED;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ROLES_CONTAINER;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ROLE_PERMIT_ALL;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SERVICE_PER_REQUEST;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.STREAM_OBSERVER;
 import static java.util.function.Predicate.not;
 
@@ -95,6 +96,13 @@ class GrpcServerExtension implements RegistryCodegenExtension {
 
     private GrpcEndpoint toEndpoint(TypeInfo serverEndpoint) {
         TypeName endpointType = serverEndpoint.typeName();
+        if (serverEndpoint.hasAnnotation(SERVICE_PER_REQUEST)) {
+            throw new CodegenException("Declarative gRPC service "
+                                               + endpointType.fqName()
+                                               + " cannot use @Service.PerRequest because gRPC calls do not participate in "
+                                               + "WebServer HTTP request scope. Use @Service.Singleton or @Service.PerLookup.",
+                                       serverEndpoint.originatingElementValue());
+        }
         List<Annotation> typeAnnotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint);
         GrpcProtoDescriptor protoDescriptor = GrpcProtoDescriptors.find(ctx,
                                                                         serverEndpoint,
@@ -251,7 +259,11 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                                   responseType,
                                                   PROTO_MESSAGE_DESCRIPTOR,
                                                   "response");
-        return Optional.of(new GrpcMethod(method,
+        TypedElementInfo effectiveMethod = TypedElementInfo.builder(method)
+                .annotations(annotations)
+                .inheritedAnnotations(List.of())
+                .build();
+        return Optional.of(new GrpcMethod(effectiveMethod,
                                           methodName(method, annotations),
                                           ctx.uniqueName(serverEndpoint, method),
                                           methodType,

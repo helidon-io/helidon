@@ -30,6 +30,8 @@ import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigBuilderSupport;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.MergedConfig;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HttpPrologue;
@@ -49,10 +51,16 @@ import io.grpc.stub.ServerCalls;
  * gRPC specific routing.
  */
 public class GrpcRouting implements Routing {
-    private static final GrpcRouting EMPTY = GrpcRouting.builder()
-            .config(Config.empty())
-            .build();
+    private static final GrpcRouting EMPTY;
     private static final String SERVER_PROTOCOL_CONFIG_KEY = "server.protocols." + GrpcProtocolProvider.CONFIG_NAME;
+    private static final Config DISCOVERY_DISABLED_CONFIG = Config.just(ConfigSources.create(
+            Map.of("grpc-services-discover-services", "false")));
+
+    static {
+        WeightedBag<ServerInterceptor> interceptors = WeightedBag.create(InterceptorWeights.USER);
+        interceptors.add(ContextSettingServerInterceptor.instance());
+        EMPTY = new GrpcRouting(List.of(), interceptors, Map.of());
+    }
 
     private final ArrayList<GrpcRoute> routes;
     private final WeightedBag<ServerInterceptor> interceptors;
@@ -160,27 +168,40 @@ public class GrpcRouting implements Routing {
 
             configuredInterceptors.add(ContextSettingServerInterceptor.instance());
             Map<String, GrpcServerService> configuredServices = new LinkedHashMap<>();
-            if (excludedServiceNames.isEmpty()) {
-                if (routingConfig.key().isRoot()) {
-                    // first use the undocumented config key (backward compatibility)
-                    addGrpcConfigServices(routingConfig.get(SERVER_PROTOCOL_CONFIG_KEY), configuredServices);
-                    // then the documented one, which should be the one that wins
-                    addGrpcConfigServices(routingConfig.get(GrpcProtocolProvider.CONFIG_NAME), configuredServices);
-                } else {
-                    addGrpcConfigServices(routingConfig, configuredServices);
+            if (routingConfig.key().isRoot()) {
+                Config legacyConfig = routingConfig.get(SERVER_PROTOCOL_CONFIG_KEY);
+                Config grpcConfig = routingConfig.get(GrpcProtocolProvider.CONFIG_NAME);
+                ConfiguredGrpcServices legacyServices = configuredServices(legacyConfig);
+                ConfiguredGrpcServices grpcServices = configuredServices(grpcConfig);
+
+                // first use the undocumented config key (backward compatibility)
+                addConfiguredGrpcServices(legacyConfig, excludedServiceNames, configuredServices);
+                // then the documented one, which should be the one that wins
+                configuredServices.values().removeIf(service -> grpcServices.identities().contains(
+                        new GrpcServerServiceIdentity(service.type(), service.name())));
+                addConfiguredGrpcServices(grpcConfig, excludedServiceNames, configuredServices);
+
+                boolean discoverServices = grpcConfig.get("grpc-services-discover-services")
+                        .asBoolean()
+                        .orElseGet(() -> legacyConfig.get("grpc-services-discover-services")
+                                .asBoolean()
+                                .orElse(true));
+                if (discoverServices) {
+                    Set<String> configuredProviderTypes = new LinkedHashSet<>(legacyServices.providerTypes());
+                    configuredProviderTypes.addAll(grpcServices.providerTypes());
+                    addDiscoveredGrpcServices(grpcConfig,
+                                              configuredProviderTypes,
+                                              excludedServiceNames,
+                                              configuredServices);
                 }
             } else {
-                if (routingConfig.key().isRoot()) {
-                    // first use the undocumented config key (backward compatibility)
-                    addGrpcConfigServices(routingConfig.get(SERVER_PROTOCOL_CONFIG_KEY),
-                                          excludedServiceNames,
-                                          configuredServices);
-                    // then the documented one, which should be the one that wins
-                    addGrpcConfigServices(routingConfig.get(GrpcProtocolProvider.CONFIG_NAME),
-                                          excludedServiceNames,
-                                          configuredServices);
-                } else {
-                    addGrpcConfigServices(routingConfig, excludedServiceNames, configuredServices);
+                ConfiguredGrpcServices configuredServiceInfo = configuredServices(routingConfig);
+                addConfiguredGrpcServices(routingConfig, excludedServiceNames, configuredServices);
+                if (routingConfig.get("grpc-services-discover-services").asBoolean().orElse(true)) {
+                    addDiscoveredGrpcServices(routingConfig,
+                                              configuredServiceInfo.providerTypes(),
+                                              excludedServiceNames,
+                                              configuredServices);
                 }
             }
             for (GrpcServerService serverService : configuredServices.values()) {
@@ -192,16 +213,54 @@ public class GrpcRouting implements Routing {
             return new GrpcRouting(routes, routingInterceptors, services);
         }
 
-        private static void addGrpcConfigServices(Config config,
-                                                  Map<String, GrpcServerService> configuredServices) {
-            for (GrpcServerService serverService : GrpcConfig.create(config).grpcServices()) {
-                configuredServices.put(serverService.name(), serverService);
+        private static ConfiguredGrpcServices configuredServices(Config config) {
+            Set<String> configuredProviderTypes = new LinkedHashSet<>();
+            Set<GrpcServerServiceIdentity> configuredServices = new LinkedHashSet<>();
+            Config grpcServices = config.get("grpc-services");
+            boolean isList = grpcServices.isList();
+            for (Config serviceConfig : grpcServices.asNodeList().orElseGet(List::of)) {
+                String serviceType;
+                String serviceName;
+                if (isList) {
+                    serviceType = serviceConfig.get("type").asString().orElse(null);
+                    serviceName = serviceConfig.get("name").asString().orElse(serviceType);
+                    if (serviceType == null) {
+                        List<Config> configs = serviceConfig.asNodeList().orElseGet(List::of);
+                        if (configs.size() == 1) {
+                            Config usedConfig = configs.getFirst();
+                            serviceName = usedConfig.name();
+                            serviceType = usedConfig.get("type").asString().orElse(serviceName);
+                        }
+                    }
+                } else {
+                    serviceName = serviceConfig.name();
+                    serviceType = serviceConfig.get("type").asString().orElse(serviceName);
+                }
+                if (serviceType != null) {
+                    configuredProviderTypes.add(serviceType);
+                    configuredServices.add(new GrpcServerServiceIdentity(serviceType, serviceName));
+                }
             }
+            return new ConfiguredGrpcServices(configuredProviderTypes, configuredServices);
         }
 
-        private static void addGrpcConfigServices(Config config,
-                                                  Set<String> excludedServiceNames,
-                                                  Map<String, GrpcServerService> configuredServices) {
+        private static void addConfiguredGrpcServices(Config config,
+                                                      Set<String> excludedServiceNames,
+                                                      Map<String, GrpcServerService> configuredServices) {
+            Config configuredOnly = MergedConfig.create(DISCOVERY_DISABLED_CONFIG, config);
+            if (excludedServiceNames.isEmpty()) {
+                for (GrpcServerService serverService : ConfigBuilderSupport.discoverServices(
+                        configuredOnly,
+                        "grpc-services",
+                        GrpcServerServiceProvider.class,
+                        GrpcServerService.class,
+                        false,
+                        List.of())) {
+                    configuredServices.put(serverService.name(), serverService);
+                }
+                return;
+            }
+
             Set<String> providerTypes = new LinkedHashSet<>();
             HelidonServiceLoader.create(GrpcServerServiceProvider.class)
                     .forEach(provider -> providerTypes.add(provider.configKey()));
@@ -237,16 +296,31 @@ public class GrpcRouting implements Routing {
                 }
             }
 
-            boolean discoverServices = config.get("grpc-services-discover-services").asBoolean().orElse(false);
             for (GrpcServerService serverService : ConfigBuilderSupport.discoverServices(
-                    config,
+                    configuredOnly,
                     "grpc-services",
                     GrpcServerServiceProvider.class,
                     GrpcServerService.class,
-                    discoverServices,
+                    false,
                     ignoredServices)) {
                 configuredServices.put(serverService.name(), serverService);
             }
+        }
+
+        private static void addDiscoveredGrpcServices(Config config,
+                                                      Set<String> configuredProviderTypes,
+                                                      Set<String> excludedServiceNames,
+                                                      Map<String, GrpcServerService> configuredServices) {
+            HelidonServiceLoader.create(GrpcServerServiceProvider.class).forEach(provider -> {
+                String type = provider.configKey();
+                if (configuredProviderTypes.contains(type) || excludedServiceNames.contains(type)) {
+                    return;
+                }
+                GrpcServerService service = provider.create(config.get("grpc-services").get(type), type);
+                if (!excludedServiceNames.contains(service.name())) {
+                    configuredServices.putIfAbsent(service.name(), service);
+                }
+            });
         }
 
         private record ExcludedGrpcServerService(String type, String name) implements GrpcServerService {
@@ -254,6 +328,12 @@ public class GrpcRouting implements Routing {
             public WeightedBag<ServerInterceptor> interceptors() {
                 return WeightedBag.create();
             }
+        }
+
+        private record GrpcServerServiceIdentity(String type, String name) {
+        }
+
+        private record ConfiguredGrpcServices(Set<String> providerTypes, Set<GrpcServerServiceIdentity> identities) {
         }
 
         /**

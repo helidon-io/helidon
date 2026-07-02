@@ -262,6 +262,9 @@ Annotations on type:
   `Descriptors.FileDescriptor`
 - `@Service.Singleton` - typical service registry scope for the endpoint implementation
 
+`@Service.PerRequest` is not supported for declarative gRPC endpoints because gRPC calls do not participate in the
+WebServer HTTP request scope. Use `@Service.Singleton` or `@Service.PerLookup` instead.
+
 The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
 `@Grpc.Proto` method. The referenced generated protocol buffer class must provide a public static `getDescriptor()`
 method returning `Descriptors.FileDescriptor`. An `@Grpc.Proto` method may be static or an endpoint instance method;
@@ -299,13 +302,13 @@ The generated `GrpcRouteRegistration` is registered by default. It can be disabl
 
 Annotate a server endpoint with `@RpcServer.Listener("admin")` to register it on a named listener.
 
-Security annotations require the `helidon-webserver-grpc-security` runtime module and an enabled gRPC security service:
-
-- `grpc.grpc-services.security.enabled=true`
+Security annotations require the `helidon-webserver-grpc-security` runtime module and normal Helidon security
+configuration. The gRPC security service is discovered from the classpath and enabled by default; disable it with
+`grpc.grpc-services.security.enabled=false`.
 
 Validation annotations require the generated validation interceptor. To map `ValidationException` to gRPC
-`INVALID_ARGUMENT`, add `helidon-webserver-grpc-validation`. The status mapper is configured under
-`grpc.grpc-services.validation` and is enabled by default.
+`INVALID_ARGUMENT`, add `helidon-webserver-grpc-validation`. The status mapper is discovered from the classpath and
+enabled by default. It is configured under `grpc.grpc-services.validation`.
 
 ### Implementation
 
@@ -520,8 +523,9 @@ Annotations:
 ### Configuration
 There is no global configuration for generated validation interceptors.
 
-For declarative gRPC server endpoints, `helidon-webserver-grpc-validation` adds a server-side status mapper configured
-under `grpc.grpc-services.validation`. It is enabled by default and can be disabled with:
+For declarative gRPC server endpoints, `helidon-webserver-grpc-validation` adds a server-side status mapper. It is
+discovered from the classpath and enabled by default, is configured under `grpc.grpc-services.validation`, and can be
+disabled with:
 
 - `grpc.grpc-services.validation.enabled=false`
 

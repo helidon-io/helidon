@@ -71,13 +71,13 @@ interface GrpcConfigBlueprint extends ProtocolConfig {
     boolean enableCompression();
 
     /**
-     * gRPC server services. These services will not be discovered automatically.
+     * gRPC server services. Services are discovered automatically by default.
      *
      * @return services to use
      */
     @Option.Singular
     @Option.Configured
-    @Option.Provider(value = GrpcServerServiceProvider.class, discoverServices = false)
+    @Option.Provider(GrpcServerServiceProvider.class)
     default List<GrpcServerService> grpcServices() {
         return List.of();
     }

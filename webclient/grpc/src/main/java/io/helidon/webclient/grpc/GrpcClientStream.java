@@ -46,8 +46,13 @@ class GrpcClientStream extends Http2ClientStream {
 
     @Override
     public boolean rstStream(Http2RstStream rstStream) {
-        resetNotifier.reset(rstStream);
-        return super.rstStream(rstStream);
+        boolean handled;
+        try {
+            resetNotifier.reset(rstStream);
+        } finally {
+            handled = super.rstStream(rstStream);
+        }
+        return handled;
     }
 
     void onReset(Consumer<Http2RstStream> resetHandler) {

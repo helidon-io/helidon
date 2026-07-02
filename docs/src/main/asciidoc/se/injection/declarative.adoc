@@ -279,6 +279,10 @@ Annotations on endpoint type:
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ProtoDescriptor.html[`io.helidon.grpc.api.Grpc.ProtoDescriptor`] - generated protocol buffer class with a static `getDescriptor()` method returning `com.google.protobuf.Descriptors.FileDescriptor`
 - `io.helidon.service.registry.Service.Singleton` - normal service registry scope for the endpoint implementation
 
+`io.helidon.service.registry.Service.PerRequest` is not supported for declarative gRPC endpoints because gRPC calls do
+not participate in the WebServer HTTP request scope. Use `io.helidon.service.registry.Service.Singleton` or
+`io.helidon.service.registry.Service.PerLookup` instead.
+
 The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
 link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.Proto.html[`@Grpc.Proto`] method. The referenced generated
 protocol buffer class must provide a public static `getDescriptor()` method returning
@@ -329,12 +333,13 @@ registrations require the named listener when `@RpcServer.Listener` is used.
 
 Validation annotations on declarative gRPC server methods are enforced by generated entry point interceptors. To map a
 `ValidationException` to gRPC `INVALID_ARGUMENT`, add `helidon-webserver-grpc-validation` to the server runtime. The
-validation gRPC server service is enabled by default under `grpc.grpc-services.validation`; set
+validation gRPC server service is discovered from the classpath and enabled by default. Configure it under
+`grpc.grpc-services.validation`; set
 `grpc.grpc-services.validation.enabled=false` to disable the status mapping.
 
-Security annotations on declarative gRPC server methods require the gRPC security module and runtime service. Add
-`helidon-webserver-grpc-security`, configure normal Helidon security, and enable the gRPC security service with
-`grpc.grpc-services.security.enabled=true`.
+Security annotations on declarative gRPC server methods require the gRPC security module. Add
+`helidon-webserver-grpc-security` and configure normal Helidon security. The gRPC security service is discovered from
+the classpath and enabled by default; set `grpc.grpc-services.security.enabled=false` to disable it.
 
 === Typed gRPC Client [[Dec-GRPC-Client]]
 

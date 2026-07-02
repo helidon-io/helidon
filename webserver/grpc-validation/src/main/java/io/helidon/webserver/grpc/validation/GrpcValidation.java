@@ -194,10 +194,6 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
 
         @Override
         public void onCancel() {
-            if (validationFailed.get()) {
-                return;
-            }
-
             try {
                 super.onCancel();
             } catch (ValidationException e) {
@@ -207,10 +203,6 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
 
         @Override
         public void onComplete() {
-            if (validationFailed.get()) {
-                return;
-            }
-
             try {
                 super.onComplete();
             } catch (ValidationException e) {

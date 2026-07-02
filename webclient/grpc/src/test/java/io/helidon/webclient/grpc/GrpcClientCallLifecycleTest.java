@@ -23,6 +23,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2RstStream;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.grpc.GrpcRouting;
 
@@ -67,6 +69,32 @@ class GrpcClientCallLifecycleTest {
                                                          new Descriptors.FileDescriptor[] {EmptyProto.getDescriptor()});
         } catch (Descriptors.DescriptorValidationException e) {
             throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    @Test
+    void resetAfterUnboundedDemandClosesCall() throws Exception {
+        WebServer server = startServer();
+        GrpcClientCall<Empty, Empty> call = newCall(server, Duration.ZERO);
+        CountDownLatch closed = new CountDownLatch(1);
+        AtomicReference<Status> closeStatus = new AtomicReference<>();
+        try {
+            call.start(new ClientCall.Listener<>() {
+                @Override
+                public void onClose(Status status, Metadata trailers) {
+                    closeStatus.set(status);
+                    closed.countDown();
+                }
+            }, new Metadata());
+            call.request(Integer.MAX_VALUE);
+
+            call.clientStream().rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+
+            assertThat("call closed", closed.await(10, TimeUnit.SECONDS), is(true));
+            assertThat(closeStatus.get().getCode(), is(Status.Code.CANCELLED));
+        } finally {
+            call.cancel("test complete", null);
+            server.stop();
         }
     }
 

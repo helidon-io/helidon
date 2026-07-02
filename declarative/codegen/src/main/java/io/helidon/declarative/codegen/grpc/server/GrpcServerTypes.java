@@ -25,6 +25,7 @@ final class GrpcServerTypes {
     static final TypeName GRPC_PROTO_DESCRIPTOR = TypeName.create("io.helidon.grpc.api.Grpc.ProtoDescriptor");
     static final TypeName RPC_SERVER_ENDPOINT = TypeName.create("io.helidon.webserver.grpc.RpcServer.Endpoint");
     static final TypeName RPC_SERVER_LISTENER = TypeName.create("io.helidon.webserver.grpc.RpcServer.Listener");
+    static final TypeName SERVICE_PER_REQUEST = TypeName.create("io.helidon.service.registry.Service.PerRequest");
     static final TypeName GRPC_ENTRY_POINTS = TypeName.create("io.helidon.webserver.grpc.GrpcEntryPoint.EntryPoints");
     static final TypeName GRPC_ROUTE_REGISTRATION = TypeName.create("io.helidon.webserver.grpc.GrpcRouteRegistration");
     static final TypeName GRPC_SECURITY = TypeName.create("io.helidon.webserver.grpc.security.GrpcSecurity");
