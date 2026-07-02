@@ -29,6 +29,7 @@ import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
@@ -73,7 +74,7 @@ class TestPrometheusFormatting {
     @Test
     void testCustomRegistryDoesNotUseMicrometerGlobalRegistry() {
         assertThat(meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class),
-                   not(sameInstance(io.micrometer.core.instrument.Metrics.globalRegistry)));
+                   not(sameInstance(Metrics.globalRegistry)));
     }
 
     @Test
@@ -81,7 +82,7 @@ class TestPrometheusFormatting {
         MeterRegistry globalRegistry = Services.get(MeterRegistry.class);
 
         assertThat(globalRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class),
-                   not(sameInstance(io.micrometer.core.instrument.Metrics.globalRegistry)));
+                   not(sameInstance(Metrics.globalRegistry)));
         assertThat(globalRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class),
                    not(sameInstance(meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class))));
     }

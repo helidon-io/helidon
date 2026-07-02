@@ -300,7 +300,7 @@ class JsonFormatter implements MeterRegistryFormatter {
     }
 
     private String metricOutputKey(Meter meter) {
-        return meter instanceof Counter || meter instanceof io.helidon.metrics.api.Gauge
+        return meter instanceof Counter || meter instanceof Gauge
                 ? flatNameAndTags(meter.id(), systemTagsManager)
                 : structureName(meter.id());
     }
@@ -383,7 +383,7 @@ class JsonFormatter implements MeterRegistryFormatter {
                                                   MetricsConfig metricsConfig,
                                                   SystemTagsManager systemTagsManager) {
             return meter instanceof Counter
-                    || meter instanceof io.helidon.metrics.api.Gauge
+                    || meter instanceof Gauge
                     || meter instanceof FunctionalCounter
                     ? new Flat(meter, systemTagsManager)
                     : new Structured(meter, metricsConfig, systemTagsManager);
@@ -433,7 +433,7 @@ class JsonFormatter implements MeterRegistryFormatter {
                     builder.set(flatNameAndTags(meter().id(), systemTagsManager()), counter.count());
                     return;
                 }
-                if (meter() instanceof io.helidon.metrics.api.Gauge gauge) {
+                if (meter() instanceof Gauge gauge) {
 
                     String nameWithTags = flatNameAndTags(meter().id(), systemTagsManager());
                     addNarrowed(builder, nameWithTags, gauge.value());

@@ -43,6 +43,7 @@ import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
@@ -134,8 +135,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                         List<io.micrometer.core.instrument.Tag> tags = new ArrayList<>();
                         systemTags.forEach((name, value) ->
                                                    tags.add(io.micrometer.core.instrument.Tag.of(name, value)));
-                        return id.replaceTags(io.micrometer.core.instrument.Tags.concat(tags,
-                                                                                       id.getTagsAsIterable()));
+                        return id.replaceTags(Tags.concat(tags, id.getTagsAsIterable()));
                     }
                 });
     }
@@ -252,11 +252,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     @Override
     public <M extends io.helidon.metrics.api.Meter> Optional<M> meter(Class<M> mClass,
                                                                       String name,
-                                                                      Iterable<io.helidon.metrics.api.Tag> tags) {
+                                                                      Iterable<Tag> tags) {
 
         lock.readLock().lock();
         try {
-            Iterable<io.helidon.metrics.api.Tag> tagsToUse = systemTagsManager.withScopeTag(tags, Optional.empty());
+            Iterable<Tag> tagsToUse = systemTagsManager.withScopeTag(tags, Optional.empty());
             Search search = delegate().find(name)
                     .tags(MTag.tags(tagsToUse));
             Meter match = search.meter();
@@ -294,7 +294,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    public Optional<io.helidon.metrics.api.Meter> remove(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
+    public Optional<io.helidon.metrics.api.Meter> remove(String name, Iterable<Tag> tags) {
         return internalRemove(MMeter.PlainId.create(name, tags), Optional.empty());
     }
 
@@ -304,7 +304,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    public Optional<io.helidon.metrics.api.Meter> remove(String name, Iterable<io.helidon.metrics.api.Tag> tags, String scope) {
+    public Optional<io.helidon.metrics.api.Meter> remove(String name, Iterable<Tag> tags, String scope) {
         return internalRemove(MMeter.PlainId.create(name, tags), Optional.ofNullable(scope));
     }
 
@@ -703,7 +703,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         // Create an ID to use for searching. It will need to have the scope tag if one was specified in the original ID's tags
         // or if the system tags manager says that a scope tag is enabled.
 
-        Iterable<io.helidon.metrics.api.Tag> tags = systemTagsManager.withScopeTag(id.tags(), scope);
+        Iterable<Tag> tags = systemTagsManager.withScopeTag(id.tags(), scope);
 
         lock.writeLock().lock();
 
@@ -734,7 +734,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private io.helidon.metrics.api.Meter.Id neutralIdWithoutSystemTags(Meter.Id micrometerId) {
         Map<String, String> systemTags = displayTagPairs();
-        List<io.helidon.metrics.api.Tag> tags = new ArrayList<>();
+        List<Tag> tags = new ArrayList<>();
         MTag.neutralTags(micrometerId.getTags()).forEach(tag -> {
             String systemTagValue = systemTags.get(tag.key());
             if (!tag.value().equals(systemTagValue)) {

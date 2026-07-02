@@ -19,6 +19,7 @@ package io.helidon.common.concurrency.limits;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -170,7 +171,7 @@ class LimitMetricsTest {
                                    String meterName,
                                    List<Tag> tags) {
         Map<String, String> expectedTags = tags.stream()
-                .collect(java.util.stream.Collectors.toMap(Tag::key, Tag::value));
+                .collect(Collectors.toMap(Tag::key, Tag::value));
 
         long count = 0;
         for (Meter meter : meterRegistry.meters(List.of(Meter.Scope.VENDOR))) {
@@ -193,7 +194,7 @@ class LimitMetricsTest {
         @Override
         void register(MetricsFactory metricsFactory, MeterRegistry meterRegistry, List<Tag> tags) {
             capturedTags = tags.stream()
-                    .collect(java.util.stream.Collectors.toMap(Tag::key, Tag::value));
+                    .collect(Collectors.toMap(Tag::key, Tag::value));
         }
 
         Map<String, String> capturedTags() {
