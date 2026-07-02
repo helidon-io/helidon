@@ -1332,12 +1332,12 @@ class OpenApiFeatureTest {
         Map<String, Object> union = schemaProperty(rendered, "StaticItem", "union");
         assertThat(union.containsKey("type"), is(false));
         assertThat(union.containsKey("nullable"), is(false));
-        List<Object> oneOf = list(union, "oneOf");
-        assertThat(oneOf.size(), is(3));
-        assertThat(map(oneOf.get(0)).get("type"), is("string"));
-        assertThat(map(oneOf.get(1)).get("type"), is("integer"));
-        assertThat(map(oneOf.get(2)).get("nullable"), is(true));
-        assertThat(list(map(oneOf.get(2)), "enum"), is(singleValueList(null)));
+        List<Object> anyOf = list(union, "anyOf");
+        assertThat(anyOf.size(), is(3));
+        assertThat(map(anyOf.get(0)).get("type"), is("string"));
+        assertThat(map(anyOf.get(1)).get("type"), is("integer"));
+        assertThat(map(anyOf.get(2)).get("nullable"), is(true));
+        assertThat(list(map(anyOf.get(2)), "enum"), is(singleValueList(null)));
 
         Map<String, Object> bounded = schemaProperty(rendered, "StaticItem", "bounded");
         assertThat(((Number) bounded.get("maximum")).doubleValue(), is(10.0));

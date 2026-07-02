@@ -559,6 +559,59 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void openApi30RenderPreservesMultiTypeAndCompositionSemantics() {
+        List<JsonString> numericTypes = List.of(JsonString.create("integer"), JsonString.create("number"));
+        List<JsonString> mixedTypes = List.of(JsonString.create("string"), JsonString.create("integer"));
+        OpenApiDocument document = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .components(components -> components
+                        .schema("NumericUnion", JsonObject.builder()
+                                .setValues("type", numericTypes)
+                                .build())
+                        .schema("ComposedUnion", JsonObject.builder()
+                                .setValues("type", mixedTypes)
+                                .setValues("anyOf", List.of(JsonObject.builder()
+                                                                      .set("description", "Existing anyOf")
+                                                                      .build()))
+                                .setValues("oneOf", List.of(JsonObject.builder()
+                                                                      .set("pattern", "[a-z]+")
+                                                                      .build()))
+                                .build())
+                        .schema("NullableComposedUnion", JsonObject.builder()
+                                .setValues("type", List.of(JsonString.create("string"), JsonString.create("null")))
+                                .setValues("oneOf", List.of(
+                                        JsonObject.builder().set("type", "string").build(),
+                                        JsonObject.builder().set("type", "null").build()))
+                                .build()))
+                .build();
+
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+        Map<String, Object> numericUnion = schema(rendered, "NumericUnion");
+        Map<String, Object> composedUnion = schema(rendered, "ComposedUnion");
+        Map<String, Object> nullableComposedUnion = schema(rendered, "NullableComposedUnion");
+
+        assertThat(numericUnion, is(Map.of("anyOf", List.of(
+                Map.of("type", "integer"),
+                Map.of("type", "number")))));
+        assertThat(composedUnion.get("anyOf"), is(List.of(Map.of("description", "Existing anyOf"))));
+        assertThat(composedUnion.get("oneOf"), is(List.of(Map.of("pattern", "[a-z]+"))));
+        assertThat(composedUnion.get("allOf"), is(List.of(Map.of("anyOf", List.of(
+                Map.of("type", "string"),
+                Map.of("type", "integer"))))));
+        assertThat(nullableComposedUnion.get("type"), is("string"));
+        assertThat(nullableComposedUnion.get("nullable"), is(true));
+        List<?> oneOf = (List<?>) nullableComposedUnion.get("oneOf");
+        assertThat(oneOf.size(), is(2));
+        assertThat(((Map<?, ?>) oneOf.get(0)).get("type"), is("string"));
+        Map<?, ?> nullSchema = (Map<?, ?>) oneOf.get(1);
+        assertThat(nullSchema.get("type"), is("object"));
+        assertThat(nullSchema.get("nullable"), is(true));
+        List<?> enumValues = (List<?>) nullSchema.get("enum");
+        assertThat(enumValues.size(), is(1));
+        assertThat(enumValues.getFirst(), is((Object) null));
+    }
+
+    @Test
     void openApi30RenderPreservesNullConstAsEnum() {
         OpenApiDocument document = OpenApiDocument.builder()
                 .info("Generated API", "1.0.0")
