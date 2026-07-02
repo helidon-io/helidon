@@ -19,12 +19,14 @@ package io.helidon.declarative.tests.openapi;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.declarative.tests.openapi.external.Message;
 import io.helidon.http.Http;
+import io.helidon.openapi.OpenApi;
 import io.helidon.webserver.http.RestServer;
 
 /**
  * Endpoint with a schema type whose simple name collides with schemas used by other endpoint sources.
  */
 @RestServer.Endpoint
+@OpenApi.Endpoint
 @Http.Path("/external-message")
 class ExternalMessageEndpoint {
 

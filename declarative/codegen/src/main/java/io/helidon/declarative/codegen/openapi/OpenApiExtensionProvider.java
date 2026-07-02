@@ -42,16 +42,27 @@ public class OpenApiExtensionProvider implements RegistryCodegenExtensionProvide
     @Override
     public Set<TypeName> supportedAnnotations() {
         return Set.of(OpenApiCodegenTypes.OPENAPI_DOCUMENT_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_API_KEY_SECURITY_SCHEMES_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_API_KEY_SECURITY_SCHEME_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_HTTP_SECURITY_SCHEMES_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_HTTP_SECURITY_SCHEME_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_MUTUAL_TLS_SECURITY_SCHEMES_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_MUTUAL_TLS_SECURITY_SCHEME_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_OAUTH2_SECURITY_SCHEMES_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_OAUTH2_SECURITY_SCHEME_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_OIDC_SECURITY_SCHEMES_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_OIDC_SECURITY_SCHEME_ANNOTATION);
+                      OpenApiCodegenTypes.OPENAPI_ENDPOINT_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_SERVER_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_SERVERS_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_EXTERNAL_DOCS_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_EXTENSION_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_EXTENSIONS_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_SECURITY_REQUIREMENT_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_OPERATION_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_PARAMETER_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_PARAMETERS_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_REQUEST_BODY_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_RESPONSE_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_RESPONSES_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_HIDDEN_ANNOTATION);
+    }
+
+    @Override
+    public boolean supportsServiceContractAnnotations() {
+        return true;
     }
 
     @Override

@@ -51,7 +51,6 @@ import io.helidon.declarative.codegen.model.http.HttpStatus;
 import io.helidon.declarative.codegen.model.http.RestMethod;
 import io.helidon.declarative.codegen.model.http.RestMethodParameter;
 import io.helidon.declarative.codegen.model.http.ServerEndpoint;
-import io.helidon.declarative.codegen.openapi.OpenApiSourceGenerator;
 import io.helidon.service.codegen.FieldHandler;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
@@ -80,13 +79,11 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
     private final RegistryCodegenContext ctx;
     private final List<HttpParameterCodegenProvider> paramProviders;
     private final ServerEndpointAnalyzer endpointAnalyzer;
-    private final Optional<OpenApiSourceGenerator> openApiSourceGenerator;
 
     RestServerExtension(RegistryCodegenContext ctx) {
         this.ctx = ctx;
         this.paramProviders = loadParamProviders(RestServerExtension.class.getClassLoader(), ctx);
-        this.endpointAnalyzer = new ServerEndpointAnalyzer(ctx);
-        this.openApiSourceGenerator = OpenApiSourceGenerator.create(ctx);
+        this.endpointAnalyzer = ServerEndpointAnalyzer.create(ctx);
     }
 
     @Override
@@ -97,8 +94,6 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         for (ServerEndpoint endpoint : endpoints) {
             process(roundContext, endpoint);
         }
-
-        openApiSourceGenerator.ifPresent(generator -> generator.processEndpoints(roundContext, endpoints));
     }
 
     static List<HttpParameterCodegenProvider> loadParamProviders(ClassLoader classLoader) {

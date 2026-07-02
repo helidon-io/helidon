@@ -63,14 +63,34 @@ ifdef::se-flavor[]
 ===== Generate OpenAPI data from declarative endpoints
 For classes annotated with
 link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Endpoint.html[`@RestServer.Endpoint`],
-Helidon generates OpenAPI data from the HTTP method, path, media type, parameter, status, and response metadata.
+Helidon generates OpenAPI data when the endpoint type, one of its methods, or one of its method parameters uses an
+endpoint-applicable `OpenApi` annotation. To opt in without adding OpenAPI-specific metadata, annotate the endpoint with
+`@OpenApi.Endpoint`. Helidon derives the generated data from the HTTP method, path, media type, parameter, status, and
+response metadata and from the Java signatures.
+
+The following annotation placements opt an endpoint into OpenAPI processing:
+
+* On the endpoint type: `Document`, `Hidden`, `SecuritySchemeRequirement`, `SecurityRequirement`, or
+  `SecurityRequirements`.
+* On an endpoint method: `Operation`, `Hidden`, `Server`, `Servers`, `ExternalDocs`, `Extension`, `Extensions`,
+  `SecuritySchemeRequirement`, `SecurityRequirement`, `SecurityRequirements`, `Parameter`, `Parameters`, `RequestBody`,
+  `Response`, or `Responses`.
+* On a method parameter: `Parameter` or `Parameters`.
+
+Document-only companion annotations such as `Info`, `Contact`, `License`, `Tag`, and security scheme declarations do not
+opt an endpoint into generation by themselves.
+
+`OpenApi.Endpoint` and endpoint-level `Hidden` and security requirement annotations declared on a declarative REST
+endpoint contract also apply to its implementations. `OpenApi.Document` describes only its declaring document metadata
+type and is not inherited by endpoint implementations.
+
 The final composed OpenAPI document must contain Info metadata. Supply it using `@OpenApi.Document` and `@OpenApi.Info`
 on an application type, from a custom
 link:{openapi-javadoc-base-url}/io/helidon/openapi/spi/OpenApiDocumentSource.html[`OpenApiDocumentSource`], or from a static
 OpenAPI document when static and generated content are merged.
 In a multi-module application, annotation processing must generate OpenAPI metadata while compiling every module that
-declares declarative endpoints. Enabling OpenAPI annotation processing only in the final application module does not
-include endpoints from previously compiled modules.
+declares opted-in declarative endpoints. Adding `@OpenApi.Document` only in the final application module does not include
+unannotated endpoints from previously compiled modules.
 Use link:{openapi-javadoc-base-url}/io/helidon/openapi/OpenApi.html[`io.helidon.openapi.OpenApi`]
 annotations to add OpenAPI-specific details such as document info, operation descriptions, parameters, responses,
 schemas, security, tags, servers, external docs, and extensions.

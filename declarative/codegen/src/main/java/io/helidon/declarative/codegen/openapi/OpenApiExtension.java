@@ -16,21 +16,91 @@
 
 package io.helidon.declarative.codegen.openapi;
 
-import java.util.Optional;
+import java.util.Set;
 
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypeName;
+import io.helidon.declarative.codegen.http.webserver.ServerEndpointAnalyzer;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_DOCUMENT_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_ENDPOINT_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTENSIONS_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTENSION_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_EXTERNAL_DOCS_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_HIDDEN_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_OPERATION_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_PARAMETERS_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_PARAMETER_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_REQUEST_BODY_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_RESPONSES_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_RESPONSE_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_REQUIREMENT_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SERVERS_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SERVER_ANNOTATION;
+
 final class OpenApiExtension implements RegistryCodegenExtension {
-    private final Optional<OpenApiSourceGenerator> sourceGenerator;
+    private static final Set<TypeName> TYPE_ANNOTATIONS = Set.of(OPENAPI_DOCUMENT_ANNOTATION,
+                                                                 OPENAPI_ENDPOINT_ANNOTATION,
+                                                                 OPENAPI_HIDDEN_ANNOTATION,
+                                                                 OPENAPI_SECURITY_REQUIREMENT_ANNOTATION,
+                                                                 OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
+                                                                 OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION);
+    private static final Set<TypeName> METHOD_ANNOTATIONS = Set.of(OPENAPI_SERVER_ANNOTATION,
+                                                                   OPENAPI_SERVERS_ANNOTATION,
+                                                                   OPENAPI_EXTERNAL_DOCS_ANNOTATION,
+                                                                   OPENAPI_EXTENSION_ANNOTATION,
+                                                                   OPENAPI_EXTENSIONS_ANNOTATION,
+                                                                   OPENAPI_SECURITY_REQUIREMENT_ANNOTATION,
+                                                                   OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
+                                                                   OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION,
+                                                                   OPENAPI_OPERATION_ANNOTATION,
+                                                                   OPENAPI_PARAMETER_ANNOTATION,
+                                                                   OPENAPI_PARAMETERS_ANNOTATION,
+                                                                   OPENAPI_REQUEST_BODY_ANNOTATION,
+                                                                   OPENAPI_RESPONSE_ANNOTATION,
+                                                                   OPENAPI_RESPONSES_ANNOTATION,
+                                                                   OPENAPI_HIDDEN_ANNOTATION);
+    private static final Set<TypeName> PARAMETER_ANNOTATIONS = Set.of(OPENAPI_PARAMETER_ANNOTATION,
+                                                                      OPENAPI_PARAMETERS_ANNOTATION);
+
+    private final RegistryCodegenContext ctx;
+    private final ServerEndpointAnalyzer endpointAnalyzer;
+    private final OpenApiSourceGenerator sourceGenerator;
 
     OpenApiExtension(RegistryCodegenContext ctx) {
-        this.sourceGenerator = OpenApiSourceGenerator.create(ctx);
+        this.ctx = ctx;
+        this.endpointAnalyzer = ServerEndpointAnalyzer.create(ctx);
+        this.sourceGenerator = new OpenApiSourceGenerator(ctx);
     }
 
     @Override
     public void process(RegistryRoundContext roundContext) {
-        sourceGenerator.ifPresent(generator -> generator.processDocuments(roundContext));
+        sourceGenerator.processDocuments(roundContext);
+        var endpointTypes = roundContext.types()
+                .stream()
+                .map(type -> ctx.typeInfo(type.typeName()).orElse(type))
+                .toList();
+        var endpoints = endpointAnalyzer.endpoints(endpointTypes)
+                .stream()
+                .filter(endpoint -> hasAny(endpoint.annotations(), TYPE_ANNOTATIONS)
+                        || endpoint.methods()
+                        .stream()
+                        .anyMatch(method -> hasAny(method.annotations(), METHOD_ANNOTATIONS)
+                                || method.parameters()
+                                .stream()
+                                .anyMatch(parameter -> hasAny(parameter.annotations(), PARAMETER_ANNOTATIONS))))
+                .toList();
+        sourceGenerator.processEndpoints(roundContext, endpoints);
+    }
+
+    private static boolean hasAny(Set<Annotation> annotations, Set<TypeName> types) {
+        return annotations.stream()
+                .map(Annotation::typeName)
+                .anyMatch(types::contains);
     }
 }

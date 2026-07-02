@@ -51,6 +51,7 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -86,14 +87,18 @@ class OpenApiPathCodegenTest {
             WebServer.class
     );
 
+    @TempDir
+    private Path workDirRoot;
+
     @Test
-    void endpointMetadataGeneratedWithoutLocalDocument() throws IOException {
-        var result = compile("openapi-endpoint-without-local-document", """
+    void openApiAnnotationOnMethodTriggersEndpointGeneration() throws IOException {
+        var result = compile("openapi-operation-endpoint", """
                 @RestServer.Endpoint
                 @Service.Singleton
                 @Http.Path("/cross-module")
                 class CrossModuleEndpoint {
                     @Http.GET
+                    @OpenApi.Operation
                     String get() {
                         return "ok";
                     }
@@ -106,47 +111,285 @@ class OpenApiPathCodegenTest {
     }
 
     @Test
-    void endpointMetadataNotGeneratedWithoutOpenApi() throws IOException {
-        var result = TestCompiler.builder()
-                .currentRelease()
-                .procOnly()
-                .addClasspath(CLASSPATH.stream()
-                                      .filter(it -> it != OpenApi.class)
-                                      .toList())
-                .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/endpoint-without-openapi"))
-                .addSource("EndpointWithoutOpenApi.java", """
-                        package com.example;
+    void endpointMarkerGeneratesMetadataFromSignature() throws IOException {
+        var result = compile("openapi-marker-endpoint", """
+                @OpenApi.Endpoint
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/defaults")
+                class DefaultOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
 
-                        import io.helidon.http.Http;
-                        import io.helidon.service.registry.Service;
-                        import io.helidon.webserver.http.RestServer;
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(generatedSource(result), containsString("document.path(\"/defaults\""));
+    }
 
-                        @RestServer.Endpoint
-                        @Service.Singleton
-                        @Http.Path("/without-openapi")
-                        class EndpointWithoutOpenApi {
-                            @Http.GET
-                            String get() {
-                                return "ok";
-                            }
-                        }
-                        """)
-                .addSource("Main.java", """
-                        package com.example;
+    @Test
+    void endpointMarkerIsInheritedWithEndpointContract() throws IOException {
+        var result = compile("inherited-openapi-marker-endpoint", """
+                @OpenApi.Endpoint
+                @RestServer.Endpoint
+                interface OpenApiEndpointContract {
+                    @Http.GET
+                    String get();
+                }
 
-                        import io.helidon.service.registry.Service;
+                @Service.Singleton
+                @Http.Path("/inherited")
+                class InheritedOpenApiEndpoint implements OpenApiEndpointContract {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
 
-                        @Service.GenerateBinding
-                        class Main {
-                        }
-                        """)
-                .build()
-                .compile();
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(generatedSource(result), containsString("document.path(\"/inherited\""));
+    }
+
+    @Test
+    void methodAnnotationOnEndpointContractTriggersGeneration() throws IOException {
+        var result = compile("contract-method-openapi-endpoint", """
+                @RestServer.Endpoint
+                interface OpenApiEndpointContract {
+                    @Http.GET
+                    @OpenApi.Operation
+                    String get();
+                }
+
+                @Service.Singleton
+                @Http.Path("/contract-method")
+                class ContractMethodOpenApiEndpoint implements OpenApiEndpointContract {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(generatedSource(result), containsString("document.path(\"/contract-method\""));
+    }
+
+    @Test
+    void securityAnnotationOnEndpointContractTriggersGeneration() throws IOException {
+        var result = compile("contract-security-openapi-endpoint", """
+                @RestServer.Endpoint
+                @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                interface SecuredOpenApiEndpointContract {
+                    @Http.GET
+                    String get();
+                }
+
+                @Service.Singleton
+                @Http.Path("/contract-security")
+                class ContractSecurityOpenApiEndpoint implements SecuredOpenApiEndpointContract {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString("document.path(\"/contract-security\""));
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+    }
+
+    @Test
+    void hiddenAnnotationOnEndpointContractHidesImplementation() throws IOException {
+        var result = compile("contract-hidden-openapi-endpoint", """
+                @OpenApi.Endpoint
+                @OpenApi.Hidden
+                @RestServer.Endpoint
+                interface HiddenOpenApiEndpointContract {
+                    @Http.GET
+                    String get();
+                }
+
+                @Service.Singleton
+                @Http.Path("/contract-hidden")
+                class ContractHiddenOpenApiEndpoint implements HiddenOpenApiEndpointContract {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("com/example/ContractHiddenOpenApiEndpoint__OpenApiEndpointSource.java")),
+                   is(false));
+    }
+
+    @Test
+    void unannotatedEndpointDoesNotTriggerOpenApiGeneration() throws IOException {
+        var result = compile("unannotated-endpoint", """
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/without-openapi")
+                class EndpointWithoutOpenApi {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
 
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(true));
         assertThat(generatedSource(result), not(containsString("OpenApiEndpoint")));
+    }
+
+    @Test
+    void documentOnlyAnnotationDoesNotTriggerEndpointGeneration() throws IOException {
+        var result = compile("document-only-annotation-endpoint", """
+                @OpenApi.Info(title = "Not a document", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/document-only")
+                class EndpointWithDocumentOnlyAnnotation {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(generatedSource(result), not(containsString("OpenApiEndpoint")));
+    }
+
+    @Test
+    void documentOnlyTypePlacementDoesNotTriggerEndpointGeneration() throws IOException {
+        var result = compile("document-only-type-placement-endpoint", """
+                @OpenApi.Server("https://example.test")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/document-only-type-placement")
+                class EndpointWithDocumentOnlyTypePlacement {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(generatedSource(result), not(containsString("OpenApiEndpoint")));
+    }
+
+    @Test
+    void methodLevelAnnotationTriggersEndpointGeneration() throws IOException {
+        var result = compile("method-level-openapi-endpoint", """
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/method-level")
+                class MethodLevelOpenApiEndpoint {
+                    @Http.GET
+                    @OpenApi.Server("https://example.test")
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(generatedSource(result), containsString("document.path(\"/method-level\""));
+    }
+
+    @Test
+    void parameterAnnotationTriggersEndpointGeneration() throws IOException {
+        var result = compile("parameter-openapi-endpoint", """
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/parameter")
+                class ParameterOpenApiEndpoint {
+                    @Http.GET
+                    String get(@OpenApi.Parameter("Search term")
+                               @Http.QueryParam("q") String query) {
+                        return query;
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(generatedSource(result), containsString("document.path(\"/parameter\""));
+    }
+
+    @Test
+    void annotatedEndpointDoesNotOptInOtherEndpoint() throws IOException {
+        var result = compile("mixed-openapi-endpoints", """
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/annotated")
+                class AnnotatedEndpoint {
+                    @Http.GET
+                    @OpenApi.Operation
+                    String get() {
+                        return "ok";
+                    }
+                }
+
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/unannotated")
+                class UnannotatedEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("com/example/AnnotatedEndpoint__OpenApiEndpointSource.java")),
+                   is(true));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("com/example/UnannotatedEndpoint__OpenApiEndpointSource.java")),
+                   is(false));
+    }
+
+    @Test
+    void restEndpointCompilesWithoutOpenApiOnClasspath() throws IOException {
+        var result = compile("rest-endpoint-without-openapi", """
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/without-openapi")
+                class EndpointWithoutOpenApi {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """, CLASSPATH.stream()
+                        .filter(it -> it != OpenApi.class)
+                        .toList());
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString("EndpointWithoutOpenApi__HttpFeature"));
+        assertThat(generated, not(containsString("OpenApiEndpoint")));
     }
 
     @Test
@@ -276,23 +519,30 @@ class OpenApiPathCodegenTest {
                                "OpenAPI path parameters: [id]");
     }
 
-    private static TestCompiler.Result compile(String workDir, String source) {
+    private TestCompiler.Result compile(String workDir, String source) {
+        return compile(workDir, source, CLASSPATH);
+    }
+
+    private TestCompiler.Result compile(String workDir, String source, List<Class<?>> classpath) {
         return TestCompiler.builder()
                 .currentRelease()
                 .procOnly()
-                .addClasspath(CLASSPATH)
+                .addClasspath(classpath)
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/" + workDir))
+                .workDir(workDirRoot.resolve(workDir))
                 .addSource("InvalidOpenApiEndpoint.java", """
                         package com.example;
 
                         import io.helidon.http.Http;
-                        import io.helidon.openapi.OpenApi;
                         import io.helidon.service.registry.Service;
                         import io.helidon.webserver.http.RestServer;
 
                         %s
-                        """.formatted(source))
+                        %s
+                        """.formatted(classpath.contains(OpenApi.class)
+                                                 ? "import io.helidon.openapi.OpenApi;"
+                                                 : "",
+                                         source))
                 .addSource("Main.java", """
                         package com.example;
 

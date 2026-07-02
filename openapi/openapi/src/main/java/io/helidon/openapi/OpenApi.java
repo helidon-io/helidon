@@ -18,6 +18,7 @@ package io.helidon.openapi;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -125,8 +126,7 @@ public final class OpenApi {
     }
 
     /**
-     * Marker for a type that contributes document-level OpenAPI metadata and enables generated OpenAPI data for
-     * declarative endpoints.
+     * Marker for a type that contributes document-level OpenAPI metadata.
      * <p>
      * A type annotated with {@code @OpenApi.Document} must also be annotated with {@link Info @OpenApi.Info}.
      */
@@ -151,6 +151,33 @@ public final class OpenApi {
          * @return JSON Schema dialect URI
          */
         String jsonSchemaDialect() default "";
+    }
+
+    /**
+     * Explicitly enables generated OpenAPI data for a declarative REST endpoint.
+     * <p>
+     * This annotation is useful when the endpoint does not use any other endpoint-applicable OpenAPI annotation. The
+     * generated OpenAPI data is derived from the endpoint's declarative HTTP annotations and Java signatures.
+     * When declared on a declarative REST endpoint contract, this annotation also applies to its implementations.
+     * <p>
+     * Without this marker, Helidon processes a declarative REST endpoint for OpenAPI when it uses any of the following:
+     * <ul>
+     *     <li>On the endpoint type: {@link Document}, {@link Hidden}, {@link SecuritySchemeRequirement},
+     *     {@link SecurityRequirement}, or {@link SecurityRequirements}.</li>
+     *     <li>On an endpoint method: {@link Operation}, {@link Hidden}, {@link Server}, {@link Servers},
+     *     {@link ExternalDocs}, {@link Extension}, {@link Extensions}, {@link SecuritySchemeRequirement},
+     *     {@link SecurityRequirement}, {@link SecurityRequirements}, {@link Parameter}, {@link Parameters},
+     *     {@link RequestBody}, {@link Response}, or {@link Responses}.</li>
+     *     <li>On a method parameter: {@link Parameter} or {@link Parameters}.</li>
+     * </ul>
+     * Document-only companion annotations such as {@link Info}, {@link Contact}, {@link License}, {@link Tag}, and
+     * security scheme declarations do not enable endpoint generation by themselves.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Inherited
+    public @interface Endpoint {
     }
 
     /**
@@ -468,10 +495,13 @@ public final class OpenApi {
 
     /**
      * Excludes an endpoint type or operation method from generated OpenAPI output.
+     * <p>
+     * When declared on a declarative REST endpoint contract, this annotation also applies to its implementations.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     @Documented
+    @Inherited
     public @interface Hidden {
     }
 
@@ -1487,10 +1517,12 @@ public final class OpenApi {
      * Method-level usage replaces inherited endpoint requirements for that operation. Direct usage cannot be combined
      * with {@link SecurityRequirement @OpenApi.SecurityRequirement} or
      * {@link SecurityRequirements @OpenApi.SecurityRequirements} on the same type or method.
+     * Type-level usage on a declarative REST endpoint contract also applies to its implementations.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     @Documented
+    @Inherited
     public @interface SecuritySchemeRequirement {
         /**
          * Required scheme name.
@@ -1520,11 +1552,13 @@ public final class OpenApi {
      * <p>
      * An empty individual requirement emits an empty OpenAPI security requirement object. To clear inherited endpoint
      * security for an operation, use an empty {@link SecurityRequirements} container instead.
+     * Type-level usage on a declarative REST endpoint contract also applies to its implementations.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     @Repeatable(SecurityRequirements.class)
     @Documented
+    @Inherited
     public @interface SecurityRequirement {
         /**
          * Required schemes. All schemes are required together.
@@ -1543,10 +1577,12 @@ public final class OpenApi {
      * An empty container on a method clears inherited endpoint security and emits {@code security: []} for the
      * generated operation. An empty container on an endpoint clears endpoint-level security for operations which do not
      * declare method-level security requirements.
+     * Type-level usage on a declarative REST endpoint contract also applies to its implementations.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     @Documented
+    @Inherited
     public @interface SecurityRequirements {
         /**
          * Security requirements.
