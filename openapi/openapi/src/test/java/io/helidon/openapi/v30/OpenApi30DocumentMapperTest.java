@@ -501,6 +501,64 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void openApi30RenderUsesAllOfForReferenceSiblings() {
+        String ref = "#/components/schemas/Base";
+        OpenApiDocument document = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .components(components -> components
+                        .schema("ReferenceOnly", JsonObject.builder()
+                                .set("$ref", ref)
+                                .build())
+                        .schema("ConstrainedReference", JsonObject.builder()
+                                .set("$ref", ref)
+                                .set("pattern", "[a-z]+")
+                                .build())
+                        .schema("ComposedReference", JsonObject.builder()
+                                .set("$ref", ref)
+                                .set("description", "Composed reference")
+                                .setValues("allOf", List.of(JsonObject.builder()
+                                                                        .set("type", "string")
+                                                                        .build()))
+                                .build()))
+                .build();
+
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+        Map<String, Object> referenceOnly = schema(rendered, "ReferenceOnly");
+        Map<String, Object> constrainedReference = schema(rendered, "ConstrainedReference");
+        Map<String, Object> composedReference = schema(rendered, "ComposedReference");
+
+        assertThat(referenceOnly, is(Map.of("$ref", ref)));
+        assertThat(constrainedReference.containsKey("$ref"), is(false));
+        assertThat(constrainedReference.get("pattern"), is("[a-z]+"));
+        assertThat(constrainedReference.get("allOf"), is(List.of(Map.of("$ref", ref))));
+        assertThat(composedReference.containsKey("$ref"), is(false));
+        assertThat(composedReference.get("description"), is("Composed reference"));
+        assertThat(composedReference.get("allOf"), is(List.of(
+                Map.of("$ref", ref),
+                Map.of("type", "string"))));
+    }
+
+    @Test
+    void openApi30ParseIgnoresReferenceSiblings() {
+        String ref = "#/components/schemas/Base";
+        OpenApiDocument document = OpenApi30DocumentMapper.parse(Map.of(
+                "openapi", "3.0.3",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "paths", Map.of(),
+                "components", Map.of(
+                        "schemas", Map.of(
+                                "Referenced", Map.of(
+                                        "$ref", ref,
+                                        "pattern", "[a-z]+")))));
+
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+
+        assertThat(schema(rendered, "Referenced"), is(Map.of("$ref", ref)));
+    }
+
+    @Test
     void openApi30RenderPreservesNullConstAsEnum() {
         OpenApiDocument document = OpenApiDocument.builder()
                 .info("Generated API", "1.0.0")

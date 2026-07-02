@@ -713,6 +713,9 @@ final class OpenApi30DocumentMapper {
             return copy(value);
         }
         Map<String, Object> source = objectMap(map);
+        if (mode == SchemaMode.CANONICAL && source.containsKey("$ref")) {
+            return reference(source);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         boolean nullable = false;
         Object enumValue = null;
@@ -782,6 +785,16 @@ final class OpenApi30DocumentMapper {
             } else if (!result.containsKey("oneOf")) {
                 result.put("nullable", true);
             }
+        }
+        if (mode == SchemaMode.OPENAPI30 && result.size() > 1 && result.containsKey("$ref")) {
+            Map<String, Object> reference = new LinkedHashMap<>();
+            reference.put("$ref", result.remove("$ref"));
+            List<Object> allOf = new ArrayList<>();
+            allOf.add(reference);
+            if (result.get("allOf") instanceof List<?> existing) {
+                allOf.addAll(existing);
+            }
+            result.put("allOf", allOf);
         }
         return result;
     }
