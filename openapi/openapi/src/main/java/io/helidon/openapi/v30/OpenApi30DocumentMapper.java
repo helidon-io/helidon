@@ -722,6 +722,7 @@ final class OpenApi30DocumentMapper {
         boolean hasEnum = false;
         Object constValue = null;
         boolean hasConst = false;
+        TypeMapping typeMapping = null;
         for (Map.Entry<String, Object> entry : source.entrySet()) {
             String key = entry.getKey();
             Object item = entry.getValue();
@@ -730,9 +731,8 @@ final class OpenApi30DocumentMapper {
                 continue;
             }
             if ("type".equals(key)) {
-                TypeMapping typeMapping = mode == SchemaMode.CANONICAL ? canonicalType(item) : openApi30Type(item);
+                typeMapping = mode == SchemaMode.CANONICAL ? canonicalType(item) : openApi30Type(item);
                 nullable |= typeMapping.nullable();
-                typeMapping.put(result);
                 continue;
             }
             if ("enum".equals(key)) {
@@ -763,6 +763,9 @@ final class OpenApi30DocumentMapper {
             default -> copyField(result, key, source);
             }
         }
+        if (typeMapping != null) {
+            typeMapping.put(result);
+        }
         if (hasEnum) {
             result.put("enum", copy(enumValue));
         }
@@ -780,9 +783,11 @@ final class OpenApi30DocumentMapper {
         if (nullable) {
             if (mode == SchemaMode.CANONICAL) {
                 addNullType(result);
+            } else if (result.containsKey("type")) {
+                result.put("nullable", true);
             } else if (result.containsKey("oneOf")) {
                 addNullOneOf(result);
-            } else if (!result.containsKey("oneOf")) {
+            } else {
                 result.put("nullable", true);
             }
         }
@@ -913,12 +918,12 @@ final class OpenApi30DocumentMapper {
         if (types.size() == 1) {
             return new TypeMapping(types.getFirst(), null, nullable);
         }
-        List<Object> oneOf = new ArrayList<>();
-        types.forEach(type -> oneOf.add(Map.of("type", type)));
+        List<Object> anyOf = new ArrayList<>();
+        types.forEach(type -> anyOf.add(Map.of("type", type)));
         if (nullable) {
-            oneOf.add(nullOnlySchema());
+            anyOf.add(nullOnlySchema());
         }
-        return new TypeMapping(null, oneOf, false);
+        return new TypeMapping(null, anyOf, false);
     }
 
     private static void addNullType(Map<String, Object> schema) {
@@ -992,15 +997,23 @@ final class OpenApi30DocumentMapper {
         OPENAPI30
     }
 
-    private record TypeMapping(Object type, List<Object> oneOf, boolean nullable) {
+    private record TypeMapping(Object type, List<Object> anyOf, boolean nullable) {
         void put(Map<String, Object> target) {
             if (type instanceof Map<?, ?> map) {
                 map.forEach((key, value) -> target.put(String.valueOf(key), value));
             } else if (type != null) {
                 target.put("type", type);
             }
-            if (oneOf != null) {
-                target.put("oneOf", oneOf);
+            if (anyOf != null) {
+                if (target.containsKey("allOf") || target.containsKey("oneOf") || target.containsKey("anyOf")) {
+                    List<Object> allOf = target.get("allOf") instanceof List<?> existing
+                            ? new ArrayList<>(existing)
+                            : new ArrayList<>();
+                    allOf.add(Map.of("anyOf", anyOf));
+                    target.put("allOf", allOf);
+                } else {
+                    target.put("anyOf", anyOf);
+                }
             }
         }
     }
