@@ -514,6 +514,10 @@ public final class OpenApiDocumentMapperSupport {
                 copyField(result, key, source);
                 return;
             }
+            if (containerExtensions && !isResponseCode(key)) {
+                throw new IllegalStateException("Invalid OpenAPI " + rules.targetVersion()
+                                                        + " Responses Object key: " + key + ".");
+            }
             object(value, object -> result.put(key, response(object, rules)));
         });
         if (containerExtensions && result.keySet().stream().noneMatch(OpenApiDocumentMapperSupport::isResponseCode)) {
