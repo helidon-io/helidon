@@ -67,6 +67,22 @@ class OpenApi32DocumentMapperTest {
             assertThat(missingResponseCode.getMessage(), containsString("response code"));
         }
 
+        IllegalStateException invalidResponseKey = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi32DocumentMapper.parse(Map.of(
+                        "openapi", "3.2.0",
+                        "info", Map.of(
+                                "title", "Static API",
+                                "version", "1.0.0"),
+                        "paths", Map.of(
+                                "/items", Map.of(
+                                        "get", Map.of(
+                                                "responses", Map.of(
+                                                        "200", Map.of("description", "OK"),
+                                                        "bogus", Map.of("description", "Invalid"))))))));
+        assertThat(invalidResponseKey.getMessage(), containsString("3.2"));
+        assertThat(invalidResponseKey.getMessage(), containsString("bogus"));
+
         OpenApiDocument document = OpenApi32DocumentMapper.parse(Map.of(
                 "openapi", "3.2.0",
                 "info", Map.of(
@@ -118,6 +134,18 @@ class OpenApi32DocumentMapperTest {
                 IllegalStateException.class,
                 () -> OpenApi32DocumentMapper.render(responsesWithoutCode, "3.2.0"));
         assertThat(renderedWithoutResponseCode.getMessage(), containsString("response code"));
+
+        OpenApiDocument responseWithInvalidKey = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .path("/items", path -> path.operation(
+                        "GET",
+                        operation -> operation.response("200", "OK").response("bogus", "Invalid")))
+                .build();
+        IllegalStateException renderedWithInvalidResponseKey = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi32DocumentMapper.render(responseWithInvalidKey, "3.2.0"));
+        assertThat(renderedWithInvalidResponseKey.getMessage(), containsString("3.2"));
+        assertThat(renderedWithInvalidResponseKey.getMessage(), containsString("bogus"));
     }
 
     @Test

@@ -432,6 +432,9 @@ final class OpenApi30DocumentMapper {
                 copyField(result, key, source);
                 return;
             }
+            if (containerExtensions && !OpenApiDocumentMapperSupport.isResponseCode(key)) {
+                throw new IllegalStateException("Invalid OpenAPI 3.0 Responses Object key: " + key + ".");
+            }
             object(value, object -> result.put(key, response(object, mode)));
         });
         if (containerExtensions && result.keySet().stream().noneMatch(OpenApiDocumentMapperSupport::isResponseCode)) {

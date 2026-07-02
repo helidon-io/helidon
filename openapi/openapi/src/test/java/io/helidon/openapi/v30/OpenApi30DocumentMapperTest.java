@@ -75,6 +75,16 @@ class OpenApi30DocumentMapperTest {
                         Map.of("responses", Map.of("200", Map.of("headers", Map.of()))))));
         assertThat(missingDescription.getMessage(), containsString("description"));
 
+        IllegalStateException invalidResponseKey = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi30DocumentMapper.parse(documentWithOperation(
+                        "3.0.3",
+                        Map.of("responses", Map.of(
+                                "200", Map.of("description", "OK"),
+                                "bogus", Map.of("description", "Invalid"))))));
+        assertThat(invalidResponseKey.getMessage(), containsString("3.0"));
+        assertThat(invalidResponseKey.getMessage(), containsString("bogus"));
+
         OpenApiDocument operationWithoutResponses = OpenApiDocument.builder()
                 .info("Generated API", "1.0.0")
                 .path("/items", path -> path.operation("GET", operation -> operation.summary("Items")))
@@ -105,6 +115,18 @@ class OpenApi30DocumentMapperTest {
                 IllegalStateException.class,
                 () -> OpenApi30DocumentMapper.render(responseWithoutDescription, "3.0.3"));
         assertThat(renderedWithoutDescription.getMessage(), containsString("description"));
+
+        OpenApiDocument responseWithInvalidKey = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .path("/items", path -> path.operation(
+                        "GET",
+                        operation -> operation.response("200", "OK").response("bogus", "Invalid")))
+                .build();
+        IllegalStateException renderedWithInvalidResponseKey = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi30DocumentMapper.render(responseWithInvalidKey, "3.0.3"));
+        assertThat(renderedWithInvalidResponseKey.getMessage(), containsString("3.0"));
+        assertThat(renderedWithInvalidResponseKey.getMessage(), containsString("bogus"));
 
         for (String description : List.of("", " ")) {
             OpenApiDocument document = OpenApi30DocumentMapper.parse(documentWithOperation(
