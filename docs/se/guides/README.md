@@ -1,9 +1,11 @@
 <!--@frontmatter
+title: "Overview"
 description: "Browse the guides"
 navigation:
   icon: i-lucide-compass
 index:
   generate: true
+  icon: i-lucide-layout-list
 -->
 # Guides
 

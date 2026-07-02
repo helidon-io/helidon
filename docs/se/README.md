@@ -1,7 +1,9 @@
 <!--@frontmatter
+title: "Overview"
 description: "Helidon SE Overview"
 index:
   generate: true
+  icon: i-lucide-layout-list
 -->
 # Helidon SE
 
