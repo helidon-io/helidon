@@ -64,8 +64,10 @@ ifdef::se-flavor[]
 For classes annotated with
 link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Endpoint.html[`@RestServer.Endpoint`],
 Helidon generates OpenAPI data from the HTTP method, path, media type, parameter, status, and response metadata.
-At least one application type must be annotated with `@OpenApi.Document` and `@OpenApi.Info` to enable generated
-OpenAPI metadata.
+The final composed OpenAPI document must contain Info metadata. Supply it using `@OpenApi.Document` and `@OpenApi.Info`
+on an application type, from a custom
+link:{openapi-javadoc-base-url}/io/helidon/openapi/spi/OpenApiDocumentSource.html[`OpenApiDocumentSource`], or from a static
+OpenAPI document when static and generated content are merged.
 In a multi-module application, annotation processing must generate OpenAPI metadata while compiling every module that
 declares declarative endpoints. Enabling OpenAPI annotation processing only in the final application module does not
 include endpoints from previously compiled modules.
