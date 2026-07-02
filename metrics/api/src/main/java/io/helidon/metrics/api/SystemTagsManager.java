@@ -42,6 +42,17 @@ public interface SystemTagsManager {
     }
 
     /**
+     * Creates a new system tags manager using the provided metrics settings and metrics factory.
+     *
+     * @param metricsConfig settings containing the global and app-level tags (if any)
+     * @param metricsFactory factory to use for creating tags
+     * @return new tags manager
+     */
+    static SystemTagsManager create(MetricsConfig metricsConfig, MetricsFactory metricsFactory) {
+        return SystemTagsManagerImpl.create(metricsConfig, metricsFactory);
+    }
+
+    /**
      * Returns the initialized instance of the tags manager.
      *
      * @return current instance of the tags manager
@@ -70,15 +81,16 @@ public interface SystemTagsManager {
     }
 
     /**
-     * Allows subscription to notification when a new system tags manager is created with a new configuration.
-     * <p>
-     * The implementation does not retain the listener strongly; callers must keep their own reference to the listener
-     * while they want to receive notifications.
+     * No-op retained for compatibility. The service registry owns one immutable shared system tags manager.
      *
-     * @param changeListener subscriber to receive change notifications
+     * @param ignoredChangeListener ignored listener; must not be {@code null}
+     * @deprecated since 27.0.0, for removal. Obtain the shared manager from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(SystemTagsManager.class)}. To use
+     * different metrics configuration, create a non-global manager using {@link #create(MetricsConfig)}.
      */
-    static void onChange(Consumer<SystemTagsManager> changeListener) {
-        SystemTagsManagerImpl.onChange(changeListener);
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    static void onChange(Consumer<SystemTagsManager> ignoredChangeListener) {
+        Objects.requireNonNull(ignoredChangeListener);
     }
 
     /**

@@ -36,7 +36,7 @@ class TestGauge {
     @BeforeAll
     static void prep() {
         metricsFactory = Services.get(MetricsFactory.class);
-        meterRegistry = metricsFactory.globalRegistry();
+        meterRegistry = Services.get(MeterRegistry.class);
     }
 
     @Test

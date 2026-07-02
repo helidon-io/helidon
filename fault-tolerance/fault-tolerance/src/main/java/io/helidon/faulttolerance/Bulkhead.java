@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
@@ -67,7 +68,9 @@ public interface Bulkhead extends FtHandler, RuntimeType.Api<BulkheadConfig> {
      * @return a new bulkhead
      */
     static Bulkhead create(BulkheadConfig config) {
-        return new BulkheadImpl(config, LazyValue.create(() -> Services.get(MetricsFactory.class)));
+        return new BulkheadImpl(config,
+                                LazyValue.create(() -> Services.get(MetricsFactory.class)),
+                                LazyValue.create(() -> Services.get(MeterRegistry.class)));
     }
 
     /**

@@ -781,8 +781,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private void initMetrics() {
         String methodName = route.method().getFullMethodName();
         methodMetrics = metrics.methodMetrics().computeIfAbsent(methodName, name -> {
-            MetricsFactory metricsFactory = metrics.factory().get();
-            MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+            GrpcProtocolSelector.MetricsOwner owner = metrics.owner().get();
+            MetricsFactory metricsFactory = owner.factory();
+            MeterRegistry meterRegistry = owner.registry();
 
             Tag okTag = metricsFactory.tagCreate("grpc.status", "OK");
             Tag grpcMethod = metricsFactory.tagCreate("grpc.method", name);

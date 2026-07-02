@@ -19,7 +19,10 @@ package io.helidon.service.test.registry;
 import java.util.List;
 import java.util.function.Supplier;
 
+import io.helidon.common.types.TypeName;
+import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.AfterAll;
@@ -108,5 +111,37 @@ public class RegistryTest {
 
         MyContract secondInstance = myContractSupplier.get();
         assertThat(secondInstance, sameInstance(firstInstance));
+    }
+
+    @Test
+    public void testServiceLoaderInstanceIsScopedToRegistry() {
+        var descriptor = ServiceLoader__ServiceDescriptor.create(TypeName.create(ServiceLoaderContract.class),
+                                                                 ServiceLoaderService.class,
+                                                                 ServiceLoaderService::new,
+                                                                 100);
+        ServiceRegistryConfig config = ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .addServiceDescriptor(descriptor)
+                .build();
+        ServiceRegistryManager firstManager = ServiceRegistryManager.create(config);
+        ServiceRegistryManager secondManager = ServiceRegistryManager.create(config);
+
+        try {
+            ServiceLoaderContract first = firstManager.registry().get(ServiceLoaderContract.class);
+            ServiceLoaderContract second = secondManager.registry().get(ServiceLoaderContract.class);
+
+            assertThat(firstManager.registry().get(ServiceLoaderContract.class), sameInstance(first));
+            assertThat(secondManager.registry().get(ServiceLoaderContract.class), sameInstance(second));
+            assertThat(second, not(sameInstance(first)));
+        } finally {
+            firstManager.shutdown();
+            secondManager.shutdown();
+        }
+    }
+
+    private interface ServiceLoaderContract {
+    }
+
+    private static class ServiceLoaderService implements ServiceLoaderContract {
     }
 }

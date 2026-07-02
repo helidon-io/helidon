@@ -23,6 +23,7 @@ import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
@@ -54,46 +55,51 @@ class MetricsUtils {
         return metricsFactory.tagCreate(name, value);
     }
 
-    static <T extends Number> void gaugeBuilder(MetricsFactory metricsFactory, String name, Supplier<T> supplier, Tag... tags) {
+    static <T extends Number> void gaugeBuilder(MetricsFactory metricsFactory,
+                                                MeterRegistry meterRegistry,
+                                                String name,
+                                                Supplier<T> supplier,
+                                                Tag... tags) {
         Gauge.Builder<T> builder = metricsFactory.gaugeBuilder(name, supplier).scope(VENDOR);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        metricsFactory.globalRegistry().getOrCreate(builder);
+        meterRegistry.getOrCreate(builder);
     }
 
-    static Counter counterBuilder(MetricsFactory metricsFactory, String name, Tag... tags) {
+    static Counter counterBuilder(MetricsFactory metricsFactory, MeterRegistry meterRegistry, String name, Tag... tags) {
         Counter.Builder builder = metricsFactory.counterBuilder(name).scope(VENDOR);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        return metricsFactory.globalRegistry().getOrCreate(builder);
+        return meterRegistry.getOrCreate(builder);
     }
 
-    static Timer timerBuilder(MetricsFactory metricsFactory, String name, Tag... tags) {
+    static Timer timerBuilder(MetricsFactory metricsFactory, MeterRegistry meterRegistry, String name, Tag... tags) {
         Timer.Builder builder = metricsFactory.timerBuilder(name).scope(VENDOR);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        return metricsFactory.globalRegistry().getOrCreate(builder);
+        return meterRegistry.getOrCreate(builder);
     }
 
-    static <T extends Number> Gauge<T> gauge(MetricsFactory metricsFactory, String name, Tag... tags) {
-        return meter(metricsFactory, Gauge.class, Meter.Type.GAUGE, name, List.of(tags));
+    static <T extends Number> Gauge<T> gauge(MeterRegistry meterRegistry,
+                                             String name,
+                                             Tag... tags) {
+        return meter(meterRegistry, Gauge.class, Meter.Type.GAUGE, name, List.of(tags));
     }
 
-    static Counter counter(MetricsFactory metricsFactory, String name, Tag... tags) {
-        return meter(metricsFactory, Counter.class, Meter.Type.COUNTER, name, List.of(tags));
+    static Counter counter(MeterRegistry meterRegistry, String name, Tag... tags) {
+        return meter(meterRegistry, Counter.class, Meter.Type.COUNTER, name, List.of(tags));
     }
 
-    static Timer timer(MetricsFactory metricsFactory, String name, Tag... tags) {
-        return meter(metricsFactory, Timer.class, Meter.Type.TIMER, name, List.of(tags));
+    static Timer timer(MeterRegistry meterRegistry, String name, Tag... tags) {
+        return meter(meterRegistry, Timer.class, Meter.Type.TIMER, name, List.of(tags));
     }
 
-    private static <M extends Meter> M meter(MetricsFactory metricsFactory,
+    private static <M extends Meter> M meter(MeterRegistry meterRegistry,
                                              Class<M> meterClass,
                                              Meter.Type meterType,
                                              String name,
                                              List<Tag> tags) {
-        var registry = metricsFactory.globalRegistry();
-        for (Meter meter : registry.meters(List.of(VENDOR))) {
+        for (Meter meter : meterRegistry.meters(List.of(VENDOR))) {
             if (meterClass.isInstance(meter)
                     && meter.type() == meterType
                     && meter.id().name().equals(name)

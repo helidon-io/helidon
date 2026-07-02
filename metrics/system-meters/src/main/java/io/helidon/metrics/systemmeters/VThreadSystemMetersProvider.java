@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -32,6 +33,7 @@ import io.helidon.common.Api;
 import io.helidon.common.resumable.Resumable;
 import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
@@ -77,7 +79,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     private long virtualThreadStarts;
     private long pinnedVirtualThreadsThresholdMillis;
     private RecordingStream recordingStream;
-    private MetricsFactory metricsFactory;
+    private MeterRegistry meterRegistry;
     private MetricsConfig metricsConfig;
     private SystemTagsManager systemTagsManager;
     private boolean shutdownHandlerRegistrationRequired;
@@ -97,16 +99,31 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     }
 
     @Override
+    @SuppressWarnings("removal")
     public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
+        MetricsFactory owningFactory = Objects.requireNonNull(metricsFactory);
+        return prepareMeterBuilders(owningFactory, owningFactory.globalRegistry());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+        return prepareMeterBuilders(Objects.requireNonNull(metricsFactory), Objects.requireNonNull(meterRegistry));
+    }
+
+    private Collection<Meter.Builder<?, ?>> prepareMeterBuilders(MetricsFactory metricsFactory,
+                                                                  MeterRegistry meterRegistry) {
         Collection<Meter.Builder<?, ?>> meterBuilders;
         long setupGeneration;
         lifecycleLock.lock();
         try {
             setupGeneration = ++lifecycleGeneration;
             closed = false;
-            this.metricsFactory = metricsFactory;
+            this.meterRegistry = meterRegistry;
             metricsConfig = metricsFactory.metricsConfig();
-            systemTagsManager = SystemTagsManager.create(metricsConfig);
+            systemTagsManager = SystemTagsManager.create(metricsConfig, metricsFactory);
             if (!metricsConfig.virtualThreadsEnabled()) {
                 return List.of();
             }
@@ -172,7 +189,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
                 }
                 shutdownHandlerRegistrationRequired = false;
                 recentPinnedVirtualThreads = null;
-                this.metricsFactory = null;
+                this.meterRegistry = null;
                 metricsConfig = null;
                 systemTagsManager = null;
                 resumableRegistered = false;
@@ -219,7 +236,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
                 shutdownHandlerRegistrationRequired = false;
             }
             recentPinnedVirtualThreads = null;
-            metricsFactory = null;
+            meterRegistry = null;
             metricsConfig = null;
             systemTagsManager = null;
             resumableRegistered = false;
@@ -426,8 +443,11 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
 
     // visible for testing
     Timer findPinned() {
-        var result = metricsFactory
-                .globalRegistry()
+        MeterRegistry meterRegistry = this.meterRegistry;
+        if (meterRegistry == null) {
+            throw new IllegalStateException("Meter registry not available");
+        }
+        var result = meterRegistry
                 .timer(METER_NAME_PREFIX + RECENT_PINNED,
                        systemTagsManager.withScopeTag(Collections.emptyList(), Optional.of(METER_SCOPE)));
         if (result.isEmpty()) {

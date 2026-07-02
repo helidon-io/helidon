@@ -35,7 +35,7 @@ class TestIntegration {
     void testHelidonRegistrationViaMicrometer() {
 
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-        MeterRegistry hMeterRegistry = metricsFactory.globalRegistry();
+        MeterRegistry hMeterRegistry = Services.get(MeterRegistry.class);
 
         Counter hCounter = hMeterRegistry.getOrCreate(metricsFactory.counterBuilder("hCounter1"));
         hCounter.increment(2);
@@ -47,7 +47,8 @@ class TestIntegration {
 
         assertThat("hCounter via Helidon unwrap after Micrometer increment", hCounter.count(), equalTo(5L));
 
-        io.micrometer.core.instrument.MeterRegistry mMeterRegistry = io.micrometer.core.instrument.Metrics.globalRegistry;
+        io.micrometer.core.instrument.MeterRegistry mMeterRegistry =
+                hMeterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
         io.micrometer.core.instrument.Counter mCounter = mMeterRegistry.counter("hCounter1", "scope", "application");
         assertThat("hCounter via Micrometer meter registry", mCounter.count(), equalTo(5D));
     }
@@ -55,8 +56,9 @@ class TestIntegration {
     @Test
     void testMicrometerRegistrationViaHelidon() {
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-        MeterRegistry hMeterRegistry = metricsFactory.globalRegistry();
-        io.micrometer.core.instrument.MeterRegistry mMeterRegistry = io.micrometer.core.instrument.Metrics.globalRegistry;
+        MeterRegistry hMeterRegistry = Services.get(MeterRegistry.class);
+        io.micrometer.core.instrument.MeterRegistry mMeterRegistry =
+                hMeterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
         io.micrometer.core.instrument.Counter mCounter = mMeterRegistry.counter("mCounter1", "scope", "application");
         mCounter.increment(2);
 

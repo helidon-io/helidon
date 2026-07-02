@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
@@ -50,7 +51,9 @@ public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
      * @return a new retry
      */
     static Retry create(RetryConfig retryConfig) {
-        return new RetryImpl(retryConfig, LazyValue.create(() -> Services.get(MetricsFactory.class)));
+        return new RetryImpl(retryConfig,
+                             LazyValue.create(() -> Services.get(MetricsFactory.class)),
+                             LazyValue.create(() -> Services.get(MeterRegistry.class)));
     }
 
     /**

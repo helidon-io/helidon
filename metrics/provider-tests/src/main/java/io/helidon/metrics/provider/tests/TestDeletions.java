@@ -45,7 +45,7 @@ class TestDeletions {
     @BeforeEach
     void setup() {
         metricsFactory = Services.get(MetricsFactory.class);
-        reg = metricsFactory.globalRegistry();
+        reg = Services.get(MeterRegistry.class);
     }
 
     @Test

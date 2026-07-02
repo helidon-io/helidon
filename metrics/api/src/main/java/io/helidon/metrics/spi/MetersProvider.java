@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 package io.helidon.metrics.spi;
 
 import java.util.Collection;
+import java.util.Objects;
 
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 
 /**
@@ -34,4 +36,18 @@ public interface MetersProvider {
      * @return meter builders
      */
     Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory);
+
+    /**
+     * Returns meter builders created using the specified {@link io.helidon.metrics.api.MetricsFactory} for the specified
+     * {@link io.helidon.metrics.api.MeterRegistry}.
+     *
+     * @param metricsFactory metrics factory the provider should use
+     * @param meterRegistry meter registry which will receive the meters
+     * @return meter builders
+     */
+    default Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+        Objects.requireNonNull(metricsFactory);
+        Objects.requireNonNull(meterRegistry);
+        return meterBuilders(metricsFactory);
+    }
 }

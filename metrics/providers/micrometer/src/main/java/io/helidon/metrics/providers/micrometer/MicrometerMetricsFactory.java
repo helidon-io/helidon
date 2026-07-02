@@ -18,8 +18,6 @@ package io.helidon.metrics.providers.micrometer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Condition;
@@ -29,9 +27,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LazyValue;
-import io.helidon.common.context.Contexts;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
@@ -50,7 +45,6 @@ import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exemplars.DefaultExemplarSampler;
@@ -64,33 +58,19 @@ class MicrometerMetricsFactory implements MetricsFactory {
     private static final System.Logger MMETER_REGISTRY_LOGGER = System.getLogger(MMeterRegistry.class.getName());
 
     private final Collection<MetersProvider> metersProviders;
+    private final Collection<MeterRegistryLifeCycleListener> meterRegistryLifeCycleListeners;
+    private final SpanContextSupplierProvider spanContextSupplierProvider;
 
     private final Collection<MMeterRegistry> meterRegistries = new ConcurrentLinkedQueue<>();
-    private final Collection<io.micrometer.core.instrument.MeterRegistry> publisherRegistries =
-            new ConcurrentLinkedQueue<>();
     private final ReentrantLock lock = new ReentrantLock();
     private final ReentrantLock globalRegistryLock = new ReentrantLock();
     private final MultipleRegistryWarnings multipleRegistryWarnings = new MultipleRegistryWarnings();
     private final ThreadLocal<Integer> globalOperationDepth = ThreadLocal.withInitial(() -> 0);
     private final Condition lifecycleChanged = lock.newCondition();
 
-    private volatile Map<String, String> globalRegistrySystemTags = Map.of();
-
-    private final LazyValue<Collection<MeterRegistryLifeCycleListener>> meterRegistryLifeCycleListeners =
-            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MeterRegistryLifeCycleListener.class))
-                    .asList());
-
-    private final LazyValue<SpanContextSupplierProvider> spanContextSupplierProvider =
-            LazyValue.create(() -> HelidonServiceLoader.builder(ServiceLoader.load(SpanContextSupplierProvider.class))
-                    .addService(new NoOpSpanContextSupplierProvider(), Double.MIN_VALUE)
-                    .build()
-                    .iterator()
-                    .next());
-    private final Consumer<MicrometerMetricsFactory> onClose;
-    private final MetricsConfig initialMetricsConfig;
+    private final MetricsConfig metricsConfig;
 
     private volatile MMeterRegistry globalMeterRegistry;
-    private MetricsConfig metricsConfig;
     private boolean closed;
     private int activeGlobalOperations;
     private boolean closeCleanupStarted;
@@ -99,25 +79,30 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig,
                                      Collection<MetersProvider> metersProviders,
-                                     Consumer<MicrometerMetricsFactory> onClose) {
-        this.initialMetricsConfig = metricsConfig;
+                                     Collection<MeterRegistryLifeCycleListener> meterRegistryLifeCycleListeners,
+                                     SpanContextSupplierProvider spanContextSupplierProvider) {
         this.metricsConfig = metricsConfig;
         this.metersProviders = metersProviders;
-        this.onClose = onClose;
+        this.meterRegistryLifeCycleListeners = meterRegistryLifeCycleListeners;
+        this.spanContextSupplierProvider = spanContextSupplierProvider;
+    }
+
+    static MicrometerMetricsFactory create(MetricsConfig metricsConfig,
+                                           Collection<MetersProvider> metersProviders) {
+        return create(metricsConfig,
+                      metersProviders,
+                      List.of(),
+                      new NoOpSpanContextSupplierProvider());
     }
 
     static MicrometerMetricsFactory create(MetricsConfig metricsConfig,
                                            Collection<MetersProvider> metersProviders,
-                                           Consumer<MicrometerMetricsFactory> onClose) {
-        return new MicrometerMetricsFactory(metricsConfig, metersProviders, onClose);
-    }
-
-    Map<String, String> globalRegistrySystemTags() {
-        return globalRegistrySystemTags;
-    }
-
-    boolean hasGlobalRegistry() {
-        return globalMeterRegistry != null;
+                                           Collection<MeterRegistryLifeCycleListener> meterRegistryLifeCycleListeners,
+                                           SpanContextSupplierProvider spanContextSupplierProvider) {
+        return new MicrometerMetricsFactory(metricsConfig,
+                                            metersProviders,
+                                            meterRegistryLifeCycleListeners,
+                                            spanContextSupplierProvider);
     }
 
     // Intended for testing lifecycle cleanup.
@@ -125,41 +110,15 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return meterRegistries.size();
     }
 
-    boolean tracks(io.micrometer.core.instrument.Meter meter) {
-        return meterRegistries.stream().anyMatch(meterRegistry -> meterRegistry.tracks(meter));
-    }
-
-    void onMeterAdded(io.micrometer.core.instrument.Meter meter) {
-        meterRegistries.forEach(mr -> mr.onMeterAdded(meter));
-    }
-
-    void onMeterRemoved(io.micrometer.core.instrument.Meter meter) {
-        meterRegistries.forEach(mr -> mr.onMeterRemoved(meter));
-    }
-
-    @Override
-    public MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill) {
-        return globalOperation(() -> {
-            MMeterRegistry result = globalMeterRegistry;
-            result.onMeterAdded(onAddListener);
-            result.onMeterRemoved(onRemoveListener);
-
-            if (backfill) {
-                result.meters().forEach(onAddListener);
-            }
-            return result;
-        });
-    }
-
     @Override
     public MMeterRegistry.Builder meterRegistryBuilder() {
         ensureOpen();
-        return MMeterRegistry.builder(Metrics.globalRegistry, this);
+        return MMeterRegistry.builder(this);
     }
 
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
-        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+        return MMeterRegistry.builder(this)
                 .metricsConfig(metricsConfig)
                 .build();
     }
@@ -169,7 +128,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig,
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
-        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+        return MMeterRegistry.builder(this)
                 .metricsConfig(metricsConfig)
                 .onMeterAdded(onAddListener)
                 .onMeterRemoved(onRemoveListener)
@@ -183,7 +142,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
 
-        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+        return MMeterRegistry.builder(this)
                 .metricsConfig(metricsConfig)
                 .clock(clock)
                 .onMeterAdded(onAddListener)
@@ -193,7 +152,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
-        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+        return MMeterRegistry.builder(this)
                 .clock(clock)
                 .metricsConfig(metricsConfig)
                 .build();
@@ -201,42 +160,17 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public MeterRegistry globalRegistry() {
-        return globalOperation(() ->
-                globalMeterRegistry != null
-                        ? globalMeterRegistry
-                        : globalRegistry(initialMetricsConfig));
-    }
-
-    @Override
-    public MeterRegistry globalRegistry(MetricsConfig metricsConfig) {
         return globalOperation(() -> {
             if (globalMeterRegistry != null) {
-                if (metricsConfig.equals(this.metricsConfig)) {
-                    return globalMeterRegistry;
-                }
-                // Ideally this method will be invoked once with the proper MetricsConfig settings.
-                // But it's possible for it to be invoked more than once with different
-                // settings. In such a case we need to clear the old global registry and create a new one because
-                // the new settings might affect its behavior.
-                closeGlobalRegistry();
+                return globalMeterRegistry;
             }
 
-            var registriesToPublish = prepareMeterRegistries(metricsConfig);
-            registriesToPublish.forEach(Metrics.globalRegistry::add);
-            publisherRegistries.addAll(registriesToPublish);
-            Contexts.globalContext().register(MetricsFactory.PULL_PUBLISHERS_PRESENT,
-                                              registriesToPublish.stream()
-                                                      .anyMatch(r -> r instanceof PrometheusMeterRegistry));
-
-            MMeterRegistry result = MMeterRegistry.builder(Metrics.globalRegistry, this)
+            MMeterRegistry result = MMeterRegistry.builder(this)
                     .metricsConfig(metricsConfig)
                     .buildRegistry();
 
             try {
-                registerMeterRegistry(metricsConfig, result, registry -> {
-                    globalMeterRegistry = registry;
-                    globalRegistrySystemTags = registry.displayTagPairs();
-                });
+                registerMeterRegistry(metricsConfig, result, registry -> globalMeterRegistry = registry);
 
                 /*
                  Let listeners enroll their callbacks for meter creation and removal with the new registry if they want before
@@ -253,13 +187,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 try {
                     if (globalMeterRegistry == result) {
                         globalMeterRegistry = null;
-                        globalRegistrySystemTags = Map.of();
                     }
                 } finally {
                     lock.unlock();
                 }
                 result.close();
-                closePublisherRegistries();
                 throw e;
             }
         });
@@ -393,35 +325,44 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
     }
 
-    private List<io.micrometer.core.instrument.MeterRegistry> prepareMeterRegistries(MetricsConfig metricsConfig) {
+    List<io.micrometer.core.instrument.MeterRegistry> prepareMeterRegistries(MetricsConfig metricsConfig) {
         /*
         If the user specified no publishers, then use an inferred Prometheus one
         for backward compatibility. If the user specified at least one publisher, then do not
         provide a default Prometheus one and use only those the user set up that are enabled.
-         */
-        SpanContextSupplierProvider spanCtxSupplierProvider = spanContextSupplierProvider.get();
-
+        */
         var enabledMicrometerPublishers = new ArrayList<io.micrometer.core.instrument.MeterRegistry>();
-        metricsConfig.publishers().stream()
-                .filter(p -> p instanceof MicrometerMetricsPublisher)
-                .filter(MetricsPublisher::enabled)
-                .map(p -> (MicrometerMetricsPublisher) p)
-                .map(p -> p instanceof PrometheusPublisher pp
-                     ? pp.prometheusRegistry().apply(key -> metricsConfig.lookupConfig(key).orElse(null),
-                                                     spanCtxSupplierProvider)
-                        : p.registry().get())
-                .forEach(enabledMicrometerPublishers::add);
-        /*
-        Configured provider handling omits disabled services, so if the user disabled the Prometheus publisher
-        the list of publishers in the build config object is empty. To see
-         */
-        if (!metricsConfig.publishersConfigured()) {
-            enabledMicrometerPublishers.add(spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
-                    ? new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null))
-                    : new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null),
-                                                  new CollectorRegistry(),
-                                                  io.micrometer.core.instrument.Clock.SYSTEM,
-                                                  new DefaultExemplarSampler(spanCtxSupplierProvider.get())));
+        try {
+            metricsConfig.publishers().stream()
+                    .filter(p -> p instanceof MicrometerMetricsPublisher)
+                    .filter(MetricsPublisher::enabled)
+                    .map(p -> (MicrometerMetricsPublisher) p)
+                    .map(p -> p instanceof PrometheusPublisher pp
+                         ? pp.prometheusRegistry().apply(key -> metricsConfig.lookupConfig(key).orElse(null),
+                                                         spanContextSupplierProvider)
+                            : p.registry().get())
+                    .forEach(enabledMicrometerPublishers::add);
+            /*
+            Configured provider handling omits disabled services, so if the user disabled the Prometheus publisher
+            the list of publishers in the build config object is empty. To see
+             */
+            if (!metricsConfig.publishersConfigured()) {
+                enabledMicrometerPublishers.add(spanContextSupplierProvider instanceof NoOpSpanContextSupplierProvider
+                        ? new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null))
+                        : new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null),
+                                                      new CollectorRegistry(),
+                                                      io.micrometer.core.instrument.Clock.SYSTEM,
+                                                      new DefaultExemplarSampler(spanContextSupplierProvider.get())));
+            }
+        } catch (RuntimeException | Error e) {
+            enabledMicrometerPublishers.forEach(registry -> {
+                try {
+                    registry.close();
+                } catch (RuntimeException | Error cleanupError) {
+                    e.addSuppressed(cleanupError);
+                }
+            });
+            throw e;
         }
 
         if (enabledMicrometerPublishers.isEmpty()) {
@@ -432,7 +373,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
     }
 
     private void notifyListenersOfCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
-        meterRegistryLifeCycleListeners.get().forEach(listener -> listener.onCreate(meterRegistry, metricsConfig));
+        meterRegistryLifeCycleListeners.forEach(listener -> listener.onCreate(meterRegistry, metricsConfig));
     }
 
     @SuppressWarnings("unchecked")
@@ -441,7 +382,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
             MeterRegistry registry,
             Collection<MetersProvider> metersProviders) {
         metersProviders.stream()
-                .flatMap(mp -> mp.meterBuilders(factory).stream())
+                .flatMap(mp -> mp.meterBuilders(factory, registry).stream())
                 .forEach(b -> registry.getOrCreate((B) b));
 
         return registry;
@@ -457,7 +398,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
         lock.lock();
         try {
             checkOpen();
-            this.metricsConfig = metricsConfig;
             meterRegistry.onRegistered();
             meterRegistries.add(meterRegistry);
             multipleRegistryWarnings.created(metricsConfig);
@@ -548,7 +488,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private List<MMeterRegistry> prepareClose() {
         closeCleanupStarted = true;
-        globalRegistrySystemTags = Map.of();
         globalMeterRegistry = null;
         return List.copyOf(meterRegistries);
     }
@@ -562,8 +501,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
         }
 
         try {
-            registries.forEach(MMeterRegistry::close);
-            closePublisherRegistries();
             metersProviders.forEach(provider -> {
                 if (provider instanceof AutoCloseable closeable) {
                     try {
@@ -573,39 +510,17 @@ class MicrometerMetricsFactory implements MetricsFactory {
                     }
                 }
             });
+            registries.forEach(MMeterRegistry::close);
         } finally {
+            lock.lock();
             try {
-                onClose.accept(this);
+                closeCleanupThread = null;
+                closeComplete = true;
+                lifecycleChanged.signalAll();
             } finally {
-                lock.lock();
-                try {
-                    closeCleanupThread = null;
-                    closeComplete = true;
-                    lifecycleChanged.signalAll();
-                } finally {
-                    lock.unlock();
-                }
+                lock.unlock();
             }
         }
-    }
-
-    private void closeGlobalRegistry() {
-        if (globalMeterRegistry != null) {
-            globalMeterRegistry.close();
-            meterRegistries.remove(globalMeterRegistry);
-            globalMeterRegistry = null;
-        }
-        globalRegistrySystemTags = Map.of();
-        closePublisherRegistries();
-    }
-
-    private void closePublisherRegistries() {
-        List<io.micrometer.core.instrument.MeterRegistry> registries = List.copyOf(publisherRegistries);
-        registries.forEach(registry -> {
-            Metrics.globalRegistry.remove(registry);
-            registry.close();
-        });
-        publisherRegistries.clear();
     }
 
     private static class MultipleRegistryWarnings {

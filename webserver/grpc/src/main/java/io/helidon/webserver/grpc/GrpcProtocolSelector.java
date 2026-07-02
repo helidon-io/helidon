@@ -30,6 +30,7 @@ import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.StreamFlowControl;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.ConnectionContext;
@@ -90,10 +91,11 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                                                  new GrpcProtocolHandlerNotFound(streamWriter, streamId, currentStreamState));
                 }
 
-                if (grpcConfig.enableMetrics() && metrics.factory().get() == null) {
-                    MetricsFactory factory = Contexts.runInContext(ctx.listenerContext().context(),
-                                                                   () -> Services.get(MetricsFactory.class));
-                    metrics.factory().compareAndSet(null, factory);
+                if (grpcConfig.enableMetrics() && metrics.owner().get() == null) {
+                    MetricsOwner owner = Contexts.runInContext(ctx.listenerContext().context(),
+                                                               () -> new MetricsOwner(Services.get(MetricsFactory.class),
+                                                                                      Services.get(MeterRegistry.class)));
+                    metrics.owner().compareAndSet(null, owner);
                 }
 
                 return new SubProtocolResult(true,
@@ -111,10 +113,12 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
         return NOT_SUPPORTED;
     }
 
-    record Metrics(AtomicReference<MetricsFactory> factory,
+    record Metrics(AtomicReference<MetricsOwner> owner,
                    Map<String, GrpcProtocolHandler.MethodMetrics> methodMetrics) {
         Metrics() {
             this(new AtomicReference<>(), new ConcurrentHashMap<>());
         }
     }
+
+    record MetricsOwner(MetricsFactory factory, MeterRegistry registry) { }
 }

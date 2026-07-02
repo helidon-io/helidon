@@ -61,12 +61,17 @@ class FixedLimitMetricsTest {
     private final WebClient webClient;
     private final WebClient adminClient;
     private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
     private final Tag adminSocketTag;
 
-    FixedLimitMetricsTest(WebClient webClient, @Socket("admin") WebClient adminClient, MetricsFactory metricsFactory) {
+    FixedLimitMetricsTest(WebClient webClient,
+                          @Socket("admin") WebClient adminClient,
+                          MetricsFactory metricsFactory,
+                          MeterRegistry meterRegistry) {
         this.webClient = webClient;
         this.adminClient = adminClient;
         this.metricsFactory = metricsFactory;
+        this.meterRegistry = meterRegistry;
         this.adminSocketTag = metricsFactory.tagCreate("socketName", "admin");
     }
 
@@ -114,7 +119,6 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
         Optional<Timer> rtt = timer(meterRegistry, Collections.emptyList());
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));
@@ -126,7 +130,6 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
         Optional<Timer> rtt = timer(meterRegistry, List.of(adminSocketTag));
         assertThat(rtt.isPresent(), is(true));
 

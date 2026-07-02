@@ -16,10 +16,12 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -27,6 +29,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -35,6 +39,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -46,11 +51,11 @@ import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -81,11 +86,6 @@ class TestMultipleRegistryLogging {
     @AfterAll
     static void afterAll() {
         mmeterRegisteryLogger.removeHandler(testHandler);
-    }
-
-    @BeforeEach
-    void setUp() {
-        MicrometerMetricsTestsJunitExtension.clear();
     }
 
     @AfterEach
@@ -199,25 +199,60 @@ class TestMultipleRegistryLogging {
     @Test
     void testDirectMicrometerRegistrationUsesGlobalSystemTags() {
         String counterName = "directMicrometerCounter";
+        Config config = Config.just(ConfigSources.create(Map.of("metrics.tags", "cluster=blue",
+                                                                "metrics.app-name", "direct")));
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Config.class, config)
+                                                                                .build());
+        try {
+            MeterRegistry meterRegistry = manager.registry().get(MeterRegistry.class);
+
+            io.micrometer.core.instrument.Counter counter =
+                    meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class)
+                            .counter(counterName);
+
+            assertThat("System tag from the global registry",
+                       counter.getId().getTag("cluster"),
+                       equalTo("blue"));
+            assertThat("App tag from the global registry",
+                       counter.getId().getTag("app"),
+                       equalTo("direct"));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testDeprecatedGlobalRegistryMethodsDoNotMutateSharedRegistry() {
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-        MetricsConfig metricsConfig = MetricsConfig.builder()
-                .tags(List.of(metricsFactory.tagCreate("cluster", "blue")))
-                .appTagName("app")
-                .appName("direct")
-                .warnOnMultipleRegistries(false)
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+        MetricsConfig factoryConfig = metricsFactory.metricsConfig();
+        Counter counter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("stableGlobalCounter"));
+        AtomicInteger added = new AtomicInteger();
+        AtomicInteger removed = new AtomicInteger();
+        MetricsConfig ignoredConfig = MetricsConfig.builder()
+                .tags(List.of(metricsFactory.tagCreate("ignored", "tag")))
                 .build();
 
-        metricsFactory.globalRegistry(metricsConfig);
+        assertThat("No-arg compatibility method",
+                   metricsFactory.globalRegistry(),
+                   sameInstance(meterRegistry));
+        assertThat("Configured compatibility method",
+                   metricsFactory.globalRegistry(ignoredConfig),
+                   sameInstance(meterRegistry));
+        assertThat("Listener compatibility method",
+                   metricsFactory.globalRegistry(meter -> added.incrementAndGet(),
+                                                 meter -> removed.incrementAndGet(),
+                                                 true),
+                   sameInstance(meterRegistry));
 
-        io.micrometer.core.instrument.Counter counter =
-                io.micrometer.core.instrument.Metrics.counter(counterName);
+        meterRegistry.getOrCreate(metricsFactory.counterBuilder("afterIgnoredGlobalMutation"));
+        meterRegistry.remove(counter);
 
-        assertThat("System tag from the global registry",
-                   counter.getId().getTag("cluster"),
-                   equalTo("blue"));
-        assertThat("App tag from the global registry",
-                   counter.getId().getTag("app"),
-                   equalTo("direct"));
+        assertThat("Factory configuration", metricsFactory.metricsConfig(), sameInstance(factoryConfig));
+        assertThat("Ignored add listener", added.get(), is(0));
+        assertThat("Ignored remove listener", removed.get(), is(0));
     }
 
     @Test
@@ -225,10 +260,9 @@ class TestMultipleRegistryLogging {
         String counterName = "providerCounter";
         MetersProvider metersProvider = metricsFactory -> List.of(metricsFactory.counterBuilder(counterName));
         MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(),
-                                                                                   List.of(metersProvider),
-                                                                                   ignored -> { });
+                                                                                   List.of(metersProvider));
         try {
-            MeterRegistry meterRegistry = metricsFactory.globalRegistry(MetricsConfig.create());
+            MeterRegistry meterRegistry = metricsFactory.globalRegistry();
 
             assertThat("Provider-created meter is recorded by the global registry",
                        meterRegistry.meter(Counter.class, counterName, List.of()).isPresent(),
@@ -242,28 +276,117 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
+    void testMetersProvidersCloseBeforeRegistries() {
+        CloseOrderMetersProvider metersProvider = new CloseOrderMetersProvider();
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(),
+                                                                                   List.of(metersProvider));
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+
+        metricsFactory.close();
+
+        assertThat("Meters provider observes its meter before registry close",
+                   metersProvider.observedActiveMeterOnClose,
+                   is(true));
+        assertThat("Registry closes after the meters provider", meterRegistry.meters(), hasSize(0));
+    }
+
+    @Test
+    void testRegistryConstructionFailureClosesPublishers() {
+        SimpleMeterRegistry publisherRegistry = new SimpleMeterRegistry();
+        Tag failingTag = new Tag() {
+            @Override
+            public String key() {
+                throw new IllegalStateException("Cannot read tag");
+            }
+
+            @Override
+            public String value() {
+                return "value";
+            }
+
+            @Override
+            public <T> T unwrap(Class<? extends T> type) {
+                return type.cast(this);
+            }
+        };
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .publishers(List.of(new TestPublisher(publisherRegistry)))
+                .tags(List.of(failingTag))
+                .build();
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+
+        try {
+            assertThrows(IllegalStateException.class, () -> metricsFactory.createMeterRegistry(metricsConfig));
+            assertThat("Publisher is closed after registry construction fails", publisherRegistry.isClosed(), is(true));
+        } finally {
+            metricsFactory.close();
+        }
+    }
+
+    @Test
+    void testPublisherCreationFailureClosesEarlierPublishers() {
+        SimpleMeterRegistry publisherRegistry = new SimpleMeterRegistry();
+        MicrometerMetricsPublisher failingPublisher = new MicrometerMetricsPublisher() {
+            @Override
+            public Supplier<io.micrometer.core.instrument.MeterRegistry> registry() {
+                return () -> {
+                    throw new IllegalStateException("Cannot create publisher registry");
+                };
+            }
+
+            @Override
+            public boolean enabled() {
+                return true;
+            }
+
+            @Override
+            public String name() {
+                return "failing";
+            }
+
+            @Override
+            public String type() {
+                return "test";
+            }
+        };
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .publishers(List.of(new TestPublisher(publisherRegistry), failingPublisher))
+                .build();
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+
+        try {
+            assertThrows(IllegalStateException.class, () -> metricsFactory.createMeterRegistry(metricsConfig));
+            assertThat("Earlier publisher is closed after a later publisher cannot be created",
+                       publisherRegistry.isClosed(),
+                       is(true));
+        } finally {
+            metricsFactory.close();
+        }
+    }
+
+    @Test
     void testServiceRegistryShutdownReleasesMetricsFactoryState() {
         ServiceRegistryManager manager = ServiceRegistryManager.create();
+        CompositeMeterRegistry delegate;
+        Set<io.micrometer.core.instrument.MeterRegistry> publishers;
         try {
-            manager.registry()
-                    .get(MetricsFactory.class)
-                    .globalRegistry(MetricsConfig.create());
+            MeterRegistry meterRegistry = manager.registry().get(MeterRegistry.class);
+            delegate = (CompositeMeterRegistry) meterRegistry
+                    .unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            publishers = Set.copyOf(delegate.getRegistries());
             assertThat("One publisher registry is registered",
-                       micrometerGlobalRegistry().getRegistries(),
+                       publishers,
                        hasSize(1));
         } finally {
             manager.shutdown();
         }
 
-        assertThat("No publisher registries remain after service registry shutdown",
-                   micrometerGlobalRegistry().getRegistries(),
-                   hasSize(0));
+        assertThat("Owned composite is closed after service registry shutdown", delegate.isClosed(), is(true));
+        publishers.forEach(publisher -> assertThat("Owned publisher is closed", publisher.isClosed(), is(true)));
 
         manager = ServiceRegistryManager.create();
         try {
-            manager.registry()
-                    .get(MetricsFactory.class)
-                    .globalRegistry(MetricsConfig.create());
+            manager.registry().get(MeterRegistry.class);
         } finally {
             manager.shutdown();
         }
@@ -283,7 +406,7 @@ class TestMultipleRegistryLogging {
         try {
             MetricsFactory metricsFactory = manager.registry().get(MetricsFactory.class);
 
-            metricsFactory.globalRegistry();
+            manager.registry().get(MeterRegistry.class);
 
             assertThat("Factory retains its owning service registry configuration",
                        metricsFactory.metricsConfig().appName(),
@@ -298,10 +421,13 @@ class TestMultipleRegistryLogging {
         ServiceRegistryManager firstManager = ServiceRegistryManager.create();
         ServiceRegistryManager secondManager = ServiceRegistryManager.create();
         try {
-            firstManager.registry().get(MetricsFactory.class).globalRegistry(MetricsConfig.create());
+            MeterRegistry firstRegistry = firstManager.registry().get(MeterRegistry.class);
 
             MetricsFactory secondFactory = secondManager.registry().get(MetricsFactory.class);
-            MeterRegistry secondRegistry = secondFactory.globalRegistry(MetricsConfig.create());
+            MeterRegistry secondRegistry = secondManager.registry().get(MeterRegistry.class);
+            assertThat("Factories own distinct Micrometer registries",
+                       secondRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class),
+                       not(sameInstance(firstRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class))));
             Counter secondCounter = secondRegistry.getOrCreate(secondFactory.counterBuilder("secondFactoryCounter"));
             secondCounter.increment();
 
@@ -323,8 +449,8 @@ class TestMultipleRegistryLogging {
     void testConcurrentServiceRegistryShutdownCompletes() throws Exception {
         ServiceRegistryManager firstManager = ServiceRegistryManager.create();
         ServiceRegistryManager secondManager = ServiceRegistryManager.create();
-        firstManager.registry().get(MetricsFactory.class).globalRegistry(MetricsConfig.create());
-        secondManager.registry().get(MetricsFactory.class).globalRegistry(MetricsConfig.create());
+        firstManager.registry().get(MeterRegistry.class);
+        secondManager.registry().get(MeterRegistry.class);
 
         CountDownLatch start = new CountDownLatch(1);
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -387,21 +513,6 @@ class TestMultipleRegistryLogging {
 
     @Test
     @Timeout(10)
-    void testReentrantCloseFromOnCloseCompletes() throws Exception {
-        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(),
-                                                                                   List.of(),
-                                                                                   MicrometerMetricsFactory::close);
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-        try {
-            Future<?> close = executor.submit(metricsFactory::close);
-            close.get(5, TimeUnit.SECONDS);
-        } finally {
-            executor.shutdownNow();
-        }
-    }
-
-    @Test
-    @Timeout(10)
     void testRegistryCreationIsAtomicWithFactoryShutdown() throws Exception {
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         MicrometerMetricsFactory metricsFactory =
@@ -448,9 +559,6 @@ class TestMultipleRegistryLogging {
     @Test
     @Timeout(10)
     void testGlobalRegistryCreationCompletesBeforeFactoryShutdownCleanup() throws Exception {
-        ServiceRegistryManager manager = ServiceRegistryManager.create();
-        MicrometerMetricsFactory metricsFactory =
-                (MicrometerMetricsFactory) manager.registry().get(MetricsFactory.class);
         CountDownLatch tagAccessed = new CountDownLatch(1);
         CountDownLatch continueTagAccess = new CountDownLatch(1);
         AtomicBoolean blockTagAccess = new AtomicBoolean();
@@ -458,11 +566,12 @@ class TestMultipleRegistryLogging {
                 .tags(List.of(blockingTag(blockTagAccess, tagAccessed, continueTagAccess)))
                 .warnOnMultipleRegistries(false)
                 .build();
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(metricsConfig, List.of());
         blockTagAccess.set(true);
 
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
         try {
-            Future<MeterRegistry> registryCreation = executor.submit(() -> metricsFactory.globalRegistry(metricsConfig));
+            Future<MeterRegistry> registryCreation = executor.submit(() -> metricsFactory.globalRegistry());
             assertThat("Global registry creation reached the coordinated point",
                        tagAccessed.await(5, TimeUnit.SECONDS),
                        is(true));
@@ -483,50 +592,10 @@ class TestMultipleRegistryLogging {
             assertThat("Factory shutdown rejected the concurrently-created global registry",
                        metricsFactory.meterRegistryCount(),
                        is(0));
-            assertThat("No publisher registries remain after global registry creation loses the shutdown race",
-                       micrometerGlobalRegistry().getRegistries(),
-                       hasSize(0));
         } finally {
             continueTagAccess.countDown();
             executor.shutdownNow();
-            manager.shutdown();
-        }
-    }
-
-    @Test
-    @Timeout(10)
-    void testGlobalRegistryListenerUsesStableRegistryDuringFactoryShutdown() throws Exception {
-        ServiceRegistryManager manager = ServiceRegistryManager.create();
-        MetricsFactory metricsFactory = manager.registry().get(MetricsFactory.class);
-        MeterRegistry globalRegistry = metricsFactory.globalRegistry(MetricsConfig.create());
-        globalRegistry.getOrCreate(metricsFactory.counterBuilder("globalListenerCounter"));
-        CountDownLatch listenerEntered = new CountDownLatch(1);
-        CountDownLatch continueListener = new CountDownLatch(1);
-
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-        try {
-            Future<MeterRegistry> listenerRegistration = executor.submit(() ->
-                    metricsFactory.globalRegistry(meter -> {
-                        listenerEntered.countDown();
-                        await(continueListener);
-                    }, meter -> { }, true));
-            assertThat("Global registry listener reached the coordinated point",
-                       listenerEntered.await(5, TimeUnit.SECONDS),
-                       is(true));
-
-            Future<?> factoryClose = executor.submit(metricsFactory::close);
-            awaitFactoryClosed(metricsFactory);
-            assertThat("Factory cleanup waits for global registry listener", factoryClose.isDone(), is(false));
-
-            continueListener.countDown();
-            assertThat("Listener registration returns the stable global registry",
-                       listenerRegistration.get(5, TimeUnit.SECONDS),
-                       sameInstance(globalRegistry));
-            factoryClose.get(5, TimeUnit.SECONDS);
-        } finally {
-            continueListener.countDown();
-            executor.shutdownNow();
-            manager.shutdown();
+            metricsFactory.close();
         }
     }
 
@@ -616,10 +685,6 @@ class TestMultipleRegistryLogging {
         };
     }
 
-    private static CompositeMeterRegistry micrometerGlobalRegistry() {
-        return io.micrometer.core.instrument.Metrics.globalRegistry;
-    }
-
     private static class TestHandler extends Handler {
 
         private final List<String> messages = Collections.synchronizedList(new ArrayList<>());
@@ -650,6 +715,52 @@ class TestMultipleRegistryLogging {
 
         void clear() {
             messages.clear();
+        }
+    }
+
+    private record TestPublisher(SimpleMeterRegistry meterRegistry) implements MicrometerMetricsPublisher {
+        @Override
+        public Supplier<io.micrometer.core.instrument.MeterRegistry> registry() {
+            return () -> meterRegistry;
+        }
+
+        @Override
+        public boolean enabled() {
+            return true;
+        }
+
+        @Override
+        public String name() {
+            return "test";
+        }
+
+        @Override
+        public String type() {
+            return "test";
+        }
+    }
+
+    private static class CloseOrderMetersProvider implements MetersProvider, AutoCloseable {
+        private static final String COUNTER_NAME = "closeOrderCounter";
+
+        private MeterRegistry meterRegistry;
+        private boolean observedActiveMeterOnClose;
+
+        @Override
+        public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
+            return List.of();
+        }
+
+        @Override
+        public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
+            return List.of(metricsFactory.counterBuilder(COUNTER_NAME));
+        }
+
+        @Override
+        public void close() {
+            Optional<Counter> counter = meterRegistry.counter(COUNTER_NAME, List.of());
+            observedActiveMeterOnClose = counter.isPresent() && !meterRegistry.isDeleted(counter.get());
         }
     }
 

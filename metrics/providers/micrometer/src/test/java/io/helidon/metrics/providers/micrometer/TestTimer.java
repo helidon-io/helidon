@@ -19,7 +19,6 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
@@ -40,7 +39,7 @@ class TestTimer {
     @BeforeAll
     static void prep() {
         metricsFactory = Services.get(MetricsFactory.class);
-        meterRegistry = metricsFactory.globalRegistry();
+        meterRegistry = Services.get(MeterRegistry.class);
     }
 
     @Test

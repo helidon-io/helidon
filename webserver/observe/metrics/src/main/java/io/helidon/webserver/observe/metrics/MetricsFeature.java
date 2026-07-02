@@ -17,12 +17,9 @@ package io.helidon.webserver.observe.metrics;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.context.Contexts;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderValues;
@@ -66,13 +63,20 @@ class MetricsFeature {
     private final MetricsObserverConfig metricsObserverConfig;
     private final MetricsConfig metricsConfig;
     private final MeterRegistry meterRegistry;
+    private final List<MeterRegistryFormatterProvider> formatterProviders;
     private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     MetricsFeature(MetricsObserverConfig config) {
         this.metricsObserverConfig = config;
-        this.metricsConfig = config.metricsConfig();
-        this.meterRegistry = config.meterRegistry()
-                .orElseGet(() -> Services.get(MetricsFactory.class).globalRegistry(metricsConfig));
+        Optional<MeterRegistry> configuredMeterRegistry = config.meterRegistry();
+        if (configuredMeterRegistry.isPresent()) {
+            this.metricsConfig = config.metricsConfig();
+            this.meterRegistry = configuredMeterRegistry.get();
+        } else {
+            this.metricsConfig = Services.get(MetricsFactory.class).metricsConfig();
+            this.meterRegistry = Services.get(MeterRegistry.class);
+        }
+        this.formatterProviders = Services.all(MeterRegistryFormatterProvider.class);
     }
 
     /**
@@ -167,10 +171,7 @@ class MetricsFeature {
                                                    Optional<String> scopeTagName,
                                                    Iterable<String> scopeSelection,
                                                    Iterable<String> nameSelection) {
-        Optional<MeterRegistryFormatter> formatter = HelidonServiceLoader.builder(
-                        ServiceLoader.load(MeterRegistryFormatterProvider.class))
-                .build()
-                .stream()
+        Optional<MeterRegistryFormatter> formatter = formatterProviders.stream()
                 .map(provider -> provider.formatter(mediaType,
                                                     metricsConfig,
                                                     meterRegistry,
@@ -321,10 +322,16 @@ class MetricsFeature {
                 .options("/", DISABLED_ENDPOINT_HANDLER);
     }
 
-    private boolean enabled() {
+    boolean enabled() {
         return metricsConfig.enabled()
-                && Contexts.globalContext().get(MetricsFactory.PULL_PUBLISHERS_PRESENT, Boolean.class)
-                .orElse(true);
+                && formatterProviders.stream()
+                .map(provider -> provider.formatter(MediaTypes.TEXT_PLAIN,
+                                                    metricsConfig,
+                                                    meterRegistry,
+                                                    metricsConfig.scoping().tagName(),
+                                                    List.of(),
+                                                    List.of()))
+                .anyMatch(Optional::isPresent);
     }
 
     /**

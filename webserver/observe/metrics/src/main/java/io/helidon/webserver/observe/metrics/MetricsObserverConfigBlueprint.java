@@ -52,9 +52,11 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
     }
 
     /**
-     * Assigns {@code MetricsSettings} which will be used in creating the {@code MetricsSupport} instance at build-time.
+     * Assigns metrics settings to use with a custom {@link io.helidon.metrics.api.MeterRegistry}.
+     * If no custom registry is configured, metrics support uses the settings from the shared registry's owning
+     * {@link io.helidon.metrics.api.MetricsFactory} instead.
      *
-     * @return the metrics settings to assign for use in building the {@code MetricsSupport} instance
+     * @return metrics settings to use with a custom registry
      */
     @Option.Configured(merge = true)
     @Option.DefaultMethod("create")
@@ -75,7 +77,8 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * If this method is not called,
      * {@link MetricsFeature} would use the shared
      * instance as provided by
-     * {@link io.helidon.metrics.api.MetricsFactory#globalRegistry()}.
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class)
+     * Services.get(MeterRegistry.class)}.
      *
      * @return meterRegistry to use in this metric support
      */

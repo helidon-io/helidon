@@ -57,10 +57,12 @@ class AimdLimitMetricsTest {
 
     private final WebClient webClient;
     private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
 
-    AimdLimitMetricsTest(WebClient webClient, MetricsFactory metricsFactory) {
+    AimdLimitMetricsTest(WebClient webClient, MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
         this.webClient = webClient;
         this.metricsFactory = metricsFactory;
+        this.meterRegistry = meterRegistry;
     }
 
     @SetUpServer
@@ -99,7 +101,6 @@ class AimdLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
         Optional<Timer> rtt = timer(meterRegistry);
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));

@@ -71,7 +71,7 @@ class SemaphoreMetrics {
     }
 
     private void init(MetricsFactory metricsFactory, Limit.InitializationContext context) {
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
 
         register(metricsFactory, meterRegistry, context.metricTags());
     }

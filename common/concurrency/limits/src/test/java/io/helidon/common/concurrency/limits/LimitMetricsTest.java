@@ -50,17 +50,18 @@ class LimitMetricsTest {
     };
 
     private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
     private final List<Tag> realMeterTags;
 
-    LimitMetricsTest(MetricsFactory metricsFactory) {
+    LimitMetricsTest(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
         this.metricsFactory = metricsFactory;
+        this.meterRegistry = meterRegistry;
         this.realMeterTags = List.of(metricsFactory.tagCreate("origin", "limit-metrics-test"));
     }
 
     @BeforeEach
     @AfterEach
     void cleanMeters() {
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
         for (String meterName : REAL_METER_NAMES) {
             meterRegistry.remove(meterName, realMeterTags, Meter.Scope.VENDOR);
         }
@@ -112,8 +113,6 @@ class LimitMetricsTest {
     @Test
     void publicContextInitRegistersRealMetersForBuiltInLimits() {
         Limit.InitializationContext context = Limit.InitializationContext.create("unit-test", realMeterTags);
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
-
         Limit fixed = FixedLimit.builder()
                 .name("test_fixed")
                 .permits(1)
@@ -156,7 +155,6 @@ class LimitMetricsTest {
 
         disabled.init(Limit.InitializationContext.create("unit-test", realMeterTags));
 
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
         assertThat(hasMeter(meterRegistry, Meter.Type.GAUGE, "test_disabled_concurrent_requests", realMeterTags), is(false));
     }
 

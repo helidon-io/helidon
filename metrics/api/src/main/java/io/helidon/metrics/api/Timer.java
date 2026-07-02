@@ -62,13 +62,11 @@ public interface Timer extends Meter, HistogramSupport {
      *
      * @param registry the meter registry whose clock is to be used for measuring the interval
      * @return new sample with start time recorded
-     * @deprecated this method gets {@link io.helidon.metrics.api.MetricsFactory}
-     * from {@link io.helidon.service.registry.ServiceRegistry}, which may be inefficient.
-     * call {@link MetricsFactory#timerStart(MeterRegistry)} instead
+     * @deprecated call {@link MetricsFactory#timerStart(MeterRegistry)} on the registry's owning factory instead
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     static Sample start(MeterRegistry registry) {
-        return Services.get(MetricsFactory.class).timerStart(registry);
+        return registry.metricsFactory().timerStart(registry);
     }
 
     /**

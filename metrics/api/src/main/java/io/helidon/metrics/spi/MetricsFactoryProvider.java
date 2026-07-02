@@ -16,10 +16,12 @@
 package io.helidon.metrics.spi;
 
 import java.util.Collection;
+import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Creates new instances of {@link io.helidon.metrics.api.MetricsFactory}.
@@ -48,10 +50,31 @@ public interface MetricsFactoryProvider {
     MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders);
 
     /**
-     * Closes all metrics factories created by this provider.
-     * <p>
-     *     Applications do not normally need to invoke this method.
-     * </p>
+     * Creates a new metrics factory using services from the registry which owns the factory.
+     *
+     * @param rootConfig      root config node
+     * @param metricsConfig   metrics settings
+     * @param metersProviders providers of built-in meters
+     * @param serviceRegistry service registry which owns the new factory
+     * @return new metrics factory
      */
-    void close();
+    default MetricsFactory create(Config rootConfig,
+                                  MetricsConfig metricsConfig,
+                                  Collection<MetersProvider> metersProviders,
+                                  ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(rootConfig);
+        Objects.requireNonNull(metricsConfig);
+        Objects.requireNonNull(metersProviders);
+        Objects.requireNonNull(serviceRegistry);
+        return create(rootConfig, metricsConfig, metersProviders);
+    }
+
+    /**
+     * No-op retained for compatibility. Service registries own and close the metrics factories they create.
+     *
+     * @deprecated since 27.0.0, for removal. Metrics factory lifecycle is managed by the service registry.
+     */
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    default void close() {
+    }
 }

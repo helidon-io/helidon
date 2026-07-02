@@ -26,13 +26,12 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
-import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,6 +41,7 @@ import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 
 class TestPrometheusFormatting {
 
@@ -67,25 +67,38 @@ class TestPrometheusFormatting {
 
         metricsConfig = metricsConfigBuilder.build();
         metricsFactory = Services.get(MetricsFactory.class);
-        meterRegistry = metricsFactory.globalRegistry(metricsConfig);
+        meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
     }
 
-    /**
-     * Sets the system tags according to what this test expects.
-     * <p>
-     *     When the global registry is initialized from the metrics config, that config object initializes the system tags
-     *     manager. This happens after the @BeforeAll method runs. So re-assert the values we want for the test here. We
-     *     would only need to do it once, not before each test, but it's low cost esp. in a test environment.
-     *
-     * </p>
-     */
-    @BeforeEach
-    void setUpSystemTags() {
-        configureSystemTags(metricsConfig);
+    @Test
+    void testCustomRegistryDoesNotUseMicrometerGlobalRegistry() {
+        assertThat(meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class),
+                   not(sameInstance(io.micrometer.core.instrument.Metrics.globalRegistry)));
     }
 
-    private static void configureSystemTags(MetricsConfig metricsConfig) {
-        SystemTagsManager.create(metricsConfig);
+    @Test
+    void testServiceRegistryOwnedRegistryDoesNotUseMicrometerGlobalRegistry() {
+        MeterRegistry globalRegistry = Services.get(MeterRegistry.class);
+
+        assertThat(globalRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class),
+                   not(sameInstance(io.micrometer.core.instrument.Metrics.globalRegistry)));
+        assertThat(globalRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class),
+                   not(sameInstance(meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class))));
+    }
+
+    @Test
+    void testCustomRegistryOwnsPublishers() {
+        MetricsConfig customConfig = MetricsConfig.builder(metricsConfig)
+                .warnOnMultipleRegistries(false)
+                .build();
+        MeterRegistry customRegistry = metricsFactory.createMeterRegistry(customConfig);
+        CompositeMeterRegistry delegate = (CompositeMeterRegistry) customRegistry
+                .unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+        Set<io.micrometer.core.instrument.MeterRegistry> publishers = delegate.getRegistries();
+
+        assertThat("Publisher count", publishers.size(), is(1));
+        customRegistry.close();
+        publishers.forEach(publisher -> assertThat("Publisher is closed", publisher.isClosed(), is(true)));
     }
 
     @Test

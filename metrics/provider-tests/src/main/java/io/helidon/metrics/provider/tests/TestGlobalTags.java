@@ -47,7 +47,7 @@ class TestGlobalTags {
                 .tags(globalTags)
                 .build();
 
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
 
         assertThat("Global tags from the config used to init the meter registry",
                    metricsConfig.tags(),
@@ -72,8 +72,7 @@ class TestGlobalTags {
         Config config = Config.just(ConfigSources.create(settings));
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
 
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry(
-                MetricsConfig.create(config.get("metrics")));
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create(config.get("metrics")));
 
         Counter counter1 = meterRegistry.getOrCreate(metricsFactory.counterBuilder("a")
                                                              .tags(List.of(metricsFactory.tagCreate("local1", "a"))));
@@ -92,11 +91,4 @@ class TestGlobalTags {
 
     }
 
-    @Test
-    void testAppName() {
-        String appNameTag = "se-app";
-        String appNameValue = "test-app";
-        Config metricsConfig = Config.just(ConfigSources.create(Map.of("app-tag-name", appNameTag, "app-name", appNameValue)));
-        Services.get(MetricsFactory.class).globalRegistry(MetricsConfig.create(metricsConfig));
-    }
 }
