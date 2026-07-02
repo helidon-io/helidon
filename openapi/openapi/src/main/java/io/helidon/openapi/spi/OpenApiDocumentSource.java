@@ -19,6 +19,7 @@ package io.helidon.openapi.spi;
 import java.util.Objects;
 
 import io.helidon.common.Api;
+import io.helidon.openapi.OpenApi;
 import io.helidon.openapi.OpenApiDocument;
 import io.helidon.openapi.OpenApiDocumentContext;
 import io.helidon.service.registry.Service;
@@ -29,6 +30,11 @@ import io.helidon.service.registry.Service;
  * A source can be qualified with {@link Service.Named @Service.Named} so the OpenAPI feature can select it with
  * {@code generated.document-sources}. Unqualified sources always contribute when they {@link #supports(OpenApiDocumentContext)
  * support} the document context and cannot be filtered by {@code generated.document-sources}.
+ * <p>
+ * The final composed OpenAPI document must contain Info metadata. The metadata can be contributed by a custom source,
+ * generated from an application type annotated with {@link OpenApi.Document @OpenApi.Document} and
+ * {@link OpenApi.Info @OpenApi.Info}, or supplied by static OpenAPI content when static and generated content are merged.
+ * An individual source does not need to provide Info metadata if another contribution supplies it.
  */
 @Api.Preview
 @Service.Contract
