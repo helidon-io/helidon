@@ -143,6 +143,28 @@ class JsonValueParserMarkingTest {
     }
 
     @Test
+    public void testMarkAndResetToMarkWithEmptyObject() {
+        assertMarkAndResetToMarkWithEmptyContainer(JsonObject.empty(), (byte) '{', (byte) '}');
+    }
+
+    @Test
+    public void testMarkAndResetToMarkWithEmptyArray() {
+        assertMarkAndResetToMarkWithEmptyContainer(JsonArray.empty(), (byte) '[', (byte) ']');
+    }
+
+    @Test
+    public void testMarkAndResetToMarkBeforeNestedEmptyContainers() {
+        assertMarkAndResetToMarkBeforeNestedEmptyContainer(JsonObject.empty(), (byte) '{', (byte) '}');
+        assertMarkAndResetToMarkBeforeNestedEmptyContainer(JsonArray.empty(), (byte) '[', (byte) ']');
+    }
+
+    @Test
+    public void testRepeatedMarkAndResetToMarkWithEmptyContainers() {
+        assertRepeatedMarkAndResetToMarkWithEmptyContainer(JsonObject.empty(), (byte) '{', (byte) '}');
+        assertRepeatedMarkAndResetToMarkWithEmptyContainer(JsonArray.empty(), (byte) '[', (byte) ']');
+    }
+
+    @Test
     public void testMarkAndDumpMark() {
         JsonValue original = JsonString.create("test");
         JsonParser parser = JsonParser.create(original);
@@ -286,6 +308,56 @@ class JsonValueParserMarkingTest {
 
         // Cannot mark again - this is expected behavior for JsonValueParser
         assertThrows(IllegalStateException.class, parser::mark);
+    }
+
+    private static void assertMarkAndResetToMarkWithEmptyContainer(JsonValue value, byte start, byte end) {
+        JsonParser parser = JsonParser.create(value);
+
+        parser.mark();
+        assertThat(parser.currentByte(), is(start));
+        assertThat(parser.nextToken(), is(end));
+        assertThat(parser.hasNext(), is(false));
+
+        parser.resetToMark();
+        assertThat(parser.currentByte(), is(start));
+        assertThat(parser.nextToken(), is(end));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    private static void assertMarkAndResetToMarkBeforeNestedEmptyContainer(JsonValue value, byte start, byte end) {
+        JsonParser parser = JsonParser.create(JsonArray.create(JsonString.create("before"), value, JsonString.create("after")));
+
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("before"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        parser.mark();
+        assertThat(parser.nextToken(), is(start));
+        assertThat(parser.nextToken(), is(end));
+
+        parser.resetToMark();
+        assertThat(parser.currentByte(), is((byte) ','));
+        assertThat(parser.nextToken(), is(start));
+        assertThat(parser.nextToken(), is(end));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("after"));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    private static void assertRepeatedMarkAndResetToMarkWithEmptyContainer(JsonValue value, byte start, byte end) {
+        JsonParser parser = JsonParser.create(value);
+
+        parser.mark();
+        assertThat(parser.nextToken(), is(end));
+        parser.resetToMark();
+        assertThat(parser.currentByte(), is(start));
+
+        parser.mark();
+        parser.resetToMark();
+        assertThat(parser.currentByte(), is(start));
+        assertThat(parser.nextToken(), is(end));
+        assertThat(parser.hasNext(), is(false));
     }
 
 }

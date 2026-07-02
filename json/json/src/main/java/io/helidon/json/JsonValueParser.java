@@ -24,8 +24,11 @@ import java.util.Set;
 class JsonValueParser implements JsonParser {
 
     private JsonValue[] values = new JsonValue[100];
+    private boolean[] valuesExpanded = new boolean[100];
     private JsonValue[] replay = new JsonValue[10];
+    private boolean[] replayExpanded = new boolean[10];
     private JsonValue current;
+    private boolean currentExpanded = false;
     private int index = 0;
 
     private boolean replayMarked = false;
@@ -43,12 +46,18 @@ class JsonValueParser implements JsonParser {
                 return true;
             }
         }
-        return index - 1 >= 0;
+        return index > 0 || (index == 0 && values[0] != null && values[0] != JsonNoopValue.INSTANCE);
     }
 
     @Override
     public byte nextToken() {
-        if (current != null) {
+        boolean expandContainer = !currentExpanded;
+        if (replayMarked && expandContainer && current != null
+                && (current.type() == JsonValueType.OBJECT || current.type() == JsonValueType.ARRAY)) {
+            replayExpanded[replayIndex] = true;
+        }
+        currentExpanded = false;
+        if (current != null && expandContainer) {
             if (current.type() == JsonValueType.OBJECT) {
                 JsonObject object = current.asObject();
                 Set<JsonString> keys = object.keys();
@@ -56,44 +65,59 @@ class JsonValueParser implements JsonParser {
                 //key size needs to be multiplied by 4, because for every key, nad value we will add : and , (-1 for the last
                 // object)
                 int size = (keys.size() * 4) - 1;
-                ensureCapacity(size + 1);
-                if (index > 0) {
+                if (index < 0) {
+                    index = 0;
+                } else if (values[index] != JsonNoopValue.INSTANCE) {
                     //We are having some values before this one. index need to be raised to prevet overwriting.
                     index++;
                 }
-                values[index++] = JsonControlValue.OBJECT_END;
-                for (JsonString key : keys) {
-                    values[index + --size] = key;
-                    values[index + --size] = JsonControlValue.COLON;
-                    values[index + --size] = object.value(key.value(), JsonNull.instance());
-                    if (size > 0) {
-                        values[index + --size] = JsonControlValue.COMMA;
+                ensureCapacity(Math.max(1, size + 1));
+                putValue(index++, JsonControlValue.OBJECT_END);
+                if (keys.isEmpty()) {
+                    index--;
+                } else {
+                    for (JsonString key : keys) {
+                        putValue(index + --size, key);
+                        putValue(index + --size, JsonControlValue.COLON);
+                        putValue(index + --size, object.value(key.value(), JsonNull.instance()));
+                        if (size > 0) {
+                            putValue(index + --size, JsonControlValue.COMMA);
+                        }
                     }
+                    index += (keys.size() * 4) - 2;
                 }
-                index += (keys.size() * 4) - 2;
             } else if (current.type() == JsonValueType.ARRAY) {
                 JsonArray array = current.asArray();
                 //We need to calculate how many values we need to add + how many commas
                 //value size needs to be multiplied by 2, because for every value we will add , (-1 for the last object)
                 int size = (array.values().size() * 2) - 1;
-                ensureCapacity(size + 1);
-                if (index > 0) {
+                if (index < 0) {
+                    index = 0;
+                } else if (values[index] != JsonNoopValue.INSTANCE) {
                     //We are having some values before this one. index need to be raised to prevet overwriting.
                     index++;
                 }
-                values[++index] = JsonControlValue.ARRAY_END;
-                for (JsonValue value : array.values()) {
-                    values[index + --size] = value;
-                    if (size > 0) {
-                        values[index + --size] = JsonControlValue.COMMA;
+                ensureCapacity(Math.max(1, size + 1));
+                putValue(index++, JsonControlValue.ARRAY_END);
+                if (array.values().isEmpty()) {
+                    index--;
+                } else {
+                    for (JsonValue value : array.values()) {
+                        putValue(index + --size, value);
+                        if (size > 0) {
+                            putValue(index + --size, JsonControlValue.COMMA);
+                        }
                     }
+                    index += (array.values().size() * 2) - 2;
                 }
-                index += (array.values().size() * 2) - 2;
             }
         }
         if (index >= 0) {
-            current = values[index];
-            values[index--] = null;
+            int currentIndex = index--;
+            current = values[currentIndex];
+            currentExpanded = valuesExpanded[currentIndex];
+            values[currentIndex] = null;
+            valuesExpanded[currentIndex] = false;
             if (current == null) {
                 throw new JsonException("No more JSON Values available");
             }
@@ -105,24 +129,43 @@ class JsonValueParser implements JsonParser {
         throw new JsonException("No more JSON Values available");
     }
 
+    private void putValue(int targetIndex, JsonValue value) {
+        values[targetIndex] = value;
+        valuesExpanded[targetIndex] = false;
+    }
+
     private void recordToReplayQueue() {
-        if (--replayIndex < 0) {
-            int previousLength = replay.length;
-            JsonValue[] newArray = new JsonValue[previousLength * 2];
-            System.arraycopy(replay, 0, newArray, newArray.length - previousLength, previousLength);
-            replay = newArray;
-            replayIndex = newArray.length - previousLength - 1;
+        recordToReplayQueue(current, currentExpanded);
+    }
+
+    private void recordToReplayQueue(JsonValue value, boolean expanded) {
+        if (replayIndex == 0) {
+            int active = replay.length - replayIndex;
+            int newLength = replay.length * 2;
+            int newStart = newLength - active;
+            JsonValue[] newReplay = new JsonValue[newLength];
+            boolean[] newReplayExpanded = new boolean[newLength];
+            System.arraycopy(replay, replayIndex, newReplay, newStart, active);
+            System.arraycopy(replayExpanded, replayIndex, newReplayExpanded, newStart, active);
+            replay = newReplay;
+            replayExpanded = newReplayExpanded;
+            replayIndex = newStart;
         }
-        replay[replayIndex] = current;
+        replay[--replayIndex] = value;
+        replayExpanded[replayIndex] = expanded;
     }
 
     void ensureCapacity(int capacity) {
         int required = Math.max(0, index) + capacity + 1;
         if (required > values.length) {
             int newLength = Math.max(values.length * 2, required);
+            int amount = Math.max(0, index + 1);
             JsonValue[] newValues = new JsonValue[newLength];
-            System.arraycopy(values, 0, newValues, 0, Math.max(0, index + 1));
+            boolean[] newValuesExpanded = new boolean[newLength];
+            System.arraycopy(values, 0, newValues, 0, amount);
+            System.arraycopy(valuesExpanded, 0, newValuesExpanded, 0, amount);
             values = newValues;
+            valuesExpanded = newValuesExpanded;
         }
     }
 
@@ -239,43 +282,55 @@ class JsonValueParser implements JsonParser {
     @Override
     public void skip() {
         if (current.type() == JsonValueType.OBJECT) {
-            for (int i = index; i > -1; i--) {
-                JsonValue value = values[i];
-                values[i] = null;
-                if (value == JsonNoopValue.INSTANCE) {
-                    //This can happen when the very first value in the parser is the object and we skip it.
-                    index = i;
-                    current = JsonControlValue.OBJECT_END;
-                    return;
-                } else if (value == JsonControlValue.OBJECT_END) {
-                    index = i;
-                    current = value;
-                    return;
-                }
+            if (!currentExpanded) {
+                current = JsonControlValue.OBJECT_END;
+                return;
             }
-            throw new JsonException("Invalid state while skipping JsonValue object.");
+            skipExpandedContainer(JsonValueType.OBJECT,
+                                  JsonControlValue.OBJECT_END,
+                                  "Invalid state while skipping JsonValue object.");
         } else if (current.type() == JsonValueType.ARRAY) {
-            for (int i = index; i > -1; i--) {
-                JsonValue value = values[i];
-                values[i] = null;
-                if (value == JsonNoopValue.INSTANCE) {
-                    //This can happen when the very first value in the parser is the array and we skip it.
-                    index = i;
-                    current = JsonControlValue.ARRAY_END;
-                    return;
-                } else if (value == JsonControlValue.ARRAY_END) {
-                    index = i;
-                    current = value;
-                    return;
-                }
+            if (!currentExpanded) {
+                current = JsonControlValue.ARRAY_END;
+                return;
             }
-            throw new JsonException("Invalid state while skipping JsonValue array.");
-        } else if (index == 0) {
+            skipExpandedContainer(JsonValueType.ARRAY,
+                                  JsonControlValue.ARRAY_END,
+                                  "Invalid state while skipping JsonValue array.");
+        } else if (index == 0 && values[0] == JsonNoopValue.INSTANCE) {
+            values[0] = null;
+            valuesExpanded[0] = false;
             index = -1;
             current = JsonNoopValue.INSTANCE;
+            currentExpanded = false;
         } else {
             nextToken();
         }
+    }
+
+    private void skipExpandedContainer(JsonValueType containerType, JsonValue containerEnd, String errorMessage) {
+        int nested = 0;
+        for (int i = index; i > -1; i--) {
+            JsonValue value = values[i];
+            boolean expanded = valuesExpanded[i];
+            if (replayMarked && value != null) {
+                recordToReplayQueue(value, expanded);
+            }
+            values[i] = null;
+            valuesExpanded[i] = false;
+            if (value != null && expanded && value.type() == containerType) {
+                nested++;
+            } else if (value == containerEnd) {
+                if (nested == 0) {
+                    index = i - 1;
+                    current = containerEnd;
+                    currentExpanded = false;
+                    return;
+                }
+                nested--;
+            }
+        }
+        throw new JsonException(errorMessage);
     }
 
     @Override
@@ -298,6 +353,7 @@ class JsonValueParser implements JsonParser {
         replayIndex = replay.length - 1;
         replayMarked = true;
         replay[replayIndex] = current;
+        replayExpanded[replayIndex] = currentExpanded;
     }
 
     @Override
@@ -311,15 +367,15 @@ class JsonValueParser implements JsonParser {
             replayMarked = false;
             int amount = replay.length - replayIndex;
             ensureCapacity(amount + 1);
-            int from = index;
-            boolean hadNext = hasNext();
-            if (hadNext) {
-                from++;
-            }
+            int from = index + 1;
             System.arraycopy(replay, replayIndex, values, from, amount);
-            index = hadNext ? index + amount : index + amount - 1;
-            current = values[index];
-            values[index--] = null;
+            System.arraycopy(replayExpanded, replayIndex, valuesExpanded, from, amount);
+            index = from + amount - 1;
+            int currentIndex = index--;
+            current = values[currentIndex];
+            currentExpanded = valuesExpanded[currentIndex];
+            values[currentIndex] = null;
+            valuesExpanded[currentIndex] = false;
         } else {
             throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
         }

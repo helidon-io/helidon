@@ -231,6 +231,12 @@ class JsonValueParserTest {
     }
 
     @Test
+    public void testJsonValueParserSkipsNestedEmptyContainers() {
+        assertNestedEmptyContainerSkipped(JsonObject.empty(), (byte) '{', (byte) '}');
+        assertNestedEmptyContainerSkipped(JsonArray.empty(), (byte) '[', (byte) ']');
+    }
+
+    @Test
     public void testJsonValueParserSkipAfterRead() {
         JsonValue original = JsonString.create("test");
         JsonParser parser = JsonParser.create(original);
@@ -279,6 +285,54 @@ class JsonValueParserTest {
         assertThat(parser.readString(), is("value"));
         assertThat(parser.nextToken(), is((byte) '}'));
         assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserTokenizesEmptyObject() {
+        JsonParser parser = JsonParser.create(JsonObject.create(Map.of()));
+
+        assertThat(parser.currentByte(), is((byte) '{'));
+        assertThat(parser.nextToken(), is((byte) '}'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserTokenizesEmptyArray() {
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of()));
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserPreservesArrayTokensAroundNestedEmptyContainers() {
+        JsonArray array = JsonArray.create(JsonObject.empty(), JsonString.create("after"), JsonArray.empty());
+        JsonParser parser = JsonParser.create(array);
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '{'));
+        assertThat(parser.nextToken(), is((byte) '}'));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("after"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserHasNextIncludesOuterEndAfterNestedEmptyContainer() {
+        JsonParser parser = JsonParser.create(JsonArray.create(JsonArray.empty()));
+        StringBuilder tokens = new StringBuilder().append((char) parser.currentByte());
+
+        while (parser.hasNext()) {
+            tokens.append((char) parser.nextToken());
+        }
+
+        assertThat(tokens.toString(), is("[[]]"));
     }
 
     @Test
@@ -450,6 +504,21 @@ class JsonValueParserTest {
         private int unscaledValueCalls() {
             return unscaledValueCalls;
         }
+    }
+
+    private static void assertNestedEmptyContainerSkipped(JsonValue emptyContainer, byte start, byte end) {
+        JsonParser parser = JsonParser.create(JsonArray.create(emptyContainer, JsonString.create("after")));
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is(start));
+        parser.skip();
+        assertThat(parser.currentByte(), is(end));
+        assertThat(parser.hasNext(), is(true));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("after"));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
     }
 
 }
