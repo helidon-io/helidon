@@ -17,8 +17,12 @@
 package io.helidon.json;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -309,6 +313,143 @@ class JsonValueParserTest {
         assertThat(bob.stringValue("name").orElseThrow(), is("Bob"));
         assertThat(bob.intValue("age").orElseThrow(), is(25));
         assertThat(bob.booleanValue("active").orElseThrow(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserExpandsStackForLargeObject() {
+        Map<String, JsonValue> values = new LinkedHashMap<>();
+        for (int i = 0; i < 120; i++) {
+            values.put("key" + i, JsonNumber.create(i + 1));
+        }
+        JsonParser parser = JsonParser.create(JsonObject.create(values));
+
+        Set<String> seen = new HashSet<>();
+        byte token = parser.nextToken();
+        for (int i = 0; i < 120; i++) {
+            assertThat(token, is((byte) '"'));
+            String key = parser.readString();
+            seen.add(key);
+            int expectedValue = Integer.parseInt(key.substring(3)) + 1;
+            assertThat(parser.nextToken(), is((byte) ':'));
+            assertThat(parser.nextToken(), is((byte) Integer.toString(expectedValue).charAt(0)));
+            assertThat(parser.readInt(), is(expectedValue));
+            token = parser.nextToken();
+            if (i < 119) {
+                assertThat(token, is((byte) ','));
+                token = parser.nextToken();
+            }
+        }
+
+        assertThat(token, is((byte) '}'));
+        assertThat(seen.size(), is(120));
+        assertThat(seen.contains("key119"), is(true));
+    }
+
+    @Test
+    public void testJsonValueParserExpandsReplayQueue() {
+        Map<String, JsonValue> values = new LinkedHashMap<>();
+        for (int i = 0; i < 12; i++) {
+            values.put("key" + i, JsonNumber.create(i + 1));
+        }
+        JsonParser parser = JsonParser.create(JsonObject.create(values));
+
+        parser.mark();
+        for (int i = 0; i < 20; i++) {
+            parser.nextToken();
+        }
+        parser.resetToMark();
+
+        JsonObject result = parser.readJsonObject();
+        assertThat(result.size(), is(12));
+        assertThat(result.intValue("key11").orElseThrow(), is(12));
+    }
+
+    @Test
+    public void testJsonValueParserKeepsOuterTokensWhenNestedObjectGrowsStack() {
+        StringBuilder json = new StringBuilder("{\"a\":{");
+        for (int i = 0; i < 120; i++) {
+            if (i > 0) {
+                json.append(',');
+            }
+            json.append("\"k").append(i).append("\":").append(i);
+        }
+        json.append("},\"z\":999}");
+
+        JsonValue value = JsonParser.create(json.toString()).readJsonValue();
+        JsonParser parser = JsonParser.create(value);
+
+        while (parser.hasNext()) {
+            parser.nextToken();
+        }
+    }
+
+    @Test
+    public void testJsonValueParserNextTokenForZeroNumber() {
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of(JsonNumber.create(0))));
+
+        assertThat(parser.nextToken(), is((byte) '0'));
+    }
+
+    @Test
+    public void testJsonValueParserNextTokenForNegativeFraction() {
+        JsonValue value = JsonParser.create("[-0.5]").readJsonValue();
+        JsonParser parser = JsonParser.create(value);
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '-'));
+        assertThat(parser.readBigDecimal(), is(new BigDecimal("-0.5")));
+    }
+
+    @Test
+    public void testJsonValueParserNextTokenForConstructedNegativeFraction() {
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of(JsonNumber.create(new BigDecimal("-0.5")))));
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '-'));
+        assertThat(parser.readBigDecimal(), is(new BigDecimal("-0.5")));
+    }
+
+    @Test
+    public void testJsonValueParserDerivesLargeNumberTokenLazily() {
+        TrackingBigDecimal value = new TrackingBigDecimal();
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of(JsonNumber.create(value))));
+
+        assertThat(value.unscaledValueCalls(), is(0));
+        assertThat(parser.nextToken(), is((byte) '1'));
+        assertThat(value.unscaledValueCalls(), is(1));
+        assertThat(parser.readBigDecimal(), is(value));
+        assertThat(parser.currentByte(), is((byte) '1'));
+        assertThat(value.unscaledValueCalls(), is(1));
+    }
+
+    private static final class TrackingBigDecimal extends BigDecimal {
+        private static final long serialVersionUID = 1L;
+
+        private int unscaledValueCalls;
+
+        private TrackingBigDecimal() {
+            super(BigInteger.TEN.pow(20));
+        }
+
+        @Override
+        public BigInteger unscaledValue() {
+            unscaledValueCalls++;
+            return super.unscaledValue();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return super.equals(obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
+
+        private int unscaledValueCalls() {
+            return unscaledValueCalls;
+        }
     }
 
 }
