@@ -35,6 +35,7 @@ import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
+import io.helidon.openapi.OpenApiDocument;
 
 /**
  * Shared support for OpenAPI version document mappers.
@@ -46,6 +47,19 @@ public final class OpenApiDocumentMapperSupport {
                                                                "description");
 
     private OpenApiDocumentMapperSupport() {
+    }
+
+    /**
+     * Validate required OpenAPI document metadata.
+     *
+     * @param document document to validate
+     * @throws IllegalStateException if required metadata is missing
+     */
+    public static void validateInfo(OpenApiDocument document) {
+        Objects.requireNonNull(document);
+        if (document.info().isEmpty()) {
+            throw new IllegalStateException("OpenAPI document requires Info metadata.");
+        }
     }
 
     /**
