@@ -85,7 +85,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
     RestServerExtension(RegistryCodegenContext ctx) {
         this.ctx = ctx;
         this.paramProviders = loadParamProviders(RestServerExtension.class.getClassLoader(), ctx);
-        this.endpointAnalyzer = ServerEndpointAnalyzer.create(ctx);
+        this.endpointAnalyzer = new ServerEndpointAnalyzer(ctx);
         this.openApiSourceGenerator = OpenApiSourceGenerator.create(ctx);
     }
 
