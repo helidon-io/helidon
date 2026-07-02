@@ -16,13 +16,11 @@
 
 package io.helidon.declarative.codegen.openapi;
 
-import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.types.Annotation;
-import io.helidon.common.types.TypeName;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class OpenApiSourceGeneratorTest {
 
     @Test
-    void repeatableAnnotationsIncludesContainerAndDirectValues() throws Exception {
+    void repeatableAnnotationsIncludesContainerAndDirectValues() {
         Annotation inheritedOkResponse = response("200");
         Annotation localCreatedResponse = response("201");
         Annotation inheritedResponses = Annotation.builder()
@@ -43,17 +41,10 @@ class OpenApiSourceGeneratorTest {
         annotations.add(inheritedResponses);
         annotations.add(localCreatedResponse);
 
-        Method method = OpenApiSourceGenerator.class.getDeclaredMethod("repeatableAnnotations",
-                                                                       Set.class,
-                                                                       TypeName.class,
-                                                                       TypeName.class);
-        method.setAccessible(true);
-
-        @SuppressWarnings("unchecked")
-        List<Annotation> responses = (List<Annotation>) method.invoke(new OpenApiSourceGenerator(null),
-                                                                      annotations,
-                                                                      OpenApiCodegenTypes.OPENAPI_RESPONSES_ANNOTATION,
-                                                                      OpenApiCodegenTypes.OPENAPI_RESPONSE_ANNOTATION);
+        List<Annotation> responses = OpenApiSourceGenerator.repeatableAnnotations(
+                annotations,
+                OpenApiCodegenTypes.OPENAPI_RESPONSES_ANNOTATION,
+                OpenApiCodegenTypes.OPENAPI_RESPONSE_ANNOTATION);
 
         assertThat(responses.size(), is(2));
         assertThat(responses.get(0), is(inheritedOkResponse));
