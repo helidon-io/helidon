@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -993,6 +994,88 @@ class OpenApiFeatureTest {
         } finally {
             releaseFirstDescribe.countDown();
             concurrentClient.closeResource();
+            webServer.stop();
+        }
+    }
+
+    @Test
+    void serializesManagerLoadingAndFormatting() throws Exception {
+        CountDownLatch formatStarted = new CountDownLatch(1);
+        CountDownLatch loadDuringFormat = new CountDownLatch(1);
+        CountDownLatch releaseFormat = new CountDownLatch(1);
+        AtomicBoolean formatting = new AtomicBoolean();
+        OpenApiManager<String> manager = new OpenApiManager<>() {
+            @Override
+            public String load(String content) {
+                if (formatting.get()) {
+                    loadDuringFormat.countDown();
+                }
+                return content;
+            }
+
+            @Override
+            public String format(String model, OpenApiFormat format) {
+                formatting.set(true);
+                formatStarted.countDown();
+                try {
+                    if (!releaseFormat.await(10, TimeUnit.SECONDS)) {
+                        throw new AssertionError("Timed out waiting to release OpenAPI formatting.");
+                    }
+                    return model;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError(e);
+                } finally {
+                    formatting.set(false);
+                }
+            }
+
+            @Override
+            public String name() {
+                return "test";
+            }
+
+            @Override
+            public String type() {
+                return "test";
+            }
+        };
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(OpenApi30Version.create())
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature firstFeature = new OpenApiFeature(config, () -> List.of(
+                generatedSource(WebServer.DEFAULT_SOCKET_NAME, "/first")), List::of);
+        OpenApiFeature secondFeature = new OpenApiFeature(config, () -> List.of(
+                generatedSource(WebServer.DEFAULT_SOCKET_NAME, "/second")), List::of);
+        WebServer webServer = WebServer.builder()
+                .port(0)
+                .addFeature(firstFeature)
+                .build();
+        WebClient client = WebClient.create();
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            webServer.start();
+            var formattedRequest = executor.submit(() -> client.get("http://localhost:" + webServer.port() + "/openapi")
+                    .accept(MediaTypes.APPLICATION_OPENAPI_YAML)
+                    .request(String.class));
+            assertThat(formatStarted.await(10, TimeUnit.SECONDS), is(true));
+
+            var modelInitialization = executor.submit(() -> {
+                secondFeature.initialize();
+                return null;
+            });
+            boolean overlapped = loadDuringFormat.await(2, TimeUnit.SECONDS);
+            releaseFormat.countDown();
+
+            assertThat(formattedRequest.get().status(), is(Status.OK_200));
+            modelInitialization.get();
+            assertThat(overlapped, is(false));
+        } finally {
+            releaseFormat.countDown();
+            client.closeResource();
             webServer.stop();
         }
     }
