@@ -33,7 +33,14 @@ import io.helidon.security.SecurityLevel;
 @Prototype.Blueprint(decorator = GrpcSecurityConfigSupport.GrpcSecurityHandlerDecorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(GrpcSecurityConfigSupport.GrpcSecurityHandlerCustomMethods.class)
-@Prototype.IncludeDefaultMethods("securityLevels")
+@Prototype.IncludeDefaultMethods({
+        "clearInheritedRolesAllowed",
+        "securityLevels",
+        "clearInheritedAuthenticator",
+        "clearInheritedAuthorizer",
+        "auditOkSeverity",
+        "auditErrorSeverity"
+})
 interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecurityHandler> {
     /**
      * An array of allowed roles for this gRPC method.
@@ -49,8 +56,9 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
      *
      * @return whether to clear inherited roles
      */
-    @Option.DefaultBoolean(false)
-    boolean clearInheritedRolesAllowed();
+    default boolean clearInheritedRolesAllowed() {
+        return false;
+    }
 
     /**
      * Security levels discovered from endpoint annotations.
@@ -75,8 +83,9 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
      *
      * @return whether to clear the inherited authenticator
      */
-    @Option.DefaultBoolean(false)
-    boolean clearInheritedAuthenticator();
+    default boolean clearInheritedAuthenticator() {
+        return false;
+    }
 
     /**
      * Use a named authorizer.
@@ -91,8 +100,9 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
      *
      * @return whether to clear the inherited authorizer
      */
-    @Option.DefaultBoolean(false)
-    boolean clearInheritedAuthorizer();
+    default boolean clearInheritedAuthorizer() {
+        return false;
+    }
 
     /**
      * Whether to authenticate this request.
@@ -148,7 +158,9 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
      * @return successful request audit severity
      */
     @Option.Configured
-    Optional<AuditSeverity> auditOkSeverity();
+    default Optional<AuditSeverity> auditOkSeverity() {
+        return Optional.empty();
+    }
 
     /**
      * Severity to use for failed requests.
@@ -156,7 +168,9 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
      * @return failed request audit severity
      */
     @Option.Configured
-    Optional<AuditSeverity> auditErrorSeverity();
+    default Optional<AuditSeverity> auditErrorSeverity() {
+        return Optional.empty();
+    }
 
     /**
      * A store of custom objects, that can be used to customize specific security providers.
