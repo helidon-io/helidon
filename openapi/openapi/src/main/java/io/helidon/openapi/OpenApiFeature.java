@@ -33,7 +33,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -79,8 +78,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "META-INF/openapi.";
     private static final String GENERATED_DOCUMENT_SOURCES_CONFIG_KEY = "generated.document-sources";
     private static final TypeName OPENAPI_DOCUMENT_SOURCE = TypeName.create(OpenApiDocumentSource.class);
-    // Document sources and managers may be registry singletons shared by multiple feature instances.
-    private static final ReentrantLock MANAGER_LOCK = new ReentrantLock();
     private static final List<String> DEFAULT_FILE_PATHS = SUPPORTED_FORMATS.keySet()
             .stream()
             .map(fileType -> DEFAULT_STATIC_FILE_PATH_PREFIX + fileType)
@@ -92,6 +89,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private final OpenApiFeatureConfig config;
     private final Config sourceConfig;
     private final OpenApiManager<?> manager;
+    private final OpenApiLockCoordinator.CoordinationLock managerLock;
     private final ConcurrentMap<String, LazyValue<Object>> modelsByListener;
     private final LazyValue<List<OpenApiDocumentSource>> documentSources;
     private final LazyValue<List<OpenApiVersion>> openApiVersions;
@@ -180,6 +178,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         contentFormat = defaultContentFormat;
         staticOpenApiDocuments = new ConcurrentHashMap<>();
         manager = config.manager().orElseGet(SimpleOpenApiManager::new);
+        managerLock = OpenApiLockCoordinator.coordinationLock(manager);
         modelsByListener = new ConcurrentHashMap<>();
         initialized = new AtomicBoolean();
     }
@@ -263,7 +262,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
                     .addFeature(new OpenApiHttpFeature(config,
                                                        manager,
                                                        socketModel,
-                                                       MANAGER_LOCK,
+                                                       managerLock.lock(),
                                                        exactStaticContent(),
                                                        contentFormat));
         }
@@ -313,11 +312,12 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
 
     private LazyValue<Object> model(String listener) {
         return LazyValue.create(() -> {
-            MANAGER_LOCK.lock();
-            try {
-                return manager.load(documentContent(listener, documentSources()));
-            } finally {
-                MANAGER_LOCK.unlock();
+            List<OpenApiDocumentSource> sources = documentSources();
+            List<OpenApiLockCoordinator.CoordinationLock> locks = new ArrayList<>(sources.size() + 1);
+            locks.add(managerLock);
+            sources.forEach(source -> locks.add(OpenApiLockCoordinator.coordinationLock(source)));
+            try (var ignored = OpenApiLockCoordinator.lock(locks)) {
+                return manager.load(documentContent(listener, sources));
             }
         });
     }
