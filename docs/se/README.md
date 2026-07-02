@@ -9,7 +9,7 @@ index:
 - [Guides](guides/README.md)
 
 ## Components
-\
+
 - [AI](ai/README.md)
 - [Builder](builder.md)
 - [Config](config/README.md)

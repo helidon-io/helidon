@@ -2,6 +2,8 @@
 description: "Helidon WebServer"
 navigation:
   icon: i-lucide-ethernet-port
+index:
+  page: webserver.md
 -->
 # WebServer
 

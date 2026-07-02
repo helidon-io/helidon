@@ -446,9 +446,12 @@ Routing based on HTTP version:
 
 <!--@mdc ::code-callout -->
 ```java
-rules.get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue().protocolVersion())) // <1>
-    .route(Http1Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route"))) // <2>
-    .route(Http2Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/2 route"))); // <3>
+rules.get("/any-version", (req, res) ->
+        res.send("HTTP Version " + req.prologue().protocolVersion())) // <1>
+    .route(Http1Route.route(Method.GET, "/version-specific", (req, res) ->
+        res.send("HTTP/1.1 route"))) // <2>
+    .route(Http2Route.route(Method.GET, "/version-specific", (req, res) ->
+        res.send("HTTP/2 route"))); // <3>
 ```
 1. An HTTP route registered on `/any-version` path that prints the version of
    HTTP protocol
