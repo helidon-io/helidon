@@ -132,63 +132,76 @@ public final class JsonNumber extends JsonValue {
     }
 
     /**
-     * Return the double value of this JsonNumber.
+     * Return the double value of this JsonNumber. This conversion may lose precision or return an infinity if the
+     * magnitude is too large.
      *
      * @return the double value
+     * @see BigDecimal#doubleValue()
      */
     public double doubleValue() {
         return bigDecimalValue().doubleValue();
     }
 
     /**
-     * Return the byte value of this JsonNumber.
+     * Return the byte value of this JsonNumber. Any fractional part is discarded. If the resulting integer does not fit,
+     * only the low-order 8 bits are returned, so the result may have the opposite sign.
      *
      * @return the byte value
+     * @see BigDecimal#byteValue()
      */
     public byte byteValue() {
         return bigDecimalValue().byteValue();
     }
 
     /**
-     * Return the short value of this JsonNumber.
+     * Return the short value of this JsonNumber. Any fractional part is discarded. If the resulting integer does not fit,
+     * only the low-order 16 bits are returned, so the result may have the opposite sign.
      *
      * @return the short value
+     * @see BigDecimal#shortValue()
      */
     public short shortValue() {
         return bigDecimalValue().shortValue();
     }
 
     /**
-     * Return the int value of this JsonNumber.
+     * Return the int value of this JsonNumber. Any fractional part is discarded. If the resulting integer does not fit,
+     * only the low-order 32 bits are returned, so the result may have the opposite sign.
      *
      * @return the int value
+     * @see BigDecimal#intValue()
      */
     public int intValue() {
         return bigDecimalValue().intValue();
     }
 
     /**
-     * Return the long value of this JsonNumber.
+     * Return the long value of this JsonNumber. Any fractional part is discarded. If the resulting integer does not fit,
+     * only the low-order 64 bits are returned, so the result may have the opposite sign.
      *
      * @return the long value
+     * @see BigDecimal#longValue()
      */
     public long longValue() {
         return bigDecimalValue().longValue();
     }
 
     /**
-     * Return the float value of this JsonNumber.
+     * Return the float value of this JsonNumber. This conversion may lose precision or return an infinity if the magnitude
+     * is too large.
      *
      * @return the float value
+     * @see BigDecimal#floatValue()
      */
     public float floatValue() {
         return bigDecimalValue().floatValue();
     }
 
     /**
-     * Return the BigInteger value of this JsonNumber.
+     * Return the BigInteger value of this JsonNumber. Any fractional part is discarded.
      *
      * @return the BigInteger value
+     * @see BigDecimal#toBigInteger()
      */
     public BigInteger bigIntegerValue() {
         return bigDecimalValue().toBigInteger();
