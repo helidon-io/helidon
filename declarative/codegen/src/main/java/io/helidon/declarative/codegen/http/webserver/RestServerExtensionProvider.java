@@ -26,6 +26,8 @@ import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 
+import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_ENDPOINT;
+
 /**
  * Java {@link java.util.ServiceLoader} provider implementation of {@link io.helidon.codegen.spi.CodegenExtensionProvider}
  * to support code generation for WebServer declarative.
@@ -42,7 +44,7 @@ public class RestServerExtensionProvider implements RegistryCodegenExtensionProv
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(ServerEndpointAnalyzer.endpointAnnotation());
+        return Set.of(REST_SERVER_ENDPOINT);
     }
 
     @Override

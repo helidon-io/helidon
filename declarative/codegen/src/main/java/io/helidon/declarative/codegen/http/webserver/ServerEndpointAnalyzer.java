@@ -23,11 +23,9 @@ import java.util.Set;
 
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.TypeHierarchy;
-import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
-import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.declarative.codegen.http.HttpCodegenValidation;
@@ -56,31 +54,11 @@ import static java.util.function.Predicate.not;
 /**
  * Analyzer for declarative WebServer endpoints.
  */
-@Api.Internal
-public final class ServerEndpointAnalyzer extends RestExtensionBase {
+final class ServerEndpointAnalyzer extends RestExtensionBase {
     private final RegistryCodegenContext ctx;
 
-    private ServerEndpointAnalyzer(RegistryCodegenContext ctx) {
+    ServerEndpointAnalyzer(RegistryCodegenContext ctx) {
         this.ctx = ctx;
-    }
-
-    /**
-     * Create a new analyzer.
-     *
-     * @param ctx codegen context
-     * @return a new endpoint analyzer
-     */
-    public static ServerEndpointAnalyzer create(RegistryCodegenContext ctx) {
-        return new ServerEndpointAnalyzer(ctx);
-    }
-
-    /**
-     * Annotation that marks declarative WebServer endpoints.
-     *
-     * @return endpoint annotation type
-     */
-    public static TypeName endpointAnnotation() {
-        return REST_SERVER_ENDPOINT;
     }
 
     /**
@@ -89,7 +67,7 @@ public final class ServerEndpointAnalyzer extends RestExtensionBase {
      * @param roundContext codegen round context
      * @return analyzed endpoints
      */
-    public List<ServerEndpoint> endpoints(RegistryRoundContext roundContext) {
+    List<ServerEndpoint> endpoints(RegistryRoundContext roundContext) {
         return roundContext.annotatedTypes(REST_SERVER_ENDPOINT)
                 .stream()
                 .map(this::endpoint)
@@ -102,7 +80,7 @@ public final class ServerEndpointAnalyzer extends RestExtensionBase {
      * @param typeInfo endpoint type
      * @return analyzed endpoint
      */
-    public ServerEndpoint endpoint(TypeInfo typeInfo) {
+    ServerEndpoint endpoint(TypeInfo typeInfo) {
         var builder = ServerEndpoint.builder()
                 .type(typeInfo);
 
