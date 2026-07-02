@@ -143,9 +143,10 @@ class OpenApiHttpFeature implements HttpFeature {
             }
         }
         return cachedDocuments.computeIfAbsent(format, fmt -> {
+            Object loadedModel = model.get();
             managerLock.lock();
             try {
-                return format(manager, fmt, model.get());
+                return format(manager, fmt, loadedModel);
             } finally {
                 managerLock.unlock();
             }
