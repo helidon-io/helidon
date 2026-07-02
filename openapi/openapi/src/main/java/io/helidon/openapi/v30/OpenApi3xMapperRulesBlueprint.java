@@ -44,7 +44,7 @@ interface OpenApi3xMapperRulesBlueprint {
     boolean operationResponsesRequired();
 
     /**
-     * Whether responses must define a non-blank description.
+     * Whether responses must define a description.
      *
      * @return whether response descriptions are required
      */
