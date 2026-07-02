@@ -18,6 +18,7 @@ package io.helidon.security.jwt;
 
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -741,7 +742,7 @@ public final class EncryptedJwt {
                 mac.update(encryptionParts.aad());
                 mac.update(encryptionParts.encryptedContent());
                 byte[] authKey = mac.doFinal();
-                return Arrays.equals(authKey, encryptionParts.authTag());
+                return MessageDigest.isEqual(authKey, encryptionParts.authTag());
             } catch (InvalidKeyException e) {
                 throw new JwtException("Exception occurred while HMAC signature.");
             }
