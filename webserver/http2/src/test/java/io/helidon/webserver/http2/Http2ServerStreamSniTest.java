@@ -256,7 +256,7 @@ class Http2ServerStreamSniTest {
 
         assertThat(windowUpdates, is(List.of(new WindowUpdate(0, entity.length))));
         assertThat(locallyResetStreams, is(List.of(STREAM_ID)));
-        assertThat(activeWhenResetRegistered.get(), is(false));
+        assertThat(activeWhenResetRegistered.get(), is(true));
         assertThat(streams.isActive(STREAM_ID), is(false));
     }
 

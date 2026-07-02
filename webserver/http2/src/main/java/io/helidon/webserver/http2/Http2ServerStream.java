@@ -1005,7 +1005,6 @@ class Http2ServerStream implements Runnable, Http2Stream {
             try {
                 writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
                 boolean remoteAlreadyComplete = remoteEndOfStream || remoteAlreadyComplete();
-                streams.deactivate(this.streamId);
                 if (resetRequestBody
                         && !remoteResetReceived
                         && !resetStreamSent
@@ -1019,6 +1018,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                         }
                     }
                 }
+                streams.deactivate(this.streamId);
             } finally {
                 resetCompletionLock.unlock();
             }
