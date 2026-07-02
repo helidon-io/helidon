@@ -43,6 +43,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OpenApi32VersionTest {
     @Test
+    void requiresInfoWhenRendering() {
+        OpenApi32Version version = OpenApi32Version.create();
+        OpenApiDocument withoutInfo = OpenApiDocument.builder()
+                .paths(Map.of())
+                .build();
+
+        IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> version.render(context(version), withoutInfo));
+        assertThat(thrown.getMessage(), containsString("requires Info metadata"));
+    }
+
+    @Test
     void requiresPathsComponentsOrWebhooksWhenRendering() {
         OpenApi32Version version = OpenApi32Version.create();
         OpenApiDocumentContext context = context(version);

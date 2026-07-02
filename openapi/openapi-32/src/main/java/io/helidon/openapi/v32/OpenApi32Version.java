@@ -30,6 +30,7 @@ import io.helidon.openapi.OpenApiDocument;
 import io.helidon.openapi.OpenApiDocumentContext;
 import io.helidon.openapi.OpenApiFormat;
 import io.helidon.openapi.spi.OpenApiVersion;
+import io.helidon.openapi.v30.OpenApiDocumentMapperSupport;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -129,6 +130,7 @@ public final class OpenApi32Version implements OpenApiVersion,
     public String render(OpenApiDocumentContext context, OpenApiDocument document) {
         Objects.requireNonNull(context);
         Objects.requireNonNull(document);
+        OpenApiDocumentMapperSupport.validateInfo(document);
         JsonObject root = document.toJsonObject();
         if (!root.containsKey("paths") && !root.containsKey("components") && !root.containsKey("webhooks")) {
             throw new IllegalStateException("OpenAPI 3.2 document requires at least one of paths, components, or webhooks.");

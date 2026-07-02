@@ -129,6 +129,7 @@ public final class OpenApi30Version implements OpenApiVersion,
     public String render(OpenApiDocumentContext context, OpenApiDocument document) {
         Objects.requireNonNull(context);
         Objects.requireNonNull(document);
+        OpenApiDocumentMapperSupport.validateInfo(document);
         JsonObject root = document.toJsonObject();
         if (!root.containsKey("paths")) {
             throw new IllegalStateException("OpenAPI 3.0 document requires a paths field.");
