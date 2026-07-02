@@ -947,6 +947,9 @@ public final class OpenApiDocument {
 
         /**
          * Set license identifier.
+         * <p>
+         * Rendered only for OpenAPI 3.1 and later output. When set together with {@link #url(String)}, this value takes
+         * precedence for those versions; the URL remains available for OpenAPI 3.0 output.
          *
          * @param identifier SPDX license identifier
          * @return updated builder
@@ -958,6 +961,8 @@ public final class OpenApiDocument {
 
         /**
          * Set license URL.
+         * <p>
+         * For OpenAPI 3.1 and later output, this value is ignored when {@link #identifier(String)} is set.
          *
          * @param url license URL
          * @return updated builder

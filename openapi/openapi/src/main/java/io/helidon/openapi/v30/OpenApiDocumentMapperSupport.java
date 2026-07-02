@@ -351,7 +351,13 @@ public final class OpenApiDocumentMapperSupport {
             }
             switch (key) {
             case "contact" -> object(value, object -> result.put(key, copyAllowed(object, rules.contactFields())));
-            case "license" -> object(value, object -> result.put(key, copyAllowed(object, rules.licenseFields())));
+            case "license" -> object(value, object -> {
+                Map<String, Object> license = copyAllowed(object, rules.licenseFields());
+                if (license.containsKey("identifier")) {
+                    license.remove("url");
+                }
+                result.put(key, license);
+            });
             default -> copyField(result, key, source);
             }
         });

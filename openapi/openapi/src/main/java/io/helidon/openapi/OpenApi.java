@@ -249,6 +249,8 @@ public final class OpenApi {
 
         /**
          * License URL.
+         * <p>
+         * For OpenAPI 3.1 and later output, this value is ignored when {@link #identifier()} is set.
          *
          * @return URL
          */
@@ -257,7 +259,8 @@ public final class OpenApi {
         /**
          * SPDX license identifier.
          * <p>
-         * Rendered only for OpenAPI 3.1 and later output.
+         * Rendered only for OpenAPI 3.1 and later output. When set together with {@link #url()}, this value takes
+         * precedence for those versions; the URL remains available for OpenAPI 3.0 output.
          *
          * @return license identifier
          */
