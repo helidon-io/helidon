@@ -30,6 +30,18 @@ import io.helidon.service.registry.Service;
 @Service.Contract
 public interface OpenApiVersion extends NamedService {
     /**
+     * OpenAPI version family supported by this implementation.
+     * <p>
+     * The value is the major and minor version prefix, such as {@code 3.1}. It is used to select an implementation for
+     * static documents that declare either the family itself or a more specific version beginning with the family
+     * followed by a period, such as {@code 3.1.0-rc1}.
+     *
+     * @return supported OpenAPI version family
+     */
+    @Override
+    String type();
+
+    /**
      * Exact OpenAPI document version produced by this implementation.
      *
      * @return OpenAPI document version
