@@ -229,6 +229,27 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
+    void rejectedStreamDeactivatesBeforeResetWrite() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingConnectionWriter writer = new RecordingConnectionWriter();
+        writer.beforeResetWrite = () -> assertThat(streams.isActive(STREAM_ID), is(false));
+        Http2ServerStream stream = stream(streams, writer);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        streams.activate(STREAM_ID);
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithoutAuthority("1"), false);
+
+        stream.run();
+
+        assertThat(writer.hasPendingTerminalCallback(), is(true));
+        assertThat(streams.isActive(STREAM_ID), is(true));
+
+        writer.completeTerminalWrite();
+
+        assertThat(streams.isActive(STREAM_ID), is(false));
+    }
+
+    @Test
     void rejectedStreamCompletionRestoresConnectionFlowControlForPrecheckedData() {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingConnectionWriter writer = new RecordingConnectionWriter();
@@ -722,6 +743,7 @@ class Http2ServerStreamSniTest {
         private final CountDownLatch terminalCallbackReady = new CountDownLatch(1);
         private final CountDownLatch terminalCallbackMayRun = new CountDownLatch(1);
         private final CountDownLatch terminalCallbackCompleted = new CountDownLatch(1);
+        private Runnable beforeResetWrite = () -> { };
         private Runnable terminalCallback;
         private int rstStreamCount;
 
@@ -737,6 +759,7 @@ class Http2ServerStreamSniTest {
         @Override
         public void write(Http2FrameData frame) {
             if (frame.header().type() == Http2FrameTypes.RST_STREAM.type()) {
+                beforeResetWrite.run();
                 rstStreamCount++;
             }
         }

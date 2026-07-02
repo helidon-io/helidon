@@ -814,6 +814,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
             try {
                 writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
                 boolean remoteAlreadyComplete = remoteAlreadyComplete();
+                streams.deactivate(this.streamId);
                 if (resetRequestBody && !remoteResetReceived && (forceReset || !remoteAlreadyComplete)) {
                     writeResetStream(resetCode);
                     resetStreamSent = true;
