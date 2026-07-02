@@ -45,6 +45,30 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OpenApi31VersionTest {
     @Test
+    void requiresPathsComponentsOrWebhooksWhenRendering() {
+        OpenApi31Version version = OpenApi31Version.create();
+        OpenApiDocumentContext context = context(version);
+        OpenApiDocument infoOnly = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .build();
+
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                    () -> version.render(context, infoOnly));
+        assertThat(thrown.getMessage(), containsString("requires at least one of paths, components, or webhooks"));
+
+        OpenApiDocument emptyComponents = version.parse(context,
+                                                        """
+                                                        openapi: 3.1.1
+                                                        info:
+                                                          title: Generated API
+                                                          version: 1.0.0
+                                                        components: {}
+                                                        """,
+                                                        MediaTypes.APPLICATION_OPENAPI_YAML);
+        assertThat(parse(version.render(context, emptyComponents)).containsKey("components"), is(true));
+    }
+
+    @Test
     void rendersJsonSchemaVocabularyWithoutOpenApi30Translation() {
         OpenApiDocument document = OpenApiDocument.builder()
                 .openapi("3.1.0")

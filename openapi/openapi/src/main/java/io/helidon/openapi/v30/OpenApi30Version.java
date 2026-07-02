@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.json.JsonObject;
 import io.helidon.openapi.OpenApiDocument;
 import io.helidon.openapi.OpenApiDocumentContext;
 import io.helidon.openapi.OpenApiFormat;
@@ -128,6 +129,10 @@ public final class OpenApi30Version implements OpenApiVersion,
     public String render(OpenApiDocumentContext context, OpenApiDocument document) {
         Objects.requireNonNull(context);
         Objects.requireNonNull(document);
+        JsonObject root = document.toJsonObject();
+        if (!root.containsKey("paths")) {
+            throw new IllegalStateException("OpenAPI 3.0 document requires a paths field.");
+        }
         Map<String, Object> values = OpenApi30DocumentMapper.render(document, config.version());
         return new Yaml(YAML_DUMPER_OPTIONS).dump(values);
     }
