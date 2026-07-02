@@ -48,10 +48,16 @@ public interface OpenApiVersion extends NamedService {
 
     /**
      * Render an OpenAPI document.
+     * <p>
+     * OpenAPI 3.0 documents require a {@code paths} field. Use
+     * {@link OpenApiDocument.Builder#paths(java.util.Map)} with {@code Map.of()} to render an intentionally empty
+     * Paths Object. OpenAPI 3.1 and 3.2 documents require at least one of {@code paths}, {@code components}, or
+     * {@code webhooks}.
      *
      * @param context document context
      * @param document version-neutral document model
      * @return rendered OpenAPI document content
+     * @throws IllegalStateException if the document does not satisfy the root requirements for the rendered version
      */
     String render(OpenApiDocumentContext context, OpenApiDocument document);
 }
