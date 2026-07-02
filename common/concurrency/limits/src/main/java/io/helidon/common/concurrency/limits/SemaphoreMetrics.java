@@ -42,13 +42,6 @@ class SemaphoreMetrics {
     private volatile Timer rttTimer;
     private volatile Timer queueWaitTimer;
 
-    /**
-     * @param enableMetrics
-     * @param semaphore          nullable
-     * @param name
-     * @param concurrentRequests
-     * @param rejectedRequests
-     */
     SemaphoreMetrics(boolean enableMetrics,
                      Semaphore semaphore,
                      String name,
@@ -66,14 +59,12 @@ class SemaphoreMetrics {
             return;
         }
 
-        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-        init(metricsFactory, context);
+        MeterRegistry registry = Services.get(MeterRegistry.class);
+        init(registry, context);
     }
 
-    private void init(MetricsFactory metricsFactory, Limit.InitializationContext context) {
-        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
-
-        register(metricsFactory, meterRegistry, context.metricTags());
+    private void init(MeterRegistry meterRegistry, Limit.InitializationContext context) {
+        register(meterRegistry.metricsFactory(), meterRegistry, context.metricTags());
     }
 
     void init(String originName) {
@@ -81,8 +72,9 @@ class SemaphoreMetrics {
             // do not access a metrics factory when metrics are not enabled
             return;
         }
-        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-        init(metricsFactory, Limit.InitializationContext.create(originName, legacySocketTags(originName, metricsFactory)));
+
+        MeterRegistry registry = Services.get(MeterRegistry.class);
+        init(registry, Limit.InitializationContext.create(originName, legacySocketTags(originName, registry.metricsFactory())));
     }
 
     boolean enabled() {
