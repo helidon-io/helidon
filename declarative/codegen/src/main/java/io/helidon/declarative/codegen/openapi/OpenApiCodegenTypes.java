@@ -20,6 +20,7 @@ import io.helidon.common.types.TypeName;
 
 final class OpenApiCodegenTypes {
     static final TypeName OPENAPI_DOCUMENT_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Document");
+    static final TypeName OPENAPI_ENDPOINT_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Endpoint");
     static final TypeName OPENAPI_INFO_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Info");
     static final TypeName OPENAPI_CONTACT_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Contact");
     static final TypeName OPENAPI_LICENSE_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.License");

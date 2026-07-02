@@ -17,12 +17,14 @@
 package io.helidon.declarative.tests.openapi;
 
 import io.helidon.http.Http;
+import io.helidon.openapi.OpenApi;
 import io.helidon.webserver.http.RestServer;
 
 /**
  * Admin endpoint used to verify explicit-listener OpenAPI generation.
  */
 @RestServer.Endpoint
+@OpenApi.Endpoint
 @RestServer.Listener("admin")
 @Http.Path("/admin")
 class AdminEndpoint {

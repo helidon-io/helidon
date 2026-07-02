@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.codegen.http.webserver;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import java.util.Set;
 
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.TypeHierarchy;
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
@@ -54,11 +56,22 @@ import static java.util.function.Predicate.not;
 /**
  * Analyzer for declarative WebServer endpoints.
  */
-final class ServerEndpointAnalyzer extends RestExtensionBase {
+@Api.Internal
+public final class ServerEndpointAnalyzer extends RestExtensionBase {
     private final RegistryCodegenContext ctx;
 
-    ServerEndpointAnalyzer(RegistryCodegenContext ctx) {
+    private ServerEndpointAnalyzer(RegistryCodegenContext ctx) {
         this.ctx = ctx;
+    }
+
+    /**
+     * Create a new endpoint analyzer.
+     *
+     * @param ctx code generation context
+     * @return endpoint analyzer
+     */
+    public static ServerEndpointAnalyzer create(RegistryCodegenContext ctx) {
+        return new ServerEndpointAnalyzer(ctx);
     }
 
     /**
@@ -67,9 +80,22 @@ final class ServerEndpointAnalyzer extends RestExtensionBase {
      * @param roundContext codegen round context
      * @return analyzed endpoints
      */
-    List<ServerEndpoint> endpoints(RegistryRoundContext roundContext) {
-        return roundContext.annotatedTypes(REST_SERVER_ENDPOINT)
+    public List<ServerEndpoint> endpoints(RegistryRoundContext roundContext) {
+        return endpoints(roundContext.annotatedTypes(REST_SERVER_ENDPOINT));
+    }
+
+    /**
+     * Analyze endpoint types from the provided candidates.
+     *
+     * @param types candidate endpoint types
+     * @return analyzed endpoints
+     */
+    public List<ServerEndpoint> endpoints(Collection<TypeInfo> types) {
+        return types
                 .stream()
+                .filter(it -> Annotations.findFirst(REST_SERVER_ENDPOINT,
+                                                    TypeHierarchy.hierarchyAnnotations(ctx, it))
+                        .isPresent())
                 .map(this::endpoint)
                 .toList();
     }
