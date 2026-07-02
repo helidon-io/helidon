@@ -60,6 +60,14 @@ class ServiceRules implements HttpRules {
     }
 
     @Override
+    public HttpRules registerLocator(HttpServiceLocator locator) {
+        ServiceLocatorRoute route = new ServiceLocatorRoute(locator, PathMatchers.any(), ALWAYS_PREDICATE);
+        routes.add(route);
+        protocolUpgradeRoutes.add(route.protocolUpgradeRoute());
+        return this;
+    }
+
+    @Override
     public HttpRules register(String pathPattern, HttpService... services) {
         for (HttpService service : services) {
             ServiceRules subRules = new ServiceRules(service, PathMatchers.create(pathPattern), ALWAYS_PREDICATE);
@@ -69,6 +77,14 @@ class ServiceRules implements HttpRules {
                 protocolUpgradeRoutes.add(subRules.buildProtocolUpgrade());
             }
         }
+        return this;
+    }
+
+    @Override
+    public HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
+        ServiceLocatorRoute route = new ServiceLocatorRoute(locator, PathMatchers.create(pathPattern), ALWAYS_PREDICATE);
+        routes.add(route);
+        protocolUpgradeRoutes.add(route.protocolUpgradeRoute());
         return this;
     }
 
