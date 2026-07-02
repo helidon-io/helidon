@@ -120,10 +120,11 @@ class DeclarativeOpenApiTest {
         assertThat(license.get("name"), is("Apache License 2.0"));
         if (supportsLicenseIdentifier()) {
             assertThat(license.get("identifier"), is("Apache-2.0"));
+            assertThat(license, not(hasKey("url")));
         } else {
             assertThat(license, not(hasKey("identifier")));
+            assertThat(license.get("url"), is("https://www.apache.org/licenses/LICENSE-2.0"));
         }
-        assertThat(license.get("url"), is("https://www.apache.org/licenses/LICENSE-2.0"));
 
         Map<String, Object> externalDocs = object(document, "externalDocs");
         assertThat(externalDocs.get("url"), is("https://helidon.io/docs"));
