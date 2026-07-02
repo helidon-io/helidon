@@ -37,6 +37,7 @@ import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.AUDIT_SEVERITY;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_ENTRY_POINTS;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_ROUTE_REGISTRATION;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SECURITY;
@@ -44,10 +45,12 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SE
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_STREAMS;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_FILE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_MESSAGE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_DENY_ALL;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_LEVEL;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.STREAM_OBSERVER;
 
 class GrpcServerRegistrationGenerator {
+    private static final String AUDITED_DEFAULT_EVENT_TYPE = "request";
     private static final TypeName LIST_OF_ANNOTATIONS = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(TypeNames.ANNOTATION)
             .build();
@@ -150,7 +153,7 @@ class GrpcServerRegistrationGenerator {
                 .decreaseContentPadding()
                 .decreaseContentPadding();
 
-        addSecurity(endpoint.security(), constructor, endpointType, null);
+        addSecurity(endpoint.security(), constructor, endpointType, null, GrpcSecurityDefinition.empty());
         if (!endpoint.security().isEmpty()) {
             constructor.addContentLine(".configure(builder);");
         }
@@ -202,7 +205,11 @@ class GrpcServerRegistrationGenerator {
                     .decreaseContentPadding()
                     .decreaseContentPadding()
                     .addContentLine("}");
-            addSecurity(method.security(), constructor, endpointType, method);
+            addSecurity(method.security(),
+                        constructor,
+                        endpointType,
+                        method,
+                        endpoint.security());
             if (!method.security().isEmpty()) {
                 constructor.addContentLine(".configure(rules);");
             }
@@ -228,7 +235,8 @@ class GrpcServerRegistrationGenerator {
     private static void addSecurity(GrpcSecurityDefinition security,
                                     Constructor.Builder constructor,
                                     TypeName endpointType,
-                                    GrpcMethod grpcMethod) {
+                                    GrpcMethod grpcMethod,
+                                    GrpcSecurityDefinition inheritedSecurity) {
         if (security.isEmpty()) {
             return;
         }
@@ -237,18 +245,24 @@ class GrpcServerRegistrationGenerator {
         security.authenticate().ifPresent(authenticate -> constructor.addContent(authenticate
                                                                                          ? ".authenticate()"
                                                                                          : ".skipAuthentication()"));
-        if (security.authenticationOptional()) {
-            constructor.addContent(".authenticationOptional()");
-        }
+        security.authenticationOptional().ifPresent(optional -> constructor.addContent(".authenticationOptional(")
+                .addContent(optional.toString())
+                .addContent(")"));
         security.authenticator().ifPresent(authenticator -> constructor.addContent(".authenticator(")
                 .addContentLiteral(authenticator)
                 .addContent(")"));
+        if (security.clearAuthenticator()) {
+            constructor.addContent(".clearAuthenticator()");
+        }
         security.authorize().ifPresent(authorize -> constructor.addContent(authorize
                                                                                    ? ".authorize()"
                                                                                    : ".skipAuthorization()"));
         security.authorizer().ifPresent(authorizer -> constructor.addContent(".authorizer(")
                 .addContentLiteral(authorizer)
                 .addContent(")"));
+        if (security.clearAuthorizer()) {
+            constructor.addContent(".clearAuthorizer()");
+        }
         if (!security.rolesAllowed().isEmpty()) {
             constructor.addContent(".rolesAllowed(");
             String separator = "";
@@ -258,35 +272,74 @@ class GrpcServerRegistrationGenerator {
                 separator = ", ";
             }
             constructor.addContent(")");
+        } else if (security.clearRolesAllowed()) {
+            constructor.addContent(".clearRolesAllowed()");
         }
         security.audit().ifPresent(audit -> constructor.addContent(audit ? ".audit()" : ".skipAudit()"));
-        security.auditEventType().ifPresent(eventType -> constructor.addContent(".auditEventType(")
-                .addContentLiteral(eventType)
-                .addContent(")"));
+        security.auditEventType()
+                .filter(eventType -> !AUDITED_DEFAULT_EVENT_TYPE.equals(eventType)
+                        || inheritedSecurity.auditEventType()
+                        .filter(inherited -> !AUDITED_DEFAULT_EVENT_TYPE.equals(inherited))
+                        .isEmpty())
+                .ifPresent(eventType -> constructor.addContent(".auditEventType(")
+                        .addContentLiteral(eventType)
+                        .addContent(")"));
         security.auditMessageFormat().ifPresent(messageFormat -> constructor.addContent(".auditMessageFormat(")
                 .addContentLiteral(messageFormat)
                 .addContent(")"));
+        security.auditOkSeverity().ifPresent(severity -> constructor.addContent(".auditOkSeverity(")
+                .addContent(AUDIT_SEVERITY)
+                .addContent(".")
+                .addContent(severity)
+                .addContent(")"));
+        security.auditErrorSeverity().ifPresent(severity -> constructor.addContent(".auditErrorSeverity(")
+                .addContent(AUDIT_SEVERITY)
+                .addContent(".")
+                .addContent(severity)
+                .addContent(")"));
         if (security.securityLevel()) {
-            addSecurityLevel(constructor, endpointType, grpcMethod);
+            addSecurityLevel(constructor,
+                             endpointType,
+                             grpcMethod,
+                             grpcMethod == null
+                                     ? security.syntheticDenyAll()
+                                     : inheritedSecurity.syntheticDenyAll(),
+                             security.syntheticDenyAll());
         }
     }
 
     private static void addSecurityLevel(Constructor.Builder constructor,
                                          TypeName endpointType,
-                                         GrpcMethod grpcMethod) {
+                                         GrpcMethod grpcMethod,
+                                         boolean syntheticClassDenyAll,
+                                         boolean syntheticMethodDenyAll) {
         constructor.addContent(".securityLevel(")
                 .addContent(SECURITY_LEVEL)
                 .addContent(".builder().type(")
                 .addContent(endpointType)
                 .addContent(".class).classAnnotations(CLASS_ANNOTATIONS)");
+        if (syntheticClassDenyAll) {
+            addDenyAllAnnotation(constructor, ".addClassAnnotation(");
+        }
         if (grpcMethod != null) {
             constructor.addContent(".methodName(")
                     .addContentLiteral(grpcMethod.method().elementName())
                     .addContent(").methodAnnotations(")
                     .addContent(toConstantName("METHOD_" + grpcMethod.uniqueName()))
                     .addContent(".annotations())");
+            if (syntheticMethodDenyAll) {
+                addDenyAllAnnotation(constructor, ".addMethodAnnotation(");
+            }
         }
         constructor.addContent(".build())");
+    }
+
+    private static void addDenyAllAnnotation(Constructor.Builder constructor, String method) {
+        constructor.addContent(method)
+                .addContent(TypeNames.ANNOTATION)
+                .addContent(".create(")
+                .addContent(SECURITY_DENY_ALL)
+                .addContent(".class))");
     }
 
     private static void addClassAnnotationsField(ClassModel.Builder classModel, GrpcEndpoint endpoint) {

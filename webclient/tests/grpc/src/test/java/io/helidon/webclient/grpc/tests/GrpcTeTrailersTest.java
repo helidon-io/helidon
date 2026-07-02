@@ -320,9 +320,24 @@ class GrpcTeTrailersTest {
 
     @Test
     void bidirectionalStreamCompletesWithSingleThreadClientExecutor() {
-        Strings.StringMessage request = Strings.StringMessage.newBuilder()
-                .setText("x".repeat(32 * 1024))
-                .build();
+        Strings.StringMessage first = Strings.StringMessage.newBuilder().setText("first").build();
+        Strings.StringMessage second = Strings.StringMessage.newBuilder().setText("second").build();
+        CountDownLatch firstResponse = new CountDownLatch(1);
+        AtomicInteger requests = new AtomicInteger();
+        Stream<Strings.StringMessage> requestStream = Stream.generate(() -> {
+            if (requests.getAndIncrement() == 0) {
+                return first;
+            }
+            try {
+                if (!firstResponse.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("First response was not received.");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while awaiting the first response.", e);
+            }
+            return second;
+        }).limit(2);
         try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
             GrpcClient boundedClient = GrpcClient.builder()
                     .tls(t -> t.enabled(false))
@@ -332,8 +347,11 @@ class GrpcTeTrailersTest {
 
             assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
                 try (Stream<Strings.StringMessage> responses = boundedClient.serviceClient(serviceDescriptor)
-                        .bidirectional("Echo", Stream.generate(() -> request).limit(4))) {
-                    assertThat(responses.count(), is(4L));
+                        .bidirectional("Echo", requestStream)) {
+                    assertThat(responses.peek(_ -> firstResponse.countDown())
+                                       .map(Strings.StringMessage::getText)
+                                       .toList(),
+                               is(List.of("first", "second")));
                 }
             });
         }

@@ -142,6 +142,33 @@ class GrpcSecurityHandlerTest {
     }
 
     @Test
+    void testMethodHandlerCanClearServiceSecurityDefaults() {
+        GrpcSecurityHandler serviceHandler = GrpcSecurityHandler.builder()
+                .rolesAllowed(Set.of("admin"))
+                .authenticator("class-authenticator")
+                .authorizer("class-authorizer")
+                .authenticationOptional(true)
+                .build();
+        GrpcSecurityHandler methodHandler = GrpcSecurityHandler.create()
+                .authenticate()
+                .authenticationOptional(false)
+                .clearAuthenticator()
+                .authorize()
+                .clearAuthorizer()
+                .clearRolesAllowed();
+        methodHandler = GrpcSecurityHandler.builder()
+                .from(methodHandler.prototype())
+                .build();
+
+        GrpcSecurityHandler combined = methodHandler.combine(serviceHandler);
+
+        assertThat(combined.prototype().authenticationOptional(), is(Optional.of(false)));
+        assertThat(combined.prototype().authenticator(), is(Optional.empty()));
+        assertThat(combined.prototype().authorizer(), is(Optional.empty()));
+        assertThat(combined.prototype().rolesAllowed(), is(Set.of()));
+    }
+
+    @Test
     void testProgrammaticServiceAndMethodHandlersAreLayered() {
         GrpcSecurity security = GrpcSecurity.create(Security.builder().build());
         GrpcSecurityHandler serviceHandler = GrpcSecurityHandler.builder()
@@ -203,10 +230,59 @@ class GrpcSecurityHandlerTest {
 
         assertThat(auditProvider.count(), is(1));
         assertThat(auditProvider.auditEvent().severity(), is(AuditEvent.AuditSeverity.SUCCESS));
+        assertThat(auditProvider.auditEvent().messageFormat(), is(GrpcSecurityHandler.DEFAULT_AUDIT_MESSAGE_FORMAT));
 
         listener.onComplete();
 
         assertThat(auditProvider.count(), is(1));
+    }
+
+    @Test
+    void testCustomSuccessfulAuditSeverity() throws Exception {
+        TestAuditProvider auditProvider = new TestAuditProvider();
+        GrpcSecurity grpcSecurity = GrpcSecurity.create(Security.builder()
+                                                            .addAuditProvider(auditProvider)
+                                                            .build());
+        GrpcSecurityHandler handler = GrpcSecurityHandler.builder()
+                .audit(true)
+                .auditOkSeverity(AuditEvent.AuditSeverity.INFO)
+                .build();
+        TestServerCall call = new TestServerCall();
+        Metadata headers = new Metadata();
+        ServerCallHandler<String, String> next = (serverCall, metadata) -> {
+            serverCall.close(Status.OK, new Metadata());
+            return new ServerCall.Listener<>() {
+            };
+        };
+
+        Context context = grpcSecurity.registerContext(call, headers);
+        context.call(() -> handler.handleSecurity(call, headers, next));
+
+        assertThat(auditProvider.auditEvent().severity(), is(AuditEvent.AuditSeverity.INFO));
+    }
+
+    @Test
+    void testCustomFailedAuditSeverity() throws Exception {
+        TestAuditProvider auditProvider = new TestAuditProvider();
+        GrpcSecurity grpcSecurity = GrpcSecurity.create(Security.builder()
+                                                            .addAuditProvider(auditProvider)
+                                                            .build());
+        GrpcSecurityHandler handler = GrpcSecurityHandler.builder()
+                .audit(true)
+                .auditErrorSeverity(AuditEvent.AuditSeverity.ERROR)
+                .build();
+        TestServerCall call = new TestServerCall();
+        Metadata headers = new Metadata();
+        ServerCallHandler<String, String> next = (serverCall, metadata) -> {
+            serverCall.close(Status.INTERNAL, new Metadata());
+            return new ServerCall.Listener<>() {
+            };
+        };
+
+        Context context = grpcSecurity.registerContext(call, headers);
+        context.call(() -> handler.handleSecurity(call, headers, next));
+
+        assertThat(auditProvider.auditEvent().severity(), is(AuditEvent.AuditSeverity.ERROR));
     }
 
     private static MethodDescriptor<String, String> methodDescriptor() {

@@ -182,8 +182,16 @@ class GrpcServerCodegenTest {
                             }
 
                             @Grpc.Unary("AuditedHello")
-                            @Audited("declarativeGrpc")
+                            @Audited(value = "declarativeGrpc",
+                                     okSeverity = io.helidon.security.AuditEvent.AuditSeverity.INFO,
+                                     errorSeverity = io.helidon.security.AuditEvent.AuditSeverity.ERROR)
                             GreetingReply auditedHello(GreetingRequest request) {
+                                return GreetingReply.getDefaultInstance();
+                            }
+
+                            @Grpc.Unary("InheritedAuditedHello")
+                            @Audited
+                            GreetingReply inheritedAuditedHello(GreetingRequest request) {
                                 return GreetingReply.getDefaultInstance();
                             }
 
@@ -212,9 +220,31 @@ class GrpcServerCodegenTest {
                         package com.example;
 
                         import io.helidon.security.annotations.Authenticated;
+                        import io.helidon.security.annotations.Audited;
 
                         @Authenticated
+                        @Audited("classAudit")
                         interface SecuredGreetingGrpc {
+                        }
+                        """)
+                .addSource("DefaultAuditedGrpc.java", """
+                        package com.example;
+
+                        import io.helidon.grpc.api.Grpc;
+                        import io.helidon.security.annotations.Audited;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.grpc.RpcServer;
+
+                        @RpcServer.Endpoint
+                        @Grpc.GrpcService("DefaultAudited")
+                        @Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)
+                        @Service.Singleton
+                        class DefaultAuditedGrpc {
+                            @Grpc.Unary("DefaultAuditedHello")
+                            @Audited
+                            GreetingReply defaultAuditedHello(GreetingRequest request) {
+                                return GreetingReply.getDefaultInstance();
+                            }
                         }
                         """)
                 .addSource("GreetingRequest.java", """
@@ -326,15 +356,23 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString(".bidirectional(\"ChatObserverHello\", this::chatObserverHello"));
         assertThat(registration, containsString("if (entryPoints.hasInterceptors()) {"));
         assertThat(registration, containsString("entryPoints.interceptor("));
-        assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().securityLevel("));
+        assertThat(registration,
+                   containsString("GrpcSecurity.enforce().authenticate().authenticationOptional(false)"
+                                          + ".clearAuthenticator().securityLevel("));
         assertThat(registration, containsString(".classAnnotations(CLASS_ANNOTATIONS).build()).configure(builder);"));
-        assertThat(registration, containsString("GrpcSecurity.enforce().authorize().securityLevel("));
+        assertThat(registration,
+                   containsString("GrpcSecurity.enforce().authorize().clearAuthorizer().securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().rolesAllowed(\"admin\").securityLevel("));
-        assertThat(registration, containsString("GrpcSecurity.enforce().skipAuthentication().skipAuthorization().securityLevel("));
+        assertThat(registration,
+                   containsString("GrpcSecurity.enforce().skipAuthentication().skipAuthorization()"
+                                          + ".clearRolesAllowed().securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().authorize().securityLevel("));
+        assertThat(registration, containsString(".auditEventType(\"classAudit\")"));
         assertThat(registration, containsString("GrpcSecurity.enforce().audit().auditEventType(\"declarativeGrpc\")"));
-        assertThat(registration, containsString(".auditMessageFormat(\"%3$s %1$s \\\"%2$s\\\" %5$s %6$s "
-                                                        + "requested by %4$s\")"));
+        assertThat(registration, not(containsString(".auditEventType(\"request\")")));
+        assertThat(registration, not(containsString(".auditMessageFormat(")));
+        assertThat(registration, containsString(".auditOkSeverity(AuditEvent.AuditSeverity.INFO)"));
+        assertThat(registration, containsString(".auditErrorSeverity(AuditEvent.AuditSeverity.ERROR)"));
         assertThat(registration, containsString("SecurityLevel.builder().type(GreetingGrpc.class)"
                                                         + ".classAnnotations(CLASS_ANNOTATIONS)"));
         assertThat(registration, containsString(".methodName(\"sayHello\")"
@@ -348,6 +386,7 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_DENY_ALL_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_ROLE_VALIDATOR_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_AUDITED_HELLO"));
+        assertThat(registration, containsString("private static final TypedElementInfo METHOD_INHERITED_AUDITED_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_STREAM_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_COLLECT_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_CHAT_HELLO"));
@@ -355,6 +394,15 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString("METHOD_VALIDATED_HELLO));"));
         assertThat(registration, containsString("METHOD_INTERCEPTED_HELLO));"));
         assertThat(registration, containsString("responseObserver.onNext(endpoint.sayHello(request));"));
+
+        Path generatedDefaultAuditedRegistration = result.sourceOutput()
+                .resolve("com/example/DefaultAuditedGrpc__GrpcRegistration.java");
+        assertThat("Generated source should exist: " + generatedDefaultAuditedRegistration,
+                   Files.exists(generatedDefaultAuditedRegistration),
+                   is(true));
+        String defaultAuditedRegistration = Files.readString(generatedDefaultAuditedRegistration, StandardCharsets.UTF_8);
+        assertThat(defaultAuditedRegistration,
+                   containsString("GrpcSecurity.enforce().audit().auditEventType(\"request\")"));
         assertThat(registration, containsString("responseObserver.onNext(endpoint.validatedHello(request));"));
         assertThat(registration, containsString("responseObserver.onNext(endpoint.interceptedHello(request));"));
         assertThat(registration, containsString("GrpcStreams.serverStreaming(() -> endpoint.streamHello(request), "
@@ -719,6 +767,46 @@ class GrpcServerCodegenTest {
     }
 
     @Test
+    void grpcServiceUsesMethodNameFromMetaAnnotation() throws IOException {
+        var result = compileGrpcService("grpc-server-meta-annotation-name",
+                                        "",
+                                        "@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)",
+                                        "",
+                                        """
+                                                @SayHello
+                                                GreetingReply greet(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
+                                                """,
+                                        PROTO_DESCRIPTOR_SOURCE,
+                                        """
+                                                package com.example;
+
+                                                import java.lang.annotation.ElementType;
+                                                import java.lang.annotation.Retention;
+                                                import java.lang.annotation.RetentionPolicy;
+                                                import java.lang.annotation.Target;
+
+                                                import io.grpc.MethodDescriptor;
+                                                import io.helidon.grpc.api.Grpc;
+
+                                                @Target(ElementType.METHOD)
+                                                @Retention(RetentionPolicy.RUNTIME)
+                                                @Grpc.GrpcMethod(value = MethodDescriptor.MethodType.UNARY,
+                                                                 name = "SayHello")
+                                                @interface SayHello {
+                                                }
+                                                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedRegistration = result.sourceOutput().resolve("com/example/GreetingGrpc__GrpcRegistration.java");
+        String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
+        assertThat(registration, containsString(".unary(\"SayHello\", this::greet"));
+    }
+
+    @Test
     void grpcServiceDiscoversTransitiveSuperclassMethod() throws IOException {
         var result = compileGrpcService("grpc-server-transitive-superclass-method",
                                         """
@@ -1009,6 +1097,92 @@ class GrpcServerCodegenTest {
         assertCompilationFails(result,
                                "Declarative gRPC does not support @Authorized(explicit = true): "
                                        + "com.example.GreetingGrpc.sayHello()");
+    }
+
+    @Test
+    void grpcMethodSecurityAnnotationsReplaceClassDefaults() throws IOException {
+        var result = compileGrpcService("grpc-server-method-security-overrides",
+                                        "import io.helidon.security.annotations.Authenticated;",
+                                        """
+                                                @Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)
+                                                @Authenticated(optional = true, provider = "class-authenticator")
+                                                @Authorized(provider = "class-authorizer")
+                                                """,
+                                        "",
+                                        """
+                                                @Grpc.Unary("SayHello")
+                                                @Authenticated
+                                                @Authorized
+                                                GreetingReply sayHello(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
+                                                """,
+                                        PROTO_DESCRIPTOR_SOURCE);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedRegistration = result.sourceOutput().resolve("com/example/GreetingGrpc__GrpcRegistration.java");
+        String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
+        assertThat(registration,
+                   containsString(".authenticate().authenticationOptional(true)"
+                                          + ".authenticator(\"class-authenticator\")"));
+        assertThat(registration, containsString(".authorize().authorizer(\"class-authorizer\")"));
+        assertThat(registration,
+                   containsString(".authenticate().authenticationOptional(false).clearAuthenticator()"
+                                          + ".authorize().clearAuthorizer()"));
+    }
+
+    @Test
+    void grpcClassWithEmptyRolesAllowedDeniesAll() throws IOException {
+        var result = compileGrpcService("grpc-server-class-empty-roles",
+                                        "import jakarta.annotation.security.RolesAllowed;",
+                                        """
+                                                @Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)
+                                                @RolesAllowed({})
+                                                """,
+                                        "",
+                                        """
+                                                @Grpc.Unary("SayHello")
+                                                GreetingReply sayHello(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
+                                                """,
+                                        PROTO_DESCRIPTOR_SOURCE);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedRegistration = result.sourceOutput().resolve("com/example/GreetingGrpc__GrpcRegistration.java");
+        String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
+        assertThat(registration,
+                   containsString(".classAnnotations(CLASS_ANNOTATIONS)"
+                                          + ".addClassAnnotation(Annotation.create(DenyAll.class))"));
+    }
+
+    @Test
+    void grpcMethodWithEmptyRolesAllowedDeniesAll() throws IOException {
+        var result = compileGrpcService("grpc-server-method-empty-roles",
+                                        "import jakarta.annotation.security.RolesAllowed;",
+                                        "@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)",
+                                        "",
+                                        """
+                                                @Grpc.Unary("SayHello")
+                                                @RolesAllowed({})
+                                                GreetingReply sayHello(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
+                                                """,
+                                        PROTO_DESCRIPTOR_SOURCE);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedRegistration = result.sourceOutput().resolve("com/example/GreetingGrpc__GrpcRegistration.java");
+        String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
+        assertThat(registration,
+                   containsString(".annotations())"
+                                          + ".addMethodAnnotation(Annotation.create(DenyAll.class))"));
     }
 
     private static TestCompiler.Result compileGrpcService(String workDir, String serviceBody) {

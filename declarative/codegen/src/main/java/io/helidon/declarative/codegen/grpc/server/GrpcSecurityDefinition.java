@@ -20,26 +20,36 @@ import java.util.List;
 import java.util.Optional;
 
 record GrpcSecurityDefinition(Optional<Boolean> authenticate,
-                              boolean authenticationOptional,
+                              Optional<Boolean> authenticationOptional,
                               Optional<String> authenticator,
+                              boolean clearAuthenticator,
                               Optional<Boolean> authorize,
                               Optional<String> authorizer,
+                              boolean clearAuthorizer,
                               List<String> rolesAllowed,
                               boolean clearRolesAllowed,
                               Optional<Boolean> audit,
                               Optional<String> auditEventType,
                               Optional<String> auditMessageFormat,
+                              Optional<String> auditOkSeverity,
+                              Optional<String> auditErrorSeverity,
+                              boolean syntheticDenyAll,
                               boolean securityLevel) {
     private static final GrpcSecurityDefinition EMPTY = new GrpcSecurityDefinition(Optional.empty(),
+                                                                                  Optional.empty(),
+                                                                                  Optional.empty(),
                                                                                   false,
                                                                                   Optional.empty(),
                                                                                   Optional.empty(),
-                                                                                  Optional.empty(),
+                                                                                  false,
                                                                                   List.of(),
                                                                                   false,
                                                                                   Optional.empty(),
                                                                                   Optional.empty(),
                                                                                   Optional.empty(),
+                                                                                  Optional.empty(),
+                                                                                  Optional.empty(),
+                                                                                  false,
                                                                                   false);
 
     static GrpcSecurityDefinition empty() {
@@ -48,15 +58,20 @@ record GrpcSecurityDefinition(Optional<Boolean> authenticate,
 
     boolean isEmpty() {
         return authenticate.isEmpty()
-                && !authenticationOptional
+                && authenticationOptional.isEmpty()
                 && authenticator.isEmpty()
+                && !clearAuthenticator
                 && authorize.isEmpty()
                 && authorizer.isEmpty()
+                && !clearAuthorizer
                 && rolesAllowed.isEmpty()
                 && !clearRolesAllowed
                 && audit.isEmpty()
                 && auditEventType.isEmpty()
                 && auditMessageFormat.isEmpty()
+                && auditOkSeverity.isEmpty()
+                && auditErrorSeverity.isEmpty()
+                && !syntheticDenyAll
                 && !securityLevel;
     }
 }

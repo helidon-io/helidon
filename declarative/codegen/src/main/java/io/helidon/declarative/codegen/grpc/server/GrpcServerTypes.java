@@ -31,6 +31,7 @@ final class GrpcServerTypes {
     static final TypeName GRPC_SERVICE_DESCRIPTOR = TypeName.create("io.helidon.webserver.grpc.GrpcServiceDescriptor");
     static final TypeName GRPC_STREAMS = TypeName.create("io.helidon.webserver.grpc.GrpcStreams");
     static final TypeName SECURITY_LEVEL = TypeName.create("io.helidon.security.SecurityLevel");
+    static final TypeName AUDIT_SEVERITY = TypeName.create("io.helidon.security.AuditEvent.AuditSeverity");
     static final TypeName SECURITY_AUTHENTICATED = TypeName.create("io.helidon.security.annotations.Authenticated");
     static final TypeName SECURITY_AUTHORIZED = TypeName.create("io.helidon.security.annotations.Authorized");
     static final TypeName SECURITY_AUDITED = TypeName.create("io.helidon.security.annotations.Audited");

@@ -218,7 +218,10 @@ class GrpcClientCodegenTest {
                    is(true));
         assertThat(client, containsString("var declarative__clientConfig = config.get(\"grpc.clients.greeting\").get(\"client\");"));
         assertThat(client, containsString("GrpcClient declarative__client = null;"));
-        assertThat(client, containsString("declarative__client = registryClient.get().orElse(null);"));
+        assertThat(client, containsString("Supplier<List<ServiceInstance<GrpcClient>>> registryClients"));
+        assertThat(client, containsString("declarative__client = registryClients.get().stream()"));
+        assertThat(client, containsString(".noneMatch(qualifier -> qualifier.typeName().equals(Service.Named.TYPE))"));
+        assertThat(client, containsString(".map(ServiceInstance::get)"));
         assertThat(client, containsString("declarative__clientBuilder.config(declarative__clientConfig);"));
         assertThat(client, containsString("declarative__clientBuilder.baseUri(uri);"));
         assertThat(client, not(containsString("uri.regionMatches(true, 0, \"http://\", 0, \"http://\".length())")));
@@ -259,6 +262,46 @@ class GrpcClientCodegenTest {
         assertThat(client, containsString("implements GreetingClient"));
         assertThat(client, containsString("GreetingReply greet(GreetingRequest request)"));
         assertThat(client, containsString("return serviceClient.unary(\"Greet\", request);"));
+    }
+
+    @Test
+    void grpcClientUsesMethodNameFromMetaAnnotation() throws IOException {
+        var result = compileGrpcClient("grpc-client-meta-annotation-name", """
+                @RpcClient.Endpoint("http://localhost:8080")
+                @Grpc.GrpcService("GreetingService")
+                @Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)
+                interface GreetingClient {
+                    @SayHello
+                    GreetingReply greet(GreetingRequest request);
+                }
+                """,
+                                       "SayHello.java",
+                                       """
+                                               package com.example;
+
+                                               import java.lang.annotation.ElementType;
+                                               import java.lang.annotation.Retention;
+                                               import java.lang.annotation.RetentionPolicy;
+                                               import java.lang.annotation.Target;
+
+                                               import io.grpc.MethodDescriptor;
+                                               import io.helidon.grpc.api.Grpc;
+
+                                               @Target(ElementType.METHOD)
+                                               @Retention(RetentionPolicy.RUNTIME)
+                                               @Grpc.GrpcMethod(value = MethodDescriptor.MethodType.UNARY,
+                                                                name = "SayHello")
+                                               @interface SayHello {
+                                               }
+                                               """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedClient = result.sourceOutput().resolve("com/example/GreetingClient__GrpcClient.java");
+        String client = Files.readString(generatedClient, StandardCharsets.UTF_8);
+        assertThat(client, containsString("GrpcClientMethodDescriptor.unary(\"GreetingService\", \"SayHello\")"));
+        assertThat(client, containsString("return serviceClient.unary(\"SayHello\", request);"));
     }
 
     @Test

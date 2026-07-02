@@ -23,6 +23,7 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
+import io.helidon.security.AuditEvent.AuditSeverity;
 import io.helidon.security.ClassToInstanceStore;
 import io.helidon.security.SecurityLevel;
 
@@ -44,6 +45,14 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
     Set<String> rolesAllowed();
 
     /**
+     * Whether to clear roles inherited from service defaults.
+     *
+     * @return whether to clear inherited roles
+     */
+    @Option.DefaultBoolean(false)
+    boolean clearInheritedRolesAllowed();
+
+    /**
      * Security levels discovered from endpoint annotations.
      *
      * @return security levels
@@ -62,12 +71,28 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
     Optional<String> authenticator();
 
     /**
+     * Whether to clear an authenticator inherited from service defaults.
+     *
+     * @return whether to clear the inherited authenticator
+     */
+    @Option.DefaultBoolean(false)
+    boolean clearInheritedAuthenticator();
+
+    /**
      * Use a named authorizer.
      *
      * @return name of authorizer as configured in {@link io.helidon.security.Security}
      */
     @Option.Configured
     Optional<String> authorizer();
+
+    /**
+     * Whether to clear an authorizer inherited from service defaults.
+     *
+     * @return whether to clear the inherited authorizer
+     */
+    @Option.DefaultBoolean(false)
+    boolean clearInheritedAuthorizer();
 
     /**
      * Whether to authenticate this request.
@@ -116,6 +141,22 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
      */
     @Option.Configured
     Optional<String> auditMessageFormat();
+
+    /**
+     * Severity to use for successful requests.
+     *
+     * @return successful request audit severity
+     */
+    @Option.Configured
+    Optional<AuditSeverity> auditOkSeverity();
+
+    /**
+     * Severity to use for failed requests.
+     *
+     * @return failed request audit severity
+     */
+    @Option.Configured
+    Optional<AuditSeverity> auditErrorSeverity();
 
     /**
      * A store of custom objects, that can be used to customize specific security providers.

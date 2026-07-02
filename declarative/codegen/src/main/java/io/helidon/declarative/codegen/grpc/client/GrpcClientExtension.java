@@ -65,6 +65,7 @@ import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.PROTO_F
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.PROTO_MESSAGE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.RPC_CLIENT_ENDPOINT;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.RPC_CLIENT_QUALIFIER_INSTANCE;
+import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.SERVICE_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static java.util.function.Predicate.not;
 
@@ -167,7 +168,9 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                                       .name("config")
                                                       .type(CONFIG))
                                               .addParameter(registryClient -> registryClient
-                                                      .name("registryClient")
+                                                      .name(endpoint.clientName().isPresent()
+                                                                    ? "registryClient"
+                                                                    : "registryClients")
                                                       .update(it -> registryClientParameter(it, endpoint)))
                                               .update(it -> constructorBody(it, endpoint)));
             GrpcProtoDescriptors.addRuntimeValidationMethod(classModel,
@@ -472,7 +475,26 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                 .addContentLine(" declarative__client = null;")
                 .addContentLine("if (!declarative__clientConfig.exists()) {")
                 .increaseContentPadding()
-                .addContentLine("declarative__client = registryClient.get().orElse(null);")
+                .update(it -> {
+                    if (endpoint.clientName().isPresent()) {
+                        it.addContentLine("declarative__client = registryClient.get().orElse(null);");
+                    } else {
+                        it.addContentLine("declarative__client = registryClients.get().stream()")
+                                .increaseContentPadding()
+                                .addContentLine(".filter(instance -> instance.qualifiers().stream()")
+                                .increaseContentPadding()
+                                .addContent(".noneMatch(qualifier -> qualifier.typeName().equals(")
+                                .addContent(SERVICE_ANNOTATION_NAMED)
+                                .addContentLine(".TYPE)))")
+                                .decreaseContentPadding()
+                                .addContentLine(".findFirst()")
+                                .addContent(".map(")
+                                .addContent(SERVICE_INSTANCE)
+                                .addContentLine("::get)")
+                                .addContentLine(".orElse(null);")
+                                .decreaseContentPadding();
+                    }
+                })
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .addContentLine("if (declarative__client == null) {")
@@ -496,15 +518,28 @@ class GrpcClientExtension implements RegistryCodegenExtension {
     private void registryClientParameter(Parameter.Builder param, GrpcEndpoint endpoint) {
         if (endpoint.clientName().isPresent()) {
             param.addAnnotation(Annotation.create(SERVICE_ANNOTATION_NAMED, endpoint.clientName().get()));
+            TypeName optionalGrpcClient = TypeName.builder()
+                    .from(TypeNames.OPTIONAL)
+                    .addTypeArgument(GRPC_CLIENT)
+                    .build();
+            param.type(TypeName.builder()
+                               .from(TypeNames.SUPPLIER)
+                               .addTypeArgument(optionalGrpcClient)
+                               .build());
+        } else {
+            TypeName serviceInstance = TypeName.builder()
+                    .from(SERVICE_INSTANCE)
+                    .addTypeArgument(GRPC_CLIENT)
+                    .build();
+            TypeName registryClients = TypeName.builder()
+                    .from(TypeNames.LIST)
+                    .addTypeArgument(serviceInstance)
+                    .build();
+            param.type(TypeName.builder()
+                               .from(TypeNames.SUPPLIER)
+                               .addTypeArgument(registryClients)
+                               .build());
         }
-        TypeName optionalGrpcClient = TypeName.builder()
-                .from(TypeNames.OPTIONAL)
-                .addTypeArgument(GRPC_CLIENT)
-                .build();
-        param.type(TypeName.builder()
-                           .from(TypeNames.SUPPLIER)
-                           .addTypeArgument(optionalGrpcClient)
-                           .build());
     }
 
     private static List<Annotation> grpcMethodAnnotations(TypedElementInfo method, List<Annotation> annotations) {
@@ -529,6 +564,11 @@ class GrpcClientExtension implements RegistryCodegenExtension {
         String name = concreteAnnotation.typeName().equals(GRPC_METHOD)
                 ? concreteAnnotation.stringValue("name").orElse("")
                 : concreteAnnotation.stringValue().orElse("");
+        if (name.isBlank() && !concreteAnnotation.typeName().equals(GRPC_METHOD)) {
+            name = Annotations.findFirst(GRPC_METHOD, concreteAnnotation.metaAnnotations())
+                    .flatMap(it -> it.stringValue("name"))
+                    .orElse("");
+        }
         return name.isBlank() ? method.elementName() : name;
     }
 

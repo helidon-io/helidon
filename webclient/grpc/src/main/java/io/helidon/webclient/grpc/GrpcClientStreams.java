@@ -23,7 +23,7 @@ import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ThreadFactory;
@@ -44,6 +44,10 @@ import io.grpc.stub.ClientCalls;
 import io.grpc.stub.ClientResponseObserver;
 
 final class GrpcClientStreams {
+    private static final ThreadFactory REQUEST_STREAM_THREAD_FACTORY =
+            Thread.ofVirtual().name("helidon-grpc-client-request-stream-", 0).factory();
+    private static final Executor REQUEST_STREAM_EXECUTOR =
+            task -> REQUEST_STREAM_THREAD_FACTORY.newThread(task).start();
     private static final ThreadFactory REQUEST_STREAM_CLOSE_THREAD_FACTORY =
             Thread.ofVirtual().name("helidon-grpc-client-request-stream-close-", 0).factory();
 
@@ -75,8 +79,13 @@ final class GrpcClientStreams {
     }
 
     static <ReqT, ResT> Stream<ResT> bidirectional(ClientCall<ReqT, ResT> call,
+                                                    Stream<ReqT> requests) {
+        return bidirectional(call, requests, REQUEST_STREAM_EXECUTOR);
+    }
+
+    static <ReqT, ResT> Stream<ResT> bidirectional(ClientCall<ReqT, ResT> call,
                                                     Stream<ReqT> requests,
-                                                    ExecutorService executor) {
+                                                    Executor executor) {
         Objects.requireNonNull(call);
         Objects.requireNonNull(requests);
         Objects.requireNonNull(executor);
@@ -355,7 +364,7 @@ final class GrpcClientStreams {
     private static final class AsyncRequestSender<T> implements Sender {
         private final CallControl<T> control;
         private final Stream<T> requests;
-        private final ExecutorService executor;
+        private final Executor executor;
         private final ContextRunner contextRunner = ContextRunner.create();
         private final ReentrantLock lock = new ReentrantLock();
         private Iterator<T> iterator;
@@ -372,7 +381,7 @@ final class GrpcClientStreams {
         private boolean isolatedCloseScheduled;
         private boolean sourceClosed;
 
-        private AsyncRequestSender(CallControl<T> control, Stream<T> requests, ExecutorService executor) {
+        private AsyncRequestSender(CallControl<T> control, Stream<T> requests, Executor executor) {
             this.control = control;
             this.requests = requests;
             this.executor = executor;
@@ -779,7 +788,7 @@ final class GrpcClientStreams {
             return ORDERED | NONNULL;
         }
 
-        private void startSender(Stream<ReqT> requests, ExecutorService executor) {
+        private void startSender(Stream<ReqT> requests, Executor executor) {
             control.sender(new AsyncRequestSender<>(control, requests, executor));
         }
 

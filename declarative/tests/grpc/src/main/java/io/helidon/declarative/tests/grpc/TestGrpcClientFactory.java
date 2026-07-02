@@ -41,10 +41,10 @@ class TestGrpcClientFactory implements Service.ServicesFactory<GrpcClient> {
 
     @Override
     public List<Service.QualifiedInstance<GrpcClient>> services() {
-        return List.of(Service.QualifiedInstance.create(client(uri(defaultServer))),
-                       Service.QualifiedInstance.create(client(uri(namedServer)),
+        return List.of(Service.QualifiedInstance.create(client(uri(namedServer)),
                                                         Qualifier.createNamed(
                                                                 ClientConfigGreetingClients.NAMED_CLIENT)),
+                       Service.QualifiedInstance.create(client(uri(defaultServer))),
                        Service.QualifiedInstance.create(client(ClientConfigGreetingClients.INVALID_URI),
                                                         Qualifier.createNamed(
                                                                 ClientConfigGreetingClients.BROKEN_CLIENT)));

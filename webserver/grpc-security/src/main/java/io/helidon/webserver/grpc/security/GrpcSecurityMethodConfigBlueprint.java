@@ -22,6 +22,7 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
+import io.helidon.security.AuditEvent.AuditSeverity;
 import io.helidon.security.ClassToInstanceStore;
 
 /**
@@ -112,6 +113,22 @@ interface GrpcSecurityMethodConfigBlueprint {
      */
     @Option.Configured
     Optional<String> auditMessageFormat();
+
+    /**
+     * Severity to use for successful requests.
+     *
+     * @return successful request audit severity
+     */
+    @Option.Configured
+    Optional<AuditSeverity> auditOkSeverity();
+
+    /**
+     * Severity to use for failed requests.
+     *
+     * @return failed request audit severity
+     */
+    @Option.Configured
+    Optional<AuditSeverity> auditErrorSeverity();
 
     /**
      * A store of custom objects, that can be used to customize specific security providers.

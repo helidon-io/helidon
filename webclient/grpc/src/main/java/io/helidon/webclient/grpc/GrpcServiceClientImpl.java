@@ -166,7 +166,7 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
             GrpcClientStreams.closeRequests(requests, t);
             throw t;
         }
-        return GrpcClientStreams.bidirectional(call, requests, grpcClient.prototype().executor());
+        return GrpcClientStreams.bidirectional(call, requests);
     }
 
     @Override

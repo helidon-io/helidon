@@ -66,6 +66,9 @@ import static java.util.function.Predicate.not;
 
 class GrpcServerExtension implements RegistryCodegenExtension {
     static final TypeName GENERATOR = TypeName.create(GrpcServerExtension.class);
+    private static final String AUDITED_DEFAULT_MESSAGE_FORMAT = "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s";
+    private static final String AUDITED_DEFAULT_OK_SEVERITY = "SUCCESS";
+    private static final String AUDITED_DEFAULT_ERROR_SEVERITY = "FAILURE";
     private static final TypeName ITERABLE = TypeName.create("java.lang.Iterable");
     private static final TypeName STREAM = TypeName.create("java.util.stream.Stream");
 
@@ -291,6 +294,11 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         String name = concreteAnnotation.typeName().equals(GRPC_METHOD)
                 ? concreteAnnotation.stringValue("name").orElse("")
                 : concreteAnnotation.stringValue().orElse("");
+        if (name.isBlank() && !concreteAnnotation.typeName().equals(GRPC_METHOD)) {
+            name = Annotations.findFirst(GRPC_METHOD, concreteAnnotation.metaAnnotations())
+                    .flatMap(it -> it.stringValue("name"))
+                    .orElse("");
+        }
         return name.isBlank() ? method.elementName() : name;
     }
 
@@ -302,9 +310,11 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         Optional<Annotation> permitAll = Annotations.findFirst(SECURITY_PERMIT_ALL, annotations);
         Optional<Annotation> rolePermitAll = Annotations.findFirst(SECURITY_ROLE_PERMIT_ALL, annotations);
         Set<String> rolesAllowed = new LinkedHashSet<>();
+        boolean hasRolesAllowed = false;
         boolean hasRoleValidatorRoles = false;
         for (Annotation annotation : annotations) {
             if (annotation.typeName().equals(SECURITY_ROLES_ALLOWED)) {
+                hasRolesAllowed = true;
                 rolesAllowed.addAll(annotation.stringValues().orElseGet(List::of));
             } else if (annotation.typeName().equals(SECURITY_ROLES)
                     || annotation.typeName().equals(SECURITY_ROLES_CONTAINER)) {
@@ -320,7 +330,8 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         }
 
         boolean hasPermitAll = permitAll.isPresent() || rolePermitAll.isPresent();
-        boolean hasDenyAll = denyAll.isPresent();
+        boolean syntheticDenyAll = hasRolesAllowed && rolesAllowed.isEmpty();
+        boolean hasDenyAll = denyAll.isPresent() || syntheticDenyAll;
         boolean securityLevel = authenticated.isPresent()
                 || authorized.isPresent()
                 || audited.isPresent()
@@ -328,7 +339,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                 || hasPermitAll
                 || hasRoleValidatorRoles
                 || hasAbacAnnotation
-                || !rolesAllowed.isEmpty();
+                || hasRolesAllowed;
 
         if (!securityLevel) {
             return GrpcSecurityDefinition.empty();
@@ -336,6 +347,12 @@ class GrpcServerExtension implements RegistryCodegenExtension {
 
         Optional<Boolean> authenticate = authenticated.flatMap(Annotation::booleanValue);
         Optional<Boolean> authorize = authorized.flatMap(Annotation::booleanValue);
+        Optional<String> authenticator = authenticated
+                .flatMap(it -> it.stringValue("provider"))
+                .filter(not(String::isBlank));
+        Optional<String> authorizer = authorized
+                .flatMap(it -> it.stringValue("provider"))
+                .filter(not(String::isBlank));
 
         if (hasDenyAll) {
             authenticate = Optional.of(false);
@@ -353,15 +370,23 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         }
 
         return new GrpcSecurityDefinition(authenticate,
-                                          authenticated.flatMap(it -> it.booleanValue("optional")).orElse(false),
-                                          authenticated.flatMap(it -> it.stringValue("provider")).filter(it -> !it.isBlank()),
+                                          authenticated.map(it -> it.booleanValue("optional").orElse(false)),
+                                          authenticator,
+                                          authenticated.isPresent() && authenticator.isEmpty(),
                                           authorize,
-                                          authorized.flatMap(it -> it.stringValue("provider")).filter(it -> !it.isBlank()),
+                                          authorizer,
+                                          authorized.isPresent() && authorizer.isEmpty(),
                                           List.copyOf(rolesAllowed),
                                           hasDenyAll || hasPermitAll,
                                           audited.map(_ -> true),
                                           audited.flatMap(Annotation::stringValue).filter(it -> !it.isBlank()),
-                                          audited.flatMap(it -> it.stringValue("messageFormat")).filter(it -> !it.isBlank()),
+                                          audited.flatMap(it -> it.stringValue("messageFormat"))
+                                                  .filter(not(AUDITED_DEFAULT_MESSAGE_FORMAT::equals)),
+                                          audited.flatMap(it -> it.stringValue("okSeverity"))
+                                                  .filter(not(AUDITED_DEFAULT_OK_SEVERITY::equals)),
+                                          audited.flatMap(it -> it.stringValue("errorSeverity"))
+                                                  .filter(not(AUDITED_DEFAULT_ERROR_SEVERITY::equals)),
+                                          syntheticDenyAll,
                                           true);
     }
 }
