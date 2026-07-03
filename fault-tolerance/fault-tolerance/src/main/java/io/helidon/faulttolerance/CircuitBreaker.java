@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
 /**
@@ -54,7 +53,6 @@ public interface CircuitBreaker extends FtHandler, RuntimeType.Api<CircuitBreake
      */
     static CircuitBreaker create(CircuitBreakerConfig config) {
         return new CircuitBreakerImpl(config,
-                                      LazyValue.create(() -> Services.get(MetricsFactory.class)),
                                       LazyValue.create(() -> Services.get(MeterRegistry.class)));
     }
 

@@ -72,4 +72,17 @@ class TestRegistrySpecificPublisher {
             otlpRegistry.close();
         }
     }
+
+    @Test
+    void endpointAvailabilityUsesObserverConfigWithSharedRegistry() {
+        MetricsConfig observerConfig = MetricsConfig.builder()
+                .enabled(false)
+                .build();
+
+        MetricsFeature metricsFeature = new MetricsFeature(MetricsObserverConfig.builder()
+                                                                  .metricsConfig(observerConfig)
+                                                                  .buildPrototype());
+
+        assertThat("Observer config disables the shared-registry endpoint", metricsFeature.enabled(), is(false));
+    }
 }

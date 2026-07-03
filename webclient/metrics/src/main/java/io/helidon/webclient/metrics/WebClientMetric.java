@@ -43,8 +43,8 @@ abstract class WebClientMetric implements WebClientService {
     private final boolean errors;
 
     WebClientMetric(Builder builder) {
-        this.metricsFactory = Services.get(MetricsFactory.class);
         this.registry = Services.get(MeterRegistry.class);
+        this.metricsFactory = registry.metricsFactory();
         this.methods = builder.methods;
         this.nameFormat = builder.nameFormat;
         this.description = builder.description;

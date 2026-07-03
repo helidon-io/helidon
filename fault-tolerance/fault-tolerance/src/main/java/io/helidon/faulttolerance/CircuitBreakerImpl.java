@@ -25,7 +25,6 @@ import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Service;
 
@@ -60,7 +59,6 @@ class CircuitBreakerImpl implements CircuitBreaker {
 
     @Service.Inject
     CircuitBreakerImpl(CircuitBreakerConfig config,
-                       Supplier<MetricsFactory> metricsFactory,
                        Supplier<MeterRegistry> meterRegistry) {
         this.delayMillis = config.delay().toMillis();
         this.successThreshold = config.successThreshold();
@@ -72,8 +70,8 @@ class CircuitBreakerImpl implements CircuitBreaker {
 
         this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
-            var mf = metricsFactory.get();
             var mr = meterRegistry.get();
+            var mf = mr.metricsFactory();
             Tag nameTag = MetricsUtils.tag(mf, "name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_CIRCUITBREAKER_CALLS_TOTAL, nameTag);
             openedCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_CIRCUITBREAKER_OPENED_TOTAL, nameTag);

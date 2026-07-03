@@ -31,7 +31,6 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
@@ -69,12 +68,11 @@ class MetricsFeature {
     MetricsFeature(MetricsObserverConfig config) {
         this.metricsObserverConfig = config;
         Optional<MeterRegistry> configuredMeterRegistry = config.meterRegistry();
+        this.meterRegistry = configuredMeterRegistry.orElseGet(() -> Services.get(MeterRegistry.class));
         if (configuredMeterRegistry.isPresent()) {
             this.metricsConfig = config.metricsConfig();
-            this.meterRegistry = configuredMeterRegistry.get();
         } else {
-            this.metricsConfig = Services.get(MetricsFactory.class).metricsConfig();
-            this.meterRegistry = Services.get(MeterRegistry.class);
+            this.metricsConfig = meterRegistry.metricsFactory().metricsConfig();
         }
         this.formatterProviders = Services.all(MeterRegistryFormatterProvider.class);
     }
@@ -245,8 +243,9 @@ class MetricsFeature {
     }
 
     private void setUpEndpoints(HttpRules rules) {
-        if (!metricsConfig.permitAll()) {
-            rules.any(SecureHandler.authorize(metricsConfig.roles().toArray(new String[0])));
+        MetricsConfig observerMetricsConfig = metricsObserverConfig.metricsConfig();
+        if (!observerMetricsConfig.permitAll()) {
+            rules.any(SecureHandler.authorize(observerMetricsConfig.roles().toArray(new String[0])));
         }
         // routing to root of metrics
         // As of Helidon 4, this is the only path we should need because scope-based or metric-name-based
@@ -323,7 +322,7 @@ class MetricsFeature {
     }
 
     boolean enabled() {
-        return metricsConfig.enabled()
+        return metricsObserverConfig.metricsConfig().enabled()
                 && formatterProviders.stream()
                 .map(provider -> provider.formatter(MediaTypes.TEXT_PLAIN,
                                                     metricsConfig,

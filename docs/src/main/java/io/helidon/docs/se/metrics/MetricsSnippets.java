@@ -58,8 +58,9 @@ class MetricsSnippets {
     // tag::snippet_2[]
     public class GreetService implements HttpService {
 
-        private final MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-        private final Counter accessCtr = Services.get(MeterRegistry.class) // <1>
+        private final MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+        private final MetricsFactory metricsFactory = meterRegistry.metricsFactory();
+        private final Counter accessCtr = meterRegistry // <1>
                 .getOrCreate(metricsFactory.counterBuilder("accessctr")); // <2>
 
         @Override

@@ -93,8 +93,12 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
 
                 if (grpcConfig.enableMetrics() && metrics.owner().get() == null) {
                     MetricsOwner owner = Contexts.runInContext(ctx.listenerContext().context(),
-                                                               () -> new MetricsOwner(Services.get(MetricsFactory.class),
-                                                                                      Services.get(MeterRegistry.class)));
+                                                               () -> {
+                                                                   MeterRegistry meterRegistry =
+                                                                           Services.get(MeterRegistry.class);
+                                                                   return new MetricsOwner(meterRegistry.metricsFactory(),
+                                                                                           meterRegistry);
+                                                               });
                     metrics.owner().compareAndSet(null, owner);
                 }
 

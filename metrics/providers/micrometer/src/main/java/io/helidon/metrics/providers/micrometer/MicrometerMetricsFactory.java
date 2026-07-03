@@ -510,7 +510,24 @@ class MicrometerMetricsFactory implements MetricsFactory {
                     }
                 }
             });
-            registries.forEach(MMeterRegistry::close);
+            Throwable closeFailure = null;
+            for (MMeterRegistry registry : registries) {
+                try {
+                    registry.close();
+                } catch (RuntimeException | Error e) {
+                    if (closeFailure == null) {
+                        closeFailure = e;
+                    } else if (closeFailure != e) {
+                        closeFailure.addSuppressed(e);
+                    }
+                }
+            }
+            if (closeFailure instanceof RuntimeException e) {
+                throw e;
+            }
+            if (closeFailure instanceof Error e) {
+                throw e;
+            }
         } finally {
             lock.lock();
             try {

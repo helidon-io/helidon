@@ -291,6 +291,65 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
+    void testFactoryCloseAttemptsEveryRegistryClose() {
+        FailingCloseMeterRegistry firstPublisher = new FailingCloseMeterRegistry("first close failure");
+        FailingCloseMeterRegistry secondPublisher = new FailingCloseMeterRegistry("second close failure");
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+        metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                   .addPublisher(new TestPublisher(firstPublisher))
+                                                   .warnOnMultipleRegistries(false)
+                                                   .build());
+        metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                   .addPublisher(new TestPublisher(secondPublisher))
+                                                   .warnOnMultipleRegistries(false)
+                                                   .build());
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class, metricsFactory::close);
+
+        assertThat("First registry close attempted", firstPublisher.closeAttempts.get(), is(1));
+        assertThat("Second registry close attempted", secondPublisher.closeAttempts.get(), is(1));
+        assertThat("First close failure reported", failure.getMessage(), is("first close failure"));
+        assertThat("Later failure is suppressed", failure.getSuppressed().length, is(1));
+        assertThat("Second close failure reported",
+                   failure.getSuppressed()[0].getMessage(),
+                   is("second close failure"));
+        assertThat("Every registry is removed after close attempts", metricsFactory.meterRegistryCount(), is(0));
+    }
+
+    @Test
+    void testFactoryCloseHandlesRepeatedFailureInstance() {
+        IllegalStateException repeatedFailure = new IllegalStateException("repeated close failure");
+        FailingCloseMeterRegistry firstPublisher = new FailingCloseMeterRegistry(repeatedFailure);
+        FailingCloseMeterRegistry secondPublisher = new FailingCloseMeterRegistry(repeatedFailure);
+        FailingCloseMeterRegistry thirdPublisher = new FailingCloseMeterRegistry("third close failure");
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+        metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                   .addPublisher(new TestPublisher(firstPublisher))
+                                                   .warnOnMultipleRegistries(false)
+                                                   .build());
+        metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                   .addPublisher(new TestPublisher(secondPublisher))
+                                                   .warnOnMultipleRegistries(false)
+                                                   .build());
+        metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                   .addPublisher(new TestPublisher(thirdPublisher))
+                                                   .warnOnMultipleRegistries(false)
+                                                   .build());
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class, metricsFactory::close);
+
+        assertThat("Repeated failure is reported", failure, is(repeatedFailure));
+        assertThat("First registry close attempted", firstPublisher.closeAttempts.get(), is(1));
+        assertThat("Second registry close attempted", secondPublisher.closeAttempts.get(), is(1));
+        assertThat("Later registry close attempted", thirdPublisher.closeAttempts.get(), is(1));
+        assertThat("Only the distinct later failure is suppressed", failure.getSuppressed().length, is(1));
+        assertThat("Later failure is reported",
+                   failure.getSuppressed()[0].getMessage(),
+                   is("third close failure"));
+        assertThat("Every registry is removed after close attempts", metricsFactory.meterRegistryCount(), is(0));
+    }
+
+    @Test
     void testRegistryConstructionFailureClosesPublishers() {
         SimpleMeterRegistry publisherRegistry = new SimpleMeterRegistry();
         Tag failingTag = new Tag() {
@@ -737,6 +796,26 @@ class TestMultipleRegistryLogging {
         @Override
         public String type() {
             return "test";
+        }
+    }
+
+    private static class FailingCloseMeterRegistry extends SimpleMeterRegistry {
+        private final AtomicInteger closeAttempts = new AtomicInteger();
+        private final IllegalStateException failure;
+
+        private FailingCloseMeterRegistry(String failureMessage) {
+            this(new IllegalStateException(failureMessage));
+        }
+
+        private FailingCloseMeterRegistry(IllegalStateException failure) {
+            this.failure = failure;
+        }
+
+        @Override
+        public void close() {
+            closeAttempts.incrementAndGet();
+            super.close();
+            throw failure;
         }
     }
 

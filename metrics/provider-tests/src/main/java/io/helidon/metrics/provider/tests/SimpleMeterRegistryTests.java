@@ -119,4 +119,21 @@ class SimpleMeterRegistryTests {
         assertThat("Incremented disabled counter", shouldBeNoOpCounter.count(), is(0L));
         assertThat("Incremented live counter", shouldBeLive.count(), is(1L));
     }
+
+    @Test
+    void testDisabledMeterUsesRegistryDefaultScope() {
+        Config config = Config.just(ConfigSources.create(Map.of("scoping.default", "custom",
+                                                                 "scoping.scopes.0.name", "custom",
+                                                                 "scoping.scopes.0.filter.exclude", "disabled")));
+        MeterRegistry customRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create(config));
+        try {
+            Counter disabledCounter = customRegistry.getOrCreate(metricsFactory.counterBuilder("disabled"));
+
+            assertThat("Disabled meter uses the custom registry default scope",
+                       disabledCounter.scope(),
+                       OptionalMatcher.optionalValue(is("custom")));
+        } finally {
+            customRegistry.close();
+        }
+    }
 }

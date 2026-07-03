@@ -52,9 +52,10 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
     }
 
     static MetricRegistryListener create(Config config) {
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
         return new DropwizardMetricsListener(config.get("name-prefix").asString().orElse("db.pool."),
-                                             Services.get(MetricsFactory.class),
-                                             Services.get(MeterRegistry.class));
+                                             meterRegistry.metricsFactory(),
+                                             meterRegistry);
     }
 
     @Override

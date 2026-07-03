@@ -508,7 +508,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
         if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
-
+            systemTagsManager.effectiveScope(builder.scope()).ifPresent(builder::scope);
             io.helidon.metrics.api.Meter result = metricsFactory.noOpMeter(builder);
             onAddListeners.forEach(listener -> listener.accept(result));
             return result;

@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Service;
 
@@ -46,7 +45,6 @@ class RetryImpl implements Retry {
 
     @Service.Inject
     RetryImpl(RetryConfig retryConfig,
-              Supplier<MetricsFactory> metricsFactory,
               Supplier<MeterRegistry> meterRegistry) {
         this.name = retryConfig.name().orElseGet(() -> "retry-" + System.identityHashCode(retryConfig));
         this.errorChecker = ErrorChecker.create(retryConfig.skipOn(), retryConfig.applyOn());
@@ -56,8 +54,8 @@ class RetryImpl implements Retry {
 
         this.metricsEnabled = retryConfig.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
-            var mf = metricsFactory.get();
             var mr = meterRegistry.get();
+            var mf = mr.metricsFactory();
             Tag nameTag = MetricsUtils.tag(mf, "name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_RETRY_CALLS_TOTAL, nameTag);
             retryCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_RETRY_RETRIES_TOTAL, nameTag);

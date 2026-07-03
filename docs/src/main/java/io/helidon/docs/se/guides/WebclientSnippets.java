@@ -88,7 +88,7 @@ class WebclientSnippets {
     void snippet_6_7_8() {
         // tag::snippet_6[]
         MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
-        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MetricsFactory metricsFactory = meterRegistry.metricsFactory();
 
         String metricName = "counter.GET.localhost"; // <1>
 
@@ -121,7 +121,7 @@ class WebclientSnippets {
     void snippet_9(String[] args) {
         // tag::snippet_9[]
         MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
-        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MetricsFactory metricsFactory = meterRegistry.metricsFactory();
 
         String counterName = "counter.GET.localhost"; // <1>
 
