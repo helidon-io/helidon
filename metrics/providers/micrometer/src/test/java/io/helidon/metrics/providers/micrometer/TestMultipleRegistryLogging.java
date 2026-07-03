@@ -317,6 +317,28 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
+    void testRegistryCloseAttemptsEveryPublisherClose() {
+        FailingCloseMeterRegistry firstPublisher = new FailingCloseMeterRegistry("first close failure");
+        FailingCloseMeterRegistry secondPublisher = new FailingCloseMeterRegistry("second close failure");
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+        metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                   .publishers(List.of(new TestPublisher(firstPublisher),
+                                                                       new TestPublisher(secondPublisher)))
+                                                   .warnOnMultipleRegistries(false)
+                                                   .build());
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class, metricsFactory::close);
+
+        assertThat("First publisher close attempted", firstPublisher.closeAttempts.get(), is(1));
+        assertThat("Second publisher close attempted", secondPublisher.closeAttempts.get(), is(1));
+        assertThat("Later failure is suppressed", failure.getSuppressed().length, is(1));
+        assertThat("Both publisher failures are reported",
+                   Set.of(failure.getMessage(), failure.getSuppressed()[0].getMessage()),
+                   is(Set.of("first close failure", "second close failure")));
+        assertThat("Registry is removed after publisher close attempts", metricsFactory.meterRegistryCount(), is(0));
+    }
+
+    @Test
     void testFactoryCloseHandlesRepeatedFailureInstance() {
         IllegalStateException repeatedFailure = new IllegalStateException("repeated close failure");
         FailingCloseMeterRegistry firstPublisher = new FailingCloseMeterRegistry(repeatedFailure);
