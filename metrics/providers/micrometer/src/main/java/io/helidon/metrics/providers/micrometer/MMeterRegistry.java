@@ -164,12 +164,44 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         } finally {
             lock.writeLock().unlock();
             if (notifyClosed) {
+                Throwable closeFailure = null;
                 try {
                     if (registeredWithFactory) {
                         metricsFactory.onMeterRegistryClosed(this);
                     }
-                } finally {
-                    delegate.close();
+                } catch (RuntimeException | Error e) {
+                    closeFailure = e;
+                }
+
+                CompositeMeterRegistry compositeMeterRegistry = (CompositeMeterRegistry) delegate;
+                for (io.micrometer.core.instrument.MeterRegistry publisher
+                        : List.copyOf(compositeMeterRegistry.getRegistries())) {
+                    try {
+                        publisher.close();
+                    } catch (RuntimeException | Error e) {
+                        if (closeFailure == null) {
+                            closeFailure = e;
+                        } else if (closeFailure != e) {
+                            closeFailure.addSuppressed(e);
+                        }
+                    } finally {
+                        compositeMeterRegistry.remove(publisher);
+                    }
+                }
+                try {
+                    compositeMeterRegistry.close();
+                } catch (RuntimeException | Error e) {
+                    if (closeFailure == null) {
+                        closeFailure = e;
+                    } else if (closeFailure != e) {
+                        closeFailure.addSuppressed(e);
+                    }
+                }
+                if (closeFailure instanceof RuntimeException e) {
+                    throw e;
+                }
+                if (closeFailure instanceof Error e) {
+                    throw e;
                 }
             }
         }

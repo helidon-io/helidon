@@ -56,7 +56,7 @@ class KeyPerformanceIndicatorMetricsImpls {
     static final String LOAD_NAME = "load";
     static final String KPI_METERS_SCOPE = Meter.Scope.VENDOR;
 
-    private static final Map<KpiMetricsKey, KeyPerformanceIndicatorSupport.Metrics> KPI_METRICS = new ConcurrentHashMap<>();
+    private static final Map<KpiMetricsKey, Basic> KPI_METRICS = new ConcurrentHashMap<>();
 
     // Maps camelCase names to snake_case, but only for those names that are actually different in the two cases.
     private static final Map<String, String> CAMEL_TO_SNAKE_CASE_METER_NAMES = Map.of("inFlight", "in_flight",
@@ -80,10 +80,15 @@ class KeyPerformanceIndicatorMetricsImpls {
                                                       KeyPerformanceIndicatorMetricsConfig kpiConfig,
                                                       BuiltInMeterNameFormat builtInMeterNameFormat) {
         KpiMetricsKey key = new KpiMetricsKey(kpiMeterRegistry, meterNamePrefix);
-        return KPI_METRICS.computeIfAbsent(key, ignored ->
-                kpiConfig.extended()
-                        ? new Extended(key, kpiConfig, builtInMeterNameFormat)
-                        : new Basic(key, builtInMeterNameFormat));
+        return KPI_METRICS.compute(key, (ignored, metrics) -> {
+            if (metrics != null) {
+                metrics.retain();
+                return metrics;
+            }
+            return kpiConfig.extended()
+                    ? new Extended(key, kpiConfig, builtInMeterNameFormat)
+                    : new Basic(key, builtInMeterNameFormat);
+        });
     }
 
     static void close() {
@@ -100,6 +105,7 @@ class KeyPerformanceIndicatorMetricsImpls {
         private final MeterRegistry meterRegistry;
         private final List<Meter> meters = new ArrayList<>();
         private final BuiltInMeterNameFormat builtInMeterNameFormat;
+        private int owners = 1;
 
         protected Basic(KpiMetricsKey key, BuiltInMeterNameFormat builtInMeterNameFormat) {
             MeterRegistry kpiMeterRegistry = key.meterRegistry;
@@ -122,8 +128,17 @@ class KeyPerformanceIndicatorMetricsImpls {
 
         @Override
         public void close() {
-            meters.forEach(meterRegistry::remove);
-            KPI_METRICS.remove(key, this);
+            KPI_METRICS.computeIfPresent(key, (ignored, metrics) -> {
+                if (metrics != this || --owners > 0) {
+                    return metrics;
+                }
+                meters.forEach(meterRegistry::remove);
+                return null;
+            });
+        }
+
+        private void retain() {
+            owners++;
         }
 
         protected <M extends Meter> M add(M meter) {

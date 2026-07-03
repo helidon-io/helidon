@@ -132,6 +132,50 @@ class TestKpiMeterNameCase {
         }
     }
 
+    @Test
+    void testSharedKpiMetricsRemainUntilLastOwnerCloses() {
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        KeyPerformanceIndicatorSupport.Metrics firstMetrics = null;
+        KeyPerformanceIndicatorSupport.Metrics secondMetrics = null;
+        try {
+            firstMetrics = KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
+                                                                   "requests.",
+                                                                   KeyPerformanceIndicatorMetricsConfig.create(),
+                                                                   BuiltInMeterNameFormat.CAMEL);
+            secondMetrics = KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
+                                                                    "requests.",
+                                                                    KeyPerformanceIndicatorMetricsConfig.create(),
+                                                                    BuiltInMeterNameFormat.CAMEL);
+
+            assertThat("Observers share the same KPI metrics", secondMetrics, sameInstance(firstMetrics));
+
+            firstMetrics.onRequestReceived();
+            firstMetrics.close();
+            firstMetrics = null;
+
+            assertThat("First observer close preserves shared KPI meters", counter(meterRegistry).count(), is(1L));
+
+            secondMetrics.onRequestReceived();
+            assertThat("Second observer keeps recording KPI metrics", counter(meterRegistry).count(), is(2L));
+
+            secondMetrics.close();
+            secondMetrics = null;
+
+            assertThat("Last observer close removes KPI meters",
+                       meterRegistry.meters().stream().noneMatch(meter -> meter.id().name().equals("requests.count")),
+                       is(true));
+        } finally {
+            if (firstMetrics != null) {
+                firstMetrics.close();
+            }
+            if (secondMetrics != null) {
+                secondMetrics.close();
+            }
+            meterRegistry.close();
+        }
+    }
+
     private static Counter counter(MeterRegistry meterRegistry) {
         return meterRegistry.meters().stream()
                 .filter(meter -> meter.id().name().equals("requests.count"))
