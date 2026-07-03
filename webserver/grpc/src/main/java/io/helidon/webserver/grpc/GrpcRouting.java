@@ -204,8 +204,16 @@ public class GrpcRouting implements Routing {
                                               configuredServices);
                 }
             }
+            Set<String> programmaticServerServiceTypes = new LinkedHashSet<>();
+            interceptors.stream()
+                    .filter(GrpcServerService.class::isInstance)
+                    .map(GrpcServerService.class::cast)
+                    .map(GrpcServerService::type)
+                    .forEach(programmaticServerServiceTypes::add);
             for (GrpcServerService serverService : configuredServices.values()) {
-                configuredInterceptors.merge(serverService.interceptors());
+                if (!programmaticServerServiceTypes.contains(serverService.type())) {
+                    configuredInterceptors.merge(serverService.interceptors());
+                }
             }
             WeightedBag<ServerInterceptor> routingInterceptors = configuredInterceptors.copyMe();
             routingInterceptors.merge(interceptors);

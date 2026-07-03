@@ -19,6 +19,7 @@ package io.helidon.declarative.tests.grpc;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.grpc.api.Grpc;
+import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.grpc.RpcServer;
 
@@ -41,6 +42,12 @@ class DefaultSecuredGreetingEndpoint {
     @Grpc.Unary("PermitAllDefaultGreet")
     @PermitAll
     GreetingReply permitAllDefaultGreet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("RoleValidatorDefaultGreet")
+    @RoleValidator.Roles("user")
+    GreetingReply roleValidatorDefaultGreet(GreetingRequest request) {
         return reply(request.getName());
     }
 

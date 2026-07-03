@@ -536,6 +536,34 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void testLocalCloseBeforeStartCallReturnsCompletesListener() {
+        AtomicInteger completeCount = new AtomicInteger();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onComplete() {
+                completeCount.incrementAndGet();
+            }
+        };
+        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+            call.close(Status.OK, new Metadata());
+            return listener;
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create());
+
+        handler.init();
+
+        assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
+        assertThat(completeCount.get(), is(1));
+    }
+
+    @Test
     void testOnlyOneTerminalCallback() {
         AtomicInteger completeCount = new AtomicInteger();
         AtomicInteger cancelCount = new AtomicInteger();

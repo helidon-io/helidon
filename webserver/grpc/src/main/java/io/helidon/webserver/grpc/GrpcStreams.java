@@ -61,8 +61,8 @@ public final class GrpcStreams {
     public static <ResT> void serverStreaming(Supplier<Stream<ResT>> handler, StreamObserver<ResT> responseObserver) {
         Objects.requireNonNull(handler);
         Objects.requireNonNull(responseObserver);
-        Outbound outbound = new Outbound(responseObserver, () -> { });
         ContextRunner contextRunner = ContextRunner.create();
+        Outbound outbound = new Outbound(responseObserver, () -> { }, contextRunner);
         Future<?> worker = contextRunner.submit(() -> {
             boolean completed;
             try {
@@ -102,8 +102,8 @@ public final class GrpcStreams {
         Objects.requireNonNull(handler);
         Objects.requireNonNull(responseObserver);
         StreamingRequest<ReqT> request = new StreamingRequest<>(responseObserver);
-        Outbound outbound = new Outbound(responseObserver, request::cancel);
         ContextRunner contextRunner = ContextRunner.create();
+        Outbound outbound = new Outbound(responseObserver, request::cancel, contextRunner);
         Future<?> worker = contextRunner.submit(() -> {
             ResT response;
             try (Stream<ReqT> stream = request.stream()) {
@@ -147,8 +147,8 @@ public final class GrpcStreams {
         Objects.requireNonNull(handler);
         Objects.requireNonNull(responseObserver);
         StreamingRequest<ReqT> request = new StreamingRequest<>(responseObserver);
-        Outbound outbound = new Outbound(responseObserver, request::cancel);
         ContextRunner contextRunner = ContextRunner.create();
+        Outbound outbound = new Outbound(responseObserver, request::cancel, contextRunner);
         Future<?> worker = contextRunner.submit(() -> {
             boolean completed;
             try (Stream<ReqT> stream = request.stream()) {
@@ -372,6 +372,7 @@ public final class GrpcStreams {
 
     private static final class Outbound {
         private final ServerCallStreamObserver<?> serverObserver;
+        private final ContextRunner contextRunner;
         private final ReentrantLock lock = new ReentrantLock();
         private final Condition ready = lock.newCondition();
         private volatile boolean cancelled;
@@ -379,7 +380,8 @@ public final class GrpcStreams {
         private Stream<?> source;
         private boolean terminal;
 
-        private Outbound(StreamObserver<?> responseObserver, Runnable onCancel) {
+        private Outbound(StreamObserver<?> responseObserver, Runnable onCancel, ContextRunner contextRunner) {
+            this.contextRunner = contextRunner;
             if (responseObserver instanceof ServerCallStreamObserver<?> observer) {
                 this.serverObserver = observer;
                 observer.setOnReadyHandler(this::signalReady);
@@ -489,13 +491,13 @@ public final class GrpcStreams {
                 worker.cancel(true);
             }
             if (source != null) {
-                THREAD_FACTORY.newThread(() -> {
+                contextRunner.submit(() -> {
                     try {
                         source.close();
                     } catch (Throwable ignored) {
                         // The peer has cancelled; there is no remaining observer to report close failures to.
                     }
-                }).start();
+                });
             }
         }
 

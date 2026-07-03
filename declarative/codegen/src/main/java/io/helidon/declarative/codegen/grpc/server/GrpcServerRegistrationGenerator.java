@@ -146,12 +146,7 @@ class GrpcServerRegistrationGenerator {
                 .addContent(endpointType)
                 .addContent(".class, ")
                 .addContentLiteral(endpoint.serviceName())
-                .addContentLine(")")
-                .increaseContentPadding()
-                .increaseContentPadding()
-                .addContentLine(".proto(declarative__proto);")
-                .decreaseContentPadding()
-                .decreaseContentPadding();
+                .addContentLine(");");
 
         addSecurity(endpoint.security(), constructor, endpointType, null, GrpcSecurityDefinition.empty());
         if (!endpoint.security().isEmpty()) {
@@ -189,6 +184,11 @@ class GrpcServerRegistrationGenerator {
                     .addContent(method.uniqueName())
                     .addContentLine(", rules -> {")
                     .increaseContentPadding()
+                    .addContent("rules.requestType(")
+                    .addContent(method.requestType())
+                    .addContent(".class).responseType(")
+                    .addContent(method.responseType())
+                    .addContentLine(".class);")
                     .addContentLine("if (entryPoints.hasInterceptors()) {")
                     .increaseContentPadding()
                     .addContentLine("rules.intercept(")
@@ -216,7 +216,7 @@ class GrpcServerRegistrationGenerator {
             constructor.decreaseContentPadding()
                     .addContentLine("});");
         }
-        return constructor.addContentLine("this.descriptor = builder.build();");
+        return constructor.addContentLine("this.descriptor = builder.proto(declarative__proto).build();");
     }
 
     private static void addMethodInfoFields(ClassModel.Builder classModel, GrpcEndpoint endpoint) {

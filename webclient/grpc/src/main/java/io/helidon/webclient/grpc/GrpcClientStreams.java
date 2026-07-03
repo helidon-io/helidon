@@ -59,7 +59,12 @@ final class GrpcClientStreams {
         Objects.requireNonNull(call);
         Objects.requireNonNull(request);
         var responses = new StreamingResponse<ReqT, ResT>();
-        ClientCalls.asyncServerStreamingCall(call, request, responses);
+        try {
+            ClientCalls.asyncServerStreamingCall(call, request, responses);
+        } catch (RuntimeException | Error t) {
+            startFailed(call, t);
+            throw t;
+        }
         return responses.stream();
     }
 
@@ -101,12 +106,16 @@ final class GrpcClientStreams {
     }
 
     private static void startFailed(ClientCall<?, ?> call, Stream<?> requests, Throwable failure) {
+        startFailed(call, failure);
+        closeRequests(requests, failure);
+    }
+
+    private static void startFailed(ClientCall<?, ?> call, Throwable failure) {
         try {
             call.cancel("Request stream failed to start.", failure);
         } catch (Throwable t) {
             failure.addSuppressed(t);
         }
-        closeRequests(requests, failure);
     }
 
     static void closeRequests(Stream<?> requests, Throwable failure) {

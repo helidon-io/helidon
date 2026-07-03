@@ -347,6 +347,10 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString("var annotations = CLASS_ANNOTATIONS;"));
         assertThat(registration, containsString("var declarative__proto = proto();"));
         assertThat(registration, containsString(".proto(declarative__proto)"));
+        assertThat(registration,
+                   containsString("rules.requestType(GreetingRequest.class)"
+                                          + ".responseType(GreetingReply.class);"));
+        assertThat(registration, containsString("this.descriptor = builder.proto(declarative__proto).build();"));
         assertThat(registration, containsString("GreetingRequest.getDescriptor()"));
         assertThat(registration, containsString("GreetingReply.getDescriptor()"));
         assertThat(registration, containsString("private static void validateProtoMethod"));
@@ -373,7 +377,9 @@ class GrpcServerCodegenTest {
         assertThat(registration,
                    containsString("GrpcSecurity.enforce().skipAuthentication().skipAuthorization()"
                                           + ".clearRolesAllowed().securityLevel("));
-        assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().authorize().securityLevel("));
+        assertThat(registration,
+                   containsString("GrpcSecurity.enforce().authenticate().authorize()"
+                                          + ".clearRolesAllowed().securityLevel("));
         assertThat(registration, containsString(".auditEventType(\"classAudit\")"));
         assertThat(registration, containsString("GrpcSecurity.enforce().audit().auditEventType(\"declarativeGrpc\")"));
         assertThat(registration, not(containsString(".auditEventType(\"request\")")));

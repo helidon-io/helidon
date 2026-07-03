@@ -710,6 +710,17 @@ class GrpcClientStreamsTest {
     }
 
     @Test
+    void serverStreamingCancelsCallWhenStartFails() {
+        IllegalStateException startFailure = new IllegalStateException("start failed");
+        TestClientCall<String, String> call = new TestClientCall<>(true, startFailure);
+
+        assertThat(assertThrows(IllegalStateException.class,
+                                () -> GrpcClientStreams.serverStreaming(call, "request")),
+                   sameInstance(startFailure));
+        assertThat(call.cancelled.get(), is(true));
+    }
+
+    @Test
     void bidirectionalClosesSourceAndCancelsCallWhenStartFails() {
         IllegalStateException startFailure = new IllegalStateException("start failed");
         TestClientCall<String, String> call = new TestClientCall<>(true, startFailure);

@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
+import io.helidon.declarative.tests.grpc.DescriptorTypesProto.Envelope;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
@@ -40,6 +41,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
@@ -129,6 +131,17 @@ class DeclarativeGrpcTest {
         var response = greetingClient.greet(request("Declarative"));
 
         assertThat(response.getMessage(), is("Hello Declarative"));
+    }
+
+    @Test
+    void testImportedAndNestedProtoTypes() {
+        var stub = DescriptorTypeServiceGrpc.newBlockingStub(channel);
+
+        Envelope.Request nested = stub.importedEmpty(Empty.getDefaultInstance());
+        Empty imported = stub.nested(nested);
+
+        assertThat(nested.getName(), is("imported"));
+        assertThat(imported, is(Empty.getDefaultInstance()));
     }
 
     @Test
@@ -349,6 +362,20 @@ class DeclarativeGrpcTest {
 
         var permitAllResponse = defaultSecuredBlockingStub.permitAllDefaultGreet(request);
         assertThat(permitAllResponse.getMessage(), is("Default secured hello Tomas"));
+    }
+
+    @Test
+    void testRoleValidatorOverridesServiceRoles() {
+        var request = request("Tomas");
+
+        var wrongRole = assertThrows(StatusRuntimeException.class,
+                                     () -> authenticatedDefaultSecuredBlockingStub(ADMIN)
+                                             .roleValidatorDefaultGreet(request));
+        assertThat(wrongRole.getStatus().getCode(), is(Code.PERMISSION_DENIED));
+
+        var response = authenticatedDefaultSecuredBlockingStub(USER)
+                .roleValidatorDefaultGreet(request);
+        assertThat(response.getMessage(), is("Default secured hello Tomas"));
     }
 
     @Test

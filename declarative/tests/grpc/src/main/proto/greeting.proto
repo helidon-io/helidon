@@ -41,6 +41,7 @@ service GreetingService {
 service DefaultSecuredGreetingService {
   rpc AdminDefaultGreet (GreetingRequest) returns (GreetingReply) {}
   rpc PermitAllDefaultGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc RoleValidatorDefaultGreet (GreetingRequest) returns (GreetingReply) {}
 }
 
 message GreetingRequest {

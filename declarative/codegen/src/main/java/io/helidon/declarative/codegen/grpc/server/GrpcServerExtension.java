@@ -389,7 +389,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                           authorizer,
                                           authorized.isPresent() && authorizer.isEmpty(),
                                           List.copyOf(rolesAllowed),
-                                          hasDenyAll || hasPermitAll,
+                                          hasDenyAll || hasPermitAll || hasRoleValidatorRoles,
                                           audited.map(_ -> true),
                                           audited.flatMap(Annotation::stringValue).filter(it -> !it.isBlank()),
                                           audited.flatMap(it -> it.stringValue("messageFormat"))

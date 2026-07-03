@@ -259,6 +259,9 @@ class GrpcStreamsTest {
     void cancellationClosesResponseSourceThatIgnoresInterruption() throws Exception {
         List<String> events = new CopyOnWriteArrayList<>();
         TestServerObserver<String> observer = new TestServerObserver<>(events, true, false, false);
+        Context context = Context.create();
+        AtomicReference<Context> closeThreadContext = new AtomicReference<>();
+        AtomicReference<Context> closeGrpcContext = new AtomicReference<>();
         CountDownLatch sourceEntered = new CountDownLatch(1);
         CountDownLatch sourceRelease = new CountDownLatch(1);
         CountDownLatch closeEntered = new CountDownLatch(1);
@@ -294,6 +297,8 @@ class GrpcStreamsTest {
                 return ORDERED | NONNULL;
             }
         }, false).onClose(() -> {
+            closeThreadContext.set(Contexts.context().orElse(null));
+            closeGrpcContext.set(ContextKeys.HELIDON_CONTEXT.get());
             closeCount.incrementAndGet();
             closeEntered.countDown();
             try {
@@ -306,7 +311,9 @@ class GrpcStreamsTest {
             }
         });
 
-        GrpcStreams.serverStreaming(() -> source, observer);
+        io.grpc.Context.current()
+                .withValue(ContextKeys.HELIDON_CONTEXT, context)
+                .run(() -> GrpcStreams.serverStreaming(() -> source, observer));
         assertThat("response source entered", sourceEntered.await(10, TimeUnit.SECONDS), is(true));
 
         observer.cancelByPeer();
@@ -316,6 +323,8 @@ class GrpcStreamsTest {
         closeRelease.countDown();
         assertThat("response source closed", sourceClosed.await(10, TimeUnit.SECONDS), is(true));
         assertThat("response source closed once", closeCount.get(), is(1));
+        assertThat(closeThreadContext.get(), is(context));
+        assertThat(closeGrpcContext.get(), is(context));
         assertThat(events, is(List.of()));
     }
 

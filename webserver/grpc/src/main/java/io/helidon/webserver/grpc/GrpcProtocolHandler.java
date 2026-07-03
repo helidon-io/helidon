@@ -745,7 +745,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 updateStreamState(closeState);
 
                 // inform listener of completion
-                if (!callCancelled && listener != null) {
+                if (!callCancelled) {
                     scheduleTerminal(ListenerTerminal.COMPLETE);
                 }
 

@@ -181,6 +181,22 @@ class GrpcSecurityHttpFeatureTest extends BaseServiceTest {
     }
 
     @Test
+    void programmaticGrpcSecurityOverridesDiscoveredGrpcSecurity() {
+        GrpcSecurity programmaticSecurity = GrpcSecurity.create(buildSecurity(), Config.empty());
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(buildGrpcSecurityConfig())
+                .intercept(programmaticSecurity)
+                .build();
+
+        List<GrpcSecurity> securityInterceptors = routing.interceptors()
+                .stream()
+                .filter(GrpcSecurity.class::isInstance)
+                .map(GrpcSecurity.class::cast)
+                .toList();
+        assertThat(securityInterceptors, is(List.of(programmaticSecurity)));
+    }
+
+    @Test
     void protocolConfigDoesNotInstantiateRoutingServices() {
         Config config = Config.just(ConfigSources.create(Map.of("grpc-services-discover-services", "true")));
         GrpcConfig protocolConfig = new GrpcProtocolConfigProvider().create(config, "grpc");
