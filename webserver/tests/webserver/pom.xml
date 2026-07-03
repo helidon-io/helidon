@@ -68,5 +68,10 @@
             <artifactId>helidon-http-encoding-gzip</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.http.encoding</groupId>
+            <artifactId>helidon-http-encoding-deflate</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

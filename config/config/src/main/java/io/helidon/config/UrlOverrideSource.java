@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,8 +112,11 @@ public class UrlOverrideSource extends AbstractSource
             Instant timestamp;
             if (connection.getLastModified() == 0) {
                 timestamp = Instant.now();
-                LOGGER.log(Level.DEBUG, "Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
-                                    + timestamp + "' as a content timestamp.");
+                if (LOGGER.isLoggable(Level.DEBUG)) {
+                    LOGGER.log(Level.DEBUG, "Missing GET '" + UrlHelper.configuredLocation(url)
+                                        + "' response header 'Last-Modified'. Used current time '"
+                                        + timestamp + "' as a content timestamp.");
+                }
             } else {
                 timestamp = Instant.ofEpochMilli(connection.getLastModified());
             }
@@ -129,14 +132,15 @@ public class UrlOverrideSource extends AbstractSource
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new ConfigException("Configuration at url '" + url + "' GET is not accessible.", ex);
+            throw new ConfigException("Configuration at url '" + UrlHelper.configuredLocation(url)
+                                              + "' GET is not accessible.", ex);
 
         }
     }
 
     @Override
     protected String uid() {
-        return url.toString();
+        return UrlHelper.configuredLocation(url);
     }
 
     /**

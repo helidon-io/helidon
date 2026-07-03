@@ -313,6 +313,21 @@ public final class OidcFeature implements HttpFeature {
             return;
         }
 
+        OptionalValue<String> state = req.query().first(STATE_PARAM_NAME);
+        String stateQuery = null;
+        if (state.isPresent()) {
+            String stateValue = state.get();
+            try {
+                HeaderValues.create(HeaderNames.LOCATION, "&" + STATE_PARAM_NAME + "=" + stateValue).validate();
+            } catch (IllegalArgumentException e) {
+                LOGGER.log(Level.TRACE, "Invalid OIDC logout state query parameter", e);
+                res.status(Status.BAD_REQUEST_400)
+                        .send();
+                return;
+            }
+            stateQuery = "&" + STATE_PARAM_NAME + "=" + encode(stateValue);
+        }
+
         String encryptedIdToken = idTokenCookie.get();
 
         try {
@@ -322,8 +337,9 @@ public final class OidcFeature implements HttpFeature {
                                                          + idToken
                                                          + "&post_logout_redirect_uri=" + postLogoutUri(req));
 
-            req.query().first("state")
-                    .ifPresent(it -> sb.append("&state=").append(it));
+            if (stateQuery != null) {
+                sb.append(stateQuery);
+            }
 
             ServerResponseHeaders headers = res.headers();
             headers.addCookie(tokenCookieHandler.removeCookie().build());
@@ -517,19 +533,9 @@ public final class OidcFeature implements HttpFeature {
         }
 
         //redirect to "originalUri"
-        String originalUri = stateCookie.stringValue("originalUri", DEFAULT_REDIRECT);
         ServerResponseHeaders headers = res.headers();
+        String originalUri = postLoginRedirectUri(stateCookie, idToken, accessToken, tenantName);
         res.status(Status.TEMPORARY_REDIRECT_307);
-        if (oidcConfig.useParam()) {
-            originalUri += (originalUri.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + accessToken;
-            if (idToken.isPresent()) {
-                originalUri += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken.get();
-            }
-            if (!DEFAULT_TENANT_ID.equals(tenantName)) {
-                originalUri += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
-            }
-        }
-
         originalUri = updateRedirectCounter(req, headers, tenantName, originalUri);
         headers.add(HeaderNames.LOCATION, originalUri);
 
@@ -560,6 +566,38 @@ public final class OidcFeature implements HttpFeature {
         }
 
         return "done";
+    }
+
+    // Package-private test seam for validating the post-login Location value without invoking the token endpoint.
+    String postLoginRedirectUri(JsonObject stateCookie,
+                                Optional<String> idToken,
+                                String accessToken,
+                                String tenantName) {
+        String originalUri = OidcUtil.localRedirectUri(
+                stateCookie.stringValue("originalUri", DEFAULT_REDIRECT))
+                .orElse(DEFAULT_REDIRECT);
+        if (oidcConfig.useParam()) {
+            StringBuilder redirectUri = new StringBuilder(originalUri)
+                    .append(originalUri.contains("?") ? '&' : '?')
+                    .append(encode(oidcConfig.paramName()))
+                    .append('=')
+                    .append(accessToken);
+            if (idToken.isPresent()) {
+                redirectUri.append('&')
+                        .append(encode(oidcConfig.idTokenParamName()))
+                        .append('=')
+                        .append(idToken.get());
+            }
+            if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                redirectUri.append('&')
+                        .append(encode(oidcConfig.tenantParamName()))
+                        .append('=')
+                        .append(encode(tenantName));
+            }
+            originalUri = redirectUri.toString();
+        }
+
+        return originalUri;
     }
 
     private String encode(String toEncode) {

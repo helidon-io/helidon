@@ -134,18 +134,23 @@ class Http2ClientConnectionHandler {
         }
         try {
             // read/write lock to obtain a stream or create a new connection
-            Http2ClientConnection conn = activeConnection.updateAndGet(c -> c != null && c.closed() ? null : c);
+            Http2ClientConnection conn = activeConnection.updateAndGet(c -> c != null && c.closed(http2Client.protocolConfig())
+                    ? null
+                    : c);
             Http2ClientStream stream;
             if (conn == null) {
                 conn = createConnection(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
                 // we must assume that a new connection can handle a new stream
-                stream = createStreamOnNewConnection(conn, request);
+                stream = createStreamOnNewConnection(http2Client, conn, request);
             } else {
-                stream = conn.tryStream(request);
+                stream = conn.tryStream(request,
+                                        http2Client.clientConfig(),
+                                        http2Client.sendListener(),
+                                        http2Client.recvListener());
                 if (stream == null) {
                     // either the connection is closed, or it ran out of streams
                     conn = createConnection(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
-                    stream = createStreamOnNewConnection(conn, request);
+                    stream = createStreamOnNewConnection(http2Client, conn, request);
                 }
             }
 
@@ -323,7 +328,7 @@ class Http2ClientConnectionHandler {
         try {
             boolean ownsExplicitConnection = ownsExplicitConnection(request);
             Http2ClientConnection connection = ownsExplicitConnection ? h2ConnByConn.get(clientConnection) : null;
-            if (connection != null && connection.closed()) {
+            if (connection != null && connection.closed(http2Client.protocolConfig())) {
                 removeConnection(connection);
                 connection = null;
             }
@@ -346,7 +351,12 @@ class Http2ClientConnectionHandler {
                 activeConnection.set(connection);
             }
 
-            return new Http2ConnectionAttemptResult(Result.HTTP_2, connection.createStream(request), null);
+            return new Http2ConnectionAttemptResult(Result.HTTP_2,
+                                                    connection.createStream(request,
+                                                                            http2Client.clientConfig(),
+                                                                            http2Client.sendListener(),
+                                                                            http2Client.recvListener()),
+                                                    null);
         } finally {
             lock.unlock();
         }
@@ -458,10 +468,14 @@ class Http2ClientConnectionHandler {
         return usedConnection;
     }
 
-    private Http2ClientStream createStreamOnNewConnection(Http2ClientConnection connection,
+    private Http2ClientStream createStreamOnNewConnection(Http2ClientImpl http2Client,
+                                                          Http2ClientConnection connection,
                                                           Http2ClientRequestImpl request) {
         try {
-            return connection.createStream(request);
+            return connection.createStream(request,
+                                           http2Client.clientConfig(),
+                                           http2Client.sendListener(),
+                                           http2Client.recvListener());
         } catch (RuntimeException e) {
             discardConnection(connection);
             throw e;

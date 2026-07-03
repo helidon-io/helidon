@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -32,6 +33,7 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -77,6 +79,7 @@ public class Http2Headers {
     public static final HeaderName STATUS_NAME = HeaderNames.create(STATUS);
     static final DynamicHeader EMPTY_HEADER_RECORD = new DynamicHeader(null, null, 0);
     private static final System.Logger LOGGER = System.getLogger(Http2Headers.class.getName());
+    private static final Set<HeaderName> NO_IGNORED_HEADERS = Set.of();
     private static final String TRAILERS = "trailers";
     private static final String HTTP = "http";
     private static final String HTTPS = "https";
@@ -110,6 +113,27 @@ public class Http2Headers {
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
                                       Http2Headers headers,
+                                      Http2FrameData... frames) {
+        return create(stream, table, huffman, headers, NO_IGNORED_HEADERS, frames);
+    }
+
+    /**
+     * Create headers from HTTP request.
+     *
+     * @param stream         stream that owns these headers
+     * @param table          dynamic table for this connection
+     * @param huffman        huffman decoder
+     * @param headers        http2 headers
+     * @param ignoredHeaders decoded header names that must not be added to the result
+     * @param frames         frames of the headers
+     * @return new headers parsed from the frames
+     * @throws Http2Exception in case of protocol errors
+     */
+    public static Http2Headers create(Http2Stream stream,
+                                      DynamicTable table,
+                                      Http2HuffmanDecoder huffman,
+                                      Http2Headers headers,
+                                      Set<HeaderName> ignoredHeaders,
                                       Http2FrameData... frames) {
 
         if (frames.length == 0) {
@@ -155,7 +179,13 @@ public class Http2Headers {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Expecting more header bytes");
             }
 
-            lastIsPseudoHeader = readHeader(writableHeaders, pseudoHeaders, table, huffman, data, lastIsPseudoHeader);
+            lastIsPseudoHeader = readHeader(writableHeaders,
+                                            pseudoHeaders,
+                                            table,
+                                            huffman,
+                                            data,
+                                            lastIsPseudoHeader,
+                                            ignoredHeaders);
         }
     }
 
@@ -334,11 +364,20 @@ public class Http2Headers {
         if (headers.contains(HeaderNames.CONNECTION)) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Connection in request headers");
         }
-        if (headers.contains(HeaderNames.TE)) {
+        if (headers.contains(HeaderNames.TRANSFER_ENCODING)) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Transfer-Encoding in request headers");
+        }
+        try {
+            headers.contentLength();
+        } catch (NumberFormatException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Content-Length header must be a number.", e);
+        } catch (IllegalArgumentException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
+        }
+            if (headers.contains(HeaderNames.TE)) {
             List<String> values = headers.all(HeaderNames.TE, List::of);
             if (!values.equals(List.of(TRAILERS))) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "te in headers with other value than trailers: \n"
-                        + BufferData.create(values.toString()).debugDataHex());
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "te in headers with other value than trailers");
             }
         }
         if (!pseudoHeaders.hasScheme()) {
@@ -350,25 +389,18 @@ public class Http2Headers {
         if (!pseudoHeaders.hasMethod()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :method pseudo header");
         }
-        if (pseudoHeaders.hasAuthority()) {
-            validateHostAuthority();
+        List<String> hostValues = headers.all(HeaderNames.HOST, List::of);
+        if (hostValues.size() > 1) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Repeated Host header");
         }
-    }
-
-    private void validateHostAuthority() {
-        List<String> hostHeaders = headers.all(HeaderNames.HOST, List::of);
-        if (hostHeaders.isEmpty()) {
-            return;
+        boolean hasHost = hostValues.size() == 1 && !hostValues.get(0).isEmpty();
+        boolean hasAuthority = pseudoHeaders.hasAuthority() && !pseudoHeaders.authority().isEmpty();
+        if (!hasAuthority && !hasHost) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :authority pseudo header or Host header");
         }
-        if (hostHeaders.size() > 1) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Only a single Host header is allowed");
-        }
-        try {
-            if (!UriAuthority.create(pseudoHeaders.authority()).equals(UriAuthority.create(hostHeaders.getFirst()))) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Host header must match :authority");
-            }
-        } catch (IllegalArgumentException e) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
+        if (pseudoHeaders.hasAuthority() && !hostValues.isEmpty()
+                && !authoritiesMatch(pseudoHeaders.scheme(), pseudoHeaders.authority(), hostValues.get(0))) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Host header does not match :authority pseudo header");
         }
     }
 
@@ -509,18 +541,39 @@ public class Http2Headers {
         return new Http2Headers(httpHeaders, pseudoHeaders);
     }
 
+    private static boolean authoritiesMatch(String scheme, String authority, String host) {
+        try {
+            int defaultPort = defaultPort(scheme);
+            UriAuthority authorityValue = UriAuthority.create(authority);
+            UriAuthority hostValue = UriAuthority.create(host);
+            return authorityValue.host().equals(hostValue.host())
+                    && authorityValue.portOrDefault(defaultPort) == hostValue.portOrDefault(defaultPort);
+        } catch (IllegalArgumentException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
+        }
+    }
+
+    private static int defaultPort(String scheme) {
+        return switch (scheme.toLowerCase(Locale.ROOT)) {
+        case HTTP -> 80;
+        case HTTPS -> 443;
+        default -> -1;
+        };
+    }
+
     private static boolean readHeader(WritableHeaders<?> headers,
                                       PseudoHeaders pseudoHeaders,
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
                                       BufferData data,
-                                      boolean lastIsPseudoHeader) {
+                                      boolean lastIsPseudoHeader,
+                                      Set<HeaderName> ignoredHeaders) {
         // find out what kind of header we have
         HeaderApproach approach = HeaderApproach.resolve(data);
 
         if (approach.tableSizeUpdate) {
             table.maxTableSize(approach.number);
-            if (headers.size() > 0 || pseudoHeaders.size() > 0) {
+            if (!lastIsPseudoHeader || pseudoHeaders.size() > 0) {
                 throw new Http2Exception(Http2ErrorCode.COMPRESSION, "Table size update is after headers");
             }
             return lastIsPseudoHeader;
@@ -539,18 +592,19 @@ public class Http2Headers {
                 try {
                     name = readString(huffman, data);
                 } catch (IllegalArgumentException e) {
-                    throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received a header with"
-                            + " non ASCII character(s)\n" + data.debugDataHex(true));
+                    throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                             "Received a header with non ASCII character(s)");
                 }
                 if (!(name.toLowerCase(Locale.ROOT).equals(name))) {
                     throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                             "Received a header with uppercase letters\n"
-                                                     + BufferData.create(name).debugDataHex());
+                                             "Received a header with uppercase letters: "
+                                                     + LogFormatter.escape(name));
                 }
                 if (name.charAt(0) == ':') {
                     throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                             "Received invalid pseudo-header field (or explicit value instead of indexed)\n"
-                                                     + BufferData.create(name).debugDataHex());
+                                             "Received invalid pseudo-header field "
+                                                     + "(or explicit value instead of indexed): "
+                                                     + LogFormatter.escape(name));
                 }
                 headerName = HeaderNames.create(name);
             } else {
@@ -597,17 +651,8 @@ public class Http2Headers {
                 }
             } else {
                 if (headerName == null || value == null) {
-                    String tHeaderName = headerName == null ? "null" : headerName.lowerCase();
-                    String tValue = value == null
-                            ? "null"
-                            : BufferData.create(value.getBytes(StandardCharsets.US_ASCII))
-                                    .debugDataHex();
-
                     throw new Http2Exception(Http2ErrorCode.COMPRESSION,
-                                             "Failed to get name or value. Name: "
-                                                     + tHeaderName
-                                                     + ", value "
-                                                     + tValue);
+                                             "Failed to get header name or value");
                 }
             }
 
@@ -615,7 +660,7 @@ public class Http2Headers {
                 table.add(headerName, value);
             }
 
-            if (!isPseudoHeader) {
+            if (!isPseudoHeader && !ignoredHeaders.contains(headerName)) {
                 headers.add(HeaderValues.create(headerName,
                                                 !approach.addToIndex,
                                                 approach.neverIndex,
@@ -642,7 +687,37 @@ public class Http2Headers {
         // +---+---------------------------+
         // | Value String (Length octets)  |
         // +-------------------------------+
-        int length = data.readHpackInt(first, 7);
+        int length = first & 0b01111111;
+        if (length == 0b01111111) {
+            long longLength = length;
+            int shiftBy = 0;
+            while (true) {
+                if (data.available() == 0) {
+                    throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                             "HPACK string length exceeds available header block bytes");
+                }
+                int next = data.read();
+                int nextValue = next & 0b01111111;
+                if (nextValue != 0 && shiftBy > 30) {
+                    throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                             "HPACK string length exceeds available header block bytes");
+                }
+                longLength += (long) nextValue << shiftBy;
+                if (longLength > data.available()) {
+                    throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                             "HPACK string length exceeds available header block bytes");
+                }
+                if ((next & 0b10000000) == 0) {
+                    length = (int) longLength;
+                    break;
+                }
+                shiftBy += 7;
+            }
+        }
+        if (length > data.available()) {
+            throw new Http2Exception(Http2ErrorCode.COMPRESSION,
+                                     "HPACK string length exceeds available header block bytes");
+        }
 
         if (isHuffman) {
             return huffman.decodeString(data, length);
@@ -999,31 +1074,35 @@ public class Http2Headers {
                 return new HeaderApproach(false, true, true, true, 0);
             }
 
-            // name and value from index - 0b1xxxxxxx
-            if ((value & 0b10000000) != 0) {
-                int indexPart = data.readHpackInt(value, 7);
-                return new HeaderApproach(false, false, false, false, indexPart);
-            }
+            try {
+                // name and value from index - 0b1xxxxxxx
+                if ((value & 0b10000000) != 0) {
+                    int indexPart = data.readHpackInt(value, 7);
+                    return new HeaderApproach(false, false, false, false, indexPart);
+                }
 
-            // name from index, literal value, index - 0b01xxxxxx
-            if ((value & 0b11000000) == 0b01000000) {
-                int indexPart = data.readHpackInt(value, 6);
-                return new HeaderApproach(true, false, false, true, indexPart);
-            }
+                // name from index, literal value, index - 0b01xxxxxx
+                if ((value & 0b11000000) == 0b01000000) {
+                    int indexPart = data.readHpackInt(value, 6);
+                    return new HeaderApproach(true, false, false, true, indexPart);
+                }
 
-            // dynamic table size update
-            if ((value & 0b11100000) == 0b00100000) {
-                int size = data.readHpackInt(value, 5);
-                return new HeaderApproach(size);
-            }
+                // dynamic table size update
+                if ((value & 0b11100000) == 0b00100000) {
+                    int size = data.readHpackInt(value, 5);
+                    return new HeaderApproach(size);
+                }
 
-            if ((value & 0b11110000) == 0) {
-                int indexPart = data.readHpackInt(value, 4);
-                return new HeaderApproach(false, false, false, true, indexPart);
-            }
-            if ((value & 0b11110000) == 0b00010000) {
-                int indexPart = data.readHpackInt(value, 4);
-                return new HeaderApproach(false, true, false, true, indexPart);
+                if ((value & 0b11110000) == 0) {
+                    int indexPart = data.readHpackInt(value, 4);
+                    return new HeaderApproach(false, false, false, true, indexPart);
+                }
+                if ((value & 0b11110000) == 0b00010000) {
+                    int indexPart = data.readHpackInt(value, 4);
+                    return new HeaderApproach(false, true, false, true, indexPart);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new Http2Exception(Http2ErrorCode.COMPRESSION, "Invalid HPACK integer", e);
             }
 
             throw new Http2Exception(Http2ErrorCode.COMPRESSION,
@@ -1070,7 +1149,8 @@ public class Http2Headers {
                     if (!hasValue) {
                         // this is garbage, cannot "never index" a header that is already indexed
                         if (LOGGER.isLoggable(DEBUG)) {
-                            LOGGER.log(DEBUG, "Never index on field with indexed value: " + headerName + ": " + value);
+                            LOGGER.log(DEBUG, "Never index on field with indexed value: "
+                                    + LogFormatter.escape(headerName.defaultCase()));
                         }
 
                         hasValue = true;
@@ -1085,7 +1165,8 @@ public class Http2Headers {
                     // index and name from index
                     if (!hasValue) {
                         if (LOGGER.isLoggable(DEBUG)) {
-                            LOGGER.log(DEBUG, "Index on field with indexed value: " + headerName + ": " + value);
+                            LOGGER.log(DEBUG, "Index on field with indexed value: "
+                                    + LogFormatter.escape(headerName.defaultCase()));
                         }
                         hasValue = true;
                     }

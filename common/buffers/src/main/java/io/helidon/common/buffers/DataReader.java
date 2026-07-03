@@ -352,7 +352,7 @@ public class DataReader {
             byte[] barr = n.bytes;
             for (int i = n.position; i < barr.length && idx < max; i++, idx++) {
                 if (barr[i] == Bytes.LF_BYTE && !ignoreLoneEol) {
-                    throw new IncorrectNewLineException("Found LF (" + idx + ") without preceding CR. :\n" + this.debugDataHex());
+                    throw new IncorrectNewLineException("Found LF (" + idx + ") without preceding CR.");
                 } else if (barr[i] == Bytes.CR_BYTE) {
                     byte nextByte;
                     if (i + 1 < barr.length) {
@@ -364,8 +364,7 @@ public class DataReader {
                         return -idx - 1;
                     }
                     if (!ignoreLoneEol) {
-                        throw new IncorrectNewLineException("Found CR (" + idx
-                                                                    + ") without following LF. :\n" + this.debugDataHex());
+                        throw new IncorrectNewLineException("Found CR (" + idx + ") without following LF.");
                     }
                 } else if (barr[i] == b) {
                     return idx;
@@ -411,7 +410,7 @@ public class DataReader {
                 if (lfIndexNode != -1) {
                     if (!ignoreLoneEol) {
                         throw new IncorrectNewLineException("Found LF (" + (idx + lfIndexNode - n.position)
-                                                                    + ") without preceding CR. :\n" + this.debugDataHex());
+                                                                    + ") without preceding CR.");
                     }
                 }
             } else {
@@ -424,7 +423,7 @@ public class DataReader {
                     }
                     if (!ignoreLoneEol) {
                         throw new IncorrectNewLineException("Found CR (" + (idx + crIndexNode - n.position)
-                                                                    + ") without following LF. :\n" + this.debugDataHex());
+                                                                    + ") without following LF.");
                     }
                 } else {
                     // found CR within the current array
@@ -433,8 +432,7 @@ public class DataReader {
                         return idx + crIndexNode - fromIndexNode;
                     }
                     if (!ignoreLoneEol) {
-                        throw new IncorrectNewLineException("Found CR (" + idx
-                                                                    + ") without following LF. :\n" + this.debugDataHex());
+                        throw new IncorrectNewLineException("Found CR (" + idx + ") without following LF.");
                     }
                     idx += (crIndexNode - fromIndexNode + 1);
                     fromIndexNode = crIndexNode + 1;

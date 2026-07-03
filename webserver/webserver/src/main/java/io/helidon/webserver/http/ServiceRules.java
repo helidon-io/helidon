@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.function.Predicate;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
+import io.helidon.webserver.http.spi.ProtocolUpgradeHandler;
 
 class ServiceRules implements HttpRules {
     private static final Predicate<Method> ALWAYS_PREDICATE = new TruePredicate();
@@ -31,6 +32,7 @@ class ServiceRules implements HttpRules {
     private final PathMatcher pathMatcher;
     private final Predicate<Method> methodPredicate;
     private final List<HttpRouteBase> routes = new LinkedList<>();
+    private final List<HttpRouteBase> protocolUpgradeRoutes = new LinkedList<>();
 
     ServiceRules() {
         this.theService = new NoOpService();
@@ -50,7 +52,18 @@ class ServiceRules implements HttpRules {
             ServiceRules subRules = new ServiceRules(service, PathMatchers.any(), ALWAYS_PREDICATE);
             service.routing(subRules);
             routes.add(subRules.build());
+            if (!subRules.protocolUpgradeRoutes.isEmpty()) {
+                protocolUpgradeRoutes.add(subRules.buildProtocolUpgrade());
+            }
         }
+        return this;
+    }
+
+    @Override
+    public HttpRules registerLocator(HttpServiceLocator locator) {
+        ServiceLocatorRoute route = new ServiceLocatorRoute(locator, PathMatchers.any(), ALWAYS_PREDICATE);
+        routes.add(route);
+        protocolUpgradeRoutes.add(route.protocolUpgradeRoute());
         return this;
     }
 
@@ -60,22 +73,46 @@ class ServiceRules implements HttpRules {
             ServiceRules subRules = new ServiceRules(service, PathMatchers.create(pathPattern), ALWAYS_PREDICATE);
             service.routing(subRules);
             routes.add(subRules.build());
+            if (!subRules.protocolUpgradeRoutes.isEmpty()) {
+                protocolUpgradeRoutes.add(subRules.buildProtocolUpgrade());
+            }
         }
         return this;
     }
 
     @Override
+    public HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
+        ServiceLocatorRoute route = new ServiceLocatorRoute(locator, PathMatchers.create(pathPattern), ALWAYS_PREDICATE);
+        routes.add(route);
+        protocolUpgradeRoutes.add(route.protocolUpgradeRoute());
+        return this;
+    }
+
+    @Override
     public HttpRules route(HttpRoute route) {
+        HttpRouteBase actualRoute;
         if (route instanceof HttpRouteImpl impl) {
-            routes.add(impl);
+            actualRoute = impl;
         } else {
-            routes.add(new HttpRouteWrap(route));
+            actualRoute = new HttpRouteWrap(route);
+        }
+        routes.add(actualRoute);
+
+        Handler handler = actualRoute.handler();
+        if (handler instanceof ProtocolUpgradeHandler protocolUpgradeHandler) {
+            protocolUpgradeRoutes.add(new ProtocolUpgradePolicyRoute(actualRoute, protocolUpgradeHandler));
         }
         return this;
     }
 
+    // Builds the route tree used for ordinary HTTP request routing.
     ServiceRoute build() {
         return new ServiceRoute(theService, methodPredicate, pathMatcher, routes);
+    }
+
+    // Builds the policy-only route tree used before completing a routed protocol upgrade.
+    ServiceRoute buildProtocolUpgrade() {
+        return new ServiceRoute(theService, methodPredicate, pathMatcher, protocolUpgradeRoutes);
     }
 
     private static final class NoOpService implements HttpService {

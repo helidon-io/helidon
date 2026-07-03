@@ -783,13 +783,7 @@ public class UnixDomainSocketTest {
     }
 
     private static Path newSocketPath(String name) {
-        try {
-            Path path = Files.createTempFile(name, ".sock");
-            Files.delete(path);
-            return path;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return socketPath(name);
     }
 
     private static Tls serverTls() {

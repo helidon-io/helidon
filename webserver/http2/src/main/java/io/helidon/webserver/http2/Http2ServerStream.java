@@ -18,10 +18,16 @@ package io.helidon.webserver.http2;
 
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.concurrency.limits.FixedLimit;
@@ -41,6 +47,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.ConnectionFlowControl;
+import io.helidon.http.http2.Http2ConnectionWriter;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Flag;
@@ -81,6 +88,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                   Http2FrameTypes.DATA,
                                                   Http2Flag.DataFlags.create(Http2Flag.DataFlags.END_OF_STREAM),
                                                   0), BufferData.empty());
+    private static final Runnable NO_OP = () -> { };
+    private static final long MAX_LOCALLY_RESET_STREAM_HEADER_BYTES = 64 * 1024;
+    private static final int MAX_LOCALLY_RESET_STREAM_HEADER_BLOCKS = 64;
     private static final System.Logger LOGGER = System.getLogger(Http2Stream.class.getName());
     private static final Set<Http2StreamState> DATA_RECEIVABLE_STATES =
             Set.of(Http2StreamState.OPEN, Http2StreamState.HALF_CLOSED_LOCAL);
@@ -92,17 +102,25 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private final Http2Settings serverSettings;
     private final Http2Settings clientSettings;
     private final Http2StreamWriter writer;
+    private final Http2ConnectionWriter connectionWriter;
     private final Router router;
     private final Http2ConnectionChecks connectionAttackVectorMetrics;
+    private final LocallyResetStreamTracker locallyResetStreamTracker;
     private final ArrayBlockingQueue<DataFrame> inboundData = new ArrayBlockingQueue<>(32);
+    private final ConnectionFlowControl connectionFlowControl;
     private final StreamFlowControl flowControl;
     private final Http2ConcurrentConnectionStreams streams;
     private final HttpRouting routing;
     private final AtomicReference<WriteState> writeState = new AtomicReference<>(WriteState.INIT);
+    private final ReentrantLock resetCompletionLock = new ReentrantLock();
     private boolean wasLastDataFrame = false;
     private boolean hasEntity = true;
     private volatile Http2Headers headers;
+    private volatile LocallyResetStreamState locallyResetStreamState;
     private volatile Http2Priority priority;
+    private boolean remoteResetReceived;
+    private volatile boolean resetStreamSent;
+    private volatile boolean remoteCompleteAfterReset;
     private volatile boolean ignoreInboundDataAfterReset;
     // used from this instance and from connection
     private volatile Http2StreamState state = Http2StreamState.IDLE;
@@ -126,9 +144,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
      * @param clientSettings        client settings
      * @param writer                writer
      * @param connectionFlowControl connection flow control
+     * @param locallyResetStreamTracker stream reset lifecycle tracker
      */
     Http2ServerStream(ConnectionContext ctx,
                       Http2ConcurrentConnectionStreams streams,
+                      LocallyResetStreamTracker locallyResetStreamTracker,
                       HttpRouting routing,
                       Http2Config http2Config,
                       List<Http2SubProtocolSelector> subProviders,
@@ -147,8 +167,13 @@ class Http2ServerStream implements Runnable, Http2Stream {
         this.serverSettings = serverSettings;
         this.clientSettings = clientSettings;
         this.writer = writer;
+        this.connectionWriter = writer instanceof Http2ConnectionWriter http2ConnectionWriter
+                ? http2ConnectionWriter
+                : null;
         this.router = ctx.router();
         this.connectionAttackVectorMetrics = connectionAttackVectorMetrics;
+        this.locallyResetStreamTracker = Objects.requireNonNull(locallyResetStreamTracker);
+        this.connectionFlowControl = connectionFlowControl;
         this.flowControl = connectionFlowControl.createStreamFlowControl(
                 streamId,
                 http2Config.initialWindowSize(),
@@ -163,7 +188,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
      * @throws Http2Exception in case data cannot be received
      */
     public void checkDataReceivable() throws Http2Exception {
-        if (ignoreInboundDataAfterReset) {
+        if (resetStreamSent && ignoreInboundDataAfterReset) {
             return;
         }
         if (!DATA_RECEIVABLE_STATES.contains(state)) {
@@ -205,11 +230,25 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                      "Received RST_STREAM for stream "
                                              + streamId + " in IDLE state");
         }
+        boolean rapidReset;
+        resetCompletionLock.lock();
+        try {
+            remoteResetReceived = true;
+            rapidReset = writeState.get() == WriteState.INIT;
+        } finally {
+            resetCompletionLock.unlock();
+        }
+        if (ignoreInboundDataAfterReset) {
+            remoteCompleteAfterReset();
+        }
         if (subProtocolHandler != null) {
             subProtocolHandler.rstStream(rstStream);
         }
-        boolean rapidReset = writeState.get() == WriteState.INIT;
         this.state = Http2StreamState.CLOSED;
+        boolean wakeupOffered = inboundData.offer(TERMINATING_FRAME);
+        if (!wakeupOffered && LOGGER.isLoggable(DEBUG)) {
+            ctx.log(LOGGER, DEBUG, "Reset stream %d already has pending data to wake up the stream handler.", streamId);
+        }
         return rapidReset;
     }
 
@@ -227,14 +266,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
             if (windowUpdate.windowSizeIncrement() == 0) {
                 Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
                 writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-                connectionAttackVectorMetrics.madeYouResetCheck(streamId);
+                connectionAttackVectorMetrics.madeYouResetCheck();
             }
             //6.9.1/3
             long size = flowControl.outbound().incrementStreamWindowSize(windowUpdate.windowSizeIncrement());
             if (size > WindowSize.MAX_WIN_SIZE || size < 0L) {
                 Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
                 writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-                connectionAttackVectorMetrics.madeYouResetCheck(streamId);
+                connectionAttackVectorMetrics.madeYouResetCheck();
             }
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write window update", e);
@@ -246,60 +285,122 @@ class Http2ServerStream implements Runnable, Http2Stream {
     @Override
     public void headers(Http2Headers headers, boolean endOfStream) {
         this.headers = headers;
+        OptionalLong contentLength = headers.httpHeaders().contentLength();
+        if (contentLength.isPresent()) {
+            this.expectedLength = contentLength.getAsLong();
+            if (expectedLength == 0) {
+                hasEntity = false;
+            }
+        }
         if (endOfStream) {
             hasEntity = false;
             closeFromRemote();
         } else {
             this.state = Http2StreamState.OPEN;
         }
-        Headers httpHeaders = headers.httpHeaders();
-        if (httpHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
-            this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
-            if (expectedLength == 0) {
-                hasEntity = false;
-            }
-        }
     }
 
     @Override
     public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
+        int dataLength = data.available();
+        if (ignoreInboundDataAfterReset) {
+            discardDataAfterReset(header.length());
+            if (endOfStream) {
+                remoteCompleteAfterReset();
+            }
+            return;
+        }
         if (!DATA_RECEIVABLE_STATES.contains(state)) {
             flowControl.inbound().incrementWindowSize(header.length());
             return;
         }
-        if (expectedLength != -1 && expectedLength < header.length()) {
-            state = Http2StreamState.CLOSED;
-            writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
-            streams.remove(this.streamId);
-            Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-            try {
-                writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-            } catch (SocketWriterException | UncheckedIOException e) {
-                throw new ServerConnectionException("Failed to write reset stream", e);
-            }
-            connectionAttackVectorMetrics.madeYouResetCheck(streamId);
-
-            try {
-                // we need to notify that there is no data coming
-                inboundData.put(TERMINATING_FRAME);
-            } catch (InterruptedException e) {
-                throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
-            }
-
-            throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
-                                     "Request data length doesn't correspond to the content-length header.");
+        if (expectedLength != -1 && expectedLength < dataLength) {
+            resetInvalidContentLength(header.length(), endOfStream);
+            return;
         }
         if (expectedLength != -1) {
-            expectedLength -= header.length();
+            expectedLength -= dataLength;
+            if (endOfStream && expectedLength != 0) {
+                resetInvalidContentLength(header.length(), true);
+                return;
+            }
         }
+        if (dataLength == 0) {
+            flowControl.inbound().incrementWindowSize(header.length());
+            if (endOfStream) {
+                closeFromRemote();
+            }
+            return;
+        }
+        enqueueDataAfterPrecheck(header, data, endOfStream);
+    }
+
+    // Package-private for deterministic rejection race tests.
+    void enqueueDataAfterPrecheck(Http2FrameHeader header, BufferData data, boolean endOfStream) {
+        DataFrame frame = enqueueData(header, data);
+        completeDataEnqueue(frame, endOfStream, ignoreInboundDataAfterReset);
+    }
+
+    // Package-private for deterministic reset race tests.
+    void enqueueDataAfterPrecheck(Http2FrameHeader header,
+                                  BufferData data,
+                                  boolean endOfStream,
+                                  Runnable afterResetStateSnapshot) {
+        DataFrame frame = enqueueData(header, data);
+        boolean ignoringInboundDataSnapshot = ignoreInboundDataAfterReset;
+        afterResetStateSnapshot.run();
+        completeDataEnqueue(frame, endOfStream, ignoringInboundDataSnapshot);
+    }
+
+    private DataFrame enqueueData(Http2FrameHeader header, BufferData data) {
         DataFrame frame = new DataFrame(header, data);
         try {
             inboundData.put(frame);
         } catch (InterruptedException e) {
             throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
         }
-        if (!DATA_RECEIVABLE_STATES.contains(state) && inboundData.remove(frame)) {
-            flowControl.inbound().incrementWindowSize(header.length());
+        return frame;
+    }
+
+    private void completeDataEnqueue(DataFrame frame,
+                                     boolean endOfStream,
+                                     boolean ignoringInboundDataSnapshot) {
+        if (!endOfStream) {
+            completeDataEnqueueState(frame, false, ignoringInboundDataSnapshot);
+            return;
+        }
+
+        resetCompletionLock.lock();
+        try {
+            completeDataEnqueueState(frame, true, ignoringInboundDataSnapshot);
+        } finally {
+            resetCompletionLock.unlock();
+        }
+    }
+
+    private void completeDataEnqueueState(DataFrame frame,
+                                          boolean endOfStream,
+                                          boolean ignoringInboundDataSnapshot) {
+        boolean ignoringInboundData = ignoringInboundDataSnapshot || ignoreInboundDataAfterReset;
+        if (ignoringInboundData || !DATA_RECEIVABLE_STATES.contains(state)) {
+            if (inboundData.remove(frame)) {
+                if (ignoringInboundData) {
+                    discardDataAfterReset(frame.header().length());
+                } else {
+                    flowControl.inbound().incrementWindowSize(frame.header().length());
+                }
+            }
+            if (endOfStream && ignoringInboundData) {
+                remoteCompleteAfterReset();
+            }
+            return;
+        }
+        if (endOfStream) {
+            if (state == Http2StreamState.HALF_CLOSED_LOCAL) {
+                state = Http2StreamState.CLOSED;
+            } else {
+                state = Http2StreamState.HALF_CLOSED_REMOTE;
+            }
         }
     }
 
@@ -327,6 +428,20 @@ class Http2ServerStream implements Runnable, Http2Stream {
         return this.flowControl;
     }
 
+    boolean discardsInboundAfterReset() {
+        return ignoreInboundDataAfterReset;
+    }
+
+    void headersAfterReset(boolean endOfStream, long headerBlockLength) {
+        if (!locallyResetStreamState().discardHeaders(headerBlockLength)) {
+            throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                     "Too many headers after stream reset.");
+        }
+        if (endOfStream) {
+            remoteCompleteAfterReset();
+        }
+    }
+
     @Override
     public void run() {
         Thread.currentThread()
@@ -337,10 +452,16 @@ class Http2ServerStream implements Runnable, Http2Stream {
         } catch (SocketWriterException | UncheckedIOException e) {
             throw e;
         } catch (CloseConnectionException e) {
-            Http2RstStream rst = new Http2RstStream(Http2ErrorCode.STREAM_CLOSED);
+            Http2ErrorCode errorCode = e.getCause() instanceof Http2Exception h2Exception
+                    ? h2Exception.code()
+                    : Http2ErrorCode.STREAM_CLOSED;
+            Http2RstStream rst = new Http2RstStream(errorCode);
             writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             // no sense in throwing an exception, as this is invoked from an executor service directly
         } catch (RequestException e) {
+            if (state == Http2StreamState.CLOSED || writeState.get() == WriteState.END) {
+                return;
+            }
             // gather error handling properties
             ErrorHandling errorHandling = ctx.listenerContext()
                     .config()
@@ -373,23 +494,56 @@ class Http2ServerStream implements Runnable, Http2Stream {
             }
             Http2Headers http2Headers = Http2Headers.create(headers)
                     .status(e.status());
-            if (entity.length == 0) {
-                writer.writeHeaders(http2Headers,
-                                    streamId,
-                                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                    flowControl.outbound());
-            } else {
-                Http2FrameHeader dataHeader = Http2FrameHeader.create(entity.length,
-                                                                      Http2FrameTypes.DATA,
-                                                                      Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                      streamId);
-                writer.writeHeaders(http2Headers,
-                                    streamId,
-                                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                    new Http2FrameData(dataHeader, BufferData.create(message)),
-                                    flowControl.outbound());
+            boolean resetRequestBody = prepareRejectedStream(false);
+            AtomicBoolean rejectedStreamCompleted = new AtomicBoolean();
+            Runnable completeRejectedStream = () -> {
+                if (rejectedStreamCompleted.compareAndSet(false, true)) {
+                    completeRejectedStream(Http2ErrorCode.CANCEL, resetRequestBody, false);
+                }
+            };
+            try {
+                if (entity.length == 0) {
+                    Http2Flag.HeaderFlags flags =
+                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
+                    if (connectionWriter == null) {
+                        writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+                        completeRejectedStream.run();
+                    } else {
+                        connectionWriter.writeHeaders(http2Headers,
+                                                      streamId,
+                                                      flags,
+                                                      flowControl.outbound(),
+                                                      completeRejectedStream);
+                    }
+                } else {
+                    Http2FrameHeader dataHeader = Http2FrameHeader.create(entity.length,
+                                                                          Http2FrameTypes.DATA,
+                                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                          streamId);
+                    if (connectionWriter == null) {
+                        writer.writeHeaders(http2Headers,
+                                            streamId,
+                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                            new Http2FrameData(dataHeader, BufferData.create(message)),
+                                            flowControl.outbound());
+                        completeRejectedStream.run();
+                    } else {
+                        connectionWriter.writeHeaders(http2Headers,
+                                                      streamId,
+                                                      Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                                      new Http2FrameData(dataHeader, BufferData.create(message)),
+                                                      flowControl.outbound(),
+                                                      completeRejectedStream);
+                    }
+                }
+            } catch (RuntimeException writeFailure) {
+                try {
+                    completeRejectedStream.run();
+                } catch (RuntimeException cleanupFailure) {
+                    writeFailure.addSuppressed(cleanupFailure);
+                }
+                throw writeFailure;
             }
-            closeRejectedStream();
         } catch (Http2Exception e) {
             ctx.log(LOGGER, DEBUG, "Intentional HTTP/2 stream exception, code: %s, message: %s",
                     e.code(),
@@ -402,7 +556,13 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     void closeFromRemote() {
-        this.state = Http2StreamState.HALF_CLOSED_REMOTE;
+        if (expectedLength != -1 && expectedLength != 0) {
+            resetInvalidContentLength(0, true);
+            return;
+        }
+        this.state = state == Http2StreamState.HALF_CLOSED_LOCAL
+                ? Http2StreamState.CLOSED
+                : Http2StreamState.HALF_CLOSED_REMOTE;
         try {
             // we need to notify that there is no data coming
             inboundData.put(TERMINATING_FRAME);
@@ -423,23 +583,31 @@ class Http2ServerStream implements Runnable, Http2Stream {
         Http2Flag.HeaderFlags flags;
 
         if (endOfStream) {
-            streams.remove(this.streamId);
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
         } else {
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS);
         }
 
         try {
-            return writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+            if (endOfStream && connectionWriter != null) {
+                return connectionWriter.writeHeaders(http2Headers, streamId, flags, flowControl.outbound(), this::closeFromLocal);
+            }
+            int written = writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+            if (endOfStream) {
+                closeFromLocal();
+            }
+            return written;
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write headers", e);
         }
     }
 
     int writeHeadersWithData(Http2Headers http2Headers, int contentLength, BufferData bufferData, boolean endOfStream) {
-        writeState.updateAndGet(s -> s
-                .checkAndMove(WriteState.HEADERS_SENT)
-                .checkAndMove(WriteState.DATA_SENT));
+        writeState.updateAndGet(s -> {
+            WriteState newState = s.checkAndMove(WriteState.HEADERS_SENT)
+                    .checkAndMove(WriteState.DATA_SENT);
+            return endOfStream ? newState.checkAndMove(WriteState.END) : newState;
+        });
 
         Http2FrameData frameData =
                 new Http2FrameData(Http2FrameHeader.create(contentLength,
@@ -448,17 +616,21 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                            streamId),
                                    bufferData);
         try {
-            return writer.writeHeaders(http2Headers, streamId,
+            return writer.writeHeaders(http2Headers,
+                                       streamId,
                                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                       frameData,
-                                       flowControl.outbound());
+                                       flowControl.outbound())
+                    + writeDataFrame(frameData, endOfStream);
         } catch (UncheckedIOException e) {
-            throw new ServerConnectionException("Failed to write headers", e);
-        } finally {
             if (endOfStream) {
-                writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
-                streams.remove(this.streamId);
+                closeFromLocal();
             }
+            throw new ServerConnectionException("Failed to write headers", e);
+        } catch (RuntimeException e) {
+            if (endOfStream) {
+                closeFromLocal();
+            }
+            throw e;
         }
     }
 
@@ -471,10 +643,6 @@ class Http2ServerStream implements Runnable, Http2Stream {
             return s.checkAndMove(WriteState.DATA_SENT);
         });
 
-        if (endOfStream) {
-            streams.remove(this.streamId);
-        }
-
         Http2FrameData frameData =
                 new Http2FrameData(Http2FrameHeader.create(bufferData.available(),
                                                            Http2FrameTypes.DATA,
@@ -483,22 +651,36 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                    bufferData);
 
         try {
-            writer.writeData(frameData, flowControl.outbound());
+            return writeDataFrame(frameData, endOfStream);
         } catch (UncheckedIOException e) {
+            if (endOfStream) {
+                closeFromLocal();
+            }
             throw new ServerConnectionException("Failed to write frame data", e);
+        } catch (RuntimeException e) {
+            if (endOfStream) {
+                closeFromLocal();
+            }
+            throw e;
         }
-        return frameData.header().length() + Http2FrameHeader.LENGTH;
     }
 
     int writeTrailers(Http2Headers http2trailers) {
         writeState.updateAndGet(s -> s.checkAndMove(WriteState.TRAILERS_SENT));
-        streams.remove(this.streamId);
 
         try {
-            return writer.writeHeaders(http2trailers,
-                                       streamId,
-                                       Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                       flowControl.outbound());
+            Http2Flag.HeaderFlags flags =
+                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
+            if (connectionWriter != null) {
+                return connectionWriter.writeHeaders(http2trailers,
+                                                     streamId,
+                                                     flags,
+                                                     flowControl.outbound(),
+                                                     this::closeFromLocal);
+            }
+            int written = writer.writeHeaders(http2trailers, streamId, flags, flowControl.outbound());
+            closeFromLocal();
+            return written;
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write trailers", e);
         }
@@ -528,8 +710,64 @@ class Http2ServerStream implements Runnable, Http2Stream {
         this.requestLimit = limit;
     }
 
+    private void resetInvalidContentLength(int currentFrameLength, boolean endOfStream) {
+        LocallyResetStreamState resetState = locallyResetStreamState();
+        ignoreInboundDataAfterReset = true;
+        state = Http2StreamState.CLOSED;
+        writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
+        locallyResetStreamTracker.add(this.streamId, resetState);
+        streams.remove(this.streamId);
+        Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
+        try {
+            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            if (endOfStream) {
+                locallyResetStreamTracker.remoteComplete(this.streamId);
+            }
+        } finally {
+            locallyResetStreamTracker.localComplete(this.streamId);
+        }
+        connectionAttackVectorMetrics.madeYouResetCheck();
+
+        if (currentFrameLength > 0) {
+            discardDataAfterReset(currentFrameLength);
+        }
+        DataFrame frame = inboundData.poll();
+        while (frame != null) {
+            int frameLength = frame.header().length();
+            if (frameLength > 0) {
+                discardDataAfterReset(frameLength);
+            }
+            frame = inboundData.poll();
+        }
+        if (!inboundData.offer(TERMINATING_FRAME)) {
+            throw new Http2Exception(Http2ErrorCode.INTERNAL, "Failed to notify reset stream.");
+        }
+    }
+
+    private void closeFromLocal() {
+        if (state == Http2StreamState.HALF_CLOSED_REMOTE || state == Http2StreamState.CLOSED) {
+            state = Http2StreamState.CLOSED;
+            streams.deactivate(this.streamId);
+        } else {
+            state = Http2StreamState.HALF_CLOSED_LOCAL;
+        }
+    }
+
     void prologue(HttpPrologue prologue) {
         this.prologue = prologue;
+    }
+
+    private int writeDataFrame(Http2FrameData frameData, boolean endOfStream) {
+        if (connectionWriter == null) {
+            writer.writeData(frameData, flowControl.outbound());
+            if (endOfStream) {
+                closeFromLocal();
+            }
+            return frameData.header().length() + Http2FrameHeader.LENGTH;
+        }
+        return connectionWriter.writeData(frameData,
+                                          flowControl.outbound(),
+                                          endOfStream ? this::closeFromLocal : NO_OP);
     }
 
     ConnectionContext connectionContext() {
@@ -545,7 +783,12 @@ class Http2ServerStream implements Runnable, Http2Stream {
         DataFrame frame;
         try {
             frame = inboundData.take();
-            flowControl.inbound().incrementWindowSize(frame.header().length());
+            int frameLength = frame.header().length();
+            if (ignoreInboundDataAfterReset) {
+                discardDataAfterReset(frameLength);
+            } else {
+                flowControl.inbound().incrementWindowSize(frameLength);
+            }
         } catch (InterruptedException e) {
             // this stream was interrupted, does not make sense to do anything else
             return BufferData.empty();
@@ -560,35 +803,115 @@ class Http2ServerStream implements Runnable, Http2Stream {
         return frame.data();
     }
 
-    private void closeRejectedStream() {
-        closeRejectedStream(Http2ErrorCode.CANCEL, false);
-    }
-
     private void closeRejectedStream(Http2ErrorCode resetCode, boolean forceReset) {
-        boolean resetRequestBody = forceReset || hasEntity && state != Http2StreamState.HALF_CLOSED_REMOTE;
-        ignoreInboundDataAfterReset = resetRequestBody;
-        this.state = Http2StreamState.CLOSED;
-        writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
-        streams.remove(this.streamId);
-        restoreInboundFlowControl();
-        if (!inboundData.offer(TERMINATING_FRAME)) {
-            throw new Http2Exception(Http2ErrorCode.INTERNAL, "Failed to close stream data queue.");
-        }
-        if (resetRequestBody) {
-            Http2RstStream rst = new Http2RstStream(resetCode);
+        boolean resetRequestBody = prepareRejectedStream(forceReset);
+        completeRejectedStream(resetCode, resetRequestBody, forceReset);
+    }
+
+    private void completeRejectedStream(Http2ErrorCode resetCode, boolean resetRequestBody, boolean forceReset) {
+        try {
+            resetCompletionLock.lock();
             try {
-                writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-            } catch (SocketWriterException | UncheckedIOException e) {
-                throw new ServerConnectionException("Failed to write reset stream", e);
+                writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
+                boolean remoteAlreadyComplete = remoteAlreadyComplete();
+                streams.deactivate(this.streamId);
+                if (resetRequestBody && !remoteResetReceived && (forceReset || !remoteAlreadyComplete)) {
+                    writeResetStream(resetCode);
+                    resetStreamSent = true;
+                    locallyResetStreamTracker.add(this.streamId, locallyResetStreamState());
+                    if (remoteCompleteAfterReset || remoteAlreadyComplete) {
+                        locallyResetStreamTracker.remoteComplete(this.streamId);
+                    }
+                }
+            } finally {
+                resetCompletionLock.unlock();
             }
-            connectionAttackVectorMetrics.madeYouResetCheck(streamId);
+        } finally {
+            this.state = Http2StreamState.CLOSED;
+            locallyResetStreamTracker.localComplete(this.streamId);
+            streams.remove(this.streamId);
         }
     }
 
-    private void restoreInboundFlowControl() {
-        DataFrame frame;
-        while ((frame = inboundData.poll()) != null) {
-            flowControl.inbound().incrementWindowSize(frame.header().length());
+    private boolean remoteAlreadyComplete() {
+        return state == Http2StreamState.HALF_CLOSED_REMOTE || state == Http2StreamState.CLOSED;
+    }
+
+    private boolean prepareRejectedStream(boolean forceReset) {
+        resetCompletionLock.lock();
+        try {
+            boolean resetRequestBody = forceReset || !remoteAlreadyComplete();
+            if (resetRequestBody) {
+                locallyResetStreamState();
+            }
+            ignoreInboundDataAfterReset = resetRequestBody;
+            DataFrame frame;
+            while ((frame = inboundData.poll()) != null) {
+                discardDataAfterReset(frame.header().length());
+            }
+            if (!inboundData.offer(TERMINATING_FRAME)) {
+                throw new Http2Exception(Http2ErrorCode.INTERNAL, "Failed to close stream data queue.");
+            }
+            return resetRequestBody;
+        } finally {
+            resetCompletionLock.unlock();
+        }
+    }
+
+    private void discardDataAfterReset(int length) {
+        connectionFlowControl.incrementInboundConnectionWindowSize(length);
+        if (!locallyResetStreamState().discardData(length)) {
+            throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                     "Too much data after stream reset.");
+        }
+    }
+
+    private LocallyResetStreamState locallyResetStreamState() {
+        LocallyResetStreamState resetState = locallyResetStreamState;
+        if (resetState == null) {
+            resetCompletionLock.lock();
+            try {
+                resetState = locallyResetStreamState;
+                if (resetState == null) {
+                    long maxHeaderBytes = Math.max(http2Config.maxFrameSize(), MAX_LOCALLY_RESET_STREAM_HEADER_BYTES);
+                    resetState = new LocallyResetStreamState(http2Config.initialWindowSize(), maxHeaderBytes);
+                    locallyResetStreamState = resetState;
+                }
+            } finally {
+                resetCompletionLock.unlock();
+            }
+        }
+        return resetState;
+    }
+
+    private void writeResetStream(Http2ErrorCode resetCode) {
+        Http2RstStream rst = new Http2RstStream(resetCode);
+        try {
+            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+        } catch (SocketWriterException | UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write reset stream", e);
+        }
+        connectionAttackVectorMetrics.madeYouResetCheck();
+    }
+
+    private void remoteCompleteAfterReset() {
+        resetCompletionLock.lock();
+        try {
+            closeIgnoredInboundDataFromRemote();
+            remoteCompleteAfterReset = true;
+            if (resetStreamSent) {
+                locallyResetStreamTracker.remoteComplete(this.streamId);
+            }
+        } finally {
+            resetCompletionLock.unlock();
+        }
+    }
+
+    private void closeIgnoredInboundDataFromRemote() {
+        if (state == Http2StreamState.HALF_CLOSED_LOCAL || state == Http2StreamState.CLOSED) {
+            state = Http2StreamState.CLOSED;
+        } else {
+            state = Http2StreamState.HALF_CLOSED_REMOTE;
         }
     }
 
@@ -663,8 +986,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                    hasEntity,
                                                                    this::readEntityFromPipeline,
                                                                    outcome,
+                                                                   ctx.listenerContext().config().maxPayloadSize(),
                                                                    http2Config.maxBufferedEntitySize().toBytes());
-            Http2ServerResponse response = new Http2ServerResponse(this, request);
+            Http2ServerResponse response = new Http2ServerResponse(this,
+                                                                   request,
+                                                                   http2Config.validateResponseHeaders());
 
             try {
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
@@ -695,8 +1021,18 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     response.commit();
                 }
             } finally {
-                request.content().consume();
-                if (this.state == Http2StreamState.HALF_CLOSED_REMOTE) {
+                try {
+                    if (this.state != Http2StreamState.CLOSED) {
+                        request.content().consume();
+                    }
+                } catch (RequestException e) {
+                    if (this.state != Http2StreamState.CLOSED) {
+                        throw e;
+                    }
+                }
+                if (this.state == Http2StreamState.CLOSED) {
+                    // already closed
+                } else if (this.state == Http2StreamState.HALF_CLOSED_REMOTE) {
                     this.state = Http2StreamState.CLOSED;
                 } else {
                     this.state = Http2StreamState.HALF_CLOSED_LOCAL;
@@ -704,8 +1040,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
             }
         } else {
             subProtocolHandler.init();
-            while (subProtocolHandler.streamState() != Http2StreamState.CLOSED
-                    && subProtocolHandler.streamState() != Http2StreamState.HALF_CLOSED_LOCAL) {
+            this.state = subProtocolHandler.streamState();
+            while (this.state != Http2StreamState.CLOSED) {
                 DataFrame frame;
                 try {
                     frame = inboundData.take();
@@ -716,9 +1052,46 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     ctx.log(LOGGER, System.Logger.Level.DEBUG, "%s interrupted stream %d", handlerName, streamId);
                     return;
                 }
+                if (this.state == Http2StreamState.CLOSED) {
+                    return;
+                }
                 subProtocolHandler.data(frame.header, frame.data);
                 this.state = subProtocolHandler.streamState();
             }
+        }
+    }
+
+    interface LocallyResetStreamTracker {
+        void add(int streamId, LocallyResetStreamState streamState);
+
+        void localComplete(int streamId);
+
+        void remoteComplete(int streamId);
+    }
+
+    static final class LocallyResetStreamState {
+        private final long maxData;
+        private final long maxHeaderBytes;
+        private final AtomicLong discardedData = new AtomicLong();
+        private final AtomicInteger discardedHeaderBlocks = new AtomicInteger();
+        private final AtomicLong discardedHeaderBytes = new AtomicLong();
+
+        private LocallyResetStreamState(long maxData, long maxHeaderBytes) {
+            this.maxData = maxData;
+            this.maxHeaderBytes = maxHeaderBytes;
+        }
+
+        boolean discardData(int length) {
+            return discardedData.addAndGet(length) <= maxData;
+        }
+
+        boolean discardHeaders(long length) {
+            return discardedHeaderBlocks.incrementAndGet() <= MAX_LOCALLY_RESET_STREAM_HEADER_BLOCKS
+                    && discardedHeaderBytes.addAndGet(length) <= maxHeaderBytes;
+        }
+
+        long discardedData() {
+            return discardedData.get();
         }
     }
 

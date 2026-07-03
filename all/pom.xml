@@ -492,6 +492,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http-http1</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http-http2</artifactId>
         </dependency>
         <dependency>
@@ -557,6 +561,10 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-grpc-security</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

@@ -17,6 +17,8 @@
 package io.helidon.json;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Objects;
 
 import io.helidon.common.Api;
 
@@ -29,19 +31,26 @@ public final class JsonNumber extends JsonValue {
     private final byte[] buffer;
     private final int start;
     private final int length;
+    private byte jsonStartChar;
     private BigDecimal bigDecimalValue;
 
     private JsonNumber(byte[] buffer, int start, int length) {
         this.buffer = buffer;
         this.start = start;
         this.length = length;
+        this.jsonStartChar = buffer[start];
     }
 
     private JsonNumber(BigDecimal bigDecimalValue) {
         this.buffer = EMPTY_BYTES;
         this.start = -1;
         this.length = -1;
-        this.bigDecimalValue = bigDecimalValue;
+        this.bigDecimalValue = Objects.requireNonNull(bigDecimalValue);
+    }
+
+    private JsonNumber(BigDecimal bigDecimalValue, byte jsonStartChar) {
+        this(bigDecimalValue);
+        this.jsonStartChar = jsonStartChar;
     }
 
     /**
@@ -61,7 +70,8 @@ public final class JsonNumber extends JsonValue {
      * @return a new JsonNumber
      */
     public static JsonNumber create(double doubleValue) {
-        return new JsonNumber(BigDecimal.valueOf(doubleValue));
+        BigDecimal value = BigDecimal.valueOf(doubleValue);
+        return new JsonNumber(value, jsonStartChar(value));
     }
 
     /**
@@ -71,7 +81,7 @@ public final class JsonNumber extends JsonValue {
      * @return a new JsonNumber
      */
     public static JsonNumber create(long longValue) {
-        return new JsonNumber(BigDecimal.valueOf(longValue));
+        return new JsonNumber(BigDecimal.valueOf(longValue), jsonStartChar(longValue));
     }
 
     static JsonNumber create(byte[] buffer, int start, int length) {
@@ -80,16 +90,45 @@ public final class JsonNumber extends JsonValue {
 
     @Override
     byte jsonStartChar() {
-        // Approximate the first character of the number string for optimization
-        // This is used by some parsers to quickly identify number values
-        int val = intValue();
-        if (val < 0) {
+        if (jsonStartChar == 0) {
+            jsonStartChar = jsonStartChar(bigDecimalValue);
+        }
+        return jsonStartChar;
+    }
+
+    private static byte jsonStartChar(BigDecimal value) {
+        int signum = value.signum();
+        if (signum < 0) {
             return '-';
         }
-        // For positive numbers, calculate first digit using log10
-        // Note: this is an approximation and may not be accurate for all cases
-        int digits = (int) Math.log10(val);
-        return (byte) ('0' + (val / (int) Math.pow(10, digits)));
+        if (signum == 0) {
+            return '0';
+        }
+        int precision = value.precision();
+        int scale = value.scale();
+        int adjustedExponent = precision - scale - 1;
+        if (scale >= precision && adjustedExponent >= -6) {
+            return '0';
+        }
+        BigInteger unscaledValue = value.unscaledValue();
+        if (unscaledValue.bitLength() < Long.SIZE) {
+            return firstDigit(unscaledValue.longValue());
+        }
+        return (byte) unscaledValue.toString().charAt(0);
+    }
+
+    private static byte jsonStartChar(long value) {
+        if (value < 0) {
+            return '-';
+        }
+        return firstDigit(value);
+    }
+
+    private static byte firstDigit(long value) {
+        while (value >= 10) {
+            value /= 10;
+        }
+        return (byte) ('0' + value);
     }
 
     /**

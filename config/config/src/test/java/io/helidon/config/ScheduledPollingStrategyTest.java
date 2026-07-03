@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,30 @@
 package io.helidon.config;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.config.spi.ChangeEventType;
+import io.helidon.config.spi.PollingStrategy;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link io.helidon.config.ScheduledPollingStrategy}.
@@ -64,12 +76,137 @@ public class ScheduledPollingStrategyTest {
                 .recurringPolicy(() -> POLLING_STRATEGY_DURATION)
                 .build();
 
-        pollingStrategy.start(when -> {
-            nextLatch.countDown();
-            return ChangeEventType.UNCHANGED;
-        });
+        try {
+            pollingStrategy.start(when -> {
+                nextLatch.countDown();
+                return ChangeEventType.UNCHANGED;
+            });
 
-        assertThat(nextLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+            assertThat(nextLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+        } finally {
+            pollingStrategy.stop();
+        }
+    }
+
+    @Test
+    public void testStartPollingRequiresPolled() {
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.builder()
+                .recurringPolicy(() -> POLLING_STRATEGY_DURATION)
+                .build();
+
+        assertThrows(NullPointerException.class, () -> pollingStrategy.start(null));
+    }
+
+    @Test
+    public void testPollingContinuesAfterTransientFailure() throws InterruptedException {
+        CountDownLatch recoveredLatch = new CountDownLatch(1);
+        AtomicInteger pollCount = new AtomicInteger();
+
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.builder()
+                .recurringPolicy(() -> POLLING_STRATEGY_DURATION)
+                .build();
+
+        try {
+            pollingStrategy.start(when -> {
+                if (pollCount.incrementAndGet() == 1) {
+                    throw new ConfigException("Transient reload failure");
+                }
+                recoveredLatch.countDown();
+                return ChangeEventType.UNCHANGED;
+            });
+
+            assertThat("Polling should continue after a transient reload failure",
+                       recoveredLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS),
+                       is(true));
+        } finally {
+            pollingStrategy.stop();
+        }
+    }
+
+    @Test
+    public void testRepeatedPollingFailureLoggingResetsAfterSuccess() throws InterruptedException {
+        CountDownLatch thirdLogLatch = new CountDownLatch(3);
+        AtomicInteger pollCount = new AtomicInteger();
+        List<LogRecord> logRecords = new CopyOnWriteArrayList<>();
+        Logger logger = Logger.getLogger(ScheduledPollingStrategy.class.getName());
+        Level originalLevel = logger.getLevel();
+        boolean originalUseParentHandlers = logger.getUseParentHandlers();
+        ConfigException firstFailure = new ConfigException("First reload failure");
+        ConfigException repeatedFailure = new ConfigException("Repeated reload failure");
+        ConfigException failureAfterRecovery = new ConfigException("Failure after recovery");
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                Throwable thrown = record.getThrown();
+                if (thrown == firstFailure || thrown == repeatedFailure || thrown == failureAfterRecovery) {
+                    logRecords.add(record);
+                    thirdLogLatch.countDown();
+                }
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() throws SecurityException {
+            }
+        };
+
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.builder()
+                .recurringPolicy(() -> Duration.ofMillis(20))
+                .build();
+
+        try {
+            logger.addHandler(handler);
+            logger.setUseParentHandlers(false);
+            logger.setLevel(Level.FINE);
+
+            PollingStrategy.Polled polled = when -> {
+                switch (pollCount.incrementAndGet()) {
+                case 1:
+                    throw firstFailure;
+                case 2:
+                    throw repeatedFailure;
+                case 3:
+                    return ChangeEventType.UNCHANGED;
+                case 4:
+                    throw failureAfterRecovery;
+                default:
+                    return ChangeEventType.UNCHANGED;
+                }
+            };
+
+            pollingStrategy.start(polled);
+
+            assertThat("Third log record should be published",
+                       thirdLogLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS),
+                       is(true));
+            pollingStrategy.stop();
+
+            assertThat(logRecords.stream().map(LogRecord::getLevel).toList(),
+                       is(List.of(Level.WARNING, Level.FINE, Level.WARNING)));
+            assertThat(logRecords.get(0).getMessage(), containsString("Failed to poll config source"));
+            assertThat(logRecords.get(0).getThrown(), instanceOf(ConfigException.class));
+            assertThat(logRecords.get(0).getThrown(), sameInstance(firstFailure));
+            assertThat(logRecords.get(0).getThrown().getMessage(),
+                       containsString("First reload failure"));
+            assertThat(logRecords.get(1).getMessage(), is("Config polling failure"));
+            assertThat(logRecords.get(1).getThrown(), instanceOf(ConfigException.class));
+            assertThat(logRecords.get(1).getThrown(), sameInstance(repeatedFailure));
+            assertThat(logRecords.get(1).getThrown().getMessage(),
+                       containsString("Repeated reload failure"));
+            assertThat(logRecords.get(2).getMessage(), containsString("Failed to poll config source"));
+            assertThat(logRecords.get(2).getThrown(), instanceOf(ConfigException.class));
+            assertThat(logRecords.get(2).getThrown(), sameInstance(failureAfterRecovery));
+            assertThat(logRecords.get(2).getThrown().getMessage(),
+                       containsString("Failure after recovery"));
+        } finally {
+            pollingStrategy.stop();
+            logger.setLevel(originalLevel);
+            logger.setUseParentHandlers(originalUseParentHandlers);
+            logger.removeHandler(handler);
+        }
     }
 
     @Test
@@ -102,30 +239,34 @@ public class ScheduledPollingStrategyTest {
         ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                    executor);
 
-        pollingStrategy.start(when -> {
-            firstLatch.countDown();
-            return ChangeEventType.UNCHANGED;
-        });
+        try {
+            pollingStrategy.start(when -> {
+                firstLatch.countDown();
+                return ChangeEventType.UNCHANGED;
+            });
 
-        assertThat(firstLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+            assertThat(firstLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
 
-        //cancel subscription
-        pollingStrategy.stop();
-        assertThat("Custom executor should not get shut down",
-                   pollingStrategy.executor().isShutdown(),
-                   is(false));
+            //cancel subscription
+            pollingStrategy.stop();
+            assertThat("Custom executor should not get shut down",
+                       pollingStrategy.executor().isShutdown(),
+                       is(false));
 
-        CountDownLatch secondLatch = new CountDownLatch(1);
+            CountDownLatch secondLatch = new CountDownLatch(1);
 
-        //subscribe again
-        pollingStrategy.start(when -> {
-            secondLatch.countDown();
-            return ChangeEventType.UNCHANGED;
-        });
+            //subscribe again
+            pollingStrategy.start(when -> {
+                secondLatch.countDown();
+                return ChangeEventType.UNCHANGED;
+            });
 
-        assertThat(secondLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+            assertThat(secondLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+        } finally {
+            pollingStrategy.stop();
+            executor.shutdown();
+        }
 
-        executor.shutdown();
     }
 
     @Test
@@ -136,27 +277,31 @@ public class ScheduledPollingStrategyTest {
                 .recurringPolicy(() -> POLLING_STRATEGY_DURATION)
                 .build();
 
-        pollingStrategy.start(when -> {
-            firstLatch.countDown();
-            return ChangeEventType.UNCHANGED;
-        });
+        try {
+            pollingStrategy.start(when -> {
+                firstLatch.countDown();
+                return ChangeEventType.UNCHANGED;
+            });
 
-        assertThat(firstLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+            assertThat(firstLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
 
-        //cancel subscription
-        pollingStrategy.stop();
-        assertThat("Default executor should get shut down",
-                   pollingStrategy.executor().isShutdown(),
-                   is(true));
+            //cancel subscription
+            pollingStrategy.stop();
+            assertThat("Default executor should get shut down",
+                       pollingStrategy.executor().isShutdown(),
+                       is(true));
 
-        CountDownLatch secondLatch = new CountDownLatch(1);
+            CountDownLatch secondLatch = new CountDownLatch(1);
 
-        //subscribe again
-        pollingStrategy.start(when -> {
-            secondLatch.countDown();
-            return ChangeEventType.UNCHANGED;
-        });
+            //subscribe again
+            pollingStrategy.start(when -> {
+                secondLatch.countDown();
+                return ChangeEventType.UNCHANGED;
+            });
 
-        assertThat(secondLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+            assertThat(secondLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
+        } finally {
+            pollingStrategy.stop();
+        }
     }
 }

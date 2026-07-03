@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.common.crypto;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.Base64Value;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -33,6 +35,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SymmetricCipherTest {
 
@@ -117,6 +120,40 @@ public class SymmetricCipherTest {
         } catch (CryptoException e) {
             assertThat(e.getMessage(), is("Failed to decrypt the message"));
         }
+    }
+
+    @Test
+    public void testAdditionalAuthenticatedData() {
+        byte[] aad = "envelope header".getBytes(StandardCharsets.UTF_8);
+        SymmetricCipher encryptingCipher = SymmetricCipher.builder()
+                .password(DEFAULT_PASSWORD)
+                .additionalAuthenticatedData(aad)
+                .build();
+        SymmetricCipher decryptingCipher = SymmetricCipher.builder()
+                .password(DEFAULT_PASSWORD)
+                .additionalAuthenticatedData(aad)
+                .build();
+
+        Base64Value encrypted = encryptingCipher.encrypt(Base64Value.create(TEST_VALUE));
+
+        assertThat(decryptingCipher.decrypt(encrypted).toDecodedString(), is(TEST_VALUE));
+    }
+
+    @Test
+    public void testAdditionalAuthenticatedDataMismatchFails() {
+        SymmetricCipher encryptingCipher = SymmetricCipher.builder()
+                .password(DEFAULT_PASSWORD)
+                .additionalAuthenticatedData("envelope header".getBytes(StandardCharsets.UTF_8))
+                .build();
+        SymmetricCipher decryptingCipher = SymmetricCipher.builder()
+                .password(DEFAULT_PASSWORD)
+                .additionalAuthenticatedData("tampered header".getBytes(StandardCharsets.UTF_8))
+                .build();
+        Base64Value encrypted = encryptingCipher.encrypt(Base64Value.create(TEST_VALUE));
+
+        CryptoException exception = assertThrows(CryptoException.class, () -> decryptingCipher.decrypt(encrypted));
+
+        assertThat(exception.getMessage(), is("Failed to decrypt the message"));
     }
 
     private static class ParameterWrapper {

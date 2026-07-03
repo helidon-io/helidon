@@ -69,7 +69,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                                              discoveryPredicate(it.supportedAnnotations(),
                                                                 it.supportedAnnotationPackages()),
                                              it.supportedMetaAnnotations(),
-                                             it.supportsServiceContractAnnotations());
+                                             it.supportsServiceContractAnnotations(),
+                                             it.supportsFactoryProvidedServiceContractAnnotations());
                 })
                 .toList();
     }
@@ -330,26 +331,32 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                                                               Map<TypeName, Set<TypeName>> supportedAnnotationsCache,
                                                               Map<TypeName, Set<TypeName>> metaAnnotationsCache,
                                                               Map<TypeName, Boolean> metaAnnotatedCache) {
-        if (!extension.supportsServiceContractAnnotations() || !ServiceTypes.isService(serviceType)) {
+        if (!ServiceTypes.isService(serviceType)
+                || (!extension.supportsServiceContractAnnotations()
+                && !extension.supportsFactoryProvidedServiceContractAnnotations())) {
             return Set.of();
         }
 
         ServiceContracts serviceContracts = ServiceContracts.create(ctx.options(), roundContext::typeInfo, serviceType);
-        Set<ResolvedType> contracts = new HashSet<>();
-        serviceContracts.addContracts(contracts, new HashSet<>(), serviceType);
-
-        Set<TypeName> result = new HashSet<>(supportedAnnotationsOnContracts(roundContext,
-                                                                             extension,
-                                                                             contracts,
-                                                                             supportedAnnotationsCache,
-                                                                             metaAnnotationsCache,
-                                                                             metaAnnotatedCache));
-        result.addAll(supportedAnnotationsOnContracts(roundContext,
-                                                      extension,
-                                                      ServiceTypes.factoryProvidedContracts(serviceContracts, serviceType),
-                                                      supportedAnnotationsCache,
-                                                      metaAnnotationsCache,
-                                                      metaAnnotatedCache));
+        Set<TypeName> result = new HashSet<>();
+        if (extension.supportsServiceContractAnnotations()) {
+            Set<ResolvedType> contracts = new HashSet<>();
+            serviceContracts.addContracts(contracts, new HashSet<>(), serviceType);
+            result.addAll(supportedAnnotationsOnContracts(roundContext,
+                                                          extension,
+                                                          contracts,
+                                                          supportedAnnotationsCache,
+                                                          metaAnnotationsCache,
+                                                          metaAnnotatedCache));
+        }
+        if (extension.supportsFactoryProvidedServiceContractAnnotations()) {
+            result.addAll(supportedAnnotationsOnContracts(roundContext,
+                                                          extension,
+                                                          ServiceTypes.factoryProvidedContracts(serviceContracts, serviceType),
+                                                          supportedAnnotationsCache,
+                                                          metaAnnotationsCache,
+                                                          metaAnnotatedCache));
+        }
 
         return Set.copyOf(result);
     }
@@ -502,7 +509,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
     private record ExtensionInfo(RegistryCodegenExtension extension,
                                  Predicate<TypeName> supportedAnnotationsPredicate,
                                  Set<TypeName> supportedMetaAnnotations,
-                                 boolean supportsServiceContractAnnotations) {
+                                 boolean supportsServiceContractAnnotations,
+                                 boolean supportsFactoryProvidedServiceContractAnnotations) {
     }
 
     private record ElementKey(TypeName owner, ElementSignature signature) {

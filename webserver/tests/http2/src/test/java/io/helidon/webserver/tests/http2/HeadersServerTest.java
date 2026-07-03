@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,12 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.FlowControl;
+import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Flag;
+import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.http2.Http2RstStream;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
@@ -47,6 +53,8 @@ import io.helidon.webserver.http2.Http2Upgrader;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.testing.junit5.http2.Http2TestClient;
+import io.helidon.webserver.testing.junit5.http2.Http2TestConnection;
 
 import org.junit.jupiter.api.Test;
 
@@ -63,12 +71,21 @@ public class HeadersServerTest {
     private static final String DATA = "Helidon!!!".repeat(10);
     private static final Header TEST_TRAILER_HEADER = HeaderValues.create("test-trailer", "trailer-value");
     private static final Header STREAM_RESULT_OK = HeaderValues.create("stream-result", "OK");
+    private static final Header INVALID_RESPONSE_HEADER = HeaderValues.create("valid-header-name", "Header\u001fValue");
     private final Http2Client client;
+    private final Http2Client responseValidationDisabledClient;
 
     HeadersServerTest(WebServer server) {
         client = Http2Client.builder()
                 .baseUri("http://localhost:" + server.port())
                 .protocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(true).build())
+                .build();
+        responseValidationDisabledClient = Http2Client.builder()
+                .baseUri("http://localhost:" + server.port("response-validation-disabled"))
+                .protocolConfig(Http2ClientProtocolConfig.builder()
+                                        .priorKnowledge(true)
+                                        .validateResponseHeaders(false)
+                                        .build())
                 .build();
     }
 
@@ -77,6 +94,11 @@ public class HeadersServerTest {
         Http2Config http2Config = Http2Config.builder()
                 .sendErrorDetails(true)
                 .maxHeaderListSize(128_000)
+                .build();
+        Http2Config responseValidationDisabledConfig = Http2Config.builder()
+                .sendErrorDetails(true)
+                .maxHeaderListSize(128_000)
+                .validateResponseHeaders(false)
                 .build();
 
         serverBuilder.port(-1)
@@ -90,10 +112,25 @@ public class HeadersServerTest {
                                                .config(Http1Config.create())
                         .addUpgrader(Http2Upgrader.create(http2Config))
                         .build());
+        serverBuilder.putSocket("response-validation-disabled", socket -> socket
+                .port(-1)
+                .protocolsDiscoverServices(false)
+                .addConnectionSelector(Http2ConnectionSelector.builder()
+                                               .http2Config(responseValidationDisabledConfig)
+                                               .build()));
     }
 
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
+        routes(router);
+    }
+
+    @SetUpRoute("response-validation-disabled")
+    static void responseValidationDisabledRouter(HttpRouting.Builder router) {
+        routes(router);
+    }
+
+    private static void routes(HttpRouting.Builder router) {
         router.error(IllegalStateException.class, (req, res, t) -> res.status(500).send(t.getMessage()));
         router.route(Http2Route.route(GET, "/ping", (req, res) -> res.send("pong")));
         router.route(Http2Route.route(GET, "/cont-out",
@@ -145,6 +182,12 @@ public class HeadersServerTest {
         router.route(Http2Route.route(GET, "/trailers-no-trailers",
                                       (req, res) -> {
                                           res.trailers().add(TEST_TRAILER_HEADER);
+                                          res.send(DATA);
+                                      }
+        ));
+        router.route(Http2Route.route(GET, "/invalid-response-header",
+                                      (req, res) -> {
+                                          res.header(INVALID_RESPONSE_HEADER);
                                           res.send(DATA);
                                       }
         ));
@@ -299,6 +342,40 @@ public class HeadersServerTest {
         assertThat(res.status(), is(Status.INTERNAL_SERVER_ERROR_500));
         assertThat(res.entity(), is(
                 "Trailers are supported only when response headers have trailer names definition 'Trailer: <trailer-name>'"));
+    }
+
+    @Test
+    void invalidResponseHeaderResetsStreamWhenValidationIsEnabled(Http2TestClient testClient) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            Http2Headers headers = Http2Headers.create(WritableHeaders.create());
+            headers.method(GET);
+            headers.path("/invalid-response-header");
+            headers.scheme(connection.clientUri().scheme());
+            headers.authority(connection.clientUri().authority());
+            connection.writer()
+                    .writeHeaders(headers,
+                                  1,
+                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                  FlowControl.Outbound.NOOP);
+
+            connection.assertSettings(TIMEOUT);
+            connection.assertWindowsUpdate(0, TIMEOUT);
+            connection.assertSettings(TIMEOUT);
+
+            Http2RstStream rstStream = connection.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.PROTOCOL));
+        }
+    }
+
+    @Test
+    void invalidResponseHeaderCanBeWrittenWhenValidationIsDisabled() {
+        ClientResponseTyped<String> res = responseValidationDisabledClient
+                .get("/invalid-response-header")
+                .request(String.class);
+
+        assertThat(res.status(), is(Status.OK_200));
+        assertThat(res.headers().get(INVALID_RESPONSE_HEADER.headerName()).get(),
+                   is(INVALID_RESPONSE_HEADER.get()));
     }
 
     private HttpClient http2Client(URI base) throws IOException, InterruptedException {

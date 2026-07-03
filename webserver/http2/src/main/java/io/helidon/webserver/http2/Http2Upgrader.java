@@ -90,13 +90,9 @@ public class Http2Upgrader implements Http1Upgrader {
                        it -> http2Headers.authority(it.get()));
         http2Headers.scheme("http");
 
-        HttpPrologue newPrologue = HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
-                                                       prologue.protocol(),
-                                                       Http2Connection.PROTOCOL_VERSION,
-                                                       prologue.method(),
-                                                       prologue.uriPath(),
-                                                       prologue.query(),
-                                                       prologue.fragment());
+        HttpPrologue newPrologue = prologue.withProtocol(Http2Connection.FULL_PROTOCOL,
+                                                         prologue.protocol(),
+                                                         Http2Connection.PROTOCOL_VERSION);
 
         connection.upgradeConnectionData(newPrologue, http2Headers);
         connection.expectPreface();

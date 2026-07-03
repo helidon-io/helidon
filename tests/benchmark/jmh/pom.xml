@@ -49,6 +49,10 @@
             <artifactId>helidon-webclient-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http2</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-json-binding</artifactId>
         </dependency>

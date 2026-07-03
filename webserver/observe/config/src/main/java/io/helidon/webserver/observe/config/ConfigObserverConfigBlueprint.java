@@ -29,6 +29,7 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = "config")
 @Prototype.Provides(ObserveProvider.class)
+@Prototype.IncludeDefaultMethods
 interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<ConfigObserver> {
     /**
      * Endpoint this observer is available on.
@@ -54,6 +55,7 @@ interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
     /**
      * Secret patterns (regular expressions) to exclude from output.
      * Any pattern that matches a key will cause the output to be obfuscated and not contain the value.
+     * Patterns are matched case-insensitively.
      * <p>
      * Patterns always added:
      * <ul>
@@ -66,6 +68,51 @@ interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
      */
     @Option.Configured
     @Option.Singular
-    @Option.Default({".*password", ".*passphrase", ".*secret"})
+    @Option.Default({
+            ConfigObserverConfigDefaults.SECRET_PASSWORD,
+            ConfigObserverConfigDefaults.SECRET_PASSPHRASE,
+            ConfigObserverConfigDefaults.SECRET_SECRET
+    })
     Set<String> secrets();
+
+    /**
+     * Safe key patterns (regular expressions) to include in output.
+     * Any pattern that matches a key will cause the output to contain the value, unless it also matches a
+     * {@link #secrets()} pattern.
+     * Patterns are matched case-insensitively.
+     *
+     * @return set of regular expression patterns for keys, where values can be included in output
+     */
+    @Option.Configured
+    @Option.Singular
+    @Option.Default({
+            ConfigObserverConfigDefaults.SAFE_KEY_SERVER_HOST,
+            ConfigObserverConfigDefaults.SAFE_KEY_SERVER_PORT,
+            ConfigObserverConfigDefaults.SAFE_KEY_SERVER_SOCKET_HOST,
+            ConfigObserverConfigDefaults.SAFE_KEY_SERVER_SOCKET_PORT,
+            ConfigObserverConfigDefaults.SAFE_KEY_OBSERVE_ENABLED,
+            ConfigObserverConfigDefaults.SAFE_KEY_OBSERVE_ENDPOINT,
+            ConfigObserverConfigDefaults.SAFE_KEY_OBSERVE_SOCKETS,
+            ConfigObserverConfigDefaults.SAFE_KEY_OBSERVE_WEIGHT,
+            ConfigObserverConfigDefaults.SAFE_KEY_OBSERVER_ENABLED,
+            ConfigObserverConfigDefaults.SAFE_KEY_OBSERVER_ENDPOINT,
+            ConfigObserverConfigDefaults.SAFE_KEY_OBSERVER_NAME
+    })
+    default Set<String> safeKeys() {
+        return ConfigObserverConfigDefaults.SAFE_KEYS;
+    }
+
+    /**
+     * Whether to include values that do not match configured {@code safe-keys} patterns; values whose keys match
+     * configured {@code secrets} patterns are still obfuscated.
+     * If enabled, the observer uses the previous behavior and only obfuscates values whose keys match
+     * {@link #secrets()}.
+     *
+     * @return whether to include unsafe values in output
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    default boolean unsafeValues() {
+        return false;
+    }
 }

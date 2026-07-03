@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.hamcrest.MatcherAssert;
@@ -32,6 +35,7 @@ import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
@@ -39,23 +43,29 @@ import org.openjdk.jmh.runner.options.TimeValue;
 public class JunitJmhRunnerTest {
 
     private static final String ERROR_MARGIN_PERCENT_DEFAULT = "15";
+    private static final String ALL_BENCHMARKS = ".*JmhTest";
+    private static final String HTTP2_REUSE_BENCHMARK =
+            ".*HttpJmhTest.http2MaxConcurrentStreamReuseLargeResponse";
+    private static final int DEFAULT_THREADS = 8;
+    private static final int HTTP2_REUSE_THREADS = 1;
     private static final int ERROR_MARGIN =
             Integer.parseInt(System.getProperty("webserver.jmh.errorMargin", ERROR_MARGIN_PERCENT_DEFAULT));
 
     static Stream<Histogram.Benchmark> httpBenchmarks() throws RunnerException, IOException {
-        Options opt = new OptionsBuilder()
-                .include(".*JmhTest")
-                .forks(1)
-                .threads(8)
-                .resultFormat(ResultFormatType.JSON)
-                .result("./target/benchmark-result.json")
-                .warmupIterations(10)
-                .warmupTime(TimeValue.seconds(1))
-                .measurementIterations(8)
-                .measurementTime(TimeValue.seconds(2))
+        Options defaultOptions = optionsBuilder("./target/benchmark-result.json")
+                .include(ALL_BENCHMARKS)
+                .exclude(HTTP2_REUSE_BENCHMARK)
+                .threads(DEFAULT_THREADS)
                 .build();
 
-        Collection<RunResult> runResults = new Runner(opt).run();
+        Options http2ReuseOptions = optionsBuilder("./target/benchmark-result-http2-reuse.json")
+                .include(HTTP2_REUSE_BENCHMARK)
+                .threads(HTTP2_REUSE_THREADS)
+                .build();
+
+        Collection<RunResult> runResults = new ArrayList<>();
+        runResults.addAll(new Runner(defaultOptions).run());
+        runResults.addAll(new Runner(http2ReuseOptions).run());
 
         boolean resetBaseline = Boolean.parseBoolean(System.getProperty("webserver.jmh.resetBaseline", "false"));
 
@@ -63,8 +73,9 @@ public class JunitJmhRunnerTest {
         Map<String, BaseLine> baseLineMap;
         if (resetBaseline || !baseLineFile.exists()) {
             Files.deleteIfExists(baseLineFile.toPath());
-            baseLineMap = BaseLine.load(Path.of("./target/benchmark-result.json"));
-            Files.copy(Path.of("./target/benchmark-result.json"), baseLineFile.toPath());
+            baseLineMap = runResults.stream()
+                    .map(BaseLine::create)
+                    .collect(Collectors.toMap(BaseLine::getBenchmark, Function.identity()));
         } else {
             baseLineMap = BaseLine.load(baseLineFile.toPath());
         }
@@ -74,6 +85,18 @@ public class JunitJmhRunnerTest {
         BaseLine.save(baseLineFile.toPath(), baseLineMap);
 
         return histogram.benchmarks.stream();
+    }
+
+    private static ChainedOptionsBuilder optionsBuilder(String resultFile) {
+        return new OptionsBuilder()
+                .forks(1)
+                .shouldFailOnError(true)
+                .resultFormat(ResultFormatType.JSON)
+                .result(resultFile)
+                .warmupIterations(10)
+                .warmupTime(TimeValue.seconds(1))
+                .measurementIterations(8)
+                .measurementTime(TimeValue.seconds(2));
     }
 
     @ParameterizedTest(name = "{0}")

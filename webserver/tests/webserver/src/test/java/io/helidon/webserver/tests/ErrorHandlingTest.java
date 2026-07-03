@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -37,8 +38,9 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @RoutingTest
@@ -47,7 +49,12 @@ class ErrorHandlingTest {
     private static final Header FIRST = HeaderValues.create(CONTROL_HEADER, "first");
     private static final Header SECOND = HeaderValues.create(CONTROL_HEADER, "second");
     private static final Header ROUTING = HeaderValues.create(CONTROL_HEADER, "routing");
+    private static final Header ROUTING_MESSAGE = HeaderValues.create(CONTROL_HEADER, "routing-message");
     private static final Header CUSTOM = HeaderValues.create(CONTROL_HEADER, "custom");
+    private static final String ROUTE_EXCEPTION_MESSAGE = "Route exception message should stay server-side";
+    private static final String HTTP_EXCEPTION_MESSAGE = "Http exception message should stay server-side";
+    private static final String INTERNAL_ERROR_MESSAGE = "Internal Server Error";
+    private static final String NOT_FOUND_MESSAGE = "Endpoint not found";
 
     private final Http1Client client;
 
@@ -62,7 +69,10 @@ class ErrorHandlingTest {
                 .error(CustomRoutingException.class, new CustomRoutingHandler())
                 .addFilter(new FirstFilter())
                 .addFilter(new SecondFilter())
-                .get("/", ErrorHandlingTest::handler);
+                .get("/", ErrorHandlingTest::handler)
+                .get("/http-exception", (req, res) -> {
+                    throw new HttpException(HTTP_EXCEPTION_MESSAGE, Status.I_AM_A_TEAPOT_418, true);
+                });
     }
 
     @Test
@@ -102,11 +112,44 @@ class ErrorHandlingTest {
                 .header(ROUTING)
                 .request()) {
             assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.entity().as(String.class), is(INTERNAL_ERROR_MESSAGE));
+        }
+    }
+
+    @Test
+    void testUnhandledExceptionMessageNotReturned() {
+        try (Http1ClientResponse response = client.get()
+                .header(ROUTING_MESSAGE)
+                .request()) {
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            String entity = response.entity().asOptional(String.class).orElse("");
+            assertThat(entity, is(INTERNAL_ERROR_MESSAGE));
+            assertThat(entity, not(containsString(ROUTE_EXCEPTION_MESSAGE)));
+        }
+    }
+
+    @Test
+    void testUnhandledHttpExceptionMessageReturned() {
+        try (Http1ClientResponse response = client.get("/http-exception")
+                .request()) {
+            assertThat(response.status(), is(Status.I_AM_A_TEAPOT_418));
+            assertThat(response.entity().as(String.class), is(HTTP_EXCEPTION_MESSAGE));
+        }
+    }
+
+    @Test
+    void testNoRouteMessageReturned() {
+        try (Http1ClientResponse response = client.get("/missing")
+                .request()) {
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+            assertThat(response.entity().as(String.class), is(NOT_FOUND_MESSAGE));
         }
     }
 
     private static void handler(ServerRequest req, ServerResponse res) throws Exception {
+        if (req.headers().contains(ROUTING_MESSAGE)) {
+            throw new RoutingException(ROUTE_EXCEPTION_MESSAGE);
+        }
         if (req.headers().contains(ROUTING)) {
             throw new RoutingException();
         }
@@ -164,7 +207,12 @@ class ErrorHandlingTest {
     }
 
     private static class RoutingException extends Exception {
+        private RoutingException() {
+        }
 
+        private RoutingException(String message) {
+            super(message);
+        }
     }
 
     private static class CustomRoutingException extends RoutingException {

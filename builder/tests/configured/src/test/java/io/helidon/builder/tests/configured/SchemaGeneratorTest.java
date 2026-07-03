@@ -130,6 +130,68 @@ class SchemaGeneratorTest {
     }
 
     @Test
+    void testConfiguredInheritance() throws IOException {
+        var baseResult = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("BaseConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * Base config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface BaseConfigBlueprint {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(baseResult.success(), is(true));
+
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addClasspathEntry(baseResult.classOutput())
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("ChildConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * Child config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ChildConfigBlueprint extends BaseConfig {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+        var schema = result.sourceOutput().resolve("com/acme/ChildConfig.java");
+        assertThat(Files.exists(schema), is(true));
+
+        var actual = Files.readString(schema);
+        assertThat(actual, matches("""
+                //...
+                package com.acme;
+                //...
+                @Configured(description = "Child config", inherits = BaseConfig.class)
+                //...
+                public interface ChildConfig extends ChildConfigBlueprint, Prototype.Api, BaseConfig {
+                //...
+                }
+                """));
+    }
+
+    @Test
     void testPrefixedNonRoot() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()

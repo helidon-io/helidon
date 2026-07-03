@@ -21,7 +21,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.http.HttpLogConfig;
 import io.helidon.http.Method;
+import io.helidon.http.http2.Http2FrameListener;
+import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
@@ -42,6 +45,8 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final Http2ConnectionCache clientCache;
     private final AtomicReference<Http1FallbackResources> http1FallbackResources = new AtomicReference<>();
     private final ReentrantLock lifecycleLock = new ReentrantLock();
+    private final Http2FrameListener sendListener;
+    private final Http2FrameListener recvListener;
     private volatile boolean closed;
 
     Http2ClientImpl(WebClient webClient, Http2ClientConfig clientConfig) {
@@ -54,6 +59,18 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
         } else {
             this.connectionCache = Http2ConnectionCache.create();
             this.clientCache = connectionCache;
+        }
+
+        HttpLogConfig log = protocolConfig.log();
+        if (log.receiveLog()) {
+            recvListener = Http2LoggingFrameListener.create(log, "cl-recv");
+        } else {
+            recvListener = Http2FrameListener.create(List.of());
+        }
+        if (log.sendLog()) {
+            sendListener = Http2LoggingFrameListener.create(log, "cl-send");
+        } else {
+            sendListener = Http2FrameListener.create(List.of());
         }
     }
 
@@ -195,6 +212,14 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     Http2ConnectionCache connectionCache() {
         return connectionCache;
+    }
+
+    Http2FrameListener sendListener() {
+        return sendListener;
+    }
+
+    Http2FrameListener recvListener() {
+        return recvListener;
     }
 
     private static final class Http1FallbackResources {

@@ -17,12 +17,16 @@
 package io.helidon.security.providers.idcs.mapper;
 
 import java.lang.reflect.Modifier;
+import java.net.InetAddress;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
@@ -46,6 +50,7 @@ import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -227,6 +232,53 @@ class IdcsRoleMapperProviderTest {
         assertThat(params.first("scope").orElseThrow(), is("urn:opc:idm:__myscopes__"));
     }
 
+    @Test
+    void testSingleTenantTokenRequestUsesClientCredentials() {
+        AtomicReference<String> authorization = new AtomicReference<>();
+        String accessToken = signedToken();
+
+        WebServer tokenServer = WebServer.builder()
+                .host(InetAddress.getLoopbackAddress().getHostAddress())
+                .routing(routing -> routing
+                        .post("/oauth2/v1/token", (req, res) -> {
+                            authorization.set(req.headers()
+                                                      .first(HeaderNames.AUTHORIZATION)
+                                                      .orElse(null));
+                            res.header(HeaderValues.CONTENT_TYPE_JSON)
+                                    .send("{\"access_token\":\"" + accessToken + "\"}");
+                        }))
+                .build()
+                .start();
+
+        try {
+            String tokenHost = "idcs-single.example.test";
+            IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
+            builder.oidcConfig(OidcConfig.builder()
+                                       .oidcMetadataWellKnown(false)
+                                       .clientId("client-id")
+                                       .clientSecret("client-secret")
+                                       .identityUri(URI.create("http://" + tokenHost + ":" + tokenServer.port()))
+                                       .tokenEndpointUri(URI.create("http://" + tokenHost + ":" + tokenServer.port()
+                                                                            + "/oauth2/v1/token"))
+                                       .authorizationEndpointUri(URI.create("http://" + tokenHost + ":" + tokenServer.port()
+                                                                            + "/oauth2/v1/authorize"))
+                                       .validateJwtWithJwk(false)
+                                       .webclient(webClient -> webClient.dnsResolver((hostname, dnsAddressLookup) ->
+                                                                                              InetAddress.getLoopbackAddress()))
+                                       .build());
+
+            IdcsRoleMapperProvider provider = builder.build();
+            Optional<String> token = provider.getAppToken(SecurityTracing.get().roleMapTracing("idcs"));
+            String expectedAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString("client-id:client-secret".getBytes(StandardCharsets.UTF_8));
+
+            assertThat(token.orElseThrow(), is(accessToken));
+            assertThat(authorization.get(), is(expectedAuthorization));
+        } finally {
+            tokenServer.stop();
+        }
+    }
+
     private static IdcsRoleMapperProvider.Builder<?> roleMapperBuilder() {
         IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
         builder.oidcConfig(OidcConfig.builder()
@@ -249,7 +301,7 @@ class IdcsRoleMapperProviderTest {
                 .algorithm("none")
                 .issuer("unit-test")
                 .issueTime(issueTime)
-                .expirationTime(issueTime.plusSeconds(60))
+                .expirationTime(issueTime.plusSeconds(3600))
                 .build();
 
         return SignedJwt.sign(jwt, Jwk.NONE_JWK).tokenContent();

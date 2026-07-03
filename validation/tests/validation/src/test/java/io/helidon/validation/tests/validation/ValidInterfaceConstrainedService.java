@@ -18,8 +18,10 @@ package io.helidon.validation.tests.validation;
 
 import java.util.List;
 
+import io.helidon.service.registry.Service;
 import io.helidon.validation.Validation;
 
+@Service.Contract
 interface ValidInterfaceConstrainedService {
     String validate(@Validation.Valid ValidatedType value);
 

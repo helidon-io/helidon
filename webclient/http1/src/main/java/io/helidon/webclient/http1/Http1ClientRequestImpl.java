@@ -26,6 +26,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
@@ -42,8 +43,10 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse>
         implements Http1ClientRequest {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
+
     private final Http1ClientImpl http1Client;
     private final FullClientRequest<?> delegate;
+
     private boolean outputStreamRedirect;
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
@@ -187,7 +190,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                             .helidonSocket().log(LOGGER,
                                                  System.Logger.Level.TRACE,
                                                  "Upgrading to %s",
-                                                 requestedUpgrade);
+                                                 LogFormatter.escape(requestedUpgrade.get()));
                 }
                 // upgrade was a success
                 return UpgradeResponse.success(response, response.connection());
@@ -195,9 +198,9 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                     response.connection().helidonSocket().log(LOGGER,
                                                               System.Logger.Level.TRACE,
-                                                              "Upgrade failed. Expected upgrade: {0}, got headers: {1}",
-                                                              requestedUpgrade,
-                                                              response.headers());
+                                                              "Upgrade failed. Expected upgrade: %s, got headers: %s",
+                                                              LogFormatter.escape(requestedUpgrade.get()),
+                                                              http1Client.logFormatter().format(response.headers()));
                 }
             }
         } else {
@@ -205,8 +208,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                 response.connection().helidonSocket().log(LOGGER,
                                                           System.Logger.Level.TRACE,
                                                           "Upgrade failed. Tried upgrading to %s, got status: %s",
-                                                          requestedUpgrade,
-                                                          response.status());
+                                                          LogFormatter.escape(requestedUpgrade.get()),
+                                                          response.status().codeText());
             }
         }
 
@@ -296,6 +299,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return new Http1ClientResponseImpl(clientConfig(),
                                            http1Client().protocolConfig(),
                                            serviceResponse.status(),
+                                           serviceResponse.serviceRequest().method(),
                                            serviceResponse.serviceRequest().headers(),
                                            serviceResponse.headers(),
                                            callChain.connection(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,12 @@ public class WebClientSecurity implements WebClientService {
             outboundEnv.method(request.method().text())
                     .path(request.uri().path().path())
                     .targetUri(request.uri().toUri())
-                    .queryParams(request.uri().query());
+                    .queryParams(request.uri().query())
+                    .requestedMethod(request.method().text())
+                    .requestedPath(request.uri().path())
+                    .requestedQuery(request.uri().hasQuery()
+                                            ? Optional.of(request.uri().query())
+                                            : Optional.empty());
 
             request.headers()
                     .stream()
@@ -199,7 +204,7 @@ public class WebClientSecurity implements WebClientService {
             ClientRequestHeaders clientHeaders = request.headers();
             for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
                 if (LOGGER.isLoggable(Level.TRACE)) {
-                    LOGGER.log(Level.TRACE, "    + Header: " + entry.getKey() + ": " + entry.getValue());
+                    LOGGER.log(Level.TRACE, "    + Header value(s) redacted");
                 }
 
                 //replace existing

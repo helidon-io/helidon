@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,14 @@ public interface ConfigSourceRuntime {
      * @param change change listener
      */
     void onChange(BiConsumer<String, ConfigNode> change);
+
+    /**
+     * Stops background change support tasks associated with this runtime.
+     * <p>
+     * The runtime remains usable after this method returns.
+     */
+    default void stopChangeSupport() {
+    }
 
     /**
      * Load the config source if it is eager (such as {@link io.helidon.config.spi.ParsableSource} or

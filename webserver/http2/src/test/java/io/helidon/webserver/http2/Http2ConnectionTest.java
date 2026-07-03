@@ -19,7 +19,13 @@ package io.helidon.webserver.http2;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketException;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,10 +40,27 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
+import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Flag;
+import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameType;
+import io.helidon.http.http2.Http2FrameTypes;
+import io.helidon.http.http2.Http2GoAway;
+import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.http2.Http2HuffmanEncoder;
 import io.helidon.http.http2.Http2Ping;
+import io.helidon.http.http2.Http2Setting;
+import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
+import io.helidon.http.http2.Http2WindowUpdate;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -49,14 +72,18 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionTest {
@@ -123,7 +150,7 @@ class Http2ConnectionTest {
         boolean previouslyInterrupted = Thread.interrupted();
         try {
             new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run();
-            streams.doMaintenance(0);
+            streams.doMaintenance();
 
             assertAll(
                     () -> assertThat(Thread.currentThread().isInterrupted(), is(true)),
@@ -149,7 +176,7 @@ class Http2ConnectionTest {
 
         try (TestLogHandler handler = TestLogHandler.install()) {
             assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
-            streams.doMaintenance(0);
+            streams.doMaintenance();
             LogRecord record = handler.await();
 
             assertAll(
@@ -172,7 +199,7 @@ class Http2ConnectionTest {
 
         try (TestLogHandler handler = TestLogHandler.install()) {
             assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
-            streams.doMaintenance(0);
+            streams.doMaintenance();
             LogRecord record = handler.await();
 
             assertAll(
@@ -198,7 +225,7 @@ class Http2ConnectionTest {
             assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
             boolean interrupted = Thread.currentThread().isInterrupted();
             Thread.interrupted();
-            streams.doMaintenance(0);
+            streams.doMaintenance();
             LogRecord record = handler.await();
 
             assertAll(
@@ -231,14 +258,178 @@ class Http2ConnectionTest {
         Http2Connection connection = new Http2Connection(ctx, config, List.of());
         Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
 
-        checks.madeYouResetCheck(0);
         ServerConnectionException exception = assertThrows(ServerConnectionException.class,
-                                                           () -> checks.madeYouResetCheck(0));
+                                                           checks::madeYouResetCheck);
 
         assertAll(
                 () -> assertThat(exception.getCause(), instanceOf(UncheckedIOException.class)),
                 () -> assertThat(exception.getCause().getCause(), instanceOf(SocketException.class))
         );
+    }
+
+    @Test
+    void h2cUpgradeRespectsConcurrentStreamLimit() throws InterruptedException {
+        List<BufferData> writtenFrames = new ArrayList<>();
+        DataWriter writer = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            writtenFrames.add(data.copy());
+            return null;
+        }).when(writer).writeNow(any(BufferData.class));
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(frameBytes(Http2Settings.builder()
+                                   .build()
+                                   .toFrameData(null, 0, Http2Flag.SettingsFlags.create(0))));
+        ExecutorService executor = mock(ExecutorService.class);
+        DataReader reader = DataReader.create(input::poll);
+        ConnectionContext ctx = http2Context(writer, reader);
+        when(ctx.executor()).thenReturn(executor);
+        Http2Connection connection = new Http2Connection(ctx,
+                                                         Http2Config.builder()
+                                                                 .sendErrorDetails(true)
+                                                                 .maxConcurrentStreams(0)
+                                                                 .build(),
+                                                         List.of());
+        Http2Headers headers = Http2Headers.create(WritableHeaders.create());
+        headers.method(Method.GET);
+        headers.path("/upgrade");
+        headers.scheme("http");
+        headers.authority("localhost");
+        connection.upgradeConnectionData(HttpPrologue.create("HTTP/1.1",
+                                                             "HTTP",
+                                                             "1.1",
+                                                             Method.GET,
+                                                             "/upgrade",
+                                                             false),
+                                         headers);
+
+        connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
+
+        verify(executor, never()).submit(any(Runnable.class));
+        BufferData goAwayData = writtenFrames.get(writtenFrames.size() - 1);
+        byte[] headerBytes = new byte[Http2FrameHeader.LENGTH];
+        goAwayData.read(headerBytes);
+        Http2FrameHeader frameHeader = Http2FrameHeader.create(BufferData.create(headerBytes));
+        assertThat(frameHeader.type(), is(Http2FrameType.GO_AWAY));
+
+        byte[] payloadBytes = new byte[frameHeader.length()];
+        goAwayData.read(payloadBytes);
+        Http2GoAway goAway = Http2GoAway.create(BufferData.create(payloadBytes));
+        assertThat(goAway.errorCode(), is(Http2ErrorCode.REFUSED_STREAM));
+    }
+
+    @Test
+    void windowUpdateForActiveStreamRefreshesIdleTime() throws InterruptedException {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        Http2Headers h2Headers = Http2Headers.create(WritableHeaders.create());
+        h2Headers.method(Method.POST);
+        h2Headers.path("/data");
+        h2Headers.scheme("http");
+        h2Headers.authority("localhost");
+
+        BufferData headersData = BufferData.growing(512);
+        h2Headers.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                        Http2HuffmanEncoder.create(),
+                        headersData);
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                        Http2FrameTypes.HEADERS,
+                                                                        Http2Flag.HeaderFlags.create(
+                                                                                Http2Flag.END_OF_HEADERS
+                                                                                        | Http2Flag.END_OF_STREAM),
+                                                                        1),
+                                                headersData)));
+
+        DataReader reader = DataReader.create(input::poll);
+        ConnectionContext ctx = http2Context(mock(DataWriter.class), reader);
+        when(ctx.executor()).thenReturn(mock(ExecutorService.class));
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+
+        assertThrows(CloseConnectionException.class,
+                     () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
+        connection.lastRequestTimestamp(ZonedDateTime.now().minusHours(1));
+        input.add(frameBytes(new Http2WindowUpdate(1)
+                                     .toFrameData(null, 1, Http2Flag.NoFlags.create())));
+
+        assertThrows(CloseConnectionException.class,
+                     () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
+
+        assertThat(connection.idleTime(), lessThan(Duration.ofSeconds(5)));
+    }
+
+    @Test
+    void madeYouResetClosesWhenThresholdIsExceeded() {
+        DataWriter writer = mock(DataWriter.class);
+        Http2Config config = Http2Config.builder()
+                .maxRapidResets(2)
+                .build();
+        ConnectionContext ctx = http2Context(writer);
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        checks.madeYouResetCheck();
+        checks.madeYouResetCheck();
+        verify(writer, never()).writeNow(any(BufferData.class));
+
+        assertThrows(CloseConnectionException.class, checks::madeYouResetCheck);
+    }
+
+    @Test
+    void madeYouResetCanBeDisabled() {
+        DataWriter writer = mock(DataWriter.class);
+        Http2Config config = Http2Config.builder()
+                .maxRapidResets(-1)
+                .build();
+        ConnectionContext ctx = http2Context(writer);
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        for (int i = 0; i < 10; i++) {
+            checks.madeYouResetCheck();
+        }
+
+        verify(writer, never()).writeNow(any(BufferData.class));
+    }
+
+    @Test
+    void rapidResetClosesWhenThresholdIsExceededWithinPeriod() {
+        DataWriter writer = mock(DataWriter.class);
+        Http2Config config = Http2Config.builder()
+                .rapidResetCheckPeriod(Duration.ofSeconds(10))
+                .maxRapidResets(2)
+                .build();
+        ConnectionContext ctx = http2Context(writer);
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        checks.rapidResetCheck(true);
+        checks.rapidResetCheck(true);
+        verify(writer, never()).writeNow(any(BufferData.class));
+
+        assertThrows(CloseConnectionException.class, () -> checks.rapidResetCheck(true));
+    }
+
+    @Test
+    void rapidResetCounterRestartsAfterCheckPeriod() throws InterruptedException {
+        DataWriter writer = mock(DataWriter.class);
+        Http2Config config = Http2Config.builder()
+                .rapidResetCheckPeriod(Duration.ofNanos(1))
+                .maxRapidResets(2)
+                .build();
+        ConnectionContext ctx = http2Context(writer);
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
+        Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
+
+        checks.rapidResetCheck(true);
+        checks.rapidResetCheck(true);
+        TimeUnit.MILLISECONDS.sleep(1);
+        checks.rapidResetCheck(true);
+        checks.rapidResetCheck(true);
+
+        verify(writer, never()).writeNow(any(BufferData.class));
     }
 
     @Test
@@ -262,12 +453,20 @@ class Http2ConnectionTest {
     }
 
     private static ConnectionContext http2Context(DataWriter writer) {
+        return http2Context(writer, mock(DataReader.class));
+    }
+
+    private static ConnectionContext http2Context(DataWriter writer, DataReader reader) {
         ConnectionContext ctx = mock(ConnectionContext.class);
         when(ctx.router()).thenReturn(Router.empty());
         when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
         when(ctx.dataWriter()).thenReturn(writer);
-        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+        when(ctx.dataReader()).thenReturn(reader);
         return ctx;
+    }
+
+    private static byte[] frameBytes(Http2FrameData frameData) {
+        return BufferData.create(frameData.header().write(), frameData.data()).readBytes();
     }
 
     private static final class TestLogHandler extends Handler implements AutoCloseable {

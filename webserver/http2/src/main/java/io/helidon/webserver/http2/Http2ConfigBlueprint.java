@@ -20,7 +20,7 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.Size;
+import io.helidon.http.HttpConfig;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
@@ -31,8 +31,8 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Blueprint(decorator = Http2ConfigBlueprint.Http2ConfigDecorator.class)
 @Prototype.Configured(root = false, value = Http2ConnectionProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
-@Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
-interface Http2ConfigBlueprint extends ProtocolConfig {
+@Prototype.IncludeDefaultMethods({"maxBufferedEntitySize", "log"})
+interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
     /**
      * The size of the largest frame payload that the sender is willing to receive in bytes.
      * Default value is {@code 16384} and maximum value is 2<sup>24</sup>-1 = 16777215 bytes.
@@ -67,16 +67,6 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.DefaultLong(8192)
     long maxConcurrentStreams();
-
-    /**
-     * Configure the maximum size allowed for an entity that can be explicitly
-     * buffered by the application by calling {@link io.helidon.http.media.ReadableEntity#buffer}.
-     *
-     * @return maximum size for a buffered entity
-     */
-    @Option.Configured
-    @Option.Default("64 KB")
-    Size maxBufferedEntitySize();
 
     /**
      * This setting indicates the sender's maximum window size in bytes for stream-level flow control.
@@ -135,11 +125,13 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
     Duration rapidResetCheckPeriod();
 
     /**
-     * Maximum number of rapid resets(stream RST sent by client before any data have been sent by server).
-     * When reached within {@link #rapidResetCheckPeriod()}, GOAWAY is sent to client and connection is closed.
+     * Maximum number of rapid client resets within the check period and server-side resets over the connection lifetime
+     * before GOAWAY is sent, or {@code -1} to disable both reset-count checks; fixed internal bounds still apply to
+     * frames received after the server has locally reset a stream.
+     * Rapid client resets are stream RST frames sent by the client before any data have been sent by the server.
      * Default value is {@code 50}.
      *
-     * @return maximum number of rapid resets
+     * @return maximum number of resets
      */
     @Option.Configured
     @Option.DefaultInt(50)

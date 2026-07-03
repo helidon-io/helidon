@@ -27,17 +27,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.http.http2.Http2Exception;
-import io.helidon.http.http2.Http2FrameData;
-import io.helidon.http.http2.Http2FrameHeader;
-import io.helidon.http.http2.Http2FrameType;
-import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
-import io.helidon.http.http2.Http2Flag;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameType;
+import io.helidon.http.http2.Http2Flag;
+import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2Util;
 import io.helidon.webserver.ConnectionContext;
@@ -113,6 +113,23 @@ class UpgradeSettingsTest {
         Http2Settings s = upgrade(encSett);
         assertThat(s.presentValue(MAX_CONCURRENT_STREAMS).orElseThrow(), is(MAX_UNSIGNED_INT - 5));
         assertThat(s.presentValue(MAX_HEADER_LIST_SIZE).orElseThrow(), is(256L));
+    }
+
+    @Test
+    void upgradePreservesEmptyQueryDelimiter() {
+        HttpPrologue emptyQueryPrologue = HttpPrologue.create("http/1.1",
+                                                              "http",
+                                                              "1.1",
+                                                              Method.GET,
+                                                              "/resource.txt?",
+                                                              false);
+        WritableHeaders<?> headers = WritableHeaders.create()
+                .add(HeaderValues.create("HTTP2-Settings", "AAEAABAAAAIAAAAB"));
+        Http2Upgrader http2Upgrader = Http2Upgrader.create(Http2Config.create());
+        Http2Connection connection = (Http2Connection) http2Upgrader.upgrade(ctx, emptyQueryPrologue, headers);
+
+        assertThat(connection.upgradePrologue().hasQuery(), is(true));
+        assertThat(connection.upgradePrologue().query().rawValue(), is(""));
     }
 
     @Test

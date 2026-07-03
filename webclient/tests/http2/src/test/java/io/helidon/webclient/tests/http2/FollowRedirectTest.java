@@ -225,6 +225,22 @@ class FollowRedirectTest {
 
     @Test
     void testEmptyOutputStreamWithRedirectAfter() {
+        assertEmptyOutputStreamWithRedirectAfter();
+    }
+
+    @Test
+    void testEntityThenEmptyOutputStreamWithRedirectAfter() {
+        assertEntityOutputStreamWithRedirectAfter();
+        clearBuffer();
+        assertEmptyOutputStreamWithRedirectAfter();
+    }
+
+    @Test
+    void testEntityOutputStreamWithRedirectAfter() {
+        assertEntityOutputStreamWithRedirectAfter();
+    }
+
+    private void assertEmptyOutputStreamWithRedirectAfter() {
         String expected = "Upload completed!";
         try (Http2ClientResponse response = webClient.put()
                 .path("/redirectAfterUpload")
@@ -233,8 +249,7 @@ class FollowRedirectTest {
         }
     }
 
-    @Test
-    void testEntityOutputStreamWithRedirectAfter() {
+    private void assertEntityOutputStreamWithRedirectAfter() {
         String expected = """
                 Upload completed!
                 0123456789

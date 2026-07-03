@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,37 @@ class MultipartTest {
                         parts.add(next.name() + ":" + next.as(String.class));
                     }
                     res.send(String.join(",", parts));
+                })
+                .post("/multipart-filename", (req, res) -> {
+                    try {
+                        MultiPart multiPart = req.content().as(MultiPart.class);
+                        ReadablePart first = multiPart.next();
+                        res.send(first.fileName().orElse(""));
+                    } catch (IllegalArgumentException e) {
+                        res.status(Status.BAD_REQUEST_400).send();
+                    }
+                })
+                .post("/multipart-skip", (req, res) -> {
+                    MultiPart multiPart = req.content().as(MultiPart.class);
+                    ReadablePart first = multiPart.next();
+                    try (InputStream inputStream = first.inputStream()) {
+                        long skipped = inputStream.skip(1);
+                        String remaining = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                        ReadablePart second = multiPart.next();
+                        res.send(skipped + ":" + first.name() + ":" + remaining + ","
+                                         + second.name() + ":" + second.as(String.class));
+                    }
+                })
+                .post("/multipart-read-first", (req, res) -> {
+                    MultiPart multiPart = req.content().as(MultiPart.class);
+                    ReadablePart first = multiPart.next();
+                    try (InputStream inputStream = first.inputStream()) {
+                        int firstByte = inputStream.read();
+                        String remaining = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                        ReadablePart second = multiPart.next();
+                        res.send(firstByte + ":" + first.name() + ":" + remaining + ","
+                                         + second.name() + ":" + second.as(String.class));
+                    }
                 });
     }
 
@@ -123,6 +154,213 @@ class MultipartTest {
                 inputStream.transferTo(out);
                 assertThat(out.toString(StandardCharsets.UTF_8), is(SECOND_PART_CONTENT));
             }
+        }
+    }
+
+    @Test
+    void testFileNameWithDirectoryPathUsesOnlyTerminalComponent() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-filename")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"; filename="%2e%2e%2f%2e%2e%2fetc%2fpasswd"\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("passwd"));
+        }
+    }
+
+    @Test
+    void testFileNameWithControlCharacterRejected() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-filename")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"; filename="file%0aname.txt"\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        }
+    }
+
+    @Test
+    void testFileNameWithEmptyQuotedValueRejected() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-filename")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"; filename=""\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        }
+    }
+
+    @Test
+    void testFileNameWithDotDotFinalSegmentRejected() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-filename")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"; filename="path%2f%2e%2e"\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        }
+    }
+
+    @Test
+    void testInvalidContentLengthHeaderIsIgnored() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: not-a-number\r
+                            \r
+                            alpha\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("first:alpha"));
+        }
+    }
+
+    @Test
+    void testContentLengthDoesNotControlBoundaryParsing() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: 1000\r
+                            \r
+                            alpha\r
+                            --boundary001\r
+                            Content-Disposition: form-data; name="second"\r
+                            Content-Length: 4\r
+                            \r
+                            beta\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("first:alpha,second:beta"));
+        }
+    }
+
+    @Test
+    void testPartInputStreamSkipBeforeRead() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-skip")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: 5\r
+                            \r
+                            alpha\r
+                            --boundary001\r
+                            Content-Disposition: form-data; name="second"\r
+                            Content-Length: 4\r
+                            \r
+                            beta\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("1:first:lpha,second:beta"));
+        }
+    }
+
+    @Test
+    void testPartInputStreamReadBeforeReadWithLeadingNewLine() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-read-first")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: 7\r
+                            \r
+                            \r
+                            alpha\r
+                            --boundary001\r
+                            Content-Disposition: form-data; name="second"\r
+                            Content-Length: 4\r
+                            \r
+                            beta\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("13:first:\nalpha,second:beta"));
+        }
+    }
+
+    @Test
+    void testPartInputStreamSkipBeforeReadWithLeadingNewLine() {
+        try (var response = client.method(Method.POST)
+                .path("/multipart-skip")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit("""
+                            --boundary001\r
+                            Content-Disposition: form-data; name="first"\r
+                            Content-Length: 7\r
+                            \r
+                            \r
+                            alpha\r
+                            --boundary001\r
+                            Content-Disposition: form-data; name="second"\r
+                            Content-Length: 4\r
+                            \r
+                            beta\r
+                            --boundary001--\r
+                            """.getBytes(StandardCharsets.UTF_8))) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("1:first:\nalpha,second:beta"));
+        }
+    }
+
+    @Test
+    void testTooManyPartsRejected() {
+        StringBuilder payload = new StringBuilder(96 * 1001);
+        for (int i = 0; i < 1001; i++) {
+            payload.append("--boundary001\r\n")
+                    .append("Content-Disposition: form-data; name=\"part-")
+                    .append(i)
+                    .append("\"\r\n")
+                    .append("Content-Length: 0\r\n\r\n\r\n");
+        }
+        payload.append("--boundary001--\r\n");
+
+        try (var response = client.method(Method.POST)
+                .path("/multipart")
+                .contentType(MediaTypes.create("multipart/form-data; boundary=boundary001"))
+                .submit(payload.toString().getBytes(StandardCharsets.US_ASCII))) {
+
+            assertThat(response.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
         }
     }
 }

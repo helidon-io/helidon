@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * HTTP/2 streams bound to single connection.
@@ -30,14 +33,34 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 final class Http2ConnectionStreams implements Http2ConcurrentConnectionStreams {
     private final Map<Integer, Http2Connection.StreamContext> streams = new HashMap<>(1000);
     private final Queue<Integer> forRemoval = new ConcurrentLinkedQueue<>();
+    private final Set<Integer> activeStreamIds = ConcurrentHashMap.newKeySet();
+    private final AtomicInteger activeStreams = new AtomicInteger();
 
     @Override
     public void remove(int streamId) {
+        deactivate(streamId);
         forRemoval.add(streamId);
     }
 
     void put(Http2Connection.StreamContext ctx) {
         streams.put(ctx.stream().streamId(), ctx);
+    }
+
+    void activate(int streamId) {
+        if (activeStreamIds.add(streamId)) {
+            activeStreams.incrementAndGet();
+        }
+    }
+
+    @Override
+    public void deactivate(int streamId) {
+        if (activeStreamIds.remove(streamId)) {
+            activeStreams.decrementAndGet();
+        }
+    }
+
+    boolean isActive(int streamId) {
+        return activeStreamIds.contains(streamId);
     }
 
     Http2Connection.StreamContext get(int streamId) {
@@ -49,17 +72,14 @@ final class Http2ConnectionStreams implements Http2ConcurrentConnectionStreams {
     }
 
     boolean isEmpty() {
-        return streams.isEmpty();
+        return activeStreams.get() == 0;
     }
 
     int size() {
-        return streams.size();
+        return activeStreams.get();
     }
 
-    void doMaintenance(long maxConcurrentStreams) {
-        if (streams.size() < maxConcurrentStreams) {
-            return;
-        }
+    void doMaintenance() {
         for (Integer streamId = forRemoval.poll();
                 streamId != null;
                 streamId = forRemoval.poll()) {

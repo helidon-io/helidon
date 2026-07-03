@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.http;
 
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.LazyString;
@@ -25,6 +26,7 @@ import io.helidon.common.buffers.LazyString;
 /**
  * Used by both HTTP server and client to parse headers from {@link io.helidon.common.buffers.DataReader}.
  */
+@Api.Internal
 public final class Http1HeadersParser {
     private static final byte[] HD_HOST = (HeaderNameEnum.HOST.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
     private static final byte[] HD_ACCEPT = (HeaderNameEnum.ACCEPT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
@@ -170,7 +172,7 @@ public final class Http1HeadersParser {
         if (col == maxLength) {
             throw new IllegalStateException("Header size exceeded");
         } else if (col < 0) {
-            throw new IllegalArgumentException("Invalid header, missing colon:\n" + reader.debugDataHex());
+            throw new IllegalArgumentException("Invalid header, missing colon");
         }
 
         String headerName = reader.readAsciiString(col);

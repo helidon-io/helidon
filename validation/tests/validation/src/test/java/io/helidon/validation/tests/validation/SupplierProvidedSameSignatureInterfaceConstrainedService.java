@@ -16,8 +16,10 @@
 
 package io.helidon.validation.tests.validation;
 
+import io.helidon.service.registry.Service;
 import io.helidon.validation.Validation;
 
+@Service.Contract
 interface SupplierProvidedSameSignatureInterfaceConstrainedService {
     @Validation.String.NotBlank
     String get();

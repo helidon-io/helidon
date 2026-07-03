@@ -188,12 +188,16 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
     @Override
     public HttpPrologue reroutePrologue(HttpPrologue prologue) {
+        UriPath uriPath = UriPath.create(reroutePath);
+        if (rerouteQuery == null) {
+            return prologue.withUriPath(uriPath);
+        }
         return HttpPrologue.create(prologue.rawProtocol(),
                                    prologue.protocol(),
                                    prologue.protocolVersion(),
                                    prologue.method(),
-                                   UriPath.create(reroutePath),
-                                   rerouteQuery == null ? prologue.query() : rerouteQuery,
+                                   uriPath,
+                                   rerouteQuery,
                                    prologue.fragment());
     }
 

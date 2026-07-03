@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ public final class UrlConfigSource extends AbstractConfigSource
 
     @Override
     protected String uid() {
-        return url.toString();
+        return UrlHelper.configuredLocation(url);
     }
 
     @Override
@@ -147,7 +147,8 @@ public final class UrlConfigSource extends AbstractConfigSource
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new ConfigException("Configuration at url '" + url + "' is not accessible.", ex);
+            throw new ConfigException("Configuration at url '" + UrlHelper.configuredLocation(url)
+                                              + "' is not accessible.", ex);
         }
     }
 
@@ -184,8 +185,8 @@ public final class UrlConfigSource extends AbstractConfigSource
             } catch (ConfigException e) {
                 throw e;
             } catch (Exception e) {
-                throw new ConfigException("Configuration at url '" + url + "' with path + " + path
-                                                  + " is not accessible.", e);
+                throw new ConfigException("Configuration at url '" + UrlHelper.configuredLocation(url)
+                                                  + "' with relative path '" + it + "' is not accessible.", e);
             }
         };
     }
@@ -209,7 +210,10 @@ public final class UrlConfigSource extends AbstractConfigSource
             connection.connect();
         } catch (IOException e) {
             // considering this to be unavailable
-            LOGGER.log(Level.TRACE, "Failed to connect to " + url + ", considering this source to be missing", e);
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Failed to connect to " + UrlHelper.configuredLocation(url)
+                        + ", considering this source to be missing", e);
+            }
             return Optional.empty();
         }
 
@@ -227,7 +231,10 @@ public final class UrlConfigSource extends AbstractConfigSource
             connection.connect();
         } catch (IOException e) {
             // considering this to be unavailable
-            LOGGER.log(Level.TRACE, "Failed to connect to " + url + ", considering this source to be missing", e);
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Failed to connect to " + UrlHelper.configuredLocation(url)
+                        + ", considering this source to be missing", e);
+            }
             return Optional.empty();
         }
 
@@ -239,8 +246,11 @@ public final class UrlConfigSource extends AbstractConfigSource
         final Instant timestamp;
         if (connection.getLastModified() == 0) {
             timestamp = Instant.now();
-            LOGGER.log(Level.TRACE, "Missing GET '" + url + "' response header 'Last-Modified'. Used current time '"
-                    + timestamp + "' as a content timestamp.");
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Missing GET '" + UrlHelper.configuredLocation(url)
+                        + "' response header 'Last-Modified'. Used current time '"
+                        + timestamp + "' as a content timestamp.");
+            }
         } else {
             timestamp = Instant.ofEpochMilli(connection.getLastModified());
         }

@@ -122,3 +122,19 @@ jwt-custom-groups-nested:
     jwt-audience: "audience.application.id"
     verify-signature: false
   jwt-groups-path: "realm_access/roles"
+
+jwt-no-authentication:
+  authenticate: false
+  # Inbound authentication is intentionally disabled for this provider.
+  atn-token:
+    verify-signature: false
+  sign-token:
+    jwk.resource.resource-path: "sign-jwk.json"
+    jwt-issuer: "jwt.example.com"
+    outbound:
+      - name: "rsa"
+        paths:
+          - "/rsa"
+        jwk-kid: "sign-rsa"
+        jwt-kid: "verify-rsa"
+        jwt-audience: "audience.application.id"

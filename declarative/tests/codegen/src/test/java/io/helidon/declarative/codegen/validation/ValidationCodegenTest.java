@@ -28,6 +28,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.Generated;
 import io.helidon.common.types.Annotation;
 import io.helidon.service.codegen.ServiceCodegenTypes;
+import io.helidon.service.codegen.ServiceOptions;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
@@ -182,6 +183,88 @@ class ValidationCodegenTest {
         var content = Files.readString(interceptor, StandardCharsets.UTF_8);
         assertThat(content, containsString("\"com.example.DefaultApiImpl.validate(java.lang.String)\""));
         assertThat(content, containsString("validation__ctx.check("));
+    }
+
+    @Test
+    void testImplicitServiceContractConstraintGeneratesInterceptor() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        public interface DefaultApi {
+                            String validate(@Validation.String.NotBlank String name);
+                        }
+                        """)
+                .addSource("DefaultApiImpl.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Singleton
+                        class DefaultApiImpl implements DefaultApi {
+                            @Override
+                            public String validate(String name) {
+                                return name;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var interceptor = result.sourceOutput().resolve("com/example/DefaultApiImpl__ValidationInterceptor_0.java");
+        assertThat(Files.exists(interceptor), is(true));
+        assertThat(Files.readString(interceptor, StandardCharsets.UTF_8),
+                   containsString("\"com.example.DefaultApiImpl.validate(java.lang.String)\""));
+    }
+
+    @Test
+    void testExternalContractConstraintGeneratesInterceptor() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addOption("-Ahelidon.registry.autoAddNonContractInterfaces=false")
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        public interface DefaultApi {
+                            String validate(@Validation.String.NotBlank String name);
+                        }
+                        """)
+                .addSource("DefaultApiImpl.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Singleton
+                        @Service.ExternalContracts(DefaultApi.class)
+                        class DefaultApiImpl implements DefaultApi {
+                            @Override
+                            public String validate(String name) {
+                                return name;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var interceptor = result.sourceOutput().resolve("com/example/DefaultApiImpl__ValidationInterceptor_0.java");
+        assertThat(Files.exists(interceptor), is(true));
+        assertThat(Files.readString(interceptor, StandardCharsets.UTF_8),
+                   containsString("\"com.example.DefaultApiImpl.validate(java.lang.String)\""));
     }
 
     @Test
@@ -476,6 +559,31 @@ class ValidationCodegenTest {
     }
 
     @Test
+    void testNonServiceInterfaceMethodConstraintRequiresValidatedWhenImplicitContractsDisabled() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addOption("-A" + ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.name() + "=false")
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        public interface DefaultApi {
+                            String validate(@Validation.String.NotBlank String name);
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString(ValidationTypes.VALIDATION_VALIDATED.fqName()
+                                                      + " annotation is required on non-service type"));
+    }
+
+    @Test
     void testInterfaceStaticMethodParameterConstraintRequiresValidated() {
         var result = TestCompiler.builder()
                 .currentRelease()
@@ -549,6 +657,9 @@ class ValidationCodegenTest {
                 .addSource("DefaultApi.java", """
                         package com.example;
 
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Contract
                         public interface DefaultApi {
                             String validate(@CustomConstraint String name);
                         }
@@ -559,6 +670,46 @@ class ValidationCodegenTest {
                         import io.helidon.service.registry.Service;
 
                         @Service.Singleton
+                        class DefaultApiImpl implements DefaultApi {
+                            @Override
+                            public String validate(String name) {
+                                return name;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("com/example/DefaultApiImpl__ValidationInterceptor_0.java")),
+                   is(true));
+    }
+
+    @Test
+    void testExternalContractConstraintTriggersServiceProcessingWhenImplicitContractsDisabled() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .addOption("-A" + ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.name() + "=false")
+                .addSource("DefaultApi.java", """
+                        package com.example;
+
+                        import io.helidon.validation.Validation;
+
+                        public interface DefaultApi {
+                            String validate(@Validation.String.NotBlank String name);
+                        }
+                        """)
+                .addSource("DefaultApiImpl.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Singleton
+                        @Service.ExternalContracts(DefaultApi.class)
                         class DefaultApiImpl implements DefaultApi {
                             @Override
                             public String validate(String name) {
@@ -691,8 +842,10 @@ class ValidationCodegenTest {
                 .addSource("LowApi.java", """
                         package com.example;
 
+                        import io.helidon.service.registry.Service;
                         import io.helidon.validation.Validation;
 
+                        @Service.Contract
                         interface LowApi {
                             String validate(@Validation.Integer.Min(1) int count);
                         }
@@ -700,8 +853,10 @@ class ValidationCodegenTest {
                 .addSource("HighApi.java", """
                         package com.example;
 
+                        import io.helidon.service.registry.Service;
                         import io.helidon.validation.Validation;
 
+                        @Service.Contract
                         interface HighApi {
                             String validate(@Validation.Integer.Min(10) int count);
                         }

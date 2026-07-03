@@ -17,10 +17,13 @@
 package io.helidon.webserver.cors;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
@@ -46,6 +49,7 @@ import static io.helidon.http.HeaderNames.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.http.HeaderNames.VARY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -283,13 +287,46 @@ public class CorsPathValidatorTest {
     }
 
     @Test
-    public void testFlightCredentials() {
+    public void testPreFlightPatternCredentials() {
         CorsPathValidator validator = CorsPathValidator.create(CorsPathConfig.builder()
                                                                        .pathPattern("/greet")
+                                                                       .clearAllowOrigins()
+                                                                       .addAllowOrigin("https?://.*\\.?example.com")
                                                                        .allowCredentials(true)
                                                                        .build());
 
         String origin = "http://example.com";
+        var requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ORIGIN, origin);
+        requestHeaders.set(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+
+        var statusCaptor = ArgumentCaptor.forClass(Status.class);
+        var responseHeaders = ServerResponseHeaders.create();
+        var response = response(responseHeaders);
+
+        CorsPathValidator.Result r = validator.preFlight(request("/greet", requestHeaders),
+                                                         response);
+
+        assertThat("Should match path", r.matched(), is(true));
+        assertThat(r.shouldContinue(), is(true));
+        assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is(origin)));
+        assertThat(responseHeaders, hasHeaderValue(VARY, is("Origin")));
+        assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_METHODS, is("PUT")));
+        assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_CREDENTIALS, is("true")));
+
+        verify(response, never()).status(statusCaptor.capture());
+    }
+
+    @Test
+    public void testFlightCredentials() {
+        String origin = "http://example.com";
+
+        CorsPathValidator validator = CorsPathValidator.create(CorsPathConfig.builder()
+                                                                       .pathPattern("/greet")
+                                                                       .allowOrigins(Set.of(origin))
+                                                                       .allowCredentials(true)
+                                                                       .build());
+
         // request
         var requestHeaders = WritableHeaders.create();
         requestHeaders.set(HeaderNames.ORIGIN, origin);
@@ -318,6 +355,109 @@ public class CorsPathValidatorTest {
         assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is(origin)));
         assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_CREDENTIALS, is("true")));
         assertThat(responseHeaders, hasHeaderValue(VARY, is("Origin")));
+    }
+
+    @Test
+    public void testWildcardCredentialsValidatorConfigRejected() {
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> CorsPathValidator.create(wildcardCredentialsConfig()));
+
+        assertThat(exception.getMessage(), is("CORS cannot allow credentials with wildcard origins"));
+    }
+
+    @Test
+    public void testWildcardCredentialsCorsConfigRejected() {
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> CorsConfig.builder()
+                                             .addDefaults(false)
+                                             .addPath(CorsPathConfig.builder()
+                                                              .pathPattern("/greet")
+                                                              .allowCredentials(true)
+                                                              .build())
+                                             .buildPrototype());
+
+        assertThat(exception.getMessage(), is("CORS cannot allow credentials with wildcard origins"));
+    }
+
+    @Test
+    public void testWildcardCredentialsPathConfigAllowedUntilUsed() {
+        CorsPathConfig config = CorsPathConfig.create(Config.create(ConfigSources.create(Map.of(
+                "path-pattern", "/greet",
+                "allow-credentials", "true"))));
+
+        assertThat(config.enabled(), is(true));
+        assertThat(config.allowCredentials(), is(true));
+        assertThat(config.allowOrigins(), is(Set.of(Cors.ALLOW_ALL)));
+    }
+
+    @Test
+    public void testWildcardCredentialsExplicitPathConfigAllowedUntilUsed() {
+        CorsPathConfig config = CorsPathConfig.create(Config.create(ConfigSources.create(Map.of(
+                "path-pattern", "/greet",
+                "allow-origins.0", Cors.ALLOW_ALL,
+                "allow-credentials", "true"))));
+
+        assertThat(config.enabled(), is(true));
+        assertThat(config.allowCredentials(), is(true));
+        assertThat(config.allowOrigins(), is(Set.of(Cors.ALLOW_ALL)));
+    }
+
+    @Test
+    public void testDuplicatePathWildcardCredentialsIgnored() {
+        CorsConfig config = CorsConfig.builder()
+                .addDefaults(false)
+                .addPath(CorsPathConfig.builder()
+                                 .pathPattern("/greet")
+                                 .allowOrigins(Set.of("http://example.com"))
+                                 .allowCredentials(true)
+                                 .build())
+                .addPath(CorsPathConfig.builder()
+                                 .pathPattern("/greet")
+                                 .allowCredentials(true)
+                                 .build())
+                .buildPrototype();
+
+        assertThat(config.paths().size(), is(2));
+        assertThat(config.paths().get(0).allowOrigins(), is(Set.of("http://example.com")));
+        assertThat(config.paths().get(1).allowOrigins(), is(Set.of(Cors.ALLOW_ALL)));
+    }
+
+    @Test
+    public void testExactOriginCredentialsConfigAllowed() {
+        CorsPathConfig config = CorsPathConfig.create(Config.create(ConfigSources.create(Map.of(
+                "path-pattern", "/greet",
+                "allow-origins.0", "http://example.com",
+                "allow-credentials", "true"))));
+
+        assertThat(config.allowCredentials(), is(true));
+        assertThat(config.allowOrigins(), is(Set.of("http://example.com")));
+    }
+
+    @Test
+    public void testTopLevelDisabledWildcardCredentialsConfigAllowed() {
+        CorsConfig config = CorsConfig.create(Config.create(ConfigSources.create(Map.of(
+                "enabled", "false",
+                "add-defaults", "false",
+                "paths.0.path-pattern", "/greet",
+                "paths.0.allow-credentials", "true"))));
+
+        CorsPathConfig path = config.paths().get(0);
+        assertThat(config.enabled(), is(false));
+        assertThat(path.enabled(), is(true));
+        assertThat(path.allowCredentials(), is(true));
+        assertThat(path.allowOrigins(), is(Set.of(Cors.ALLOW_ALL)));
+    }
+
+    @Test
+    public void testDisabledWildcardCredentialsConfigAllowed() {
+        CorsPathConfig config = CorsPathConfig.create(Config.create(ConfigSources.create(Map.of(
+                "path-pattern", "/greet",
+                "enabled", "false",
+                "allow-credentials", "true"))));
+
+        assertThat(config.enabled(), is(false));
+        assertThat(config.allowCredentials(), is(true));
+        assertThat(config.allowOrigins(), is(Set.of(Cors.ALLOW_ALL)));
     }
 
     @Test
@@ -373,6 +513,23 @@ public class CorsPathValidatorTest {
         when(response.headers()).thenReturn(headers);
 
         return response;
+    }
+
+    /*
+    Bypasses builder validation to verify that externally provided CorsPathConfig services
+    are rejected before a validator starts serving requests.
+     */
+    private static CorsPathConfig wildcardCredentialsConfig() {
+        return Mockito.mock(CorsPathConfig.class, invocation -> switch (invocation.getMethod().getName()) {
+        case "pathPattern" -> "/greet";
+        case "exclusive" -> true;
+        case "enabled" -> true;
+        case "allowCredentials" -> true;
+        case "maxAge" -> Duration.ofSeconds(3600);
+        case "allowOrigins", "allowHeaders", "allowMethods" -> Set.of(Cors.ALLOW_ALL);
+        case "exposeHeaders" -> Set.of();
+        default -> Mockito.RETURNS_DEFAULTS.answer(invocation);
+        });
     }
 
     private static class TestRoutedPath implements RoutedPath {

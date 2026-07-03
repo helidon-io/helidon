@@ -69,6 +69,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         // if not expecting continue, then we must expect the entity is being sent, and so we also treat it as if continue
         // was sent
         this.continueSent = continueImmediately || !expectContinue;
+        var listenerCtx = ctx.listenerContext();
         // we need the same entity instance every time the entity() method is called
         this.entity = LazyValue.create(() -> ServerRequestEntity.create(this::trySend100,
                                                                         streamFilter,
@@ -76,7 +77,8 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
                                                                         it -> readEntityFromPipeline.get(),
                                                                         entityReadLatch::countDown,
                                                                         headers,
-                                                                        ctx.listenerContext().mediaContext(),
+                                                                        listenerCtx.mediaContext(),
+                                                                        listenerCtx.config().maxPayloadSize(),
                                                                         http1Config.maxBufferedEntitySize().toBytes()));
     }
 
@@ -112,10 +114,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     private void trySend100(boolean drain) {
         if (!continueImmediately && expectContinue && !drain) {
             BufferData buffer = BufferData.create(Http1Connection.CONTINUE_100);
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Status.CONTINUE_100);
-                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send %n%s", buffer.debugDataHex());
-            }
+            ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Status.CONTINUE_100.codeText());
             try {
                 ctx.dataWriter().writeNow(buffer);
             } catch (SocketWriterException | UncheckedIOException e) {

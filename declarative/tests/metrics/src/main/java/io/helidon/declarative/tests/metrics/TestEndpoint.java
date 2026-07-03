@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import io.helidon.webserver.http.RestServer;
 @Service.Singleton
 @Metrics.Tag(key = "endpoint", value = "TestEndpoint")
 @Metrics.Tag(key = "application", value = "MyNiceApp")
-class TestEndpoint {
+class TestEndpoint implements InheritedMetricsContract {
     private final MeterRegistry meterRegistry;
     private final AtomicInteger gaugeValue = new AtomicInteger();
 
@@ -45,6 +45,32 @@ class TestEndpoint {
     @Metrics.Counted(tags = @Metrics.Tag(key = "location", value = "method"))
     String counted() {
         return "counted";
+    }
+
+    @Override
+    @Metrics.Tag(key = "implementationOne", value = "one")
+    @Metrics.Tag(key = "implementationTwo", value = "two")
+    public String inheritedCounted() {
+        return "inherited counted";
+    }
+
+    @Override
+    @Metrics.Tag(key = "implementationOne", value = "one")
+    @Metrics.Tag(key = "implementationTwo", value = "two")
+    public int inheritedGaugeValue() {
+        return gaugeValue.get() + 1;
+    }
+
+    @Override
+    @Metrics.Counted(value = "split-counted", absoluteName = true)
+    public String splitCounted() {
+        return "split counted";
+    }
+
+    @Override
+    @Metrics.Timed(value = "split-timed", absoluteName = true)
+    public String splitTimed() {
+        return "split timed";
     }
 
     @Http.GET

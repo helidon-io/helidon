@@ -75,6 +75,8 @@ class ContentLengthTest {
     private static final Logger CONNECTION_HANDLER_LOGGER = Logger.getLogger("io.helidon.webserver.ConnectionHandler");
     private static final String SHORTER_DATA_PATH = "/shorter-data";
     private static final String LONGER_DATA_PATH = "/longer-data";
+    private static final String PADDED_DATA_PATH = "/padded-data";
+    private static final String ZERO_DATA_PATH = "/zero-data";
     private static final String SECOND_STREAM_OK_PATH = "/second-stream-ok";
     private static final TestProbe SHORTER_DATA_PROBE = new TestProbe();
     private static final TestProbe SECOND_STREAM_PROBE = new TestProbe();
@@ -87,6 +89,8 @@ class ContentLengthTest {
     static void router(HttpRouting.Builder router) {
         router.route(Http2Route.route(POST, SHORTER_DATA_PATH, trackedHandler(SHORTER_DATA_PROBE)))
                 .route(Http2Route.route(POST, LONGER_DATA_PATH, handler()))
+                .route(Http2Route.route(POST, PADDED_DATA_PATH, (req, res) -> res.send(req.content().as(String.class))))
+                .route(Http2Route.route(POST, ZERO_DATA_PATH, (req, res) -> res.send("done")))
                 .route(Http2Route.route(POST, SECOND_STREAM_OK_PATH, trackedHandler(SECOND_STREAM_PROBE)));
     }
 
@@ -115,12 +119,31 @@ class ContentLengthTest {
         h2conn.assertWindowsUpdate(0, TIMEOUT);
         h2conn.assertSettings(TIMEOUT);
 
-        Http2Headers http2Headers = h2conn.assertHeaders(1, TIMEOUT);
-        assertThat(http2Headers.status(), is(Status.OK_200));
-        byte[] responseBytes = h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT).data().readBytes();
-        assertThat(new String(responseBytes), is("pong"));
+        assertProtocolRstStream(h2conn, 1);
+        assertNextRequestSucceeds(h2conn, 3);
+    }
 
-        assertNoHandlerExceptions(SHORTER_DATA_PROBE);
+    @Test
+    void noDataEndStreamRejected(Http2TestClient client) {
+        Http2TestConnection h2conn = client.createConnection();
+
+        var headers = requestHeadersWithContentLength(5);
+        Http2Headers h2Headers = Http2Headers.create(headers);
+        h2Headers.method(POST);
+        h2Headers.path(SHORTER_DATA_PATH);
+        h2Headers.scheme(h2conn.clientUri().scheme());
+        h2Headers.authority(h2conn.clientUri().authority());
+        h2conn.writer().writeHeaders(h2Headers,
+                                     1,
+                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                     FlowControl.Outbound.NOOP);
+
+        h2conn.assertSettings(TIMEOUT);
+        h2conn.assertWindowsUpdate(0, TIMEOUT);
+        h2conn.assertSettings(TIMEOUT);
+
+        assertProtocolRstStream(h2conn, 1);
+        assertNextRequestSucceeds(h2conn, 3);
     }
 
     @Test
@@ -134,10 +157,8 @@ class ContentLengthTest {
         h2conn.assertWindowsUpdate(0, TIMEOUT);
         h2conn.assertSettings(TIMEOUT);
 
-        h2conn.assertRstStream(1, TIMEOUT);
-        h2conn.assertGoAway(Http2ErrorCode.ENHANCE_YOUR_CALM,
-                            "Request data length doesn't correspond to the content-length header.",
-                            TIMEOUT);
+        assertProtocolRstStream(h2conn, 1);
+        assertNextRequestSucceeds(h2conn, 3);
 
         /*
         Now this fails already in connection, we never reach routing.
@@ -173,7 +194,8 @@ class ContentLengthTest {
         h2conn.assertWindowsUpdate(0, TIMEOUT);
         h2conn.assertSettings(TIMEOUT);
 
-        h2conn.assertNextFrame(Http2FrameType.HEADERS, TIMEOUT);
+        Http2Headers responseHeaders = h2conn.assertHeaders(1, TIMEOUT);
+        assertThat(responseHeaders.status(), is(Status.OK_200));
         h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT);
 
         assertNoHandlerExceptions(SECOND_STREAM_PROBE);
@@ -182,16 +204,203 @@ class ContentLengthTest {
         headers = requestHeadersWithContentLength(2);
         h2conn.request(3, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
 
-        h2conn.assertRstStream(3, TIMEOUT);
-        h2conn.assertGoAway(Http2ErrorCode.ENHANCE_YOUR_CALM,
-                            "Request data length doesn't correspond to the content-length header.",
-                            TIMEOUT);
+        assertProtocolRstStream(h2conn, 3);
+        assertNextRequestSucceeds(h2conn, 5);
 
         /*
         As in the previous test, this may not reach routing at all (depends on environment, buffer sizes etc.).
         The original block of code should have been removed when changes for unix domain sockets were done, as in
         longerData() above.
          */
+    }
+
+    @Test
+    void extraDataAfterContentLengthResetDoesNotCloseConnection(Http2TestClient client) {
+        Http2TestConnection h2conn = client.createConnection();
+
+        writeRequestHeaders(h2conn, 1, LONGER_DATA_PATH, requestHeadersWithContentLength(2), false);
+        writeData(h2conn, 1, BufferData.create("frank"), false);
+        writeData(h2conn, 1, BufferData.create("more"), true);
+
+        h2conn.assertSettings(TIMEOUT);
+        h2conn.assertWindowsUpdate(0, TIMEOUT);
+        h2conn.assertSettings(TIMEOUT);
+
+        assertProtocolRstStream(h2conn, 1);
+        assertNextRequestSucceeds(h2conn, 3);
+    }
+
+    @Test
+    void negativeContentLengthRejected(Http2TestClient client) {
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLength(-1),
+                                    "Content-Length header must be a number.");
+    }
+
+    @Test
+    void signedContentLengthRejected(Http2TestClient client) {
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("+5"),
+                                    "Content-Length header must be a number.");
+    }
+
+    @Test
+    void negativeZeroContentLengthRejected(Http2TestClient client) {
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("-0"),
+                                    "Content-Length header must be a number.");
+    }
+
+    @Test
+    void repeatedNegativeContentLengthRejected(Http2TestClient client) {
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLength(5, -1),
+                                    "Content-Length header must have exactly one value.");
+    }
+
+    @Test
+    void conflictingContentLengthRejected(Http2TestClient client) {
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLength(5, 4),
+                                    "Content-Length header must have exactly one value.");
+    }
+
+    @Test
+    void conflictingCommaSeparatedContentLengthRejected(Http2TestClient client) {
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("5, 4"),
+                                    "Content-Length header must have exactly one value.");
+    }
+
+    @Test
+    void equalCommaSeparatedContentLengthRejected(Http2TestClient client) {
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("5, 5"),
+                                    "Content-Length header must have exactly one value.");
+    }
+
+    @Test
+    void equalRepeatedContentLengthRejected(Http2TestClient client) {
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLength(5, 5),
+                                    "Content-Length header must have exactly one value.");
+    }
+
+    @Test
+    void controlCharacterContentLengthRejected(Http2TestClient client) {
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("5\u000b"),
+                                    "Content-Length header must be a number.");
+    }
+
+    @Test
+    void paddedDataUsesOnlyDataLengthForContentLength(Http2TestClient client) {
+        Http2TestConnection h2conn = client.createConnection();
+
+        writeRequestHeaders(h2conn, 1, PADDED_DATA_PATH, requestHeadersWithContentLength(5), false);
+        BufferData payload = BufferData.growing(8);
+        payload.write(2);
+        payload.write("frank".getBytes());
+        payload.write(new byte[2]);
+        Http2Flag.DataFlags flags = Http2Flag.DataFlags.create(Http2Flag.PADDED | Http2Flag.END_OF_STREAM);
+        Http2FrameHeader dataHeader = Http2FrameHeader.create(8, Http2FrameTypes.DATA, flags, 1);
+        h2conn.writer().writeData(new Http2FrameData(dataHeader, payload), FlowControl.Outbound.NOOP);
+
+        h2conn.assertSettings(TIMEOUT);
+        h2conn.assertWindowsUpdate(0, TIMEOUT);
+        h2conn.assertSettings(TIMEOUT);
+
+        Http2Headers responseHeaders = h2conn.assertHeaders(1, TIMEOUT);
+        assertThat(responseHeaders.status(), is(Status.OK_200));
+        byte[] responseBytes = h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT).data().readBytes();
+        assertThat(new String(responseBytes), is("frank"));
+    }
+
+    @Test
+    void paddingOnlyDataDoesNotEndContent(Http2TestClient client) {
+        Http2TestConnection h2conn = client.createConnection();
+
+        writeRequestHeaders(h2conn, 1, PADDED_DATA_PATH, requestHeadersWithContentLength(5), false);
+        writePaddingOnlyData(h2conn, 1, false);
+
+        BufferData payload = BufferData.create("frank");
+        Http2FrameHeader dataHeader = Http2FrameHeader.create(payload.available(),
+                                                              Http2FrameTypes.DATA,
+                                                              Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                              1);
+        h2conn.writer().writeData(new Http2FrameData(dataHeader, payload), FlowControl.Outbound.NOOP);
+
+        h2conn.assertSettings(TIMEOUT);
+        h2conn.assertWindowsUpdate(0, TIMEOUT);
+        h2conn.assertSettings(TIMEOUT);
+
+        Http2Headers responseHeaders = h2conn.assertHeaders(1, TIMEOUT);
+        assertThat(responseHeaders.status(), is(Status.OK_200));
+        byte[] responseBytes = h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT).data().readBytes();
+        assertThat(new String(responseBytes), is("frank"));
+    }
+
+    @Test
+    void zeroContentLengthPaddingOnlyDataDoesNotBlockStream(Http2TestClient client) {
+        Http2TestConnection h2conn = client.createConnection();
+
+        writeRequestHeaders(h2conn, 1, ZERO_DATA_PATH, requestHeadersWithContentLength(0), false);
+        for (int i = 0; i < 40; i++) {
+            writePaddingOnlyData(h2conn, 1, false);
+        }
+        writePaddingOnlyData(h2conn, 1, true);
+
+        h2conn.assertSettings(TIMEOUT);
+        h2conn.assertWindowsUpdate(0, TIMEOUT);
+        h2conn.assertSettings(TIMEOUT);
+
+        Http2Headers responseHeaders = h2conn.assertHeaders(1, TIMEOUT);
+        assertThat(responseHeaders.status(), is(Status.OK_200));
+        byte[] responseBytes = h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT).data().readBytes();
+        assertThat(new String(responseBytes), is("done"));
+    }
+
+    @Test
+    void zeroContentLengthPaddingOnlyDataAfterResponseDoesNotCloseConnection(Http2TestClient client) {
+        Http2TestConnection h2conn = client.createConnection();
+
+        writeRequestHeaders(h2conn, 1, ZERO_DATA_PATH, requestHeadersWithContentLength(0), false);
+
+        h2conn.assertSettings(TIMEOUT);
+        h2conn.assertWindowsUpdate(0, TIMEOUT);
+        h2conn.assertSettings(TIMEOUT);
+
+        Http2Headers responseHeaders = h2conn.assertHeaders(1, TIMEOUT);
+        assertThat(responseHeaders.status(), is(Status.OK_200));
+        byte[] responseBytes = h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT).data().readBytes();
+        assertThat(new String(responseBytes), is("done"));
+
+        writePaddingOnlyData(h2conn, 1, true);
+        assertNextRequestSucceeds(h2conn, 3);
+    }
+
+    @Test
+    void trailersCannotEndShortContentLength(Http2TestClient client) {
+        Http2TestConnection h2conn = client.createConnection();
+
+        writeRequestHeaders(h2conn, 1, SHORTER_DATA_PATH, requestHeadersWithContentLength(5), false);
+        BufferData payload = BufferData.create("fra");
+        Http2FrameHeader dataHeader = Http2FrameHeader.create(payload.available(), Http2FrameTypes.DATA,
+                                                              Http2Flag.DataFlags.create(0), 1);
+        h2conn.writer().writeData(new Http2FrameData(dataHeader, payload), FlowControl.Outbound.NOOP);
+        Http2Headers trailers = Http2Headers.create(WritableHeaders.create()
+                                                            .add(HeaderNames.create("x-trailer"), "done"));
+        h2conn.writer().writeHeaders(trailers,
+                                     1,
+                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                     FlowControl.Outbound.NOOP);
+
+        h2conn.assertSettings(TIMEOUT);
+        h2conn.assertWindowsUpdate(0, TIMEOUT);
+        h2conn.assertSettings(TIMEOUT);
+
+        assertProtocolRstStream(h2conn, 1);
+        assertNextRequestSucceeds(h2conn, 3);
     }
 
     private static Handler handler() {
@@ -224,9 +433,11 @@ class ContentLengthTest {
         };
     }
 
-    private WritableHeaders<?> requestHeadersWithContentLength(long contentLength) {
+    private WritableHeaders<?> requestHeadersWithContentLength(long... contentLengths) {
         var headers = WritableHeaders.create();
-        headers.add(HeaderNames.CONTENT_LENGTH, contentLength);
+        for (long contentLength : contentLengths) {
+            headers.add(HeaderNames.CONTENT_LENGTH, contentLength);
+        }
         return headers;
     }
 
@@ -283,6 +494,76 @@ class ContentLengthTest {
         return new Http2FrameData(header, BufferData.create(frameBytes));
     }
 
+    private WritableHeaders<?> requestHeadersWithContentLengthValue(String... contentLengths) {
+        var headers = WritableHeaders.create();
+        for (String contentLength : contentLengths) {
+            headers.add(HeaderNames.CONTENT_LENGTH, contentLength);
+        }
+        return headers;
+    }
+
+    private void assertContentLengthRejected(Http2TestClient client,
+                                             WritableHeaders<?> headers,
+                                             String message) {
+        Http2TestConnection h2conn = client.createConnection();
+        h2conn.completeHandshake(TIMEOUT);
+
+        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
+
+        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL, message, TIMEOUT);
+    }
+
+    private void writeRequestHeaders(Http2TestConnection h2conn,
+                                     int streamId,
+                                     String path,
+                                     WritableHeaders<?> headers,
+                                     boolean endOfStream) {
+        Http2Headers h2Headers = Http2Headers.create(headers);
+        h2Headers.method(POST);
+        h2Headers.path(path);
+        h2Headers.scheme(h2conn.clientUri().scheme());
+        h2Headers.authority(h2conn.clientUri().authority());
+        int flags = Http2Flag.END_OF_HEADERS | (endOfStream ? Http2Flag.END_OF_STREAM : 0);
+        h2conn.writer().writeHeaders(h2Headers,
+                                     streamId,
+                                     Http2Flag.HeaderFlags.create(flags),
+                                     FlowControl.Outbound.NOOP);
+    }
+
+    private void writeData(Http2TestConnection h2conn, int streamId, BufferData data, boolean endOfStream) {
+        int flags = endOfStream ? Http2Flag.END_OF_STREAM : 0;
+        Http2FrameHeader dataHeader = Http2FrameHeader.create(data.available(),
+                                                              Http2FrameTypes.DATA,
+                                                              Http2Flag.DataFlags.create(flags),
+                                                              streamId);
+        h2conn.writer().writeData(new Http2FrameData(dataHeader, data), FlowControl.Outbound.NOOP);
+    }
+
+    private void writePaddingOnlyData(Http2TestConnection h2conn, int streamId, boolean endOfStream) {
+        BufferData paddingOnly = BufferData.growing(3);
+        paddingOnly.write(2);
+        paddingOnly.write(new byte[2]);
+        int flags = Http2Flag.PADDED | (endOfStream ? Http2Flag.END_OF_STREAM : 0);
+        Http2FrameHeader paddingOnlyHeader = Http2FrameHeader.create(3,
+                                                                     Http2FrameTypes.DATA,
+                                                                     Http2Flag.DataFlags.create(flags),
+                                                                     streamId);
+        h2conn.writer().writeData(new Http2FrameData(paddingOnlyHeader, paddingOnly), FlowControl.Outbound.NOOP);
+    }
+
+    private void assertNextRequestSucceeds(Http2TestConnection h2conn, int streamId) {
+        h2conn.request(streamId,
+                       POST,
+                       LONGER_DATA_PATH,
+                       requestHeadersWithContentLength(5),
+                       BufferData.create("frank"));
+
+        Http2Headers responseHeaders = h2conn.assertHeaders(streamId, TIMEOUT);
+        assertThat(responseHeaders.status(), is(Status.OK_200));
+        byte[] responseBytes = h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT).data().readBytes();
+        assertThat(new String(responseBytes), is("pong"));
+    }
+
     private static void assertNoHandlerExceptions(TestProbe testProbe) {
         assertNull(testProbe.consumeException);
         assertNull(testProbe.sendException);
@@ -315,6 +596,10 @@ class ContentLengthTest {
                 throw new UncheckedIOException(e);
             }
         }
+    }
+
+    private void assertProtocolRstStream(Http2TestConnection h2conn, int streamId) {
+        assertThat(h2conn.assertRstStream(streamId, TIMEOUT).errorCode(), is(Http2ErrorCode.PROTOCOL));
     }
 
     private static final class TestLogHandler extends java.util.logging.Handler {

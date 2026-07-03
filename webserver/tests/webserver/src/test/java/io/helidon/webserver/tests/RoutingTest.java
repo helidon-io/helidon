@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ class RoutingTest extends RoutingTestBase {
                 .post("/post", (req, res) -> res.send("post"))
                 .put("/put", (req, res) -> res.send("put"))
                 .delete("/delete", (req, res) -> res.send("delete"))
-                .head("/head", (req, res) -> res.send("head"))
+                .head("/head", (req, res) -> sendHead(res, "head"))
                 .options("/options", (req, res) -> res.send("options"))
                 .trace("/trace", (req, res) -> res.send("trace"))
                 .patch("/patch", (req, res) -> res.send("patch"))
@@ -66,7 +66,7 @@ class RoutingTest extends RoutingTestBase {
                 .post("/post_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("post_multi"))
                 .put("/put_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("put_multi"))
                 .delete("/delete_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("delete_multi"))
-                .head("/head_multi", RoutingTestBase::multiHandler, (req, res) -> res.send("head_multi"))
+                .head("/head_multi", RoutingTestBase::multiHandler, (req, res) -> sendHead(res, "head_multi"))
                 .options("/options_multi",
                          RoutingTestBase::multiHandler,
                          (req, res) -> res.send("options_multi"))
@@ -77,7 +77,7 @@ class RoutingTest extends RoutingTestBase {
                 .post((req, res) -> res.send("post_catchall"))
                 .put((req, res) -> res.send("put_catchall"))
                 .delete((req, res) -> res.send("delete_catchall"))
-                .head((req, res) -> res.send("head_catchall"))
+                .head((req, res) -> sendHead(res, "head_catchall"))
                 .options((req, res) -> res.send("options_catchall"))
                 .trace((req, res) -> res.send("trace_catchall"))
                 .patch((req, res) -> res.send("patch_catchall")));

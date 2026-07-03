@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config;
 import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.Instant;
@@ -58,13 +59,78 @@ final class UrlHelper {
                 }
             }
         } catch (IOException ex) {
-            LOGGER.log(Level.TRACE, () -> "Configuration at url '" + url + "' HEAD is not accessible.", ex);
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE,
+                           "Configuration at url '" + configuredLocation(url) + "' HEAD is not accessible.",
+                           ex);
+            }
             return Optional.empty();
         }
 
         Instant timestamp = Instant.MIN;
-        LOGGER.log(Level.TRACE, "Missing HEAD '" + url + "' response header 'Last-Modified'. Used time '"
-                             + timestamp + "' as a content timestamp.");
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Missing HEAD '" + configuredLocation(url)
+                    + "' response header 'Last-Modified'. Used time '"
+                                 + timestamp + "' as a content timestamp.");
+        }
         return Optional.of(timestamp);
+    }
+
+    static String configuredLocation(URL url) {
+        StringBuilder result = new StringBuilder();
+
+        result.append(url.getProtocol()).append(':');
+
+        String host = url.getHost();
+        String path = "jar".equals(url.getProtocol()) ? url.getFile() : url.getPath();
+        if (!host.isEmpty()) {
+            result.append("//").append(host);
+
+            int port = url.getPort();
+            if (port != -1) {
+                result.append(':').append(port);
+            }
+        } else {
+            int nestedSeparator = path.indexOf("!/");
+            if (nestedSeparator > 0) {
+                String nestedLocation = path.substring(0, nestedSeparator);
+                try {
+                    nestedLocation = configuredLocation(new URL(nestedLocation));
+                } catch (MalformedURLException ignored) {
+                    int nestedScheme = nestedLocation.indexOf("://");
+                    if (nestedScheme >= 0) {
+                        int authorityStart = nestedScheme + 3;
+                        int authorityEnd = nestedLocation.indexOf('/', authorityStart);
+                        int at = nestedLocation.indexOf('@', authorityStart);
+                        if (at >= 0 && (authorityEnd == -1 || at < authorityEnd)) {
+                            nestedLocation = nestedLocation.substring(0, authorityStart)
+                                    + nestedLocation.substring(at + 1);
+                        }
+                    }
+                    int query = nestedLocation.indexOf('?');
+                    if (query != -1) {
+                        nestedLocation = nestedLocation.substring(0, query);
+                    }
+                    int fragment = nestedLocation.indexOf('#');
+                    if (fragment != -1) {
+                        nestedLocation = nestedLocation.substring(0, fragment);
+                    }
+                }
+                String entry = path.substring(nestedSeparator);
+                int query = entry.indexOf('?');
+                if (query != -1) {
+                    entry = entry.substring(0, query);
+                }
+                int fragment = entry.indexOf('#');
+                if (fragment != -1) {
+                    entry = entry.substring(0, fragment);
+                }
+                path = nestedLocation + entry;
+            }
+        }
+
+        result.append(path);
+
+        return result.toString();
     }
 }

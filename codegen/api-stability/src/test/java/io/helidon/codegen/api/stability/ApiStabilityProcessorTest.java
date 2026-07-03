@@ -171,6 +171,63 @@ public class ApiStabilityProcessorTest {
     }
 
     @Test
+    void testRecordCompactConstructorCompiles() {
+        var result = TestCompiler.builder()
+                .addProcessor(new ApiStabilityProcessor())
+                .addClasspath(Api.class)
+                .currentRelease()
+                .addOption("-Xlint:none")
+                .addSource("Repro.java", """
+                        package com.example;
+
+                        record Repro(String name) {
+                            Repro {
+                                name = name.trim();
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        assertThat(result.diagnostics(), empty());
+    }
+
+    @Test
+    void testRecordCompactConstructorGlobalIgnoreCompiles() {
+        var result = TestCompiler.builder()
+                .addProcessor(new ApiStabilityProcessor())
+                .addClasspath(Api.class)
+                .currentRelease()
+                .addOption("-Xlint:none")
+                .addOption("-Ahelidon.api=ignore")
+                .addSource("InternalApi.java", """
+                        package com.example;
+
+                        import io.helidon.common.Api;
+
+                        @Api.Internal
+                        class InternalApi {
+                        }
+                        """)
+                .addSource("Repro.java", """
+                        package com.example;
+
+                        record Repro(String name) {
+                            Repro {
+                                InternalApi api = new InternalApi();
+                                name = name.trim();
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        assertThat(result.diagnostics(), empty());
+    }
+
+    @Test
     void testGlobalWarnOptionDowngradesDefaultFailures() {
         var result = TestCompiler.builder()
                 .addProcessor(new ApiStabilityProcessor())

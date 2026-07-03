@@ -31,6 +31,8 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.RoutedPath;
@@ -86,14 +88,23 @@ class Http2ServerRequest implements RoutingRequest {
                        boolean hasEntity,
                        Supplier<BufferData> entitySupplier,
                        LimitAlgorithm.Outcome limitOutcome,
+                       long maxPayloadSize,
                        long maxBufferedEntitySize) {
         this.ctx = ctx;
         this.security = security;
         this.originalPrologue = prologue;
         this.http2Headers = headers;
-        this.headers = ServerRequestHeaders.create(headers.httpHeaders());
         this.requestId = requestId;
-        this.authority = headers.authority();
+        WritableHeaders<?> requestHeaders = WritableHeaders.create(headers.httpHeaders());
+        String authority = headers.authority();
+        if (authority == null || authority.isEmpty()) {
+            authority = requestHeaders.first(HeaderNames.HOST).orElse(null);
+        }
+        if (authority != null && !authority.isEmpty()) {
+            requestHeaders.set(HeaderValues.create(HeaderNames.HOST, authority));
+        }
+        this.authority = authority;
+        this.headers = ServerRequestHeaders.create(requestHeaders);
         this.limitOutcome = limitOutcome;
 
         if (hasEntity) {
@@ -103,6 +114,7 @@ class Http2ServerRequest implements RoutingRequest {
                                                                                  NO_OP_RUNNABLE,
                                                                                  this.headers,
                                                                                  ctx.listenerContext().mediaContext(),
+                                                                                 maxPayloadSize,
                                                                                  maxBufferedEntitySize));
         } else {
             this.entity = LazyValue.create(ReadableEntityBase.empty());
@@ -120,6 +132,7 @@ class Http2ServerRequest implements RoutingRequest {
                                      boolean hasEntity,
                                      Supplier<BufferData> entitySupplier,
                                      LimitAlgorithm.Outcome limitOutcome,
+                                     long maxPayloadSize,
                                      long maxBufferedEntitySize) {
         return new Http2ServerRequest(ctx,
                                       security,
@@ -130,6 +143,7 @@ class Http2ServerRequest implements RoutingRequest {
                                       hasEntity,
                                       entitySupplier,
                                       limitOutcome,
+                                      maxPayloadSize,
                                       maxBufferedEntitySize);
     }
 

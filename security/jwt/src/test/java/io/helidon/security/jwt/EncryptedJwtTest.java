@@ -16,11 +16,14 @@
 
 package io.helidon.security.jwt;
 
+import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.util.Base64;
 import java.util.Optional;
 
+import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
@@ -43,9 +46,11 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.security.jwt.EncryptedJwt.SupportedEncryption;
 import static io.helidon.security.jwt.EncryptedJwt.builder;
 import static io.helidon.security.jwt.EncryptedJwt.parseToken;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Encrypted JWT tests.
@@ -92,7 +97,7 @@ public class EncryptedJwtTest {
     @Test
     public void testCustomHeaderCreation() {
         String kid = "RS_512";
-        SupportedAlgorithm rsaAlgorithm = SupportedAlgorithm.RSA1_5;
+        SupportedAlgorithm rsaAlgorithm = SupportedAlgorithm.RSA_OAEP_256;
         SupportedEncryption aesAlgorithm = SupportedEncryption.A256CBC_HS512;
         EncryptedJwt encryptedJwt = builder(signedJwt)
                 .jwks(jwkKeys, kid)
@@ -123,7 +128,7 @@ public class EncryptedJwtTest {
     public void testCustomEncryptAndDecrypt() {
         EncryptedJwt encryptedOne = builder(signedJwt)
                 .jwks(jwkKeys, "RS_512")
-                .algorithm(SupportedAlgorithm.RSA1_5)
+                .algorithm(SupportedAlgorithm.RSA_OAEP)
                 .encryption(SupportedEncryption.A256CBC_HS512)
                 .build();
         EncryptedJwt encryptedSecond = builder(signedJwt)
@@ -139,6 +144,38 @@ public class EncryptedJwtTest {
         SignedJwt decryptedTwo = encryptedJwt2.decrypt(jwkKeys);
 
         assertThat(decryptedOne.getJwt().headerJsonObject(), is(decryptedTwo.getJwt().headerJsonObject()));
+    }
+
+    @Test
+    void testUnsupportedRsaKeyManagementAlgorithmIsRejected() {
+        String rsaPkcs1 = "RSA1_5";
+        String headerBase64 = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(JwtHeaders.builder()
+                                        .algorithm(rsaPkcs1)
+                                        .encryption(SupportedEncryption.A256GCM.toString())
+                                        .contentType("JWT")
+                                        .keyId("RS_512")
+                                        .build()
+                                        .headerJsonObject()
+                                        .toString()
+                                        .getBytes(StandardCharsets.UTF_8));
+        EncryptedJwt encryptedJwt = parseToken(headerBase64 + ".AA.AA.AA.AA");
+
+        assertThat(encryptedJwt.headers().algorithm(), is(Optional.of(rsaPkcs1)));
+        Errors.ErrorMessagesException exception =
+                assertThrows(Errors.ErrorMessagesException.class, () -> encryptedJwt.decrypt(jwkKeys));
+        assertThat(exception.getMessage(), containsString("Value of the claim alg not supported. alg: RSA1_5"));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testUnsupportedRsaKeyManagementAlgorithmCannotBeUsedForEncryption() {
+        JwtException exception = assertThrows(JwtException.class, () -> builder(signedJwt)
+                .jwks(jwkKeys, "RS_512")
+                .algorithm(SupportedAlgorithm.RSA1_5)
+                .build());
+        assertThat(exception.getMessage(), containsString("JWE key encryption algorithm is not supported: RSA1_5"));
     }
 
     @Test

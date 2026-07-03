@@ -58,7 +58,8 @@ class ReaderInputStream extends InputStream {
         if (charPosition >= charLength && eof) {
             return -1;
         }
-        return fillByteArray(b, off, len);
+        int read = fillByteArray(b, off, len);
+        return read == 0 && eof ? -1 : read;
     }
 
     @Override
@@ -75,6 +76,7 @@ class ReaderInputStream extends InputStream {
         if (leftoversLength > 0) {
             while (leftoversPosition < leftoversLength && readBytes < len) {
                 bytes[bytesIndex++] = leftovers[leftoversPosition++];
+                readBytes++;
             }
             if (leftoversPosition == leftoversLength) {
                 leftoversLength = 0;
@@ -174,9 +176,12 @@ class ReaderInputStream extends InputStream {
             charArray[0] = charArray[charLength - 1];
             offset = 1;
         }
-        charLength = reader.read(charArray, offset, charArray.length - offset);
-        if (charLength != charArray.length - offset) {
+        int read = reader.read(charArray, offset, charArray.length - offset);
+        if (read == -1) {
             eof = true;
+            charLength = offset;
+        } else {
+            charLength = offset + read;
         }
         charPosition = 0;
     }

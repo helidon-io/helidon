@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.helidon.security.SecurityEnvironment;
 import io.helidon.tracing.Span;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
+import io.helidon.webserver.http.HttpRequest;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 
@@ -51,7 +52,7 @@ class SecurityContextFilter implements Filter {
     @Override
     public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
         Map<String, List<String>> allHeaders = new TreeMap<>(String::compareToIgnoreCase);
-        allHeaders.putAll(req.headers().toMap());
+        allHeaders.putAll(headers(req));
 
         Context context = req.context();
         Optional<Map> newHeaders = context.get(SecurityHttpFeature.CONTEXT_ADD_HEADERS, Map.class);
@@ -63,6 +64,9 @@ class SecurityContextFilter implements Filter {
                     .targetUri(req.requestedUri().toUri())
                     .path(req.path().path())
                     .method(req.prologue().method().text())
+                    .requestedMethod(req.prologue().method().text())
+                    .requestedPath(req.prologue().uriPath())
+                    .requestedQuery(req.prologue().hasQuery() ? Optional.of(req.query()) : Optional.empty())
                     .addAttribute("remotePeer", req.remotePeer())
                     .addAttribute("userIp", req.remotePeer().host())
                     .addAttribute("userPort", req.remotePeer().port())
@@ -87,5 +91,11 @@ class SecurityContextFilter implements Filter {
         }
 
         chain.proceed();
+    }
+
+    static Map<String, List<String>> headers(HttpRequest request) {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        request.headers().forEach(header -> headers.put(header.name(), header.allValues()));
+        return headers;
     }
 }

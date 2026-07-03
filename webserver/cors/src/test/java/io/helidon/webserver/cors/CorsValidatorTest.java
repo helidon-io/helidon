@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.cors;
 
+import java.util.Set;
+
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.HeaderNames;
@@ -35,6 +37,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeaderValue;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.never;
@@ -183,6 +189,103 @@ public class CorsValidatorTest {
                                                  response);
 
         assertThat("CORS should succeed, as this is a GET request and defaults are configured", success, is(true));
+        verify(response, never()).status(statusCaptor.capture());
+    }
+
+    @Test
+    public void testTopLevelDisabledConfigIgnored() {
+        CorsValidator validator = CorsValidator.create(CorsConfig.builder()
+                                                               .enabled(false)
+                                                               .addDefaults(false)
+                                                               .addPath(CorsPathConfig.builder()
+                                                                                .pathPattern("/test")
+                                                                                .allowCredentials(true)
+                                                                                .build())
+                                                               .buildPrototype(),
+                                                       WebServer.DEFAULT_SOCKET_NAME);
+
+        var requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ORIGIN, "http://www.example.com");
+        requestHeaders.set(HeaderNames.HOST, "localhost:80");
+        var statusCaptor = ArgumentCaptor.forClass(Status.class);
+        var responseHeaders = ServerResponseHeaders.create();
+        var response = response(responseHeaders);
+
+        boolean success = validator.checkNonOptions(request(Method.GET, "/test", requestHeaders),
+                                                    response);
+
+        assertThat("Disabled CORS should not validate path entries", success, is(true));
+        assertThat(responseHeaders.size(), is(0));
+        verify(response, never()).status(statusCaptor.capture());
+    }
+
+    @Test
+    public void testDisabledPathIgnoredForPreflight() {
+        String origin = "http://www.example.com";
+        CorsValidator validator = CorsValidator.create(CorsConfig.builder()
+                                                               .addDefaults(false)
+                                                               .addPath(CorsPathConfig.builder()
+                                                                                .pathPattern("/test")
+                                                                                .enabled(false)
+                                                                                .allowOrigins(Set.of("http://disabled.example.com"))
+                                                                                .build())
+                                                               .addPath(CorsPathConfig.builder()
+                                                                                .pathPattern("/test")
+                                                                                .allowOrigins(Set.of(origin))
+                                                                                .allowCredentials(true)
+                                                                                .build())
+                                                               .buildPrototype(),
+                                                       WebServer.DEFAULT_SOCKET_NAME);
+
+        var requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ORIGIN, origin);
+        requestHeaders.set(HeaderNames.HOST, "localhost:80");
+        requestHeaders.set(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+        var statusCaptor = ArgumentCaptor.forClass(Status.class);
+        var responseHeaders = ServerResponseHeaders.create();
+        var response = response(responseHeaders);
+
+        boolean success = validator.checkOptions(request(Method.OPTIONS, "/test", requestHeaders),
+                                                 response);
+
+        assertThat("CORS should ignore disabled preflight paths and continue with the next match", success, is(true));
+        assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is(origin)));
+        assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_CREDENTIALS, is("true")));
+        assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_METHODS, is("PUT")));
+        verify(response, never()).status(statusCaptor.capture());
+    }
+
+    @Test
+    public void testDisabledPathIgnored() {
+        String origin = "http://www.example.com";
+        CorsValidator validator = CorsValidator.create(CorsConfig.builder()
+                                                               .addDefaults(false)
+                                                               .addPath(CorsPathConfig.builder()
+                                                                                .pathPattern("/test")
+                                                                                .enabled(false)
+                                                                                .allowOrigins(Set.of("http://disabled.example.com"))
+                                                                                .build())
+                                                               .addPath(CorsPathConfig.builder()
+                                                                                .pathPattern("/test")
+                                                                                .allowOrigins(Set.of(origin))
+                                                                                .allowCredentials(true)
+                                                                                .build())
+                                                               .buildPrototype(),
+                                                       WebServer.DEFAULT_SOCKET_NAME);
+
+        var requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ORIGIN, origin);
+        requestHeaders.set(HeaderNames.HOST, "localhost:80");
+        var statusCaptor = ArgumentCaptor.forClass(Status.class);
+        var responseHeaders = ServerResponseHeaders.create();
+        var response = response(responseHeaders);
+
+        boolean success = validator.checkNonOptions(request(Method.GET, "/test", requestHeaders),
+                                                    response);
+
+        assertThat("CORS should ignore disabled paths and continue with the next match", success, is(true));
+        assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_ORIGIN, is(origin)));
+        assertThat(responseHeaders, hasHeaderValue(ACCESS_CONTROL_ALLOW_CREDENTIALS, is("true")));
         verify(response, never()).status(statusCaptor.capture());
     }
 

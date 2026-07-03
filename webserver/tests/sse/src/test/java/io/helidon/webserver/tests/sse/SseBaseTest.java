@@ -161,6 +161,24 @@ class SseBaseTest {
         }
     }
 
+    static void sseFieldLineBreaks(ServerRequest req, ServerResponse res) {
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            SseEvent event = SseEvent.builder()
+                    .comment("comment\nid:injected-comment\rdata:injected-comment\r\nevent:injected-comment")
+                    .id("id\nid:injected-id\rid:injected-id\r\nid:injected-id")
+                    .name("name\nevent:injected-event\revent:injected-event\r\nevent:injected-event")
+                    .data("payload")
+                    .build();
+            sseSink.emit(event);
+        }
+    }
+
+    static void sseDataCarriageReturn(ServerRequest req, ServerResponse res) {
+        try (SseSink sseSink = res.sink(SseSink.TYPE)) {
+            sseSink.emit(SseEvent.create("line\revent:injected-data"));
+        }
+    }
+
     protected void testSse(String path, String... events) throws Exception {
         testSse(path, List.of(), events);
     }

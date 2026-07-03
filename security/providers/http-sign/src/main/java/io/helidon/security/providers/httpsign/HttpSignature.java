@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -40,16 +43,19 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import io.helidon.common.pki.Keys;
+import io.helidon.common.uri.UriQuery;
+import io.helidon.http.DateTime;
 import io.helidon.security.SecurityEnvironment;
 
 /**
  * Class wrapping signature and fields needed to build and validate it.
  */
 class HttpSignature {
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.RFC_1123_DATE_TIME;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTime.RFC_1123_DATE_TIME;
     private static final System.Logger LOGGER = System.getLogger(HttpSignature.class.getName());
     private static final List<String> DEFAULT_HEADERS = List.of("date");
     private static final byte[] EMPTY_BYTES = new byte[0];
+    private static final ZoneId GMT = ZoneId.of("GMT");
 
     private final String keyId;
     private final String algorithm;
@@ -57,6 +63,7 @@ class HttpSignature {
     // Backward compatibility with Helidon versions until 3.0.0
     // the signed string contained a trailing new line
     private final boolean backwardCompatibleEol;
+    private final String parseError;
     private String base64Signature;
 
     private byte[] signatureBytes;
@@ -66,21 +73,32 @@ class HttpSignature {
         this.algorithm = algorithm;
         this.headers = headers;
         this.backwardCompatibleEol = backwardCompatibleEol;
+        this.parseError = null;
     }
 
     private HttpSignature(String keyId,
                           String algorithm,
                           List<String> headers,
                           String base64Signature,
-                          boolean backwardCompatibleEol) {
+                          boolean backwardCompatibleEol,
+                          String parseError) {
         this.keyId = keyId;
         this.algorithm = algorithm;
         this.headers = headers;
         this.base64Signature = base64Signature;
         this.backwardCompatibleEol = backwardCompatibleEol;
+        this.parseError = parseError;
     }
 
     static HttpSignature fromHeader(String header, boolean backwardCompatibleEol) {
+        return fromHeader(header, backwardCompatibleEol, false);
+    }
+
+    static HttpSignature fromAuthorizationHeader(String header, boolean backwardCompatibleEol) {
+        return fromHeader(header, backwardCompatibleEol, true);
+    }
+
+    private static HttpSignature fromHeader(String header, boolean backwardCompatibleEol, boolean strict) {
         /*keyId="rsa-key-1",algorithm="rsa-sha256",
                 headers="(request-target) host date digest content-length",
                 signature="Base64(RSA-SHA256(signing string))"*/
@@ -96,21 +114,47 @@ class HttpSignature {
         // according to spec, I must go from beginning and latest one wins
         int b = 0;
         while (true) {
-            int c = header.indexOf(',', b);
             int eq = header.indexOf('=', b);
             if (eq == -1) {
-                return new HttpSignature(keyId, algorithm, headers, signature, backwardCompatibleEol);
+                return new HttpSignature(keyId,
+                                         algorithm,
+                                         headers,
+                                         signature,
+                                         backwardCompatibleEol,
+                                         strict && b < header.length()
+                                                 ? "Unexpected data after signature parameters"
+                                                 : null);
             }
-            if (eq > c) {
+            int c = header.indexOf(',', b);
+            if (c != -1 && c < eq) {
+                if (strict && !header.substring(b, c).trim().isEmpty()) {
+                    return new HttpSignature(keyId,
+                                             algorithm,
+                                             headers,
+                                             signature,
+                                             backwardCompatibleEol,
+                                             "Unexpected data after signature parameters");
+                }
                 b = c + 1;
+                continue;
             }
             int qb = header.indexOf('"', eq);
             if (qb == -1) {
-                return new HttpSignature(keyId, algorithm, headers, signature, backwardCompatibleEol);
+                return new HttpSignature(keyId,
+                                         algorithm,
+                                         headers,
+                                         signature,
+                                         backwardCompatibleEol,
+                                         strict ? "Unexpected data after signature parameters" : null);
             }
             int qe = header.indexOf('"', qb + 1);
             if (qe == -1) {
-                return new HttpSignature(keyId, algorithm, headers, signature, backwardCompatibleEol);
+                return new HttpSignature(keyId,
+                                         algorithm,
+                                         headers,
+                                         signature,
+                                         backwardCompatibleEol,
+                                         strict ? "Unexpected data after signature parameters" : null);
             }
 
             String name = header.substring(b, eq).trim();
@@ -129,13 +173,36 @@ class HttpSignature {
                 headers = Arrays.asList(unquotedValue.split(" "));
                 break;
             default:
+                if (strict) {
+                    return new HttpSignature(keyId,
+                                             algorithm,
+                                             headers,
+                                             signature,
+                                             backwardCompatibleEol,
+                                             "Unexpected data after signature parameters");
+                }
                 LOGGER.log(Level.TRACE, () -> "Invalid signature header field: " + name + ": \"" + unquotedValue + "\"");
                 break;
 
             }
             b = qe + 1;
+            while (b < header.length() && Character.isWhitespace(header.charAt(b))) {
+                b++;
+            }
             if (b >= header.length()) {
-                return new HttpSignature(keyId, algorithm, headers, signature, backwardCompatibleEol);
+                return new HttpSignature(keyId, algorithm, headers, signature, backwardCompatibleEol, null);
+            }
+            if (header.charAt(b) != ',') {
+                return new HttpSignature(keyId,
+                                         algorithm,
+                                         headers,
+                                         signature,
+                                         backwardCompatibleEol,
+                                         strict ? "Unexpected data after signature parameters" : null);
+            }
+            b++;
+            while (b < header.length() && Character.isWhitespace(header.charAt(b))) {
+                b++;
             }
         }
     }
@@ -144,11 +211,17 @@ class HttpSignature {
                               OutboundTargetDefinition outboundDefinition,
                               Map<String, List<String>> newHeaders,
                               boolean backwardCompatibleEol) {
+        List<String> signedHeaders = outboundDefinition.signedHeadersConfig()
+                .headers(env.method(), env.headers());
+        if (outboundDefinition.header() == HttpSignHeader.AUTHORIZATION) {
+            signedHeaders = signedHeaders.stream()
+                    .filter(header -> !"authorization".equalsIgnoreCase(header))
+                    .toList();
+        }
 
         HttpSignature signature = new HttpSignature(outboundDefinition.keyId(),
                                                     outboundDefinition.algorithm(),
-                                                    outboundDefinition.signedHeadersConfig()
-                                                            .headers(env.method(), env.headers()),
+                                                    signedHeaders,
                                                     backwardCompatibleEol);
 
         // validate algorithm is OK
@@ -206,6 +279,9 @@ class HttpSignature {
     Optional<String> validate() {
         List<String> problems = new ArrayList<>();
 
+        if (parseError != null) {
+            problems.add(parseError);
+        }
         if (null == keyId) {
             problems.add("keyId is a mandatory signature header component");
         }
@@ -240,7 +316,8 @@ class HttpSignature {
 
     Optional<String> validate(SecurityEnvironment env,
                               InboundClientDefinition clientDefinition,
-                              List<String> requiredHeaders) {
+                              List<String> requiredHeaders,
+                              Duration dateValidity) {
 
         // validate algorithm is OK
         if (!algorithm.equalsIgnoreCase(clientDefinition.algorithm())) {
@@ -248,8 +325,40 @@ class HttpSignature {
         }
 
         for (String requiredHeader : requiredHeaders) {
-            if (!this.headers.contains(requiredHeader)) {
+            if (this.headers.stream().noneMatch(requiredHeader::equalsIgnoreCase)) {
                 return Optional.of("Header " + requiredHeader + " is required, yet not signed");
+            }
+        }
+
+        if (!dateValidity.isZero() && headers.stream().anyMatch("date"::equalsIgnoreCase)) {
+            List<String> dateHeaderValues = env.headers().get("date");
+            if (dateHeaderValues == null) {
+                for (Map.Entry<String, List<String>> header : env.headers().entrySet()) {
+                    if ("date".equalsIgnoreCase(header.getKey())) {
+                        dateHeaderValues = header.getValue();
+                        break;
+                    }
+                }
+            }
+
+            if (dateHeaderValues == null || dateHeaderValues.isEmpty()) {
+                return Optional.of("Date header is signed, but missing from request");
+            }
+            if (dateHeaderValues.size() != 1) {
+                return Optional.of("Date header must contain exactly one value");
+            }
+
+            Instant dateHeader;
+            ZonedDateTime serverTime = env.time();
+            Instant now = serverTime.toInstant();
+            try {
+                dateHeader = DateTime.parse(dateHeaderValues.get(0), serverTime).toInstant();
+            } catch (DateTimeParseException e) {
+                return Optional.of("Date header cannot be parsed: " + e.getMessage());
+            }
+
+            if (dateHeader.isBefore(now.minus(dateValidity)) || dateHeader.isAfter(now.plus(dateValidity))) {
+                return Optional.of("Date header is outside the allowed validity interval");
             }
         }
 
@@ -288,7 +397,7 @@ class HttpSignature {
                                              .publicKey()
                                              .orElseThrow(() -> new HttpSignatureException(
                                                      "Public key is required, yet not configured")));
-                signature.update(getBytesToSign(env, null));
+                signature.update(getBytesToValidate(env, null));
 
             if (!signature.verify(this.signatureBytes)) {
                 return Optional.of("Signature is not valid");
@@ -304,10 +413,20 @@ class HttpSignature {
         } catch (SignatureException e) {
             LOGGER.log(Level.TRACE, "Signature exception", e);
             return Optional.of("SignatureException: " + e.getMessage());
+        } catch (SecurityException e) {
+            LOGGER.log(Level.TRACE, "Failed to validate rsa-sha256", e);
+            return Optional.of("Failed to validate rsa-sha256: " + e.getMessage());
         }
     }
 
     private byte[] signHmacSha256(SecurityEnvironment env, byte[] secret, Map<String, List<String>> newHeaders) {
+        return signHmacSha256(env, secret, newHeaders, false);
+    }
+
+    private byte[] signHmacSha256(SecurityEnvironment env,
+                                  byte[] secret,
+                                  Map<String, List<String>> newHeaders,
+                                  boolean useRequestedTarget) {
         try {
             String algorithm = "HmacSHA256";
             Mac mac = Mac.getInstance(algorithm);
@@ -315,7 +434,8 @@ class HttpSignature {
             SecretKeySpec secretKey = new SecretKeySpec(secret, algorithm);
             mac.init(secretKey);
 
-            return mac.doFinal(getBytesToSign(env, newHeaders));
+            byte[] bytesToSign = useRequestedTarget ? getBytesToValidate(env, newHeaders) : getBytesToSign(env, newHeaders);
+            return mac.doFinal(bytesToSign);
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new HttpSignatureException(e);
         }
@@ -324,7 +444,7 @@ class HttpSignature {
     private Optional<String> validateHmacSha256(SecurityEnvironment env,
                                                 InboundClientDefinition clientDefinition) {
         try {
-            byte[] signature = signHmacSha256(env, clientDefinition.hmacSharedSecret().orElse(EMPTY_BYTES), null);
+            byte[] signature = signHmacSha256(env, clientDefinition.hmacSharedSecret().orElse(EMPTY_BYTES), null, true);
             if (!MessageDigest.isEqual(signature, this.signatureBytes)) {
                 return Optional.of("Signature is not valid");
             }
@@ -336,19 +456,45 @@ class HttpSignature {
     }
 
     private byte[] getBytesToSign(SecurityEnvironment env, Map<String, List<String>> newHeaders) {
-        return getSignedString(newHeaders, env).getBytes(StandardCharsets.UTF_8);
+        return getSignedString(newHeaders, env, true).getBytes(StandardCharsets.UTF_8);
+    }
+
+    private byte[] getBytesToValidate(SecurityEnvironment env, Map<String, List<String>> newHeaders) {
+        return getSignedString(newHeaders, env, true).getBytes(StandardCharsets.UTF_8);
     }
 
     String getSignedString(Map<String, List<String>> newHeaders, SecurityEnvironment env) {
+        return getSignedString(newHeaders, env, true);
+    }
+
+    private String getSignedString(Map<String, List<String>> newHeaders,
+                                   SecurityEnvironment env,
+                                   boolean useRequestedTarget) {
         Map<String, List<String>> requestHeaders = env.headers();
         List<String> linesToSign = new LinkedList<>();
 
         for (String header : this.headers) {
-            if ("(request-target)".equals(header)) {
+            if ("(request-target)".equalsIgnoreCase(header)) {
                 //special case
+                String method = useRequestedTarget ? env.requestedMethod() : env.method();
+                String target;
+                if (useRequestedTarget) {
+                    String path = env.requestedPath().rawPath();
+                    if (path.isEmpty()) {
+                        path = "/";
+                    }
+                    Optional<UriQuery> requestedQuery = env.requestedQuery();
+                    target = requestedQuery.isPresent() ? path + "?" + requestedQuery.get().rawValue() : path;
+                } else {
+                    String path = env.path()
+                            .filter(it -> !it.isEmpty())
+                            .orElse("/");
+                    String query = env.queryParams().rawValue();
+                    target = query.isEmpty() ? path : path + "?" + query;
+                }
                 linesToSign.add(header
-                                        + ": " + env.method().toLowerCase()
-                                        + " " + env.path().orElse("/"));
+                                        + ": " + method.toLowerCase()
+                                        + " " + target);
             } else {
                 List<String> headerValues = requestHeaders.get(header);
                 if (null == headerValues && null == newHeaders) {
@@ -359,7 +505,7 @@ class HttpSignature {
                 if (null == headerValues) {
                     // there are two headers we understand and may want to add to request
                     if ("date".equalsIgnoreCase(header)) {
-                        String date = ZonedDateTime.now(ZoneId.of("GMT")).format(DATE_FORMATTER);
+                        String date = ZonedDateTime.now(GMT).format(DATE_FORMATTER);
                         headerValues = List.of(date);
                         newHeaders.put("date", headerValues);
 
@@ -367,11 +513,15 @@ class HttpSignature {
                     } else if ("host".equalsIgnoreCase(header)) {
                         URI uri = env.targetUri();
 
-                        String host = uri.getHost() + ":" + uri.getPort();
+                        String host = uri.getHost();
+                        if (uri.getPort() != -1) {
+                            host = host + ":" + uri.getPort();
+                        }
+                        String finalHost = host;
                         headerValues = List.of(host);
                         newHeaders.put("host", headerValues);
 
-                        LOGGER.log(Level.TRACE, () -> "Added host header to request: " + host);
+                        LOGGER.log(Level.TRACE, () -> "Added host header to request: " + finalHost);
                     } else {
                         throw new HttpSignatureException("Header " + header + " is required for signature, yet not defined in "
                                                                  + "request");

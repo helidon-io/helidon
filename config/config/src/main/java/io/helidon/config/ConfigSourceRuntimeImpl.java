@@ -57,7 +57,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
     private final ConfigSource configSource;
     private final boolean changesSupported;
     private final Supplier<Optional<ObjectNode>> reloader;
-    private final Runnable changesRunnable;
+    private final ChangeSupport changeSupport;
     private final Function<String, Optional<ConfigNode>> singleNodeFunction;
     private final boolean isLazy;
 
@@ -114,7 +114,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
 
         // change support
         boolean changesSupported = false;
-        Runnable changesRunnable = null;
+        ChangeSupport changeSupport = null;
 
         if (configSource instanceof WatchableSource) {
             WatchableSource<Object> watchable = (WatchableSource<Object>) source;
@@ -122,12 +122,12 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
 
             if (changeWatcher.isPresent()) {
                 changesSupported = true;
-                changesRunnable = new WatchableChangesStarter(configContext,
-                                                              listeners,
-                                                              reloader,
-                                                              source,
-                                                              watchable,
-                                                              changeWatcher.get());
+                changeSupport = new WatchableChangesStarter(configContext,
+                                                            listeners,
+                                                            reloader,
+                                                            source,
+                                                            watchable,
+                                                            changeWatcher.get());
             }
         }
 
@@ -137,22 +137,32 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
 
             if (pollingStrategy.isPresent()) {
                 changesSupported = true;
-                changesRunnable = new PollingStrategyStarter(configContext,
-                                                             listeners,
-                                                             reloader,
-                                                             source,
-                                                             pollable,
-                                                             pollingStrategy.get(),
-                                                             lastStamp);
+                changeSupport = new PollingStrategyStarter(configContext,
+                                                           listeners,
+                                                           reloader,
+                                                           source,
+                                                           pollable,
+                                                           pollingStrategy.get(),
+                                                           lastStamp);
             }
         }
 
         if (!changesSupported && (configSource instanceof EventConfigSource event)) {
             changesSupported = true;
-            changesRunnable = () -> event.onChange((key, config) -> listeners.forEach(it -> it.accept(key, config)));
+            changeSupport = new ChangeSupport() {
+                @Override
+                public void start() {
+                    event.onChange((key, config) -> listeners.forEach(it -> it.accept(key, config)));
+                }
+
+                @Override
+                public void stop() {
+                    event.stopChangeSupport();
+                }
+            };
         }
 
-        this.changesRunnable = changesRunnable;
+        this.changeSupport = changeSupport;
         this.changesSupported = changesSupported;
     }
 
@@ -165,6 +175,11 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
         this.listeners.add(change);
         this.changesWanted = true;
         startChanges();
+    }
+
+    @Override
+    public void stopChangeSupport() {
+        stopChanges();
     }
 
     @Override
@@ -279,7 +294,14 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
     private void startChanges() {
         if (!changesStarted && changesWanted && (dataLoaded || isLazy)) {
             changesStarted = true;
-            changesRunnable.run();
+            changeSupport.start();
+        }
+    }
+
+    void stopChanges() {
+        if (changesSupported && changesStarted) {
+            changesStarted = false;
+            changeSupport.stop();
         }
     }
 
@@ -296,7 +318,14 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
 
     }
 
-    private static final class PollingStrategyStarter implements Runnable {
+    private interface ChangeSupport {
+        void start();
+
+        default void stop() {
+        }
+    }
+
+    private static final class PollingStrategyStarter implements ChangeSupport {
         private final PollingStrategy pollingStrategy;
         private final PollingStrategyListener listener;
 
@@ -313,8 +342,13 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
         }
 
         @Override
-        public void run() {
+        public void start() {
             pollingStrategy.start(listener);
+        }
+
+        @Override
+        public void stop() {
+            pollingStrategy.stop();
         }
     }
 
@@ -364,7 +398,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
         }
     }
 
-    private static final class WatchableChangesStarter implements Runnable {
+    private static final class WatchableChangesStarter implements ChangeSupport {
         private final WatchableSource<Object> watchable;
         private final WatchableListener listener;
         private final ChangeWatcher<Object> changeWatcher;
@@ -381,9 +415,14 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
         }
 
         @Override
-        public void run() {
+        public void start() {
             Object target = watchable.target();
             changeWatcher.start(target, listener);
+        }
+
+        @Override
+        public void stop() {
+            changeWatcher.stop();
         }
     }
 

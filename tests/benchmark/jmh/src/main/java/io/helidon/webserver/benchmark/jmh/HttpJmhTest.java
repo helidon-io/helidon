@@ -27,23 +27,30 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webclient.http2.Http2ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http1.Http1Route;
+import io.helidon.webserver.http2.Http2Config;
+import io.helidon.webserver.http2.Http2ConnectionSelector;
+import io.helidon.webserver.http2.Http2Route;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
@@ -53,24 +60,43 @@ public class HttpJmhTest {
     private static final Header CONTENT_TYPE = HeaderValues.createCached(HeaderNames.CONTENT_TYPE,
                                                                          "text/plain; charset=UTF-8");
     private static final Header CONTENT_LENGTH = HeaderValues.createCached(HeaderNames.CONTENT_LENGTH, "13");
+    private static final int LARGE_RESPONSE_SIZE = 128 * 1024;
+    private static final int HTTP2_REUSE_REQUESTS = 16;
+    private static final int HTTP2_REUSE_THREADS = 1;
+    private static final Header LARGE_CONTENT_LENGTH = HeaderValues.createCached(HeaderNames.CONTENT_LENGTH,
+                                                                                 String.valueOf(LARGE_RESPONSE_SIZE));
     private static final Header SERVER = HeaderValues.createCached(HeaderNames.SERVER, "Helidon");
     private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] LARGE_RESPONSE_BYTES = new byte[LARGE_RESPONSE_SIZE];
     private static final byte[] HTTP_1_CLOSE_REQUEST = """
             GET /plaintext HTTP/1.1\r
             Host: localhost\r
             Connection: close\r
             \r
             """.getBytes(StandardCharsets.US_ASCII);
+
+    static {
+        Arrays.fill(LARGE_RESPONSE_BYTES, (byte) 'H');
+    }
+
     private WebServer server;
     private int serverPort;
     private HttpClient http1Client;
     private HttpClient http2Client;
+    private Http2Client helidonHttp2Client;
 
     @Setup
     public void setup() {
         LogConfig.configureRuntime();
+        Http2Config http2Config = Http2Config.builder()
+                .maxConcurrentStreams(1)
+                .build();
 
         server = WebServer.builder()
+                .addProtocol(http2Config)
+                .addConnectionSelector(Http2ConnectionSelector.builder()
+                                               .http2Config(http2Config)
+                                               .build())
                 .connectionOptions(builder -> builder
                         .readTimeout(Duration.ZERO)
                         .connectTimeout(Duration.ZERO)
@@ -79,7 +105,9 @@ public class HttpJmhTest {
                 .writeQueueLength(4000)
                 .host(SERVER_HOST)
                 .backlog(8192)
-                .routing(router -> router.route(Http1Route.route(Method.GET, "/plaintext", new PlaintextHandler())))
+                .routing(router -> router
+                        .route(Http1Route.route(Method.GET, "/plaintext", new PlaintextHandler()))
+                        .route(Http2Route.route(Method.GET, "/http2-large", new LargeHttp2Handler())))
                 .build()
                 .start();
 
@@ -94,10 +122,17 @@ public class HttpJmhTest {
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
+
+        helidonHttp2Client = Http2Client.builder()
+                .shareConnectionCache(false)
+                .protocolConfig(http2 -> http2.priorKnowledge(true))
+                .baseUri("http://" + SERVER_HOST + ":" + serverPort)
+                .build();
     }
 
     @TearDown
     public void tearDown() {
+        helidonHttp2Client.closeResource();
         server.stop();
     }
 
@@ -135,6 +170,17 @@ public class HttpJmhTest {
                 .build();
         HttpResponse<byte[]> response = http2Client.send(request, HttpResponse.BodyHandlers.ofByteArray());
         bh.consume(response);
+    }
+
+    @Benchmark
+    @Threads(HTTP2_REUSE_THREADS)
+    public void http2MaxConcurrentStreamReuseLargeResponse(Blackhole bh) {
+        for (int i = 0; i < HTTP2_REUSE_REQUESTS; i++) {
+            try (Http2ClientResponse response = helidonHttp2Client.get("/http2-large").request()) {
+                bh.consume(response.status());
+                bh.consume(response.entity().as(byte[].class));
+            }
+        }
     }
 
     private static int readResponse(InputStream input, byte[] responseBuffer) throws IOException {
@@ -187,6 +233,16 @@ public class HttpJmhTest {
             res.header(CONTENT_TYPE);
             res.header(SERVER);
             res.send(RESPONSE_BYTES);
+        }
+    }
+
+    private static class LargeHttp2Handler implements Handler {
+        @Override
+        public void handle(ServerRequest req, ServerResponse res) {
+            res.header(LARGE_CONTENT_LENGTH);
+            res.header(CONTENT_TYPE);
+            res.header(SERVER);
+            res.send(LARGE_RESPONSE_BYTES);
         }
     }
 }

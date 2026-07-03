@@ -54,6 +54,7 @@ class CorsPathValidator {
     private final Set<String> exposeHeaders;
 
     private CorsPathValidator(CorsPathConfig config) {
+        CorsConfigSupport.validateCredentialsOrigins(config.enabled(), config.allowCredentials(), config.allowOrigins());
         this.config = config;
         this.matcher = PathMatchers.create(config.pathPattern());
         this.exclusive = config.exclusive();
