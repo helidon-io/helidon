@@ -2,6 +2,8 @@
 description: "Helidon MicroProfile security"
 navigation:
   icon: i-lucide-shield
+index:
+  page: security.md
 -->
 # Security
 

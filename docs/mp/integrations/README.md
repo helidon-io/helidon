@@ -1,5 +1,5 @@
 <!--@frontmatter
-title: "Overview"
+title: Overview
 description: "Helidon MP Integrations"
 navigation:
   icon: i-lucide-cloud

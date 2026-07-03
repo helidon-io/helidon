@@ -76,15 +76,15 @@ configuration and pass it to the WebServer builder.
 
 ```java
 Tls tls = Tls.builder()
-        .privateKey(pk -> pk
-                .keystore(keys -> keys.keystore(it -> it.resourcePath("private-key.p12"))
-                        .passphrase("password".toCharArray())))
-        .trust(trust -> trust
-                .keystore(keys -> keys.keystore(it -> it.resourcePath("trust.p12"))))
-        .build();
+    .privateKey(pk -> pk
+        .keystore(keys -> keys.keystore(it -> it.resourcePath("private-key.p12"))
+            .passphrase("password".toCharArray())))
+    .trust(trust -> trust
+        .keystore(keys -> keys.keystore(it -> it.resourcePath("trust.p12"))))
+    .build();
 
 WebServer.builder()
-        .tls(tls);
+    .tls(tls);
 ```
 
 #### Configuring TLS in the Config File
@@ -126,7 +126,7 @@ classpath:
 ```java [application.yaml]
 Config config = Config.create(); // <1>
 WebServer.builder()
-        .config(config.get("server")); // <2>
+    .config(config.get("server")); // <2>
 ```
 1. `application.yaml` is a default configuration source loaded when YAML support
    is on classpath, so we can just use `Config.create()`
@@ -140,7 +140,7 @@ WebServerTls instance based on `application.yaml` file located on the classpath:
 ```java [application.yaml]
 Config config = Config.create();
 WebServer.builder()
-        .tls(it -> it.config(config.get("server.tls")));
+    .tls(it -> it.config(config.get("server.tls")));
 ```
 
 This can alternatively be configured with paths to PKCS#8 PEM files rather than
@@ -191,9 +191,9 @@ Using HttpRouting.Builder to specify how HTTP requests are handled:
 <!--@mdc ::code-callout -->
 ```java
 WebServer.builder()
-        .routing(it -> it
-                .get("/hello", (req, res) -> res.send("Hello World!"))) // <1>
-        .build(); // <2>
+    .routing(it -> it
+        .get("/hello", (req, res) -> res.send("Hello World!"))) // <1>
+    .build(); // <2>
 ```
 1. Handle all GETs to `/hello` path. Send the `Hello World!` string.
 2. Create a server instance with the provided routing
@@ -268,12 +268,12 @@ using its `Builder`.
 <!--@mdc ::code-callout -->
 ```java
 routing.route(HttpRoute.builder()
-                      .path("/hello")
-                      .methods(Method.POST, Method.PUT) // <1>
-                      .handler((req, res) -> {
-                          String requestEntity = req.content().as(String.class);
-                          res.send(requestEntity); // <2>
-                      }));
+    .path("/hello")
+    .methods(Method.POST, Method.PUT) // <1>
+    .handler((req, res) -> {
+        String requestEntity = req.content().as(String.class);
+        res.send(requestEntity); // <2>
+    }));
 ```
 1. The route is specified for `GET` and `POST` requests
 2. The handler consumes the request payload and echoes it back
@@ -429,7 +429,7 @@ To complete the request handling, you must send a response by calling the
 rules.get("/hello", (req, res) -> { // <1>
     // terminating logic
     res.status(Status.ACCEPTED_202)
-            .send("Saved!"); // <2>
+        .send("Saved!"); // <2>
 });
 ```
 1. handler that terminates the request handling for any HTTP method using the
@@ -514,15 +514,15 @@ import static io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscovery
 import static io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscoveryType.X_FORWARDED;
 
 AllowList trustedProxies = AllowList.builder()
-        .addAllowedPattern(Pattern.compile("lb.+\\.mycorp\\.com"))
-        .addDenied("lbtest.mycorp.com")
-        .build(); // <1>
+    .addAllowedPattern(Pattern.compile("lb.+\\.mycorp\\.com"))
+    .addDenied("lbtest.mycorp.com")
+    .build(); // <1>
 
 WebServer.builder()
-        .requestedUriDiscoveryContext(it -> it
-                .addDiscoveryType(FORWARDED) // <2>
-                .addDiscoveryType(X_FORWARDED)
-                .trustedProxies(trustedProxies)); // <3>
+    .requestedUriDiscoveryContext(it -> it
+        .addDiscoveryType(FORWARDED) // <2>
+        .addDiscoveryType(X_FORWARDED)
+        .trustedProxies(trustedProxies)); // <3>
 ```
 1. Create the `AllowList` describing the intermediate networks nodes to trust and
   not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers
@@ -635,8 +635,8 @@ response as follows:
   ```java
   rules.get((req, res) -> {
     throw new HttpException(
-            "Amount of money must be greater than 0.",
-            Status.NOT_ACCEPTABLE_406);
+        "Amount of money must be greater than 0.",
+        Status.NOT_ACCEPTABLE_406);
   });
   ```
 
@@ -906,12 +906,12 @@ server feature using WebServerConfig.Builder:
 <!--@mdc ::code-callout -->
 ```java
 builder.addFeature(StaticContentFeature.builder() // <1>
-                           .addPath(p -> p.location(Paths.get("/some/WEB/pics")) // <2>
-                                   .context("/pictures")) // <3>
-                           .addClasspath(cl -> cl.location("/static-content") // <4>
-                                   .welcome("index.html") // <5>
-                                   .context("/")) // <6>
-                           .build());
+    .addPath(p -> p.location(Paths.get("/some/WEB/pics")) // <2>
+        .context("/pictures")) // <3>
+    .addClasspath(cl -> cl.location("/static-content") // <4>
+        .welcome("index.html") // <5>
+        .context("/")) // <6>
+    .build());
 ```
 1. Create a new `StaticContentFeature` to register with the web server (will be
    served on all sockets by default)
@@ -955,10 +955,10 @@ Customized media support for WebServer
 
 ```java
 WebServer.builder()
-        .mediaContext(it -> it
-                .mediaSupportsDiscoverServices(false)
-                .addMediaSupport(JsonpSupport.create())
-                .build());
+    .mediaContext(it -> it
+        .mediaSupportsDiscoverServices(false)
+        .addMediaSupport(JsonpSupport.create())
+        .build());
 ```
 
 Each registered (or discovered) media support adds support for writing and
@@ -1003,8 +1003,8 @@ static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of(
 rules.post("/hello", (req, res) -> {
     JsonObject requestEntity = req.content().as(JsonObject.class); // <2>
     JsonObject responseEntity = JSON_FACTORY.createObjectBuilder() // <3>
-            .add("message", "Hello " + requestEntity.getString("name"))
-            .build();
+        .add("message", "Hello " + requestEntity.getString("name"))
+        .build();
     res.send(responseEntity); // <4>
 });
 ```
@@ -1476,9 +1476,9 @@ port:
 ```java
 public static void main(String[] args) {
     WebServer webServer = WebServer.builder()
-            .routing(it -> it.any((req, res) -> res.send("It works!"))) // <1>
-            .build() // <2>
-            .start(); // <3>
+        .routing(it -> it.any((req, res) -> res.send("It works!"))) // <1>
+        .build() // <2>
+        .start(); // <3>
 
     System.out.println("Server started at: http://localhost:" + webServer.port()); // <4>
 }

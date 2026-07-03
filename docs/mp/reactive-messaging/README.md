@@ -2,6 +2,8 @@
 description: "MicroProfile Reactive Messaging"
 navigation:
   icon: i-lucide-message-square
+index:
+  page: reactive-messaging.md
 -->
 # Reactivemessaging
 

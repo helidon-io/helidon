@@ -2,6 +2,8 @@
 description: "Jakarta REST Support"
 navigation:
   icon: i-lucide-ethernet-port
+index:
+  page: jaxrs.md
 -->
 # JAX-RS
 

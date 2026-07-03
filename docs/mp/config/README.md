@@ -2,6 +2,8 @@
 description: "MicroProfile Config"
 navigation:
   icon: i-lucide-settings
+index:
+  page: config.md
 -->
 # Config
 

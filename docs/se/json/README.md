@@ -2,6 +2,8 @@
 description: "Helidon JSON Support"
 navigation:
   icon: i-lucide-braces
+index:
+  page: json.md
 -->
 # JSON
 

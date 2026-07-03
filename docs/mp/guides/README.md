@@ -1,6 +1,6 @@
 <!--@frontmatter
-title: "Overview"
-description: Browse the guides
+title: Overview
+description: Guides Overview
 navigation:
   icon: i-lucide-compass
 index:

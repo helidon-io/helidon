@@ -2,6 +2,8 @@
 description: "Helidon MP CORS Support"
 navigation:
   icon: i-lucide-share
+index:
+  page: cors.md
 -->
 # CORS
 

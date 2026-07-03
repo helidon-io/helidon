@@ -1,5 +1,5 @@
 <!--@frontmatter
-title: "Overview"
+title: Overview
 description: "Helidon MP Overview"
 index:
   generate: true

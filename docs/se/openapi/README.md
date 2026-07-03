@@ -2,6 +2,8 @@
 description: "Helidon OpenAPI Support"
 navigation:
   icon: i-simple-icons-openapiinitiative
+index:
+  page: openapi.md
 -->
 # OpenAPI
 

@@ -1,5 +1,7 @@
 <!--@frontmatter
 description: "Helidon LangChain4j Integration"
+index:
+  page: langchain4j.md
 -->
 # LangChain4j
 

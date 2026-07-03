@@ -2,6 +2,8 @@
 description: "MicroProfile Rest Client"
 navigation:
   icon: i-lucide-airplay
+index:
+  page: restclient.md
 -->
 # REST Client
 

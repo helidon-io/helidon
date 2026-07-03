@@ -2,6 +2,8 @@
 description: "Helidon Metrics"
 navigation:
   icon: i-lucide-gauge
+index:
+  page: metrics.md
 -->
 # Metrics
 

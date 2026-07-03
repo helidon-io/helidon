@@ -2,6 +2,8 @@
 description: "Dependency Injection"
 navigation:
   icon: i-lucide-pipette
+index:
+  page: injection.md
 -->
 # Injection
 
