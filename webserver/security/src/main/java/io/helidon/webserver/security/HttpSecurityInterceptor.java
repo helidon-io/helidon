@@ -66,12 +66,13 @@ import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.Service;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
+import io.helidon.webserver.http.HttpEntryPoint;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 @Service.Singleton
 @Weight(800)
-class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
+class HttpSecurityInterceptor implements Interception.EntryPointInterceptor, HttpEntryPoint.AuthorizationInterceptor {
     private static final System.Logger LOGGER = System.getLogger(HttpSecurityInterceptor.class.getName());
     private static final TypeName AUTHENTICATED_TYPE = TypeName.create("io.helidon.security.annotations.Authenticated");
     private static final TypeName AUTHORIZED_TYPE = TypeName.create("io.helidon.security.annotations.Authorized");
@@ -107,6 +108,37 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
         }
 
         return proceedGeneric(ctx, chain, args);
+    }
+
+    @Override
+    public void authorize(InterceptionContext ctx,
+                          HttpEntryPoint.Interceptor.Chain chain,
+                          ServerRequest req,
+                          ServerResponse res) throws Exception {
+        HttpSecurityDefinition definition = methodSecurity(ctx);
+        if (!definition.requiresAuthorization()) {
+            chain.proceed(req, res);
+            return;
+        }
+
+        SecurityContext securityContext = req.context()
+                .get(SecurityContext.class)
+                .orElseThrow(() -> new IllegalStateException("No security context in request context. "
+                                                                     + "Make sure the ContextFeature is added to WebServer"));
+        EndpointConfig previousEndpointConfig = securityContext.endpointConfig();
+        var endpointConfig = EndpointConfig.builder()
+                .securityLevels(definition.securityLevels())
+                .build();
+        var ictx = new HttpSecurityInterceptorContext();
+        try {
+            securityContext.endpointConfig(endpointConfig);
+            authorize(req, res, ictx, SecurityTracing.get(req.context()), definition, securityContext);
+            if (!ictx.shouldFinish()) {
+                chain.proceed(req, res);
+            }
+        } finally {
+            securityContext.endpointConfig(previousEndpointConfig);
+        }
     }
 
     private <T> T proceedHttp(InterceptionContext ctx,

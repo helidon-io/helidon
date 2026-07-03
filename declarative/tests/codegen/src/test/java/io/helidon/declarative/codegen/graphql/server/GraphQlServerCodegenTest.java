@@ -123,7 +123,8 @@ class GraphQlServerCodegenTest {
                         @GraphQlServer.SchemaUri("/schema")
                         class GraphEndpoint {
                             @GraphQl.Query
-                            String hello(@GraphQl.Argument("name") String name) {
+                            @GraphQl.Description("Greets a user")
+                            String hello(@GraphQl.Argument("name") @GraphQl.Description("User name") String name) {
                                 return "Hello " + name;
                             }
 
@@ -350,7 +351,10 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString(".httpEntryPoints(httpEntryPoints, descriptor, descriptor.qualifiers(), annotations)"));
         assertThat(generated, containsString("entryPoints.dataFetcher("));
         assertThat(generated, containsString("type Query"));
-        assertThat(generated, containsString("hello(name: String): String"));
+        assertThat(generated, containsString("\\\"Greets a user\\\"\\n  hello(\\n"
+                                                     + "    \\\"User name\\\"\\n"
+                                                     + "    name: String\\n"
+                                                     + "  ): String"));
         assertThat(generated, containsString("search(criteria: BookSearchInput!): String"));
         assertThat(generated, containsString("statusName(status: BookStatus): String"));
         assertThat(generated, containsString("renamedStatus: BookStatus"));
@@ -695,10 +699,10 @@ class GraphQlServerCodegenTest {
                 .toList();
         assertThat(generatedSources.size(), is(1));
         assertThat(generatedSources.getFirst().getFileName().toString(),
-                   is("GraphQl__40_default__2f_graphql__GraphQlFeature.java"));
+                   is("GraphEndpoint__GraphQlFeature.java"));
 
         String generated = Files.readString(generatedSources.getFirst(), StandardCharsets.UTF_8);
-        assertThat(generated, containsString("class GraphQl__40_default__2f_graphql__GraphQlFeature implements HttpFeature"));
+        assertThat(generated, containsString("class GraphEndpoint__GraphQlFeature implements HttpFeature"));
         assertThat(generated, containsString("GraphEndpoint__ServiceDescriptor.INSTANCE"));
         assertThat(generated, containsString("requestAnnotations(GraphEndpoint__ServiceDescriptor.ANNOTATIONS)"));
         assertThat(generated, containsString("GraphEndpoint endpoint_0"));
@@ -836,6 +840,114 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString(".webContext(\"/admin/graphql\")"));
         assertThat(generated, containsString(".webContext(\"/graphql\")"));
         assertThat(generated.split("routing.register", -1).length - 1, is(2));
+    }
+
+    @Test
+    void routeGroupsProduceDistinctFeatureNames() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-primary-endpoint-feature-names"))
+                .addSource("FirstEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.Context("/api/v1")
+                        class FirstEndpoint {
+                            @GraphQl.Query
+                            String first() {
+                                return "first";
+                            }
+                        }
+                        """)
+                .addSource("SecondEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.Context("/api/v1")
+                        class SecondEndpoint {
+                            @GraphQl.Query
+                            String second() {
+                                return "second";
+                            }
+                        }
+                        """)
+                .addSource("ThirdEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.Context("/api_2f_v1")
+                        class ThirdEndpoint {
+                            @GraphQl.Query
+                            String third() {
+                                return "third";
+                            }
+                        }
+                        """)
+                .addSource("FourthEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.Context("/api_2f_v1")
+                        class FourthEndpoint {
+                            @GraphQl.Query
+                            String fourth() {
+                                return "fourth";
+                            }
+                        }
+                        """)
+                .addSource("GraphQl__40_default__2f_api_2f_v1.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.Context("/single")
+                        class GraphQl__40_default__2f_api_2f_v1 {
+                            @GraphQl.Query
+                            String single() {
+                                return "single";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith("__GraphQlFeature.java"))
+                .map(it -> it.getFileName().toString())
+                .sorted()
+                .toList();
+        assertThat(generatedSources,
+                   is(List.of("FirstEndpoint__GraphQlFeature.java",
+                              "FourthEndpoint__GraphQlFeature.java",
+                              "GraphQl__40_default__2f_api_2f_v1__GraphQlFeature.java")));
     }
 
     @Test

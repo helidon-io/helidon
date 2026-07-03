@@ -25,30 +25,50 @@ import io.helidon.common.Weight;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.Service;
+import io.helidon.webserver.http.HttpEntryPoint;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings("helidon:api:internal")
 @Service.Singleton
 @Weight(1000)
-class GraphQlEntryPointRecorder implements Interception.EntryPointInterceptor {
+class GraphQlEntryPointRecorder implements Interception.EntryPointInterceptor, HttpEntryPoint.AuthorizationInterceptor {
     private static final Queue<String> EXECUTIONS = new ArrayBlockingQueue<>(100);
+    private static final Queue<String> AUTHORIZATIONS = new ArrayBlockingQueue<>(100);
 
     @Override
     public <T> T proceed(InterceptionContext invocationContext,
                          Interception.Interceptor.Chain<T> chain,
                          Object... args) throws Exception {
-        String definition = invocationContext.serviceInfo().serviceType().fqName()
-                + "." + invocationContext.elementInfo().signature().text();
-
-        EXECUTIONS.add(definition);
+        EXECUTIONS.add(definition(invocationContext));
 
         return chain.proceed(args);
     }
 
+    @Override
+    public void authorize(InterceptionContext invocationContext,
+                          HttpEntryPoint.Interceptor.Chain chain,
+                          ServerRequest request,
+                          ServerResponse response) throws Exception {
+        AUTHORIZATIONS.add(definition(invocationContext));
+        chain.proceed(request, response);
+    }
+
     static void reset() {
         EXECUTIONS.clear();
+        AUTHORIZATIONS.clear();
     }
 
     static List<String> executions() {
         return new ArrayList<>(EXECUTIONS);
+    }
+
+    static List<String> authorizations() {
+        return new ArrayList<>(AUTHORIZATIONS);
+    }
+
+    private static String definition(InterceptionContext invocationContext) {
+        return invocationContext.serviceInfo().serviceType().fqName()
+                + "." + invocationContext.elementInfo().signature().text();
     }
 }

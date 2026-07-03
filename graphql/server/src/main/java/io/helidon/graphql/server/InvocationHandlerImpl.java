@@ -61,6 +61,7 @@ import static io.helidon.graphql.server.GraphQlConstants.LOCATIONS;
 import static io.helidon.graphql.server.GraphQlConstants.MESSAGE;
 import static io.helidon.graphql.server.GraphQlConstants.PATH;
 import static io.helidon.graphql.server.GraphQlContextKeys.PARSED_DOCUMENT;
+import static io.helidon.graphql.server.GraphQlContextKeys.PARSE_ERROR;
 
 class InvocationHandlerImpl implements InvocationHandler {
     private static final System.Logger LOGGER = System.getLogger(InvocationHandlerImpl.class.getName());
@@ -102,6 +103,10 @@ class InvocationHandlerImpl implements InvocationHandler {
             ExecutionInput executionInput,
             Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidate) {
 
+        Object parseError = executionInput.getGraphQLContext().get(PARSE_ERROR);
+        if (parseError instanceof PreparsedDocumentEntry entry && entry.getDocument() == null && entry.hasErrors()) {
+            return CompletableFuture.completedFuture(entry);
+        }
         Object parsedDocument = executionInput.getGraphQLContext().get(PARSED_DOCUMENT);
         if (parsedDocument instanceof Document document) {
             return CompletableFuture.completedFuture(new PreparsedDocumentEntry(document,

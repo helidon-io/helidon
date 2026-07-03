@@ -19,7 +19,10 @@ package io.helidon.graphql.server;
 import java.util.List;
 import java.util.Map;
 
+import graphql.InvalidSyntaxError;
+import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.language.Document;
+import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -29,9 +32,11 @@ import graphql.schema.idl.TypeDefinitionRegistry;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.graphql.server.GraphQlContextKeys.PARSED_DOCUMENT;
+import static io.helidon.graphql.server.GraphQlContextKeys.PARSE_ERROR;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InvocationHandlerObjectResultTest {
     @SuppressWarnings("unchecked")
@@ -90,6 +95,23 @@ class InvocationHandlerObjectResultTest {
 
         List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
         assertThat(errors.getFirst().get("message").toString(), containsString("Field 'unknown'"));
+        assertThat(result.get("data"), is((Object) null));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void parseErrorContextUsesParseError() {
+        InvocationHandler handler = InvocationHandler.create(schema());
+        InvalidSyntaxException exception = assertThrows(InvalidSyntaxException.class, () -> Parser.parse("query {"));
+        InvalidSyntaxError invalidSyntaxError = exception.toInvalidSyntaxError();
+        PreparsedDocumentEntry parseError = new PreparsedDocumentEntry(invalidSyntaxError);
+
+        Map<String, Object> result = handler.executeWithContext("{book { title }}",
+                                                                Map.of(),
+                                                                Map.of(PARSE_ERROR, parseError));
+
+        List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
+        assertThat(errors.getFirst().get("message"), is(invalidSyntaxError.getMessage()));
         assertThat(result.get("data"), is((Object) null));
     }
 

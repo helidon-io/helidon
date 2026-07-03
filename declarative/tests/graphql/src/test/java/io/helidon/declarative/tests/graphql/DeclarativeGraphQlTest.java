@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -69,7 +70,11 @@ class DeclarativeGraphQlTest {
             String schema = response.as(String.class);
 
             assertThat(schema, containsString("type Query"));
-            assertThat(schema, containsString("hello(name: String): String"));
+            assertThat(schema, containsString("\"Greets a user\"\n"
+                                                      + "  hello(\n"
+                                                      + "    \"User name\"\n"
+                                                      + "    name: String\n"
+                                                      + "  ): String"));
             assertThat(schema, containsString("tracedHello(name: String): String"));
             assertThat(schema, containsString("catalogName: String"));
             assertThat(schema, containsString("validatedGreeting(name: String = \"Reader\"): String"));
@@ -133,9 +138,9 @@ class DeclarativeGraphQlTest {
         }
 
         assertThat(GraphQlEntryPointRecorder.executions(),
-                   hasItems(CatalogEndpoint.class.getName() + ".graphQlSchema()",
-                            CatalogEndpoint.class.getName() + ".graphQlPost()",
-                            CatalogEndpoint.class.getName() + ".graphQlGet()"));
+                   hasItems(CatalogEndpoint.class.getName() + ".<graphql-schema>()",
+                            CatalogEndpoint.class.getName() + ".<graphql-post>()",
+                            CatalogEndpoint.class.getName() + ".<graphql-get>()"));
     }
 
     @Test
@@ -430,6 +435,259 @@ class DeclarativeGraphQlTest {
                                   "jack",
                                   "jackIsGreat");
         assertThat(data.stringValue("securedRequest").orElseThrow(), is("Secured request jack"));
+    }
+
+    @Test
+    void testMetadataSecurityForExplicitEndpoint() {
+        try (Http1ClientResponse response = client.get("/explicit-secured-graphql/schema.graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .request()) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        try (Http1ClientResponse response = client.get("/explicit-secured-graphql")
+                .queryParam("query", """
+                        query Resolver {
+                          explicitlySecuredRequest
+                        }
+                        query Introspection {
+                          ...SchemaMetadata
+                        }
+                        fragment SchemaMetadata on Query {
+                          __schema { queryType { name } }
+                        }
+                        """)
+                .queryParam("operationName", "Introspection")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .request()) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("""
+                                {
+                                  "operationName": "",
+                                  "query": "query Introspection { __schema { queryType { name } } } query Resolver { explicitlySecuredRequest }"
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        try (Http1ClientResponse response = client.get("/explicit-secured-graphql/schema.graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), containsString("explicitlySecuredRequest: String"));
+        }
+
+        try (Http1ClientResponse response = client.get("/explicit-secured-graphql")
+                .queryParam("query", "{ __schema { queryType { name } } }")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            JsonObject data = response.as(JsonObject.class).objectValue("data").orElseThrow();
+            assertThat(data.objectValue("__schema").orElseThrow()
+                               .objectValue("queryType").orElseThrow()
+                               .stringValue("name").orElseThrow(), is("Query"));
+        }
+
+        JsonObject introspection = graphQl("""
+                                                   {
+                                                     "query": "{ __type(name: \\"Query\\") { name } }"
+                                                   }
+                                                   """,
+                                           "/explicit-secured-graphql",
+                                           "jack",
+                                           "jackIsGreat");
+        assertThat(introspection.objectValue("__type").orElseThrow()
+                           .stringValue("name").orElseThrow(), is("Query"));
+
+        assertThat(GraphQlEntryPointRecorder.executions(),
+                   hasItems(ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-schema>()",
+                            ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-get>()",
+                            ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-post>()"));
+        assertThat(GraphQlEntryPointRecorder.executions(),
+                   not(hasItem(ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-introspection>()")));
+        assertThat(GraphQlEntryPointRecorder.authorizations(),
+                   hasItem(ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-introspection>()"));
+    }
+
+    @Test
+    void testExplicitEndpointAuthenticationPrecedesParsing() {
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .submit("{")) {
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
+        }
+
+        try (Http1ClientResponse response = client.get("/explicit-secured-graphql")
+                .request()) {
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
+        }
+
+        assertThat(GraphQlEntryPointRecorder.executions(),
+                   hasItems(ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-post>()",
+                            ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-get>()"));
+    }
+
+    @Test
+    void testTypeNameSecurityForExplicitEndpoint() {
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("{\"query\": \"{ __typename }\"}")) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("{\"query\": \"{ explicitlySecuredBook { __typename } }\"}")) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        JsonObject rootType = graphQl("""
+                                              {
+                                                "query": "{ __typename }"
+                                              }
+                                              """,
+                                      "/explicit-secured-graphql",
+                                      "jack",
+                                      "jackIsGreat");
+        assertThat(rootType.stringValue("__typename").orElseThrow(), is("Query"));
+
+        JsonObject nestedType = graphQl("""
+                                                {
+                                                  "query": "{ explicitlySecuredBook { __typename } }"
+                                                }
+                                                """,
+                                        "/explicit-secured-graphql",
+                                        "jack",
+                                        "jackIsGreat");
+        assertThat(nestedType.objectValue("explicitlySecuredBook").orElseThrow()
+                           .stringValue("__typename").orElseThrow(), is("Book"));
+    }
+
+    @Test
+    void testInvalidIntrospectionSecurityForExplicitEndpoint() {
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("{\"query\": \"{ __schema { missingField } }\"}")) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("""
+                                {
+                                  "operationName": "Normal",
+                                  "query": "query Normal { explicitlySecuredRequest } query Metadata { __schema { missingField } }"
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("""
+                                {
+                                  "operationName": "Duplicate",
+                                  "query": "query Duplicate { explicitlySecuredRequest } query Duplicate { __typename }"
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        String unusedMetadataFragment = "query Normal { explicitlySecuredRequest } "
+                + "fragment Metadata on Query { __schema { missingField } }";
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("""
+                                {
+                                  "operationName": "Normal",
+                                  "query": "%s"
+                                }
+                                """.formatted(unusedMetadataFragment))) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        String duplicateMetadataFragment = "query Normal { ...Duplicate } "
+                + "fragment Duplicate on Query { __schema { missingField } } "
+                + "fragment Duplicate on Query { explicitlySecuredRequest }";
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("""
+                                {
+                                  "operationName": "Normal",
+                                  "query": "%s"
+                                }
+                                """.formatted(duplicateMetadataFragment))) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
+        JsonObject invalid = graphQlResponse("""
+                                                     {
+                                                       "query": "{ __schema { missingField } }"
+                                                     }
+                                                     """,
+                                             "/explicit-secured-graphql",
+                                             "jack",
+                                             "jackIsGreat");
+        assertThat(invalid.arrayValue("errors").orElseThrow().toString(), containsString("missingField"));
+    }
+
+    @Test
+    void testGetMutationPrecedesMetadataAuthorization() {
+        try (Http1ClientResponse response = client.get("/explicit-secured-graphql")
+                .queryParam("query", "mutation { __typename }")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .request()) {
+            assertThat(response.status(), is(Status.METHOD_NOT_ALLOWED_405));
+            assertThat(response.headers().first(HeaderNames.ALLOW).orElseThrow(), is("POST"));
+        }
+    }
+
+    @Test
+    void testMetadataAuthorizationDoesNotSatisfyExplicitResolvers() {
+        try (Http1ClientResponse response = client.get("/explicit-secured-graphql/schema.graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        JsonObject data = graphQl("""
+                                          {
+                                            "query": "{ explicitlySecuredRequest }"
+                                          }
+                                          """,
+                                  "/explicit-secured-graphql",
+                                  "jack",
+                                  "jackIsGreat");
+        assertThat(data.stringValue("explicitlySecuredRequest").orElseThrow(),
+                   is("Explicitly secured request jack"));
+
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .submit("""
+                                {
+                                  "query": "{ graphQlSchema }"
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+        }
+
+        JsonObject mixed = graphQlResponse("""
+                                                   {
+                                                     "query": "{ __schema { queryType { name } } graphQlIntrospection }"
+                                                   }
+                                                   """,
+                                           "/explicit-secured-graphql",
+                                           "jack",
+                                           "jackIsGreat");
+        JsonObject mixedData = mixed.objectValue("data").orElseThrow();
+        assertThat(mixedData.objectValue("__schema").orElseThrow()
+                           .objectValue("queryType").orElseThrow()
+                           .stringValue("name").orElseThrow(), is("Query"));
+        assertThat(mixedData.value("graphQlIntrospection").orElseThrow().type(), is(JsonValueType.NULL));
+        assertThat(mixed.arrayValue("errors").orElseThrow().toString(), containsString("Server Error"));
     }
 
     @Test

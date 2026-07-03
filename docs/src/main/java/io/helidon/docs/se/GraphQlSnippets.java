@@ -108,7 +108,8 @@ class GraphQlSnippets {
     @GraphQlServer.Endpoint
     static class CatalogEndpoint {
         @GraphQl.Query
-        Book book(@GraphQl.Argument("isbn") String isbn) {
+        @GraphQl.Description("Looks up a book by ISBN")
+        Book book(@GraphQl.Argument("isbn") @GraphQl.Description("ISBN of the book") String isbn) {
             return new Book("Dune", BookStatus.AVAILABLE, List.of("classic"), isbn);
         }
 

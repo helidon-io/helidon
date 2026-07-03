@@ -21,12 +21,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.graphql.server.ExecutionContext;
+import io.helidon.graphql.server.GraphQlContextKeys;
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
@@ -38,6 +41,7 @@ import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpEntryPoint;
+import io.helidon.webserver.http.HttpRules;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
@@ -56,14 +60,24 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Answers;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @ServerTest
 class GraphQlServiceTest {
+    private static final Annotation EXPLICIT_AUTHORIZATION = Annotation.builder()
+            .typeName(TypeName.create("io.helidon.security.annotations.Authorized"))
+            .property("explicit", true)
+            .build();
     private static final RecordingEntryPoints ENTRY_POINTS = new RecordingEntryPoints();
     private static final AtomicInteger MUTATIONS = new AtomicInteger();
 
@@ -76,7 +90,10 @@ class GraphQlServiceTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
         builder.register(GraphQlService.builder()
-                                 .httpEntryPoints(ENTRY_POINTS, mock(ServiceDescriptor.class), Set.of(), List.of())
+                                 .httpEntryPoints(ENTRY_POINTS,
+                                                  mock(ServiceDescriptor.class),
+                                                  Set.of(),
+                                                  List.of(EXPLICIT_AUTHORIZATION))
                                  .invocationHandler(InvocationHandler.create(buildSchema()))
                                  .permitAll(true)
                                  .build());
@@ -132,6 +149,30 @@ class GraphQlServiceTest {
                                .orElseThrow(),
                        is("legacy"));
         }
+
+        try (Http1ClientResponse response = client.post("/legacy")
+                .submit("{\"query\": \"query {\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(JsonObject.class)
+                               .objectValue("data")
+                               .orElseThrow()
+                               .stringValue("hello")
+                               .orElseThrow(),
+                       is("legacy"));
+        }
+    }
+
+    @Test
+    void invalidSyntaxReturnsGraphQlError() {
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("{\"query\": \"query {\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(JsonObject.class)
+                               .arrayValue("errors")
+                               .orElseThrow()
+                               .toString(),
+                       containsString("Invalid syntax"));
+        }
     }
 
     @Test
@@ -154,7 +195,75 @@ class GraphQlServiceTest {
         }
 
         assertThat(ENTRY_POINTS.invocations(), is(3));
-        assertThat(ENTRY_POINTS.methodNames(), is(List.of("graphQlSchema", "graphQlPost", "graphQlGet")));
+        assertThat(ENTRY_POINTS.methodNames(), is(List.of("<graphql-schema>", "<graphql-post>", "<graphql-get>")));
+        assertThat(ENTRY_POINTS.authorizationMethodNames(), is(List.of()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"/, /schema.graphql", "/api/, /api/schema.graphql"})
+    void schemaRouteUsesSinglePathSeparator(String context, String schemaPath) {
+        HttpRules rules = mock(HttpRules.class, Answers.RETURNS_SELF);
+        GraphQlService.builder()
+                .webContext(context)
+                .executor(mock(ExecutorService.class))
+                .invocationHandler(new LegacyInvocationHandler())
+                .build()
+                .routing(rules);
+
+        verify(rules).get(eq(schemaPath), any(Handler.class));
+    }
+
+    @Test
+    void metadataRequestsUseStableEntryPoint() {
+        int createdHandlers = ENTRY_POINTS.createdHandlers();
+
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("{\"query\": \"{__typename}\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        try (Http1ClientResponse response = client.get("/graphql")
+                .queryParam("query", """
+                        query Normal { hello }
+                        query Metadata { ...MetadataFields }
+                        fragment MetadataFields on Query { __schema { queryType { name } } }
+                        """)
+                .queryParam("operationName", "Metadata")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("""
+                                {
+                                  "operationName": "Normal",
+                                  "query": "query Normal { hello } query Metadata { __typename }"
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("{\"query\": \"{__schema { missingField }}\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(JsonObject.class)
+                               .arrayValue("errors")
+                               .orElseThrow()
+                               .toString(),
+                       containsString("missingField"));
+        }
+
+        assertThat(ENTRY_POINTS.methodNames(),
+                   is(List.of("<graphql-post>",
+                              "<graphql-get>",
+                              "<graphql-post>",
+                              "<graphql-post>")));
+        assertThat(ENTRY_POINTS.authorizationMethodNames(),
+                   is(List.of("<graphql-introspection>",
+                              "<graphql-introspection>",
+                              "<graphql-introspection>",
+                              "<graphql-introspection>")));
+        assertThat(ENTRY_POINTS.createdHandlers(), is(createdHandlers));
     }
 
     @Test
@@ -221,7 +330,16 @@ class GraphQlServiceTest {
             assertThat(response.headers().first(HeaderNames.ALLOW).orElseThrow(), is("POST"));
         }
 
+        try (Http1ClientResponse response = client.get("/graphql")
+                .queryParam("query", "mutation { __typename }")
+                .request()) {
+            assertThat(response.status(), is(Status.METHOD_NOT_ALLOWED_405));
+            assertThat(response.headers().first(HeaderNames.ALLOW).orElseThrow(), is("POST"));
+        }
+
         assertThat(MUTATIONS.get(), is(0));
+        assertThat(ENTRY_POINTS.methodNames(), is(List.of("<graphql-get>", "<graphql-get>", "<graphql-get>")));
+        assertThat(ENTRY_POINTS.authorizationMethodNames(), is(List.of()));
     }
 
     @Test
@@ -406,8 +524,10 @@ class GraphQlServiceTest {
     }
 
     private static final class RecordingEntryPoints implements HttpEntryPoint.EntryPoints {
+        private final AtomicInteger createdHandlers = new AtomicInteger();
         private final AtomicInteger invocations = new AtomicInteger();
         private final List<String> methodNames = new CopyOnWriteArrayList<>();
+        private final List<String> authorizationMethodNames = new CopyOnWriteArrayList<>();
 
         @Override
         public Handler handler(ServiceDescriptor<?> descriptor,
@@ -415,6 +535,7 @@ class GraphQlServiceTest {
                                List<Annotation> typeAnnotations,
                                TypedElementInfo methodInfo,
                                Handler actualHandler) {
+            createdHandlers.incrementAndGet();
             return (req, res) -> {
                 invocations.incrementAndGet();
                 methodNames.add(methodInfo.elementName());
@@ -422,21 +543,53 @@ class GraphQlServiceTest {
             };
         }
 
+        @Override
+        public Handler authorizationHandler(ServiceDescriptor<?> descriptor,
+                                            Set<Qualifier> typeQualifiers,
+                                            List<Annotation> typeAnnotations,
+                                            TypedElementInfo methodInfo,
+                                            Handler actualHandler) {
+            return (req, res) -> {
+                authorizationMethodNames.add(methodInfo.elementName());
+                actualHandler.handle(req, res);
+            };
+        }
+
         private void reset() {
             invocations.set(0);
             methodNames.clear();
+            authorizationMethodNames.clear();
         }
 
         private int invocations() {
             return invocations.get();
         }
 
+        private int createdHandlers() {
+            return createdHandlers.get();
+        }
+
         private List<String> methodNames() {
             return List.copyOf(methodNames);
+        }
+
+        private List<String> authorizationMethodNames() {
+            return List.copyOf(authorizationMethodNames);
         }
     }
 
     private static final class LegacyInvocationHandler implements InvocationHandler {
+        @Override
+        public Map<String, Object> executeWithContext(String query,
+                                                      Map<String, Object> variables,
+                                                      Map<String, Object> contextValues) {
+            if (contextValues.containsKey(GraphQlContextKeys.PARSED_DOCUMENT)
+                    || contextValues.containsKey(GraphQlContextKeys.PARSE_ERROR)) {
+                return Map.of("data", Map.of("hello", "preparsed"));
+            }
+            return InvocationHandler.super.executeWithContext(query, variables, contextValues);
+        }
+
         @Override
         public Map<String, Object> execute(String query, String operationName, Map<String, Object> variables) {
             return Map.of("data", Map.of("hello", "legacy"));

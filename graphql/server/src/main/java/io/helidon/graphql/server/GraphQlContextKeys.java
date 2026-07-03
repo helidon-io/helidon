@@ -28,6 +28,11 @@ public final class GraphQlContextKeys {
      */
     public static final String PARSED_DOCUMENT = GraphQlConstants.class.getName() + ".parsedDocument";
 
+    /**
+     * GraphQL Java parse error key.
+     */
+    public static final String PARSE_ERROR = GraphQlConstants.class.getName() + ".parseError";
+
     private GraphQlContextKeys() {
     }
 }

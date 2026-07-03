@@ -25,6 +25,7 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
 
 /**
@@ -84,6 +85,31 @@ public class HttpEntryPoint {
     }
 
     /**
+     * Authorization-only interceptor for an operation discovered inside an active HTTP entry point.
+     * <p>
+     * This contract is intended for protocol integrations that must authorize a framework-owned operation after request
+     * parsing has identified it. Authentication and the remaining HTTP entry point interceptors are handled by the enclosing
+     * HTTP entry point and must not be repeated by this interceptor.
+     */
+    @Api.Internal
+    @Service.Contract
+    public interface AuthorizationInterceptor {
+        /**
+         * Authorize the operation.
+         *
+         * @param interceptionContext context with invocation metadata
+         * @param chain authorization interceptor chain
+         * @param request server request
+         * @param response server response
+         * @throws Exception in case authorization fails with an exception
+         */
+        void authorize(InterceptionContext interceptionContext,
+                       Interceptor.Chain chain,
+                       ServerRequest request,
+                       ServerResponse response) throws Exception;
+    }
+
+    /**
      * A contract used from generated code to invoke HTTP entry point interceptors.
      */
     public interface EntryPoints {
@@ -102,5 +128,26 @@ public class HttpEntryPoint {
                         List<Annotation> typeAnnotations,
                         TypedElementInfo methodInfo,
                         Handler actualHandler);
+
+        /**
+         * Handler that triggers authorization-only interceptors for an operation discovered inside an active HTTP entry
+         * point.
+         * <p>
+         * The default fails because invoking the complete entry point chain would repeat authentication and other interceptors.
+         *
+         * @param descriptor descriptor of the invoked endpoint (not generated code)
+         * @param typeQualifiers qualifiers of the invoked endpoint
+         * @param typeAnnotations type annotations of the invoked endpoint
+         * @param methodInfo method information of the framework-owned operation
+         * @param actualHandler handler that invokes the operation
+         * @return handler to invoke inside the active HTTP entry point
+         */
+        default Handler authorizationHandler(ServiceDescriptor<?> descriptor,
+                                             Set<Qualifier> typeQualifiers,
+                                             List<Annotation> typeAnnotations,
+                                             TypedElementInfo methodInfo,
+                                             Handler actualHandler) {
+            throw new UnsupportedOperationException("Authorization-only HTTP entry point interception is not supported");
+        }
     }
 }

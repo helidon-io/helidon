@@ -146,6 +146,7 @@ final class GraphQlServerTypes {
     record Argument(TypedElementInfo parameter,
                     String graphQlName,
                     List<Annotation> annotations,
+                    Optional<String> description,
                     Optional<String> defaultValue,
                     boolean nonNull,
                     String schemaType,
@@ -319,25 +320,40 @@ final class GraphQlServerTypes {
         if (arguments.isEmpty()) {
             return;
         }
+        if (arguments.stream().anyMatch(argument -> argument.description().isPresent())) {
+            result.append("(\n");
+            for (Argument argument : arguments) {
+                appendDescription(result, 4, argument.description());
+                result.append("    ");
+                appendArgument(result, argument);
+                result.append('\n');
+            }
+            result.append("  )");
+            return;
+        }
         result.append('(');
         for (int i = 0; i < arguments.size(); i++) {
             Argument argument = arguments.get(i);
             if (i > 0) {
                 result.append(", ");
             }
-            result.append(argument.graphQlName())
-                    .append(": ")
-                    .append(argument.schemaType());
-            argument.defaultValue().ifPresent(it -> result.append(" = ").append(it));
+            appendArgument(result, argument);
         }
         result.append(')');
     }
 
-    private static void appendDescription(StringBuilder result, int indent, Optional<String> description) {
+    static void appendDescription(StringBuilder result, int indent, Optional<String> description) {
         description.ifPresent(it -> result.append(" ".repeat(indent))
                 .append('"')
                 .append(escapeDescription(it))
                 .append("\"\n"));
+    }
+
+    private static void appendArgument(StringBuilder result, Argument argument) {
+        result.append(argument.graphQlName())
+                .append(": ")
+                .append(argument.schemaType());
+        argument.defaultValue().ifPresent(it -> result.append(" = ").append(it));
     }
 
     private static String escapeDescription(String description) {

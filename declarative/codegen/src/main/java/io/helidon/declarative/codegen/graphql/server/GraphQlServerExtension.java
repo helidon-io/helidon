@@ -115,6 +115,7 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputVa
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.valueExpression;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerScalarMethods.addScalarMethods;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendArguments;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendDescription;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendEnum;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendInput;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendObject;
@@ -687,6 +688,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         return new Argument(parameter,
                             validatedGraphQlName,
                             List.copyOf(annotations),
+                            description(annotations),
                             defaultValue,
                             nonNull,
                             schemaType,
@@ -785,27 +787,8 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     }
 
     private static String featureClassName(GraphQlGroup group) {
-        if (group.endpoints().size() == 1) {
-            TypeName endpointTypeName = group.primaryEndpoint().typeInfo().typeName();
-            return endpointTypeName.classNameWithEnclosingNames().replace('.', '_') + "__GraphQlFeature";
-        }
-        return "GraphQl_" + identifierPart(group.key().listener()) + "_" + identifierPart(group.key().context())
-                + "__GraphQlFeature";
-    }
-
-    private static String identifierPart(String value) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < value.length(); i++) {
-            char ch = value.charAt(i);
-            if (Character.isJavaIdentifierPart(ch)) {
-                result.append(ch);
-            } else {
-                result.append('_')
-                        .append(Integer.toHexString(ch))
-                        .append('_');
-            }
-        }
-        return result.isEmpty() ? "root" : result.toString();
+        TypeName endpointTypeName = group.primaryEndpoint().typeInfo().typeName();
+        return endpointTypeName.classNameWithEnclosingNames().replace('.', '_') + "__GraphQlFeature";
     }
 
     private Map<TypeName, String> endpointFields(GraphQlGroup group) {
@@ -1314,6 +1297,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .append(typeName)
                 .append(" {\n");
         for (Operation operation : operations) {
+            appendDescription(result, 2, description(operation.annotations()));
             result.append("  ")
                     .append(operation.graphQlName());
             appendArguments(result, operation.arguments());
@@ -1694,7 +1678,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                      fields,
                      new SchemaField(operation.graphQlName(),
                                      schemaType,
-                                     description(new HashSet<>(operation.annotations())),
+                                     description(operation.annotations()),
                                      operation.arguments(),
                                      Optional.empty(),
                                      Optional.of(operation.uniqueName())),
@@ -1924,7 +1908,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                    typeInfo.originatingElementValue());
     }
 
-    private static Optional<String> description(Set<Annotation> annotations) {
+    private static Optional<String> description(Collection<Annotation> annotations) {
         return Annotations.findFirst(GRAPHQL_DESCRIPTION, annotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank));

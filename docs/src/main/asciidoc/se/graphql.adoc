@@ -84,6 +84,12 @@ The following is a description of each of these steps:
 <3> Wire up the `DataFetcher` s.
 <4> Generate the GraphQL schema.
 
+GraphQL responses are serialized with Helidon JSON binding. JSON-native values, maps, and iterable values are written
+directly. Other Java objects in the response, such as custom values stored in `GraphQLError.extensions`, must have a
+Helidon JSON serializer. Annotate the type with `@Json.Entity` to generate one, use `@Json.Serializer` to select a custom
+serializer, or register a `JsonSerializer` service. Helidon annotation processing must be enabled when using the JSON
+annotations. A response containing an unsupported value cannot be serialized.
+
 == Declarative API [[GraphQL-Declarative-API]]
 
 Helidon Declarative can generate the GraphQL schema, GraphQL Java runtime wiring, and WebServer registration from annotated
@@ -128,7 +134,8 @@ include::{sourcedir}/se/GraphQlSnippets.java[tag=snippet_3, indent=0]
 
 Annotate a Service Registry singleton with `@GraphQlServer.Endpoint`. Resolver methods annotated with `@GraphQl.Query` and
 `@GraphQl.Mutation` become top-level GraphQL fields. Methods annotated with `@GraphQlServer.Field` become child field
-resolvers on generated object types.
+resolvers on generated object types. `@GraphQl.Description` on resolver methods and parameters becomes the description of
+the generated SDL field or argument.
 
 [source,java]
 ----
@@ -160,6 +167,12 @@ By default, generated GraphQL endpoints use `/graphql`, and the generated schema
 `@GraphQlServer.Context`, and `@GraphQlServer.SchemaUri`.
 Endpoints that share the same listener and web context are generated into one GraphQL route, so they must be in the same
 Java package, must declare the same endpoint-level request metadata annotations, and must not use conflicting schema URIs.
+
+Endpoint-level security annotations also protect the generated schema and GraphQL introspection. When an endpoint uses
+`@Authorized(explicit=true)`, application resolvers must still call `SecurityContext.authorize`. The framework-owned schema,
+`__schema`, `__type`, and `__typename` operations cannot make that application call, so Helidon evaluates authorization
+implicitly for those metadata operations while preserving the configured authorization provider and endpoint security
+constraints.
 
 == Configuration
 

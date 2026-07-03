@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,6 +122,11 @@ class HttpSecurityDefinition {
         result.authnOptional = this.authnOptional;
         result.authenticator = this.authenticator;
         result.authorizer = this.authorizer;
+        result.audited = this.audited;
+        result.auditEventType = this.auditEventType;
+        result.auditMessageFormat = this.auditMessageFormat;
+        result.auditOkSeverity = this.auditOkSeverity;
+        result.auditErrorSeverity = this.auditErrorSeverity;
         result.securityLevels.addAll(this.securityLevels);
         result.authorizeByDefault = this.authorizeByDefault;
         result.atzExplicit = this.atzExplicit;
@@ -183,18 +188,18 @@ class HttpSecurityDefinition {
 
     void audited(Annotation annotation) {
         this.audited = true;
-        this.auditEventType = checkDefault(auditEventType,
-                                           annotation.stringValue(),
-                                           "request");
-        this.auditMessageFormat = checkDefault(auditMessageFormat,
-                                               annotation.stringValue("messageFormat"),
-                                               "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s");
-        this.auditOkSeverity = checkDefault(auditOkSeverity,
-                                            annotation.enumValue("okSeverity", AuditEvent.AuditSeverity.class),
-                                            AuditEvent.AuditSeverity.SUCCESS);
-        this.auditErrorSeverity = checkDefault(auditErrorSeverity,
-                                               annotation.enumValue("errorSeverity", AuditEvent.AuditSeverity.class),
-                                               AuditEvent.AuditSeverity.FAILURE);
+        this.auditEventType = annotationValue(auditEventType,
+                                              annotation.stringValue(),
+                                              "request");
+        this.auditMessageFormat = annotationValue(auditMessageFormat,
+                                                  annotation.stringValue("messageFormat"),
+                                                  "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s");
+        this.auditOkSeverity = annotationValue(auditOkSeverity,
+                                               annotation.enumValue("okSeverity", AuditEvent.AuditSeverity.class),
+                                               AuditEvent.AuditSeverity.SUCCESS);
+        this.auditErrorSeverity = annotationValue(auditErrorSeverity,
+                                                  annotation.enumValue("errorSeverity", AuditEvent.AuditSeverity.class),
+                                                  AuditEvent.AuditSeverity.FAILURE);
     }
 
     void failOnFailureIfOptional(boolean failOnFailureIfOptional) {
@@ -221,15 +226,7 @@ class HttpSecurityDefinition {
         return atzExplicit;
     }
 
-    private <T> T checkDefault(T currentValue, Optional<T> annotValue, T defaultValue) {
-        if (null == currentValue) {
-            return annotValue.orElse(defaultValue);
-        }
-
-        if (currentValue.equals(defaultValue)) {
-            return annotValue.orElse(defaultValue);
-        }
-
-        return currentValue;
+    private <T> T annotationValue(T currentValue, Optional<T> configuredValue, T defaultValue) {
+        return configuredValue.orElse(currentValue == null ? defaultValue : currentValue);
     }
 }

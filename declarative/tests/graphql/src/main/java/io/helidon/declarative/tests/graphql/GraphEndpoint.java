@@ -39,8 +39,9 @@ class GraphEndpoint {
     private final AtomicBoolean enabled = new AtomicBoolean();
 
     @GraphQl.Query
+    @GraphQl.Description("Greets a user")
     @Metrics.Counted(value = "graphql-metered-hello", absoluteName = true)
-    String hello(@GraphQl.Argument("name") String name) {
+    String hello(@GraphQl.Argument("name") @GraphQl.Description("User name") String name) {
         return "Hello " + name;
     }
 
