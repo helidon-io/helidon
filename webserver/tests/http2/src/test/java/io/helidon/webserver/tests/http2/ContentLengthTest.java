@@ -508,7 +508,8 @@ class ContentLengthTest {
         Http2TestConnection h2conn = client.createConnection();
         h2conn.completeHandshake(TIMEOUT);
 
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
+        // The protocol error is in HEADERS; avoid racing the terminal GOAWAY against unread DATA on connection close.
+        writeRequestHeaders(h2conn, 1, LONGER_DATA_PATH, headers, true);
 
         h2conn.assertGoAway(Http2ErrorCode.PROTOCOL, message, TIMEOUT);
     }
