@@ -58,26 +58,31 @@ class Http2ConnectionWriterTest {
         AtomicInteger cuts = new AtomicInteger();
         CountDownLatch fourthCut = new CountDownLatch(1);
         CountDownLatch initialWait = new CountDownLatch(2);
+        CountDownLatch resumedWait = new CountDownLatch(2);
         CountDownLatch thirdWait = new CountDownLatch(1);
         FlowControl.Outbound firstFlowControl = trackingFlowControl(connection.createStreamFlowControl(1, 1024, 16384)
                                                                            .outbound(),
                                                                    cuts,
                                                                    fourthCut,
                                                                    initialWait,
+                                                                   resumedWait,
                                                                    thirdWait);
         FlowControl.Outbound secondFlowControl = trackingFlowControl(connection.createStreamFlowControl(3, 1024, 16384)
                                                                             .outbound(),
                                                                     cuts,
                                                                     fourthCut,
                                                                     initialWait,
+                                                                    resumedWait,
                                                                     thirdWait);
 
         AtomicInteger writes = new AtomicInteger();
+        AtomicReference<Thread> firstWritingThread = new AtomicReference<>();
         CountDownLatch firstWriteStarted = new CountDownLatch(1);
         CountDownLatch releaseFirstWrite = new CountDownLatch(1);
         DataWriter dataWriter = mock(DataWriter.class);
         doAnswer(_ -> {
             if (writes.incrementAndGet() == 1) {
+                firstWritingThread.set(Thread.currentThread());
                 firstWriteStarted.countDown();
                 releaseFirstWrite.await();
             }
@@ -98,8 +103,14 @@ class Http2ConnectionWriterTest {
 
             connection.incrementOutboundConnectionWindowSize(1024);
             assertThat("first DATA write must start", firstWriteStarted.await(1, TimeUnit.SECONDS), is(true));
-            // Give a non-atomic implementation time to cut both frames before the first write completes.
-            var _ = fourthCut.await(1, TimeUnit.SECONDS);
+            assertThat("both connection-window waits must resume", resumedWait.await(1, TimeUnit.SECONDS), is(true));
+            Thread contender = firstWritingThread.get() == firstWriter ? secondWriter : firstWriter;
+            long contenderDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+            while (contender.getState() != Thread.State.WAITING && System.nanoTime() < contenderDeadline) {
+                Thread.onSpinWait();
+            }
+            assertThat("second writer must wait for the writer lock", contender.getState(), is(Thread.State.WAITING));
+            assertThat("second writer must not cut with stale connection credit", fourthCut.getCount(), is(1L));
             releaseFirstWrite.countDown();
 
             assertThat("second writer must wait for more connection credit",
@@ -285,8 +296,10 @@ class Http2ConnectionWriterTest {
                                                             AtomicInteger cuts,
                                                             CountDownLatch fourthCut,
                                                             CountDownLatch initialWait,
+                                                            CountDownLatch resumedWait,
                                                             CountDownLatch thirdWait) {
         FlowControl.Outbound flowControl = mock(FlowControl.Outbound.class, delegatesTo(delegate));
+        AtomicBoolean firstWait = new AtomicBoolean(true);
         doAnswer(invocation -> {
             if (cuts.incrementAndGet() == 4) {
                 fourthCut.countDown();
@@ -294,12 +307,16 @@ class Http2ConnectionWriterTest {
             return delegate.cut(invocation.getArgument(0));
         }).when(flowControl).cut(any(Http2FrameData.class));
         doAnswer(_ -> {
-            if (cuts.get() >= 4) {
-                thirdWait.countDown();
-            } else {
+            boolean initial = firstWait.getAndSet(false);
+            if (initial) {
                 initialWait.countDown();
+            } else {
+                thirdWait.countDown();
             }
             delegate.blockTillUpdate();
+            if (initial) {
+                resumedWait.countDown();
+            }
             return null;
         }).when(flowControl).blockTillUpdate();
         return flowControl;

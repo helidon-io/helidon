@@ -122,8 +122,6 @@ abstract class WindowSizeImpl implements WindowSize {
      */
     static final class Outbound extends WindowSizeImpl implements WindowSize.Outbound {
 
-        private static final int BACKOFF_MIN = 50;
-        private static final int BACKOFF_MAX = 5000;
         private final ReentrantLock updateLock = new ReentrantLock();
         private final Condition updated = updateLock.newCondition();
         private final ConnectionFlowControl.Type type;
@@ -139,18 +137,30 @@ abstract class WindowSizeImpl implements WindowSize {
 
         @Override
         public long incrementWindowSize(int increment) {
-            long remaining = super.incrementWindowSize(increment);
-            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
-                LOGGER_OUTBOUND.log(DEBUG, String.format("%s OFC STR %d: +%d(%d)", type, streamId, increment, remaining));
+            long remaining;
+            updateLock.lock();
+            try {
+                remaining = super.incrementWindowSize(increment);
+                updated.signalAll();
+            } finally {
+                updateLock.unlock();
             }
-            triggerUpdate();
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_OUTBOUND.log(DEBUG,
+                                    String.format("%s OFC STR %d: +%d(%d)", type, streamId, increment, remaining));
+            }
             return remaining;
         }
 
         @Override
         public void resetWindowSize(int size) {
-            super.resetWindowSize(size);
-            triggerUpdate();
+            updateLock.lock();
+            try {
+                super.resetWindowSize(size);
+                updated.signalAll();
+            } finally {
+                updateLock.unlock();
+            }
         }
 
         @Override
@@ -170,18 +180,15 @@ abstract class WindowSizeImpl implements WindowSize {
 
         @Override
         public void blockTillUpdate() {
-            if (getRemainingWindowSize() > 0) {
-                return;
-            }
             var startTime = System.nanoTime();
             long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-            int backoff = BACKOFF_MIN;
             try {
                 while (true) {
                     boolean timedOut;
                     boolean waiting;
                     updateLock.lock();
                     try {
+                        // Updates acquire this lock, so the predicate check and await enrollment are atomic.
                         int remainingWindowSize = getRemainingWindowSize();
                         long elapsedNanos = System.nanoTime() - startTime;
                         if (elapsedNanos >= timeoutNanos) {
@@ -192,10 +199,7 @@ abstract class WindowSizeImpl implements WindowSize {
                         } else {
                             timedOut = false;
                             long remainingNanos = timeoutNanos - elapsedNanos;
-                            long backoffNanos = TimeUnit.MILLISECONDS.toNanos(backoff);
-                            var _ = updated.await(Math.min(backoffNanos, remainingNanos), TimeUnit.NANOSECONDS);
-                            // linear deterministic backoff
-                            backoff = Math.min(backoff * 2, BACKOFF_MAX);
+                            var _ = updated.await(remainingNanos, TimeUnit.NANOSECONDS);
                             waiting = getRemainingWindowSize() < 1;
                         }
                     } finally {

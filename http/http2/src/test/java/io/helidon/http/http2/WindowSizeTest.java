@@ -37,6 +37,20 @@ import static org.hamcrest.Matchers.nullValue;
 class WindowSizeTest {
 
     @Test
+    void observesUpdateBeforeBlockingWaitStarts() {
+        ConnectionFlowControl connection = ConnectionFlowControl.clientBuilder((_, _) -> { })
+                .blockTimeout(Duration.ofSeconds(1))
+                .build();
+        WindowSize.Outbound outbound = connection.outbound();
+        outbound.decrementWindowSize(outbound.getRemainingWindowSize());
+
+        outbound.incrementWindowSize(1);
+        outbound.blockTillUpdate();
+
+        assertThat("positive window must be observed before waiting", outbound.getRemainingWindowSize(), is(1));
+    }
+
+    @Test
     void resumesAllWaitersAfterWindowUpdate() throws InterruptedException {
         ConnectionFlowControl connection = ConnectionFlowControl.clientBuilder((_, _) -> { })
                 .blockTimeout(Duration.ofSeconds(3))
@@ -73,7 +87,6 @@ class WindowSizeTest {
             assertThat("first flow-control wait must start", blockers[0].getState(), is(Thread.State.TIMED_WAITING));
             assertThat("second flow-control wait must start", blockers[1].getState(), is(Thread.State.TIMED_WAITING));
 
-            Thread.sleep(Duration.ofMillis(1700));
             outbound.incrementWindowSize(1024);
             for (Thread blocker : blockers) {
                 blocker.join();
@@ -129,13 +142,13 @@ class WindowSizeTest {
 
     @Test
     void rejectsLateUpdateBetweenTimeoutChecks() throws InterruptedException {
-        CountDownLatch afterTimeoutCheck = new CountDownLatch(1);
+        CountDownLatch afterTimedWait = new CountDownLatch(1);
         CountDownLatch resumeBlocker = new CountDownLatch(1);
         Handler handler = new Handler() {
             @Override
             public void publish(LogRecord record) {
                 if (record.getMessage().contains("Window depleted, waiting for update.")) {
-                    afterTimeoutCheck.countDown();
+                    afterTimedWait.countDown();
                     try {
                         resumeBlocker.await();
                     } catch (InterruptedException e) {
@@ -177,10 +190,9 @@ class WindowSizeTest {
         });
         Thread updater = null;
         try {
-            assertThat("flow-control waiter must pass a pre-deadline timeout check",
-                       afterTimeoutCheck.await(1, TimeUnit.SECONDS),
+            assertThat("flow-control waiter must finish its timed wait",
+                       afterTimedWait.await(1, TimeUnit.SECONDS),
                        is(true));
-            Thread.sleep(Duration.ofMillis(100));
             updater = Thread.ofVirtual().start(() -> outbound.incrementWindowSize(1));
             long updateDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
             while (outbound.getRemainingWindowSize() < 1 && System.nanoTime() < updateDeadline) {
