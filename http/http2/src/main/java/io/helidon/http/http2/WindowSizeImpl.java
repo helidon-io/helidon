@@ -15,9 +15,10 @@
  */
 package io.helidon.http.http2;
 
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -123,7 +124,8 @@ abstract class WindowSizeImpl implements WindowSize {
 
         private static final int BACKOFF_MIN = 50;
         private static final int BACKOFF_MAX = 5000;
-        private final Semaphore updatedSemaphore = new Semaphore(1);
+        private final ReentrantLock updateLock = new ReentrantLock();
+        private final Condition updated = updateLock.newCondition();
         private final ConnectionFlowControl.Type type;
         private final int streamId;
         private final long timeoutMillis;
@@ -153,44 +155,63 @@ abstract class WindowSizeImpl implements WindowSize {
 
         @Override
         public int decrementWindowSize(int decrement) {
-            int n = super.decrementWindowSize(decrement);
-            triggerUpdate();
-            return n;
+            return super.decrementWindowSize(decrement);
         }
 
         @Override
         public void triggerUpdate() {
-            updatedSemaphore.release();
+            updateLock.lock();
+            try {
+                updated.signalAll();
+            } finally {
+                updateLock.unlock();
+            }
         }
 
         @Override
         public void blockTillUpdate() {
+            if (getRemainingWindowSize() > 0) {
+                return;
+            }
             var startTime = System.nanoTime();
             long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
             int backoff = BACKOFF_MIN;
-            while (getRemainingWindowSize() < 1) {
-                try {
-                    updatedSemaphore.drainPermits();
-                    if (getRemainingWindowSize() < 1) {
+            try {
+                while (true) {
+                    boolean timedOut;
+                    boolean waiting;
+                    updateLock.lock();
+                    try {
+                        int remainingWindowSize = getRemainingWindowSize();
                         long elapsedNanos = System.nanoTime() - startTime;
-                        long remainingNanos = timeoutNanos > elapsedNanos ? timeoutNanos - elapsedNanos : 0;
-                        long backoffNanos = TimeUnit.MILLISECONDS.toNanos(backoff);
-                        var _ = updatedSemaphore.tryAcquire(Math.min(backoffNanos, remainingNanos),
-                                                           TimeUnit.NANOSECONDS);
-                        // linear deterministic backoff
-                        backoff = Math.min(backoff * 2, BACKOFF_MAX);
+                        if (elapsedNanos >= timeoutNanos) {
+                            timedOut = true;
+                            waiting = false;
+                        } else if (remainingWindowSize > 0) {
+                            return;
+                        } else {
+                            timedOut = false;
+                            long remainingNanos = timeoutNanos - elapsedNanos;
+                            long backoffNanos = TimeUnit.MILLISECONDS.toNanos(backoff);
+                            var _ = updated.await(Math.min(backoffNanos, remainingNanos), TimeUnit.NANOSECONDS);
+                            // linear deterministic backoff
+                            backoff = Math.min(backoff * 2, BACKOFF_MAX);
+                            waiting = getRemainingWindowSize() < 1;
+                        }
+                    } finally {
+                        updateLock.unlock();
                     }
-                } catch (InterruptedException e) {
-                    debugLog("%s OFC STR %d: Window depleted, waiting for update interrupted.", e);
-                    throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait interrupted.");
+                    if (timedOut) {
+                        debugLog("%s OFC STR %d: Window depleted, waiting for update time-out.", null);
+                        throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait time-out.");
+                    }
+                    if (waiting) {
+                        debugLog("%s OFC STR %d: Window depleted, waiting for update.", null);
+                    }
                 }
-                if (System.nanoTime() - startTime >= timeoutNanos) {
-                    debugLog("%s OFC STR %d: Window depleted, waiting for update time-out.", null);
-                    throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait time-out.");
-                }
-                if (getRemainingWindowSize() < 1) {
-                    debugLog("%s OFC STR %d: Window depleted, waiting for update.", null);
-                }
+            } catch (InterruptedException e) {
+                debugLog("%s OFC STR %d: Window depleted, waiting for update interrupted.", e);
+                throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait interrupted.");
             }
         }
 
