@@ -107,8 +107,9 @@ class MetricsSnippets {
             private final Counter cardCounter; // <1>
 
             GreetingCards() {
-                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-                cardCounter = Services.get(MeterRegistry.class)
+                MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+                MetricsFactory metricsFactory = meterRegistry.metricsFactory();
+                cardCounter = meterRegistry
                         .getOrCreate(metricsFactory.counterBuilder("cardCount")
                                              .description("Counts card retrievals")); // <2>
             }
@@ -163,10 +164,12 @@ class MetricsSnippets {
 
             private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
             private final Timer cardTimer; // <1>
+            private final MetricsFactory metricsFactory;
 
             GreetingCards() {
-                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-                cardTimer = Services.get(MeterRegistry.class)
+                MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+                metricsFactory = meterRegistry.metricsFactory();
+                cardTimer = meterRegistry
                         .getOrCreate(metricsFactory.timerBuilder("cardTimer") // <2>
                                              .description("Times card retrievals"));
             }
@@ -177,7 +180,7 @@ class MetricsSnippets {
             }
 
             private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-                Timer.Sample timerSample = Services.get(MetricsFactory.class).timerStart(); // <3>
+                Timer.Sample timerSample = metricsFactory.timerStart(); // <3>
                 response.whenSent(() -> timerSample.stop(cardTimer)); // <4>
                 sendResponse(response, "Here are some cards ...");
             }
@@ -199,8 +202,9 @@ class MetricsSnippets {
             private final DistributionSummary cardSummary; // <1>
 
             GreetingCards() {
-                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-                cardSummary = Services.get(MeterRegistry.class)
+                MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+                MetricsFactory metricsFactory = meterRegistry.metricsFactory();
+                cardSummary = meterRegistry
                         .getOrCreate(metricsFactory.distributionSummaryBuilder("cardDist",
                                                                                metricsFactory.distributionStatisticsConfigBuilder())
                                              .description("random card distribution")); // <2>
@@ -236,8 +240,9 @@ class MetricsSnippets {
 
             GreetingCards() {
                 Random r = new Random();
-                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
-                Services.get(MeterRegistry.class)
+                MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+                MetricsFactory metricsFactory = meterRegistry.metricsFactory();
+                meterRegistry
                         .getOrCreate(metricsFactory.gaugeBuilder("temperature",
                                                                  () -> r.nextDouble(100.0))
                                              .description("Ambient temperature")); // <1>

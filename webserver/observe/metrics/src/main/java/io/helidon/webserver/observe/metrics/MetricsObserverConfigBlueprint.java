@@ -52,11 +52,12 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
     }
 
     /**
-     * Assigns metrics settings to use with a custom {@link io.helidon.metrics.api.MeterRegistry}.
-     * If no custom registry is configured, metrics support uses the settings from the shared registry's owning
-     * {@link io.helidon.metrics.api.MetricsFactory} instead.
+     * Assigns metrics settings for the observer endpoint, including whether the endpoint is enabled and its access controls.
+     * With a custom {@link io.helidon.metrics.api.MeterRegistry}, the settings also describe the registry-specific behavior.
+     * With the shared registry, registry-specific behavior uses the settings from that registry's owning
+     * {@link io.helidon.metrics.api.MetricsFactory} while the endpoint settings assigned here still apply.
      *
-     * @return metrics settings to use with a custom registry
+     * @return metrics settings for the observer endpoint and, when configured, a custom registry
      */
     @Option.Configured(merge = true)
     @Option.DefaultMethod("create")

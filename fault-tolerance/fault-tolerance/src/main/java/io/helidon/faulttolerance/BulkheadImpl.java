@@ -33,7 +33,6 @@ import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Service;
@@ -59,7 +58,6 @@ class BulkheadImpl implements Bulkhead {
 
     @Service.Inject
     BulkheadImpl(BulkheadConfig config,
-                 Supplier<MetricsFactory> metricsFactory,
                  Supplier<MeterRegistry> meterRegistry) {
         this.inProgress = new Semaphore(config.limit(), true);
         this.name = config.name().orElseGet(() -> "bulkhead-" + System.identityHashCode(config));
@@ -72,8 +70,8 @@ class BulkheadImpl implements Bulkhead {
 
         this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
-            var mf = metricsFactory.get();
             var mr = meterRegistry.get();
+            var mf = mr.metricsFactory();
             Tag nameTag = MetricsUtils.tag(mf, "name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_BULKHEAD_CALLS_TOTAL, nameTag);
             waitingDurationMetric = MetricsUtils.timerBuilder(mf, mr, FT_BULKHEAD_WAITINGDURATION, nameTag);

@@ -16,17 +16,22 @@
 package io.helidon.webserver.observe.metrics;
 
 import io.helidon.metrics.api.BuiltInMeterNameFormat;
+import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 
 class TestKpiMeterNameCase {
 
@@ -78,5 +83,60 @@ class TestKpiMeterNameCase {
                            .map(m -> m.id().name())
                            .toList(),
                    hasItem("requests.in_flight"));
+    }
+
+    @Test
+    void testKpiMetricsAreIsolatedByRegistry() {
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .warnOnMultipleRegistries(false)
+                .build();
+        MeterRegistry firstRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        MeterRegistry secondRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        KeyPerformanceIndicatorSupport.Metrics firstMetrics = null;
+        KeyPerformanceIndicatorSupport.Metrics secondMetrics = null;
+        try {
+            firstMetrics = KeyPerformanceIndicatorMetricsImpls.get(firstRegistry,
+                                                                   "requests.",
+                                                                   KeyPerformanceIndicatorMetricsConfig.create(),
+                                                                   BuiltInMeterNameFormat.CAMEL);
+            secondMetrics = KeyPerformanceIndicatorMetricsImpls.get(secondRegistry,
+                                                                    "requests.",
+                                                                    KeyPerformanceIndicatorMetricsConfig.create(),
+                                                                    BuiltInMeterNameFormat.CAMEL);
+
+            assertThat("Each registry has its own KPI metrics", secondMetrics, not(sameInstance(firstMetrics)));
+
+            firstMetrics.onRequestReceived();
+            secondMetrics.onRequestReceived();
+            assertThat("First registry count", counter(firstRegistry).count(), is(1L));
+            assertThat("Second registry count", counter(secondRegistry).count(), is(1L));
+
+            firstMetrics.close();
+            firstMetrics = null;
+            assertThat("Closing the first KPI metrics removes only its meters",
+                       firstRegistry.meters().stream().noneMatch(meter -> meter.id().name().equals("requests.count")),
+                       is(true));
+
+            secondMetrics.onRequestReceived();
+            assertThat("Second registry remains active", counter(secondRegistry).count(), is(2L));
+        } finally {
+            if (firstMetrics != null) {
+                firstMetrics.close();
+            }
+            if (secondMetrics != null) {
+                secondMetrics.close();
+            }
+            firstRegistry.close();
+            secondRegistry.close();
+        }
+    }
+
+    private static Counter counter(MeterRegistry meterRegistry) {
+        return meterRegistry.meters().stream()
+                .filter(meter -> meter.id().name().equals("requests.count"))
+                .map(Counter.class::cast)
+                .findFirst()
+                .orElseThrow();
     }
 }

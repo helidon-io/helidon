@@ -48,8 +48,8 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
     protected MetricService(MetricBuilderBase<?, ?> builder) {
         super(builder);
 
-        this.metricsFactory = Services.get(MetricsFactory.class);
         this.registry = Services.get(MeterRegistry.class);
+        this.metricsFactory = registry.metricsFactory();
         BiFunction<String, DbStatementType, String> nameFunction = builder.nameFormat();
         this.meta = builder.meta();
 
