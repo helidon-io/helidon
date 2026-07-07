@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.http.Method;
 import io.helidon.security.ClassToInstanceStore;

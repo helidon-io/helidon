@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.Config;
 import io.helidon.tracing.SamplerType;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.SpanProcessorType;

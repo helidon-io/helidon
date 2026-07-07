@@ -18,7 +18,6 @@ package io.helidon.webserver.cors;
 import java.time.Duration;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.Method;
 
