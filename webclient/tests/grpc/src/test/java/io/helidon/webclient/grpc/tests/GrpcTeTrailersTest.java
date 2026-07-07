@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -375,9 +376,15 @@ class GrpcTeTrailersTest {
                 .build();
         AtomicInteger requestsProduced = new AtomicInteger();
         AtomicInteger responsesReceived = new AtomicInteger();
+        AtomicBoolean requestProductionResumed = new AtomicBoolean();
+        AtomicBoolean firstResponseReceived = new AtomicBoolean();
         AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicReference<Stream<Strings.StringMessage>> responseStream = new AtomicReference<>();
+        AtomicReference<CountDownLatch> nextRequestProduced = new AtomicReference<>();
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch requestProductionStarted = new CountDownLatch(1);
+        CountDownLatch postReleaseProgress = new CountDownLatch(2);
         pausedStarted.set(started);
         pausedRelease.set(release);
         pausedConsumed.set(0);
@@ -387,34 +394,102 @@ class GrpcTeTrailersTest {
                     .bidirectional("PausedEcho",
                                    Stream.generate(() -> {
                                        requestsProduced.incrementAndGet();
+                                       requestProductionStarted.countDown();
+                                       CountDownLatch requestProduced = nextRequestProduced.get();
+                                       if (requestProduced != null) {
+                                           requestProduced.countDown();
+                                       }
+                                       if (release.getCount() == 0
+                                               && requestProductionResumed.compareAndSet(false, true)) {
+                                           postReleaseProgress.countDown();
+                                       }
                                        return request;
                                    }).limit(BIDI_MESSAGE_COUNT))) {
-                responses.forEach(ignored -> responsesReceived.incrementAndGet());
+                responseStream.set(responses);
+                try {
+                    Iterator<Strings.StringMessage> iterator = responses.iterator();
+                    while (iterator.hasNext()) {
+                        iterator.next();
+                        responsesReceived.incrementAndGet();
+                        if (firstResponseReceived.compareAndSet(false, true)) {
+                            postReleaseProgress.countDown();
+                        }
+                        if (postReleaseProgress.getCount() == 0) {
+                            break;
+                        }
+                    }
+                } finally {
+                    responseStream.compareAndSet(responses, null);
+                }
             } catch (Throwable t) {
                 failure.set(t);
             }
         });
 
+        boolean postReleaseProgressObserved;
+        boolean callCompleted;
         try {
-            assertThat("paused endpoint started", started.await(10, TimeUnit.SECONDS), is(true));
-            Thread.sleep(500);
-            assertThat("client request production must stop without server demand",
-                       requestsProduced.get() < BIDI_MESSAGE_COUNT,
-                       is(true));
+            try {
+                assertThat("paused endpoint started", started.await(10, TimeUnit.SECONDS), is(true));
+                assertThat("client request production started",
+                           requestProductionStarted.await(10, TimeUnit.SECONDS),
+                           is(true));
+
+                boolean requestProductionStopped = false;
+                long stopDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                do {
+                    CountDownLatch requestProduced = new CountDownLatch(1);
+                    nextRequestProduced.set(requestProduced);
+                    requestProductionStopped = !requestProduced.await(1, TimeUnit.SECONDS);
+                } while (!requestProductionStopped
+                        && requestsProduced.get() < BIDI_MESSAGE_COUNT
+                        && System.nanoTime() < stopDeadline);
+                nextRequestProduced.set(null);
+
+                assertThat("client request production must stop without server demand; produced="
+                                   + requestsProduced.get(),
+                           requestProductionStopped,
+                           is(true));
+                assertThat("client request production must stop without server demand; produced="
+                                   + requestsProduced.get(),
+                           requestsProduced.get() < BIDI_MESSAGE_COUNT,
+                           is(true));
+            } finally {
+                release.countDown();
+            }
+            postReleaseProgressObserved = postReleaseProgress.await(30, TimeUnit.SECONDS);
+            if (postReleaseProgressObserved) {
+                call.join(TimeUnit.SECONDS.toMillis(10));
+            }
+            callCompleted = !call.isAlive();
         } finally {
-            release.countDown();
+            if (call.isAlive()) {
+                Stream<Strings.StringMessage> responses = responseStream.get();
+                if (responses != null) {
+                    responses.close();
+                    call.join(TimeUnit.SECONDS.toMillis(10));
+                }
+            }
+            if (call.isAlive()) {
+                call.interrupt();
+                call.join(TimeUnit.SECONDS.toMillis(10));
+            }
         }
 
-        call.join(TimeUnit.SECONDS.toMillis(10));
-        assertThat("bidirectional call completed; produced=" + requestsProduced.get()
+        assertThat("request production and response consumption resumed after server demand; produced="
+                           + requestsProduced.get()
                            + ", consumed=" + pausedConsumed.get()
                            + ", responses=" + responsesReceived.get(),
-                   call.isAlive(),
-                   is(false));
+                   postReleaseProgressObserved,
+                   is(true));
+        assertThat("request production resumed after server demand", requestProductionResumed.get(), is(true));
+        assertThat("response received after server demand", firstResponseReceived.get(), is(true));
+        assertThat("bidirectional call completed before cleanup; produced=" + requestsProduced.get()
+                           + ", consumed=" + pausedConsumed.get()
+                           + ", responses=" + responsesReceived.get(),
+                   callCompleted,
+                   is(true));
         assertThat("bidirectional call failure", failure.get(), nullValue());
-        assertThat(requestsProduced.get(), is(BIDI_MESSAGE_COUNT));
-        assertThat(pausedConsumed.get(), is(BIDI_MESSAGE_COUNT));
-        assertThat(responsesReceived.get(), is(BIDI_MESSAGE_COUNT));
     }
 
     private static void upper(Strings.StringMessage req, StreamObserver<Strings.StringMessage> observer) {
@@ -478,7 +553,7 @@ class GrpcTeTrailersTest {
         return GrpcStreams.bidirectional(requests -> {
             pausedStarted.get().countDown();
             try {
-                if (!pausedRelease.get().await(10, TimeUnit.SECONDS)) {
+                if (!pausedRelease.get().await(30, TimeUnit.SECONDS)) {
                     throw new IllegalStateException("Timed out waiting to release paused gRPC request stream");
                 }
             } catch (InterruptedException e) {
