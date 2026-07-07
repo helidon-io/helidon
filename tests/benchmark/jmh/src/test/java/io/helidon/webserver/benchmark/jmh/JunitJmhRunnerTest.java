@@ -46,6 +46,7 @@ public class JunitJmhRunnerTest {
     private static final String ALL_BENCHMARKS = ".*JmhTest";
     private static final String HTTP2_REUSE_BENCHMARK =
             ".*HttpJmhTest.http2MaxConcurrentStreamReuseLargeResponse";
+    private static final String HTTP2_FLOW_CONTROL_BENCHMARK = ".*Http2FlowControlJmhTest.*";
     private static final int DEFAULT_THREADS = 8;
     private static final int HTTP2_REUSE_THREADS = 1;
     private static final int ERROR_MARGIN =
@@ -55,6 +56,7 @@ public class JunitJmhRunnerTest {
         Options defaultOptions = optionsBuilder("./target/benchmark-result.json")
                 .include(ALL_BENCHMARKS)
                 .exclude(HTTP2_REUSE_BENCHMARK)
+                .exclude(HTTP2_FLOW_CONTROL_BENCHMARK)
                 .threads(DEFAULT_THREADS)
                 .build();
 
@@ -63,9 +65,14 @@ public class JunitJmhRunnerTest {
                 .threads(HTTP2_REUSE_THREADS)
                 .build();
 
+        Options http2FlowControlOptions = optionsBuilder("./target/benchmark-result-http2-flow-control.json")
+                .include(HTTP2_FLOW_CONTROL_BENCHMARK)
+                .build();
+
         Collection<RunResult> runResults = new ArrayList<>();
         runResults.addAll(new Runner(defaultOptions).run());
         runResults.addAll(new Runner(http2ReuseOptions).run());
+        runResults.addAll(new Runner(http2FlowControlOptions).run());
 
         boolean resetBaseline = Boolean.parseBoolean(System.getProperty("webserver.jmh.resetBaseline", "false"));
 

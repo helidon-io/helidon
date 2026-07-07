@@ -256,9 +256,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     sctx.stream.flowControl().outbound().resetStreamWindowSize(initialWindowSize.intValue());
                 }
             }
-
-            // Unblock frames waiting for update
-            this.flowControl.outbound().triggerUpdate();
         }
 
         if (this.clientSettings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {

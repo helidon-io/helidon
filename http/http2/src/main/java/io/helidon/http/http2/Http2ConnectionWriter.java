@@ -283,17 +283,25 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         int written = 0;
         Http2FrameData currFrame = frame;
         while (true) {
-            Http2FrameData[] splitFrames = flowControl.cut(currFrame);
-            if (splitFrames.length == 1) {
-                // windows are wide enough
-                written += lockedWriteData(currFrame, flowControl, onEndStreamFrameWritten);
-                break;
-            } else if (splitFrames.length == 0) {
+            Http2FrameData[] splitFrames;
+            lock();
+            try {
+                splitFrames = flowControl.cut(currFrame);
+                if (splitFrames.length == 1) {
+                    // windows are wide enough
+                    written += noLockWriteData(currFrame, flowControl, onEndStreamFrameWritten);
+                    break;
+                } else if (splitFrames.length == 2) {
+                    // write send-able part and block until window update with the rest
+                    written += noLockWriteData(splitFrames[0], flowControl, onEndStreamFrameWritten);
+                }
+            } finally {
+                streamLock.unlock();
+            }
+            if (splitFrames.length == 0) {
                 // block until window update
                 flowControl.blockTillUpdate();
             } else if (splitFrames.length == 2) {
-                // write send-able part and block until window update with the rest
-                written += lockedWriteData(splitFrames[0], flowControl, onEndStreamFrameWritten);
                 flowControl.blockTillUpdate();
                 currFrame = splitFrames[1];
             }
@@ -301,21 +309,16 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         return written;
     }
 
-    private int lockedWriteData(Http2FrameData frame,
+    private int noLockWriteData(Http2FrameData frame,
                                 FlowControl.Outbound flowControl,
                                 Runnable onEndStreamFrameWritten) {
-        lock();
-        try {
-            noLockWrite(frame);
-            flowControl.decrementWindowSize(frame.header().length());
-            if (frame.header().type() == Http2FrameType.DATA
-                    && frame.header().flags(Http2FrameTypes.DATA).endOfStream()) {
-                onEndStreamFrameWritten.run();
-            }
-            return frameBytes(frame);
-        } finally {
-            streamLock.unlock();
+        noLockWrite(frame);
+        flowControl.decrementWindowSize(frame.header().length());
+        if (frame.header().type() == Http2FrameType.DATA
+                && frame.header().flags(Http2FrameTypes.DATA).endOfStream()) {
+            onEndStreamFrameWritten.run();
         }
+        return frameBytes(frame);
     }
 
     private static int frameBytes(Http2FrameData frame) {
