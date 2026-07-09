@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -28,6 +29,7 @@ import java.util.function.Supplier;
  */
 public class DataReader {
     private final Supplier<byte[]> bytesSupplier;
+    private final ByteArrayReader byteArrayReader;
     private final boolean ignoreLoneEol;
     private Node head;
     private Node tail;
@@ -42,11 +44,7 @@ public class DataReader {
      */
     @Deprecated(forRemoval = true, since = "4.4.0")
     public DataReader(Supplier<byte[]> bytesSupplier) {
-        this.ignoreLoneEol = false;
-        this.bytesSupplier = bytesSupplier;
-        // we cannot block until data is actually ready to be consumed
-        this.head = new Node(BufferData.EMPTY_BYTES);
-        this.tail = this.head;
+        this(bytesSupplier, null, false);
     }
 
     /**
@@ -58,8 +56,15 @@ public class DataReader {
      */
     @Deprecated(forRemoval = true, since = "4.4.0")
     public DataReader(Supplier<byte[]> bytesSupplier, boolean ignoreLoneEol) {
+        this(bytesSupplier, null, ignoreLoneEol);
+    }
+
+    private DataReader(Supplier<byte[]> bytesSupplier,
+                       ByteArrayReader byteArrayReader,
+                       boolean ignoreLoneEol) {
         this.ignoreLoneEol = ignoreLoneEol;
-        this.bytesSupplier = bytesSupplier;
+        this.bytesSupplier = Objects.requireNonNull(bytesSupplier);
+        this.byteArrayReader = byteArrayReader;
         // we cannot block until data is actually ready to be consumed
         this.head = new Node(BufferData.EMPTY_BYTES);
         this.tail = this.head;
@@ -87,6 +92,18 @@ public class DataReader {
     }
 
     /**
+     * Data reader from a supplier of bytes with an optional direct bulk-read path.
+     * The bulk reader is used only when no previously supplied bytes remain buffered.
+     *
+     * @param bytesSupplier supplier used by parsing and other buffered reads
+     * @param byteArrayReader reader that can read directly into a caller-provided array
+     * @return data reader using the supplied buffered and direct read paths
+     */
+    public static DataReader create(Supplier<byte[]> bytesSupplier, ByteArrayReader byteArrayReader) {
+        return new DataReader(bytesSupplier, Objects.requireNonNull(byteArrayReader), false);
+    }
+
+    /**
      * Number of bytes available in the currently pulled data.
      *
      * @return number of bytes available
@@ -110,6 +127,54 @@ public class DataReader {
         Node n = new Node(bytes);
         tail.next = n;
         tail = n;
+    }
+
+    /**
+     * Read bytes into a caller-provided array. Already buffered bytes are always consumed before the direct reader.
+     *
+     * @param bytes destination array
+     * @param offset destination offset
+     * @param length maximum number of bytes to read
+     * @return number of bytes read, or {@code -1} at end of input
+     */
+    public int read(byte[] bytes, int offset, int length) {
+        Objects.checkFromIndexSize(offset, length, bytes.length);
+        if (length == 0) {
+            return 0;
+        }
+
+        int buffered = available();
+        if (buffered > 0) {
+            int toRead = Math.min(buffered, length);
+            return readBuffer(toRead).read(bytes, offset, toRead);
+        }
+        if (byteArrayReader != null) {
+            return byteArrayReader.read(bytes, offset, length);
+        }
+
+        try {
+            ensureAvailable();
+        } catch (InsufficientDataAvailableException e) {
+            return -1;
+        }
+        int toRead = Math.min(available(), length);
+        return readBuffer(toRead).read(bytes, offset, toRead);
+    }
+
+    /**
+     * Direct reader of bytes into a caller-provided array.
+     */
+    @FunctionalInterface
+    public interface ByteArrayReader {
+        /**
+         * Read bytes.
+         *
+         * @param bytes destination array
+         * @param offset destination offset
+         * @param length maximum number of bytes to read
+         * @return number of bytes read, or {@code -1} at end of input
+         */
+        int read(byte[] bytes, int offset, int length);
     }
 
     /**
