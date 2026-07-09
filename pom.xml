@@ -669,16 +669,6 @@
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
                         <!-- Bump up from 24 to 72 to reduce token use -->
                         <ossIndexAnalyzerCacheValidForHours>72</ossIndexAnalyzerCacheValidForHours>
-                        <excludes>
-                            <!-- Exclude stuff we do not deploy -->
-                            <exclude>io.helidon.tracing:helidon-tracing-tests</exclude>
-                            <exclude>io.helidon.config.tests*</exclude>
-                            <exclude>io.helidon.test*</exclude>
-                            <exclude>io.helidon.examples*</exclude>
-                            <exclude>io.helidon.microprofile.tests*</exclude>
-                            <!-- This should be excluded by above, but for some reason it persists -->
-                            <exclude>org.testng:testng</exclude>
-                        </excludes>
                         <formats>
                             <format>HTML</format>
                         </formats>

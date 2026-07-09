@@ -35,6 +35,7 @@
         <!-- due to a package split in testcontainers, we cannot use module-info.java -->
         <helidon.services.skip>true</helidon.services.skip>
         <maven.deploy.skip>true</maven.deploy.skip>
+        <dependency-check.skip>true</dependency-check.skip>
     </properties>
 
     <dependencies>
