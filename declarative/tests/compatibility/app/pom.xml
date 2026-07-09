@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2026 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>io.helidon.declarative.tests</groupId>
+        <artifactId>helidon-declarative-tests-compatibility</artifactId>
+        <version>27.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>helidon-declarative-tests-compatibility-app</artifactId>
+    <name>Helidon Declarative Tests Compatibility App</name>
+    <description>Helidon 27 application consuming a legacy Helidon 4 declarative library</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.declarative.tests.compatibility</groupId>
+            <artifactId>helidon-declarative-tests-compatibility-legacy-4-module</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.fault-tolerance</groupId>
+            <artifactId>helidon-fault-tolerance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json-binding</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json-binding</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-system-meters</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.scheduling</groupId>
+            <artifactId>helidon-scheduling</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.validation</groupId>
+            <artifactId>helidon-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-websocket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-concurrency-limits</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-cors</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-websocket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.bundles</groupId>
+                            <artifactId>helidon-bundles-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.bundles</groupId>
+                        <artifactId>helidon-bundles-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+                <executions>
+                    <execution>
+                        <id>create-application</id>
+                        <goals>
+                            <goal>create-application</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
