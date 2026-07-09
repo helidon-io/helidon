@@ -34,6 +34,7 @@ import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -118,7 +119,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private volatile Http2Headers headers;
     private volatile LocallyResetStreamState locallyResetStreamState;
     private volatile Http2Priority priority;
-    private boolean remoteResetReceived;
+    private volatile boolean remoteResetReceived;
     private volatile boolean resetStreamSent;
     private volatile boolean remoteCompleteAfterReset;
     private volatile boolean ignoreInboundDataAfterReset;
@@ -458,92 +459,15 @@ class Http2ServerStream implements Runnable, Http2Stream {
             Http2RstStream rst = new Http2RstStream(errorCode);
             writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             // no sense in throwing an exception, as this is invoked from an executor service directly
+        } catch (BadRequestException e) {
+            handleRequestException(RequestException.builder()
+                                           .message(e.getMessage())
+                                           .cause(e)
+                                           .type(DirectHandler.EventType.BAD_REQUEST)
+                                           .status(e.status())
+                                           .build());
         } catch (RequestException e) {
-            if (state == Http2StreamState.CLOSED || writeState.get() == WriteState.END) {
-                return;
-            }
-            // gather error handling properties
-            ErrorHandling errorHandling = ctx.listenerContext()
-                    .config()
-                    .errorHandling();
-
-            // log message in DEBUG mode
-            if (LOGGER.isLoggable(DEBUG) && (e.safeMessage() || errorHandling.logAllMessages())) {
-                LOGGER.log(DEBUG, e);
-            }
-
-            // create message to return based on settings
-            String message = null;
-            if (errorHandling.includeEntity()) {
-                message = e.safeMessage() ? e.getMessage() : "Bad request, see server log for more information";
-            }
-
-            DirectHandler handler = ctx.listenerContext()
-                    .directHandlers()
-                    .handler(e.eventType());
-            DirectHandler.TransportResponse response = handler.handle(e.request(),
-                                                                      e.eventType(),
-                                                                      e.status(),
-                                                                      e.responseHeaders(),
-                                                                      message);
-
-            ServerResponseHeaders headers = response.headers();
-            byte[] entity = response.entity().orElse(BufferData.EMPTY_BYTES);
-            if (entity.length != 0) {
-                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
-            }
-            Http2Headers http2Headers = Http2Headers.create(headers)
-                    .status(e.status());
-            boolean resetRequestBody = prepareRejectedStream(false);
-            AtomicBoolean rejectedStreamCompleted = new AtomicBoolean();
-            Runnable completeRejectedStream = () -> {
-                if (rejectedStreamCompleted.compareAndSet(false, true)) {
-                    completeRejectedStream(Http2ErrorCode.CANCEL, resetRequestBody, false);
-                }
-            };
-            try {
-                if (entity.length == 0) {
-                    Http2Flag.HeaderFlags flags =
-                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
-                    if (connectionWriter == null) {
-                        writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
-                        completeRejectedStream.run();
-                    } else {
-                        connectionWriter.writeHeaders(http2Headers,
-                                                      streamId,
-                                                      flags,
-                                                      flowControl.outbound(),
-                                                      completeRejectedStream);
-                    }
-                } else {
-                    Http2FrameHeader dataHeader = Http2FrameHeader.create(entity.length,
-                                                                          Http2FrameTypes.DATA,
-                                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                          streamId);
-                    if (connectionWriter == null) {
-                        writer.writeHeaders(http2Headers,
-                                            streamId,
-                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                            new Http2FrameData(dataHeader, BufferData.create(message)),
-                                            flowControl.outbound());
-                        completeRejectedStream.run();
-                    } else {
-                        connectionWriter.writeHeaders(http2Headers,
-                                                      streamId,
-                                                      Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                                      new Http2FrameData(dataHeader, BufferData.create(message)),
-                                                      flowControl.outbound(),
-                                                      completeRejectedStream);
-                    }
-                }
-            } catch (RuntimeException writeFailure) {
-                try {
-                    completeRejectedStream.run();
-                } catch (RuntimeException cleanupFailure) {
-                    writeFailure.addSuppressed(cleanupFailure);
-                }
-                throw writeFailure;
-            }
+            handleRequestException(e);
         } catch (Http2Exception e) {
             ctx.log(LOGGER, DEBUG, "Intentional HTTP/2 stream exception, code: %s, message: %s",
                     e.code(),
@@ -711,9 +635,17 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     private void resetInvalidContentLength(int currentFrameLength, boolean endOfStream) {
+        resetInvalidContentLength(currentFrameLength, endOfStream, NO_OP);
+    }
+
+    // Package-private for deterministic local reset race tests.
+    void resetInvalidContentLength(int currentFrameLength,
+                                   boolean endOfStream,
+                                   Runnable afterResetStatePublished) {
         LocallyResetStreamState resetState = locallyResetStreamState();
         ignoreInboundDataAfterReset = true;
         state = Http2StreamState.CLOSED;
+        afterResetStatePublished.run();
         writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
         locallyResetStreamTracker.add(this.streamId, resetState);
         streams.remove(this.streamId);
@@ -772,6 +704,96 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     ConnectionContext connectionContext() {
         return this.ctx;
+    }
+
+    private void handleRequestException(RequestException e) {
+        if (remoteResetReceived || ignoreInboundDataAfterReset || writeState.get() == WriteState.END) {
+            return;
+        }
+
+        // gather error handling properties
+        ErrorHandling errorHandling = ctx.listenerContext()
+                .config()
+                .errorHandling();
+
+        // log message in DEBUG mode
+        if (LOGGER.isLoggable(DEBUG) && (e.safeMessage() || errorHandling.logAllMessages())) {
+            LOGGER.log(DEBUG, e);
+        }
+
+        // create message to return based on settings
+        String message = null;
+        if (errorHandling.includeEntity()) {
+            message = e.safeMessage() ? e.getMessage() : "Bad request, see server log for more information";
+        }
+
+        DirectHandler handler = ctx.listenerContext()
+                .directHandlers()
+                .handler(e.eventType());
+        DirectHandler.TransportResponse response = handler.handle(e.request(),
+                                                                  e.eventType(),
+                                                                  e.status(),
+                                                                  e.responseHeaders(),
+                                                                  message);
+
+        ServerResponseHeaders headers = response.headers();
+        byte[] entity = response.entity().orElse(BufferData.EMPTY_BYTES);
+        if (entity.length != 0) {
+            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
+        }
+        Http2Headers http2Headers = Http2Headers.create(headers);
+        http2Headers.status(response.status());
+        boolean resetRequestBody = prepareRejectedStream(false);
+        AtomicBoolean rejectedStreamCompleted = new AtomicBoolean();
+        Runnable completeRejectedStream = () -> {
+            if (rejectedStreamCompleted.compareAndSet(false, true)) {
+                completeRejectedStream(Http2ErrorCode.CANCEL, resetRequestBody, false);
+            }
+        };
+        try {
+            if (entity.length == 0) {
+                Http2Flag.HeaderFlags flags =
+                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
+                if (connectionWriter == null) {
+                    writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+                    completeRejectedStream.run();
+                } else {
+                    connectionWriter.writeHeaders(http2Headers,
+                                                  streamId,
+                                                  flags,
+                                                  flowControl.outbound(),
+                                                  completeRejectedStream);
+                }
+            } else {
+                Http2FrameHeader dataHeader = Http2FrameHeader.create(entity.length,
+                                                                      Http2FrameTypes.DATA,
+                                                                      Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                      streamId);
+                Http2FrameData frameData = new Http2FrameData(dataHeader, BufferData.create(entity));
+                if (connectionWriter == null) {
+                    writer.writeHeaders(http2Headers,
+                                        streamId,
+                                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                        frameData,
+                                        flowControl.outbound());
+                    completeRejectedStream.run();
+                } else {
+                    connectionWriter.writeHeaders(http2Headers,
+                                                  streamId,
+                                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                                  frameData,
+                                                  flowControl.outbound(),
+                                                  completeRejectedStream);
+                }
+            }
+        } catch (RuntimeException writeFailure) {
+            try {
+                completeRejectedStream.run();
+            } catch (RuntimeException cleanupFailure) {
+                writeFailure.addSuppressed(cleanupFailure);
+            }
+            throw writeFailure;
+        }
     }
 
     private BufferData readEntityFromPipeline() {
@@ -998,20 +1020,22 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     LimitAlgorithm.Token permit = accepted.token();
                     try {
                         routing.route(ctx, request, response);
-                    } finally {
-                        if (response.status() == Status.NOT_FOUND_404) {
-                            permit.ignore();
-                        } else {
-                            switch (response.status().family()) {
-                            case INFORMATIONAL:
-                            case SUCCESSFUL:
-                            case REDIRECTION:
-                                permit.success();
-                                break;
-                            default:
-                                permit.dropped();
-                                break;
-                            }
+                    } catch (RuntimeException | Error e) {
+                        permit.dropped();
+                        throw e;
+                    }
+                    if (response.status() == Status.NOT_FOUND_404) {
+                        permit.ignore();
+                    } else {
+                        switch (response.status().family()) {
+                        case INFORMATIONAL:
+                        case SUCCESSFUL:
+                        case REDIRECTION:
+                            permit.success();
+                            break;
+                        default:
+                            permit.dropped();
+                            break;
                         }
                     }
                 } else {

@@ -24,13 +24,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.ForbiddenException;
-import io.helidon.http.HeaderNames;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
@@ -45,8 +44,78 @@ record CachedHandlerPath(Path path,
                          BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
                          Function<Path, Optional<Path>> pathResolver,
                          boolean followLinks,
-                         Function<Path, Optional<Path>> secureRootResolver) implements CachedHandler {
+                         Function<Path, Optional<Path>> secureRootResolver,
+                         ResponseRepresentation representation,
+                         SidecarCache sidecarCache) implements CachedHandler {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerPath.class.getName());
+
+    CachedHandlerPath(Path path,
+                      MediaType mediaType,
+                      IoFunction<Path, Optional<Instant>> lastModified,
+                      BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader) {
+        this(path,
+             mediaType,
+             lastModified,
+             setLastModifiedHeader,
+             Optional::of,
+             true,
+             it -> Optional.empty(),
+             ResponseRepresentation.plain(),
+             SidecarCache.create());
+    }
+
+    CachedHandlerPath(Path path,
+                      MediaType mediaType,
+                      IoFunction<Path, Optional<Instant>> lastModified,
+                      BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
+                      ResponseRepresentation representation) {
+        this(path,
+             mediaType,
+             lastModified,
+             setLastModifiedHeader,
+             Optional::of,
+             true,
+             it -> Optional.empty(),
+             representation,
+             SidecarCache.create());
+    }
+
+    CachedHandlerPath(Path path,
+                      MediaType mediaType,
+                      IoFunction<Path, Optional<Instant>> lastModified,
+                      BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
+                      Function<Path, Optional<Path>> pathResolver,
+                      boolean followLinks,
+                      Function<Path, Optional<Path>> secureRootResolver) {
+        this(path,
+             mediaType,
+             lastModified,
+             setLastModifiedHeader,
+             pathResolver,
+             followLinks,
+             secureRootResolver,
+             ResponseRepresentation.plain(),
+             SidecarCache.create());
+    }
+
+    CachedHandlerPath(Path path,
+                      MediaType mediaType,
+                      IoFunction<Path, Optional<Instant>> lastModified,
+                      BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
+                      Function<Path, Optional<Path>> pathResolver,
+                      boolean followLinks,
+                      Function<Path, Optional<Path>> secureRootResolver,
+                      ResponseRepresentation representation) {
+        this(path,
+             mediaType,
+             lastModified,
+             setLastModifiedHeader,
+             pathResolver,
+             followLinks,
+             secureRootResolver,
+             representation,
+             SidecarCache.create());
+    }
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
@@ -55,34 +124,49 @@ record CachedHandlerPath(Path path,
                           ServerResponse response,
                           String requestedResource) throws IOException {
 
+        return handle(method, request, response, cache::remove, requestedResource);
+    }
+
+    @Override
+    public boolean handleSidecar(SidecarCache sidecarCache,
+                                 String coding,
+                                 LruCache<String, CachedHandler> cache,
+                                 Method method,
+                                 ServerRequest request,
+                                 ServerResponse response,
+                                 String requestedResource) throws IOException {
+        return handle(method, request, response, resource -> sidecarCache.remove(coding), requestedResource);
+    }
+
+    private boolean handle(Method method,
+                           ServerRequest request,
+                           ServerResponse response,
+                           Consumer<String> invalidate,
+                           String requestedResource) throws IOException {
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Sending static content from path: " + path);
         }
 
         Optional<Path> resolved = pathResolver.apply(path);
         if (resolved.isEmpty()) {
-            cache.remove(requestedResource);
+            invalidate.accept(requestedResource);
             return false;
         }
         Path resolvedPath = resolved.get();
         Path secureRoot = secureRootResolver.apply(resolvedPath).orElse(null);
 
-        // now it exists and is a file
-        BasicFileAttributes attributes;
         try {
-            attributes = FileBasedContentHandler.attributes(resolvedPath, followLinks, secureRoot);
+            BasicFileAttributes attributes = FileBasedContentHandler.attributes(resolvedPath, followLinks, secureRoot);
+            if (!attributes.isRegularFile()
+                    || !Files.isReadable(resolvedPath)
+                    || Files.isHidden(path)
+                    || Files.isHidden(resolvedPath)) {
+                invalidate.accept(requestedResource);
+                throw new ForbiddenException("File is not accessible");
+            }
         } catch (IOException e) {
-            cache.remove(requestedResource);
+            invalidate.accept(requestedResource);
             throw new ForbiddenException("File is not accessible", e);
-        }
-        if (!attributes.isRegularFile()
-                || !Files.isReadable(resolvedPath)
-                || Files.isHidden(path)
-                || Files.isHidden(resolvedPath)) {
-            // check if file still exists (the tmp may have been removed, file may have been removed
-            // there is still a race change, but we do not want to keep cached records for invalid files
-            cache.remove(requestedResource);
-            throw new ForbiddenException("File is not accessible");
         }
 
         Instant lastModified;
@@ -93,49 +177,96 @@ record CachedHandlerPath(Path path,
                 lastModified = FileBasedContentHandler.lastModified(resolvedPath, followLinks, secureRoot).orElse(null);
             }
         } catch (IOException e) {
-            cache.remove(requestedResource);
+            invalidate.accept(requestedResource);
             throw new ForbiddenException("File is not accessible", e);
         }
 
-        // etag etc.
-        if (lastModified != null) {
-            processEtag(String.valueOf(lastModified.toEpochMilli()), request.headers(), response.headers());
-            processModifyHeaders(lastModified, request.headers(), response.headers(), setLastModifiedHeader());
-        }
-
-        response.headers().contentType(mediaType);
-
-        if (method == Method.GET) {
-            SeekableByteChannel channel;
+        SeekableByteChannel channel = null;
+        if (method == Method.GET || !representation.runtimeEncoded()) {
             try {
                 channel = FileBasedContentHandler.newByteChannel(resolvedPath, followLinks, secureRoot);
             } catch (IOException e) {
-                cache.remove(requestedResource);
+                invalidate.accept(requestedResource);
                 throw new ForbiddenException("File is not accessible", e);
             }
-            try (SeekableByteChannel openChannel = channel) {
-                FileBasedContentHandler.send(request, response, openChannel);
-            }
-        } else {
-            try {
-                long contentLength;
-                if (!followLinks || secureRoot != null) {
-                    try (SeekableByteChannel channel = FileBasedContentHandler.newByteChannel(resolvedPath,
-                                                                                              followLinks,
-                                                                                              secureRoot)) {
-                        contentLength = channel.size();
-                    }
-                } else {
-                    contentLength = Files.size(resolvedPath);
+        }
+
+        try (SeekableByteChannel openChannel = channel) {
+            String etag = null;
+            if (lastModified != null) {
+                long etagContentLength = representation.etagRequiresContentLength() ? openChannel.size() : -1;
+                etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), etagContentLength);
+                try {
+                    boolean ifNoneMatchPresent = processEtag(etag,
+                                                            representation.weakEtag(),
+                                                            request.headers(),
+                                                            response.headers());
+                    processModifyHeaders(lastModified,
+                                         request.headers(),
+                                         response.headers(),
+                                         setLastModifiedHeader(),
+                                         !ifNoneMatchPresent);
+                } catch (io.helidon.http.HttpException e) {
+                    representation.apply(e);
+                    e.header(representation.etagHeader(etag));
+                    throw e;
                 }
-                response.headers().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
-            } catch (IOException e) {
-                cache.remove(requestedResource);
-                throw new ForbiddenException("File is not accessible", e);
             }
-            response.send();
+
+            response.headers().contentType(mediaType);
+
+            if (method == Method.GET) {
+                FileBasedContentHandler.send(request,
+                                             response,
+                                             openChannel,
+                                             representation,
+                                             etag);
+            } else {
+                representation.apply(response);
+                if (!representation.runtimeEncoded()) {
+                    FileBasedContentHandler.processContentLength(openChannel.size(), response.headers());
+                }
+                response.send();
+            }
         }
 
         return true;
+    }
+
+    @Override
+    public CachedHandler withRepresentation(ResponseRepresentation representation) {
+        return new CachedHandlerPath(path,
+                                     mediaType,
+                                     lastModified,
+                                     setLastModifiedHeader,
+                                     pathResolver,
+                                     followLinks,
+                                     secureRootResolver,
+                                     representation,
+                                     sidecarCache);
+    }
+
+    @Override
+    public boolean available() {
+        Optional<Path> resolved = pathResolver.apply(path);
+        if (resolved.isEmpty()) {
+            return false;
+        }
+        Path resolvedPath = resolved.get();
+        Path secureRoot = secureRootResolver.apply(resolvedPath).orElse(null);
+        try {
+            BasicFileAttributes attributes = FileBasedContentHandler.attributes(resolvedPath, followLinks, secureRoot);
+            return attributes.isRegularFile()
+                    && Files.isReadable(resolvedPath)
+                    && !Files.isHidden(path)
+                    && !Files.isHidden(resolvedPath);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public SidecarCache sidecarCache() {
+        return sidecarCache;
     }
 }

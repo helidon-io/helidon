@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,26 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
     private static final Pattern RANGE_PATTERN = Pattern.compile("(\\d+)?-(\\d+)?(?:, )?");
 
     static List<ByteRangeRequest> parse(ServerRequest req, ServerResponse res, String headerValues, long fileLength) {
+        return parseRanges(req, res, headerValues, fileLength);
+    }
+
+    static List<ByteRangeRequest> parse(ServerRequest req,
+                                        ServerResponse res,
+                                        String headerValues,
+                                        long fileLength,
+                                        String etag,
+                                        boolean weakEtag) {
+        if (!ifRangeMatches(req, etag, weakEtag)) {
+            return List.of();
+        }
+
+        return parseRanges(req, res, headerValues, fileLength);
+    }
+
+    private static List<ByteRangeRequest> parseRanges(ServerRequest req,
+                                                      ServerResponse res,
+                                                      String headerValues,
+                                                      long fileLength) {
         Matcher matcher = RANGE_PATTERN.matcher(headerValues);
 
         List<ByteRangeRequest> parts = new ArrayList<>();
@@ -67,6 +87,22 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
         }
 
         return parts;
+    }
+
+    private static boolean ifRangeMatches(ServerRequest req, String etag, boolean weakEtag) {
+        if (!req.headers().contains(HeaderNames.IF_RANGE)) {
+            return true;
+        }
+
+        String ifRange = req.headers().get(HeaderNames.IF_RANGE).get().trim();
+        if (ifRange.startsWith("\"") || StaticContentHandler.isWeakETag(ifRange)) {
+            return !weakEtag
+                    && etag != null
+                    && !StaticContentHandler.isWeakETag(ifRange)
+                    && StaticContentHandler.unquoteETag(ifRange).equals(StaticContentHandler.unquoteETag(etag));
+        }
+
+        return false;
     }
 
     void setContentRange(ServerResponse response) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,49 +16,57 @@
 
 package io.helidon.http.encoding;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 
 class ContentEncodingSupportImpl implements ContentEncodingContext {
-    private static final String IDENTITY_ENCODING = "identity";
-
     private final boolean encodingEnabled;
     private final boolean decodingEnabled;
     private final Map<String, ContentEncoder> encoders;
+    private final Map<String, String> canonicalContentEncodings;
     private final Map<String, ContentDecoder> decoders;
-    private final ContentEncoder firstEncoder;
+    private final List<String> contentEncodingIds;
+    private final Map<String, ContentEncoder> negotiatedEncoders;
     private final ContentEncodingContextConfig config;
 
     ContentEncodingSupportImpl(ContentEncodingContextConfig config) {
         this.config = config;
 
-        Map<String, ContentEncoder> encoders = new HashMap<>();
+        Map<String, ContentEncoder> encoders = new LinkedHashMap<>();
+        Map<String, String> canonicalContentEncodings = new HashMap<>();
         Map<String, ContentDecoder> decoders = new HashMap<>();
-        ContentEncoder firstEncoder = null;
 
         for (ContentEncoding contentEncoding : config.contentEncodings()) {
             Set<String> ids = contentEncoding.ids();
             if (contentEncoding.supportsEncoding()) {
+                Optional<String> canonicalCoding = canonicalCoding(contentEncoding);
                 for (String id : ids) {
+                    String normalized = id.toLowerCase(Locale.ROOT);
                     ContentEncoder encoder = contentEncoding.encoder();
-                    if (firstEncoder == null) {
-                        firstEncoder = encoder;
-                    }
-                    encoders.putIfAbsent(id, encoder);
+                    encoders.putIfAbsent(normalized, encoder);
+                    canonicalCoding.ifPresent(coding -> canonicalContentEncodings.putIfAbsent(normalized, coding));
                 }
             }
 
             if (contentEncoding.supportsDecoding()) {
                 for (String id : ids) {
+                    id = id.toLowerCase(Locale.ROOT);
                     decoders.putIfAbsent(id, contentEncoding.decoder());
                 }
             }
@@ -66,13 +74,70 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
         this.encodingEnabled = !encoders.isEmpty();
         this.decodingEnabled = !decoders.isEmpty();
+        this.contentEncodingIds = contentEncodingIds(config.contentEncodings());
 
-        encoders.put(IDENTITY_ENCODING, ContentEncoder.NO_OP);
-        decoders.put(IDENTITY_ENCODING, ContentDecoder.NO_OP);
+        encoders.put(AcceptEncoding.IDENTITY, ContentEncoder.NO_OP);
+        decoders.put(AcceptEncoding.IDENTITY, ContentDecoder.NO_OP);
+
+        Map<String, ContentEncoder> negotiatedEncoders = new HashMap<>();
+        for (String responseCoding : contentEncodingIds) {
+            ContentEncoder delegate = encoders.get(responseCoding);
+            String canonicalCoding = canonicalContentEncodings.getOrDefault(responseCoding, responseCoding);
+            if (responseCoding.equals(canonicalCoding)) {
+                negotiatedEncoders.put(responseCoding, delegate);
+            } else {
+                negotiatedEncoders.put(responseCoding, new ContentEncoder() {
+                    @Override
+                    public OutputStream apply(OutputStream network) {
+                        return delegate.apply(network);
+                    }
+
+                    @Override
+                    public void headers(WritableHeaders<?> headers) {
+                        delegate.headers(headers);
+                        headers.set(HeaderNames.CONTENT_ENCODING, responseCoding);
+                    }
+                });
+            }
+        }
 
         this.encoders = encoders;
+        this.canonicalContentEncodings = Map.copyOf(canonicalContentEncodings);
         this.decoders = decoders;
-        this.firstEncoder = firstEncoder;
+        this.negotiatedEncoders = Map.copyOf(negotiatedEncoders);
+    }
+
+    static List<String> contentEncodingIds(List<ContentEncoding> contentEncodings) {
+        Set<String> result = new LinkedHashSet<>();
+        for (ContentEncoding contentEncoding : contentEncodings) {
+            if (contentEncoding.supportsEncoding()) {
+                canonicalCoding(contentEncoding).ifPresent(result::add);
+                contentEncoding.ids()
+                        .stream()
+                        .map(id -> id.toLowerCase(Locale.ROOT))
+                        .filter(id -> !AcceptEncoding.IDENTITY.equals(id))
+                        .sorted()
+                        .forEach(result::add);
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    static Optional<String> canonicalEncodingId(List<ContentEncoding> contentEncodings, String encodingId) {
+        String normalized = Objects.requireNonNull(encodingId).toLowerCase(Locale.ROOT);
+        if (AcceptEncoding.IDENTITY.equals(normalized)) {
+            return Optional.of(AcceptEncoding.IDENTITY);
+        }
+        for (ContentEncoding contentEncoding : contentEncodings) {
+            if (contentEncoding.supportsEncoding()
+                    && contentEncoding.ids()
+                            .stream()
+                            .map(id -> id.toLowerCase(Locale.ROOT))
+                            .anyMatch(normalized::equals)) {
+                return canonicalCoding(contentEncoding);
+            }
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -87,17 +152,31 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
     @Override
     public boolean contentEncodingSupported(String encodingId) {
-        return encoders.get(encodingId) != null;
+        return encoders.get(encodingId.toLowerCase(Locale.ROOT)) != null;
+    }
+
+    @Override
+    public List<String> contentEncodingIds() {
+        return contentEncodingIds;
+    }
+
+    @Override
+    public Optional<String> canonicalEncodingId(String encodingId) {
+        String normalized = Objects.requireNonNull(encodingId).toLowerCase(Locale.ROOT);
+        if (!encoders.containsKey(normalized)) {
+            return Optional.empty();
+        }
+        return Optional.of(canonicalContentEncodings.getOrDefault(normalized, normalized));
     }
 
     @Override
     public boolean contentDecodingSupported(String encodingId) {
-        return decoders.get(encodingId) != null;
+        return decoders.get(encodingId.toLowerCase(Locale.ROOT)) != null;
     }
 
     @Override
     public ContentEncoder encoder(String encodingId) throws NoSuchElementException {
-        ContentEncoder encoder = encoders.get(encodingId);
+        ContentEncoder encoder = encoders.get(encodingId.toLowerCase(Locale.ROOT));
         if (encoder == null) {
             throw new NoSuchElementException("Encoding for " + encodingId + " not available");
         }
@@ -106,7 +185,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
     @Override
     public ContentDecoder decoder(String encodingId) throws NoSuchElementException {
-        ContentDecoder decoder = decoders.get(encodingId);
+        ContentDecoder decoder = decoders.get(encodingId.toLowerCase(Locale.ROOT));
         if (decoder == null) {
             throw new NoSuchElementException("Decoding for " + encodingId + " not available");
         }
@@ -116,27 +195,29 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
     @Override
     public ContentEncoder encoder(Headers headers) {
-        if (!contentEncodingEnabled() || !headers.contains(HeaderNames.ACCEPT_ENCODING)) {
+        if (!headers.contains(HeaderNames.ACCEPT_ENCODING)) {
             return ContentEncoder.NO_OP;
         }
 
-        String acceptEncoding = headers.get(HeaderNames.ACCEPT_ENCODING).get();
-        /*
-            Accept-Encoding: gzip
-            Accept-Encoding: gzip, compress, br
-            Accept-Encoding: br;q=1.0, gzip;q=0.8, *;q=0.1
-         */
-        List<EncodingWithQ> supported = encodings(acceptEncoding);
-        for (EncodingWithQ encodingWithQ : supported) {
-            if ("*".equals(encodingWithQ.encoding)) {
-                return firstEncoder;
-            }
-            if (contentEncodingSupported(encodingWithQ.encoding)) {
-                return encoders.get(encodingWithQ.encoding);
-            }
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(headers);
+        if (!acceptEncoding.valid()) {
+            throw new BadRequestException("Invalid Accept-Encoding header");
         }
 
-        return ContentEncoder.NO_OP;
+        if (!contentEncodingEnabled()) {
+            return ContentEncoder.NO_OP;
+        }
+
+        Optional<AcceptEncoding.CodingQuality> selected = acceptEncoding.best(contentEncodingIds);
+        if (selected.isEmpty()) {
+            throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true);
+        }
+        String selectedCoding = selected.get().coding();
+        if (AcceptEncoding.IDENTITY.equals(selectedCoding)) {
+            return ContentEncoder.NO_OP;
+        }
+
+        return negotiatedEncoders.get(selectedCoding);
     }
 
     @Override
@@ -144,72 +225,20 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         return config;
     }
 
-    /**
-     * Extract encodings from header value and sort them based on quality.
-     *
-     * @param acceptEncoding comma-separated list of encodings
-     * @return sorted list of encodings
-     */
-    static List<EncodingWithQ> encodings(String acceptEncoding) {
-        String[] values = acceptEncoding.split(",");
-        List<EncodingWithQ> supported = new ArrayList<>(values.length);
-        for (String value : values) {
-            supported.add(EncodingWithQ.parse(value));
+    private static Optional<String> canonicalCoding(ContentEncoding contentEncoding) {
+        Set<String> ids = contentEncoding.ids();
+        String type = contentEncoding.type().toLowerCase(Locale.ROOT);
+        for (String id : ids) {
+            String normalized = id.toLowerCase(Locale.ROOT);
+            if (type.equals(normalized) && !AcceptEncoding.IDENTITY.equals(normalized)) {
+                return Optional.of(normalized);
+            }
         }
-        Collections.sort(supported);
-        return supported;
+        return ids.stream()
+                .map(id -> id.toLowerCase(Locale.ROOT))
+                .filter(id -> !AcceptEncoding.IDENTITY.equals(id))
+                .sorted()
+                .findFirst();
     }
 
-    static class EncodingWithQ implements Comparable<EncodingWithQ> {
-        private final String encoding;
-        private final double q;
-
-        EncodingWithQ(String encoding, double q) {
-            this.encoding = encoding;
-            this.q = q;
-        }
-
-        static EncodingWithQ parse(String value) {
-            if (value.indexOf(';') != -1) {
-                int index = value.indexOf(';');
-                String encoding = value.substring(0, index).trim();
-                String qString = value.substring(index + 1); // q=0.1
-                index = qString.indexOf('=');
-                if (index == -1) {
-                    throw new IllegalArgumentException("Invalid q value for Accept-Encoding");
-                }
-                double q = Double.parseDouble(qString.substring(index + 1));
-                return new EncodingWithQ(encoding, q);
-            } else {
-                return new EncodingWithQ(value.trim(), 1);
-            }
-        }
-
-        @Override
-        public int compareTo(EncodingWithQ o) {
-            return Double.compare(o.q, this.q);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(encoding, q);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            EncodingWithQ that = (EncodingWithQ) o;
-            return Double.compare(that.q, q) == 0 && encoding.equals(that.encoding);
-        }
-
-        @Override
-        public String toString() {
-            return encoding + ";q=" + q;
-        }
-    }
 }

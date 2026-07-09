@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -41,59 +43,140 @@ record CachedHandlerInMemory(MediaType mediaType,
                              BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
                              byte[] bytes,
                              int contentLength,
-                             Header contentLengthHeader) implements CachedHandler {
+                             Header contentLengthHeader,
+                             ResponseRepresentation representation,
+                             SidecarCache sidecarCache) implements CachedHandler {
+
+    CachedHandlerInMemory(MediaType mediaType,
+                          Instant lastModified,
+                          BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
+                          byte[] bytes,
+                          int contentLength,
+                          Header contentLengthHeader) {
+        this(mediaType,
+             lastModified,
+             setLastModifiedHeader,
+             bytes,
+             contentLength,
+             contentLengthHeader,
+             ResponseRepresentation.plain());
+    }
+
+    CachedHandlerInMemory(MediaType mediaType,
+                          Instant lastModified,
+                          BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
+                          byte[] bytes,
+                          int contentLength,
+                          Header contentLengthHeader,
+                          ResponseRepresentation representation) {
+        this(mediaType,
+             lastModified,
+             setLastModifiedHeader,
+             bytes,
+             contentLength,
+             contentLengthHeader,
+             representation,
+             SidecarCache.create());
+    }
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
                           Method method,
                           ServerRequest request,
                           ServerResponse response,
-                          String requestedResource) {
+                          String requestedResource) throws IOException {
         // etag etc.
+        String etag = null;
         if (lastModified != null) {
-            processEtag(String.valueOf(lastModified.toEpochMilli()), request.headers(), response.headers());
-            processModifyHeaders(lastModified, request.headers(), response.headers(), setLastModifiedHeader);
+            etag = representation.etag(String.valueOf(lastModified.toEpochMilli()), contentLength);
+            try {
+                boolean ifNoneMatchPresent = processEtag(etag, representation.weakEtag(), request.headers(), response.headers());
+                processModifyHeaders(lastModified,
+                                     request.headers(),
+                                     response.headers(),
+                                     setLastModifiedHeader,
+                                     !ifNoneMatchPresent);
+            } catch (HttpException e) {
+                representation.apply(e);
+                e.header(representation.etagHeader(etag));
+                throw e;
+            }
         }
 
         response.headers().contentType(mediaType);
 
         if (method == Method.GET) {
-            send(request, response);
+            if (representation.runtimeEncoded()) {
+                representation.apply(response);
+                sendRuntimeEncoded(response);
+            } else {
+                send(request, response, etag);
+            }
         } else {
-            response.headers().set(contentLengthHeader());
+            representation.apply(response);
+            if (!representation.runtimeEncoded()) {
+                response.headers().set(contentLengthHeader());
+            }
             response.send();
         }
 
         return true;
     }
 
-    private void send(ServerRequest request, ServerResponse response) {
+    @Override
+    public CachedHandler withRepresentation(ResponseRepresentation representation) {
+        return new CachedHandlerInMemory(mediaType,
+                                         lastModified,
+                                         setLastModifiedHeader,
+                                         bytes,
+                                         contentLength,
+                                         contentLengthHeader,
+                                         representation,
+                                         sidecarCache);
+    }
+
+    @Override
+    public SidecarCache sidecarCache() {
+        return sidecarCache;
+    }
+
+    private void send(ServerRequest request, ServerResponse response, String etag) {
         ServerRequestHeaders headers = request.headers();
 
         if (headers.contains(HeaderNames.RANGE)) {
             long contentLength = contentLength();
-            List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
-                                                                   response,
-                                                                   headers.get(HeaderNames.RANGE).values(),
-                                                                   contentLength);
-            if (ranges.size() == 1) {
-                // single response
-                ByteRangeRequest range = ranges.getFirst();
+            try {
+                List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
+                                                                       response,
+                                                                       headers.get(HeaderNames.RANGE).values(),
+                                                                       contentLength,
+                                                                       etag,
+                                                                       representation.weakEtag());
+                if (ranges.size() == 1) {
+                    // single response
+                    ByteRangeRequest range = ranges.getFirst();
 
-                if (range.offset() > contentLength()) {
-                    throw new HttpException("Invalid range offset", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+                    if (range.offset() > contentLength()) {
+                        throw new HttpException("Invalid range offset", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+                    }
+                    if (range.length() > (contentLength() - range.offset())) {
+                        throw new HttpException("Invalid length", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+                    }
+
+                    representation.apply(response);
+                    range.setContentRange(response);
+
+                    // only send a part of the file
+                    response.send(Arrays.copyOfRange(bytes(),
+                                                     (int) range.offset(),
+                                                     (int) (range.offset() + range.length())));
+                } else {
+                    // not supported, send full
+                    send(response);
                 }
-                if (range.length() > (contentLength() - range.offset())) {
-                    throw new HttpException("Invalid length", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
-                }
-
-                range.setContentRange(response);
-
-                // only send a part of the file
-                response.send(Arrays.copyOfRange(bytes(), (int) range.offset(), (int) range.length()));
-            } else {
-                // not supported, send full
-                send(response);
+            } catch (HttpException e) {
+                representation.apply(e);
+                throw e;
             }
         } else {
             send(response);
@@ -101,7 +184,14 @@ record CachedHandlerInMemory(MediaType mediaType,
     }
 
     private void send(ServerResponse response) {
+        representation.apply(response);
         response.headers().set(contentLengthHeader());
         response.send(bytes());
+    }
+
+    private void sendRuntimeEncoded(ServerResponse response) throws IOException {
+        try (OutputStream out = representation.outputStream(response.outputStream())) {
+            out.write(bytes);
+        }
     }
 }

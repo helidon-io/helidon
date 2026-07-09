@@ -41,6 +41,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpException;
+import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
@@ -333,6 +334,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         headers.clear();
         streamingEntity = false;
         outputStream = null;
+        resetAutomaticContentEncoding();
         return true;
     }
 
@@ -343,6 +345,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
         streamingEntity = false;
         outputStream = null;
+        resetAutomaticContentEncoding();
         return true;
     }
 
@@ -468,7 +471,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             headers.remove(HeaderNames.CONTENT_LENGTH);
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;
-        } else if (!headers.contains(HeaderNames.CONTENT_LENGTH)) {
+        } else if (!headers.contains(HeaderNames.CONTENT_LENGTH) && !omitImplicitContentLength(length)) {
             headers.contentLength(length);
         }
 
@@ -552,6 +555,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         return code == Status.NO_CONTENT_204.code()
                 || code == Status.RESET_CONTENT_205.code()
                 || code == Status.NOT_MODIFIED_304.code();
+    }
+
+    private boolean omitImplicitContentLength(int length) {
+        return length == 0
+                && request.prologue().method() == Method.HEAD
+                && headers.contains(HeaderNames.CONTENT_ENCODING);
     }
 
     static class BlockingOutputStream extends OutputStream {

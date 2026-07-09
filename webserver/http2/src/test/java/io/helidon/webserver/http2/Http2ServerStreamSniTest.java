@@ -27,12 +27,14 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.common.uri.UriAuthority;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ConnectionWriter;
@@ -370,6 +372,77 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
+    void requestExceptionAfterRemoteEndStreamReturnsErrorResponse() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        Http2ServerStream stream = stream(streams,
+                                          writer,
+                                          new ArrayList<>(),
+                                          sniContext(),
+                                          NO_OP_RESET_TRACKER,
+                                          List.of(),
+                                          8192,
+                                          rejectingRouting());
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithAuthority("api.example.com"), true);
+
+        stream.run();
+
+        assertThat(writer.status, is(Status.BAD_REQUEST_400));
+        assertThat(writer.rstStreamCount, is(0));
+        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+    }
+
+    @Test
+    void peerResetBeforeRequestExceptionSuppressesErrorResponse() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        Http2ServerStream stream = stream(streams,
+                                          writer,
+                                          new ArrayList<>(),
+                                          sniContext(),
+                                          NO_OP_RESET_TRACKER,
+                                          List.of(),
+                                          8192,
+                                          rejectingRouting());
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithAuthority("api.example.com"), true);
+        boolean rapidReset = stream.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+
+        stream.run();
+
+        assertThat(rapidReset, is(true));
+        assertThat(writer.status, is(nullValue()));
+        assertThat(writer.rstStreamCount, is(0));
+        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+    }
+
+    @Test
+    void localResetBeforeRequestExceptionSuppressesErrorResponse() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        Http2ServerStream stream = stream(streams,
+                                          writer,
+                                          new ArrayList<>(),
+                                          sniContext(),
+                                          NO_OP_RESET_TRACKER,
+                                          List.of(),
+                                          8192,
+                                          rejectingRouting());
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithAuthority("api.example.com"), false);
+
+        stream.resetInvalidContentLength(0, false, stream::run);
+
+        assertThat(writer.status, is(nullValue()));
+        assertThat(writer.rstStreamCount, is(1));
+        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+    }
+
+    @Test
     void rejectedStreamCompletionCannotUndercountPeerReset() throws Exception {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingConnectionWriter writer = new RecordingConnectionWriter(true);
@@ -529,7 +602,8 @@ class Http2ServerStreamSniTest {
                       sniContext,
                       resetTracker,
                       subProtocolSelectors,
-                      8192);
+                      8192,
+                      HttpRouting.empty());
     }
 
     private static Http2ServerStream stream(Http2ConnectionStreams streams,
@@ -539,6 +613,24 @@ class Http2ServerStreamSniTest {
                                             Http2ServerStream.LocallyResetStreamTracker resetTracker,
                                             List<Http2SubProtocolSelector> subProtocolSelectors,
                                             int initialWindowSize) {
+        return stream(streams,
+                      writer,
+                      windowUpdates,
+                      sniContext,
+                      resetTracker,
+                      subProtocolSelectors,
+                      initialWindowSize,
+                      HttpRouting.empty());
+    }
+
+    private static Http2ServerStream stream(Http2ConnectionStreams streams,
+                                            Http2StreamWriter writer,
+                                            List<WindowUpdate> windowUpdates,
+                                            SniContext sniContext,
+                                            Http2ServerStream.LocallyResetStreamTracker resetTracker,
+                                            List<Http2SubProtocolSelector> subProtocolSelectors,
+                                            int initialWindowSize,
+                                            HttpRouting routing) {
         Http2Config config = Http2Config.builder()
                 .initialWindowSize(initialWindowSize)
                 .maxFrameSize(16384)
@@ -551,7 +643,7 @@ class Http2ServerStreamSniTest {
         return new Http2ServerStream(connectionContext(sniContext),
                                      streams,
                                      resetTracker,
-                                     HttpRouting.empty(),
+                                     routing,
                                      config,
                                      subProtocolSelectors,
                                      STREAM_ID,
@@ -562,6 +654,14 @@ class Http2ServerStreamSniTest {
                                      new Http2ConnectionChecks(config, mock(Http2Connection.class)));
     }
 
+    private static HttpRouting rejectingRouting() {
+        return HttpRouting.builder()
+                .get("/", (_, _) -> {
+                    throw new BadRequestException("Rejected request");
+                })
+                .build();
+    }
+
     private static ConnectionContext connectionContext() {
         return connectionContext(sniContext());
     }
@@ -569,6 +669,7 @@ class Http2ServerStreamSniTest {
     private static ConnectionContext connectionContext(SniContext sniContext) {
         ListenerContext listenerContext = mock(ListenerContext.class);
         when(listenerContext.config()).thenReturn(ListenerConfig.create());
+        when(listenerContext.contentEncodingContext()).thenReturn(ContentEncodingContext.create());
         when(listenerContext.directHandlers()).thenReturn(DirectHandlers.create());
 
         ConnectionContext ctx = mock(ConnectionContext.class);

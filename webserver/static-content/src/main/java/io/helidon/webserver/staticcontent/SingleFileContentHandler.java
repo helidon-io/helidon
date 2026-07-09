@@ -17,7 +17,9 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -31,19 +33,24 @@ class SingleFileContentHandler extends FileBasedContentHandler {
 
     private final boolean cacheInMemory;
     private final Path path;
+    private final Path configuredParent;
     // The configured file is pinned for the handler instance lifetime, including stop/start cycles.
     private final AtomicReference<Path> realPath = new AtomicReference<>();
+    // The configured parent is pinned separately for resolving sibling pre-compressed files.
+    private final AtomicReference<Path> realParent = new AtomicReference<>();
 
     SingleFileContentHandler(FileSystemHandlerConfig config) {
         super(config);
 
         this.cacheInMemory = config.cachedFiles().contains(".") || config.cachedFiles().contains("/");
         this.path = config.location().toAbsolutePath().normalize();
+        this.configuredParent = Objects.requireNonNull(path.getParent());
     }
 
     @Override
     public void beforeStart() {
         try {
+            realParent();
             Optional<Path> maybeResolvedPath = contentPath(path);
             if (cacheInMemory) {
                 // directly cache in memory
@@ -81,9 +88,12 @@ class SingleFileContentHandler extends FileBasedContentHandler {
             String resource = ".";
             Optional<CachedHandler> cachedHandler = cacheHandler(resource);
             if (cachedHandler.isPresent()) {
-                return cachedHandler.get().handle(handlerCache(), method, req, res, resource);
+                CachedHandler identityHandler = cachedHandler.get();
+                CachedHandler handler = selectSingleFileHandler(identityHandler, req);
+                return handler.handle(handlerCache(), method, req, res, ".");
             }
-            return cacheFileHandler().handle(handlerCache(), method, req, res, ".");
+            CachedHandler handler = cacheFileHandler();
+            return selectSingleFileHandler(handler, req).handle(handlerCache(), method, req, res, ".");
         }
 
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -105,6 +115,29 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         return handler;
     }
 
+    private CachedHandler selectSingleFileHandler(CachedHandler identityHandler, ServerRequest request)
+            throws IOException {
+        String logicalFileName = fileName(path);
+        try {
+            return selectHandler(identityHandler, request, (coding, suffix) -> {
+                Path sidecar = path.resolveSibling(logicalFileName + "." + suffix);
+                if (sidecarPath(sidecar).isEmpty()) {
+                    return Optional.empty();
+                }
+                return Optional.of(new CachedHandlerPath(sidecar,
+                                                         detectType(logicalFileName),
+                                                         FileBasedContentHandler::lastModified,
+                                                         ServerResponseHeaders::lastModified,
+                                                         this::sidecarPath,
+                                                         false,
+                                                         it -> Optional.ofNullable(realParent.get()),
+                                                         ResponseRepresentation.encoded(coding)));
+            });
+        } catch (java.net.URISyntaxException e) {
+            throw new IOException(e);
+        }
+    }
+
     private Optional<Path> contentPath(Path path) {
         try {
             Path currentRealPath = path.toRealPath();
@@ -123,6 +156,45 @@ class SingleFileContentHandler extends FileBasedContentHandler {
                 return Optional.of(currentRealPath);
             }
             return Optional.empty();
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Path> sidecarPath(Path sidecar) {
+        if (!sidecar.startsWith(configuredParent) || !Files.exists(sidecar)) {
+            return Optional.empty();
+        }
+
+        try {
+            Optional<Path> maybeRealParent = realParent();
+            if (maybeRealParent.isEmpty()) {
+                return Optional.empty();
+            }
+            Path currentRealParent = maybeRealParent.get();
+            Path expectedPath = currentRealParent.resolve(configuredParent.relativize(sidecar)).normalize();
+            Path expectedRealPath = expectedPath.toRealPath();
+            Path resolvedSidecar = sidecar.toRealPath();
+            if (expectedRealPath.startsWith(currentRealParent) && resolvedSidecar.equals(expectedRealPath)) {
+                return Optional.of(resolvedSidecar);
+            }
+            return Optional.empty();
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Path> realParent() {
+        Path currentRealParent = realParent.get();
+        if (currentRealParent != null) {
+            return Optional.of(currentRealParent);
+        }
+        try {
+            Path resolvedParent = configuredParent.toRealPath();
+            if (realParent.compareAndSet(null, resolvedParent)) {
+                return Optional.of(resolvedParent);
+            }
+            return Optional.ofNullable(realParent.get());
         } catch (IOException | SecurityException e) {
             return Optional.empty();
         }

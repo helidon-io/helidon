@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,17 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 
+import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -32,6 +38,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ByteRangeRequestTest {
+    private static final String FIRST_BYTE_RANGE = HeaderValues.create(HeaderNames.RANGE, "bytes=0-0").values();
+
     @Test
     void testFromUntilEnd() {
         Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=49-");
@@ -125,5 +133,68 @@ class ByteRangeRequestTest {
         assertThat(byteRange.fileLength(), is(50L));
         assertThat(byteRange.offset(), is(0L));
         assertThat(byteRange.length(), is(50L)); //(bytes 0 to 49)
+    }
+
+    @Test
+    void testIfRangeDateIsNotStrongValidator() {
+        Instant lastModified = Instant.parse("2026-06-30T12:00:00.123456Z");
+        ServerRequest req = requestWithIfRange(lastModified);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        List<ByteRangeRequest> requests = ByteRangeRequest.parse(req,
+                                                                 res,
+                                                                 FIRST_BYTE_RANGE,
+                                                                 50,
+                                                                 null,
+                                                                 false);
+
+        assertThat(requests, is(List.of()));
+    }
+
+    @Test
+    void testIfRangeDateRequiresExactMatch() {
+        Instant lastModified = Instant.parse("2026-06-30T12:00:00.123456Z");
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        assertThat(ByteRangeRequest.parse(requestWithIfRange(lastModified.minusSeconds(1)),
+                                          res,
+                                          FIRST_BYTE_RANGE,
+                                          50,
+                                          null,
+                                          false),
+                   is(List.of()));
+        assertThat(ByteRangeRequest.parse(requestWithIfRange(lastModified.plusSeconds(1)),
+                                          res,
+                                          FIRST_BYTE_RANGE,
+                                          50,
+                                          null,
+                                          false),
+                   is(List.of()));
+    }
+
+    @Test
+    void testMalformedIfRangeEntityTagDoesNotMatch() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.IF_RANGE, "\"");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        Mockito.when(req.headers()).thenReturn(ServerRequestHeaders.create(headers));
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        assertThat(ByteRangeRequest.parse(req,
+                                          res,
+                                          FIRST_BYTE_RANGE,
+                                          50,
+                                          "123",
+                                          false),
+                   is(List.of()));
+    }
+
+    private static ServerRequest requestWithIfRange(Instant ifRange) {
+        String value = ZonedDateTime.ofInstant(ifRange, ZoneOffset.UTC).format(DateTime.RFC_1123_DATE_TIME);
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.IF_RANGE, value);
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        Mockito.when(req.headers()).thenReturn(ServerRequestHeaders.create(headers));
+        return req;
     }
 }
