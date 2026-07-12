@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfigSources;
+import io.helidon.config.mp.spi.MpConfigFilter;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 import io.helidon.config.yaml.mp.YamlMpConfigSource;
 
@@ -176,6 +177,25 @@ class AdvancedConfigurationSnippets {
                 .withSources(MpConfigSources.create(helidonConfig)) // <2>
                 .build();
         // end::snippet_6[]
+    }
+
+    class Snippet7 {
+        // tag::snippet_7[]
+        public class TrimAppPropertiesFilter implements MpConfigFilter {
+            @Override
+            public void init(Config config) { // <1>
+                // Optional: read higher-priority configuration to set up this filter
+            }
+
+            @Override
+            public String apply(String propertyName, String value) {
+                if (propertyName.startsWith("app.") && value != null) { // <2>
+                    return value.trim();
+                }
+                return value; // <3>
+            }
+        }
+        // end::snippet_7[]
     }
 
 }
