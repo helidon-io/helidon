@@ -37,6 +37,7 @@ import io.helidon.security.SecurityResponse;
 import io.helidon.security.integration.common.AtnTracing;
 import io.helidon.security.integration.common.AtzTracing;
 import io.helidon.security.integration.common.SecurityTracing;
+import io.helidon.webserver.ServerRequest;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -51,6 +52,7 @@ import org.glassfish.jersey.server.ContainerRequest;
 abstract class SecurityFilterCommon {
     static final String PROP_FILTER_CONTEXT = "io.helidon.security.jersey.FilterContext";
 
+    private static final String PROP_REQUESTED_URI = "io.helidon.jaxrs.requested-uri";
     private static final List<SecurityResponseMapper> RESPONSE_MAPPERS = HelidonServiceLoader
             .builder(ServiceLoader.load(SecurityResponseMapper.class)).build().asList();
 
@@ -70,7 +72,9 @@ abstract class SecurityFilterCommon {
         this.featureConfig = featureConfig;
     }
 
-    protected void doFilter(ContainerRequestContext request, SecurityContext securityContext) {
+    protected void doFilter(ContainerRequestContext request,
+                            SecurityContext securityContext,
+                            ServerRequest serverRequest) {
         SecurityTracing tracing = SecurityTracing.get();
         tracing.securityContext(securityContext);
 
@@ -84,13 +88,22 @@ abstract class SecurityFilterCommon {
 
         URI requestUri = request.getUriInfo().getRequestUri();
         String query = requestUri.getRawQuery();
-        String path = requestUri.getRawPath();
-        path = path == null || path.isEmpty() ? "/" : path;
+        String rawPath = requestUri.getRawPath();
+        rawPath = rawPath == null || rawPath.isEmpty() ? "/" : rawPath;
+        Object requestedUriProperty = request.getProperty(PROP_REQUESTED_URI);
+        if (requestedUriProperty instanceof io.helidon.common.http.UriInfo requestedUri) {
+            String requestedPath = requestedUri.path();
+            String serverPath = serverRequest.path().absolute().toString();
+            // Preserve raw path encoding while adding the externally requested prefix.
+            if (requestedPath != null && requestedPath.endsWith(serverPath)) {
+                rawPath = requestedPath.substring(0, requestedPath.length() - serverPath.length()) + rawPath;
+            }
+        }
         String origRequest;
         if ((null == query) || query.isEmpty()) {
-            origRequest = path;
+            origRequest = rawPath;
         } else {
-            origRequest = path + "?" + query;
+            origRequest = rawPath + "?" + query;
         }
         Map<String, List<String>> allHeaders = new HashMap<>(filterContext.getHeaders());
         allHeaders.put(Security.HEADER_ORIG_URI, List.of(origRequest));

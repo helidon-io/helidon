@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.common.SecurityTracing;
+import io.helidon.webserver.ServerRequest;
 
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.ConstrainedTo;
@@ -53,6 +54,9 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
     @Context
     private UriInfo uriInfo;
 
+    @Context
+    private ServerRequest serverRequest;
+
     @Override
     public void filter(ContainerRequestContext request) {
         SecurityTracing tracing = SecurityTracing.get();
@@ -75,7 +79,7 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
                 .set(securityContext);
 
         if (featureConfig().shouldUsePrematchingAuthentication()) {
-            doFilter(request, securityContext);
+            doFilter(request, securityContext, serverRequest);
         }
     }
 

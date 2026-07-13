@@ -18,9 +18,12 @@ package io.helidon.security.integration.jersey;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.HttpRequest;
+import io.helidon.common.http.UriInfo;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
@@ -28,6 +31,7 @@ import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.integration.common.SecurityTracing;
+import io.helidon.webserver.ServerRequest;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -176,8 +180,6 @@ class SecurityFilterTest {
         SecurityFilter.FilterContext filterContext = new SecurityFilter.FilterContext();
         filterContext.setJerseyRequest(request);
 
-        SecurityDefinition methodSecurity = mock(SecurityDefinition.class);
-
         SecurityClientBuilder<AuthorizationResponse> clientBuilder = mock(SecurityClientBuilder.class);
         when(clientBuilder.buildAndGet()).thenReturn(AuthorizationResponse.builder()
                                                              .description("Unit-test")
@@ -210,10 +212,144 @@ class SecurityFilterTest {
         when(uriInfo.getRequestUri()).thenReturn(requestUri);
         when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
 
-        filter.doFilter(request, securityContext);
+        filter.doFilter(request, securityContext, mock(ServerRequest.class));
 
         assertThat(securityContext.env().headers().get(Security.HEADER_ORIG_URI),
                    is(List.of("/raw%2Fresource?return=https%3A%2F%2Fexample.com%2Ftest")));
+    }
+
+    @Test
+    void testOriginalUriHeaderUsesRequestedUriPrefix() {
+        SecurityContext securityContext = security.createContext("testOriginalUriHeaderUsesRequestedUriPrefix");
+        SecurityFilterCommon filter = new TestSecurityFilter(security);
+        ContainerRequest request = mock(ContainerRequest.class);
+        ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
+        URI requestUri = URI.create("http://example.org/v1/raw%2Fresource?return=https%3A%2F%2Fexample.com%2Ftest");
+        UriInfo requestedUri = new UriInfo("https",
+                                           "example.org",
+                                           443,
+                                           "/api/audit-mgmt/auditexemptions/v1/raw/resource",
+                                           Optional.of("return=https%3A%2F%2Fexample.com%2Ftest"));
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+
+        headers.put("Host", List.of("example.org"));
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getUriInfo()).thenReturn(uriInfo);
+        when(request.getHeaders()).thenReturn(headers);
+        when(request.getProperty("io.helidon.jaxrs.requested-uri")).thenReturn(requestedUri);
+        when(uriInfo.getRequestUri()).thenReturn(requestUri);
+        when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
+
+        filter.doFilter(request, securityContext, serverRequest("/v1/raw/resource"));
+
+        assertThat(securityContext.env().headers().get(Security.HEADER_ORIG_URI),
+                   is(List.of("/api/audit-mgmt/auditexemptions/v1/raw%2Fresource"
+                                      + "?return=https%3A%2F%2Fexample.com%2Ftest")));
+    }
+
+    @Test
+    void testOriginalUriHeaderUsesCanonicalRequestedUriPath() {
+        assertOriginalUriHeader("http://example.org/v1/a/%2E%2E/raw%2Fresource/",
+                                "/api/audit-mgmt/auditexemptions/v1/raw/resource",
+                                "/v1/raw/resource",
+                                Optional.empty(),
+                                "/api/audit-mgmt/auditexemptions/v1/a/%2E%2E/raw%2Fresource/");
+    }
+
+    @Test
+    void testOriginalUriHeaderUsesCanonicalRequestedUriPathWithLeadingParent() {
+        assertOriginalUriHeader("http://example.org/%2E%2E/admin/secret",
+                                "/api/admin/secret",
+                                "/admin/secret",
+                                Optional.empty(),
+                                "/api/%2E%2E/admin/secret");
+    }
+
+    @Test
+    void testOriginalUriHeaderUsesCanonicalRequestedUriPathWithLeadingSlash() {
+        assertOriginalUriHeader("http://example.org/%2Fadmin/secret",
+                                "/api/admin/secret",
+                                "/admin/secret",
+                                Optional.empty(),
+                                "/api/%2Fadmin/secret");
+    }
+
+    @Test
+    void testOriginalUriHeaderUsesMatrixParameterPath() {
+        assertOriginalUriHeader("http://example.org/a%3Bx=1/%2E%2E/b",
+                                "/a;x=1/../b",
+                                "/a;x=1/../b",
+                                Optional.empty(),
+                                "/a%3Bx=1/%2E%2E/b");
+    }
+
+    @Test
+    void testOriginalUriHeaderUsesRequestedUriPrefixWithMatrixParameterPath() {
+        assertOriginalUriHeader("http://example.org/v1/a%2F/resource;v=1",
+                                "/api/v1/a//resource;v=1",
+                                "/v1/a//resource;v=1",
+                                Optional.empty(),
+                                "/api/v1/a%2F/resource;v=1");
+    }
+
+    @Test
+    void testOriginalUriHeaderKeepsJerseyQueryAfterUriRewrite() {
+        assertOriginalUriHeader("http://example.org/new?new=2",
+                                "/legacy",
+                                "/legacy",
+                                Optional.of("old=1"),
+                                "/new?new=2");
+    }
+
+    @Test
+    void testOriginalUriHeaderKeepsJerseyQueryWithRequestedUriPrefix() {
+        assertOriginalUriHeader("http://example.org/new?new=2",
+                                "/api/new",
+                                "/new",
+                                Optional.of("old=1"),
+                                "/api/new?new=2");
+    }
+
+    @Test
+    void testOriginalUriHeaderUsesRequestedUriPrefixAfterPathRewrite() {
+        assertOriginalUriHeader("http://example.org/resource?new=2",
+                                "/api/v1/resource",
+                                "/v1/resource",
+                                Optional.of("old=1"),
+                                "/api/resource?new=2");
+    }
+
+    private void assertOriginalUriHeader(String requestUriString,
+                                         String requestedPath,
+                                         String serverPath,
+                                         Optional<String> requestedQuery,
+                                         String expected) {
+        SecurityContext securityContext = security.createContext("testOriginalUriHeaderUsesCanonicalRequestedUriPath");
+        SecurityFilterCommon filter = new TestSecurityFilter(security);
+        ContainerRequest request = mock(ContainerRequest.class);
+        ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
+        URI requestUri = URI.create(requestUriString);
+        UriInfo requestedUri = new UriInfo("https", "example.org", 443, requestedPath, requestedQuery);
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+        headers.put("Host", List.of("example.org"));
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getUriInfo()).thenReturn(uriInfo);
+        when(request.getHeaders()).thenReturn(headers);
+        when(request.getProperty("io.helidon.jaxrs.requested-uri")).thenReturn(requestedUri);
+        when(uriInfo.getRequestUri()).thenReturn(requestUri);
+        when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
+        filter.doFilter(request, securityContext, serverRequest(serverPath));
+        assertThat(securityContext.env().headers().get(Security.HEADER_ORIG_URI),
+                   is(List.of(expected)));
+    }
+
+    private static ServerRequest serverRequest(String path) {
+        ServerRequest serverRequest = mock(ServerRequest.class);
+        HttpRequest.Path requestPath = mock(HttpRequest.Path.class);
+        when(serverRequest.path()).thenReturn(requestPath);
+        when(requestPath.absolute()).thenReturn(requestPath);
+        when(requestPath.toString()).thenReturn(path);
+        return serverRequest;
     }
 
     private static Application getApplication() {
