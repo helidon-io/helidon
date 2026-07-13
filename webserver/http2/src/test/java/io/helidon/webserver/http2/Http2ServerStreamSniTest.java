@@ -889,7 +889,11 @@ class Http2ServerStreamSniTest {
         }).when(handler).init();
         doAnswer(_ -> {
             resetThread.set(Thread.currentThread());
-            initRelease.countDown();
+            try {
+                interrupted.await(5, TimeUnit.SECONDS);
+            } finally {
+                initRelease.countDown();
+            }
             return null;
         }).when(handler).rstStream(any(Http2RstStream.class));
         Http2SubProtocolSelector selector = (ctx,
