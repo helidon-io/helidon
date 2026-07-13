@@ -414,9 +414,6 @@ class GrpcTeTrailersTest {
                         if (firstResponseReceived.compareAndSet(false, true)) {
                             postReleaseProgress.countDown();
                         }
-                        if (postReleaseProgress.getCount() == 0) {
-                            break;
-                        }
                     }
                 } finally {
                     responseStream.compareAndSet(responses, null);
