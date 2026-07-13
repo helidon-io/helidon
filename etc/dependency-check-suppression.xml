@@ -521,5 +521,40 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
     <packageUrl regex="true">^pkg:maven/com\.graphql-java/java-dataloader@.*$</packageUrl>
     <cve>CVE-2023-28867</cve>
 </suppress>
+<!-- Under dispute
+     These CVEs are being disputed. For details see:
+     https://github.com/HdrHistogram/HdrHistogram/issues/222
+     https://github.com/HdrHistogram/HdrHistogram/issues/221
+     https://github.com/HdrHistogram/HdrHistogram/issues/220
+     https://github.com/HdrHistogram/HdrHistogram/issues/218
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14683</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14685</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14686</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14684</vulnerabilityName>
+</suppress>
 
 </suppressions>
