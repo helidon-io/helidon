@@ -254,9 +254,9 @@ class GrpcTeTrailersTest {
                                         responseListener) {
                                     @Override
                                     public void onClose(Status status, Metadata trailers) {
+                                        super.onClose(status, trailers);
                                         closedStatus.set(status);
                                         callClosed.countDown();
-                                        super.onClose(status, trailers);
                                     }
                                 }, headers);
                             }
@@ -267,18 +267,21 @@ class GrpcTeTrailersTest {
 
         try (Stream<Strings.StringMessage> responses = timeoutClient.serviceClient(timeoutServiceDescriptor)
                 .serverStreaming("PauseAfterTwo", Strings.StringMessage.getDefaultInstance())) {
-            Iterator<Strings.StringMessage> iterator = responses.iterator();
-            assertThat(iterator.next().getText(), is("one"));
-            assertThat("client call closed after response demand timeout",
-                       callClosed.await(10, TimeUnit.SECONDS),
-                       is(true));
-            assertThat(closedStatus.get().getCode(), is(Status.Code.CANCELLED));
+            try {
+                Iterator<Strings.StringMessage> iterator = responses.iterator();
+                assertThat(iterator.next().getText(), is("one"));
+                assertThat("client call closed after response demand timeout",
+                           callClosed.await(10, TimeUnit.SECONDS),
+                           is(true));
+                assertThat(closedStatus.get().getCode(), is(Status.Code.CANCELLED));
 
-            StatusRuntimeException failure = assertThrows(StatusRuntimeException.class,
-                                                          iterator::hasNext);
-            assertThat(failure.getStatus().getCode(), is(Status.Code.CANCELLED));
-        } finally {
-            release.countDown();
+                StatusRuntimeException failure = assertTimeoutPreemptively(Duration.ofSeconds(10),
+                                                                           () -> assertThrows(StatusRuntimeException.class,
+                                                                                              iterator::hasNext));
+                assertThat(failure.getStatus().getCode(), is(Status.Code.CANCELLED));
+            } finally {
+                release.countDown();
+            }
         }
     }
 
