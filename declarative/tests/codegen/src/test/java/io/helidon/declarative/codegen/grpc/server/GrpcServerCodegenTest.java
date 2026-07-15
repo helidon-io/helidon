@@ -1200,6 +1200,74 @@ class GrpcServerCodegenTest {
     }
 
     @Test
+    void grpcMethodSecurityAnnotationsOverrideInheritedPermitAll() throws IOException {
+        var result = compileGrpcService("grpc-server-method-security-overrides-permit-all",
+                                        """
+                                                import io.helidon.security.annotations.Authenticated;
+                                                import jakarta.annotation.security.PermitAll;
+                                                """,
+                                        "@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)",
+                                        "implements PermittedGreetingGrpc",
+                                        """
+                                                @Override
+                                                @Grpc.Unary("AuthenticatedHello")
+                                                @Authenticated
+                                                public GreetingReply authenticatedHello(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
+
+                                                @Override
+                                                @Grpc.Unary("AuthorizedHello")
+                                                @Authorized
+                                                public GreetingReply authorizedHello(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
+
+                                                @Override
+                                                @Grpc.Unary("PermitAllHello")
+                                                @PermitAll
+                                                public GreetingReply permitAllHello(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
+                                                """,
+                                        PROTO_DESCRIPTOR_SOURCE,
+                                        """
+                                                package com.example;
+
+                                                import io.helidon.security.annotations.Authenticated;
+                                                import io.helidon.security.annotations.Authorized;
+                                                import jakarta.annotation.security.PermitAll;
+
+                                                interface PermittedGreetingGrpc {
+                                                    @PermitAll
+                                                    GreetingReply authenticatedHello(GreetingRequest request);
+
+                                                    @PermitAll
+                                                    GreetingReply authorizedHello(GreetingRequest request);
+
+                                                    @Authenticated
+                                                    @Authorized
+                                                    GreetingReply permitAllHello(GreetingRequest request);
+                                                }
+                                                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedRegistration = result.sourceOutput().resolve("com/example/GreetingGrpc__GrpcRegistration.java");
+        String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
+        assertThat(registration,
+                   containsString("GrpcSecurity.enforce().authenticate().authenticationOptional(false)"
+                                          + ".clearAuthenticator().skipAuthorization()"));
+        assertThat(registration,
+                   containsString("GrpcSecurity.enforce().skipAuthentication().authorize().clearAuthorizer()"));
+        assertThat(registration,
+                   containsString("GrpcSecurity.enforce().skipAuthentication().authenticationOptional(false)"
+                                          + ".clearAuthenticator().skipAuthorization().clearAuthorizer()"
+                                          + ".clearRolesAllowed()"));
+    }
+
+    @Test
     void grpcClassWithEmptyRolesAllowedDeniesAll() throws IOException {
         var result = compileGrpcService("grpc-server-class-empty-roles",
                                         "import jakarta.annotation.security.RolesAllowed;",

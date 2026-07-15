@@ -156,6 +156,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                         .filter(not(String::isBlank)),
                                 protoDescriptor,
                                 security(typeAnnotations,
+                                         serverEndpoint.annotations(),
                                          serverEndpoint.typeName().fqName(),
                                          serverEndpoint.originatingElementValue()),
                                 List.copyOf(methods));
@@ -271,6 +272,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                           requestType,
                                           responseType,
                                           security(annotations,
+                                                   method.annotations(),
                                                    serverEndpoint.typeName().fqName() + "." + method.elementName() + "()",
                                                    method.originatingElementValue())));
     }
@@ -314,7 +316,10 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         return name.isBlank() ? method.elementName() : name;
     }
 
-    private static GrpcSecurityDefinition security(List<Annotation> annotations, String target, Object originatingElement) {
+    private static GrpcSecurityDefinition security(List<Annotation> annotations,
+                                                   List<Annotation> directAnnotations,
+                                                   String target,
+                                                   Object originatingElement) {
         Optional<Annotation> authenticated = Annotations.findFirst(SECURITY_AUTHENTICATED, annotations);
         Optional<Annotation> authorized = Annotations.findFirst(SECURITY_AUTHORIZED, annotations);
         Optional<Annotation> audited = Annotations.findFirst(SECURITY_AUDITED, annotations);
@@ -342,6 +347,10 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         }
 
         boolean hasPermitAll = permitAll.isPresent() || rolePermitAll.isPresent();
+        boolean hasDirectAuthenticated = Annotations.findFirst(SECURITY_AUTHENTICATED, directAnnotations).isPresent();
+        boolean hasDirectAuthorized = Annotations.findFirst(SECURITY_AUTHORIZED, directAnnotations).isPresent();
+        boolean hasDirectPermitAll = Annotations.findFirst(SECURITY_PERMIT_ALL, directAnnotations).isPresent()
+                || Annotations.findFirst(SECURITY_ROLE_PERMIT_ALL, directAnnotations).isPresent();
         boolean syntheticDenyAll = hasRolesAllowed && rolesAllowed.isEmpty();
         boolean hasDenyAll = denyAll.isPresent() || syntheticDenyAll;
         boolean securityLevel = authenticated.isPresent()
@@ -370,8 +379,12 @@ class GrpcServerExtension implements RegistryCodegenExtension {
             authenticate = Optional.of(false);
             authorize = Optional.of(true);
         } else if (hasPermitAll) {
-            authenticate = Optional.of(false);
-            authorize = Optional.of(false);
+            if (hasDirectPermitAll || !hasDirectAuthenticated) {
+                authenticate = Optional.of(false);
+            }
+            if (hasDirectPermitAll || !hasDirectAuthorized) {
+                authorize = Optional.of(false);
+            }
         } else if (hasRoleValidatorRoles || hasAbacAnnotation) {
             if (authenticate.isEmpty()) {
                 authenticate = Optional.of(true);

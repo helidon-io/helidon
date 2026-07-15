@@ -42,7 +42,14 @@ import io.helidon.webserver.grpc.GrpcStreams;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
+import io.grpc.CallOptions;
+import io.grpc.Channel;
+import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
+import io.grpc.ForwardingClientCall;
+import io.grpc.ForwardingClientCallListener;
 import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
@@ -94,7 +101,6 @@ class GrpcTeTrailersTest {
     private static final AtomicReference<CountDownLatch> floodCompleted = new AtomicReference<>();
     private static final AtomicReference<CountDownLatch> resetRelease = new AtomicReference<>();
     private static final AtomicReference<CountDownLatch> resetThrown = new AtomicReference<>();
-    private static final AtomicReference<CountDownLatch> timeoutSecondSent = new AtomicReference<>();
     private static final AtomicReference<CountDownLatch> timeoutRelease = new AtomicReference<>();
     private static final AtomicReference<CountDownLatch> pausedStarted = new AtomicReference<>();
     private static final AtomicReference<CountDownLatch> pausedRelease = new AtomicReference<>();
@@ -226,22 +232,47 @@ class GrpcTeTrailersTest {
 
     @Test
     void responseDemandTimeoutRemainsCancelled() throws Exception {
-        CountDownLatch secondSent = new CountDownLatch(1);
+        CountDownLatch callClosed = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
-        timeoutSecondSent.set(secondSent);
+        AtomicReference<Status> closedStatus = new AtomicReference<>();
         timeoutRelease.set(release);
         GrpcClient timeoutClient = GrpcClient.builder()
                 .tls(t -> t.enabled(false))
                 .baseUri("http://localhost:" + serverPort)
                 .protocolConfig(it -> it.nextRequestWaitTime(Duration.ofMillis(50)))
                 .build();
+        GrpcServiceDescriptor timeoutServiceDescriptor = GrpcServiceDescriptor.builder(serviceDescriptor)
+                .addInterceptor(new ClientInterceptor() {
+                    @Override
+                    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
+                                                                               CallOptions callOptions,
+                                                                               Channel next) {
+                        return new ForwardingClientCall.SimpleForwardingClientCall<>(next.newCall(method, callOptions)) {
+                            @Override
+                            public void start(Listener<RespT> responseListener, Metadata headers) {
+                                super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<>(
+                                        responseListener) {
+                                    @Override
+                                    public void onClose(Status status, Metadata trailers) {
+                                        closedStatus.set(status);
+                                        callClosed.countDown();
+                                        super.onClose(status, trailers);
+                                    }
+                                }, headers);
+                            }
+                        };
+                    }
+                })
+                .build();
 
-        try (Stream<Strings.StringMessage> responses = timeoutClient.serviceClient(serviceDescriptor)
+        try (Stream<Strings.StringMessage> responses = timeoutClient.serviceClient(timeoutServiceDescriptor)
                 .serverStreaming("PauseAfterTwo", Strings.StringMessage.getDefaultInstance())) {
             Iterator<Strings.StringMessage> iterator = responses.iterator();
             assertThat(iterator.next().getText(), is("one"));
-            assertThat("second server response sent", secondSent.await(10, TimeUnit.SECONDS), is(true));
-            Thread.sleep(500);
+            assertThat("client call closed after response demand timeout",
+                       callClosed.await(10, TimeUnit.SECONDS),
+                       is(true));
+            assertThat(closedStatus.get().getCode(), is(Status.Code.CANCELLED));
 
             StatusRuntimeException failure = assertThrows(StatusRuntimeException.class,
                                                           iterator::hasNext);
@@ -533,7 +564,6 @@ class GrpcTeTrailersTest {
     private static void pauseAfterTwo(Strings.StringMessage req, StreamObserver<Strings.StringMessage> observer) {
         observer.onNext(Strings.StringMessage.newBuilder().setText("one").build());
         observer.onNext(Strings.StringMessage.newBuilder().setText("two").build());
-        timeoutSecondSent.get().countDown();
         try {
             timeoutRelease.get().await(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
