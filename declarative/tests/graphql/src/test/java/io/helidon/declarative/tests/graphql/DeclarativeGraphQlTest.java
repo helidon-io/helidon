@@ -19,6 +19,7 @@ package io.helidon.declarative.tests.graphql;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -531,16 +532,33 @@ class DeclarativeGraphQlTest {
     }
 
     @Test
+    void testExplicitEndpointRequestsWithoutResolverInvocation() {
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .submit("{\"query\": \"{ missingField }\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(JsonObject.class).arrayValue("errors").isPresent(), is(true));
+        }
+
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .submit("""
+                                {
+                                  "query": "query($skip: Boolean!) { graphQlSchema @skip(if: $skip) }",
+                                  "variables": { "skip": true }
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(JsonObject.class).objectValue("data").orElseThrow().size(), is(0));
+        }
+
+    }
+
+    @Test
     void testTypeNameSecurityForExplicitEndpoint() {
         try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
                 .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
                 .submit("{\"query\": \"{ __typename }\"}")) {
-            assertThat(response.status(), is(Status.FORBIDDEN_403));
-        }
-
-        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
-                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
-                .submit("{\"query\": \"{ explicitlySecuredBook { __typename } }\"}")) {
             assertThat(response.status(), is(Status.FORBIDDEN_403));
         }
 
@@ -564,6 +582,9 @@ class DeclarativeGraphQlTest {
                                         "jackIsGreat");
         assertThat(nestedType.objectValue("explicitlySecuredBook").orElseThrow()
                            .stringValue("__typename").orElseThrow(), is("Book"));
+        assertThat(GraphQlEntryPointRecorder.authorizations(),
+                   is(List.of(ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-introspection>()",
+                              ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-introspection>()")));
     }
 
     @Test

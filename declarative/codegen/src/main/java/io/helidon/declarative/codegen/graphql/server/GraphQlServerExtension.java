@@ -190,6 +190,13 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank))
                 .map(GraphQlServerExtension::normalizePath)
+                .map(path -> {
+                    String normalized = path;
+                    while (normalized.length() > 1 && normalized.endsWith("/")) {
+                        normalized = normalized.substring(0, normalized.length() - 1);
+                    }
+                    return normalized;
+                })
                 .orElse(DEFAULT_CONTEXT);
         String schemaUri = Annotations.findFirst(GRAPHQL_SERVER_SCHEMA_URI, typeAnnotations)
                 .flatMap(Annotation::stringValue)
@@ -827,7 +834,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .addContent(".schemaUri(")
                 .addContentLiteral(group.schemaUri())
                 .addContentLine(")")
-                .addContentLine(".httpEntryPoints(httpEntryPoints, descriptor, descriptor.qualifiers(), annotations)")
+                .addContentLine(".declarativeHttpEntryPoints(httpEntryPoints, descriptor, descriptor.qualifiers(), annotations)")
                 .addContentLine(".invocationHandler(invocationHandler())")
                 .addContentLine(".build());")
                 .decreaseContentPadding()

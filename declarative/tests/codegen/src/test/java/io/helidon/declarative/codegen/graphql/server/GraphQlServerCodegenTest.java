@@ -348,7 +348,8 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString(".schemaUri(\"/schema\")"));
         assertThat(generated, containsString("HttpEntryPoint.EntryPoints httpEntryPoints"));
         assertThat(generated, containsString("this.httpEntryPoints = httpEntryPoints;"));
-        assertThat(generated, containsString(".httpEntryPoints(httpEntryPoints, descriptor, descriptor.qualifiers(), annotations)"));
+        assertThat(generated,
+                   containsString(".declarativeHttpEntryPoints(httpEntryPoints, descriptor, descriptor.qualifiers(), annotations)"));
         assertThat(generated, containsString("entryPoints.dataFetcher("));
         assertThat(generated, containsString("type Query"));
         assertThat(generated, containsString("\\\"Greets a user\\\"\\n  hello(\\n"
@@ -731,7 +732,7 @@ class GraphQlServerCodegenTest {
                         import io.helidon.webserver.graphql.GraphQlServer;
 
                         @GraphQlServer.Endpoint
-                        @GraphQlServer.Context("graphql")
+                        @GraphQlServer.Context("graphql/")
                         @GraphQlServer.SchemaUri("schema.graphql")
                         class GraphEndpoint {
                             @GraphQl.Query

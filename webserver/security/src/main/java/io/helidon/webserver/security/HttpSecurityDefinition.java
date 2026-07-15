@@ -227,6 +227,10 @@ class HttpSecurityDefinition {
     }
 
     private <T> T annotationValue(T currentValue, Optional<T> configuredValue, T defaultValue) {
-        return configuredValue.orElse(currentValue == null ? defaultValue : currentValue);
+        if (currentValue == null) {
+            return configuredValue.orElse(defaultValue);
+        }
+        return configuredValue.filter(value -> !value.equals(defaultValue))
+                .orElse(currentValue);
     }
 }

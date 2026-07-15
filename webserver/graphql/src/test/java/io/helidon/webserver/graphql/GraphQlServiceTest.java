@@ -200,8 +200,8 @@ class GraphQlServiceTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/, /schema.graphql", "/api/, /api/schema.graphql"})
-    void schemaRouteUsesSinglePathSeparator(String context, String schemaPath) {
+    @CsvSource({"/, /, /schema.graphql", "/api/, /api, /api/schema.graphql"})
+    void schemaRouteUsesSinglePathSeparator(String context, String queryPath, String schemaPath) {
         HttpRules rules = mock(HttpRules.class, Answers.RETURNS_SELF);
         GraphQlService.builder()
                 .webContext(context)
@@ -211,6 +211,8 @@ class GraphQlServiceTest {
                 .routing(rules);
 
         verify(rules).get(eq(schemaPath), any(Handler.class));
+        verify(rules).get(eq(queryPath), any(Handler.class));
+        verify(rules).post(eq(queryPath), any(Handler.class));
     }
 
     @Test
@@ -253,14 +255,19 @@ class GraphQlServiceTest {
                        containsString("missingField"));
         }
 
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("{\"query\": \"{metadata {__typename}}\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
         assertThat(ENTRY_POINTS.methodNames(),
                    is(List.of("<graphql-post>",
                               "<graphql-get>",
                               "<graphql-post>",
+                              "<graphql-post>",
                               "<graphql-post>")));
         assertThat(ENTRY_POINTS.authorizationMethodNames(),
                    is(List.of("<graphql-introspection>",
-                              "<graphql-introspection>",
                               "<graphql-introspection>",
                               "<graphql-introspection>")));
         assertThat(ENTRY_POINTS.createdHandlers(), is(createdHandlers));
@@ -299,6 +306,18 @@ class GraphQlServiceTest {
             assertThat("POST decimal", data.doubleValue("scaled").orElseThrow(), is(1.0));
             assertThat("POST long", data.stringValue("longValue").orElseThrow(), is("Long:3000000000"));
             assertThat("POST big", data.stringValue("bigValue").orElseThrow(), is("BigInteger:9223372036854775808"));
+        }
+
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("""
+                                {
+                                  "query": "query($value: ANY) { numberType(value: $value) }",
+                                  "variables": { "value": 1e100000 }
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.OK_200));
+            JsonObject data = response.as(JsonObject.class).objectValue("data").orElseThrow();
+            assertThat(data.stringValue("numberType").orElseThrow(), is("BigDecimal:1E+100000"));
         }
 
         try (Http1ClientResponse response = client.get("/graphql")
@@ -414,10 +433,14 @@ class GraphQlServiceTest {
                     numbers: [Int]
                     nothing: String
                     extensionObject: String
+                    metadata: Metadata
                     scaled(value: Float): Float
                     sum(values: [Int]): Int
                 }
                 scalar ANY
+                type Metadata {
+                    name: String
+                }
                 type Mutation {
                     update(enabled: Boolean): Boolean
                 }
@@ -453,6 +476,7 @@ class GraphQlServiceTest {
                                                .extensions(Map.of("payload", new ExtensionPayload("E-1", 30)))
                                                .build())
                                 .build())
+                        .dataFetcher("metadata", _ -> Map.of("name", "metadata"))
                         .dataFetcher("scaled", environment -> environment.getArgument("value"))
                         .dataFetcher("sum", environment -> {
                             List<Integer> values = environment.getArgument("values");

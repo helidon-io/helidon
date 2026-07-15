@@ -110,6 +110,13 @@ class GraphQlEntryPointsImpl implements GraphQlEntryPoint.EntryPoints {
 
         @Override
         public Object get(DataFetchingEnvironment environment) throws Exception {
+            var graphQlContext = environment.getGraphQlContext();
+            if (graphQlContext != null) {
+                GraphQlService.ResolverInvocation invocation = graphQlContext.get(GraphQlService.RESOLVER_INVOCATION_KEY);
+                if (invocation != null) {
+                    invocation.markInvoked();
+                }
+            }
             return createChain().proceed(environment);
         }
 

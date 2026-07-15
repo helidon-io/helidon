@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -72,6 +74,7 @@ import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
@@ -87,6 +90,7 @@ import graphql.schema.GraphQLSchema;
  */
 public class GraphQlService implements HttpService {
     private static final TypeName AUTHORIZED_TYPE = TypeName.create("io.helidon.security.annotations.Authorized");
+    static final String RESOLVER_INVOCATION_KEY = GraphQlService.class.getName() + ".resolver-invocation";
     private static final TypedElementInfo POST_METHOD = requestMethod("<graphql-post>");
     private static final TypedElementInfo GET_METHOD = requestMethod("<graphql-get>");
     private static final TypedElementInfo SCHEMA_METHOD = requestMethod("<graphql-schema>");
@@ -99,6 +103,7 @@ public class GraphQlService implements HttpService {
     private final Handler graphQlPost;
     private final Handler graphQlGet;
     private final Handler introspectionAuthorization;
+    private final Handler noResolverAuthorization;
     private final Handler graphQlSchema;
     private final boolean parsePostRequest;
     private final JsonBinding jsonBinding;
@@ -112,6 +117,7 @@ public class GraphQlService implements HttpService {
         this.graphQlPost = builder.postEntryPoint.apply(this::graphQlPost);
         this.graphQlGet = builder.getEntryPoint.apply(this::graphQlGet);
         this.introspectionAuthorization = builder.introspectionAuthorization.apply(this::graphQlRequest);
+        this.noResolverAuthorization = builder.noResolverAuthorization.apply(this::graphQlResponse);
         this.graphQlSchema = builder.schemaEntryPoint.apply(this::graphQlSchema);
         this.parsePostRequest = builder.parsePostRequest;
         this.jsonBinding = JsonBinding.create();
@@ -215,7 +221,7 @@ public class GraphQlService implements HttpService {
         }
     }
 
-    private void graphQlRequest(ServerRequest req, ServerResponse res) {
+    private void graphQlRequest(ServerRequest req, ServerResponse res) throws Exception {
         GraphQlRequest graphQlRequest = req.context()
                 .get(GraphQlRequest.class)
                 .orElseThrow(() -> new IllegalStateException("GraphQL request state is missing"));
@@ -228,27 +234,46 @@ public class GraphQlService implements HttpService {
         }
 
         res.headers().contentType(MediaTypes.APPLICATION_JSON);
-        Map<String, Object> contextValues = requestContext(req, graphQlRequest.parsedQuery());
+        ResolverInvocation resolverInvocation = new ResolverInvocation();
+        Map<String, Object> contextValues = requestContext(req, graphQlRequest.parsedQuery(), resolverInvocation);
         Map<String, Object> result = graphQlRequest.operationName() == null
                 ? invocationHandler.executeWithContext(graphQlRequest.query(), graphQlRequest.variables(), contextValues)
                 : invocationHandler.executeWithContext(graphQlRequest.query(),
                                                        graphQlRequest.operationName(),
                                                        graphQlRequest.variables(),
                                                        contextValues);
+        req.context().register(new GraphQlResponse(result));
+        if (resolverInvocation.invoked() || graphQlRequest.parsedQuery().map(ParsedQuery::introspection).orElse(false)) {
+            graphQlResponse(req, res);
+        } else {
+            noResolverAuthorization.handle(req, res);
+        }
+    }
+
+    private void graphQlResponse(ServerRequest req, ServerResponse res) {
+        Map<String, Object> result = req.context()
+                .get(GraphQlResponse.class)
+                .orElseThrow(() -> new IllegalStateException("GraphQL response state is missing"))
+                .result();
         res.send(toJsonBytes(result));
     }
 
-    private Map<String, Object> requestContext(ServerRequest req, Optional<ParsedQuery> parsedQuery) {
+    private Map<String, Object> requestContext(ServerRequest req,
+                                               Optional<ParsedQuery> parsedQuery,
+                                               ResolverInvocation resolverInvocation) {
         if (parsedQuery.isEmpty()) {
-            return Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context());
+            return Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context(),
+                          RESOLVER_INVOCATION_KEY, resolverInvocation);
         }
         ParsedQuery parsed = parsedQuery.orElseThrow();
         if (parsed.document().isPresent()) {
             return Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context(),
-                          GraphQlContextKeys.PARSED_DOCUMENT, parsed.document().orElseThrow());
+                          GraphQlContextKeys.PARSED_DOCUMENT, parsed.document().orElseThrow(),
+                          RESOLVER_INVOCATION_KEY, resolverInvocation);
         }
         return Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context(),
-                      GraphQlContextKeys.PARSE_ERROR, parsed.parseError().orElseThrow());
+                      GraphQlContextKeys.PARSE_ERROR, parsed.parseError().orElseThrow(),
+                      RESOLVER_INVOCATION_KEY, resolverInvocation);
     }
 
     private static Optional<ParsedQuery> parseQuery(String query, String operationName) {
@@ -274,29 +299,28 @@ public class GraphQlService implements HttpService {
                 .filter(OperationDefinition.Operation.MUTATION::equals)
                 .isPresent();
 
+        Map<String, FragmentDefinition> fragments = new LinkedHashMap<>();
+        document.getDefinitionsOfType(FragmentDefinition.class)
+                .forEach(fragment -> fragments.putIfAbsent(fragment.getName(), fragment));
+        Set<String> visitedFragments = new HashSet<>();
         ArrayDeque<SelectionSet> selectionSets = new ArrayDeque<>();
-        document.getDefinitions().forEach(definition -> {
-            switch (definition) {
-            case OperationDefinition operation -> selectionSets.addLast(operation.getSelectionSet());
-            case FragmentDefinition fragment -> selectionSets.addLast(fragment.getSelectionSet());
-            default -> {
-                // Other definitions do not contain executable selections.
-            }
-            }
-        });
+        operationDefinition.map(OperationDefinition::getSelectionSet)
+                .ifPresent(selectionSets::addLast);
         boolean introspection = false;
         while (!selectionSets.isEmpty() && !introspection) {
             for (Selection<?> selection : selectionSets.removeFirst().getSelections()) {
                 switch (selection) {
-                case Field field -> {
-                    introspection = field.getName().startsWith("__");
-                    if (!introspection && field.getSelectionSet() != null) {
-                        selectionSets.addLast(field.getSelectionSet());
+                case Field field -> introspection = field.getName().startsWith("__");
+                case InlineFragment fragment -> selectionSets.addLast(fragment.getSelectionSet());
+                case FragmentSpread spread -> {
+                    if (visitedFragments.add(spread.getName())) {
+                        Optional.ofNullable(fragments.get(spread.getName()))
+                                .map(FragmentDefinition::getSelectionSet)
+                                .ifPresent(selectionSets::addLast);
                     }
                 }
-                case InlineFragment fragment -> selectionSets.addLast(fragment.getSelectionSet());
                 default -> {
-                    // Fragment bodies are already roots in the whole-document scan.
+                    // Other selections do not identify request-level introspection.
                 }
                 }
                 if (introspection) {
@@ -378,7 +402,7 @@ public class GraphQlService implements HttpService {
 
     private static Object toJavaNumber(JsonNumber number) {
         BigDecimal value = number.bigDecimalValue();
-        if (value.scale() <= 0) {
+        if (value.scale() == 0) {
             BigInteger integer = value.toBigIntegerExact();
             if (integer.bitLength() < Integer.SIZE) {
                 return integer.intValue();
@@ -451,6 +475,7 @@ public class GraphQlService implements HttpService {
         private Function<Handler, Handler> getEntryPoint = Function.identity();
         private Function<Handler, Handler> schemaEntryPoint = Function.identity();
         private Function<Handler, Handler> introspectionAuthorization = Function.identity();
+        private Function<Handler, Handler> noResolverAuthorization = Function.identity();
         private boolean parsePostRequest;
 
         private Builder() {
@@ -565,6 +590,46 @@ public class GraphQlService implements HttpService {
                                        Set<Qualifier> typeQualifiers,
                                        List<Annotation> typeAnnotations) {
 
+            return configureHttpEntryPoints(entryPoints,
+                                            descriptor,
+                                            typeQualifiers,
+                                            typeAnnotations,
+                                            false);
+        }
+
+        /**
+         * Configure HTTP entry point wrapping for a generated declarative GraphQL service.
+         * <p>
+         * Unlike {@link #httpEntryPoints(HttpEntryPoint.EntryPoints, ServiceDescriptor, Set, List)}, this method may
+         * complete explicit request authorization after GraphQL execution when no resolver was invoked. Generated
+         * declarative services guarantee that every application resolver records its invocation before application code
+         * executes, so this cannot defer authorization until after an untracked resolver runs.
+         *
+         * @param entryPoints HTTP entry points
+         * @param descriptor descriptor of the declarative endpoint
+         * @param typeQualifiers qualifiers of the declarative endpoint
+         * @param typeAnnotations annotations of the declarative endpoint
+         * @return updated builder instance
+         */
+        @Api.Internal
+        public Builder declarativeHttpEntryPoints(HttpEntryPoint.EntryPoints entryPoints,
+                                                  ServiceDescriptor<?> descriptor,
+                                                  Set<Qualifier> typeQualifiers,
+                                                  List<Annotation> typeAnnotations) {
+
+            return configureHttpEntryPoints(entryPoints,
+                                            descriptor,
+                                            typeQualifiers,
+                                            typeAnnotations,
+                                            true);
+        }
+
+        private Builder configureHttpEntryPoints(HttpEntryPoint.EntryPoints entryPoints,
+                                                 ServiceDescriptor<?> descriptor,
+                                                 Set<Qualifier> typeQualifiers,
+                                                 List<Annotation> typeAnnotations,
+                                                 boolean declarativeResolvers) {
+
             Objects.requireNonNull(entryPoints);
             Objects.requireNonNull(descriptor);
             Objects.requireNonNull(typeQualifiers);
@@ -580,6 +645,11 @@ public class GraphQlService implements HttpService {
             TypedElementInfo schemaMethod = implicitAuthorization
                     .map(annotation -> requestMethod("<graphql-schema>", annotation))
                     .orElse(SCHEMA_METHOD);
+            List<Annotation> implicitTypeAnnotations = implicitAuthorization
+                    .map(_ -> typeAnnotations.stream()
+                            .filter(annotation -> !annotation.typeName().equals(AUTHORIZED_TYPE))
+                            .toList())
+                    .orElse(typeAnnotations);
             this.postEntryPoint = handler -> entryPoints.handler(descriptor,
                                                                  typeQualifiers,
                                                                  typeAnnotations,
@@ -592,16 +662,24 @@ public class GraphQlService implements HttpService {
                                                                 handler);
             this.schemaEntryPoint = handler -> entryPoints.handler(descriptor,
                                                                    typeQualifiers,
-                                                                   typeAnnotations,
+                                                                   implicitTypeAnnotations,
                                                                    schemaMethod,
                                                                    handler);
             implicitAuthorization.ifPresent(annotation -> {
                 TypedElementInfo introspectionMethod = requestMethod("<graphql-introspection>", annotation);
+                TypedElementInfo noResolverMethod = requestMethod("<graphql-no-resolver>", annotation);
                 this.introspectionAuthorization = handler -> entryPoints.authorizationHandler(descriptor,
                                                                                                 typeQualifiers,
-                                                                                                typeAnnotations,
+                                                                                                implicitTypeAnnotations,
                                                                                                 introspectionMethod,
                                                                                                 handler);
+                if (declarativeResolvers) {
+                    this.noResolverAuthorization = handler -> entryPoints.authorizationHandler(descriptor,
+                                                                                                 typeQualifiers,
+                                                                                                 implicitTypeAnnotations,
+                                                                                                 noResolverMethod,
+                                                                                                 handler);
+                }
             });
             this.parsePostRequest = true;
             return this;
@@ -614,11 +692,11 @@ public class GraphQlService implements HttpService {
          * @return updated builder instance
          */
         public Builder webContext(String path) {
-            if (path.startsWith("/")) {
-                this.context = path;
-            } else {
-                this.context = "/" + path;
+            String normalized = path.startsWith("/") ? path : "/" + path;
+            while (normalized.length() > 1 && normalized.endsWith("/")) {
+                normalized = normalized.substring(0, normalized.length() - 1);
             }
+            this.context = normalized;
             return this;
         }
 
@@ -678,6 +756,21 @@ public class GraphQlService implements HttpService {
                                   Map<String, Object> variables,
                                   Optional<ParsedQuery> parsedQuery,
                                   boolean getRequest) {
+    }
+
+    private record GraphQlResponse(Map<String, Object> result) {
+    }
+
+    static final class ResolverInvocation {
+        private final AtomicBoolean invoked = new AtomicBoolean();
+
+        void markInvoked() {
+            invoked.set(true);
+        }
+
+        boolean invoked() {
+            return invoked.get();
+        }
     }
 
     private record ParsedQuery(Optional<Document> document,
