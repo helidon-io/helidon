@@ -804,13 +804,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         private void sendFirstChunkOnly() {
-            int contentLength;
             if (firstBuffer == null) {
                 headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
-                contentLength = 0;
             } else {
                 headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
-                contentLength = firstBuffer.available();
             }
             isChunked = false;
             headers.remove(HeaderNames.TRANSFER_ENCODING);
@@ -819,16 +816,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             Status usedStatus = status.get();
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
-            BufferData bufferData = BufferData.growing(contentLength + 256);
-            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, sendKeepAliveHeader, validateHeaders);
+            BufferData headerBuffer = BufferData.growing(256);
+            nonEntityBytes(headers, usedStatus, headerBuffer, keepAlive, sendKeepAliveHeader, validateHeaders);
 
-            if (firstBuffer != null) {
-                bufferData.write(firstBuffer);
-            }
+            // first buffer is owned copy, so combine it with the headers without copying it
+            BufferData bufferData = (firstBuffer == null) ? headerBuffer : BufferData.create(headerBuffer, firstBuffer);
 
             sendListener.data(ctx, bufferData);
             responseBytesTotal += bufferData.available();
             writeResponse(dataWriter, bufferData, "Failed to write response");
+            firstBuffer = null;
         }
 
         private void sendHeadersAndPrepare() {
