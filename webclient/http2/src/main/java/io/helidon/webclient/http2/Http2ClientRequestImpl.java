@@ -259,7 +259,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         }
 
         boolean retainRequestEntity = followRedirects()
-                && RedirectionProcessor.keepsMethodAndEntity(serviceResponse.status());
+                && RedirectionProcessor.keepsMethodAndEntity(method(), serviceResponse.status());
         boolean hasRequestEntity = retainRequestEntity && callChain.hasRequestEntity();
         Object requestEntity = retainRequestEntity ? callChain.requestEntity() : null;
         long maxBufferedEntitySize = http2Client.protocolConfig().maxBufferedEntitySize().toBytes();

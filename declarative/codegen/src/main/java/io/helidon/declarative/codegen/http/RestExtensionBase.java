@@ -66,7 +66,7 @@ public abstract class RestExtensionBase {
                                                                 + element.elementName(),
                                                         element.originatingElementValue()));
         return switch (method) {
-            case "GET", "PUT", "POST", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE" -> new HttpMethod(method, true);
+            case "GET", "PUT", "POST", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE", "QUERY" -> new HttpMethod(method, true);
             default -> new HttpMethod(method, false);
         };
     }

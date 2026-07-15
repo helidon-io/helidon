@@ -25,6 +25,7 @@ import java.util.Optional;
 import io.helidon.common.media.type.ParserMode;
 
 import static io.helidon.http.HeaderNames.ACCEPT_PATCH;
+import static io.helidon.http.HeaderNames.ACCEPT_QUERY;
 import static io.helidon.http.HeaderNames.EXPIRES;
 import static io.helidon.http.HeaderNames.LAST_MODIFIED;
 import static io.helidon.http.HeaderNames.LOCATION;
@@ -65,6 +66,40 @@ public interface ClientResponseHeaders extends Headers {
         List<HttpMediaType> mediaTypes = new ArrayList<>(all.size());
         for (String value : all) {
             mediaTypes.add(HttpMediaType.create(value));
+        }
+        return mediaTypes;
+    }
+
+    /**
+     * Accepted queries.
+     *
+     * @return list of accepted queries media types
+     */
+    default List<HttpMediaType> acceptQueries() {
+        if (!contains(ACCEPT_QUERY)) {
+            return List.of();
+        }
+        List<String> all = get(ACCEPT_QUERY).allValues(true);
+        List<HttpMediaType> mediaTypes = new ArrayList<>(all.size());
+        for (String val : all) {
+            String trimmed = val.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            int semi = trimmed.indexOf(';');
+            String mediaRange;
+            String params;
+            if (semi != -1) {
+                mediaRange = trimmed.substring(0, semi).trim();
+                params = trimmed.substring(semi);
+            } else {
+                mediaRange = trimmed;
+                params = "";
+            }
+            if (mediaRange.startsWith("\"") && mediaRange.endsWith("\"") && mediaRange.length() > 1) {
+                mediaRange = mediaRange.substring(1, mediaRange.length() - 1).trim();
+            }
+            mediaTypes.add(HttpMediaType.create(mediaRange + params));
         }
         return mediaTypes;
     }

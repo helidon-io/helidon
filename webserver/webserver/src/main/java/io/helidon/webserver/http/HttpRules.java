@@ -543,6 +543,33 @@ public interface HttpRules {
     }
 
     /**
+     * Add a query route.
+     *
+     * @param pathPattern URI path pattern
+     * @param handlers    handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules query(String pathPattern, Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Method.QUERY, pathPattern, handler);
+        }
+        return this;
+    }
+
+    /**
+     * Add a query route.
+     *
+     * @param handlers handlers to process HTTP request
+     * @return updated rules
+     */
+    default HttpRules query(Handler... handlers) {
+        for (Handler handler : handlers) {
+            route(Method.QUERY, handler);
+        }
+        return this;
+    }
+
+    /**
      * Add a route that executes on any HTTP method and any path.
      *
      * @param pathPattern URI path pattern

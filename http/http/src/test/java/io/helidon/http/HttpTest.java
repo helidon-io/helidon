@@ -108,6 +108,19 @@ class HttpTest {
         );
     }
 
+    @Test
+    void testAcceptQueryStructuredFields() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.ACCEPT_QUERY, "\"application/jsonpath\", application/sql;charset=\"UTF-8\"");
+        ClientResponseHeaders clientHeaders = ClientResponseHeaders.create(headers, io.helidon.common.media.type.ParserMode.STRICT);
+        List<HttpMediaType> parsed = clientHeaders.acceptQueries();
+
+        assertThat(parsed.size(), is(2));
+        assertThat(parsed.get(0).mediaType().text(), is("application/jsonpath"));
+        assertThat(parsed.get(1).mediaType().text(), is("application/sql"));
+        assertThat(parsed.get(1).parameters().get("charset"), is("UTF-8"));
+    }
+
     private static final class SingleValueHeader extends HeaderValueBase {
         private SingleValueHeader(String value) {
             super(HeaderNames.ACCEPT, false, false, value);
