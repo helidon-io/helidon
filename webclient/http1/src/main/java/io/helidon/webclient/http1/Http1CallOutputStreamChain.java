@@ -119,7 +119,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 redirectUri.host(resolvedUri.host());
                 redirectUri.port(resolvedUri.port());
             }
-            boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(responseStatus);
+            boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(cos.lastRequest.method(), responseStatus);
             ClientRequest.OutputStreamHandler handler = osHandler;
             if (sendEntity && !cos.lastRequest.canReplayEntityTo(redirectUri)) {
                 // Replaying a 307/308 output-stream body to a new origin can leak credentials or form data.
@@ -507,8 +507,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
-            if (lastStatus == Status.TEMPORARY_REDIRECT_307
-                    || lastStatus == Status.PERMANENT_REDIRECT_308) {
+            if (RedirectionProcessor.keepsMethodAndEntity(originalRequest.method(), lastStatus)) {
                 method = originalRequest.method();
                 sendEntity = true;
             } else {
@@ -564,8 +563,13 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                         checkRedirectHeaders(response.headers());
                         if (response.status() != Status.TEMPORARY_REDIRECT_307
                                 && response.status() != Status.PERMANENT_REDIRECT_308) {
-                            method = Method.GET;
-                            sendEntity = false;
+                            if (originalRequest.method() == Method.QUERY && response.status() != Status.SEE_OTHER_303) {
+                                method = Method.QUERY;
+                                sendEntity = true;
+                            } else {
+                                method = Method.GET;
+                                sendEntity = false;
+                            }
                         }
                         redirectedUri = response.headers().get(HeaderNames.LOCATION).get();
                     } finally {

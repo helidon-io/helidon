@@ -101,7 +101,7 @@ class Http2CallEntityChain extends Http2CallChainBase {
 
     @Override
     protected WebClientServiceResponse doProceed(WebClientServiceRequest serviceRequest, HttpClientResponse response) {
-        if (RedirectionProcessor.keepsMethodAndEntity(response.status())) {
+        if (RedirectionProcessor.keepsMethodAndEntity(serviceRequest.method(), response.status())) {
             // HTTP/1 fallback can receive a redirect before an HTTP/2 stream exists. Do not serialize the body here;
             // redirect policy must be able to reject cross-origin replay before invoking media writers.
             hasRequestEntity = mayHaveEntity(entityHolder.entity());

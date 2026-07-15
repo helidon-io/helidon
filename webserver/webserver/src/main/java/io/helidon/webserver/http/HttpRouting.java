@@ -374,6 +374,22 @@ public interface HttpRouting extends Routing, Prototype.Api {
         }
 
         @Override
+        default Builder query(String pathPattern, Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Method.QUERY, pathPattern, handler);
+            }
+            return this;
+        }
+
+        @Override
+        default Builder query(Handler... handlers) {
+            for (Handler handler : handlers) {
+                route(Method.QUERY, handler);
+            }
+            return this;
+        }
+
+        @Override
         default Builder any(String pathPattern, Handler... handlers) {
             for (Handler handler : handlers) {
                 route(HttpRoute.builder()

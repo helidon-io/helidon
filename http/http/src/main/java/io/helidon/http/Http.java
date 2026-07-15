@@ -340,6 +340,15 @@ public final class Http {
     }
 
     /**
+     * QUERY method of an HTTP endpoint.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @HttpMethod(Method.QUERY_NAME)
+    public @interface QUERY {
+    }
+
+    /**
      * What media type(s) this method produces.
      * <p>
      * If the method may produce more than one type, the response headers must be crafted by hand. If it produces

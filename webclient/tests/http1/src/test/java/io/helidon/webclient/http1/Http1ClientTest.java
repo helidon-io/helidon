@@ -96,8 +96,10 @@ class Http1ClientTest {
         rules.put("/test", Http1ClientTest::responseHandler);
         rules.put("/redirectKeepMethod", Http1ClientTest::redirectKeepMethod);
         rules.put("/redirect", Http1ClientTest::redirect);
+        rules.query("/redirect", Http1ClientTest::redirect);
         rules.get("/afterRedirect", Http1ClientTest::afterRedirectGet);
         rules.put("/afterRedirect", Http1ClientTest::afterRedirectPut);
+        rules.query("/afterRedirect", Http1ClientTest::afterRedirectQuery);
         rules.put("/chunkresponse", Http1ClientTest::chunkResponseHandler);
         rules.put("/delayedEndpoint", Http1ClientTest::delayedHandler);
     }
@@ -411,6 +413,17 @@ class Http1ClientTest {
     }
 
     @Test
+    void testQueryRedirect() {
+        try (HttpClientResponse response = injectedHttp1client.method(Method.QUERY)
+                .uri("/redirect")
+                .submit("Test entity")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.lastEndpointUri().path().path(), is("/afterRedirect"));
+            assertThat(response.as(String.class), is("QUERY after redirect endpoint reached"));
+        }
+    }
+
+    @Test
     void testReadTimeoutPerRequest() {
         String testEntity = "Test entity";
         try (HttpClientResponse response = injectedHttp1client.put("/delayedEndpoint")
@@ -504,6 +517,17 @@ class Http1ClientTest {
         }
         res.status(Status.NO_CONTENT_204)
                 .send();
+    }
+
+    private static void afterRedirectQuery(ServerRequest req, ServerResponse res) {
+        String entity = req.content().as(String.class);
+        if (!entity.equals("Test entity")) {
+            res.status(Status.BAD_REQUEST_400)
+                    .send("Entity was not kept the same after the redirect");
+            return;
+        }
+        res.status(Status.OK_200)
+                .send("QUERY after redirect endpoint reached");
     }
 
     private static void delayedHandler(ServerRequest req, ServerResponse res) throws IOException, InterruptedException {
