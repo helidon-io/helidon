@@ -78,7 +78,7 @@
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
         <version.lib.junit>5.12.2</version.lib.junit>
-        <version.lib.log4j>2.25.4</version.lib.log4j>
+        <version.lib.log4j>2.25.5</version.lib.log4j>
         <version.lib.micrometer>1.15.2</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
