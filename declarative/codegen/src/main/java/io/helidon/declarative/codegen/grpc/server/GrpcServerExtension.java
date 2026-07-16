@@ -326,7 +326,17 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         boolean hasDirectPermitAll = Annotations.findFirst(SECURITY_PERMIT_ALL, directAnnotations).isPresent()
                 || Annotations.findFirst(SECURITY_ROLE_PERMIT_ALL, directAnnotations).isPresent();
         if (hasDirectPermitAll) {
-            return annotations;
+            Set<TypeName> directAnnotationTypes = Set.copyOf(directAnnotations.stream()
+                                                                      .map(Annotation::typeName)
+                                                                      .toList());
+            return annotations.stream()
+                    .filter(it -> directAnnotationTypes.contains(it.typeName())
+                            || (!it.typeName().equals(SECURITY_DENY_ALL)
+                                    && !it.typeName().equals(SECURITY_ROLES_ALLOWED)
+                                    && !it.typeName().equals(SECURITY_ROLES)
+                                    && !it.typeName().equals(SECURITY_ROLES_CONTAINER)
+                                    && !it.hasMetaAnnotation(SECURITY_ABAC_ANNOTATION)))
+                    .toList();
         }
 
         boolean hasDirectAbacAnnotation = directAnnotations.stream()

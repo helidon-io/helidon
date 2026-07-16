@@ -72,6 +72,15 @@ In addition, the following section must be added to the `build` of the Maven `po
 </plugins>
 ----
 
+When using declarative gRPC server endpoints or typed gRPC clients, add the Helidon gRPC API dependency to the project's compile classpath:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.grpc</groupId>
+    <artifactId>helidon-grpc-api</artifactId>
+</dependency>
+----
 
 == Features
 

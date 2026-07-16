@@ -497,7 +497,11 @@ class GrpcTeTrailersTest {
             if (call.isAlive()) {
                 Stream<Strings.StringMessage> responses = responseStream.get();
                 if (responses != null) {
-                    responses.close();
+                    Thread close = Thread.startVirtualThread(responses::close);
+                    close.join(TimeUnit.SECONDS.toMillis(10));
+                    if (close.isAlive()) {
+                        close.interrupt();
+                    }
                     call.join(TimeUnit.SECONDS.toMillis(10));
                 }
             }

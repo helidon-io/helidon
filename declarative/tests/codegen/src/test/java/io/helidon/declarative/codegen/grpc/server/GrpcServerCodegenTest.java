@@ -1200,7 +1200,7 @@ class GrpcServerCodegenTest {
     }
 
     @Test
-    void grpcMethodSecurityAnnotationsOverrideInheritedPermitAll() throws IOException {
+    void grpcMethodSecurityAnnotationsOverrideInheritedAnnotations() throws IOException {
         var result = compileGrpcService("grpc-server-method-security-overrides-permit-all",
                                         """
                                                 import io.helidon.security.annotations.Authenticated;
@@ -1232,6 +1232,20 @@ class GrpcServerCodegenTest {
                                                 }
 
                                                 @Override
+                                                @Grpc.Unary("RolesAllowedPermitAllHello")
+                                                @PermitAll
+                                                public GreetingReply rolesAllowedPermitAllHello(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
+
+                                                @Override
+                                                @Grpc.Unary("DenyAllPermitAllHello")
+                                                @PermitAll
+                                                public GreetingReply denyAllPermitAllHello(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
+
+                                                @Override
                                                 @Grpc.Unary("RoleValidatorHello")
                                                 @RoleValidator.Roles("admin")
                                                 public GreetingReply roleValidatorHello(GreetingRequest request) {
@@ -1245,7 +1259,9 @@ class GrpcServerCodegenTest {
                                                 import io.helidon.security.annotations.Authenticated;
                                                 import io.helidon.security.annotations.Authorized;
                                                 import io.helidon.security.abac.role.RoleValidator;
+                                                import jakarta.annotation.security.DenyAll;
                                                 import jakarta.annotation.security.PermitAll;
+                                                import jakarta.annotation.security.RolesAllowed;
 
                                                 interface PermittedGreetingGrpc {
                                                     @PermitAll
@@ -1257,6 +1273,12 @@ class GrpcServerCodegenTest {
                                                     @Authenticated
                                                     @Authorized
                                                     GreetingReply permitAllHello(GreetingRequest request);
+
+                                                    @RolesAllowed("admin")
+                                                    GreetingReply rolesAllowedPermitAllHello(GreetingRequest request);
+
+                                                    @DenyAll
+                                                    GreetingReply denyAllPermitAllHello(GreetingRequest request);
 
                                                     @PermitAll
                                                     GreetingReply roleValidatorHello(GreetingRequest request);
@@ -1277,8 +1299,33 @@ class GrpcServerCodegenTest {
                    containsString("GrpcSecurity.enforce().skipAuthentication().authenticationOptional(false)"
                                           + ".clearAuthenticator().skipAuthorization().clearAuthorizer()"
                                           + ".clearRolesAllowed()"));
+        String rolesAllowedRegistration = registration.substring(
+                registration.indexOf("builder.unary(\"RolesAllowedPermitAllHello\""),
+                registration.indexOf("builder.unary(\"DenyAllPermitAllHello\""));
+        assertThat(rolesAllowedRegistration,
+                   containsString("GrpcSecurity.enforce().skipAuthentication().skipAuthorization().clearRolesAllowed()"));
+        assertThat(rolesAllowedRegistration, not(containsString(".rolesAllowed(\"admin\")")));
+        String denyAllRegistration = registration.substring(
+                registration.indexOf("builder.unary(\"DenyAllPermitAllHello\""),
+                registration.indexOf("builder.unary(\"RoleValidatorHello\""));
+        assertThat(denyAllRegistration,
+                   containsString("GrpcSecurity.enforce().skipAuthentication().skipAuthorization().clearRolesAllowed()"));
         assertThat(registration,
                    containsString("GrpcSecurity.enforce().authenticate().authorize().clearRolesAllowed()"));
+        int rolesAllowedMetadataStart =
+                registration.indexOf("private static final TypedElementInfo METHOD_ROLES_ALLOWED_PERMIT_ALL_HELLO");
+        String rolesAllowedMetadata = registration.substring(
+                rolesAllowedMetadataStart,
+                registration.indexOf("private static final TypedElementInfo", rolesAllowedMetadataStart + 1));
+        assertThat(rolesAllowedMetadata, containsString("jakarta.annotation.security.PermitAll"));
+        assertThat(rolesAllowedMetadata, not(containsString("jakarta.annotation.security.RolesAllowed")));
+        int denyAllMetadataStart =
+                registration.indexOf("private static final TypedElementInfo METHOD_DENY_ALL_PERMIT_ALL_HELLO");
+        String denyAllMetadata = registration.substring(
+                denyAllMetadataStart,
+                registration.indexOf("private static final TypedElementInfo", denyAllMetadataStart + 1));
+        assertThat(denyAllMetadata, containsString("jakarta.annotation.security.PermitAll"));
+        assertThat(denyAllMetadata, not(containsString("jakarta.annotation.security.DenyAll")));
         String roleValidatorMetadata = registration.substring(
                 registration.indexOf("private static final TypedElementInfo METHOD_ROLE_VALIDATOR_HELLO"),
                 registration.indexOf("private final GreetingGrpc endpoint;"));

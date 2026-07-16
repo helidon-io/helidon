@@ -27,6 +27,13 @@ New JMH benchmark classes should be created in `src/main/java/io/helidon/tests/b
 the legacy webserver baseline runner end with `JmhTest`; subsystem benchmarks can instead provide a dedicated JUnit
 runner under `src/test/java`.
 
+Before running any module-scoped benchmark command below from a clean checkout, install the repository artifacts from
+the repository root:
+
+```shell
+mvn -ntp clean install -DskipTests
+```
+
 The gRPC streaming benchmark covers the resource-owning server-streaming, client-streaming, and bidirectional APIs,
 same-run legacy iterator baselines, mixed new-client/legacy-server and legacy-client/new-server pairs, and a deliberately
 CPU-bound slow-consumer bidirectional path. Payloads exercise both sides of the client's readiness threshold. The JSON
