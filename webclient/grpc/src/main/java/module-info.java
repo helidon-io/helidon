@@ -43,6 +43,8 @@ module io.helidon.webclient.grpc {
     exports io.helidon.webclient.grpc;
     exports io.helidon.webclient.grpc.spi;
 
+    uses io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
+
     provides io.helidon.webclient.spi.ClientProtocolProvider
             with io.helidon.webclient.grpc.GrpcProtocolProvider;
 }

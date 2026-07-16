@@ -1204,6 +1204,7 @@ class GrpcServerCodegenTest {
         var result = compileGrpcService("grpc-server-method-security-overrides-permit-all",
                                         """
                                                 import io.helidon.security.annotations.Authenticated;
+                                                import io.helidon.security.abac.role.RoleValidator;
                                                 import jakarta.annotation.security.PermitAll;
                                                 """,
                                         "@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)",
@@ -1229,6 +1230,13 @@ class GrpcServerCodegenTest {
                                                 public GreetingReply permitAllHello(GreetingRequest request) {
                                                     return GreetingReply.getDefaultInstance();
                                                 }
+
+                                                @Override
+                                                @Grpc.Unary("RoleValidatorHello")
+                                                @RoleValidator.Roles("admin")
+                                                public GreetingReply roleValidatorHello(GreetingRequest request) {
+                                                    return GreetingReply.getDefaultInstance();
+                                                }
                                                 """,
                                         PROTO_DESCRIPTOR_SOURCE,
                                         """
@@ -1236,6 +1244,7 @@ class GrpcServerCodegenTest {
 
                                                 import io.helidon.security.annotations.Authenticated;
                                                 import io.helidon.security.annotations.Authorized;
+                                                import io.helidon.security.abac.role.RoleValidator;
                                                 import jakarta.annotation.security.PermitAll;
 
                                                 interface PermittedGreetingGrpc {
@@ -1248,6 +1257,9 @@ class GrpcServerCodegenTest {
                                                     @Authenticated
                                                     @Authorized
                                                     GreetingReply permitAllHello(GreetingRequest request);
+
+                                                    @PermitAll
+                                                    GreetingReply roleValidatorHello(GreetingRequest request);
                                                 }
                                                 """);
 
@@ -1265,6 +1277,13 @@ class GrpcServerCodegenTest {
                    containsString("GrpcSecurity.enforce().skipAuthentication().authenticationOptional(false)"
                                           + ".clearAuthenticator().skipAuthorization().clearAuthorizer()"
                                           + ".clearRolesAllowed()"));
+        assertThat(registration,
+                   containsString("GrpcSecurity.enforce().authenticate().authorize().clearRolesAllowed()"));
+        String roleValidatorMetadata = registration.substring(
+                registration.indexOf("private static final TypedElementInfo METHOD_ROLE_VALIDATOR_HELLO"),
+                registration.indexOf("private final GreetingGrpc endpoint;"));
+        assertThat(roleValidatorMetadata,
+                   not(containsString("jakarta.annotation.security.PermitAll")));
     }
 
     @Test

@@ -48,6 +48,8 @@ module io.helidon.webserver.grpc {
     exports io.helidon.webserver.grpc;
     exports io.helidon.webserver.grpc.spi;
 
+    uses io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
+
     provides io.helidon.webserver.http2.spi.Http2SubProtocolProvider
             with io.helidon.webserver.grpc.GrpcProtocolProvider;
     provides io.helidon.webserver.spi.ProtocolConfigProvider

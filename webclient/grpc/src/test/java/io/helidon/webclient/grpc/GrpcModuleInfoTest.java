@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.grpc;
+package io.helidon.webclient.grpc;
 
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
+import io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
 import org.junit.jupiter.api.Test;
 
-import static java.lang.module.ModuleDescriptor.Requires.Modifier.TRANSITIVE;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -36,21 +35,6 @@ class GrpcModuleInfoTest {
             descriptor = ModuleDescriptor.read(input);
         }
 
-        assertThat(descriptor.uses(), hasItem(GrpcServerServiceProvider.class.getName()));
-    }
-
-    @Test
-    void serviceRegistryRequirementIsTransitive() throws IOException {
-        ModuleDescriptor descriptor;
-        try (var input = Files.newInputStream(Path.of("target/classes/module-info.class"))) {
-            descriptor = ModuleDescriptor.read(input);
-        }
-
-        ModuleDescriptor.Requires serviceRegistry = descriptor.requires()
-                .stream()
-                .filter(requires -> requires.name().equals("io.helidon.service.registry"))
-                .findFirst()
-                .orElseThrow();
-        assertThat(serviceRegistry.modifiers(), hasItem(TRANSITIVE));
+        assertThat(descriptor.uses(), hasItem(GrpcClientServiceProvider.class.getName()));
     }
 }

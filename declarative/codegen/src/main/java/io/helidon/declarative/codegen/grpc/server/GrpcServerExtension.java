@@ -103,7 +103,9 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                                + "WebServer HTTP request scope. Use @Service.Singleton or @Service.PerLookup.",
                                        serverEndpoint.originatingElementValue());
         }
-        List<Annotation> typeAnnotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint);
+        List<Annotation> typeAnnotations = effectiveSecurityAnnotations(TypeHierarchy.hierarchyAnnotations(ctx,
+                                                                                                            serverEndpoint),
+                                                                        serverEndpoint.annotations());
         GrpcProtoDescriptor protoDescriptor = GrpcProtoDescriptors.find(ctx,
                                                                         serverEndpoint,
                                                                         typeAnnotations,
@@ -169,7 +171,10 @@ class GrpcServerExtension implements RegistryCodegenExtension {
             return Optional.empty();
         }
 
-        List<Annotation> annotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint, method);
+        List<Annotation> annotations = effectiveSecurityAnnotations(TypeHierarchy.hierarchyAnnotations(ctx,
+                                                                                                        serverEndpoint,
+                                                                                                        method),
+                                                                    method.annotations());
         List<Annotation> grpcMethodAnnotations = grpcMethodAnnotations(method, annotations);
         if (grpcMethodAnnotations.size() > 1) {
             throw new CodegenException("Declarative gRPC server method "
@@ -314,6 +319,28 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                     .orElse("");
         }
         return name.isBlank() ? method.elementName() : name;
+    }
+
+    private static List<Annotation> effectiveSecurityAnnotations(List<Annotation> annotations,
+                                                                 List<Annotation> directAnnotations) {
+        boolean hasDirectPermitAll = Annotations.findFirst(SECURITY_PERMIT_ALL, directAnnotations).isPresent()
+                || Annotations.findFirst(SECURITY_ROLE_PERMIT_ALL, directAnnotations).isPresent();
+        if (hasDirectPermitAll) {
+            return annotations;
+        }
+
+        boolean hasDirectAbacAnnotation = directAnnotations.stream()
+                .anyMatch(it -> it.typeName().equals(SECURITY_ROLES)
+                        || it.typeName().equals(SECURITY_ROLES_CONTAINER)
+                        || it.hasMetaAnnotation(SECURITY_ABAC_ANNOTATION));
+        if (!hasDirectAbacAnnotation) {
+            return annotations;
+        }
+
+        return annotations.stream()
+                .filter(it -> !it.typeName().equals(SECURITY_PERMIT_ALL))
+                .filter(it -> !it.typeName().equals(SECURITY_ROLE_PERMIT_ALL))
+                .toList();
     }
 
     private static GrpcSecurityDefinition security(List<Annotation> annotations,
