@@ -92,6 +92,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private volatile Future<?> readStreamFuture;
     private volatile Thread readStreamThread;
     private volatile Future<?> writeStreamFuture;
+    private volatile Thread writeStreamThread;
     private volatile ScheduledFuture<?> heartbeatFuture;
     private volatile RuntimeException resetFailure;
     private boolean writerScheduled;
@@ -342,6 +343,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     }
 
     private void writeQueued() {
+        writeStreamThread = Thread.currentThread();
         try {
             socket().log(LOGGER, DEBUG, "[Writing task] started");
             boolean endOfStream = false;
@@ -397,6 +399,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             try {
                 writerScheduled = false;
                 writeStreamFuture = null;
+                writeStreamThread = null;
                 reschedule = !closed.get() && isRemoteOpen() && !sendingQueue.isEmpty();
             } finally {
                 writerLock.unlock();
@@ -419,17 +422,41 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         try {
             sendingQueue.clear();
             queuedBytes.set(0);
+            Future<?> writeStreamFuture;
+            Thread writeStreamThread;
+            writerLock.lock();
             try {
-                if (resetFailure == null) {
-                    clientStream().cancel();
-                } else {
-                    clientStream().close();
-                }
+                writeStreamFuture = this.writeStreamFuture;
+                writeStreamThread = this.writeStreamThread;
             } finally {
+                writerLock.unlock();
+            }
+            if (writeStreamFuture != null && writeStreamThread != Thread.currentThread()) {
+                writeStreamFuture.cancel(true);
+            }
+            if (writeStreamFuture != null) {
                 try {
-                    connection().close();
+                    clientStream().close();
                 } finally {
-                    unblockUnaryExecutor();
+                    try {
+                        connection().closeNow();
+                    } finally {
+                        unblockUnaryExecutor();
+                    }
+                }
+            } else {
+                try {
+                    if (resetFailure == null) {
+                        clientStream().cancel();
+                    } else {
+                        clientStream().close();
+                    }
+                } finally {
+                    try {
+                        connection().close();
+                    } finally {
+                        unblockUnaryExecutor();
+                    }
                 }
             }
 
@@ -445,10 +472,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             Future<?> readStreamFuture = this.readStreamFuture;
             if (readStreamFuture != null) {
                 readStreamFuture.cancel(true);
-            }
-            Future<?> writeStreamFuture = this.writeStreamFuture;
-            if (writeStreamFuture != null) {
-                writeStreamFuture.cancel(true);
             }
             heartbeatLock.lock();
             try {

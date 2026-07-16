@@ -448,6 +448,9 @@ class GrpcTeTrailersTest {
                         if (firstResponseReceived.compareAndSet(false, true)) {
                             postReleaseProgress.countDown();
                         }
+                        if (postReleaseProgress.getCount() == 0) {
+                            break;
+                        }
                     }
                 } finally {
                     responseStream.compareAndSet(responses, null);
@@ -519,7 +522,7 @@ class GrpcTeTrailersTest {
                    is(true));
         assertThat("request production resumed after server demand", requestProductionResumed.get(), is(true));
         assertThat("response received after server demand", firstResponseReceived.get(), is(true));
-        assertThat("bidirectional call completed before cleanup; produced=" + requestsProduced.get()
+        assertThat("bidirectional call completed after post-demand progress; produced=" + requestsProduced.get()
                            + ", consumed=" + pausedConsumed.get()
                            + ", responses=" + responsesReceived.get(),
                    callCompleted,
