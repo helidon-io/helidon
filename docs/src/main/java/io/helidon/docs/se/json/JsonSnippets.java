@@ -52,6 +52,16 @@ class JsonSnippets {
         // end::snippet_1[]
     }
 
+    void snippet33() {
+        // tag::snippet_33[]
+        JsonBinding binding = JsonBinding.create();
+        List<String> values = List.of("first", "second");
+
+        String json = binding.serializeList(values, String.class);
+        List<String> deserialized = binding.deserializeList(json, String.class);
+        // end::snippet_33[]
+    }
+
     void snippet_2() {
         // tag::snippet_2[]
         @Json.Entity

@@ -122,7 +122,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @return         the JSON string representation
      */
     default <T> String serializeList(List<T> values, Class<? super T> itemType) {
-        return serialize(values, listType(itemType));
+        return serialize(values, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -167,7 +167,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @return         the JSON bytes encoded using UTF-8
      */
     default <T> byte[] serializeListToBytes(List<T> values, Class<? super T> itemType) {
-        return serializeToBytes(values, listType(itemType));
+        return serializeToBytes(values, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -212,7 +212,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param <T>          the type of each list item
      */
     default <T> void serializeList(OutputStream outputStream, List<T> values, Class<? super T> itemType) {
-        serialize(outputStream, values, listType(itemType));
+        serialize(outputStream, values, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -257,7 +257,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param <T>       the type of each list item
      */
     default <T> void serializeList(JsonGenerator generator, List<T> values, Class<? super T> itemType) {
-        serialize(generator, values, listType(itemType));
+        serialize(generator, values, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -302,7 +302,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param <T>      the type of each list item
      */
     default <T> void serializeList(Writer writer, List<T> values, Class<? super T> itemType) {
-        serialize(writer, values, listType(itemType));
+        serialize(writer, values, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -322,7 +322,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bytes the JSON data as bytes
      * @param type  the class type to deserialize to
      * @param <T>   the type of the object
-     * @return      the deserialized object
+     * @return      the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(byte[] bytes, Class<T> type);
 
@@ -332,10 +332,10 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bytes    the JSON data as bytes
      * @param itemType the class type of each list item
      * @param <T>      the type of each list item
-     * @return         the deserialized list
+     * @return         the deserialized list, or {@code null} when the input represents JSON null
      */
     default <T> List<T> deserializeList(byte[] bytes, Class<T> itemType) {
-        return deserialize(bytes, listType(itemType));
+        return deserialize(bytes, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -344,7 +344,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bytes the JSON data as bytes
      * @param type  the generic type to deserialize to
      * @param <T>   the type of the object
-     * @return      the deserialized object
+     * @return      the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(byte[] bytes, GenericType<T> type);
 
@@ -354,7 +354,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param jsonStr the JSON string
      * @param type    the class type to deserialize to
      * @param <T>     the type of the object
-     * @return        the deserialized object
+     * @return        the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(String jsonStr, Class<T> type);
 
@@ -364,10 +364,10 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param jsonStr  the JSON string
      * @param itemType the class type of each list item
      * @param <T>      the type of each list item
-     * @return         the deserialized list
+     * @return         the deserialized list, or {@code null} when the input represents JSON null
      */
     default <T> List<T> deserializeList(String jsonStr, Class<T> itemType) {
-        return deserialize(jsonStr, listType(itemType));
+        return deserialize(jsonStr, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -376,7 +376,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param jsonStr the JSON string
      * @param type    the generic type to deserialize to
      * @param <T>     the type of the object
-     * @return        the deserialized object
+     * @return        the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(String jsonStr, GenericType<T> type);
 
@@ -386,7 +386,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param inputStream the input stream containing JSON data
      * @param type        the class type to deserialize to
      * @param <T>         the type of the object
-     * @return            the deserialized object
+     * @return            the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(InputStream inputStream, Class<T> type);
 
@@ -396,10 +396,10 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param inputStream the input stream containing JSON data
      * @param itemType    the class type of each list item
      * @param <T>         the type of each list item
-     * @return            the deserialized list
+     * @return            the deserialized list, or {@code null} when the input represents JSON null
      */
     default <T> List<T> deserializeList(InputStream inputStream, Class<T> itemType) {
-        return deserialize(inputStream, listType(itemType));
+        return deserialize(inputStream, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -408,7 +408,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param inputStream the input stream containing JSON data
      * @param type        the generic type to deserialize to
      * @param <T>         the type of the object
-     * @return            the deserialized object
+     * @return            the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(InputStream inputStream, GenericType<T> type);
 
@@ -419,7 +419,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bufferSize  the buffer size for reading
      * @param type        the class type to deserialize to
      * @param <T>         the type of the object
-     * @return            the deserialized object
+     * @return            the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(InputStream inputStream, int bufferSize, Class<T> type);
 
@@ -430,10 +430,10 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bufferSize  the buffer size for reading
      * @param itemType    the class type of each list item
      * @param <T>         the type of each list item
-     * @return            the deserialized list
+     * @return            the deserialized list, or {@code null} when the input represents JSON null
      */
     default <T> List<T> deserializeList(InputStream inputStream, int bufferSize, Class<T> itemType) {
-        return deserialize(inputStream, bufferSize, listType(itemType));
+        return deserialize(inputStream, bufferSize, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -443,7 +443,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bufferSize  the buffer size for reading
      * @param type        the generic type to deserialize to
      * @param <T>         the type of the object
-     * @return            the deserialized object
+     * @return            the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(InputStream inputStream, int bufferSize, GenericType<T> type);
 
@@ -453,7 +453,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param reader the reader containing JSON data
      * @param type   the class type to deserialize to
      * @param <T>    the type of the object
-     * @return       the deserialized object
+     * @return       the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(Reader reader, Class<T> type);
 
@@ -463,10 +463,10 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param reader   the reader containing JSON data
      * @param itemType the class type of each list item
      * @param <T>      the type of each list item
-     * @return         the deserialized list
+     * @return         the deserialized list, or {@code null} when the input represents JSON null
      */
     default <T> List<T> deserializeList(Reader reader, Class<T> itemType) {
-        return deserialize(reader, listType(itemType));
+        return deserialize(reader, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -475,7 +475,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param reader the reader containing JSON data
      * @param type   the generic type to deserialize to
      * @param <T>    the type of the object
-     * @return       the deserialized object
+     * @return       the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(Reader reader, GenericType<T> type);
 
@@ -485,20 +485,20 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param jsonValue the JsonValue to deserialize
      * @param type      the class type to deserialize to
      * @param <T>       the type of the object
-     * @return          the deserialized object
+     * @return          the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(JsonValue jsonValue, Class<T> type);
 
     /**
      * Deserializes a JSON array value to a list of objects of the specified item type.
      *
-     * @param jsonValue the JSON array value to deserialize
+     * @param jsonValue the JSON value to deserialize
      * @param itemType  the class type of each list item
      * @param <T>       the type of each list item
-     * @return          the deserialized list
+     * @return          the deserialized list, or {@code null} when the input represents JSON null
      */
     default <T> List<T> deserializeList(JsonValue jsonValue, Class<T> itemType) {
-        return deserialize(jsonValue, listType(itemType));
+        return deserialize(jsonValue, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -507,7 +507,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param jsonValue the JsonValue to deserialize
      * @param type      the generic type to deserialize to
      * @param <T>       the type of the object
-     * @return          the deserialized object
+     * @return          the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(JsonValue jsonValue, GenericType<T> type);
 
@@ -517,7 +517,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param parser the parser containing JSON data
      * @param type   the class type to deserialize to
      * @param <T>    the type of the object
-     * @return       the deserialized object
+     * @return       the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(JsonParser parser, Class<T> type);
 
@@ -527,10 +527,10 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param parser   the parser containing JSON data
      * @param itemType the class type of each list item
      * @param <T>      the type of each list item
-     * @return         the deserialized list
+     * @return         the deserialized list, or {@code null} when the input represents JSON null
      */
     default <T> List<T> deserializeList(JsonParser parser, Class<T> itemType) {
-        return deserialize(parser, listType(itemType));
+        return deserialize(parser, JsonBindingTypes.listType(itemType));
     }
 
     /**
@@ -539,15 +539,8 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param parser the parser containing JSON data
      * @param type   the generic type to deserialize to
      * @param <T>    the type of the object
-     * @return       the deserialized object
+     * @return       the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(JsonParser parser, GenericType<T> type);
-
-    private static <T> GenericType<List<T>> listType(Class<? super T> itemType) {
-        return GenericType.<List<T>>builder()
-                .baseType(List.class)
-                .addGenericParameter(itemType)
-                .build();
-    }
 
 }

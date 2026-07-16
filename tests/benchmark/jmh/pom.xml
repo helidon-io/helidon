@@ -69,6 +69,10 @@
             <artifactId>helidon-http-media-json-smile</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json-binding</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
         </dependency>

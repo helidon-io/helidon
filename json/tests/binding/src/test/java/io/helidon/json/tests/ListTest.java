@@ -37,6 +37,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 @Testing.Test
 public class ListTest {
@@ -67,6 +68,12 @@ public class ListTest {
         String json = bindingMethod.serializeList(jsonBinding, list, String.class);
         assertThat(json, is(expected));
         assertThat(bindingMethod.deserializeList(jsonBinding, json, String.class), is(list));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testListHelpersDeserializeJsonNull(BindingMethod bindingMethod) {
+        assertThat(bindingMethod.deserializeList(jsonBinding, "null", String.class), is(nullValue()));
     }
 
     @Test
