@@ -50,6 +50,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @SuppressWarnings("helidon:api:preview")
 @ServerTest
 class DeclarativeGraphQlTest {
+    private static final String CONFIGURED_ERROR_MESSAGE = "Configured GraphQL Error";
+
     private final Http1Client client;
     private final TestSpanExporter spanExporter;
 
@@ -350,9 +352,28 @@ class DeclarativeGraphQlTest {
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
         assertThat(data.value("validatedGreeting").orElseThrow().type(), is(JsonValueType.NULL));
         String errors = json.arrayValue("errors").orElseThrow().toString();
-        assertThat(errors, containsString("Server Error"));
+        assertThat(errors, containsString(CONFIGURED_ERROR_MESSAGE));
         assertThat(errors, not(containsString("is blank")));
         assertThat(errors, containsString("validatedGreeting"));
+    }
+
+    @Test
+    void testInvocationExceptionConfiguration() {
+        JsonObject json = graphQlResponse("""
+                                                  {
+                                                    "query": "{ blacklistedCheckedFailure whitelistedRuntimeFailure defaultRuntimeFailure }"
+                                                  }
+                                                  """);
+
+        JsonObject data = json.objectValue("data").orElseThrow();
+        assertThat(data.value("blacklistedCheckedFailure").orElseThrow().type(), is(JsonValueType.NULL));
+        assertThat(data.value("whitelistedRuntimeFailure").orElseThrow().type(), is(JsonValueType.NULL));
+        assertThat(data.value("defaultRuntimeFailure").orElseThrow().type(), is(JsonValueType.NULL));
+        String errors = json.arrayValue("errors").orElseThrow().toString();
+        assertThat(errors, containsString(CONFIGURED_ERROR_MESSAGE));
+        assertThat(errors, not(containsString("Checked exception detail")));
+        assertThat(errors, containsString("Whitelisted runtime exception detail"));
+        assertThat(errors, not(containsString("Hidden runtime exception detail")));
     }
 
     @Test
@@ -708,7 +729,22 @@ class DeclarativeGraphQlTest {
                            .objectValue("queryType").orElseThrow()
                            .stringValue("name").orElseThrow(), is("Query"));
         assertThat(mixedData.value("graphQlIntrospection").orElseThrow().type(), is(JsonValueType.NULL));
-        assertThat(mixed.arrayValue("errors").orElseThrow().toString(), containsString("Server Error"));
+        assertThat(mixed.arrayValue("errors").orElseThrow().toString(), containsString(CONFIGURED_ERROR_MESSAGE));
+    }
+
+    @Test
+    void testSchemaFirstAccessPreservesExplicitAuthorization() {
+        try (Http1ClientResponse response = client.get("/schema-first-explicit-secured-graphql/schema.graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        try (Http1ClientResponse response = client.post("/schema-first-explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .submit("{\"query\": \"{ graphQlSchema }\"}")) {
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+        }
     }
 
     @Test
@@ -723,7 +759,7 @@ class DeclarativeGraphQlTest {
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
         assertThat(data.value("securedMessage").orElseThrow().type(), is(JsonValueType.NULL));
         String errors = json.arrayValue("errors").orElseThrow().toString();
-        assertThat(errors, containsString("Server Error"));
+        assertThat(errors, containsString(CONFIGURED_ERROR_MESSAGE));
         assertThat(errors, not(containsString("Security did not allow this request to proceed")));
         assertThat(errors, containsString("securedMessage"));
     }
@@ -742,7 +778,7 @@ class DeclarativeGraphQlTest {
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
         assertThat(data.value("securedMessage").orElseThrow().type(), is(JsonValueType.NULL));
         String errors = json.arrayValue("errors").orElseThrow().toString();
-        assertThat(errors, containsString("Server Error"));
+        assertThat(errors, containsString(CONFIGURED_ERROR_MESSAGE));
         assertThat(errors, not(containsString("Security did not allow this request to proceed")));
         assertThat(errors, containsString("securedMessage"));
     }

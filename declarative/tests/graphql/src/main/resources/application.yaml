@@ -20,6 +20,13 @@ server:
     request-scope:
       enabled: true
 
+graphql:
+  default-error-message: "Configured GraphQL Error"
+  exception-white-list:
+    - "java.lang.IllegalStateException"
+  exception-black-list:
+    - "java.io.IOException"
+
 security:
   providers:
     - http-basic-auth:

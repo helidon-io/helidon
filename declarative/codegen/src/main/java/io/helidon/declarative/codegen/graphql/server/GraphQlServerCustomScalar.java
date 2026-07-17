@@ -41,44 +41,50 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_NAME;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCALAR;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCALAR_SPI;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.javaIdentifierSuffix;
 import static java.util.function.Predicate.not;
 
 class GraphQlServerCustomScalar {
     private static final TypeName GENERATOR = TypeName.create(GraphQlServerExtension.class);
 
     private final RegistryCodegenContext ctx;
-    private final Set<TypeName> generatedAdapters = new HashSet<>();
+    private final Set<TypeName> generatedScalarTypes = new HashSet<>();
 
     GraphQlServerCustomScalar(RegistryCodegenContext ctx) {
         this.ctx = ctx;
     }
 
-    void process(RegistryRoundContext roundContext, ScalarSchemaType scalarType) {
+    void process(RegistryRoundContext roundContext, TypeInfo endpointTypeInfo, ScalarSchemaType scalarType) {
         TypeInfo scalarTypeInfo = roundContext.typeInfo(scalarType.javaType().boxed())
                 .or(() -> roundContext.typeInfo(scalarType.javaType()))
                 .orElseThrow(() -> new CodegenException("Unknown Java GraphQL scalar type "
                                                                 + scalarType.javaType().fqName(),
                                                         scalarType.originatingElement()));
-        TypeName generatedType = customScalarAdapterName(scalarType.javaType());
-        if (generatedAdapters.add(generatedType)) {
+        if (generatedScalarTypes.add(scalarType.javaType())) {
+            TypeName generatedType = customScalarAdapterName(endpointTypeInfo.typeName(), scalarType.javaType());
             Set<Annotation> scalarAnnotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, scalarTypeInfo));
             TypeName customScalar = TypeName.builder(GRAPHQL_CUSTOM_SCALAR_SPI)
                     .addTypeArgument(scalarType.javaType())
                     .build();
-            process(roundContext, customScalar, scalarType, scalarTypeInfo, scalarAnnotations, generatedType);
+            process(roundContext,
+                    endpointTypeInfo,
+                    customScalar,
+                    scalarTypeInfo,
+                    scalarAnnotations,
+                    generatedType);
         }
     }
 
     private void process(RegistryRoundContext roundContext,
+                         TypeInfo endpointTypeInfo,
                          TypeName customScalar,
-                         ScalarSchemaType scalarType,
                          TypeInfo scalarTypeInfo,
                          Set<Annotation> scalarAnnotations,
                          TypeName generatedType) {
         ClassModel.Builder classModel = ClassModel.builder()
                 .type(generatedType)
-                .copyright(CodegenUtil.copyright(GENERATOR, scalarTypeInfo.typeName(), generatedType))
-                .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, scalarTypeInfo.typeName(), generatedType, "0", ""))
+                .copyright(CodegenUtil.copyright(GENERATOR, endpointTypeInfo.typeName(), generatedType))
+                .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, endpointTypeInfo.typeName(), generatedType, "0", ""))
                 .addAnnotation(DeclarativeTypes.SINGLETON_ANNOTATION)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addInterface(GRAPHQL_SCALAR_SPI)
@@ -156,14 +162,14 @@ class GraphQlServerCustomScalar {
 
         roundContext.addGeneratedType(generatedType,
                                       classModel,
-                                      scalarTypeInfo.typeName(),
-                                      scalarType.originatingElement());
+                                      endpointTypeInfo.typeName(),
+                                      endpointTypeInfo.originatingElementValue());
     }
 
-    private static TypeName customScalarAdapterName(TypeName scalarType) {
+    private static TypeName customScalarAdapterName(TypeName endpointType, TypeName scalarType) {
         return TypeName.builder()
-                .packageName(scalarType.packageName())
-                .className(scalarType.classNameWithEnclosingNames().replace('.', '_') + "Scalar__GraphQlScalar")
+                .packageName(endpointType.packageName())
+                .className(javaIdentifierSuffix(scalarType.fqName()) + "Scalar__GraphQlScalar")
                 .build();
     }
 

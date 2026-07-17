@@ -28,7 +28,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.InvalidFlavor(HelidonFlavor.MP)
 module io.helidon.webserver.graphql {
 
-    requires io.helidon.common.configurable;
     requires io.helidon.common.uri;
     requires io.helidon.common;
     requires io.helidon.config;

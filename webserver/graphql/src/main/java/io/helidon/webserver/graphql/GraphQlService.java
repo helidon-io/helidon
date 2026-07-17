@@ -34,7 +34,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.Api;
-import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -98,7 +97,6 @@ public class GraphQlService implements HttpService {
     private final String context;
     private final String schemaUri;
     private final InvocationHandler invocationHandler;
-    private final ExecutorService executor;
     private final boolean permitAll;
     private final Handler graphQlPost;
     private final Handler graphQlGet;
@@ -112,7 +110,6 @@ public class GraphQlService implements HttpService {
         this.context = builder.context;
         this.schemaUri = builder.schemaUri;
         this.invocationHandler = builder.handler;
-        this.executor = builder.executor.get();
         this.permitAll = builder.permitAll;
         this.graphQlPost = builder.postEntryPoint.apply(this::graphQlPost);
         this.graphQlGet = builder.getEntryPoint.apply(this::graphQlGet);
@@ -468,7 +465,6 @@ public class GraphQlService implements HttpService {
     public static class Builder implements io.helidon.common.Builder<Builder, GraphQlService> {
         private String context = GraphQlConstants.GRAPHQL_WEB_CONTEXT;
         private String schemaUri = GraphQlConstants.GRAPHQL_SCHEMA_URI;
-        private Supplier<? extends ExecutorService> executor;
         private InvocationHandler handler;
         private boolean permitAll;
         private Function<Handler, Handler> postEntryPoint = Function.identity();
@@ -485,13 +481,6 @@ public class GraphQlService implements HttpService {
         public GraphQlService build() {
             if (handler == null) {
                 throw new IllegalStateException("Invocation handler must be defined");
-            }
-
-            if (executor == null) {
-                executor = ServerThreadPoolSupplier.builder()
-                        .name("graphql")
-                        .threadNamePrefix("graphql-")
-                        .build();
             }
 
             return new GraphQlService(this);
@@ -523,11 +512,6 @@ public class GraphQlService implements HttpService {
          *     <td>{@code false}</td>
          *     <td>Whether to permit access without authentication.</td>
          * </tr>
-         * <tr>
-         *     <td>executor-service</td>
-         *     <td>default server thread pool configuration</td>
-         *     <td>see {@link io.helidon.common.configurable.ServerThreadPoolSupplier#builder()}</td>
-         * </tr>
          * </table>
          *
          * @param config configuration to use
@@ -537,14 +521,6 @@ public class GraphQlService implements HttpService {
             config.get("web-context").asString().ifPresent(this::webContext);
             config.get("schema-uri").asString().ifPresent(this::schemaUri);
             config.get("permit-all").asBoolean().ifPresent(this::permitAll);
-
-            if (executor == null) {
-                executor = ServerThreadPoolSupplier.builder()
-                        .name("graphql")
-                        .threadNamePrefix("graphql-")
-                        .config(config.get("executor-service"))
-                        .build();
-            }
 
             return this;
         }
@@ -645,11 +621,6 @@ public class GraphQlService implements HttpService {
             TypedElementInfo schemaMethod = implicitAuthorization
                     .map(annotation -> requestMethod("<graphql-schema>", annotation))
                     .orElse(SCHEMA_METHOD);
-            List<Annotation> implicitTypeAnnotations = implicitAuthorization
-                    .map(_ -> typeAnnotations.stream()
-                            .filter(annotation -> !annotation.typeName().equals(AUTHORIZED_TYPE))
-                            .toList())
-                    .orElse(typeAnnotations);
             this.postEntryPoint = handler -> entryPoints.handler(descriptor,
                                                                  typeQualifiers,
                                                                  typeAnnotations,
@@ -662,7 +633,7 @@ public class GraphQlService implements HttpService {
                                                                 handler);
             this.schemaEntryPoint = handler -> entryPoints.handler(descriptor,
                                                                    typeQualifiers,
-                                                                   implicitTypeAnnotations,
+                                                                   typeAnnotations,
                                                                    schemaMethod,
                                                                    handler);
             implicitAuthorization.ifPresent(annotation -> {
@@ -670,13 +641,13 @@ public class GraphQlService implements HttpService {
                 TypedElementInfo noResolverMethod = requestMethod("<graphql-no-resolver>", annotation);
                 this.introspectionAuthorization = handler -> entryPoints.authorizationHandler(descriptor,
                                                                                                 typeQualifiers,
-                                                                                                implicitTypeAnnotations,
+                                                                                                typeAnnotations,
                                                                                                 introspectionMethod,
                                                                                                 handler);
                 if (declarativeResolvers) {
                     this.noResolverAuthorization = handler -> entryPoints.authorizationHandler(descriptor,
                                                                                                  typeQualifiers,
-                                                                                                 implicitTypeAnnotations,
+                                                                                                 typeAnnotations,
                                                                                                  noResolverMethod,
                                                                                                  handler);
                 }
@@ -733,9 +704,10 @@ public class GraphQlService implements HttpService {
          *
          * @param executor executor service
          * @return updated builder instance
+         * @deprecated GraphQL request processing does not use a dedicated executor
          */
+        @Deprecated(since = "27.0.0", forRemoval = true)
         public Builder executor(ExecutorService executor) {
-            this.executor = () -> executor;
             return this;
         }
 
@@ -744,9 +716,10 @@ public class GraphQlService implements HttpService {
          *
          * @param executor executor service
          * @return updated builder instance
+         * @deprecated GraphQL request processing does not use a dedicated executor
          */
+        @Deprecated(since = "27.0.0", forRemoval = true)
         public Builder executor(Supplier<? extends ExecutorService> executor) {
-            this.executor = executor;
             return this;
         }
     }

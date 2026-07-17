@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.tests.graphql;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -56,6 +57,21 @@ class GraphEndpoint {
                              @GraphQl.DefaultValue("\"Reader\"")
                              @Validation.String.NotBlank String name) {
         return "Validated " + name;
+    }
+
+    @GraphQl.Query
+    String blacklistedCheckedFailure() throws IOException {
+        throw new IOException("Checked exception detail");
+    }
+
+    @GraphQl.Query
+    String whitelistedRuntimeFailure() {
+        throw new IllegalStateException("Whitelisted runtime exception detail");
+    }
+
+    @GraphQl.Query
+    String defaultRuntimeFailure() {
+        throw new UnsupportedOperationException("Hidden runtime exception detail");
     }
 
     @GraphQl.Query

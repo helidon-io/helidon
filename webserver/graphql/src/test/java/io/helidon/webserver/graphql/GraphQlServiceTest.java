@@ -21,7 +21,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.context.Context;
@@ -205,7 +204,6 @@ class GraphQlServiceTest {
         HttpRules rules = mock(HttpRules.class, Answers.RETURNS_SELF);
         GraphQlService.builder()
                 .webContext(context)
-                .executor(mock(ExecutorService.class))
                 .invocationHandler(new LegacyInvocationHandler())
                 .build()
                 .routing(rules);

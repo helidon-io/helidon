@@ -66,6 +66,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class GraphQlServerCodegenTest {
     private static final List<Class<?>> GRAPHQL_CLASSPATH = List.of(
             Annotation.class,
+            io.helidon.common.buffers.BufferData.class,
+            io.helidon.common.concurrency.limits.Limit.class,
+            io.helidon.common.configurable.ThreadPool.class,
+            io.helidon.common.mapper.Mapper.class,
+            io.helidon.common.media.type.MediaType.class,
+            io.helidon.common.parameters.Parameters.class,
+            io.helidon.common.socket.SocketContext.class,
+            io.helidon.common.tls.Tls.class,
+            io.helidon.common.uri.UriQuery.class,
             Config.class,
             DataFetcher.class,
             DataFetchingEnvironment.class,
@@ -84,8 +93,15 @@ class GraphQlServerCodegenTest {
             HttpEntryPoint.class,
             HttpFeature.class,
             HttpRouting.class,
+            io.helidon.http.Status.class,
+            io.helidon.http.encoding.ContentEncoding.class,
+            io.helidon.http.http1.Http1ConnectionListener.class,
+            io.helidon.http.media.MediaContext.class,
             io.helidon.common.security.SecurityContext.class,
             InvocationHandler.class,
+            io.helidon.json.JsonObject.class,
+            io.helidon.json.binding.JsonBinding.class,
+            io.helidon.metrics.api.Metrics.class,
             Prototype.class,
             RuntimeWiring.class,
             SchemaGenerator.class,
@@ -336,7 +352,7 @@ class GraphQlServerCodegenTest {
                 .toList();
         assertThat(generatedSources.size(), is(1));
         var scalarSources = Files.walk(result.sourceOutput())
-                .filter(it -> it.getFileName().toString().equals("IsbnScalar__GraphQlScalar.java"))
+                .filter(it -> it.getFileName().toString().equals("com_2e_example_2e_IsbnScalar__GraphQlScalar.java"))
                 .toList();
         assertThat(scalarSources.size(), is(1));
 
@@ -346,6 +362,9 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("routing.register(GraphQlService.builder()"));
         assertThat(generated, containsString(".webContext(\"/api/graphql\")"));
         assertThat(generated, containsString(".schemaUri(\"/schema\")"));
+        assertThat(generated, containsString("Config config"));
+        assertThat(generated, containsString("this.config = config;"));
+        assertThat(generated, containsString(".config(config.get(\"graphql\"))"));
         assertThat(generated, containsString("HttpEntryPoint.EntryPoints httpEntryPoints"));
         assertThat(generated, containsString("this.httpEntryPoints = httpEntryPoints;"));
         assertThat(generated,
@@ -419,7 +438,9 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("scalarLiteralValue("));
         assertThat(generated, containsString("case graphql.language.ArrayValue arrayValue"));
         assertThat(generated, containsString("case graphql.language.ObjectValue objectValue"));
-        assertThat(generatedScalar, containsString("class IsbnScalar__GraphQlScalar implements GeneratedGraphQl.CustomScalar"));
+        assertThat(generatedScalar,
+                   containsString("class com_2e_example_2e_IsbnScalar__GraphQlScalar "
+                                          + "implements GeneratedGraphQl.CustomScalar"));
         assertThat(generatedScalar, containsString("private final GraphQlScalar<Isbn> delegate"));
         assertThat(generatedScalar, containsString("return \"ISBN\";"));
         assertThat(generatedScalar, containsString("return Isbn.class;"));
@@ -487,6 +508,136 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("builder.type(\"AuthorDto\""));
         assertThat(generated, containsString(".dataFetcher(\"name\", environment -> ((AuthorDto) environment.getSource()).getName())"));
         assertThat(generated, containsString(".dataFetcher(\"active\", environment -> ((AuthorDto) environment.getSource()).isActive())"));
+    }
+
+    @Test
+    void dependencyModuleCustomScalarsGenerateConsumerOwnedAdapters() throws IOException {
+        Path workDir = Path.of("target/test-compiler/graphql-server-cross-module-custom-scalars");
+        var dependency = TestCompiler.builder()
+                .currentRelease()
+                .addModulepath(GRAPHQL_CLASSPATH)
+                .workDir(workDir.resolve("dependency"))
+                .addSource("module-info.java", """
+                        module com.example.scalars {
+                            requires io.helidon.graphql;
+
+                            exports com.example.scalars.first;
+                            exports com.example.scalars.second;
+                        }
+                        """)
+                .addSource("com/example/scalars/first/Value.java", """
+                        package com.example.scalars.first;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Scalar("FIRST_VALUE")
+                        public record Value(String value) {
+                        }
+                        """)
+                .addSource("com/example/scalars/second/Value.java", """
+                        package com.example.scalars.second;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Scalar("SECOND_VALUE")
+                        public record Value(String value) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String dependencyDiagnostics = String.join("\n", dependency.diagnostics());
+        assertThat(dependencyDiagnostics, dependency.success(), is(true));
+
+        var consumer = TestCompiler.builder()
+                .currentRelease()
+                .addModulepath(GRAPHQL_CLASSPATH)
+                .addModulepathEntry(dependency.classOutput())
+                .addProcessor(AptProcessor::new)
+                .workDir(workDir.resolve("consumer"))
+                .addSource("module-info.java", """
+                        module com.example.endpoint {
+                            requires com.example.scalars;
+                            requires io.helidon.common;
+                            requires io.helidon.common.context;
+                            requires io.helidon.common.types;
+                            requires io.helidon.config;
+                            requires io.helidon.graphql;
+                            requires io.helidon.graphql.server;
+                            requires io.helidon.service.registry;
+                            requires io.helidon.webserver;
+                            requires io.helidon.webserver.graphql;
+                        }
+                        """)
+                .addSource("GraphEndpoint.java", """
+                        package com.example.endpoint;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            com.example.scalars.first.Value firstValue() {
+                                return new com.example.scalars.first.Value("first");
+                            }
+
+                            @GraphQl.Query
+                            com.example.scalars.second.Value secondValue() {
+                                return new com.example.scalars.second.Value("second");
+                            }
+                        }
+                        """)
+                .addSource("ScalarProviders.java", """
+                        package com.example.endpoint;
+
+                        import io.helidon.graphql.spi.GraphQlScalar;
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Singleton
+                        class FirstScalar implements GraphQlScalar<com.example.scalars.first.Value> {
+                            @Override
+                            public Object serialize(com.example.scalars.first.Value value) {
+                                return value.value();
+                            }
+
+                            @Override
+                            public com.example.scalars.first.Value parseValue(Object value) {
+                                return new com.example.scalars.first.Value((String) value);
+                            }
+                        }
+
+                        @Service.Singleton
+                        class SecondScalar implements GraphQlScalar<com.example.scalars.second.Value> {
+                            @Override
+                            public Object serialize(com.example.scalars.second.Value value) {
+                                return value.value();
+                            }
+
+                            @Override
+                            public com.example.scalars.second.Value parseValue(Object value) {
+                                return new com.example.scalars.second.Value((String) value);
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String consumerDiagnostics = String.join("\n", consumer.diagnostics());
+        assertThat(consumerDiagnostics, consumer.success(), is(true));
+
+        var scalarAdapters = Files.walk(consumer.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith("Scalar__GraphQlScalar.java"))
+                .toList();
+        assertThat(scalarAdapters.size(), is(2));
+        assertThat(scalarAdapters.stream()
+                           .allMatch(it -> it.getParent().endsWith(Path.of("com", "example", "endpoint"))),
+                   is(true));
+        assertThat(scalarAdapters.stream()
+                           .map(it -> it.getFileName().toString())
+                           .distinct()
+                           .count(),
+                   is(2L));
     }
 
     @Test
@@ -1807,6 +1958,71 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("must use a concrete element type"));
+    }
+
+    @Test
+    void childFieldEnumAndListArgumentsDoNotInterfereWithSourceInference() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-field-source-inference-with-arguments"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+
+                            @GraphQlServer.Field
+                            String stateLabel(@GraphQlServer.Source Book book, BookStatus status) {
+                                return book.title() + ": " + status;
+                            }
+
+                            @GraphQlServer.Field
+                            String tagSummary(Book book, List<String> tags) {
+                                return book.title() + ": " + tags;
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title) {
+                        }
+                        """)
+                .addSource("BookStatus.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        enum BookStatus {
+                            AVAILABLE
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = Files.readString(result.sourceOutput()
+                                                    .resolve("com/example/GraphEndpoint__GraphQlFeature.java"),
+                                            StandardCharsets.UTF_8);
+        assertThat(generated, containsString("stateLabel(status: BookStatus): String"));
+        assertThat(generated, containsString("tagSummary(tags: [String]): String"));
     }
 
     @Test

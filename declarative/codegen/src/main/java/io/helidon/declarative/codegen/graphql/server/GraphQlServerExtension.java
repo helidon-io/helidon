@@ -617,7 +617,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                       TypedElementInfo method,
                                                       TypedElementInfo parameter,
                                                       int index) {
-        if (isScalarType(roundContext, parameter.typeName())) {
+        if (parameter.typeName().isList() || isScalarType(roundContext, parameter.typeName())) {
             return Optional.empty();
         }
         if (specialParameterKind(parameter.typeName()).isPresent()) {
@@ -627,6 +627,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         TypeInfo typeInfo = roundContext.typeInfo(parameter.typeName().boxed())
                 .or(() -> roundContext.typeInfo(parameter.typeName()))
                 .orElseThrow(() -> unsupportedSourceType(endpoint, method, parameter));
+        if (typeInfo.kind() == ElementKind.ENUM) {
+            return Optional.empty();
+        }
         if (typeInfo.kind() == ElementKind.RECORD
                 || typeInfo.kind() == ElementKind.CLASS
                 || typeInfo.kind() == ElementKind.INTERFACE) {
@@ -704,7 +707,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
 
     private void process(RegistryRoundContext roundContext, GraphQlGroup group) {
         for (ScalarSchemaType scalarType : group.schemaTypes().scalarTypes()) {
-            customScalar.process(roundContext, scalarType);
+            customScalar.process(roundContext, group.primaryEndpoint().typeInfo(), scalarType);
         }
 
         TypeInfo type = group.primaryEndpoint().typeInfo();
@@ -747,6 +750,8 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .isFinal(true)
                 .type(LIST_OF_GRAPHQL_SCALARS)
                 .name("scalars"));
+        classModel.addField(field -> field.accessModifier(AccessModifier.PRIVATE)
+                .isFinal(true).type(DeclarativeTypes.CONFIG).name("config"));
 
         Constructor.Builder constructor = Constructor.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
@@ -771,9 +776,10 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .addParameter(param -> param
                         .type(LIST_OF_GRAPHQL_SCALARS)
                         .name("scalars"))
+                .addParameter(param -> param.type(DeclarativeTypes.CONFIG).name("config"))
                 .addContentLine("this.entryPoints = entryPoints;")
                 .addContentLine("this.httpEntryPoints = httpEntryPoints;")
-                .addContentLine("this.scalars = scalars;");
+                .addContentLine("this.scalars = scalars;").addContentLine("this.config = config;");
         classModel.addConstructor(constructor);
 
         addSetupMethod(classModel, group);
@@ -926,9 +932,12 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .accessModifier(AccessModifier.PRIVATE)
                 .returnType(INVOCATION_HANDLER)
                 .name("invocationHandler")
-                .addContent("return ")
-                .addContent(INVOCATION_HANDLER)
-                .addContentLine(".create(schema());"));
+                .addContent("return ").addContent(INVOCATION_HANDLER)
+                .addContentLine(".builder()").increaseContentPadding().increaseContentPadding()
+                .addContentLine(".config(config.get(\"graphql\"))")
+                .addContentLine(".schema(schema())")
+                .addContentLine(".build();")
+                .decreaseContentPadding().decreaseContentPadding());
     }
 
     private void addRuntimeWiringMethod(ClassModel.Builder classModel, GraphQlGroup group) {

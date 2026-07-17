@@ -289,7 +289,7 @@ final class GraphQlServerInputValues {
         return "list_" + javaIdentifierSuffix(listType.javaType().resolvedName());
     }
 
-    private static String javaIdentifierSuffix(String value) {
+    static String javaIdentifierSuffix(String value) {
         StringBuilder result = new StringBuilder(value.length());
         for (int i = 0; i < value.length(); i++) {
             char ch = value.charAt(i);
