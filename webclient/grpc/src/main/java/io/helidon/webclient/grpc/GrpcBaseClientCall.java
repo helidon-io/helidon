@@ -32,6 +32,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.tls.Tls;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
@@ -82,16 +83,18 @@ import static java.lang.System.Logger.Level.TRACE;
  */
 abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private static final System.Logger LOGGER = System.getLogger(GrpcBaseClientCall.class.getName());
+    private static final Tls CLEARTEXT_TLS = Tls.builder()
+            .enabled(false)
+            .build();
 
     static final Metadata EMPTY_METADATA = new Metadata();
-    static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
-    static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
+    static final Header GRPC_ACCEPT_ENCODING = HeaderValues.createCached(HeaderNames.ACCEPT_ENCODING, "gzip");
+    static final Header GRPC_CONTENT_TYPE = HeaderValues.createCached(HeaderNames.CONTENT_TYPE, "application/grpc");
     // Listed in the gRPC-over-HTTP/2 Call-Definition as a non-optional field.
     // Used to detect incompatible proxies: intermediaries that do not support HTTP/2 trailers
     // may silently strip grpc-status and trailing metadata. RFC 7540 §8.1.2.2 permits TE in
     // HTTP/2 headers only with the value "trailers".
     // See: https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
-    static final Header GRPC_TE_TRAILERS = HeaderValues.create(HeaderNames.TE, "trailers");
     static final HeaderName STATUS_NAME = HeaderNames.createFromLowercase("grpc-status");
 
     static final BufferData PING_FRAME = BufferData.create("PING");
@@ -217,7 +220,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         headers.set(Http2Headers.SCHEME_NAME, "http");
         headers.set(GRPC_CONTENT_TYPE);
         headers.set(GRPC_ACCEPT_ENCODING);
-        headers.set(GRPC_TE_TRAILERS);
+        headers.set(HeaderValues.TE_TRAILERS);
         return headers;
     }
 
@@ -301,20 +304,21 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         WebClient webClient = grpcClient.webClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
         SniConfig sni = clientConfig.sni().orElse(null);
+        Tls tls = "http".equalsIgnoreCase(clientUri.scheme()) ? CLEARTEXT_TLS : clientConfig.tls();
 
         if (clientConfig.baseAddress().isPresent()
             && clientConfig.baseAddress().get() instanceof UnixDomainSocketAddress udsAddress) {
             ConnectionKey connectionKey;
             if (sni == null) {
                 connectionKey = ConnectionKey.createUnixDomainSocket(clientUri,
-                                                                     clientConfig.tls(),
+                                                                     tls,
                                                                      clientConfig.dnsResolver(),
                                                                      clientConfig.dnsAddressLookup(),
                                                                      udsAddress);
             } else {
                 connectionKey = ConnectionKey.createUnixDomainSocket(clientUri,
                                                                      sni,
-                                                                     clientConfig.tls(),
+                                                                     tls,
                                                                      clientConfig.dnsResolver(),
                                                                      clientConfig.dnsAddressLookup(),
                                                                      udsAddress,
@@ -333,7 +337,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         if (sni == null) {
             connectionKey = ConnectionKey.create(
                     clientUri,
-                    clientConfig.tls(),
+                    tls,
                     DefaultDnsResolver.create(),
                     DnsAddressLookup.defaultLookup(),
                     Proxy.noProxy());
@@ -341,7 +345,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             connectionKey = ConnectionKey.create(
                     clientUri,
                     sni,
-                    clientConfig.tls(),
+                    tls,
                     DefaultDnsResolver.create(),
                     DnsAddressLookup.defaultLookup(),
                     Proxy.noProxy(),

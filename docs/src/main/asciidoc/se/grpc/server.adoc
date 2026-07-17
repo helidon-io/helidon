@@ -303,8 +303,9 @@ gRPC protocol, so secure gRPC services with `helidon-webserver-grpc-security`.
 </dependency>
 ----
 
-Configure security as a gRPC server service under `grpc-services.security`.
-The `security` root config still defines the Helidon security providers.
+The gRPC security service is discovered from the classpath and enabled by default. Configure its settings under
+`grpc-services.security`; set `grpc-services.security.enabled=false` to disable it. The `security` root config defines
+the Helidon security providers.
 
 [source,yaml]
 ----

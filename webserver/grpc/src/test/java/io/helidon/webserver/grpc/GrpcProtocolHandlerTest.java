@@ -22,9 +22,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -59,6 +64,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -72,6 +78,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class GrpcProtocolHandlerTest {
 
     private static final HeaderName GRPC_ACCEPT_ENCODING = HeaderNames.create("grpc-accept-encoding");
+    private static final ExecutorService EXECUTOR = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
+
+    @AfterAll
+    static void closeExecutor() {
+        EXECUTOR.close();
+    }
 
     @Test
     @SuppressWarnings("unchecked")
@@ -214,6 +226,427 @@ class GrpcProtocolHandlerTest {
 
         assertDoesNotThrow(() -> handler.data(header, BufferData.empty()));
         assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
+    }
+
+    @Test
+    void testReentrantDemandPreservesMessageAndHalfCloseOrder() {
+        List<String> events = new ArrayList<>();
+        AtomicReference<ServerCall<String, String>> callRef = new AtomicReference<>();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onMessage(String message) {
+                events.add(message);
+                if ("one".equals(message)) {
+                    callRef.get().request(1);
+                }
+            }
+
+            @Override
+            public void onHalfClose() {
+                events.add("halfClose");
+            }
+        };
+        ServerCallHandler<String, String> callHandler = new ServerCallHandler<>() {
+            @Override
+            public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata ignored) {
+                callRef.set(call);
+                return listener;
+            }
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create());
+        handler.init();
+        callRef.get().request(2);
+        sendData(handler, "one", false);
+        sendData(handler, "two", false);
+        sendData(handler, "three", false);
+        sendData(handler, null, true);
+
+        assertThat(events, is(List.of("one", "two", "three", "halfClose")));
+    }
+
+    @Test
+    void testHalfCloseWaitsForConcurrentMessageCallback() throws Exception {
+        CountDownLatch messageEntered = new CountDownLatch(1);
+        CountDownLatch releaseMessage = new CountDownLatch(1);
+        AtomicInteger halfCloseCount = new AtomicInteger();
+        AtomicReference<ServerCall<String, String>> callRef = new AtomicReference<>();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onMessage(String message) {
+                messageEntered.countDown();
+                try {
+                    releaseMessage.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public void onHalfClose() {
+                halfCloseCount.incrementAndGet();
+            }
+        };
+        ServerCallHandler<String, String> callHandler = new ServerCallHandler<>() {
+            @Override
+            public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata ignored) {
+                callRef.set(call);
+                return listener;
+            }
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create());
+        handler.init();
+        Thread dataThread = Thread.startVirtualThread(() -> {
+            sendData(handler, "one", false);
+            sendData(handler, null, true);
+        });
+
+        Thread requestThread = Thread.startVirtualThread(() -> callRef.get().request(1));
+        assertThat("message callback entered", messageEntered.await(10, TimeUnit.SECONDS), is(true));
+        assertThat("half-close must wait for message callback", halfCloseCount.get(), is(0));
+        releaseMessage.countDown();
+        requestThread.join(TimeUnit.SECONDS.toMillis(10));
+        dataThread.join(TimeUnit.SECONDS.toMillis(10));
+
+        assertThat("request thread completed", requestThread.isAlive(), is(false));
+        assertThat("data thread completed", dataThread.isAlive(), is(false));
+        assertThat(halfCloseCount.get(), is(1));
+    }
+
+    @Test
+    void testCancelWaitsForConcurrentMessageCallback() throws Exception {
+        List<String> events = new ArrayList<>();
+        CountDownLatch messageEntered = new CountDownLatch(1);
+        CountDownLatch releaseMessage = new CountDownLatch(1);
+        AtomicReference<ServerCall<String, String>> callRef = new AtomicReference<>();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onMessage(String message) {
+                events.add("message-start");
+                messageEntered.countDown();
+                try {
+                    releaseMessage.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(e);
+                }
+                events.add("message-end");
+            }
+
+            @Override
+            public void onCancel() {
+                events.add("cancel");
+            }
+        };
+        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+            callRef.set(call);
+            return listener;
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create());
+        handler.init();
+        Thread dataThread = Thread.startVirtualThread(() -> sendData(handler, "one", false));
+
+        Thread requestThread = Thread.startVirtualThread(() -> callRef.get().request(1));
+        assertThat("message callback entered", messageEntered.await(10, TimeUnit.SECONDS), is(true));
+        handler.rstStream(new Http2RstStream(io.helidon.http.http2.Http2ErrorCode.CANCEL));
+        assertThat(events, is(List.of("message-start")));
+
+        releaseMessage.countDown();
+        requestThread.join(TimeUnit.SECONDS.toMillis(10));
+        dataThread.join(TimeUnit.SECONDS.toMillis(10));
+
+        assertThat("request thread completed", requestThread.isAlive(), is(false));
+        assertThat("data thread completed", dataThread.isAlive(), is(false));
+        assertThat(events, is(List.of("message-start", "message-end", "cancel")));
+    }
+
+    @Test
+    void testInboundFloodWaitsForDemand() throws Exception {
+        AtomicInteger messageCount = new AtomicInteger();
+        AtomicReference<ServerCall<String, String>> callRef = new AtomicReference<>();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onMessage(String message) {
+                messageCount.incrementAndGet();
+            }
+        };
+        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+            callRef.set(call);
+            return listener;
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create());
+        handler.init();
+
+        int messageCountInFrame = 256;
+        BufferData data = BufferData.growing(messageCountInFrame * 16);
+        for (int i = 0; i < messageCountInFrame; i++) {
+            byte[] message = Integer.toString(i).getBytes(StandardCharsets.UTF_8);
+            data.write(0);
+            data.writeUnsignedInt32(message.length);
+            data.write(message);
+        }
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(0),
+                                                          1);
+        CountDownLatch dataFinished = new CountDownLatch(1);
+        Thread dataThread = Thread.startVirtualThread(() -> {
+            try {
+                handler.data(header, data);
+            } finally {
+                dataFinished.countDown();
+            }
+        });
+
+        assertThat("flood must pause without demand", dataFinished.await(200, TimeUnit.MILLISECONDS), is(false));
+        assertThat(messageCount.get(), is(0));
+        callRef.get().request(1);
+        assertThat(messageCount.get(), is(1));
+        assertThat("flood must pause after consuming demand", dataFinished.await(200, TimeUnit.MILLISECONDS), is(false));
+
+        callRef.get().request(messageCountInFrame - 1);
+        assertThat("flood completed after demand", dataFinished.await(10, TimeUnit.SECONDS), is(true));
+        dataThread.join(TimeUnit.SECONDS.toMillis(10));
+
+        assertThat(dataThread.isAlive(), is(false));
+        assertThat(messageCount.get(), is(messageCountInFrame));
+    }
+
+    @Test
+    void testCancelReleasesMessageWaitingForDemand() throws Exception {
+        AtomicInteger messageCount = new AtomicInteger();
+        AtomicInteger cancelCount = new AtomicInteger();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onMessage(String message) {
+                messageCount.incrementAndGet();
+            }
+
+            @Override
+            public void onCancel() {
+                cancelCount.incrementAndGet();
+            }
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(listener),
+                                                GrpcConfig.create());
+        handler.init();
+        CountDownLatch dataFinished = new CountDownLatch(1);
+        Thread dataThread = Thread.startVirtualThread(() -> {
+            try {
+                sendData(handler, "one", false);
+            } finally {
+                dataFinished.countDown();
+            }
+        });
+
+        assertThat("message must wait for demand", dataFinished.await(200, TimeUnit.MILLISECONDS), is(false));
+        handler.rstStream(new Http2RstStream(io.helidon.http.http2.Http2ErrorCode.CANCEL));
+        assertThat("cancellation must release the data worker", dataFinished.await(10, TimeUnit.SECONDS), is(true));
+        dataThread.join(TimeUnit.SECONDS.toMillis(10));
+
+        assertThat(dataThread.isAlive(), is(false));
+        assertThat(cancelCount.get(), is(1));
+        assertThat(messageCount.get(), is(0));
+    }
+
+    @Test
+    void testLocalCloseReleasesEndStreamMessageWaitingForDemand() throws Exception {
+        AtomicInteger messageCount = new AtomicInteger();
+        AtomicInteger completeCount = new AtomicInteger();
+        AtomicReference<ServerCall<String, String>> callRef = new AtomicReference<>();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onMessage(String message) {
+                messageCount.incrementAndGet();
+            }
+
+            @Override
+            public void onComplete() {
+                completeCount.incrementAndGet();
+            }
+        };
+        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+            callRef.set(call);
+            return listener;
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create());
+        AtomicInteger streamCloseCount = new AtomicInteger();
+        handler.onStreamClosed(streamCloseCount::incrementAndGet);
+        handler.init();
+        CountDownLatch dataFinished = new CountDownLatch(1);
+        Thread dataThread = Thread.startVirtualThread(() -> {
+            try {
+                sendData(handler, "one", true);
+            } finally {
+                dataFinished.countDown();
+            }
+        });
+
+        assertThat("message must wait for demand", dataFinished.await(200, TimeUnit.MILLISECONDS), is(false));
+        callRef.get().close(Status.OK, new Metadata());
+        assertThat("local close must release the data worker", dataFinished.await(10, TimeUnit.SECONDS), is(true));
+        dataThread.join(TimeUnit.SECONDS.toMillis(10));
+
+        assertThat(dataThread.isAlive(), is(false));
+        assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
+        assertThat(streamCloseCount.get(), is(1));
+        assertThat(messageCount.get(), is(0));
+        assertThat(completeCount.get(), is(1));
+    }
+
+    @Test
+    void testLocalCloseBeforeStartCallReturnsCompletesListener() {
+        AtomicInteger completeCount = new AtomicInteger();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onComplete() {
+                completeCount.incrementAndGet();
+            }
+        };
+        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+            call.close(Status.OK, new Metadata());
+            return listener;
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create());
+
+        handler.init();
+
+        assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
+        assertThat(completeCount.get(), is(1));
+    }
+
+    @Test
+    void testOnlyOneTerminalCallback() {
+        AtomicInteger completeCount = new AtomicInteger();
+        AtomicInteger cancelCount = new AtomicInteger();
+        AtomicReference<ServerCall<String, String>> callRef = new AtomicReference<>();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onComplete() {
+                completeCount.incrementAndGet();
+            }
+
+            @Override
+            public void onCancel() {
+                cancelCount.incrementAndGet();
+            }
+        };
+        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+            callRef.set(call);
+            return listener;
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                noOpWriter(),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create());
+        handler.init();
+
+        callRef.get().close(Status.OK, new Metadata());
+        handler.rstStream(new Http2RstStream(io.helidon.http.http2.Http2ErrorCode.CANCEL));
+
+        assertThat(completeCount.get(), is(1));
+        assertThat(cancelCount.get(), is(0));
+    }
+
+    @Test
+    void testHalfCloseExceptionSendsGrpcStatus() {
+        AtomicInteger cancellations = new AtomicInteger();
+        AtomicReference<Http2Headers> trailers = new AtomicReference<>();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onHalfClose() {
+                throw Status.INVALID_ARGUMENT.withDescription("bad request").asRuntimeException();
+            }
+
+            @Override
+            public void onCancel() {
+                cancellations.incrementAndGet();
+            }
+        };
+        ServerCallHandler<String, String> callHandler = new ServerCallHandler<>() {
+            @Override
+            public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
+                call.request(1);
+                return listener;
+            }
+        };
+        BufferData data = grpcData("bad");
+        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                                Http2Headers.create(WritableHeaders.create()),
+                                                                                headersCapturingWriter(trailers),
+                                                                                1,
+                                                                                null,
+                                                                                Http2StreamState.OPEN,
+                                                                                route(callHandler),
+                                                                                GrpcConfig.create());
+        handler.init();
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                          1);
+
+        assertDoesNotThrow(() -> handler.data(header, data));
+
+        assertAll(
+                () -> assertThat(cancellations.get(), is(0)),
+                () -> assertThat(handler.streamState(), is(Http2StreamState.CLOSED)),
+                () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.STATUS_NAME),
+                                 is(Optional.of(String.valueOf(Status.Code.INVALID_ARGUMENT.value())))),
+                () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.MESSAGE_NAME),
+                                 is(Optional.of("bad request")))
+        );
     }
 
     @Test
@@ -366,6 +799,25 @@ class GrpcProtocolHandlerTest {
         };
     }
 
+    private static void sendData(GrpcProtocolHandler<String, String> handler, String content, boolean endOfStream) {
+        BufferData data = content == null ? BufferData.empty() : grpcData(content);
+        int flags = endOfStream ? Http2Flag.END_OF_STREAM : 0;
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(flags),
+                                                          1);
+        handler.data(header, data);
+    }
+
+    private static BufferData grpcData(String content) {
+        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        BufferData data = BufferData.create(5 + bytes.length);
+        data.write(0);
+        data.writeUnsignedInt32(bytes.length);
+        data.write(bytes);
+        return data;
+    }
+
     private static MethodDescriptor<String, String> stringMethodDescriptor() {
         MethodDescriptor.Marshaller<String> marshaller = new MethodDescriptor.Marshaller<>() {
             @Override
@@ -388,6 +840,36 @@ class GrpcProtocolHandlerTest {
                 .setRequestMarshaller(marshaller)
                 .setResponseMarshaller(marshaller)
                 .build();
+    }
+
+    private static Http2StreamWriter headersCapturingWriter(AtomicReference<Http2Headers> capturedHeaders) {
+        return new Http2StreamWriter() {
+            @Override
+            public void write(Http2FrameData frame) {
+            }
+
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                capturedHeaders.set(headers);
+                return 0;
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    Http2FrameData dataFrame,
+                                    FlowControl.Outbound flowControl) {
+                throw new UnsupportedOperationException("Unused");
+            }
+        };
     }
 
     private static Http2StreamWriter headersFailingWriter() {
@@ -566,6 +1048,24 @@ class GrpcProtocolHandlerTest {
         }
 
         @Test
+        void zeroLengthReadsReturnZeroAtEndOfStream() throws IOException {
+            try (var stream = stream(new byte[0])) {
+                byte[] target = new byte[1];
+                assertThat(stream.read(new byte[0]), is(0));
+                assertThat(stream.read(target, 1, 0), is(0));
+            }
+        }
+
+        @Test
+        void endOfStreamStillValidatesReadArguments() throws IOException {
+            try (var stream = stream(new byte[0])) {
+                assertThrows(NullPointerException.class, () -> stream.read(null));
+                assertThrows(NullPointerException.class, () -> stream.read(null, 0, 0));
+                assertThrows(IndexOutOfBoundsException.class, () -> stream.read(new byte[1], 1, 1));
+            }
+        }
+
+        @Test
         void skipAdvancesPosition() throws IOException {
             byte[] content = "grpc payload".getBytes(StandardCharsets.UTF_8);
             try (var stream = stream(content)) {
@@ -590,6 +1090,16 @@ class GrpcProtocolHandlerTest {
             byte[] content = "grpc payload".getBytes(StandardCharsets.UTF_8);
             try (var stream = stream(content)) {
                 long skipped = stream.skip(0);
+                assertThat(skipped, is(0L));
+                assertThat(stream.available(), is(content.length));
+            }
+        }
+
+        @Test
+        void skipNegativeDoesNothing() throws IOException {
+            byte[] content = "grpc payload".getBytes(StandardCharsets.UTF_8);
+            try (var stream = stream(content)) {
+                long skipped = stream.skip(-1);
                 assertThat(skipped, is(0L));
                 assertThat(stream.available(), is(content.length));
             }
@@ -627,7 +1137,7 @@ class GrpcProtocolHandlerTest {
 
         @Override
         public ExecutorService executor() {
-            throw new UnsupportedOperationException("Should not be called");
+            return EXECUTOR;
         }
 
         @Override

@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+package io.helidon.declarative.tests.grpc;
+
+option java_package = "io.helidon.declarative.tests.grpc";
+option java_outer_classname = "DeclarativeGrpcProto";
+
+service GreetingService {
+  rpc Greet (GreetingRequest) returns (GreetingReply) {}
+  rpc InterceptedGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc ValidatedGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc SecureGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc AuthorizedGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc AdminGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc PermitAllGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc DenyAllGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc RoleValidatorGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc ScopeGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc AuditedGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc Split (GreetingRequest) returns (stream GreetingReply) {}
+  rpc Join (stream GreetingRequest) returns (GreetingReply) {}
+  rpc Chat (stream GreetingRequest) returns (stream GreetingReply) {}
+}
+
+service DefaultSecuredGreetingService {
+  rpc AdminDefaultGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc PermitAllDefaultGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc RoleValidatorDefaultGreet (GreetingRequest) returns (GreetingReply) {}
+}
+
+message GreetingRequest {
+  string name = 1;
+}
+
+message GreetingReply {
+  string message = 1;
+}

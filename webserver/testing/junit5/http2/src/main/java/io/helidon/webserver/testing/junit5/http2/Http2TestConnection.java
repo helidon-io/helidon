@@ -283,7 +283,18 @@ public class Http2TestConnection implements AutoCloseable {
      * @return the frame
      */
     public Http2Headers assertHeaders(int streamId, Duration timeout) {
-        Http2FrameData frame = assertNextFrame(Http2FrameType.HEADERS, timeout);
+        return assertHeaders(assertNextFrame(Http2FrameType.HEADERS, timeout), streamId);
+    }
+
+    /**
+     * Assert the supplied frame is a HEADERS frame for the expected stream.
+     *
+     * @param frame frame to assert
+     * @param streamId expected stream id
+     * @return decoded headers
+     */
+    public Http2Headers assertHeaders(Http2FrameData frame, int streamId) {
+        assertThat(frame.header().type(), Matchers.equalTo(Http2FrameType.HEADERS));
         assertThat(frame.header().streamId(), Matchers.equalTo(streamId));
         return Http2Headers.create(null, requestDynamicTable, requestHuffman, frame);
     }

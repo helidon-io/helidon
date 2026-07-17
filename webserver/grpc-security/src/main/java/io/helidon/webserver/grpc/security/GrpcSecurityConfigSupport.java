@@ -142,6 +142,12 @@ class GrpcSecurityConfigSupport {
             if (builder.auditMessageFormat().isPresent() && builder.audit().isEmpty()) {
                 builder.audit(true);
             }
+            if (builder.auditOkSeverity().isPresent() && builder.audit().isEmpty()) {
+                builder.audit(true);
+            }
+            if (builder.auditErrorSeverity().isPresent() && builder.audit().isEmpty()) {
+                builder.audit(true);
+            }
         }
     }
 }

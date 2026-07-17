@@ -148,6 +148,8 @@ public final class GrpcSecurity implements ServerInterceptor, GrpcServerService,
                 methodConfig.authorize().ifPresent(handlerBuilder::authorize);
                 methodConfig.auditEventType().ifPresent(handlerBuilder::auditEventType);
                 methodConfig.auditMessageFormat().ifPresent(handlerBuilder::auditMessageFormat);
+                methodConfig.auditOkSeverity().ifPresent(handlerBuilder::auditOkSeverity);
+                methodConfig.auditErrorSeverity().ifPresent(handlerBuilder::auditErrorSeverity);
                 methodConfig.customObjects().ifPresent(handlerBuilder::customObjects);
                 methodConfig.config().ifPresent(handlerBuilder::config);
 

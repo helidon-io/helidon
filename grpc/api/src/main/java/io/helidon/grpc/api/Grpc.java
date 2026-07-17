@@ -23,6 +23,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
+import io.helidon.service.registry.Service;
+
 import io.grpc.MethodDescriptor;
 
 /**
@@ -32,6 +35,12 @@ public interface Grpc {
 
     /**
      * An annotation used to mark a class as representing a gRPC service.
+     * <p>
+     * The value is the gRPC service name used on the wire. If the proto file declares
+     * a {@code package}, use the fully-qualified service name, such as
+     * {@code example.greeter.GreetingService}. Server descriptors use the service
+     * class simple name when the value is not set. Declarative gRPC endpoints require
+     * an explicit fully-qualified service name that matches the proto descriptor.
      */
     @Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR})
     @Retention(RetentionPolicy.RUNTIME)
@@ -40,6 +49,9 @@ public interface Grpc {
     @interface GrpcService {
         /**
          * Obtain the service name.
+         * <p>
+         * Server descriptors use the service class simple name when the value is not set.
+         * Declarative gRPC endpoints require an explicit fully-qualified service name.
          *
          * @return the service name
          */
@@ -54,16 +66,38 @@ public interface Grpc {
     }
 
     /**
-     * An annotation to mark a method as returning a proto file description
-     * used by the gRPC reflection service. Annotated method must return
-     * {@code com.google.protobuf.Descriptors.FileDescriptor} and expect
-     * no parameters.
+     * An annotation to mark a method that provides the protocol buffer file descriptor.
+     * The annotated method must have no parameters and return
+     * {@code com.google.protobuf.Descriptors.FileDescriptor}.
+     * <p>
+     * For declarative gRPC, the method must be non-private and declare no checked exceptions. Declarative server endpoints
+     * may use a static or instance method; declarative clients may use a static or default interface method.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
     @interface Proto {
+    }
+
+    /**
+     * An annotation to identify the generated protocol buffer class that provides
+     * the proto file descriptor.
+     * The referenced class must declare a public static {@code getDescriptor()} method
+     * returning {@code com.google.protobuf.Descriptors.FileDescriptor}.
+     */
+    @Target({ElementType.TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @Inherited
+    @Api.Incubating
+    @interface ProtoDescriptor {
+        /**
+         * The generated protocol buffer class.
+         *
+         * @return the generated protocol buffer class
+         */
+        Class<?> value();
     }
 
     /**
@@ -86,7 +120,17 @@ public interface Grpc {
     }
 
     /**
-     * An annotation to mark a class as representing a bi-directional streaming gRPC method.
+     * An annotation to mark a method as representing a bi-directional streaming gRPC method.
+     * <p>
+     * Declarative gRPC methods support these signatures:
+     * <ul>
+     *     <li>{@code Stream<Res> method(Stream<Req>)}</li>
+     *     <li>{@code StreamObserver<Req> method(StreamObserver<Res>)}</li>
+     * </ul>
+     * Declarative streaming methods use resource-owning streams with transport backpressure and cancellation.
+     * The runtime owns and closes request streams supplied to server endpoints and generated clients. A response stream
+     * returned by a server endpoint transfers ownership to the runtime. A generated-client caller owns a returned
+     * response stream and must close it when it stops before normal exhaustion.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
@@ -105,7 +149,16 @@ public interface Grpc {
     }
 
     /**
-     * An annotation to mark a class as representing a client streaming gRPC method.
+     * An annotation to mark a method as representing a client streaming gRPC method.
+     * <p>
+     * Declarative gRPC methods support these signatures:
+     * <ul>
+     *     <li>{@code Res method(Stream<Req>)}</li>
+     *     <li>{@code StreamObserver<Req> method(StreamObserver<Res>)} on clients</li>
+     * </ul>
+     * Server endpoint methods return a single response value and do not support the {@code StreamObserver} signature.
+     * Declarative streaming methods use resource-owning streams with transport backpressure and cancellation.
+     * The runtime owns and closes request streams supplied to server endpoints and generated clients.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
@@ -124,7 +177,15 @@ public interface Grpc {
     }
 
     /**
-     * An annotation to mark a class as representing a server streaming gRPC method.
+     * An annotation to mark a method as representing a server streaming gRPC method.
+     * <p>
+     * Declarative gRPC methods support these signatures:
+     * <ul>
+     *     <li>{@code Stream<Res> method(Req)}</li>
+     *     <li>{@code void method(Req, StreamObserver<Res>)}</li>
+     * </ul>
+     * A response stream returned by a server endpoint transfers ownership to the runtime. A generated-client caller
+     * owns a returned response stream and must close it when it stops before normal exhaustion.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
@@ -218,11 +279,14 @@ public interface Grpc {
     /**
      * An annotation used to annotate a type or method to specify the
      * named marshaller supplier to use for rpc method calls.
+     *
+     * @deprecated use {@code io.helidon.microprofile.grpc.core.GrpcMarshaller}.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface GrpcMarshaller {
 
         /**
@@ -248,6 +312,7 @@ public interface Grpc {
      */
     @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
     @Retention(RetentionPolicy.RUNTIME)
+    @Service.EntryPoint
     @Documented
     @Inherited
     @interface GrpcMethod {
@@ -270,11 +335,14 @@ public interface Grpc {
 
     /**
      * An annotation to indicate the request type of gRPC method.
+     *
+     * @deprecated use {@code io.helidon.microprofile.grpc.core.RequestType}.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface RequestType {
         /**
          * Obtain the gRPC request type.
@@ -286,11 +354,14 @@ public interface Grpc {
 
     /**
      * An annotation to indicate the response type of gRPC method.
+     *
+     * @deprecated use {@code io.helidon.microprofile.grpc.core.ResponseType}.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface ResponseType {
         /**
          * Obtain the gRPC response type.
@@ -302,9 +373,12 @@ public interface Grpc {
 
     /**
      * An annotation that can be used to specify the name of a configured gRPC channel.
+     *
+     * @deprecated use {@code io.helidon.microprofile.grpc.client.GrpcChannel}.
      */
     @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER})
     @Retention(RetentionPolicy.RUNTIME)
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface GrpcChannel {
 
         /**
@@ -317,9 +391,12 @@ public interface Grpc {
 
     /**
      * An annotation used to mark an injection point for a gRPC service client proxy.
+     *
+     * @deprecated use {@code io.helidon.microprofile.grpc.client.GrpcProxy}.
      */
     @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
     @Retention(RetentionPolicy.RUNTIME)
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface GrpcProxy {
     }
 }

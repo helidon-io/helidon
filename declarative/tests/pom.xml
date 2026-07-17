@@ -51,6 +51,7 @@
         <module>tracing</module>
         <module>websocket</module>
         <module>cors</module>
+        <module>grpc</module>
     </modules>
 
 </project>

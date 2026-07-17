@@ -16,10 +16,12 @@
 
 package io.helidon.webserver.http2;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.HeaderValues;
@@ -27,16 +29,24 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ConnectionWriter;
+import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Settings;
+import io.helidon.http.http2.Http2StreamState;
+import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
+import io.helidon.webserver.http2.spi.SubProtocolResult;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -186,6 +196,75 @@ class ConnectionStreamTest {
         assertThat(streams.isActive(STREAM_ID), Matchers.is(false));
     }
 
+    @Test
+    void resetRestoresOnlyConnectionCreditForQueuedData() {
+        List<WindowUpdate> windowUpdates = new ArrayList<>();
+        ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder(
+                        (streamId, update) -> windowUpdates.add(new WindowUpdate(streamId,
+                                                                                 update.windowSizeIncrement())))
+                .initialWindowSize(65536)
+                .maxFrameSize(16384)
+                .build();
+        Http2ServerStream stream = stream(new Http2ConnectionStreams(), new RecordingConnectionWriter(), flowControl);
+        stream.headers(Http2Headers.create(WritableHeaders.create()), false);
+
+        for (int i = 0; i < 2; i++) {
+            Http2FrameHeader header = Http2FrameHeader.create(4096,
+                                                              Http2FrameTypes.DATA,
+                                                              Http2Flag.DataFlags.create(0),
+                                                              STREAM_ID);
+            stream.flowControl().inbound().decrementWindowSize(header.length());
+            stream.data(header, BufferData.create(new byte[header.length()]), false);
+        }
+
+        stream.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+
+        assertThat(windowUpdates, Matchers.empty());
+
+        for (int i = 0; i < 2; i++) {
+            flowControl.decrementInboundConnectionWindowSize(16384);
+            flowControl.incrementInboundConnectionWindowSize(16384);
+        }
+
+        assertThat(windowUpdates, Matchers.is(List.of(new WindowUpdate(0, 40960))));
+    }
+
+    @Test
+    void asynchronousSubProtocolCloseWakesStreamTask() throws InterruptedException {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        AsyncSubProtocolHandler handler = new AsyncSubProtocolHandler();
+        Http2SubProtocolSelector selector = (ctx,
+                                             prologue,
+                                             headers,
+                                             streamWriter,
+                                             streamId,
+                                             serverSettings,
+                                             clientSettings,
+                                             flowControl,
+                                             currentStreamState,
+                                             router) -> new SubProtocolResult(true, handler);
+        Http2ServerStream stream = stream(streams, new RecordingConnectionWriter(), List.of(selector));
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        streams.activate(STREAM_ID);
+        stream.headers(Http2Headers.create(WritableHeaders.create()), false);
+        Http2FrameHeader header = Http2FrameHeader.create(1,
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                          STREAM_ID);
+        stream.data(header, BufferData.create(new byte[1]), true);
+        Thread task = Thread.startVirtualThread(stream);
+
+        assertThat(handler.dataReceived.await(10, TimeUnit.SECONDS), Matchers.is(true));
+        handler.close();
+        task.join(TimeUnit.SECONDS.toMillis(10));
+
+        assertThat(task.isAlive(), Matchers.is(false));
+        assertThat(stream.streamState(), Matchers.is(Http2StreamState.CLOSED));
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(false));
+        streams.doMaintenance();
+        assertThat(streams.get(STREAM_ID), nullValue());
+    }
+
     private static Http2ServerStream mockStream(int streamId) {
         Http2ServerStream s = mock(Http2ServerStream.class);
         when(s.streamId()).thenReturn(streamId);
@@ -201,6 +280,37 @@ class ConnectionStreamTest {
                 .initialWindowSize(config.initialWindowSize())
                 .maxFrameSize(config.maxFrameSize())
                 .build();
+        return stream(streams, writer, flowControl, List.of());
+    }
+
+    private static Http2ServerStream stream(Http2ConnectionStreams streams,
+                                            Http2ConnectionWriter writer,
+                                            ConnectionFlowControl flowControl) {
+        return stream(streams, writer, flowControl, List.of());
+    }
+
+    private static Http2ServerStream stream(Http2ConnectionStreams streams,
+                                            Http2ConnectionWriter writer,
+                                            List<Http2SubProtocolSelector> subProtocols) {
+        Http2Config config = Http2Config.builder()
+                .initialWindowSize(8192)
+                .maxFrameSize(16384)
+                .build();
+        ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder((streamId, windowUpdate) -> { })
+                .initialWindowSize(config.initialWindowSize())
+                .maxFrameSize(config.maxFrameSize())
+                .build();
+        return stream(streams, writer, flowControl, subProtocols);
+    }
+
+    private static Http2ServerStream stream(Http2ConnectionStreams streams,
+                                            Http2ConnectionWriter writer,
+                                            ConnectionFlowControl flowControl,
+                                            List<Http2SubProtocolSelector> subProtocols) {
+        Http2Config config = Http2Config.builder()
+                .initialWindowSize(8192)
+                .maxFrameSize(16384)
+                .build();
         ListenerContext listenerContext = mock(ListenerContext.class);
         when(listenerContext.config()).thenReturn(ListenerConfig.create());
         when(listenerContext.directHandlers()).thenReturn(DirectHandlers.create());
@@ -214,14 +324,57 @@ class ConnectionStreamTest {
                                      NO_OP_RESET_TRACKER,
                                      HttpRouting.empty(),
                                      config,
-                                     List.of(),
+                                     subProtocols,
                                      STREAM_ID,
                                      Http2Settings.builder().build(),
                                      Http2Settings.builder().build(),
                                      writer,
                                      flowControl,
+                                     new Http2ServerStream.InboundDataBudget(1024,
+                                                                             2L * config.initialWindowSize()),
                                      new Http2ConnectionChecks(config, mock(Http2Connection.class)));
     }
+
+    private static final class AsyncSubProtocolHandler implements Http2SubProtocolSelector.SubProtocolHandler {
+        private final CountDownLatch dataReceived = new CountDownLatch(1);
+        private volatile Http2StreamState state = Http2StreamState.OPEN;
+        private volatile Runnable closeListener = () -> { };
+
+        @Override
+        public void init() {
+        }
+
+        @Override
+        public Http2StreamState streamState() {
+            return state;
+        }
+
+        @Override
+        public void onStreamClosed(Runnable listener) {
+            closeListener = listener;
+        }
+
+        @Override
+        public void rstStream(Http2RstStream rstStream) {
+        }
+
+        @Override
+        public void windowUpdate(Http2WindowUpdate update) {
+        }
+
+        @Override
+        public void data(Http2FrameHeader header, BufferData data) {
+            state = Http2StreamState.HALF_CLOSED_REMOTE;
+            dataReceived.countDown();
+        }
+
+        private void close() {
+            state = Http2StreamState.CLOSED;
+            closeListener.run();
+        }
+    }
+
+    private record WindowUpdate(int streamId, int increment) { }
 
     private static Http2Headers responseHeaders() {
         WritableHeaders<?> headers = WritableHeaders.create();

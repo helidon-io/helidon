@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
@@ -435,6 +436,19 @@ public class Http2ClientConnection {
         } catch (Throwable e) {
             ctx.log(LOGGER, TRACE, "Failed to send HTTP/2 GOAWAY before closing connection.", e);
         }
+        closeConnection();
+    }
+
+    /**
+     * Immediately closes this connection without attempting to send an HTTP/2 GOAWAY frame.
+     */
+    @Api.Internal
+    public void closeNow() {
+        initialSettingsLatch.countDown();
+        closeConnection();
+    }
+
+    private void closeConnection() {
         if (state.getAndSet(State.CLOSED) != State.CLOSED) {
             try {
                 if (handleTask != null) {

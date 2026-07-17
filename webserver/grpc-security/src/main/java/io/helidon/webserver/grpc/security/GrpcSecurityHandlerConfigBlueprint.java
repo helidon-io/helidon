@@ -16,13 +16,16 @@
 
 package io.helidon.webserver.grpc.security;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
+import io.helidon.security.AuditEvent.AuditSeverity;
 import io.helidon.security.ClassToInstanceStore;
+import io.helidon.security.SecurityLevel;
 
 /**
  * Configuration of a {@link io.helidon.webserver.grpc.security.GrpcSecurityHandler}.
@@ -30,6 +33,14 @@ import io.helidon.security.ClassToInstanceStore;
 @Prototype.Blueprint(decorator = GrpcSecurityConfigSupport.GrpcSecurityHandlerDecorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(GrpcSecurityConfigSupport.GrpcSecurityHandlerCustomMethods.class)
+@Prototype.IncludeDefaultMethods({
+        "clearInheritedRolesAllowed",
+        "securityLevels",
+        "clearInheritedAuthenticator",
+        "clearInheritedAuthorizer",
+        "auditOkSeverity",
+        "auditErrorSeverity"
+})
 interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecurityHandler> {
     /**
      * An array of allowed roles for this gRPC method.
@@ -41,6 +52,25 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
     Set<String> rolesAllowed();
 
     /**
+     * Whether to clear roles inherited from service defaults.
+     *
+     * @return whether to clear inherited roles
+     */
+    default boolean clearInheritedRolesAllowed() {
+        return false;
+    }
+
+    /**
+     * Security levels discovered from endpoint annotations.
+     *
+     * @return security levels
+     */
+    @Option.Singular
+    default List<SecurityLevel> securityLevels() {
+        return List.of();
+    }
+
+    /**
      * Use a named authenticator.
      *
      * @return name of authenticator as configured in {@link io.helidon.security.Security}
@@ -49,12 +79,30 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
     Optional<String> authenticator();
 
     /**
+     * Whether to clear an authenticator inherited from service defaults.
+     *
+     * @return whether to clear the inherited authenticator
+     */
+    default boolean clearInheritedAuthenticator() {
+        return false;
+    }
+
+    /**
      * Use a named authorizer.
      *
      * @return name of authorizer as configured in {@link io.helidon.security.Security}
      */
     @Option.Configured
     Optional<String> authorizer();
+
+    /**
+     * Whether to clear an authorizer inherited from service defaults.
+     *
+     * @return whether to clear the inherited authorizer
+     */
+    default boolean clearInheritedAuthorizer() {
+        return false;
+    }
 
     /**
      * Whether to authenticate this request.
@@ -103,6 +151,26 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
      */
     @Option.Configured
     Optional<String> auditMessageFormat();
+
+    /**
+     * Severity to use for successful requests.
+     *
+     * @return successful request audit severity
+     */
+    @Option.Configured
+    default Optional<AuditSeverity> auditOkSeverity() {
+        return Optional.empty();
+    }
+
+    /**
+     * Severity to use for failed requests.
+     *
+     * @return failed request audit severity
+     */
+    @Option.Configured
+    default Optional<AuditSeverity> auditErrorSeverity() {
+        return Optional.empty();
+    }
 
     /**
      * A store of custom objects, that can be used to customize specific security providers.

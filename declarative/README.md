@@ -246,6 +246,157 @@ requests.
 
 The implementation uses constants wherever possible (header names, header values, media types etc.).
 
+## gRPC Declarative Server
+
+Defines a declarative gRPC server endpoint. Each method represents a gRPC method on the named service.
+
+### Declaration
+
+Declaration must be done on a service registry service.
+
+Annotations on type:
+
+- `@RpcServer.Endpoint` - required annotation to generate a declarative gRPC server endpoint
+- `@Grpc.GrpcService` - required, non-blank gRPC service name; use the fully-qualified service name when the proto declares a package.
+- `@Grpc.ProtoDescriptor` - generated protocol buffer class with a static `getDescriptor()` method returning
+  `Descriptors.FileDescriptor`
+- `@Service.Singleton` - typical service registry scope for the endpoint implementation
+
+`@Service.PerRequest` is not supported for declarative gRPC endpoints because gRPC calls do not participate in the
+WebServer HTTP request scope. Use `@Service.Singleton` or `@Service.PerLookup` instead.
+
+The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
+`@Grpc.Proto` method. The referenced generated protocol buffer class must provide a public static `getDescriptor()`
+method returning `Descriptors.FileDescriptor`. An `@Grpc.Proto` method may be static or an endpoint instance method;
+it must be non-private, have no parameters or checked exceptions, and return `Descriptors.FileDescriptor`.
+Each request and response type must implement `com.google.protobuf.Message` and declare public static no-argument
+`getDescriptor()` and `getDefaultInstance()` methods returning `Descriptors.Descriptor` and the message type,
+respectively. At runtime, the generated registration verifies that these descriptors match the input and output
+descriptors of the named proto method.
+
+Annotations on endpoint methods:
+
+- `@Grpc.Unary` - unary gRPC method
+- `@Grpc.ServerStreaming` - server-streaming gRPC method
+- `@Grpc.ClientStreaming` - client-streaming gRPC method
+- `@Grpc.Bidirectional` - bidirectional streaming gRPC method
+
+Supported server method signatures:
+
+- Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Server streaming: `Stream<Res> method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Stream<Req>)`
+- Bidirectional streaming: `Stream<Res> method(Stream<Req>)` or
+  `StreamObserver<Req> method(StreamObserver<Res>)`
+
+Declarative streaming methods use resource-owning `Stream` instances with transport backpressure and cancellation.
+Endpoint implementations consume request streams, while the generated runtime owns and closes both request streams
+supplied to an endpoint and response streams returned by an endpoint. Endpoint implementations transfer ownership of
+response streams to the runtime and must not close a response stream before returning it.
+
+### Configuration
+
+The generated `GrpcRouteRegistration` is registered by default. It can be disabled with:
+
+- `server.features.grpc-route-registration.enabled=false`
+
+Annotate a server endpoint with `@RpcServer.Listener("admin")` to register it on a named listener.
+
+Security annotations require the `helidon-webserver-grpc-security` runtime module and normal Helidon security
+configuration. The gRPC security service is discovered from the classpath and enabled by default; disable it with
+`grpc.grpc-services.security.enabled=false`.
+
+Validation annotations require the generated validation interceptor. To map `ValidationException` to gRPC
+`INVALID_ARGUMENT`, add `helidon-webserver-grpc-validation`. The status mapper is discovered from the classpath and
+enabled by default. It is configured under `grpc.grpc-services.validation`.
+
+### Implementation
+
+A class named `AnnotatedTypeName__GrpcRegistration` will be generated for types annotated with `@RpcServer.Endpoint`.
+This class registers the generated `GrpcServiceDescriptor` using the fully-qualified gRPC service name.
+
+## gRPC Declarative Client
+
+Defines a typed gRPC client API. Each method represents a gRPC method on the named service.
+
+### Declaration
+
+Declaration must be done on an interface.
+
+Annotations on type:
+
+- `@RpcClient.Endpoint` - required annotation to generate a typed gRPC client
+- `@Grpc.GrpcService` - required, non-blank gRPC service name; use the fully-qualified service name when the proto
+  declares a package.
+- `@Grpc.ProtoDescriptor` - generated protocol buffer class with a static `getDescriptor()` method returning
+  `Descriptors.FileDescriptor`
+
+The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
+`@Grpc.Proto` method. The referenced generated protocol buffer class must provide a public static `getDescriptor()`
+method returning `Descriptors.FileDescriptor`. An `@Grpc.Proto` method may be static or a default interface method;
+it must be non-private, have no parameters or checked exceptions, and return `Descriptors.FileDescriptor`.
+Each request and response type must implement `com.google.protobuf.Message` and declare public static no-argument
+`getDescriptor()` and `getDefaultInstance()` methods returning `Descriptors.Descriptor` and the message type,
+respectively. At runtime, the generated client verifies that these descriptors match the input and output descriptors
+of the named proto method.
+
+Annotations on the interface method(s):
+
+- `@Grpc.Unary` - unary gRPC method
+- `@Grpc.ServerStreaming` - server-streaming gRPC method
+- `@Grpc.ClientStreaming` - client-streaming gRPC method
+- `@Grpc.Bidirectional` - bidirectional streaming gRPC method
+
+Supported client method signatures:
+
+- Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Server streaming: `Stream<Res> method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Stream<Req>)` or `StreamObserver<Req> method(StreamObserver<Res>)`
+- Bidirectional streaming: `Stream<Res> method(Stream<Req>)` or
+  `StreamObserver<Req> method(StreamObserver<Res>)`
+
+Returned streams own the RPC and must be closed when the caller stops before normal exhaustion. The client consumes and
+closes request streams on normal completion, cancellation, or failure; a transferred request stream must not be reused.
+The calling thread consumes a client-streaming request stream. If producing elements can block, closing the stream must
+unblock production so an early peer termination can return promptly.
+
+To use a declarative gRPC client, inject the annotated interface using the `@RpcClient.Client` qualifier:
+
+```java
+@Service.Inject
+MyClass(@RpcClient.Client MyGrpcClient grpcClient) {
+}
+```
+
+### Configuration
+
+The `@RpcClient.Endpoint.value()` property defines the target URI for generated backing clients and supports
+configuration expressions, such as `http://localhost:${test.server.port}`. Registry-provided clients keep their own
+base URI.
+
+The base of configuration for a declarative gRPC client is the fully qualified name of the annotated interface. This key
+can be modified using `configKey` property of the `@RpcClient.Endpoint` annotation.
+
+There is one key that can be defined under this key:
+
+- `client` - configuration options of Helidon `GrpcClient`
+
+Client resolution order:
+
+1. If `<configKey>.client` exists, create a dedicated `GrpcClient` from that configuration and apply
+   `@RpcClient.Endpoint.value()` as its base URI.
+2. Otherwise, if `@RpcClient.Endpoint.clientName()` is defined and exists in the registry, use that named `GrpcClient`.
+3. Otherwise, if `@RpcClient.Endpoint.clientName()` is defined and no matching named `GrpcClient` exists, create a new
+   `GrpcClient` using `@RpcClient.Endpoint.value()`.
+4. Otherwise, if an unnamed `GrpcClient` exists in the registry, use it.
+5. Otherwise, create a new `GrpcClient` using `@RpcClient.Endpoint.value()`.
+
+### Implementation
+
+A class named `AnnotatedInterfaceName__GrpcClient` will be generated for types annotated with `@RpcClient.Endpoint`.
+This class will implement all of the interface methods, and it will use a configured or registry-provided instance of
+Helidon `GrpcClient` to invoke all requests.
+
 ## Scheduling
 
 Annotated method(s) of a service will be invoked with the schedule defined by the annotation.
@@ -370,7 +521,13 @@ Annotations:
 - `@Validation.Validated` - on a type to generate type validator for a type
 
 ### Configuration
-There is currently no configuration for validation.
+There is no global configuration for generated validation interceptors.
+
+For declarative gRPC server endpoints, `helidon-webserver-grpc-validation` adds a server-side status mapper. It is
+discovered from the classpath and enabled by default, is configured under `grpc.grpc-services.validation`, and can be
+disabled with:
+
+- `grpc.grpc-services.validation.enabled=false`
 
 ### Implementation
 

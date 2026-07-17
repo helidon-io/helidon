@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import io.helidon.grpc.core.WeightedBag;
 
@@ -132,6 +134,42 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
     }
 
     @Override
+    public <ReqT, ResT> Stream<ResT> serverStreaming(String methodName, ReqT request) {
+        Objects.requireNonNull(methodName, "methodName");
+        Objects.requireNonNull(request, "request");
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.SERVER_STREAMING);
+        return GrpcClientStreams.serverStreaming(call, request);
+    }
+
+    @Override
+    public <ReqT, ResT> ResT clientStreaming(String methodName, Stream<ReqT> requests) {
+        Objects.requireNonNull(methodName, "methodName");
+        Objects.requireNonNull(requests, "requests");
+        ClientCall<ReqT, ResT> call;
+        try {
+            call = ensureMethod(methodName, MethodDescriptor.MethodType.CLIENT_STREAMING);
+        } catch (RuntimeException | Error t) {
+            GrpcClientStreams.closeRequests(requests, t);
+            throw t;
+        }
+        return GrpcClientStreams.clientStreaming(call, requests);
+    }
+
+    @Override
+    public <ReqT, ResT> Stream<ResT> bidirectional(String methodName, Stream<ReqT> requests) {
+        Objects.requireNonNull(methodName, "methodName");
+        Objects.requireNonNull(requests, "requests");
+        ClientCall<ReqT, ResT> call;
+        try {
+            call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
+        } catch (RuntimeException | Error t) {
+            GrpcClientStreams.closeRequests(requests, t);
+            throw t;
+        }
+        return GrpcClientStreams.bidirectional(call, requests);
+    }
+
+    @Override
     public <ReqT, ResT> Iterator<ResT> bidi(String methodName, Iterator<ReqT> request) {
         ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
         CompletableFuture<Iterator<ResT>> future = new CompletableFuture<>();
@@ -197,4 +235,5 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
             return methodChannel.newCall(methodDescriptor.descriptor(), CallOptions.DEFAULT);
         }
     }
+
 }

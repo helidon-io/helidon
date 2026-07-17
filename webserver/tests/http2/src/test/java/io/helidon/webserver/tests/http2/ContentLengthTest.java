@@ -47,6 +47,7 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2Util;
+import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
@@ -65,7 +66,9 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.Method.POST;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ServerTest
@@ -559,10 +562,24 @@ class ContentLengthTest {
                        requestHeadersWithContentLength(5),
                        BufferData.create("frank"));
 
-        Http2Headers responseHeaders = h2conn.assertHeaders(streamId, TIMEOUT);
-        assertThat(responseHeaders.status(), is(Status.OK_200));
-        byte[] responseBytes = h2conn.assertNextFrame(Http2FrameType.DATA, TIMEOUT).data().readBytes();
-        assertThat(new String(responseBytes), is("pong"));
+        int responseFrames = 0;
+        while (responseFrames < 2) {
+            Http2FrameData frame = h2conn.awaitNextFrame(TIMEOUT);
+            assertThat(frame, notNullValue());
+            if (frame.header().type() == Http2FrameType.WINDOW_UPDATE) {
+                assertThat(frame.header().streamId(), is(0));
+                assertThat(Http2WindowUpdate.create(frame.data()).windowSizeIncrement(), greaterThan(0));
+                continue;
+            }
+            if (responseFrames++ == 0) {
+                Http2Headers responseHeaders = h2conn.assertHeaders(frame, streamId);
+                assertThat(responseHeaders.status(), is(Status.OK_200));
+            } else {
+                assertThat(frame.header().type(), is(Http2FrameType.DATA));
+                assertThat(frame.header().streamId(), is(streamId));
+                assertThat(new String(frame.data().readBytes()), is("pong"));
+            }
+        }
     }
 
     private static void assertNoHandlerExceptions(TestProbe testProbe) {

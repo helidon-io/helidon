@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,14 +59,12 @@ interface GrpcClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<
     boolean enableMetrics();
 
     /**
-     * gRPC client services. A gRPC service needs to be explicitly added to
-     * be enabled given that {@code discoveredServices} is {@code false}.
+     * gRPC client services. Services are discovered automatically by default.
      *
      * @return services to use with this gRPC client
      */
     @Option.Singular
     @Option.Configured
-    @Option.Provider(value = GrpcClientServiceProvider.class, discoverServices = false)
+    @Option.Provider(GrpcClientServiceProvider.class)
     List<GrpcClientService> grpcServices();
 }
-

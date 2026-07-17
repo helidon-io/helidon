@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.webserver.http2.spi;
+
+import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HttpPrologue;
@@ -83,8 +85,21 @@ public interface Http2SubProtocolSelector {
         Http2StreamState streamState();
 
         /**
-         * RST stream was received. Note that this method will be dispatched on the
-         * HTTP/2 connection thread, not the stream thread.
+         * Register a callback for when the handler reaches the {@link Http2StreamState#CLOSED closed} state.
+         * Implementations that can close asynchronously must override this method and invoke the callback exactly once.
+         * The callback may run on any thread. The default implementation validates the callback but does not register it.
+         *
+         * @param listener close listener
+         */
+        default void onStreamClosed(Runnable listener) {
+            Objects.requireNonNull(listener);
+        }
+
+        /**
+         * RST stream was received, or the local connection closed before the subprotocol started.
+         * This method is normally dispatched on the HTTP/2 connection thread. If the stream closes while
+         * subprotocol selection is in progress, it is dispatched on the stream thread before {@link #init()}.
+         * Implementations must support both threads and concurrent invocation with {@code init()}.
          *
          * @param rstStream RST stream frame
          */

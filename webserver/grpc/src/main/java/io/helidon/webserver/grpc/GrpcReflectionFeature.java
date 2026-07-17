@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.ServerFeature;
 
@@ -115,24 +114,15 @@ public class GrpcReflectionFeature implements Weighted, ServerFeature, RuntimeTy
 
             // adds gRPC reflection service
             if (sb.routingBuilders().hasRouting(GrpcRouting.Builder.class)) {
-                sb.routingBuilders()
+                GrpcRouting.Builder grpcRouting = sb.routingBuilders()
                         .routingBuilder(GrpcRouting.Builder.class)
                         .service(new GrpcReflectionService(grpcRoutings))
                         .service(new GrpcReflectionServiceV1Alpha(grpcRoutings));     // older version for some tools
+                grpcRoutings.add(grpcRouting.build());
             } else {
                 LOGGER.log(Level.WARNING, "Unable to register gRPC reflection service, "
                         + "no gRPC routes found for socket " + socket);
             }
-
-            // collects per-socket gRPC routes for this server instance
-            sb.listener()
-                    .routings()
-                    .forEach(routingBuilder -> {
-                        Routing routing = routingBuilder.build();
-                        if (routing instanceof GrpcRouting grpcRouting) {
-                            grpcRoutings.add(grpcRouting);
-                        }
-                    });
         });
     }
 
@@ -144,6 +134,11 @@ public class GrpcReflectionFeature implements Weighted, ServerFeature, RuntimeTy
     @Override
     public String type() {
         return GRPC_REFLECTION;
+    }
+
+    @Override
+    public double weight() {
+        return Weighted.DEFAULT_WEIGHT - 1;
     }
 
     @Override

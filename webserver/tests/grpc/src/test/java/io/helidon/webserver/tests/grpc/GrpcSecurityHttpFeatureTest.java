@@ -39,6 +39,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.grpc.GrpcConfig;
+import io.helidon.webserver.grpc.GrpcProtocolConfigProvider;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.grpc.security.GrpcSecurity;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
@@ -156,8 +157,11 @@ class GrpcSecurityHttpFeatureTest extends BaseServiceTest {
                 .config(config.get("server.protocols.grpc"))
                 .build();
 
-        assertThat(services.size(), is(1));
-        assertThat(services.get(0).interceptors().isEmpty(), is(false));
+        GrpcServerService securityService = services.stream()
+                .filter(GrpcSecurity.class::isInstance)
+                .findFirst()
+                .orElseThrow();
+        assertThat(securityService.interceptors().isEmpty(), is(false));
         assertGrpcSecurityInterceptor(routing, true);
         assertGrpcSecurityInterceptor(protocolRouting, true);
     }
@@ -177,16 +181,46 @@ class GrpcSecurityHttpFeatureTest extends BaseServiceTest {
     }
 
     @Test
+    void programmaticGrpcSecurityOverridesDiscoveredGrpcSecurity() {
+        GrpcSecurity programmaticSecurity = GrpcSecurity.create(buildSecurity(), Config.empty());
+        GrpcRouting routing = GrpcRouting.builder()
+                .config(buildGrpcSecurityConfig())
+                .intercept(programmaticSecurity)
+                .build();
+
+        List<GrpcSecurity> securityInterceptors = routing.interceptors()
+                .stream()
+                .filter(GrpcSecurity.class::isInstance)
+                .map(GrpcSecurity.class::cast)
+                .toList();
+        assertThat(securityInterceptors, is(List.of(programmaticSecurity)));
+    }
+
+    @Test
+    void protocolConfigDoesNotInstantiateRoutingServices() {
+        Config config = Config.just(ConfigSources.create(Map.of("grpc-services-discover-services", "true")));
+        GrpcConfig protocolConfig = new GrpcProtocolConfigProvider().create(config, "grpc");
+
+        assertThat(protocolConfig.grpcServices().isEmpty(), is(true));
+    }
+
+    @Test
     void disabledGrpcSecurityDoesNotRequireSecurityConfig() {
-        Config config = Config.just(ConfigSources.create(Map.of(
+        Config legacyConfig = Config.just(ConfigSources.create(Map.of(
                 "server.protocols.grpc.grpc-services.security.enabled", "false")));
+        GrpcRouting legacyRouting = GrpcRouting.builder()
+                .config(legacyConfig)
+                .build();
+        GrpcRouting protocolRouting = GrpcRouting.builder()
+                .config(legacyConfig.get("server.protocols.grpc"))
+                .build();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "grpc.grpc-services.security.enabled", "false")));
         GrpcRouting routing = GrpcRouting.builder()
                 .config(config)
                 .build();
-        GrpcRouting protocolRouting = GrpcRouting.builder()
-                .config(config.get("server.protocols.grpc"))
-                .build();
 
+        assertGrpcSecurityInterceptor(legacyRouting, false);
         assertGrpcSecurityInterceptor(routing, false);
         assertGrpcSecurityInterceptor(protocolRouting, false);
     }

@@ -24,11 +24,12 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
@@ -106,6 +107,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                  DistributionSummary sentMessageSize,
                                  DistributionSummary recvMessageSize) { }
 
+    private enum ListenerTerminal {
+        CANCEL,
+        COMPLETE
+    }
+
     private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
     private static final int GRPC_HEADER_SIZE = 5;
@@ -116,11 +122,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final Http2StreamWriter streamWriter;
     private final int streamId;
     private final GrpcRouteHandler<REQ, RES> route;
-    private final AtomicInteger numMessages = new AtomicInteger();
-    private final LinkedBlockingQueue<REQ> listenerQueue = new LinkedBlockingQueue<>();
+    private final ReentrantLock inboundLock = new ReentrantLock();
+    private final Condition inboundChanged = inboundLock.newCondition();
     private final StreamFlowControl flowControl;
     private final GrpcConfig grpcConfig;
 
+    private volatile ServerCall<REQ, RES> serverCall;
     private volatile ServerCall.Listener<REQ> listener;
     private BufferData entityBytes;
     private BufferData readBufferData = BufferData.create(INITIAL_BUFFER_SIZE);
@@ -132,6 +139,17 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private long bytesReceived;
     private MethodMetrics methodMetrics;
     private long startMillis;
+    private int numMessages;
+    private boolean readyPending;
+    private boolean halfClosePending;
+    private boolean inboundDraining;
+    private boolean listenerTerminated;
+    private boolean streamCloseDelivered;
+    private ListenerTerminal terminalPending;
+    private Runnable streamCloseListener;
+    private REQ pendingRequest;
+    private long messagesQueued;
+    private long messagesDelivered;
 
     private volatile boolean callCancelled;
     private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
@@ -158,6 +176,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     public void init() {
         try {
             ServerCall<REQ, RES> serverCall = createServerCall();
+            this.serverCall = serverCall;
             Headers httpHeaders = headers.httpHeaders();
 
             // setup compression
@@ -179,7 +198,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     // initiate server call
                     ServerCallHandler<REQ, RES> callHandler = route.callHandler();
                     listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
-                    listener.onReady();
+                    inboundLock.lock();
+                    try {
+                        if (!listenerTerminated && terminalPending == null) {
+                            readyPending = true;
+                        }
+                    } finally {
+                        inboundLock.unlock();
+                    }
+                    flushQueue();
                     bytesReceived = 0L;
                 });
         } catch (CloseConnectionException e) {
@@ -198,20 +225,54 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         return currentStreamState.get();
     }
 
+    @Override
+    public void onStreamClosed(Runnable listener) {
+        boolean deliver;
+        inboundLock.lock();
+        try {
+            streamCloseListener = Objects.requireNonNull(listener);
+            deliver = currentStreamState.get() == CLOSED && !streamCloseDelivered;
+            if (deliver) {
+                streamCloseDelivered = true;
+            }
+        } finally {
+            inboundLock.unlock();
+        }
+        if (deliver) {
+            listener.run();
+        }
+    }
+
+    private void updateStreamState(Http2StreamState next) {
+        Http2StreamState state = currentStreamState.updateAndGet(current -> nextStreamState(current, next));
+        Runnable listener = null;
+        if (state == CLOSED) {
+            inboundLock.lock();
+            try {
+                if (!streamCloseDelivered && streamCloseListener != null) {
+                    streamCloseDelivered = true;
+                    listener = streamCloseListener;
+                }
+            } finally {
+                inboundLock.unlock();
+            }
+        }
+        if (listener != null) {
+            listener.run();
+        }
+    }
+
     /**
-     * An RST stream framed was received, and it is called in the HTTP/2 connection
-     * thread, so proper synchronization is required.
+     * An RST stream frame was received, or the HTTP/2 connection closed before initialization completed.
+     * Proper synchronization is required because this may run on the connection or stream thread.
      *
      * @param rstStream RST stream frame
      */
     @Override
     public void rstStream(Http2RstStream rstStream) {
         callCancelled = (rstStream.errorCode() == Http2ErrorCode.CANCEL);
-        if (listener != null) {
-            listener.onCancel();
-        }
-        currentStreamState.updateAndGet(
-                current -> nextStreamState(current, Http2StreamState.CLOSED));
+        updateStreamState(Http2StreamState.CLOSED);
+        scheduleTerminal(ListenerTerminal.CANCEL);
     }
 
     @Override
@@ -234,8 +295,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             }
             if (state == Http2StreamState.HALF_CLOSED_LOCAL) {
                 if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
-                    currentStreamState.updateAndGet(
-                            current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_REMOTE));
+                    updateStreamState(Http2StreamState.HALF_CLOSED_REMOTE);
                 }
                 return;
             }
@@ -281,19 +341,59 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     bytesReceived += entityBytes.available();
                     InputStream is = new BufferDataInputStream(entityBytes);
                     REQ request = route.method().parseRequest(isCompressed ? decompressor.decompress(is) : is);
-                    listenerQueue.add(request);
+                    long messageSequence = 0;
+                    inboundLock.lock();
+                    try {
+                        if (!listenerTerminated && terminalPending == null) {
+                            if (pendingRequest != null) {
+                                throw new IllegalStateException("Previous gRPC request is still pending");
+                            }
+                            pendingRequest = request;
+                            messageSequence = ++messagesQueued;
+                        }
+                    } finally {
+                        inboundLock.unlock();
+                    }
                     flushQueue();
 
-                    // reset entityBytes
+                    if (messageSequence == 0) {
+                        entityBytes = null;
+                        break;
+                    }
+
+                    inboundLock.lock();
+                    try {
+                        while (messagesDelivered < messageSequence
+                                && !listenerTerminated
+                                && terminalPending == null) {
+                            inboundChanged.await();
+                        }
+                        if (messagesDelivered < messageSequence) {
+                            entityBytes = null;
+                            break;
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new ServerConnectionException("Interrupted while waiting for gRPC message demand", e);
+                    } finally {
+                        inboundLock.unlock();
+                    }
                     entityBytes = null;
                 }
             }
 
             // if EOS then half close remote
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
-                listener.onHalfClose();
-                currentStreamState.updateAndGet(
-                        current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_REMOTE));
+                inboundLock.lock();
+                try {
+                    if (!listenerTerminated && terminalPending == null) {
+                        halfClosePending = true;
+                    }
+                } finally {
+                    inboundLock.unlock();
+                }
+                flushQueue();
+                updateStreamState(Http2StreamState.HALF_CLOSED_REMOTE);
                 // update metrics
                 if (grpcConfig.enableMetrics()) {
                     methodMetrics.recvMessageSize.record(bytesReceived);
@@ -305,7 +405,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             if (isPeerCancellation(e)) {
                 throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
             }
-            listener.onCancel();
+            closeOnException(e, header);
             LOGGER.log(ERROR, "Failed to process grpc request, data bytes: " + data.available(), e);
         }
     }
@@ -338,8 +438,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     metadata.put(Metadata.Key.of(GRPC_ACCEPT_ENCODING.defaultCase(), Metadata.ASCII_STRING_MARSHALLER),
                                  String.join(",", encodings));
                     serverCall.close(Status.UNIMPLEMENTED, metadata);
-                    currentStreamState.updateAndGet(
-                            current -> nextStreamState(current, Http2StreamState.CLOSED));  // stops processing
+                    updateStreamState(Http2StreamState.CLOSED);  // stops processing
                     return;
                 }
             } else if (httpHeaders.contains(GRPC_ACCEPT_ENCODING)) {
@@ -371,6 +470,18 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         return callCancelled && Status.fromThrowable(throwable).getCode() == Status.Code.CANCELLED;
     }
 
+    private void closeOnException(Throwable throwable, Http2FrameHeader header) {
+        if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
+            updateStreamState(Http2StreamState.HALF_CLOSED_REMOTE);
+        }
+
+        ServerCall<REQ, RES> call = serverCall;
+        if (call != null && currentStreamState.get() != CLOSED) {
+            Metadata trailers = Status.trailersFromThrowable(throwable);
+            call.close(Status.fromThrowable(throwable), trailers == null ? new Metadata() : trailers);
+        }
+    }
+
     private void writeHeaders(Http2Headers http2Headers, HeaderFlags flags) {
         try {
             streamWriter.writeHeaders(http2Headers, streamId, flags, outboundFlowControl());
@@ -388,15 +499,115 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     private void addNumMessages(int n) {
-        numMessages.getAndAdd(n);
+        inboundLock.lock();
+        try {
+            if (!listenerTerminated && terminalPending == null) {
+                numMessages += n;
+            }
+        } finally {
+            inboundLock.unlock();
+        }
     }
 
     private void flushQueue() {
-        if (listener != null) {
-            while (!listenerQueue.isEmpty() && numMessages.getAndDecrement() > 0) {
-                listener.onMessage(listenerQueue.poll());
+        inboundLock.lock();
+        try {
+            if (inboundDraining || listener == null || listenerTerminated) {
+                return;
+            }
+            inboundDraining = true;
+        } finally {
+            inboundLock.unlock();
+        }
+
+        boolean finished = false;
+        try {
+            while (true) {
+                REQ request = null;
+                boolean ready = false;
+                boolean halfClose = false;
+                ListenerTerminal terminal = null;
+                inboundLock.lock();
+                try {
+                    if (terminalPending != null) {
+                        terminal = terminalPending;
+                        terminalPending = null;
+                        listenerTerminated = true;
+                        readyPending = false;
+                        pendingRequest = null;
+                        halfClosePending = false;
+                        numMessages = 0;
+                        inboundChanged.signalAll();
+                    } else if (readyPending) {
+                        readyPending = false;
+                        ready = true;
+                    } else if (pendingRequest != null && numMessages > 0) {
+                        numMessages--;
+                        request = pendingRequest;
+                        pendingRequest = null;
+                    } else if (pendingRequest == null && halfClosePending) {
+                        halfClosePending = false;
+                        halfClose = true;
+                    } else {
+                        inboundDraining = false;
+                        finished = true;
+                        return;
+                    }
+                } finally {
+                    inboundLock.unlock();
+                }
+                if (terminal == ListenerTerminal.CANCEL) {
+                    listener.onCancel();
+                    return;
+                } else if (terminal == ListenerTerminal.COMPLETE) {
+                    listener.onComplete();
+                    return;
+                } else if (ready) {
+                    listener.onReady();
+                } else if (request != null) {
+                    try {
+                        listener.onMessage(request);
+                    } finally {
+                        inboundLock.lock();
+                        try {
+                            messagesDelivered++;
+                            inboundChanged.signalAll();
+                        } finally {
+                            inboundLock.unlock();
+                        }
+                    }
+                } else if (halfClose) {
+                    listener.onHalfClose();
+                }
+            }
+        } finally {
+            if (!finished) {
+                inboundLock.lock();
+                try {
+                    inboundDraining = false;
+                } finally {
+                    inboundLock.unlock();
+                }
             }
         }
+    }
+
+    private void scheduleTerminal(ListenerTerminal terminal) {
+        inboundLock.lock();
+        try {
+            if (!listenerTerminated
+                    && (terminalPending == null || terminal == ListenerTerminal.CANCEL)) {
+                terminalPending = terminal;
+                readyPending = false;
+                pendingRequest = null;
+                halfClosePending = false;
+                numMessages = 0;
+                inboundChanged.signalAll();
+            }
+        } finally {
+            inboundLock.unlock();
+        }
+        flushQueue();
     }
 
     /**
@@ -426,11 +637,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     ServerCall<REQ, RES> createServerCall() {
         return new ServerCall<REQ, RES>() {
-
             private long bytesSent;
             private boolean headersSent;
             private BufferData writeBufferData = BufferData.growing(INITIAL_BUFFER_SIZE);
-
             @Override
             public void request(int numMessages) {
                 addNumMessages(numMessages);
@@ -498,7 +707,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 } catch (UncheckedIOException e) {
                     throw new ServerConnectionException("Failed to write grpc response data", e);
                 } catch (IOException e) {
-                    listener.onCancel();
+                    callCancelled = true;
+                    scheduleTerminal(ListenerTerminal.CANCEL);
                     LOGGER.log(ERROR, "Failed to respond to grpc request: " + route.method(), e);
                 }
             }
@@ -528,14 +738,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM));
                 } catch (CloseConnectionException e) {
                     callCancelled = true;
-                    currentStreamState.updateAndGet(current -> nextStreamState(current, closeState));
+                    updateStreamState(closeState);
+                    scheduleTerminal(ListenerTerminal.CANCEL);
                     return;
                 }
-                currentStreamState.updateAndGet(current -> nextStreamState(current, closeState));
+                updateStreamState(closeState);
 
                 // inform listener of completion
-                if (!callCancelled && listener != null) {
-                    listener.onComplete();
+                if (!callCancelled) {
+                    scheduleTerminal(ListenerTerminal.COMPLETE);
                 }
 
                 // update metrics
@@ -634,12 +845,20 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
         @Override
         public int read(byte[] b) {
+            Objects.requireNonNull(b);
+            if (b.length == 0) {
+                return 0;
+            }
             // BufferData.read(byte[]) returns 0 when exhausted; InputStream requires -1 at EOF
             return bufferData.available() == 0 ? -1 : bufferData.read(b);
         }
 
         @Override
         public int read(byte[] b, int off, int len) {
+            Objects.checkFromIndexSize(off, len, Objects.requireNonNull(b).length);
+            if (len == 0) {
+                return 0;
+            }
             // BufferData.read(byte[],int,int) returns 0 when exhausted; InputStream requires -1 at EOF
             return bufferData.available() == 0 ? -1 : bufferData.read(b, off, len);
         }
@@ -659,6 +878,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         @Override
         public long skip(long n) {
             // advance readPosition directly; avoids the default read()-in-a-loop
+            if (n <= 0) {
+                return 0;
+            }
             int toSkip = (int) Math.min(bufferData.available(), n);
             bufferData.skip(toSkip);
             return toSkip;

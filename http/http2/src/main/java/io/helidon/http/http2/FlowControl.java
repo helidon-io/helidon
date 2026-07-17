@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,19 @@ public interface FlowControl {
          * @param increment increment in bytes
          */
         void incrementWindowSize(int increment);
+
+        /**
+         * Increment only the stream window size.
+         * <p>
+         * This is used when connection-level credit has already been returned while buffering the frame, but the
+         * stream-level credit must remain withheld until the application consumes it.
+         *
+         * @param increment increment in bytes
+         */
+        default void incrementStreamWindowSize(int increment) {
+            incrementWindowSize(increment);
+        }
+
     }
 
     /**

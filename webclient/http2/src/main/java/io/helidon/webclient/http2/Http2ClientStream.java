@@ -208,10 +208,6 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
             connection.writer().write(frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
         }
-
-        flowControl()
-                .outbound()
-                .incrementStreamWindowSize(increment);
     }
 
     @Override

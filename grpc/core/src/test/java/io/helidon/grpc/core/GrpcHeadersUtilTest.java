@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.grpc.Metadata;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -56,13 +57,20 @@ class GrpcHeadersUtilTest {
         Metadata metadata = new Metadata();
         Metadata.Key<byte[]> key = Metadata.Key.of("secret-bin", Metadata.BINARY_BYTE_MARSHALLER);
         byte[] mySecret = "my-secret".getBytes(StandardCharsets.UTF_8);
+        byte[] myOtherSecret = "my-other-secret".getBytes(StandardCharsets.UTF_8);
         metadata.put(key, mySecret);
+        metadata.put(key, myOtherSecret);
         WritableHeaders<?> headers = WritableHeaders.create();
         GrpcHeadersUtil.updateHeaders(headers, metadata);
         assertThat(headers.size(), is(1));
         List<String> values = headers.get(HeaderNames.create("secret-bin")).allValues();
-        byte[] value = Base64.getDecoder().decode(values.getFirst().getBytes(StandardCharsets.UTF_8));
-        assertThat(new String(value, StandardCharsets.UTF_8), is("my-secret"));
+        Set<String> decoded = new HashSet<>();
+        values.stream()
+                .map(Base64.getDecoder()::decode)
+                .map(value -> new String(value, StandardCharsets.UTF_8))
+                .forEach(decoded::add);
+        assertThat(decoded, hasItem("my-secret"));
+        assertThat(decoded, hasItem("my-other-secret"));
     }
 
     @Test
@@ -78,5 +86,52 @@ class GrpcHeadersUtilTest {
         metadata.getAll(key).forEach(values::add);
         assertThat(values, hasItem("sugar"));
         assertThat(values, hasItem("almond"));
+    }
+
+    @Test
+    void testToBinaryMetadata() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.create("secret-bin"),
+                    Base64.getEncoder().encodeToString("sugar".getBytes(StandardCharsets.UTF_8)),
+                    Base64.getEncoder().encodeToString("almond".getBytes(StandardCharsets.UTF_8)));
+
+        Metadata metadata = GrpcHeadersUtil.toMetadata(headers);
+        Metadata.Key<byte[]> key = Metadata.Key.of("secret-bin", Metadata.BINARY_BYTE_MARSHALLER);
+        Set<String> values = new HashSet<>();
+        metadata.getAll(key).forEach(value -> values.add(new String(value, StandardCharsets.UTF_8)));
+
+        assertThat(values, hasItem("sugar"));
+        assertThat(values, hasItem("almond"));
+    }
+
+    @Test
+    void testToCommaSeparatedBinaryMetadata() {
+        String sugar = Base64.getEncoder().withoutPadding().encodeToString("sugar".getBytes(StandardCharsets.UTF_8));
+        String almond = Base64.getEncoder().encodeToString("almond".getBytes(StandardCharsets.UTF_8));
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.create("secret-bin"), sugar + ", " + almond);
+
+        Metadata metadata = GrpcHeadersUtil.toMetadata(headers);
+        Metadata.Key<byte[]> key = Metadata.Key.of("secret-bin", Metadata.BINARY_BYTE_MARSHALLER);
+        Set<String> values = new HashSet<>();
+        metadata.getAll(key).forEach(value -> values.add(new String(value, StandardCharsets.UTF_8)));
+
+        assertThat(values, hasItem("sugar"));
+        assertThat(values, hasItem("almond"));
+    }
+
+    @Test
+    void testToCommaSeparatedBinaryMetadataPreservesTrailingEmptyValue() {
+        String sugar = Base64.getEncoder().encodeToString("sugar".getBytes(StandardCharsets.UTF_8));
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.create("secret-bin"), sugar + ",");
+
+        Metadata metadata = GrpcHeadersUtil.toMetadata(headers);
+        Metadata.Key<byte[]> key = Metadata.Key.of("secret-bin", Metadata.BINARY_BYTE_MARSHALLER);
+        Set<String> values = new HashSet<>();
+        metadata.getAll(key).forEach(value -> values.add(new String(value, StandardCharsets.UTF_8)));
+
+        assertThat(values, hasItems("sugar", ""));
+        assertThat(values.size(), is(2));
     }
 }

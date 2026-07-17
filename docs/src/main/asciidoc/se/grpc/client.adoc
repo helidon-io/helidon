@@ -156,6 +156,18 @@ descriptor can be provided, and a method invoked using the methods
 include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_8, indent=0]
 ----
 
+The resource-owning streaming methods are `serverStreaming`, `clientStreaming`, and `bidirectional`. They use Java
+`Stream` for streaming requests or responses and apply transport readiness rather than eagerly buffering an entire
+stream. A request stream is transferred to the call and must not be reused. A returned response stream owns the active
+RPC and must be closed, including when an operation short-circuits before consuming every response. The calling thread
+consumes a client-streaming request stream. If producing elements can block, closing the request stream must unblock
+production so an early peer termination can return promptly. Use try-with-resources, for example:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_8_resource_stream, indent=0]
+----
+
 === Client URI Suppliers
 
 A `ClientURISupplier` can be used to dynamically obtain a sequence of `ClientUri`
@@ -248,9 +260,7 @@ For more information see xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics]
 == Tracing
 
 Tracing in the gRPC client is implemented as a so-called gRPC client service.
-To enable tracing support, you need to list tracing as an available service
-either programmatically or via config, and
-include the following dependency in your project:
+To enable tracing support, include the following dependency in your project:
 
 [source,xml]
 ----
@@ -260,8 +270,8 @@ include the following dependency in your project:
 </dependency>
 ----
 
-Tracing support is loaded via the gRPC client service SPI and made available to
-clients. Using config, we can list it as an available gRPC service as follows:
+Tracing support is discovered from the classpath via the gRPC client service SPI and enabled by default.
+The `grpc-services` configuration is optional and can be used to configure or disable tracing:
 
 [source,yaml]
 ----
@@ -271,7 +281,8 @@ grpc-client:
 ----
 
 At the time of writing, no additional configuration is necessary under the
-`tracing:` section.
+`tracing:` section. Set `grpc-client.grpc-services.tracing.enabled=false` to disable only tracing, or set
+`grpc-client.grpc-services-discover-services=false` to disable automatic discovery of all gRPC client services.
 Finally, a gRPC client instance can be created that is configured with
 tracing support enabled as follows:
 

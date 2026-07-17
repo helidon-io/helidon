@@ -37,6 +37,7 @@ import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ClassToInstanceStore;
 import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityRequest;
 import io.helidon.security.SecurityRequestBuilder;
 import io.helidon.security.SecurityResponse;
@@ -81,6 +82,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
 
     private final GrpcSecurityHandlerConfig config;
     private final Optional<Set<String>> rolesAllowed;
+    private final List<SecurityLevel> securityLevels;
     private final Optional<ClassToInstanceStore<Object>> customObjects;
     private final Optional<String> explicitAuthenticator;
     private final Optional<String> explicitAuthorizer;
@@ -90,11 +92,19 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
     private final Optional<Boolean> audited;
     private final Optional<String> auditEventType;
     private final Optional<String> auditMessageFormat;
+    private final Optional<AuditEvent.AuditSeverity> auditOkSeverity;
+    private final Optional<AuditEvent.AuditSeverity> auditErrorSeverity;
+    private final boolean clearRolesAllowed;
+    private final boolean clearAuthenticator;
+    private final boolean clearAuthorizer;
     private final Map<String, Config> configMap = new HashMap<>();
     private final AtomicReference<CombinedHandler> combinedHandler = new AtomicReference<>();
 
     private GrpcSecurityHandler(GrpcSecurityHandlerConfig config) {
         this.config = config;
+        this.clearRolesAllowed = config.clearInheritedRolesAllowed();
+        this.clearAuthenticator = config.clearInheritedAuthenticator();
+        this.clearAuthorizer = config.clearInheritedAuthorizer();
 
         Set<String> rolesAllowedSet = config.rolesAllowed();
         if (rolesAllowedSet.isEmpty()) {
@@ -102,7 +112,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
         } else {
             this.rolesAllowed = Optional.of(rolesAllowedSet);
         }
-
+        this.securityLevels = config.securityLevels();
         this.customObjects = config.customObjects()
                 .map(it -> {
                     ClassToInstanceStore<Object> ctis = ClassToInstanceStore.create();
@@ -117,6 +127,8 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
         this.audited = config.audit();
         this.auditEventType = config.auditEventType();
         this.auditMessageFormat = config.auditMessageFormat();
+        this.auditOkSeverity = config.auditOkSeverity();
+        this.auditErrorSeverity = config.auditErrorSeverity();
 
         config.config().ifPresent(conf -> conf.asNodeList().get().forEach(node -> configMap.put(node.name(), node)));
     }
@@ -207,7 +219,16 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler authenticator(String explicitAuthenticator) {
-        return builder().from(prototype()).authenticator(explicitAuthenticator).build();
+        return mutate(builder -> builder.authenticator(explicitAuthenticator));
+    }
+
+    /**
+     * Clear an authenticator inherited from service defaults.
+     *
+     * @return new handler
+     */
+    public GrpcSecurityHandler clearAuthenticator() {
+        return mutate(builder -> builder.clearAuthenticator().clearInheritedAuthenticator(true));
     }
 
     /**
@@ -217,7 +238,16 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler authorizer(String explicitAuthorizer) {
-        return builder().from(prototype()).authorizer(explicitAuthorizer).build();
+        return mutate(builder -> builder.authorizer(explicitAuthorizer));
+    }
+
+    /**
+     * Clear an authorizer inherited from service defaults.
+     *
+     * @return new handler
+     */
+    public GrpcSecurityHandler clearAuthorizer() {
+        return mutate(builder -> builder.clearAuthorizer().clearInheritedAuthorizer(true));
     }
 
     /**
@@ -227,12 +257,29 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler rolesAllowed(String... roles) {
-        return builder()
-                .from(prototype())
-                .rolesAllowed(Set.of(roles))
+        return mutate(builder -> builder.rolesAllowed(Set.of(roles))
                 .authorize(true)
-                .authenticate(true)
-                .build();
+                .authenticate(true));
+    }
+
+    /**
+     * Clear roles inherited from service defaults.
+     *
+     * @return new handler
+     */
+    public GrpcSecurityHandler clearRolesAllowed() {
+        return mutate(builder -> builder.clearRolesAllowed().clearInheritedRolesAllowed(true));
+    }
+
+    /**
+     * Add a security level discovered from endpoint annotations.
+     *
+     * @param securityLevel security level
+     * @return new handler
+     */
+    public GrpcSecurityHandler securityLevel(SecurityLevel securityLevel) {
+        Objects.requireNonNull(securityLevel);
+        return mutate(builder -> builder.addSecurityLevel(securityLevel));
     }
 
     /**
@@ -241,7 +288,17 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler authenticationOptional() {
-        return builder().from(prototype()).authenticationOptional(true).build();
+        return authenticationOptional(true);
+    }
+
+    /**
+     * Configure whether authentication failures may continue as anonymous.
+     *
+     * @param optional whether authentication is optional
+     * @return new handler
+     */
+    public GrpcSecurityHandler authenticationOptional(boolean optional) {
+        return mutate(builder -> builder.authenticationOptional(optional));
     }
 
     /**
@@ -250,7 +307,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler authenticate() {
-        return builder().from(prototype()).authenticate(true).build();
+        return mutate(builder -> builder.authenticate(true));
     }
 
     /**
@@ -259,7 +316,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler skipAuthentication() {
-        return builder().from(prototype()).authenticate(false).build();
+        return mutate(builder -> builder.authenticate(false));
     }
 
     /**
@@ -269,7 +326,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler customObject(Object object) {
-        return builder().from(prototype()).addObject(object).build();
+        return mutate(builder -> builder.addObject(object));
     }
 
     /**
@@ -279,7 +336,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler auditEventType(String eventType) {
-        return builder().from(prototype()).auditEventType(eventType).build();
+        return mutate(builder -> builder.auditEventType(eventType));
     }
 
     /**
@@ -289,7 +346,27 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler auditMessageFormat(String messageFormat) {
-        return builder().from(prototype()).auditMessageFormat(messageFormat).build();
+        return mutate(builder -> builder.auditMessageFormat(messageFormat));
+    }
+
+    /**
+     * Override the audit severity used for successful requests.
+     *
+     * @param severity audit severity
+     * @return new handler
+     */
+    public GrpcSecurityHandler auditOkSeverity(AuditEvent.AuditSeverity severity) {
+        return mutate(builder -> builder.auditOkSeverity(severity));
+    }
+
+    /**
+     * Override the audit severity used for failed requests.
+     *
+     * @param severity audit severity
+     * @return new handler
+     */
+    public GrpcSecurityHandler auditErrorSeverity(AuditEvent.AuditSeverity severity) {
+        return mutate(builder -> builder.auditErrorSeverity(severity));
     }
 
     /**
@@ -298,7 +375,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler authorize() {
-        return builder().from(prototype()).authorize(true).build();
+        return mutate(builder -> builder.authorize(true));
     }
 
     /**
@@ -307,7 +384,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler skipAuthorization() {
-        return builder().from(prototype()).authorize(false).build();
+        return mutate(builder -> builder.authorize(false));
     }
 
     /**
@@ -316,7 +393,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler audit() {
-        return builder().from(prototype()).audit(true).build();
+        return mutate(builder -> builder.audit(true));
     }
 
     /**
@@ -325,7 +402,13 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
      * @return new handler
      */
     public GrpcSecurityHandler skipAudit() {
-        return builder().from(prototype()).audit(false).build();
+        return mutate(builder -> builder.audit(false));
+    }
+
+    private GrpcSecurityHandler mutate(Consumer<GrpcSecurityHandlerConfig.Builder> configurer) {
+        GrpcSecurityHandlerConfig.Builder builder = builder().from(prototype());
+        configurer.accept(builder);
+        return builder.build();
     }
 
     GrpcSecurityHandler combine(GrpcSecurityHandler defaults) {
@@ -350,7 +433,19 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
     }
 
     private void update(GrpcSecurityHandlerConfig.Builder builder) {
+        if (clearRolesAllowed) {
+            builder.clearRolesAllowed();
+        }
+        if (clearAuthenticator) {
+            builder.clearAuthenticator();
+        }
+        if (clearAuthorizer) {
+            builder.clearAuthorizer();
+        }
         rolesAllowed.ifPresent(builder::rolesAllowed);
+        if (!securityLevels.isEmpty()) {
+            builder.securityLevels(securityLevels);
+        }
         explicitAuthenticator.ifPresent(builder::authenticator);
         explicitAuthorizer.ifPresent(builder::authorizer);
         authenticate.ifPresent(builder::authenticate);
@@ -359,6 +454,8 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
         audited.ifPresent(builder::audit);
         auditEventType.ifPresent(builder::auditEventType);
         auditMessageFormat.ifPresent(builder::auditMessageFormat);
+        auditOkSeverity.ifPresent(builder::auditOkSeverity);
+        auditErrorSeverity.ifPresent(builder::auditErrorSeverity);
         customObjects.ifPresent(builder::customObjects);
         config.config().ifPresent(builder::config);
     }
@@ -387,6 +484,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
 
         securityContext.endpointConfig(securityContext.endpointConfig()
                                                .derive()
+                                               .securityLevels(securityLevels)
                                                .configMap(configMap)
                                                .customObjects(customObjects.orElseGet(ClassToInstanceStore::create))
                                                .build());
@@ -443,8 +541,8 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
 
         Status auditStatus = status == null ? Status.OK : status;
         AuditEvent.AuditSeverity severity = auditStatus.isOk()
-                ? AuditEvent.AuditSeverity.SUCCESS
-                : AuditEvent.AuditSeverity.FAILURE;
+                ? auditOkSeverity.orElse(AuditEvent.AuditSeverity.SUCCESS)
+                : auditErrorSeverity.orElse(AuditEvent.AuditSeverity.FAILURE);
 
         SecurityAuditEvent auditEvent = SecurityAuditEvent
                 .audit(severity,

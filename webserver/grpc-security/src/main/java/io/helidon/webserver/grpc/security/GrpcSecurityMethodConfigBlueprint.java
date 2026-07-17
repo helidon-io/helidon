@@ -22,6 +22,7 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
+import io.helidon.security.AuditEvent.AuditSeverity;
 import io.helidon.security.ClassToInstanceStore;
 
 /**
@@ -30,6 +31,7 @@ import io.helidon.security.ClassToInstanceStore;
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(GrpcSecurityConfigSupport.GrpcSecurityMethodCustomMethods.class)
+@Prototype.IncludeDefaultMethods({"auditOkSeverity", "auditErrorSeverity"})
 interface GrpcSecurityMethodConfigBlueprint {
     /**
      * Bare gRPC method name such as {@code Upper}, not the full gRPC method path such as
@@ -112,6 +114,26 @@ interface GrpcSecurityMethodConfigBlueprint {
      */
     @Option.Configured
     Optional<String> auditMessageFormat();
+
+    /**
+     * Severity to use for successful requests.
+     *
+     * @return successful request audit severity
+     */
+    @Option.Configured
+    default Optional<AuditSeverity> auditOkSeverity() {
+        return Optional.empty();
+    }
+
+    /**
+     * Severity to use for failed requests.
+     *
+     * @return failed request audit severity
+     */
+    @Option.Configured
+    default Optional<AuditSeverity> auditErrorSeverity() {
+        return Optional.empty();
+    }
 
     /**
      * A store of custom objects, that can be used to customize specific security providers.

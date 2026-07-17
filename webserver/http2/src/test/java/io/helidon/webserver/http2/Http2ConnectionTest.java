@@ -65,6 +65,8 @@ import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
+import io.helidon.webserver.http2.spi.SubProtocolResult;
 
 import org.junit.jupiter.api.Test;
 
@@ -87,6 +89,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionTest {
+
+    @Test
+    void zeroInitialWindowStillCreatesConnection() {
+        Http2Config config = Http2Config.builder()
+                .initialWindowSize(0)
+                .build();
+
+        assertDoesNotThrow(() -> new Http2Connection(http2Context(mock(DataWriter.class)), config, List.of()));
+    }
 
     @Test
     void pingAckWrapsUncheckedIOException() {
@@ -244,6 +255,80 @@ class Http2ConnectionTest {
     }
 
     @Test
+    void connectionTerminationAbortsAndRemovesEveryStream() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        Http2ServerStream first = mock(Http2ServerStream.class);
+        Http2ServerStream second = mock(Http2ServerStream.class);
+        when(first.streamId()).thenReturn(1);
+        when(second.streamId()).thenReturn(3);
+        streams.put(new Http2Connection.StreamContext(1, 8192, first));
+        streams.put(new Http2Connection.StreamContext(3, 8192, second));
+        streams.activate(1);
+        streams.activate(3);
+
+        streams.abortAll();
+
+        verify(first).abortConnection();
+        verify(second).abortConnection();
+        assertAll(
+                () -> assertThat(streams.isEmpty(), is(true)),
+                () -> assertThat(streams.get(1), is(nullValue())),
+                () -> assertThat(streams.get(3), is(nullValue()))
+        );
+    }
+
+    @Test
+    void peerDisconnectPreventsQueuedStreamHandlerFromStarting() {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        Http2Headers h2Headers = Http2Headers.create(WritableHeaders.create());
+        h2Headers.method(Method.POST);
+        h2Headers.path("/grpc");
+        h2Headers.scheme("http");
+        h2Headers.authority("localhost");
+        BufferData headersData = BufferData.growing(512);
+        h2Headers.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                        Http2HuffmanEncoder.create(),
+                        headersData);
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                        Http2FrameTypes.HEADERS,
+                                                                        Http2Flag.HeaderFlags.create(
+                                                                                Http2Flag.END_OF_HEADERS),
+                                                                        1),
+                                                headersData)));
+        DataReader reader = DataReader.create(input::poll);
+        ExecutorService executor = mock(ExecutorService.class);
+        AtomicReference<Runnable> queuedHandler = new AtomicReference<>();
+        doAnswer(invocation -> {
+            queuedHandler.set(invocation.getArgument(0));
+            return null;
+        }).when(executor).submit(any(Runnable.class));
+        ConnectionContext ctx = http2Context(mock(DataWriter.class), reader);
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
+        Http2SubProtocolSelector.SubProtocolHandler handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        Http2SubProtocolSelector selector = (connectionContext,
+                                             prologue,
+                                             headers,
+                                             streamWriter,
+                                             streamId,
+                                             serverSettings,
+                                             clientSettings,
+                                             streamFlowControl,
+                                             currentStreamState,
+                                             router) -> new SubProtocolResult(true, handler);
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(selector));
+
+        assertThrows(CloseConnectionException.class,
+                     () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
+        queuedHandler.get().run();
+
+        verify(handler, never()).init();
+    }
+
+    @Test
     void closeConnectionWrapsUncheckedIOException() {
         DataWriter writer = mock(DataWriter.class);
         doThrow(new UncheckedIOException(new SocketException("Broken pipe")))
@@ -316,6 +401,7 @@ class Http2ConnectionTest {
         goAwayData.read(payloadBytes);
         Http2GoAway goAway = Http2GoAway.create(BufferData.create(payloadBytes));
         assertThat(goAway.errorCode(), is(Http2ErrorCode.REFUSED_STREAM));
+        assertThat(goAway.lastStreamId(), is(1));
     }
 
     @Test
@@ -339,7 +425,13 @@ class Http2ConnectionTest {
                                                                         1),
                                                 headersData)));
 
-        DataReader reader = DataReader.create(input::poll);
+        AtomicReference<Http2Connection> connectionRef = new AtomicReference<>();
+        DataReader reader = DataReader.create(() -> {
+            if (input.size() == 1) {
+                connectionRef.get().lastRequestTimestamp(ZonedDateTime.now().minusHours(1));
+            }
+            return input.poll();
+        });
         ConnectionContext ctx = http2Context(mock(DataWriter.class), reader);
         when(ctx.executor()).thenReturn(mock(ExecutorService.class));
         PeerInfo peerInfo = mock(PeerInfo.class);
@@ -347,10 +439,7 @@ class Http2ConnectionTest {
         when(ctx.remotePeer()).thenReturn(peerInfo);
         when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
         Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
-
-        assertThrows(CloseConnectionException.class,
-                     () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
-        connection.lastRequestTimestamp(ZonedDateTime.now().minusHours(1));
+        connectionRef.set(connection);
         input.add(frameBytes(new Http2WindowUpdate(1)
                                      .toFrameData(null, 1, Http2Flag.NoFlags.create())));
 

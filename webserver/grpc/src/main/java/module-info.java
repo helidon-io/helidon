@@ -32,6 +32,7 @@ module io.helidon.webserver.grpc {
     requires io.helidon.webserver.http2;
     requires io.helidon.config;
     requires io.helidon.metrics.api;
+    requires transitive io.helidon.service.registry;
     requires io.helidon.webserver;
 
     requires io.grpc;
@@ -46,6 +47,8 @@ module io.helidon.webserver.grpc {
 
     exports io.helidon.webserver.grpc;
     exports io.helidon.webserver.grpc.spi;
+
+    uses io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 
     provides io.helidon.webserver.http2.spi.Http2SubProtocolProvider
             with io.helidon.webserver.grpc.GrpcProtocolProvider;

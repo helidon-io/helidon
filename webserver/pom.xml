@@ -42,6 +42,7 @@
         <module>graphql</module>
         <module>grpc</module>
         <module>grpc-security</module>
+        <module>grpc-validation</module>
         <module>grpc-tracing</module>
         <module>hsts</module>
         <module>http2</module>

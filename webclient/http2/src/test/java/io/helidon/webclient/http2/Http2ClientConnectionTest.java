@@ -58,6 +58,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -422,6 +423,30 @@ class Http2ClientConnectionTest {
             assertNotNull(recoveredStream);
             recoveredStream.close();
             connection.close();
+        }
+    }
+
+    @Test
+    void closeNowDoesNotWaitForConnectionWriter() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), false);
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            CompletableFuture<Void> cancel = CompletableFuture.runAsync(stream::cancel);
+
+            assertTrue(blockedWrite.awaitEntered());
+            try {
+                connection.closeNow();
+                test.assertConnectionClosed();
+                assertFalse(cancel.isDone());
+            } finally {
+                blockedWrite.release();
+            }
+            cancel.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            stream.close();
         }
     }
 
