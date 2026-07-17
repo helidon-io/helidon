@@ -86,7 +86,11 @@ class ServiceManager<T> {
 
         Activator<T> serviceActivator;
         if (fixedInstance) {
-            serviceActivator = activatorSupplier.get();
+            try {
+                serviceActivator = activator();
+            } catch (ScopeNotActiveException e) {
+                return Optional.empty();
+            }
         } else {
             Optional<Activator<T>> existingActivator = existingActivator();
             if (existingActivator.isEmpty()) {

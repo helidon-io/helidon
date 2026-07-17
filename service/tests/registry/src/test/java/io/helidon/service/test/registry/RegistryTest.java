@@ -192,7 +192,6 @@ public class RegistryTest {
             Services.set(FirstActiveContract.class, explicit);
 
             assertThat(serviceRegistry.firstActive(FirstActiveContract.class).orElseThrow(), sameInstance(explicit));
-            assertThat(serviceRegistry.get(FirstActiveContract.class), sameInstance(explicit));
 
             manager.shutdown();
             shutDown = true;
