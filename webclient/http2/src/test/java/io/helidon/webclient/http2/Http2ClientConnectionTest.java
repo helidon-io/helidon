@@ -44,6 +44,7 @@ import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameListener;
+import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanEncoder;
@@ -64,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
@@ -447,6 +449,70 @@ class Http2ClientConnectionTest {
             }
             cancel.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             stream.close();
+        }
+    }
+
+    @Test
+    void windowUpdateWriterDoesNotDependOnConnectionExecutor() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            try {
+                Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+                stream.writeHeaders(requestHeaders(), true);
+                Http2Headers.DynamicTable inboundTable =
+                        Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+                Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+                byte[] responseData = "response".getBytes(StandardCharsets.UTF_8);
+                test.offerInbound(encodedHeaderFrame(stream.streamId(), encodedResponseHeaders(false), inboundTable, huffman),
+                                  dataFrame(stream.streamId(), responseData, false));
+                assertThat(stream.readHeaders().status(), is(Status.OK_200));
+
+                clearInvocations(test.dataWriter);
+                MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+                CompletableFuture<Void> activeWrite = CompletableFuture.runAsync(
+                        () -> connection.writer().write(windowUpdateFrame(0)));
+
+                assertTrue(blockedWrite.awaitEntered());
+                try {
+                    CompletableFuture<Http2FrameData> read = CompletableFuture.supplyAsync(
+                            () -> stream.readOne(Duration.ofSeconds(1)));
+                    Http2FrameData frame = read.get(2, TimeUnit.SECONDS);
+                    assertThat(frame.header().type(), is(Http2FrameType.DATA));
+                    assertThat(frame.data().readBytes(), is(responseData));
+                } finally {
+                    blockedWrite.release();
+                }
+                activeWrite.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+
+                verify(test.dataWriter, timeout(TEST_WAIT_TIMEOUT.toMillis()).atLeast(2))
+                        .writeNow(any(BufferData.class));
+            } finally {
+                connection.closeNow();
+            }
+        }
+    }
+
+    @Test
+    void deferredWindowUpdateFailureClosesConnection() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            CompletableFuture<Void> activeWrite = CompletableFuture.runAsync(
+                    () -> connection.writer().write(dataFrame(1, new byte[1024], false)));
+
+            assertTrue(blockedWrite.awaitEntered());
+            try {
+                test.failWrites();
+                connection.writer().write(windowUpdateFrame(0));
+            } finally {
+                blockedWrite.release();
+            }
+
+            activeWrite.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            test.assertConnectionClosed();
         }
     }
 

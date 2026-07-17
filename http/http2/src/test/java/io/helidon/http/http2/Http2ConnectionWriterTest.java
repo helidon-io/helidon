@@ -18,10 +18,9 @@ package io.helidon.http.http2;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,63 +50,135 @@ import static org.mockito.Mockito.when;
 class Http2ConnectionWriterTest {
 
     @Test
-    void asyncWriteDoesNotBlockInboundProgressBehindDataWrite() throws InterruptedException {
+    void writesPendingWindowUpdatesBeforeResetWhileDataWriteBlocked() throws InterruptedException {
         AtomicInteger writes = new AtomicInteger();
-        AtomicReference<Throwable> writeFailure = new AtomicReference<>();
-        AtomicReference<Throwable> asyncFailure = new AtomicReference<>();
+        AtomicInteger windowIncrement = new AtomicInteger();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
         CountDownLatch dataWriteStarted = new CountDownLatch(1);
         CountDownLatch releaseDataWrite = new CountDownLatch(1);
-        CountDownLatch asyncWriteReturned = new CountDownLatch(1);
-        CountDownLatch asyncWriteCompleted = new CountDownLatch(1);
         DataWriter dataWriter = mock(DataWriter.class);
         doAnswer(_ -> {
             if (writes.incrementAndGet() == 1) {
                 dataWriteStarted.countDown();
                 releaseDataWrite.await();
-            } else {
-                asyncWriteCompleted.countDown();
             }
             return null;
         }).when(dataWriter).writeNow(any(BufferData.class));
+        List<Http2FrameType> frameTypes = new ArrayList<>();
+        AtomicReference<Http2FrameType> frameType = new AtomicReference<>();
+        Http2FrameListener listener = new Http2FrameListener() {
+            @Override
+            public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+                frameTypes.add(header.type());
+                frameType.set(header.type());
+            }
 
-        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
-        Thread dataWriterThread = Thread.startVirtualThread(() -> {
+            @Override
+            public void frame(SocketContext ctx, int streamId, BufferData data) {
+                if (frameType.get() == Http2FrameType.WINDOW_UPDATE) {
+                    windowIncrement.set(data.copy().readInt32() & Integer.MAX_VALUE);
+                }
+            }
+        };
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of(listener));
+        Thread dataWriterThread = Thread.ofVirtual().start(() -> {
             try {
                 writer.write(dataFrame(1, 1024));
             } catch (Throwable t) {
-                writeFailure.set(t);
+                failure.compareAndSet(null, t);
             }
         });
 
         assertThat("DATA write must start", dataWriteStarted.await(1, TimeUnit.SECONDS), is(true));
-        try (ExecutorService executor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory())) {
-            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1024);
-            Thread asyncCaller = Thread.startVirtualThread(() -> {
-                writer.writeAsync(windowUpdate.toFrameData(null, 1, Http2Flag.NoFlags.create()),
-                                  executor,
-                                  asyncFailure::set);
-                asyncWriteReturned.countDown();
-            });
+        for (int i = 0; i < 2; i++) {
+            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+            writer.write(windowUpdate.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+        }
+        Http2RstStream reset = new Http2RstStream(Http2ErrorCode.CANCEL);
+        Thread resetWriterThread = Thread.ofVirtual().start(() -> {
+            try {
+                writer.write(reset.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            } catch (Throwable t) {
+                failure.compareAndSet(null, t);
+            }
+        });
 
-            assertThat("queueing WINDOW_UPDATE must not block behind DATA",
-                       asyncWriteReturned.await(1, TimeUnit.SECONDS),
-                       is(true));
-            assertThat("asynchronous write must wait for the active DATA frame",
-                       asyncWriteCompleted.await(100, TimeUnit.MILLISECONDS),
-                       is(false));
+        try {
             releaseDataWrite.countDown();
-            assertThat("queued WINDOW_UPDATE must be written after DATA",
-                       asyncWriteCompleted.await(1, TimeUnit.SECONDS),
-                       is(true));
-            asyncCaller.join();
+            dataWriterThread.join(TimeUnit.SECONDS.toMillis(2));
+            resetWriterThread.join(TimeUnit.SECONDS.toMillis(2));
         } finally {
             releaseDataWrite.countDown();
-            dataWriterThread.join();
         }
 
+        assertThat("DATA writer must terminate", dataWriterThread.isAlive(), is(false));
+        assertThat("reset writer must terminate", resetWriterThread.isAlive(), is(false));
+        assertThat(writes.get(), is(3));
+        assertThat(frameTypes, is(List.of(Http2FrameType.DATA,
+                                          Http2FrameType.WINDOW_UPDATE,
+                                          Http2FrameType.RST_STREAM)));
+        assertThat(windowIncrement.get(), is(2));
+        assertThat(failure.get(), is(nullValue()));
+    }
+
+    @Test
+    void coalescesWindowUpdateBacklogWhileWriterIsBlocked() throws InterruptedException {
+        AtomicInteger writes = new AtomicInteger();
+        AtomicInteger windowIncrement = new AtomicInteger();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        CountDownLatch dataWriteStarted = new CountDownLatch(1);
+        CountDownLatch releaseDataWrite = new CountDownLatch(1);
+        CountDownLatch windowUpdateWritten = new CountDownLatch(1);
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            int write = writes.incrementAndGet();
+            if (write == 1) {
+                dataWriteStarted.countDown();
+                releaseDataWrite.await();
+            } else {
+                windowUpdateWritten.countDown();
+            }
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        AtomicReference<Http2FrameType> frameType = new AtomicReference<>();
+        Http2FrameListener listener = new Http2FrameListener() {
+            @Override
+            public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+                frameType.set(header.type());
+            }
+
+            @Override
+            public void frame(SocketContext ctx, int streamId, BufferData data) {
+                if (frameType.get() == Http2FrameType.WINDOW_UPDATE) {
+                    windowIncrement.set(data.copy().readInt32() & Integer.MAX_VALUE);
+                }
+            }
+        };
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of(listener));
+        Thread dataWriterThread = Thread.ofVirtual().start(() -> {
+            try {
+                writer.write(dataFrame(1, 1024));
+            } catch (Throwable t) {
+                failure.compareAndSet(null, t);
+            }
+        });
+
+        assertThat("DATA write must start", dataWriteStarted.await(1, TimeUnit.SECONDS), is(true));
+        try {
+            for (int i = 0; i < 5000; i++) {
+                Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+                writer.write(windowUpdate.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            }
+        } finally {
+            releaseDataWrite.countDown();
+        }
+
+        dataWriterThread.join(TimeUnit.SECONDS.toMillis(2));
+        assertThat("DATA writer must terminate", dataWriterThread.isAlive(), is(false));
+        assertThat("WINDOW_UPDATE must be written", windowUpdateWritten.await(2, TimeUnit.SECONDS), is(true));
         assertThat(writes.get(), is(2));
-        assertThat(writeFailure.get(), is(nullValue()));
-        assertThat(asyncFailure.get(), is(nullValue()));
+        assertThat(windowIncrement.get(), is(5000));
+        assertThat(failure.get(), is(nullValue()));
     }
 
     @Test
