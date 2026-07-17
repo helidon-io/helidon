@@ -106,6 +106,7 @@ public class Http2ClientConnection {
     private final ReentrantLock reservedStreamsLock = new ReentrantLock();
     private final CountDownLatch initialSettingsLatch = new CountDownLatch(1);
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
+    private volatile ExecutorService executor;
     private volatile int lastStreamId;
     private volatile long expectedPingAck = NO_PING_ACK;
     private volatile long peerMaxConcurrentStreams = Http2Setting.MAX_CONCURRENT_STREAMS.defaultValue();
@@ -492,6 +493,7 @@ public class Http2ClientConnection {
                        ExecutorService executor,
                        boolean sendSettings) {
         CountDownLatch cdl = new CountDownLatch(1);
+        this.executor = executor;
 
         handleTask = executor.submit(() -> {
             ctx.log(LOGGER, TRACE, "Starting HTTP/2 connection, thread: %s", Thread.currentThread().getName());
@@ -573,7 +575,7 @@ public class Http2ClientConnection {
 
     private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
         if (streamId == 0) {
-            writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+            writeWindowUpdate(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             return;
         }
         if (streamId < lastStreamId) {
@@ -593,8 +595,17 @@ public class Http2ClientConnection {
         }
         Http2ClientStream stream = stream(streamId);
         if (stream != null && !stream.streamState().equals(Http2StreamState.CLOSED)) {
-            writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+            writeWindowUpdate(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
         }
+    }
+
+    private void writeWindowUpdate(Http2FrameData frame) {
+        writer.writeAsync(frame, executor, this::windowUpdateWriteFailed);
+    }
+
+    private void windowUpdateWriteFailed(Throwable failure) {
+        ctx.log(LOGGER, DEBUG, "Failed to write HTTP/2 window update", failure);
+        closeNow();
     }
 
     private boolean handle() {

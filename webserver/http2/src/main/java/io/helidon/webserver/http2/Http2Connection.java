@@ -638,7 +638,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     // Used in inbound flow control instance to write WINDOW_UPDATE frame.
     private void writeWindowUpdateFrame(int streamId, Http2WindowUpdate windowUpdateFrame) {
-        writeConnectionFrame(windowUpdateFrame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+        Http2FrameData frame = windowUpdateFrame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create());
+        connectionWriter.writeAsync(frame, ctx.executor(), this::windowUpdateWriteFailed);
+    }
+
+    private void windowUpdateWriteFailed(Throwable failure) {
+        LOGGER.log(DEBUG, "Failed to write HTTP/2 window update", failure);
+        close(true);
     }
 
     private void doSettings() {

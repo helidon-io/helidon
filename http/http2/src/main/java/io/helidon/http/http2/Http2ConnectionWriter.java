@@ -18,8 +18,14 @@ package io.helidon.http.http2;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
@@ -34,6 +40,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private final DataWriter writer;
 
     private final Lock streamLock = new ReentrantLock(true);
+    private final Queue<AsyncWrite> asyncWrites = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean asyncWriteScheduled = new AtomicBoolean();
+    private final AtomicReference<Throwable> asyncWriteFailure = new AtomicReference<>();
     private final SocketContext ctx;
     private final Http2FrameListener listener;
     private final Http2Headers.DynamicTable outboundDynamicTable;
@@ -60,6 +69,36 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     @Override
     public void write(Http2FrameData frame) {
         lockedWrite(frame);
+    }
+
+    /**
+     * Queue a frame for a serialized asynchronous write. This allows an inbound consumer to continue reading while
+     * another stream is blocked in a socket write on the same connection. The frame data is copied before this method
+     * returns.
+     *
+     * @param frame frame to write
+     * @param executor executor used to drain queued writes
+     * @param onFailure action invoked if a queued write fails
+     */
+    public void writeAsync(Http2FrameData frame, Executor executor, Consumer<Throwable> onFailure) {
+        Objects.requireNonNull(frame);
+        Objects.requireNonNull(executor);
+        Objects.requireNonNull(onFailure);
+        Throwable failure = asyncWriteFailure.get();
+        if (failure != null) {
+            onFailure.accept(failure);
+            return;
+        }
+        Http2FrameData frameCopy = new Http2FrameData(frame.header(), frame.data().copy());
+        AsyncWrite asyncWrite = new AsyncWrite(frameCopy, executor, onFailure);
+        asyncWrites.add(asyncWrite);
+        failure = asyncWriteFailure.get();
+        if (failure != null) {
+            asyncWrites.remove(asyncWrite);
+            onFailure.accept(failure);
+            return;
+        }
+        scheduleAsyncWrite();
     }
 
     @Override
@@ -252,6 +291,42 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
+    private void scheduleAsyncWrite() {
+        AsyncWrite next = asyncWrites.peek();
+        if (next == null || asyncWriteFailure.get() != null || !asyncWriteScheduled.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            next.executor().execute(this::drainAsyncWrites);
+        } catch (RuntimeException | Error e) {
+            asyncWriteScheduled.set(false);
+            failAsyncWrites(next, e);
+        }
+    }
+
+    private void drainAsyncWrites() {
+        AsyncWrite asyncWrite = null;
+        try {
+            while ((asyncWrite = asyncWrites.poll()) != null) {
+                lockedWrite(asyncWrite.frame());
+            }
+        } catch (Throwable t) {
+            failAsyncWrites(asyncWrite, t);
+        } finally {
+            asyncWriteScheduled.set(false);
+            if (asyncWriteFailure.get() == null && !asyncWrites.isEmpty()) {
+                scheduleAsyncWrite();
+            }
+        }
+    }
+
+    private void failAsyncWrites(AsyncWrite asyncWrite, Throwable failure) {
+        if (asyncWriteFailure.compareAndSet(null, failure)) {
+            asyncWrites.clear();
+            asyncWrite.onFailure().accept(failure);
+        }
+    }
+
     private void lock() {
         try {
             streamLock.lockInterruptibly();
@@ -323,5 +398,8 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
     private static int frameBytes(Http2FrameData frame) {
         return frame.header().length() + Http2FrameHeader.LENGTH;
+    }
+
+    private record AsyncWrite(Http2FrameData frame, Executor executor, Consumer<Throwable> onFailure) {
     }
 }

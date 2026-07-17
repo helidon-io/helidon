@@ -20,6 +20,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,6 +49,66 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionWriterTest {
+
+    @Test
+    void asyncWriteDoesNotBlockInboundProgressBehindDataWrite() throws InterruptedException {
+        AtomicInteger writes = new AtomicInteger();
+        AtomicReference<Throwable> writeFailure = new AtomicReference<>();
+        AtomicReference<Throwable> asyncFailure = new AtomicReference<>();
+        CountDownLatch dataWriteStarted = new CountDownLatch(1);
+        CountDownLatch releaseDataWrite = new CountDownLatch(1);
+        CountDownLatch asyncWriteReturned = new CountDownLatch(1);
+        CountDownLatch asyncWriteCompleted = new CountDownLatch(1);
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            if (writes.incrementAndGet() == 1) {
+                dataWriteStarted.countDown();
+                releaseDataWrite.await();
+            } else {
+                asyncWriteCompleted.countDown();
+            }
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+        Thread dataWriterThread = Thread.startVirtualThread(() -> {
+            try {
+                writer.write(dataFrame(1, 1024));
+            } catch (Throwable t) {
+                writeFailure.set(t);
+            }
+        });
+
+        assertThat("DATA write must start", dataWriteStarted.await(1, TimeUnit.SECONDS), is(true));
+        try (ExecutorService executor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory())) {
+            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1024);
+            Thread asyncCaller = Thread.startVirtualThread(() -> {
+                writer.writeAsync(windowUpdate.toFrameData(null, 1, Http2Flag.NoFlags.create()),
+                                  executor,
+                                  asyncFailure::set);
+                asyncWriteReturned.countDown();
+            });
+
+            assertThat("queueing WINDOW_UPDATE must not block behind DATA",
+                       asyncWriteReturned.await(1, TimeUnit.SECONDS),
+                       is(true));
+            assertThat("asynchronous write must wait for the active DATA frame",
+                       asyncWriteCompleted.await(100, TimeUnit.MILLISECONDS),
+                       is(false));
+            releaseDataWrite.countDown();
+            assertThat("queued WINDOW_UPDATE must be written after DATA",
+                       asyncWriteCompleted.await(1, TimeUnit.SECONDS),
+                       is(true));
+            asyncCaller.join();
+        } finally {
+            releaseDataWrite.countDown();
+            dataWriterThread.join();
+        }
+
+        assertThat(writes.get(), is(2));
+        assertThat(writeFailure.get(), is(nullValue()));
+        assertThat(asyncFailure.get(), is(nullValue()));
+    }
 
     @Test
     void concurrentWritersDoNotReuseConnectionWindowCredit() throws InterruptedException {
