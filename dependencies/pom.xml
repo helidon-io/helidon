@@ -99,6 +99,7 @@
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
         <version.lib.jersey>3.1.11</version.lib.jersey>
+        <version.lib.jersey-mp-rest-client>3.1.10</version.lib.jersey-mp-rest-client>
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
         <version.lib.jgit>7.3.0.202506031305-r</version.lib.jgit>
@@ -1008,7 +1009,7 @@
             <dependency>
                 <groupId>org.glassfish.jersey.ext.microprofile</groupId>
                 <artifactId>jersey-mp-rest-client</artifactId>
-                <version>${version.lib.jersey}</version>
+                <version>${version.lib.jersey-mp-rest-client}</version>
                 <exclusions>
                     <!-- most of these libraries are either bad (javax*), or we need additional exclusions on them -->
                     <exclusion>
