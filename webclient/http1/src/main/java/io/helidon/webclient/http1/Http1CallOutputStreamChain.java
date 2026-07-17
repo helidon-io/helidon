@@ -408,22 +408,31 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 try {
                     writer.flush();     // flush before a read
                     connection.readTimeout(originalRequest.readContinueTimeout());
-                    responseHead = callChain.readResponseHead(connection,
-                                                              reader,
-                                                              Http1CallChainBase::isPreContinueInterimResponse,
-                                                              false);
-                } catch (UncheckedIOException e) {
-                    if (e.getCause() instanceof SocketTimeoutException) {
-                        responseHead = null;
-                        connection.allowExpectContinue(false);
-                    } else {
+                    while (responseHead == null) {
+                        boolean statusRead = false;
                         try {
-                            connection.closeResource();
-                        } catch (Exception ex) {
-                            e.addSuppressed(ex);
+                            Status responseStatus = callChain.readResponseStatus(connection, reader, false);
+                            statusRead = true;
+                            ClientResponseHeaders responseHeaders = callChain.readResponseHeaders(connection, reader);
+
+                            if (!Http1CallChainBase.isPreContinueInterimResponse(responseStatus)) {
+                                responseHead = new ResponseHead(responseStatus, responseHeaders);
+                            }
+                        } catch (UncheckedIOException e) {
+                            if (!statusRead && e.getCause() instanceof SocketTimeoutException) {
+                                connection.allowExpectContinue(false);
+                                break;
+                            }
+                            throw e;
                         }
-                        throw e;
                     }
+                } catch (UncheckedIOException e) {
+                    try {
+                        connection.closeResource();
+                    } catch (Exception ex) {
+                        e.addSuppressed(ex);
+                    }
+                    throw e;
                 } finally {
                     if (connection.isConnected()) {
                         connection.readTimeout(originalRequest.readTimeout());

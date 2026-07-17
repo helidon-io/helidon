@@ -276,28 +276,38 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                   Predicate<Status> skippedResponse,
                                   boolean closeOnReadFailure) {
         while (true) {
-            Status responseStatus;
-            try {
-                responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-            } catch (UncheckedIOException e) {
-                if (closeOnReadFailure) {
-                    // Normal response reads cannot reuse a connection after a timeout or close while reading status.
-                    try {
-                        connection.closeResource();
-                    } catch (Exception ex) {
-                        e.addSuppressed(ex);
-                    }
-                }
-                throw e;
-            }
-            recvListener.status(connection.helidonSocket(), responseStatus);
-            ClientResponseHeaders responseHeaders = readHeaders(reader);
-            recvListener.headers(connection.helidonSocket(), responseHeaders);
+            Status responseStatus = readResponseStatus(connection, reader, closeOnReadFailure);
+            ClientResponseHeaders responseHeaders = readResponseHeaders(connection, reader);
 
             if (!skippedResponse.test(responseStatus)) {
                 return new ResponseHead(responseStatus, responseHeaders);
             }
         }
+    }
+
+    Status readResponseStatus(ClientConnection connection, DataReader reader, boolean closeOnReadFailure) {
+        Status responseStatus;
+        try {
+            responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+        } catch (UncheckedIOException e) {
+            if (closeOnReadFailure) {
+                // Normal response reads cannot reuse a connection after a timeout or close while reading status.
+                try {
+                    connection.closeResource();
+                } catch (Exception ex) {
+                    e.addSuppressed(ex);
+                }
+            }
+            throw e;
+        }
+        recvListener.status(connection.helidonSocket(), responseStatus);
+        return responseStatus;
+    }
+
+    ClientResponseHeaders readResponseHeaders(ClientConnection connection, DataReader reader) {
+        ClientResponseHeaders responseHeaders = readHeaders(reader);
+        recvListener.headers(connection.helidonSocket(), responseHeaders);
+        return responseHeaders;
     }
 
     static boolean isPreContinueInterimResponse(Status responseStatus) {
