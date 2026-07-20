@@ -207,6 +207,11 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     @Override
+    public boolean isResponseHandled() {
+        return hasEntity() || isNexted() || shouldReroute();
+    }
+
+    @Override
     public ServerResponse beforeTrailers(Consumer<ServerResponseTrailers> beforeTrailers) {
         this.beforeTrailers = beforeTrailers;
         return this;

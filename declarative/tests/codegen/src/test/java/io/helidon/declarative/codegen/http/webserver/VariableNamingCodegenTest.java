@@ -29,6 +29,7 @@ import io.helidon.common.Default;
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.Mappers;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.uri.UriQuery;
@@ -71,6 +72,7 @@ class VariableNamingCodegenTest {
             HttpRoute.class,
             HttpRouting.class,
             HttpRules.class,
+            MediaType.class,
             Mappers.class,
             Parameters.class,
             Prototype.class,
@@ -152,5 +154,159 @@ class VariableNamingCodegenTest {
         assertThat(generated, containsString("u_response);"));
         assertThat(generated, containsString("res.send(response);"));
         assertThat(generated, not(containsString("helidonDeclarative__")));
+    }
+
+    @Test
+    void generatedServerResponseParameterGuardsSend() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/http-server-response-parameter"))
+                .addSource("OutputStreamEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+                        import io.helidon.webserver.http.ServerResponse;
+
+                        @RestServer.Listener("@default")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/output")
+                        class OutputStreamEndpoint {
+                            @Http.GET
+                            @Http.Path("/stream")
+                            @Http.Produces("text/plain")
+                            @RestServer.Header(name = "X-Stream", value = "true")
+                            @RestServer.Status(201)
+                            void stream(ServerResponse response) {
+                                response.send();
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith(".java"))
+                .toList();
+
+        StringBuilder generatedContent = new StringBuilder();
+        for (Path generatedSource : generatedSources) {
+            generatedContent.append(Files.readString(generatedSource, StandardCharsets.UTF_8));
+            generatedContent.append('\n');
+        }
+
+        String generated = generatedContent.toString();
+        int contentType = generated.indexOf("res.headers().contentType(");
+        int status = generated.indexOf("res.status(");
+        int header = generated.indexOf("res.header(");
+        int invocation = generated.indexOf("this.endpoint.stream(u_response);");
+        int guard = generated.indexOf("if (!res.isResponseHandled()) {");
+        int send = generated.indexOf("res.send();", guard);
+
+        assertThat(generated, containsString("var u_response = res;"));
+        assertThat("content type must be generated", contentType, not(-1));
+        assertThat("status must be generated", status, not(-1));
+        assertThat("header must be generated", header, not(-1));
+        assertThat("endpoint invocation must be generated", invocation, not(-1));
+        assertThat("send guard must be generated", guard, not(-1));
+        assertThat("send must be generated inside the guard", send, not(-1));
+        assertThat("content type must be set before the endpoint method is invoked", contentType < invocation, is(true));
+        assertThat("status must be set before the endpoint method is invoked", status < invocation, is(true));
+        assertThat("headers must be set before the endpoint method is invoked", header < invocation, is(true));
+        assertThat("send guard must be generated after the endpoint method is invoked", invocation < guard, is(true));
+        assertThat("send must be guarded by ServerResponse.isResponseHandled()", guard < send, is(true));
+    }
+
+    @Test
+    void generatedServerResponseParameterReturnValueAlwaysSends() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/http-server-response-return-value"))
+                .addSource("ReturnValueEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+                        import io.helidon.webserver.http.ServerResponse;
+
+                        @RestServer.Listener("@default")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/return")
+                        class ReturnValueEndpoint {
+                            @Http.GET
+                            @Http.Path("/entity")
+                            @Http.Produces("text/plain")
+                            @RestServer.Header(name = "X-Entity", value = "true")
+                            @RestServer.Status(202)
+                            String entity(ServerResponse response) {
+                                return "entity";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith(".java"))
+                .toList();
+
+        StringBuilder generatedContent = new StringBuilder();
+        for (Path generatedSource : generatedSources) {
+            generatedContent.append(Files.readString(generatedSource, StandardCharsets.UTF_8));
+            generatedContent.append('\n');
+        }
+
+        String generated = generatedContent.toString();
+        int contentType = generated.indexOf("res.headers().contentType(");
+        int status = generated.indexOf("res.status(");
+        int header = generated.indexOf("res.header(");
+        int invocation = generated.indexOf("var response = this.endpoint.entity(u_response);");
+        int send = generated.indexOf("res.send(response);", invocation);
+
+        assertThat(generated, containsString("var u_response = res;"));
+        assertThat("content type must be generated", contentType, not(-1));
+        assertThat("status must be generated", status, not(-1));
+        assertThat("header must be generated", header, not(-1));
+        assertThat("endpoint invocation must be generated", invocation, not(-1));
+        assertThat("return value send must be generated", send, not(-1));
+        assertThat("content type must be set before the endpoint method is invoked", contentType < invocation, is(true));
+        assertThat("status must be set before the endpoint method is invoked", status < invocation, is(true));
+        assertThat("headers must be set before the endpoint method is invoked", header < invocation, is(true));
+        assertThat("return value must be sent without response-handled guard",
+                   generated,
+                   not(containsString("if (!res.isResponseHandled()) {")));
+        assertThat("return value must be sent after the endpoint method is invoked", invocation < send, is(true));
     }
 }
