@@ -125,7 +125,21 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
 
     @Override
     public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
-        validateInitialWindowSize(settings);
+        Integer initialWindowSize = settings.initialWindowSize();
+        if (initialWindowSize != null) {
+            Http2RemoteFlowController flowController = encoder().flowController();
+            int delta = initialWindowSize - flowController.initialWindowSize();
+            if (delta > 0) {
+                encoder().connection().forEachActiveStream(stream -> {
+                    if (flowController.windowSize(stream) > Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE - delta) {
+                        throw Http2Exception.connectionError(Http2Error.FLOW_CONTROL_ERROR,
+                                                             "Window size overflow for stream: %d",
+                                                             stream.id());
+                    }
+                    return true;
+                });
+            }
+        }
         encoder().writeSettingsAck(ctx, ctx.newPromise());
         inboundAdapter.onSettingsRead(ctx, settings);
     }
@@ -201,26 +215,4 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
         }
     }
 
-    private void validateInitialWindowSize(Http2Settings settings) throws Http2Exception {
-        Integer initialWindowSize = settings.initialWindowSize();
-        if (initialWindowSize == null) {
-            return;
-        }
-
-        Http2RemoteFlowController flowController = encoder().flowController();
-        int delta = initialWindowSize - flowController.initialWindowSize();
-        if (delta <= 0) {
-            return;
-        }
-
-        encoder().connection().forEachActiveStream(stream -> {
-            if (flowController.windowSize(stream) > Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE - delta) {
-                throw Http2Exception.connectionError(Http2Error.FLOW_CONTROL_ERROR,
-                                                     "Window size overflow for stream: %d",
-                                                     stream.id());
-            }
-            return true;
-        });
-    }
 }
-
