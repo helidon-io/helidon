@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.SocketTimeoutException;
 import java.net.StandardProtocolFamily;
 import java.net.URI;
 import java.net.UnixDomainSocketAddress;
@@ -40,6 +41,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -88,6 +90,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -868,6 +871,24 @@ class Http1ClientTest {
     }
 
     @Test
+    void testExpectContinueHeaderTimeoutFailsRequest() {
+        String rawContinueResponse = "HTTP/1.1 417 Expectation Failed\r\n";
+        Http1Client expectContinueClient = Http1Client.builder()
+                .sendExpectContinue(true)
+                .build();
+        Http1ClientRequest request = expectContinueClient.put("http://localhost:" + dummyPort + "/test");
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(null, rawContinueResponse, true);
+        request.connection(connection);
+
+        UncheckedIOException exception = assertThrows(UncheckedIOException.class,
+                                                       () -> getHttp1ClientResponseFromOutputStream(request,
+                                                                                                   new String[] {"body"}));
+
+        assertThat(exception.getCause(), instanceOf(SocketTimeoutException.class));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
     void testChunk() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
@@ -1435,8 +1456,21 @@ class Http1ClientTest {
             this(true, rawResponse, rawContinueResponse);
         }
 
+        FakeHttp1ClientConnection(String rawResponse,
+                                  String rawContinueResponse,
+                                  boolean timeoutAfterFirstResponseRead) {
+            this(Status.OK_200,
+                 true,
+                 true,
+                 List.of(),
+                 null,
+                 rawResponse,
+                 rawContinueResponse,
+                 timeoutAfterFirstResponseRead);
+        }
+
         FakeHttp1ClientConnection(boolean includeKeepAliveHeader, String rawResponse, String rawContinueResponse) {
-            this(Status.OK_200, includeKeepAliveHeader, true, List.of(), null, rawResponse, rawContinueResponse);
+            this(Status.OK_200, includeKeepAliveHeader, true, List.of(), null, rawResponse, rawContinueResponse, false);
         }
 
         FakeHttp1ClientConnection(Status responseStatus, boolean includeContentLength) {
@@ -1462,12 +1496,30 @@ class Http1ClientTest {
                                           byte[] responseEntity,
                                           String rawResponse,
                                           String rawContinueResponse) {
+            this(responseStatus,
+                 includeKeepAliveHeader,
+                 includeContentLength,
+                 additionalResponseHeaders,
+                 responseEntity,
+                 rawResponse,
+                 rawContinueResponse,
+                 false);
+        }
+
+        private FakeHttp1ClientConnection(Status responseStatus,
+                                          boolean includeKeepAliveHeader,
+                                          boolean includeContentLength,
+                                          List<Header> additionalResponseHeaders,
+                                          byte[] responseEntity,
+                                          String rawResponse,
+                                          String rawContinueResponse,
+                                          boolean timeoutAfterFirstResponseRead) {
             ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
             ArrayBlockingQueue<byte[]> clientToServer = new ArrayBlockingQueue<>(1024);
 
-            this.clientReader = reader(serverToClient);
+            this.clientReader = reader(serverToClient, timeoutAfterFirstResponseRead);
             this.clientWriter = writer(clientToServer);
-            this.serverReader = reader(clientToServer);
+            this.serverReader = reader(clientToServer, false);
             this.serverWriter = writer(serverToClient);
             this.includeKeepAliveHeader = includeKeepAliveHeader;
             this.rawResponse = rawResponse;
@@ -1576,15 +1628,23 @@ class Http1ClientTest {
             };
         }
 
-        private DataReader reader(ArrayBlockingQueue<byte[]> queue) {
+        private DataReader reader(ArrayBlockingQueue<byte[]> queue, boolean timeoutAfterFirstRead) {
+            AtomicBoolean dataRead = new AtomicBoolean();
+            AtomicBoolean timeoutTriggered = new AtomicBoolean();
             return DataReader.create(() -> {
                 if (serverException != null) {
                     throw new IllegalStateException("Server exception", serverException);
                 }
                 byte[] data;
                 try {
-                    data = queue.poll(5, TimeUnit.SECONDS);
+                    long timeout = timeoutAfterFirstRead && dataRead.get() && !timeoutTriggered.get()
+                            ? 100
+                            : 5_000;
+                    data = queue.poll(timeout, TimeUnit.MILLISECONDS);
                     if (data == null) {
+                        if (timeoutAfterFirstRead && dataRead.get() && timeoutTriggered.compareAndSet(false, true)) {
+                            throw new UncheckedIOException(new SocketTimeoutException("Simulated response header timeout"));
+                        }
                         return null;
                     }
                 } catch (InterruptedException e) {
@@ -1593,6 +1653,7 @@ class Http1ClientTest {
                 if (data.length == 0) {
                     return null;
                 }
+                dataRead.set(true);
                 return data;
             });
         }
