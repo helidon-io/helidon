@@ -9,6 +9,32 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.19]
+
+This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 3. Helidon 3 requires Java 17 or newer.
+
+### NOTABLE CHANGES
+
+- OIDC access-token and tenant cookies are now encrypted by default, and unknown tenant IDs are rejected by default. Rolling upgrades can temporarily disable cookie encryption with `cookie-encryption-enabled: false`; set `fallback-to-default-tenant-enabled: true` only when unknown tenants should retain the previous fallback behavior.
+- OIDC login redirects now use encrypted, time-bound state and query-parameter handoffs. For mixed-version rolling upgrades, use the temporary `legacy-state-param`, `legacy-state-fallback`, and `legacy-query-param-handoff` compatibility settings described in the OIDC provider documentation.
+- WebClient no longer propagates cookies across cross-origin redirects.
+- GraphQL query depth and complexity are limited by default. Set `graphql.max-query-depth` or `graphql.max-query-complexity` to `0` to restore the previous unlimited behavior for that limit.
+- The default PBKDF2 iteration count used by `SymmetricCipher` increased from 10,000 to 600,000. Existing password-encrypted OIDC cookies and Config Vault values require the temporary `legacy-cookie-encryption`/`legacy-cookie-fallback` or `legacy-encryption`/`legacy-fallback` settings during migration. Direct `SymmetricCipher` users must configure `.numberOfIterations(10_000)` to read values written with the old default, then re-encrypt them with 600,000 iterations.
+
+### CHANGES
+
+- Config: Add versioned Config Vault encryption and migration controls [ac135e0acc](https://github.com/helidon-io/helidon/commit/ac135e0acc0ca8ecf5596b4a21aeb890487edab4)
+- Dependencies: Upgrade Jackson to 2.21.5 [12169](https://github.com/helidon-io/helidon/pull/12169)
+- Dependencies: Upgrade Log4j to 2.25.5 [12176](https://github.com/helidon-io/helidon/pull/12176)
+- GraphQL: Fix query depth and complexity limits [f07587e90a](https://github.com/helidon-io/helidon/commit/f07587e90af32cc5a7e8d788486d966c0525dad5)
+- HTTP/2: Reject oversized initial window sizes [abb2d714f4](https://github.com/helidon-io/helidon/commit/abb2d714f41c7ae6ff3fcaee2c6b6049b2a4149c)
+- Logging: Neutralize line breaks in JUL log messages [feba5d5045](https://github.com/helidon-io/helidon/commit/feba5d50450173755ad7f9a8840aa7a65f21e7e9)
+- Security: Encrypt OIDC access-token and tenant cookies by default [6f301a793d](https://github.com/helidon-io/helidon/commit/6f301a793d55daf8decaad1fb79ef19fa809b8bc)
+- Security: Harden OIDC redirect state and query-parameter token handoff [ebfb8a1ad8](https://github.com/helidon-io/helidon/commit/ebfb8a1ad841679c33cfb95c8d89802ee955f786)
+- Security: Increase the default `SymmetricCipher` PBKDF2 iteration count [ac135e0acc](https://github.com/helidon-io/helidon/commit/ac135e0acc0ca8ecf5596b4a21aeb890487edab4)
+- Security: Reject unknown OIDC tenants before metadata discovery [7d00378c63](https://github.com/helidon-io/helidon/commit/7d00378c6373c241d1b1f515d1bc2c04af36be1d)
+- WebClient: Stop propagating cookies across cross-origin redirects [d288f31f3b](https://github.com/helidon-io/helidon/commit/d288f31f3b9abbc8c05c652b58ec9b35a33cdb82)
+
 ## [3.2.18]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3. Helidon 3 requires Java 17 or newer.
@@ -1111,6 +1137,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.19]: https://github.com/helidon-io/helidon/compare/3.2.18...3.2.19
 [3.2.18]: https://github.com/helidon-io/helidon/compare/3.2.17...3.2.18
 [3.2.17]: https://github.com/helidon-io/helidon/compare/3.2.16...3.2.17
 [3.2.16]: https://github.com/helidon-io/helidon/compare/3.2.15...3.2.16

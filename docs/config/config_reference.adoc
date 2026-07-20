@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_faulttolerance_Bulkhead.adoc[Bulkhead (faulttolerance)]
 - xref:{rootdir}/config/io_helidon_faulttolerance_CircuitBreaker.adoc[CircuitBreaker (faulttolerance)]
 - xref:{rootdir}/config/io_helidon_metrics_api_ComponentMetricsSettings.adoc[ComponentMetricsSettings (metrics.api)]
+- xref:{rootdir}/config/io_helidon_security_providers_config_vault_ConfigVaultProvider.adoc[ConfigVaultProvider (security.providers.config.vault)]
 - xref:{rootdir}/config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.adoc[ConfigUser (security.providers.httpauth.ConfigUserStore)]
 - xref:{rootdir}/config/io_helidon_webserver_cors_CrossOriginConfig.adoc[CrossOriginConfig (webserver.cors)]
 - xref:{rootdir}/config/io_helidon_faulttolerance_Retry_DelayingRetryPolicy.adoc[DelayingRetryPolicy (faulttolerance.Retry)]

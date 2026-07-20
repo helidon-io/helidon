@@ -103,6 +103,10 @@ This type provides the following service implementations:
 |`introspect-endpoint-uri` |URI |{nbsp} |Endpoint to use to validate JWT.
  Either use this or set #signJwk(JwkKeys) or #signJwk(Resource).
 |`issuer` |string |{nbsp} |Issuer of issued tokens.
+|`legacy-cookie-encryption` |boolean |`false` |Whether password-based encrypted OIDC cookies should be written without a version byte and with the legacy PBKDF2 iteration count.
+ This can be enabled during rolling upgrades so upgraded nodes continue creating cookies that older nodes can decrypt. Leave disabled for steady-state deployments and reset to `false` after all nodes run the new version. This setting does not affect named Security encryption configured with `cookie-encryption-name`.
+|`legacy-cookie-fallback` |boolean |`false` |Whether password-based encrypted OIDC cookies should retry decryption with the alternate cookie format after primary decryption fails.
+ This can be enabled after a rolling upgrade to accept older unversioned legacy cookies until they expire, or while legacy writes must read versioned current cookies. Leave disabled for steady-state deployments and reset to `false` after legacy cookies expire. This setting does not affect named Security encryption configured with `cookie-encryption-name`.
 |`legacy-query-param-handoff` |boolean |`false` |Whether to use the legacy raw access token query parameter handoff after OIDC callback.
  This can be enabled during rolling updates so upgraded nodes continue creating query parameter handoff values that older nodes can process. Leave disabled for steady-state deployments and reset to `false` after all nodes run the updated version.
 |`legacy-state-fallback` |boolean |`false` |Whether to accept the legacy raw local redirect URI from the OIDC `state` parameter.
