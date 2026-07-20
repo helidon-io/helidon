@@ -175,8 +175,10 @@ based on the received tenant name. The way this tenant name has to be provided i
 configuration. See <<tenant-enable, How to enable tenants>> for more information. After matching tenant configuration
 with the received name, the rest of the OIDC flow if exactly the same as in <<oidc-workflow, How does OIDC work>>.
 
-Base OIDC configuration is treated as a default tenant, which is used, if no tenant name is provided. This default
-tenant is having `@default` name specified.
+Base OIDC configuration is treated as a default tenant, which is used if no tenant name is provided. This default
+tenant has the name `@default`. An identified tenant name must match a configured tenant; unknown tenant names are
+rejected by default. Set `fallback-to-default-tenant-enabled: true` only when unknown tenant names should use the
+default tenant configuration.
 
 It is also important to note, that each tenant configuration is based on the default tenant configuration (base OIDC configuration),
 and therefore its configuration do not need to change all the properties, if they do not differ from the base OIDC

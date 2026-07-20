@@ -47,7 +47,9 @@ Every client and request is created by a builder pattern, so it improves readabi
 
     * *Following redirects*:
 The WebClient is able to follow the redirect chain and perform requests on the correct endpoint for you. You no longer
-have to point your client to the correct/final endpoint.
+have to point your client to the correct/final endpoint. On a cross-origin redirect, WebClient strips the `Authorization`
+and `Cookie` headers by default. It also rejects `307` and `308` redirects that would replay a request entity to another
+origin. Set `follow-cross-origin-entity-redirects` to `true` only when every possible redirect target is trusted.
 
     * *Tracing, metrics and security propagation*:
 When you configure the Helidon WebServer to use tracing, metrics and security, the settings are automatically

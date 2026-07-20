@@ -11,6 +11,49 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## 4.5.1
+
+This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### NOTABLE CHANGES
+
+- GraphQL requests now require authentication by default and query depth and complexity are limited by default. Set `graphql.permit-all` to `true` to restore unauthenticated access, and tune `graphql.max-query-depth` and `graphql.max-query-complexity` when applications intentionally accept larger queries.
+- OIDC access-token cookies are now encrypted by default, and unknown tenant IDs are rejected by default. Rolling upgrades can temporarily disable cookie encryption with `cookie-encryption-enabled: false`; set `fallback-to-default-tenant-enabled: true` only when unknown tenants should retain the previous fallback behavior.
+- WebClient now strips cookies as well as authorization headers on cross-origin redirects, and rejects cross-origin `307` and `308` redirects that would replay a request entity. Set `follow-cross-origin-entity-redirects: true` only for trusted redirect targets that require the previous behavior.
+- Config observer secret masking now covers additional common secret names.
+- The default PBKDF2 iteration count used by `SymmetricCipher` increased from 10,000 to 600,000.
+
+### CHANGES
+
+- Codegen: Fix API stability record constructor processing [12133](https://github.com/helidon-io/helidon/pull/12133)
+- Config: Expand config observer secret masking defaults [c962284df0](https://github.com/helidon-io/helidon/commit/c962284df068a9b9225957c4f38c3c7f5d69601e)
+- Config: Fix HOCON included self-reference resolution [12120](https://github.com/helidon-io/helidon/pull/12120)
+- Config: Preserve generic config value mapper types [12137](https://github.com/helidon-io/helidon/pull/12137)
+- Declarative: Fix inherited declarative contract annotations [12122](https://github.com/helidon-io/helidon/pull/12122)
+- Declarative: Fix missing request entity handling [12148](https://github.com/helidon-io/helidon/pull/12148)
+- Declarative: Fix `ServerResponse` handling [12145](https://github.com/helidon-io/helidon/pull/12145)
+- Dependencies: Upgrade Handlebars to 4.5.2 and Micrometer to 1.15.12 [12129](https://github.com/helidon-io/helidon/pull/12129)
+- Dependencies: Downgrade Jersey MP Rest Client to 3.1.10 [12181](https://github.com/helidon-io/helidon/pull/12181)
+- Dependencies: Upgrade Jackson to 2.21.5 and Parsson to 1.1.9 [12168](https://github.com/helidon-io/helidon/pull/12168)
+- Dependencies: Upgrade Log4j to 2.25.5 [12175](https://github.com/helidon-io/helidon/pull/12175)
+- GraphQL: Fix query depth and complexity limits [00c924ea91](https://github.com/helidon-io/helidon/commit/00c924ea915b18bcf52c4c73631b7e72b37a75ce)
+- GraphQL: Remove the invalid MP flavor from the WebServer GraphQL module [12084](https://github.com/helidon-io/helidon/pull/12084)
+- GraphQL: Require authentication by default [c91e6096fb](https://github.com/helidon-io/helidon/commit/c91e6096fbd5921e4c5986a0f3d3ea7c83cf5df2)
+- HTTP/2: Fix split header block serialization [12139](https://github.com/helidon-io/helidon/pull/12139)
+- HTTP/2: Reject oversized initial window sizes [885f0110d9](https://github.com/helidon-io/helidon/commit/885f0110d9a071119eebc2273031c9cc99b855d8)
+- Jersey: Fix multipart boundary handling [12155](https://github.com/helidon-io/helidon/pull/12155)
+- JSON: Defer number replay token derivation [12165](https://github.com/helidon-io/helidon/pull/12165)
+- JSON: Reject null object keys [12163](https://github.com/helidon-io/helidon/pull/12163)
+- Metrics: Update metrics factory documentation [12138](https://github.com/helidon-io/helidon/pull/12138)
+- MicroProfile: Fix Fault Tolerance request scope retention [12154](https://github.com/helidon-io/helidon/pull/12154)
+- Security: Encrypt OIDC access-token cookies by default [8f186102e7](https://github.com/helidon-io/helidon/commit/8f186102e7be7417c76721d75a1e5d9b851d9114)
+- Security: Redact IDCS application access tokens from logs [32dcf288a1](https://github.com/helidon-io/helidon/commit/32dcf288a114e010f6faffdc9c1cef32b9836600)
+- Security: Reject unknown OIDC tenants before metadata discovery [1289a24ae3](https://github.com/helidon-io/helidon/commit/1289a24ae386f0957d209a53e473e8581bf7ff21)
+- WebClient: Block cross-origin redirect entity replay by default [a5f602d463](https://github.com/helidon-io/helidon/commit/a5f602d46326216e39ccc46cda5b2c3578071e9c)
+- WebClient: Stop propagating cookies across redirect origins [76a48d6c49](https://github.com/helidon-io/helidon/commit/76a48d6c492c4ccf3917bd8c3552a4d96fa933e3)
+
 ## 4.5.0
 
 This release of Helidon contains important bug, security and performance fixes and is strongly recommended for all users of Helidon 4.
@@ -2713,6 +2756,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.5.1]: https://github.com/oracle/helidon/compare/4.5.0...4.5.1
 [4.5.0]: https://github.com/oracle/helidon/compare/4.4.1...4.5.0
 [4.4.1]: https://github.com/oracle/helidon/compare/4.4.0...4.4.1
 [4.4.0]: https://github.com/oracle/helidon/compare/4.3.4...4.4.0
