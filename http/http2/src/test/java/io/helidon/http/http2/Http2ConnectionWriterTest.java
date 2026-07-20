@@ -122,6 +122,60 @@ class Http2ConnectionWriterTest {
     }
 
     @Test
+    void doesNotWriteWindowUpdateAfterReset() {
+        AtomicReference<Http2ConnectionWriter> writerRef = new AtomicReference<>();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        List<Http2FrameType> frameTypes = new ArrayList<>();
+        List<Integer> windowUpdateStreamIds = new ArrayList<>();
+        Http2FrameListener listener = new Http2FrameListener() {
+            @Override
+            public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+                frameTypes.add(header.type());
+                if (header.type() == Http2FrameType.WINDOW_UPDATE) {
+                    windowUpdateStreamIds.add(streamId);
+                }
+                if (header.type() == Http2FrameType.RST_STREAM) {
+                    Thread lateWindowUpdateWriter = Thread.ofVirtual().start(() -> {
+                        try {
+                            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+                            writerRef.get().write(windowUpdate.toFrameData(null,
+                                                                          streamId,
+                                                                          Http2Flag.NoFlags.create()));
+                        } catch (Throwable t) {
+                            failure.compareAndSet(null, t);
+                        }
+                    });
+                    try {
+                        lateWindowUpdateWriter.join(TimeUnit.SECONDS.toMillis(2));
+                        if (lateWindowUpdateWriter.isAlive()) {
+                            failure.compareAndSet(null, new AssertionError("WINDOW_UPDATE writer did not terminate"));
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted", e);
+                    }
+                }
+            }
+        };
+        DataWriter dataWriter = mock(DataWriter.class);
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of(listener));
+        writerRef.set(writer);
+
+        Http2RstStream reset = new Http2RstStream(Http2ErrorCode.CANCEL);
+        writer.write(reset.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+        writer.write(windowUpdate.toFrameData(null, 0, Http2Flag.NoFlags.create()));
+        writer.write(Http2Ping.create().toFrameData());
+
+        assertThat(frameTypes, is(List.of(Http2FrameType.RST_STREAM,
+                                          Http2FrameType.WINDOW_UPDATE,
+                                          Http2FrameType.PING)));
+        assertThat(windowUpdateStreamIds, is(List.of(0)));
+        assertThat(failure.get(), is(nullValue()));
+        verify(dataWriter, times(3)).writeNow(any(BufferData.class));
+    }
+
+    @Test
     void coalescesWindowUpdateBacklogWhileWriterIsBlocked() throws InterruptedException {
         AtomicInteger writes = new AtomicInteger();
         AtomicInteger windowIncrement = new AtomicInteger();

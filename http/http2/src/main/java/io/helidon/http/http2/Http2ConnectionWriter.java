@@ -16,6 +16,7 @@
 
 package io.helidon.http.http2;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import io.helidon.common.socket.SocketContext;
  */
 public class Http2ConnectionWriter implements Http2StreamWriter {
     private static final Runnable NO_OP = () -> { };
+    private static final int NO_RESET_STREAM = -1;
 
     private final DataWriter writer;
 
@@ -48,6 +50,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private final Http2Headers.DynamicTable outboundDynamicTable;
     private final Http2HuffmanEncoder responseHuffman;
     private final BufferData headerBuffer = BufferData.growing(512);
+    // Guarded by windowUpdateLock. The generation prevents an older reset from clearing a newer reset's fence.
+    private int resetStreamId = NO_RESET_STREAM;
+    private long resetGeneration;
 
     /**
      * A new writer.
@@ -77,14 +82,17 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         // The common path stays synchronous. Only hand off when another frame is holding the serialization lock
         // during a blocking transport write, otherwise an inbound flow-control callback could stop duplex progress.
         boolean locked = false;
+        int streamId = frame.header().streamId();
         try {
             windowUpdateLock.lock();
             try {
                 throwIfWindowUpdateFailed();
+                if (streamId != 0 && streamId == resetStreamId) {
+                    return;
+                }
                 locked = streamLock.tryLock(0, TimeUnit.NANOSECONDS);
                 if (!locked) {
                     Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(frame.data());
-                    int streamId = frame.header().streamId();
                     pendingWindowUpdates.merge(streamId, (long) windowUpdate.windowSizeIncrement(), Long::sum);
                 }
             } finally {
@@ -295,23 +303,47 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     }
 
     private void lockedWrite(Http2FrameData frame) {
+        boolean reset = frame.header().type() == Http2FrameType.RST_STREAM;
+        long fenceGeneration = -1;
         lock();
         try {
             throwIfWindowUpdateFailed();
-            if (frame.header().type() == Http2FrameType.RST_STREAM) {
-                Http2FrameData windowUpdate;
-                while ((windowUpdate = pollWindowUpdate(frame.header().streamId())) != null) {
+            if (reset) {
+                List<Http2FrameData> windowUpdates = new ArrayList<>();
+                windowUpdateLock.lock();
+                try {
+                    int streamId = frame.header().streamId();
+                    resetStreamId = streamId;
+                    fenceGeneration = ++resetGeneration;
+                    Http2FrameData windowUpdate;
+                    while ((windowUpdate = pollWindowUpdateNoLock(streamId)) != null) {
+                        windowUpdates.add(windowUpdate);
+                    }
+                } finally {
+                    windowUpdateLock.unlock();
+                }
+                for (Http2FrameData windowUpdate : windowUpdates) {
                     noLockWrite(windowUpdate);
                 }
             }
             noLockWrite(frame);
         } catch (Throwable t) {
-            if (frame.header().type() == Http2FrameType.RST_STREAM) {
+            if (reset) {
                 failWindowUpdates(t);
             }
             throw t;
         } finally {
             streamLock.unlock();
+            if (reset) {
+                windowUpdateLock.lock();
+                try {
+                    if (resetGeneration == fenceGeneration) {
+                        resetStreamId = NO_RESET_STREAM;
+                    }
+                } finally {
+                    windowUpdateLock.unlock();
+                }
+            }
         }
     }
 
@@ -364,15 +396,6 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 return null;
             }
             int streamId = pendingWindowUpdates.keySet().iterator().next();
-            return pollWindowUpdateNoLock(streamId);
-        } finally {
-            windowUpdateLock.unlock();
-        }
-    }
-
-    private Http2FrameData pollWindowUpdate(int streamId) {
-        windowUpdateLock.lock();
-        try {
             return pollWindowUpdateNoLock(streamId);
         } finally {
             windowUpdateLock.unlock();

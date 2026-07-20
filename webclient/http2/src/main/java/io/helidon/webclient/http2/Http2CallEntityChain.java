@@ -70,7 +70,7 @@ class Http2CallEntityChain extends Http2CallChainBase {
         Http2Headers http2Headers = prepareHeaders(serviceRequest.method(), headers, uri);
 
         stream.writeHeaders(http2Headers, !clientRequest().outputStreamRedirect() && entityBytes.length == 0);
-        stream.flowControl().inbound().incrementWindowSize(clientRequest().requestPrefetch());
+        stream.incrementInboundWindowSize(clientRequest().requestPrefetch());
         whenSent.complete(serviceRequest);
 
         waitFor100Continue(stream);
