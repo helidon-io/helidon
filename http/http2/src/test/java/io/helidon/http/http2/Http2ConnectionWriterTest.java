@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
@@ -48,6 +49,88 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionWriterTest {
+
+    @Test
+    void closesWriterWhenSynchronousWindowUpdateWriteFails() {
+        SocketWriterException writeFailure = new SocketWriterException();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            throw writeFailure;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+
+        SocketWriterException thrown = assertThrows(SocketWriterException.class,
+                                                     () -> writer.write(windowUpdate.toFrameData(null,
+                                                                                                1,
+                                                                                                Http2Flag.NoFlags.create())));
+
+        assertThat(thrown, is(writeFailure));
+        verify(dataWriter).close();
+    }
+
+    @Test
+    void closesWriterWhenPendingWindowUpdateFailsBeforeReset() throws InterruptedException {
+        AtomicInteger writes = new AtomicInteger();
+        AtomicReference<Throwable> dataFailure = new AtomicReference<>();
+        AtomicReference<Throwable> resetFailure = new AtomicReference<>();
+        CountDownLatch dataWriteStarted = new CountDownLatch(1);
+        CountDownLatch releaseDataWrite = new CountDownLatch(1);
+        CountDownLatch resetWriteStarted = new CountDownLatch(1);
+        SocketWriterException writeFailure = new SocketWriterException();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            if (writes.incrementAndGet() == 1) {
+                dataWriteStarted.countDown();
+                releaseDataWrite.await();
+                return null;
+            }
+            throw writeFailure;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+        Thread dataWriterThread = Thread.ofVirtual().start(() -> {
+            try {
+                writer.write(dataFrame(1, 1024));
+            } catch (Throwable t) {
+                dataFailure.set(t);
+            }
+        });
+
+        assertThat("DATA write must start", dataWriteStarted.await(1, TimeUnit.SECONDS), is(true));
+        Http2RstStream reset = new Http2RstStream(Http2ErrorCode.CANCEL);
+        Thread resetWriterThread = Thread.ofVirtual().start(() -> {
+            resetWriteStarted.countDown();
+            try {
+                writer.write(reset.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            } catch (Throwable t) {
+                resetFailure.set(t);
+            }
+        });
+
+        try {
+            assertThat("reset write must start", resetWriteStarted.await(1, TimeUnit.SECONDS), is(true));
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+            while (resetWriterThread.getState() != Thread.State.WAITING && System.nanoTime() < deadline) {
+                Thread.onSpinWait();
+            }
+            assertThat("reset writer must wait for the DATA write",
+                       resetWriterThread.getState(),
+                       is(Thread.State.WAITING));
+            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+            writer.write(windowUpdate.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+        } finally {
+            releaseDataWrite.countDown();
+        }
+
+        dataWriterThread.join(TimeUnit.SECONDS.toMillis(2));
+        resetWriterThread.join(TimeUnit.SECONDS.toMillis(2));
+        assertThat("DATA writer must terminate", dataWriterThread.isAlive(), is(false));
+        assertThat("reset writer must terminate", resetWriterThread.isAlive(), is(false));
+        assertThat(dataFailure.get(), is(nullValue()));
+        assertThat(resetFailure.get(), is(writeFailure));
+        assertThat(writes.get(), is(2));
+        verify(dataWriter).close();
+    }
 
     @Test
     void writesPendingWindowUpdatesBeforeResetWhileDataWriteBlocked() throws InterruptedException {

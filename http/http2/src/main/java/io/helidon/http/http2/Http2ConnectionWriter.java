@@ -111,7 +111,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 }
                 noLockWrite(frame);
             } catch (Throwable t) {
-                failWindowUpdates(t);
+                failWindowUpdatesAndClose(t);
                 throw t;
             } finally {
                 streamLock.unlock();
@@ -329,7 +329,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             noLockWrite(frame);
         } catch (Throwable t) {
             if (reset) {
-                failWindowUpdates(t);
+                failWindowUpdatesAndClose(t);
             }
             throw t;
         } finally {
@@ -357,7 +357,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                     .start(this::drainWindowUpdates);
         } catch (RuntimeException | Error e) {
             windowUpdateWriteScheduled.set(false);
-            failWindowUpdates(e);
+            failWindowUpdatesAndClose(e);
             throw e;
         }
     }
@@ -375,12 +375,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 streamLock.unlock();
             }
         } catch (Throwable t) {
-            failWindowUpdates(t);
-            try {
-                writer.close();
-            } catch (Throwable closeFailure) {
-                t.addSuppressed(closeFailure);
-            }
+            failWindowUpdatesAndClose(t);
         } finally {
             windowUpdateWriteScheduled.set(false);
             if (hasPendingWindowUpdates()) {
@@ -438,9 +433,16 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void failWindowUpdates(Throwable failure) {
-        windowUpdateFailure.compareAndSet(null, failure);
+    private void failWindowUpdatesAndClose(Throwable failure) {
+        if (!windowUpdateFailure.compareAndSet(null, failure)) {
+            return;
+        }
         clearWindowUpdates();
+        try {
+            writer.close();
+        } catch (Throwable closeFailure) {
+            failure.addSuppressed(closeFailure);
+        }
     }
 
     private void clearWindowUpdates() {
