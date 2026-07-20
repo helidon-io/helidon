@@ -51,4 +51,18 @@ class Log4jLogLevelManagerTest {
         LoggerLevel logger = manager.logger(LOGGER_NAME).orElseThrow();
         assertThat(logger.configuredLevel().isEmpty(), is(true));
     }
+
+    @Test
+    void shouldReturnEmptyForUnknownLogger() {
+        LogLevelManager manager = new Log4jLogLevelManager();
+
+        assertThat(manager.logger("io.helidon.logging.log4j.test.unknown").isEmpty(), is(true));
+    }
+
+    @Test
+    void shouldKnowRootLogger() {
+        LogLevelManager manager = new Log4jLogLevelManager();
+
+        assertThat(manager.logger(LogLevelManager.ROOT_LOGGER_NAME).isPresent(), is(true));
+    }
 }

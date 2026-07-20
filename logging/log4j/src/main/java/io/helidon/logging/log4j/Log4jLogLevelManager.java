@@ -66,7 +66,15 @@ public class Log4jLogLevelManager implements LogLevelManager {
 
     @Override
     public Optional<LoggerLevel> logger(String name) {
-        return Optional.of(logger(context().getConfiguration(), toLog4jName(name)));
+        String loggerName = toLog4jName(name);
+        LoggerContext context = context();
+        Configuration configuration = context.getConfiguration();
+        if (!isRoot(loggerName)
+                && !configuration.getLoggers().containsKey(loggerName)
+                && !context.hasLogger(loggerName)) {
+            return Optional.empty();
+        }
+        return Optional.of(logger(configuration, loggerName));
     }
 
     @Override
