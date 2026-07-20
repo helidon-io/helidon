@@ -499,6 +499,7 @@ class Http2ClientConnectionTest {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(1));
             Http2ClientConnection connection = test.createConnection(false);
+            assertTrue(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
             MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
             CompletableFuture<Void> activeWrite = CompletableFuture.runAsync(
                     () -> connection.writer().write(dataFrame(1, new byte[1024], false)));
@@ -880,6 +881,8 @@ class Http2ClientConnectionTest {
 
         private final ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
         private final LinkedBlockingQueue<byte[]> inboundFrames = new LinkedBlockingQueue<>();
+        // The client preface is the first writeNow call; the initial SETTINGS ACK is the second.
+        private final CountDownLatch initialWriteNowCallsCompleted = new CountDownLatch(2);
         private final AtomicBoolean failWrites = new AtomicBoolean();
         private final AtomicReference<BlockedWrite> blockedWrite = new AtomicReference<>();
         private final DataWriter dataWriter = mock(DataWriter.class);
@@ -913,11 +916,13 @@ class Http2ClientConnectionTest {
             doAnswer(invocation -> {
                 maybeFailWrites();
                 maybeBlockWriteNow();
+                initialWriteNowCallsCompleted.countDown();
                 return null;
             }).when(dataWriter).writeNow(any(BufferData.class));
             doAnswer(invocation -> {
                 maybeFailWrites();
                 maybeBlockWriteNow();
+                initialWriteNowCallsCompleted.countDown();
                 return null;
             }).when(dataWriter).writeNow(any(BufferData[].class));
 
