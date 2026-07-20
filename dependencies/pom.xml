@@ -99,6 +99,8 @@
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
         <version.lib.jersey>3.1.11</version.lib.jersey>
+        <!-- 3.1.11 can nondeterministically copy inbound provider headers to outbound requests.
+             Keep 3.1.10 until https://github.com/eclipse-ee4j/jersey/issues/6101 is fixed and released. -->
         <version.lib.jersey-mp-rest-client>3.1.10</version.lib.jersey-mp-rest-client>
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
