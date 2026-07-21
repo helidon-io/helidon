@@ -23,7 +23,7 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - OIDC access-token cookies are now encrypted by default, and unknown tenant IDs are rejected by default. Rolling upgrades can temporarily disable cookie encryption with `cookie-encryption-enabled: false`; set `fallback-to-default-tenant-enabled: true` only when unknown tenants should retain the previous fallback behavior.
 - WebClient now strips cookies as well as authorization headers on cross-origin redirects, and rejects cross-origin `307` and `308` redirects that would replay a request entity. Set `follow-cross-origin-entity-redirects: true` only for trusted redirect targets that require the previous behavior.
 - Config observer secret masking now covers additional common secret names.
-- The default PBKDF2 iteration count used by `SymmetricCipher` increased from 10,000 to 600,000.
+- Password-encrypted OIDC cookies and Config Vault values now use versioned ciphertext, and the default PBKDF2 iteration count used by SymmetricCipher increased from 10,000 to 600,000. OIDC users should use legacy-cookie-encryption and legacy-cookie-fallback during rolling migration; Config Vault provides legacy-encryption and legacy-fallback. Direct SymmetricCipher users must explicitly decrypt data using the previous 10,000-iteration setting and migrate it.
 
 ### CHANGES
 
