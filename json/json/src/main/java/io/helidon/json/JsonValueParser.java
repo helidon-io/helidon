@@ -24,9 +24,9 @@ import java.util.Set;
 class JsonValueParser implements JsonParser {
 
     private JsonValue[] values = new JsonValue[100];
-    private boolean[] valuesExpanded = new boolean[100];
+    private boolean[] valuesExpanded;
     private JsonValue[] replay = new JsonValue[10];
-    private boolean[] replayExpanded = new boolean[10];
+    private boolean[] replayExpanded;
     private JsonValue current;
     private boolean currentExpanded = false;
     private int index = 0;
@@ -54,6 +54,9 @@ class JsonValueParser implements JsonParser {
         boolean expandContainer = !currentExpanded;
         if (replayMarked && expandContainer && current != null
                 && (current.type() == JsonValueType.OBJECT || current.type() == JsonValueType.ARRAY)) {
+            if (replayExpanded == null) {
+                replayExpanded = new boolean[replay.length];
+            }
             replayExpanded[replayIndex] = true;
         }
         currentExpanded = false;
@@ -115,9 +118,11 @@ class JsonValueParser implements JsonParser {
         if (index >= 0) {
             int currentIndex = index--;
             current = values[currentIndex];
-            currentExpanded = valuesExpanded[currentIndex];
+            currentExpanded = valuesExpanded != null && valuesExpanded[currentIndex];
             values[currentIndex] = null;
-            valuesExpanded[currentIndex] = false;
+            if (valuesExpanded != null) {
+                valuesExpanded[currentIndex] = false;
+            }
             if (current == null) {
                 throw new JsonException("No more JSON Values available");
             }
@@ -131,7 +136,9 @@ class JsonValueParser implements JsonParser {
 
     private void putValue(int targetIndex, JsonValue value) {
         values[targetIndex] = value;
-        valuesExpanded[targetIndex] = false;
+        if (valuesExpanded != null) {
+            valuesExpanded[targetIndex] = false;
+        }
     }
 
     private void recordToReplayQueue() {
@@ -144,15 +151,24 @@ class JsonValueParser implements JsonParser {
             int newLength = replay.length * 2;
             int newStart = newLength - active;
             JsonValue[] newReplay = new JsonValue[newLength];
-            boolean[] newReplayExpanded = new boolean[newLength];
             System.arraycopy(replay, replayIndex, newReplay, newStart, active);
-            System.arraycopy(replayExpanded, replayIndex, newReplayExpanded, newStart, active);
+            if (replayExpanded != null) {
+                boolean[] newReplayExpanded = new boolean[newLength];
+                System.arraycopy(replayExpanded, replayIndex, newReplayExpanded, newStart, active);
+                replayExpanded = newReplayExpanded;
+            }
             replay = newReplay;
-            replayExpanded = newReplayExpanded;
             replayIndex = newStart;
         }
         replay[--replayIndex] = value;
-        replayExpanded[replayIndex] = expanded;
+        if (expanded) {
+            if (replayExpanded == null) {
+                replayExpanded = new boolean[replay.length];
+            }
+            replayExpanded[replayIndex] = true;
+        } else if (replayExpanded != null) {
+            replayExpanded[replayIndex] = false;
+        }
     }
 
     void ensureCapacity(int capacity) {
@@ -161,11 +177,13 @@ class JsonValueParser implements JsonParser {
             int newLength = Math.max(values.length * 2, required);
             int amount = Math.max(0, index + 1);
             JsonValue[] newValues = new JsonValue[newLength];
-            boolean[] newValuesExpanded = new boolean[newLength];
             System.arraycopy(values, 0, newValues, 0, amount);
-            System.arraycopy(valuesExpanded, 0, newValuesExpanded, 0, amount);
+            if (valuesExpanded != null) {
+                boolean[] newValuesExpanded = new boolean[newLength];
+                System.arraycopy(valuesExpanded, 0, newValuesExpanded, 0, amount);
+                valuesExpanded = newValuesExpanded;
+            }
             values = newValues;
-            valuesExpanded = newValuesExpanded;
         }
     }
 
@@ -299,7 +317,9 @@ class JsonValueParser implements JsonParser {
                                   "Invalid state while skipping JsonValue array.");
         } else if (index == 0 && values[0] == JsonNoopValue.INSTANCE) {
             values[0] = null;
-            valuesExpanded[0] = false;
+            if (valuesExpanded != null) {
+                valuesExpanded[0] = false;
+            }
             index = -1;
             current = JsonNoopValue.INSTANCE;
             currentExpanded = false;
@@ -312,12 +332,14 @@ class JsonValueParser implements JsonParser {
         int nested = 0;
         for (int i = index; i > -1; i--) {
             JsonValue value = values[i];
-            boolean expanded = valuesExpanded[i];
+            boolean expanded = valuesExpanded != null && valuesExpanded[i];
             if (replayMarked && value != null) {
                 recordToReplayQueue(value, expanded);
             }
             values[i] = null;
-            valuesExpanded[i] = false;
+            if (valuesExpanded != null) {
+                valuesExpanded[i] = false;
+            }
             if (value != null && expanded && value.type() == containerType) {
                 nested++;
             } else if (value == containerEnd) {
@@ -353,7 +375,14 @@ class JsonValueParser implements JsonParser {
         replayIndex = replay.length - 1;
         replayMarked = true;
         replay[replayIndex] = current;
-        replayExpanded[replayIndex] = currentExpanded;
+        if (currentExpanded) {
+            if (replayExpanded == null) {
+                replayExpanded = new boolean[replay.length];
+            }
+            replayExpanded[replayIndex] = true;
+        } else if (replayExpanded != null) {
+            replayExpanded[replayIndex] = false;
+        }
     }
 
     @Override
@@ -369,13 +398,20 @@ class JsonValueParser implements JsonParser {
             ensureCapacity(amount + 1);
             int from = index + 1;
             System.arraycopy(replay, replayIndex, values, from, amount);
-            System.arraycopy(replayExpanded, replayIndex, valuesExpanded, from, amount);
+            if (replayExpanded != null) {
+                if (valuesExpanded == null) {
+                    valuesExpanded = new boolean[values.length];
+                }
+                System.arraycopy(replayExpanded, replayIndex, valuesExpanded, from, amount);
+            }
             index = from + amount - 1;
             int currentIndex = index--;
             current = values[currentIndex];
-            currentExpanded = valuesExpanded[currentIndex];
+            currentExpanded = valuesExpanded != null && valuesExpanded[currentIndex];
             values[currentIndex] = null;
-            valuesExpanded[currentIndex] = false;
+            if (valuesExpanded != null) {
+                valuesExpanded[currentIndex] = false;
+            }
         } else {
             throw new IllegalStateException("Parser tried to reset to the marked place, but no mark was found");
         }
