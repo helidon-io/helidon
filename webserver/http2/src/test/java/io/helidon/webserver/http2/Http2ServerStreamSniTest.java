@@ -198,6 +198,27 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
+    void localResetClosesStreamWindowUpdateProducer() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        List<WindowUpdate> windowUpdates = new ArrayList<>();
+        Http2ServerStream stream = stream(streams, writer, windowUpdates);
+        stream.headers(headersWithAuthority("api.example.com"), false);
+        stream.flowControl().inbound().decrementWindowSize(1);
+
+        stream.windowUpdate(new Http2WindowUpdate(0));
+        stream.data(Http2FrameHeader.create(1,
+                                            Http2FrameTypes.DATA,
+                                            Http2Flag.DataFlags.create(0),
+                                            STREAM_ID),
+                    BufferData.empty(),
+                    false);
+
+        assertThat(writer.rstStreamCodes, is(List.of(Http2ErrorCode.PROTOCOL)));
+        assertThat(windowUpdates, is(List.of(new WindowUpdate(0, 1))));
+    }
+
+    @Test
     void rejectedStreamRestoresQueuedDataConnectionFlowControl() {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingStreamWriter writer = new RecordingStreamWriter();

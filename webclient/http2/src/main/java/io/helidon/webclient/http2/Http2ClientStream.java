@@ -190,31 +190,40 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     @Override
     public void windowUpdate(Http2WindowUpdate windowUpdate) {
-        this.state = Http2StreamState.checkAndGetState(this.state,
-                                                       Http2FrameType.WINDOW_UPDATE,
-                                                       false,
-                                                       false,
-                                                       false);
+        inboundStateLock.lock();
+        try {
+            this.state = Http2StreamState.checkAndGetState(this.state,
+                                                           Http2FrameType.WINDOW_UPDATE,
+                                                           false,
+                                                           false,
+                                                           false);
+        } finally {
+            inboundStateLock.unlock();
+        }
 
         int increment = windowUpdate.windowSizeIncrement();
 
         //6.9/2
         if (increment == 0) {
-            Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-            connection.writer().write(frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+            reset(Http2ErrorCode.PROTOCOL);
+            return;
         }
         //6.9.1/3
         if (flowControl.outbound().incrementStreamWindowSize(increment) > WindowSize.MAX_WIN_SIZE) {
-            Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
-            connection.writer().write(frame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+            reset(Http2ErrorCode.FLOW_CONTROL);
         }
     }
 
     @Override
     public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
-        updateState(Http2StreamState.checkAndGetState(this.state, header.type(), false, endOfStream, false));
-        readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
-        flowControl.inbound().incrementWindowSize(header.length());
+        inboundStateLock.lock();
+        try {
+            updateState(Http2StreamState.checkAndGetState(this.state, header.type(), false, endOfStream, false));
+            readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
+            incrementInboundWindowSizeLocked(header.length());
+        } finally {
+            inboundStateLock.unlock();
+        }
     }
 
     @Override
@@ -278,25 +287,51 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @param errorCode HTTP/2 error code to send
      */
     void reset(Http2ErrorCode errorCode) {
-        if (NON_CANCELABLE.contains(state)) {
-            return;
+        Http2StreamState nextState;
+        inboundStateLock.lock();
+        try {
+            if (NON_CANCELABLE.contains(state)) {
+                return;
+            }
+            nextState = Http2StreamState.checkAndGetState(this.state,
+                                                          Http2FrameType.RST_STREAM,
+                                                          true,
+                                                          false,
+                                                          false);
+            this.state = nextState;
+        } finally {
+            inboundStateLock.unlock();
         }
         Http2RstStream rstStream = new Http2RstStream(errorCode);
         Http2FrameData frameData = rstStream.toFrameData(settings, streamId, Http2Flag.NoFlags.create());
-        Http2StreamState nextState = Http2StreamState.checkAndGetState(this.state,
-                                                                       Http2FrameType.RST_STREAM,
-                                                                       true,
-                                                                       false,
-                                                                       false);
-        sendListener.frameHeader(ctx, streamId, frameData.header());
-        sendListener.frame(ctx, streamId, rstStream);
         try {
+            sendListener.frameHeader(ctx, streamId, frameData.header());
+            sendListener.frame(ctx, streamId, rstStream);
             connection.writer().write(frameData);
         } catch (UncheckedIOException e) {
             // we consider this to be a marker that the connection is already close
             ctx.log(LOGGER, DEBUG, "Exception during stream cancel", e);
         } finally {
-            updateState(nextState);
+            if (nextState == Http2StreamState.CLOSED) {
+                releaseReservation();
+            }
+        }
+    }
+
+    void incrementInboundWindowSize(int increment) {
+        inboundStateLock.lock();
+        try {
+            incrementInboundWindowSizeLocked(increment);
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
+    private void incrementInboundWindowSizeLocked(int increment) {
+        if (state == Http2StreamState.CLOSED || closed) {
+            connection.flowControl().incrementInboundConnectionWindowSize(increment);
+        } else {
+            flowControl.inbound().incrementWindowSize(increment);
         }
     }
 

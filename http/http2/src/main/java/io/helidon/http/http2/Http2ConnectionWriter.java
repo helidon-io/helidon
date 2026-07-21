@@ -16,8 +16,14 @@
 
 package io.helidon.http.http2;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -30,15 +36,23 @@ import io.helidon.common.socket.SocketContext;
  */
 public class Http2ConnectionWriter implements Http2StreamWriter {
     private static final Runnable NO_OP = () -> { };
+    private static final int NO_RESET_STREAM = -1;
 
     private final DataWriter writer;
 
     private final Lock streamLock = new ReentrantLock(true);
+    private final Lock windowUpdateLock = new ReentrantLock();
+    private final Map<Integer, Long> pendingWindowUpdates = new LinkedHashMap<>();
+    private final AtomicBoolean windowUpdateWriteScheduled = new AtomicBoolean();
+    private final AtomicReference<Throwable> windowUpdateFailure = new AtomicReference<>();
     private final SocketContext ctx;
     private final Http2FrameListener listener;
     private final Http2Headers.DynamicTable outboundDynamicTable;
     private final Http2HuffmanEncoder responseHuffman;
     private final BufferData headerBuffer = BufferData.growing(512);
+    // Guarded by windowUpdateLock. The generation prevents an older reset from clearing a newer reset's fence.
+    private int resetStreamId = NO_RESET_STREAM;
+    private long resetGeneration;
 
     /**
      * A new writer.
@@ -59,7 +73,52 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
     @Override
     public void write(Http2FrameData frame) {
-        lockedWrite(frame);
+        Objects.requireNonNull(frame);
+        if (frame.header().type() != Http2FrameType.WINDOW_UPDATE) {
+            lockedWrite(frame);
+            return;
+        }
+
+        // The common path stays synchronous. Only hand off when another frame is holding the serialization lock
+        // during a blocking transport write, otherwise an inbound flow-control callback could stop duplex progress.
+        boolean locked = false;
+        int streamId = frame.header().streamId();
+        try {
+            windowUpdateLock.lock();
+            try {
+                throwIfWindowUpdateFailed();
+                if (streamId != 0 && streamId == resetStreamId) {
+                    return;
+                }
+                locked = streamLock.tryLock(0, TimeUnit.NANOSECONDS);
+                if (!locked) {
+                    Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(frame.data());
+                    pendingWindowUpdates.merge(streamId, (long) windowUpdate.windowSizeIncrement(), Long::sum);
+                }
+            } finally {
+                windowUpdateLock.unlock();
+            }
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted", e);
+        }
+        if (locked) {
+            try {
+                throwIfWindowUpdateFailed();
+                int count = pendingWindowUpdateCount();
+                Http2FrameData pending;
+                for (int i = 0; i < count && (pending = pollWindowUpdate()) != null; i++) {
+                    noLockWrite(pending);
+                }
+                noLockWrite(frame);
+            } catch (Throwable t) {
+                failWindowUpdatesAndClose(t);
+                throw t;
+            } finally {
+                streamLock.unlock();
+            }
+            return;
+        }
+        scheduleWindowUpdateWrite();
     }
 
     @Override
@@ -244,11 +303,161 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     }
 
     private void lockedWrite(Http2FrameData frame) {
+        boolean reset = frame.header().type() == Http2FrameType.RST_STREAM;
+        long fenceGeneration = -1;
         lock();
         try {
+            throwIfWindowUpdateFailed();
+            if (reset) {
+                List<Http2FrameData> windowUpdates = new ArrayList<>();
+                windowUpdateLock.lock();
+                try {
+                    int streamId = frame.header().streamId();
+                    resetStreamId = streamId;
+                    fenceGeneration = ++resetGeneration;
+                    Http2FrameData windowUpdate;
+                    while ((windowUpdate = pollWindowUpdateNoLock(streamId)) != null) {
+                        windowUpdates.add(windowUpdate);
+                    }
+                } finally {
+                    windowUpdateLock.unlock();
+                }
+                for (Http2FrameData windowUpdate : windowUpdates) {
+                    noLockWrite(windowUpdate);
+                }
+            }
             noLockWrite(frame);
+        } catch (Throwable t) {
+            if (reset) {
+                failWindowUpdatesAndClose(t);
+            }
+            throw t;
         } finally {
             streamLock.unlock();
+            if (reset) {
+                windowUpdateLock.lock();
+                try {
+                    if (resetGeneration == fenceGeneration) {
+                        resetStreamId = NO_RESET_STREAM;
+                    }
+                } finally {
+                    windowUpdateLock.unlock();
+                }
+            }
+        }
+    }
+
+    private void scheduleWindowUpdateWrite() {
+        if (!hasPendingWindowUpdates() || !windowUpdateWriteScheduled.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            Thread.ofVirtual()
+                    .name("helidon-http2-window-update-" + ctx.socketId())
+                    .start(this::drainWindowUpdates);
+        } catch (RuntimeException | Error e) {
+            windowUpdateWriteScheduled.set(false);
+            failWindowUpdatesAndClose(e);
+            throw e;
+        }
+    }
+
+    private void drainWindowUpdates() {
+        try {
+            lock();
+            try {
+                int count = pendingWindowUpdateCount();
+                Http2FrameData frame;
+                for (int i = 0; i < count && (frame = pollWindowUpdate()) != null; i++) {
+                    noLockWrite(frame);
+                }
+            } finally {
+                streamLock.unlock();
+            }
+        } catch (Throwable t) {
+            failWindowUpdatesAndClose(t);
+        } finally {
+            windowUpdateWriteScheduled.set(false);
+            if (hasPendingWindowUpdates()) {
+                scheduleWindowUpdateWrite();
+            }
+        }
+    }
+
+    private Http2FrameData pollWindowUpdate() {
+        windowUpdateLock.lock();
+        try {
+            if (pendingWindowUpdates.isEmpty()) {
+                return null;
+            }
+            int streamId = pendingWindowUpdates.keySet().iterator().next();
+            return pollWindowUpdateNoLock(streamId);
+        } finally {
+            windowUpdateLock.unlock();
+        }
+    }
+
+    private Http2FrameData pollWindowUpdateNoLock(int streamId) {
+        Long increment = pendingWindowUpdates.remove(streamId);
+        if (increment == null) {
+            return null;
+        }
+        int writeIncrement = (int) Math.min(increment, Integer.MAX_VALUE);
+        if (increment > Integer.MAX_VALUE) {
+            pendingWindowUpdates.put(streamId, increment - Integer.MAX_VALUE);
+        }
+        BufferData data = BufferData.create(4);
+        data.writeInt32(writeIncrement);
+        Http2FrameHeader header = Http2FrameHeader.create(4,
+                                                           Http2FrameTypes.WINDOW_UPDATE,
+                                                           Http2Flag.NoFlags.create(),
+                                                           streamId);
+        return new Http2FrameData(header, data);
+    }
+
+    private boolean hasPendingWindowUpdates() {
+        windowUpdateLock.lock();
+        try {
+            return !pendingWindowUpdates.isEmpty();
+        } finally {
+            windowUpdateLock.unlock();
+        }
+    }
+
+    private int pendingWindowUpdateCount() {
+        windowUpdateLock.lock();
+        try {
+            return pendingWindowUpdates.size();
+        } finally {
+            windowUpdateLock.unlock();
+        }
+    }
+
+    private void failWindowUpdatesAndClose(Throwable failure) {
+        if (!windowUpdateFailure.compareAndSet(null, failure)) {
+            return;
+        }
+        clearWindowUpdates();
+        try {
+            writer.close();
+        } catch (Throwable closeFailure) {
+            failure.addSuppressed(closeFailure);
+        }
+    }
+
+    private void clearWindowUpdates() {
+        windowUpdateLock.lock();
+        try {
+            pendingWindowUpdates.clear();
+        } finally {
+            windowUpdateLock.unlock();
+        }
+    }
+
+    private void throwIfWindowUpdateFailed() {
+        Throwable failure = windowUpdateFailure.get();
+        if (failure != null) {
+            throw new IllegalStateException("Failed to write HTTP/2 window update", failure);
         }
     }
 
@@ -324,4 +533,5 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     private static int frameBytes(Http2FrameData frame) {
         return frame.header().length() + Http2FrameHeader.LENGTH;
     }
+
 }

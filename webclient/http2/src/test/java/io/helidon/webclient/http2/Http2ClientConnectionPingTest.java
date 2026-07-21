@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -37,6 +38,7 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.Value;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -50,6 +52,7 @@ import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameListener;
+import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanEncoder;
@@ -124,6 +127,44 @@ class Http2ClientConnectionPingTest {
         stream.windowUpdate(new Http2WindowUpdate(1024));
 
         assertThat(stream.flowControl().outbound().getRemainingWindowSize(), is(before + 1024));
+    }
+
+    @Test
+    void resetClosesStreamWindowUpdateProducerBeforeWritingReset() {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        AtomicReference<Http2ClientStream> streamRef = new AtomicReference<>();
+        Http2FrameListener sendListener = new Http2FrameListener() {
+            @Override
+            public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+                if (header.type() == Http2FrameType.RST_STREAM) {
+                    streamRef.get().incrementInboundWindowSize(1);
+                }
+            }
+        };
+        Http2ClientStream stream = new Http2ClientStream(test.connection,
+                                                         Http2Settings.create(),
+                                                         test.socket,
+                                                         STREAM_CONFIG,
+                                                         test.clientConfig,
+                                                         test.streamIdSequence,
+                                                         sendListener,
+                                                         Http2FrameListener.create(List.of()));
+        streamRef.set(stream);
+        stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), false);
+        stream.flowControl().inbound().decrementWindowSize(1);
+        test.writes().clear();
+
+        stream.cancel();
+
+        List<Http2FrameType> frameTypes = new ArrayList<>();
+        List<Integer> streamIds = new ArrayList<>();
+        for (BufferData write : test.writes()) {
+            Http2FrameHeader header = Http2FrameHeader.create(write.copy());
+            frameTypes.add(header.type());
+            streamIds.add(header.streamId());
+        }
+        assertThat(frameTypes, is(List.of(Http2FrameType.WINDOW_UPDATE, Http2FrameType.RST_STREAM)));
+        assertThat(streamIds, is(List.of(0, stream.streamId())));
     }
 
     @Test

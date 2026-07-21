@@ -31,6 +31,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
@@ -157,7 +158,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 ? Http2FrameListener.create(List.of(Http2LoggingFrameListener.create(log, "recv")))
                 : Http2FrameListener.create(List.of());
         this.connectionWriter = new Http2ConnectionWriter(ctx,
-                                                          ctx.dataWriter(),
+                                                          new ConnectionDataWriter(ctx.dataWriter()),
                                                           log.sendLog()
                                                                   ? List.of(Http2LoggingFrameListener.create(log, "send"))
                                                                   : List.of());
@@ -1503,6 +1504,44 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         @Override
         public StreamFlowControl flowControl() {
             return FLOW_CONTROL;
+        }
+    }
+
+    private final class ConnectionDataWriter implements DataWriter {
+        private final DataWriter delegate;
+
+        private ConnectionDataWriter(DataWriter delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(BufferData... buffers) {
+            delegate.write(buffers);
+        }
+
+        @Override
+        public void write(BufferData buffer) {
+            delegate.write(buffer);
+        }
+
+        @Override
+        public void writeNow(BufferData... buffers) {
+            delegate.writeNow(buffers);
+        }
+
+        @Override
+        public void writeNow(BufferData buffer) {
+            delegate.writeNow(buffer);
+        }
+
+        @Override
+        public void flush() {
+            delegate.flush();
+        }
+
+        @Override
+        public void close() {
+            Http2Connection.this.close(true);
         }
     }
 

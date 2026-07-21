@@ -18,6 +18,7 @@ package io.helidon.http.http2;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
@@ -47,6 +49,274 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionWriterTest {
+
+    @Test
+    void closesWriterWhenSynchronousWindowUpdateWriteFails() {
+        SocketWriterException writeFailure = new SocketWriterException();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            throw writeFailure;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+
+        SocketWriterException thrown = assertThrows(SocketWriterException.class,
+                                                     () -> writer.write(windowUpdate.toFrameData(null,
+                                                                                                1,
+                                                                                                Http2Flag.NoFlags.create())));
+
+        assertThat(thrown, is(writeFailure));
+        verify(dataWriter).close();
+    }
+
+    @Test
+    void closesWriterWhenPendingWindowUpdateFailsBeforeReset() throws InterruptedException {
+        AtomicInteger writes = new AtomicInteger();
+        AtomicReference<Throwable> dataFailure = new AtomicReference<>();
+        AtomicReference<Throwable> resetFailure = new AtomicReference<>();
+        CountDownLatch dataWriteStarted = new CountDownLatch(1);
+        CountDownLatch releaseDataWrite = new CountDownLatch(1);
+        CountDownLatch resetWriteStarted = new CountDownLatch(1);
+        SocketWriterException writeFailure = new SocketWriterException();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            if (writes.incrementAndGet() == 1) {
+                dataWriteStarted.countDown();
+                releaseDataWrite.await();
+                return null;
+            }
+            throw writeFailure;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+        Thread dataWriterThread = Thread.ofVirtual().start(() -> {
+            try {
+                writer.write(dataFrame(1, 1024));
+            } catch (Throwable t) {
+                dataFailure.set(t);
+            }
+        });
+
+        assertThat("DATA write must start", dataWriteStarted.await(1, TimeUnit.SECONDS), is(true));
+        Http2RstStream reset = new Http2RstStream(Http2ErrorCode.CANCEL);
+        Thread resetWriterThread = Thread.ofVirtual().start(() -> {
+            resetWriteStarted.countDown();
+            try {
+                writer.write(reset.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            } catch (Throwable t) {
+                resetFailure.set(t);
+            }
+        });
+
+        try {
+            assertThat("reset write must start", resetWriteStarted.await(1, TimeUnit.SECONDS), is(true));
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+            while (resetWriterThread.getState() != Thread.State.WAITING && System.nanoTime() < deadline) {
+                Thread.onSpinWait();
+            }
+            assertThat("reset writer must wait for the DATA write",
+                       resetWriterThread.getState(),
+                       is(Thread.State.WAITING));
+            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+            writer.write(windowUpdate.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+        } finally {
+            releaseDataWrite.countDown();
+        }
+
+        dataWriterThread.join(TimeUnit.SECONDS.toMillis(2));
+        resetWriterThread.join(TimeUnit.SECONDS.toMillis(2));
+        assertThat("DATA writer must terminate", dataWriterThread.isAlive(), is(false));
+        assertThat("reset writer must terminate", resetWriterThread.isAlive(), is(false));
+        assertThat(dataFailure.get(), is(nullValue()));
+        assertThat(resetFailure.get(), is(writeFailure));
+        assertThat(writes.get(), is(2));
+        verify(dataWriter).close();
+    }
+
+    @Test
+    void writesPendingWindowUpdatesBeforeResetWhileDataWriteBlocked() throws InterruptedException {
+        AtomicInteger writes = new AtomicInteger();
+        AtomicInteger windowIncrement = new AtomicInteger();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        CountDownLatch dataWriteStarted = new CountDownLatch(1);
+        CountDownLatch releaseDataWrite = new CountDownLatch(1);
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            if (writes.incrementAndGet() == 1) {
+                dataWriteStarted.countDown();
+                releaseDataWrite.await();
+            }
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        List<Http2FrameType> frameTypes = new ArrayList<>();
+        AtomicReference<Http2FrameType> frameType = new AtomicReference<>();
+        Http2FrameListener listener = new Http2FrameListener() {
+            @Override
+            public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+                frameTypes.add(header.type());
+                frameType.set(header.type());
+            }
+
+            @Override
+            public void frame(SocketContext ctx, int streamId, BufferData data) {
+                if (frameType.get() == Http2FrameType.WINDOW_UPDATE) {
+                    windowIncrement.set(data.copy().readInt32() & Integer.MAX_VALUE);
+                }
+            }
+        };
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of(listener));
+        Thread dataWriterThread = Thread.ofVirtual().start(() -> {
+            try {
+                writer.write(dataFrame(1, 1024));
+            } catch (Throwable t) {
+                failure.compareAndSet(null, t);
+            }
+        });
+
+        assertThat("DATA write must start", dataWriteStarted.await(1, TimeUnit.SECONDS), is(true));
+        for (int i = 0; i < 2; i++) {
+            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+            writer.write(windowUpdate.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+        }
+        Http2RstStream reset = new Http2RstStream(Http2ErrorCode.CANCEL);
+        Thread resetWriterThread = Thread.ofVirtual().start(() -> {
+            try {
+                writer.write(reset.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            } catch (Throwable t) {
+                failure.compareAndSet(null, t);
+            }
+        });
+
+        try {
+            releaseDataWrite.countDown();
+            dataWriterThread.join(TimeUnit.SECONDS.toMillis(2));
+            resetWriterThread.join(TimeUnit.SECONDS.toMillis(2));
+        } finally {
+            releaseDataWrite.countDown();
+        }
+
+        assertThat("DATA writer must terminate", dataWriterThread.isAlive(), is(false));
+        assertThat("reset writer must terminate", resetWriterThread.isAlive(), is(false));
+        assertThat(writes.get(), is(3));
+        assertThat(frameTypes, is(List.of(Http2FrameType.DATA,
+                                          Http2FrameType.WINDOW_UPDATE,
+                                          Http2FrameType.RST_STREAM)));
+        assertThat(windowIncrement.get(), is(2));
+        assertThat(failure.get(), is(nullValue()));
+    }
+
+    @Test
+    void doesNotWriteWindowUpdateAfterReset() {
+        AtomicReference<Http2ConnectionWriter> writerRef = new AtomicReference<>();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        List<Http2FrameType> frameTypes = new ArrayList<>();
+        List<Integer> windowUpdateStreamIds = new ArrayList<>();
+        Http2FrameListener listener = new Http2FrameListener() {
+            @Override
+            public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+                frameTypes.add(header.type());
+                if (header.type() == Http2FrameType.WINDOW_UPDATE) {
+                    windowUpdateStreamIds.add(streamId);
+                }
+                if (header.type() == Http2FrameType.RST_STREAM) {
+                    Thread lateWindowUpdateWriter = Thread.ofVirtual().start(() -> {
+                        try {
+                            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+                            writerRef.get().write(windowUpdate.toFrameData(null,
+                                                                          streamId,
+                                                                          Http2Flag.NoFlags.create()));
+                        } catch (Throwable t) {
+                            failure.compareAndSet(null, t);
+                        }
+                    });
+                    try {
+                        lateWindowUpdateWriter.join(TimeUnit.SECONDS.toMillis(2));
+                        if (lateWindowUpdateWriter.isAlive()) {
+                            failure.compareAndSet(null, new AssertionError("WINDOW_UPDATE writer did not terminate"));
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted", e);
+                    }
+                }
+            }
+        };
+        DataWriter dataWriter = mock(DataWriter.class);
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of(listener));
+        writerRef.set(writer);
+
+        Http2RstStream reset = new Http2RstStream(Http2ErrorCode.CANCEL);
+        writer.write(reset.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+        writer.write(windowUpdate.toFrameData(null, 0, Http2Flag.NoFlags.create()));
+        writer.write(Http2Ping.create().toFrameData());
+
+        assertThat(frameTypes, is(List.of(Http2FrameType.RST_STREAM,
+                                          Http2FrameType.WINDOW_UPDATE,
+                                          Http2FrameType.PING)));
+        assertThat(windowUpdateStreamIds, is(List.of(0)));
+        assertThat(failure.get(), is(nullValue()));
+        verify(dataWriter, times(3)).writeNow(any(BufferData.class));
+    }
+
+    @Test
+    void coalescesWindowUpdateBacklogWhileWriterIsBlocked() throws InterruptedException {
+        AtomicInteger writes = new AtomicInteger();
+        AtomicInteger windowIncrement = new AtomicInteger();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        CountDownLatch dataWriteStarted = new CountDownLatch(1);
+        CountDownLatch releaseDataWrite = new CountDownLatch(1);
+        CountDownLatch windowUpdateWritten = new CountDownLatch(1);
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            int write = writes.incrementAndGet();
+            if (write == 1) {
+                dataWriteStarted.countDown();
+                releaseDataWrite.await();
+            } else {
+                windowUpdateWritten.countDown();
+            }
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        AtomicReference<Http2FrameType> frameType = new AtomicReference<>();
+        Http2FrameListener listener = new Http2FrameListener() {
+            @Override
+            public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+                frameType.set(header.type());
+            }
+
+            @Override
+            public void frame(SocketContext ctx, int streamId, BufferData data) {
+                if (frameType.get() == Http2FrameType.WINDOW_UPDATE) {
+                    windowIncrement.set(data.copy().readInt32() & Integer.MAX_VALUE);
+                }
+            }
+        };
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of(listener));
+        Thread dataWriterThread = Thread.ofVirtual().start(() -> {
+            try {
+                writer.write(dataFrame(1, 1024));
+            } catch (Throwable t) {
+                failure.compareAndSet(null, t);
+            }
+        });
+
+        assertThat("DATA write must start", dataWriteStarted.await(1, TimeUnit.SECONDS), is(true));
+        try {
+            for (int i = 0; i < 5000; i++) {
+                Http2WindowUpdate windowUpdate = new Http2WindowUpdate(1);
+                writer.write(windowUpdate.toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            }
+        } finally {
+            releaseDataWrite.countDown();
+        }
+
+        dataWriterThread.join(TimeUnit.SECONDS.toMillis(2));
+        assertThat("DATA writer must terminate", dataWriterThread.isAlive(), is(false));
+        assertThat("WINDOW_UPDATE must be written", windowUpdateWritten.await(2, TimeUnit.SECONDS), is(true));
+        assertThat(writes.get(), is(2));
+        assertThat(windowIncrement.get(), is(5000));
+        assertThat(failure.get(), is(nullValue()));
+    }
 
     @Test
     void concurrentWritersDoNotReuseConnectionWindowCredit() throws InterruptedException {

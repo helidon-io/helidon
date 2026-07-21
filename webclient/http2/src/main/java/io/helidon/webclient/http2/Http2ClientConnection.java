@@ -139,7 +139,7 @@ public class Http2ClientConnection {
         this.ctx = connection.helidonSocket();
         this.dataWriter = connection.writer();
         this.reader = connection.reader();
-        this.writer = new Http2ConnectionWriter(connection.helidonSocket(), connection.writer(), List.of());
+        this.writer = new Http2ConnectionWriter(connection.helidonSocket(), new ConnectionDataWriter(), List.of());
         this.closeListener = closeListener;
     }
 
@@ -1086,6 +1086,38 @@ public class Http2ClientConnection {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                          "Response Header Fields Too Large");
             }
+        }
+    }
+
+    private final class ConnectionDataWriter implements DataWriter {
+        @Override
+        public void write(BufferData... buffers) {
+            dataWriter.write(buffers);
+        }
+
+        @Override
+        public void write(BufferData buffer) {
+            dataWriter.write(buffer);
+        }
+
+        @Override
+        public void writeNow(BufferData... buffers) {
+            dataWriter.writeNow(buffers);
+        }
+
+        @Override
+        public void writeNow(BufferData buffer) {
+            dataWriter.writeNow(buffer);
+        }
+
+        @Override
+        public void flush() {
+            dataWriter.flush();
+        }
+
+        @Override
+        public void close() {
+            closeNow();
         }
     }
 

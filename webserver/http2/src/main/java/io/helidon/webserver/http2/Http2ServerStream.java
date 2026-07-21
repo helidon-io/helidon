@@ -124,6 +124,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private volatile boolean resetStreamSent;
     private volatile boolean remoteCompleteAfterReset;
     private volatile boolean ignoreInboundDataAfterReset;
+    private boolean windowUpdatesClosed;
     private volatile boolean connectionAborted;
     // used from this instance and from connection
     private volatile Http2StreamState state = Http2StreamState.IDLE;
@@ -337,14 +338,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
             //6.9/2
             if (windowUpdate.windowSizeIncrement() == 0) {
                 Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-                writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+                writeResetStream(frame, clientSettings);
                 connectionAttackVectorMetrics.madeYouResetCheck();
             }
             //6.9.1/3
             long size = flowControl.outbound().incrementStreamWindowSize(windowUpdate.windowSizeIncrement());
             if (size > WindowSize.MAX_WIN_SIZE || size < 0L) {
                 Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
-                writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+                writeResetStream(frame, clientSettings);
                 connectionAttackVectorMetrics.madeYouResetCheck();
             }
         } catch (UncheckedIOException e) {
@@ -386,7 +387,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
             if (state == Http2StreamState.CLOSED) {
                 restoreDiscardedConnectionCredit(header.length());
             } else {
-                flowControl.inbound().incrementWindowSize(header.length());
+                incrementInboundWindowSize(header.length());
             }
             return;
         }
@@ -402,7 +403,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
             }
         }
         if (dataLength == 0) {
-            flowControl.inbound().incrementWindowSize(header.length());
+            incrementInboundWindowSize(header.length());
             if (endOfStream) {
                 closeFromRemote();
             }
@@ -569,7 +570,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     : Http2ErrorCode.STREAM_CLOSED;
             Http2RstStream rst = new Http2RstStream(errorCode);
             try {
-                writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+                writeResetStream(rst, serverSettings);
                 resetSent = true;
             } catch (SocketWriterException | UncheckedIOException writeFailure) {
                 connectionFailed = true;
@@ -593,7 +594,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     if (!connectionFailed && !resetSent) {
                         Http2RstStream rst = new Http2RstStream(Http2ErrorCode.INTERNAL);
                         try {
-                            writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+                            writeResetStream(rst, serverSettings);
                             resetSent = true;
                         } catch (SocketWriterException | UncheckedIOException writeFailure) {
                             ctx.log(LOGGER, DEBUG, "Failed to reset stream %d after handler failure", streamId);
@@ -911,7 +912,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 discardDataAfterReset(currentFrameLength);
             }
             if (sendReset) {
-                writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+                writeResetStream(rst, clientSettings);
                 connectionAttackVectorMetrics.madeYouResetCheck();
             }
         } finally {
@@ -970,7 +971,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 }
                 return BufferData.empty();
             }
-            inboundData.complete(frame, () -> flowControl.inbound().incrementStreamWindowSize(frame.flowControlLength()));
+            inboundData.complete(frame, () -> incrementInboundStreamWindowSize(frame.flowControlLength()));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ServerConnectionException("Interrupted while waiting for request data", e);
@@ -1083,11 +1084,21 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private void writeResetStream(Http2ErrorCode resetCode) {
         Http2RstStream rst = new Http2RstStream(resetCode);
         try {
-            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            writeResetStream(rst, clientSettings);
         } catch (SocketWriterException | UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write reset stream", e);
         }
         connectionAttackVectorMetrics.madeYouResetCheck();
+    }
+
+    private void writeResetStream(Http2RstStream reset, Http2Settings settings) {
+        resetCompletionLock.lock();
+        try {
+            windowUpdatesClosed = true;
+        } finally {
+            resetCompletionLock.unlock();
+        }
+        writer.write(reset.toFrameData(settings, streamId, Http2Flag.NoFlags.create()));
     }
 
     private void remoteCompleteAfterReset() {
@@ -1114,6 +1125,30 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private void restoreDiscardedConnectionCredit(int bytes) {
         if (bytes > 0) {
             connectionFlowControl.incrementInboundConnectionWindowSize(bytes);
+        }
+    }
+
+    private void incrementInboundWindowSize(int increment) {
+        resetCompletionLock.lock();
+        try {
+            if (windowUpdatesClosed) {
+                connectionFlowControl.incrementInboundConnectionWindowSize(increment);
+            } else {
+                flowControl.inbound().incrementWindowSize(increment);
+            }
+        } finally {
+            resetCompletionLock.unlock();
+        }
+    }
+
+    private void incrementInboundStreamWindowSize(int increment) {
+        resetCompletionLock.lock();
+        try {
+            if (!windowUpdatesClosed) {
+                flowControl.inbound().incrementStreamWindowSize(increment);
+            }
+        } finally {
+            resetCompletionLock.unlock();
         }
     }
 
@@ -1307,7 +1342,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     abortInboundData();
                 } else {
                     inboundData.complete(frame,
-                                         () -> flowControl.inbound().incrementStreamWindowSize(frame.flowControlLength()));
+                                         () -> incrementInboundStreamWindowSize(frame.flowControlLength()));
                 }
             }
         }
