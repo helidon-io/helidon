@@ -19,6 +19,7 @@ package io.helidon.builder.test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import io.helidon.builder.test.testsubjects.SomeProvider;
@@ -26,7 +27,9 @@ import io.helidon.builder.test.testsubjects.WithProviderRegistry;
 import io.helidon.common.Errors;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigNode;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,6 +40,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -192,6 +196,47 @@ class ProviderRegistryTest {
         assertThat(value.optionalSetDiscover(), optionalValue(is(Set.of())));
         assertThat(value.optionalListNotDiscover(), optionalValue(is(List.of())));
         assertThat(value.optionalSetNotDiscover(), optionalValue(is(Set.of())));
+    }
+
+    @Test
+    void testExplicitSingleProviderIgnoresInvalidConfig() {
+        SomeProvider.SomeService someService = new DummyService();
+        Config invalidConfig = Config.just(ConfigSources.create(Map.of("one-not-discover", "invalid")));
+
+        WithProviderRegistry value = WithProviderRegistry.builder()
+                .config(invalidConfig)
+                .oneNotDiscover(someService)
+                .mappersExplicit(Mappers.create())
+                .build();
+
+        assertThat(value.oneNotDiscover(), sameInstance(someService));
+    }
+
+    @Test
+    void testTypeAndNameListRejectsDuplicateIdentities() {
+        ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
+                .addList("list-not-discover", ConfigNode.ListNode.builder()
+                        .addObject(ConfigNode.ObjectNode.builder()
+                                .addValue("type", "some-1")
+                                .addValue("name", "duplicate")
+                                .build())
+                        .addObject(ConfigNode.ObjectNode.builder()
+                                .addValue("type", "some-1")
+                                .addValue("name", "duplicate")
+                                .build())
+                        .build())
+                .build();
+
+        ConfigException failure = assertThrows(ConfigException.class,
+                                                () -> WithProviderRegistry.builder()
+                                                        .config(Config.just(ConfigSources.create(root)))
+                                                        .oneNotDiscover(new DummyService())
+                                                        .mappersExplicit(Mappers.create())
+                                                        .build());
+
+        assertThat(failure.getMessage(), containsString("Duplicate configured provider identity"));
+        assertThat(failure.getMessage(), containsString("type \"some-1\""));
+        assertThat(failure.getMessage(), containsString("name \"duplicate\""));
     }
 
     @Test

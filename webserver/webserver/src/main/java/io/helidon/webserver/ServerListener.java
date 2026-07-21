@@ -51,12 +51,9 @@ import io.helidon.webserver.spi.TransportBinding;
 import io.helidon.webserver.spi.TransportBindingFactory;
 
 import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.WARNING;
 
 class ServerListener implements TransportBindingContext, ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
-    private static final String EXPLICIT_SSL_CONTEXT_RELOAD_NOT_SUPPORTED =
-            "TLS cannot be reloaded when an explicit instance of SSL context was used to create it";
     // TransportBinding.stop receives the graceful period and may need time after it expires to run forced cleanup.
     private static final long BINDING_FORCE_STOP_COMPLETION_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
 
@@ -144,13 +141,15 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         this.fatalListenerFailureHandler = Objects.requireNonNull(fatalListenerFailureHandler, "fatalListenerFailureHandler");
         this.transportBindings = planTransportBindings(protocolConfigs);
         int maxConnections = listenerConfig.maxConnections();
-        int bindingCount = transportBindings.size();
-        if (maxConnections > 0 && bindingCount > maxConnections) {
-            LOGGER.log(WARNING, "Listener " + socketName + " has " + bindingCount
-                    + " active transport bindings, but maxConnections is " + maxConnections
-                    + ". Connection permits are shared across transport bindings, so at least one binding may never "
-                    + "accept a connection. Configure maxConnections to at least the number of active transport bindings "
-                    + "or leave it unlimited.");
+        long idlePermitBindingCount = transportBindings.stream()
+                .filter(TransportBinding::holdsIdleConnectionPermit)
+                .count();
+        if (maxConnections > 0 && idlePermitBindingCount > maxConnections) {
+            throw new IllegalArgumentException("Listener " + socketName + " has max-connections=" + maxConnections
+                                                       + ", but " + idlePermitBindingCount
+                                                       + " active transport bindings each reserve an idle connection "
+                                                       + "permit. Configure max-connections to at least "
+                                                       + idlePermitBindingCount + " or leave it unlimited.");
         }
     }
 
@@ -198,8 +197,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         return router;
     }
 
-    @Override
-    public Timer timer() {
+    Timer idleConnectionTimer() {
         return idleConnectionTimer;
     }
 
@@ -244,7 +242,8 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         return OptionalInt.empty();
     }
 
-    SocketAddress configuredAddress() {
+    @Override
+    public SocketAddress configuredAddress() {
         return configuredAddress;
     }
 
@@ -253,8 +252,8 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         Objects.requireNonNull(binding, "binding");
         Objects.requireNonNull(cause, "cause");
         fatalListenerFailureHandler.handle(this,
-                                           new IllegalStateException("Fatal failure in transport binding " + binding.name()
-                                                                             + " of type \"" + binding.type() + "\" at "
+                                           new IllegalStateException("Fatal failure in transport binding type \""
+                                                                             + binding.type() + "\" at "
                                                                              + binding.configuredEndpoint(),
                                                                      cause));
     }
@@ -293,12 +292,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     }
 
     boolean hasTls() {
-        for (TransportBinding binding : transportBindings) {
-            if (binding.security() == TransportBinding.Security.TLS) {
-                return true;
-            }
-        }
-        return false;
+        return tls.enabled();
     }
 
     void reloadTls(Tls tls) {
@@ -310,7 +304,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         if (!tls.enabled()) {
             throw new UnsupportedOperationException("TLS cannot be disabled by reloading on the socket " + socketName);
         }
-        reloadTls(tlsMaterial(tls));
+        this.tls.reload(tls);
     }
 
     void reloadTls(TlsMaterial material) {
@@ -357,55 +351,30 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         return InitializationContext.create(socketName, List.of(Tag.create("socketName", socketName)));
     }
 
-    private static TlsMaterial tlsMaterial(Tls tls) {
-        var tlsConfig = tls.prototype();
-        if (tlsConfig.sslContext().isPresent()) {
-            throw new UnsupportedOperationException(EXPLICIT_SSL_CONTEXT_RELOAD_NOT_SUPPORTED);
-        }
-
-        TlsMaterial.Builder builder = TlsMaterial.builder()
-                .trustAll(tlsConfig.trustAll());
-        tlsConfig.privateKey().ifPresent(builder::privateKey);
-        if (!tlsConfig.privateKeyCertChain().isEmpty()) {
-            builder.privateKeyCertChain(tlsConfig.privateKeyCertChain());
-        }
-        if (!tlsConfig.trust().isEmpty()) {
-            builder.trust(tlsConfig.trust());
-        }
-        tlsConfig.secureRandom().ifPresent(builder::secureRandom);
-        tlsConfig.secureRandomAlgorithm().ifPresent(builder::secureRandomAlgorithm);
-        tlsConfig.secureRandomProvider().ifPresent(builder::secureRandomProvider);
-        tlsConfig.keyManagerFactoryAlgorithm().ifPresent(builder::keyManagerFactoryAlgorithm);
-        tlsConfig.keyManagerFactoryProvider().ifPresent(builder::keyManagerFactoryProvider);
-        tlsConfig.trustManagerFactoryAlgorithm().ifPresent(builder::trustManagerFactoryAlgorithm);
-        tlsConfig.trustManagerFactoryProvider().ifPresent(builder::trustManagerFactoryProvider);
-        tlsConfig.internalKeystoreType().ifPresent(builder::internalKeystoreType);
-        tlsConfig.internalKeystoreProvider().ifPresent(builder::internalKeystoreProvider);
-        tlsConfig.revocation().ifPresent(builder::revocation);
-
-        return builder.build();
-    }
-
     private List<TransportBinding> planTransportBindings(List<ProtocolConfig> protocolConfigs) {
         BindingPlanContext planContext = new ListenerBindingPlanContext();
         List<TransportBinding> activeBindings = new ArrayList<>();
-        Set<BindingConfigId> bindingConfigs = new LinkedHashSet<>();
-        Set<String> bindingNames = new LinkedHashSet<>();
+        Set<String> factoryTypes = new LinkedHashSet<>();
 
         for (TransportBindingFactory factory : listenerConfig.bindings()) {
+            String factoryType = Objects.requireNonNull(factory.type(), "Transport binding factory returned null type");
+            String factoryName = Objects.requireNonNull(factory.name(), "Transport binding factory returned null name");
+            if (!factoryType.equals(factoryName)) {
+                throw new IllegalArgumentException("Transport binding factory type \"" + factoryType
+                                                           + "\" does not match its provider key \"" + factoryName
+                                                           + "\" on listener " + socketName);
+            }
+            if (!factoryTypes.add(factoryType)) {
+                throw new IllegalArgumentException("Duplicate transport binding factory type \"" + factoryType
+                                                           + "\" on listener " + socketName);
+            }
             if (!factory.enabled()) {
                 continue;
-            }
-            if (!bindingConfigs.add(new BindingConfigId(factory.type(), factory.name()))) {
-                throw new IllegalArgumentException("Duplicate transport binding factory \"" + factory.name()
-                                                           + "\" of type \"" + factory.type()
-                                                           + "\" on listener " + socketName);
             }
             if (!factory.canBind(planContext)) {
                 if (factory.required()) {
                     throw new IllegalArgumentException("Listener " + socketName
-                                                               + " requires transport binding " + factory.name()
-                                                               + " of type \"" + factory.type()
+                                                               + " requires transport binding type \"" + factoryType
                                                                + "\", but this binding cannot bind with the listener "
                                                                + "configuration");
                 }
@@ -414,8 +383,10 @@ class ServerListener implements TransportBindingContext, ListenerContext {
 
             TransportBinding binding = Objects.requireNonNull(factory.create(this),
                                                               "Transport binding factory returned null");
-            if (!bindingNames.add(binding.name())) {
-                throw new IllegalArgumentException("Duplicate transport binding name \"" + binding.name()
+            String bindingType = Objects.requireNonNull(binding.type(), "Transport binding returned null type");
+            if (!factoryType.equals(bindingType)) {
+                throw new IllegalArgumentException("Transport binding factory type \"" + factoryType
+                                                           + "\" created binding type \"" + bindingType
                                                            + "\" on listener " + socketName);
             }
             activeBindings.add(binding);
@@ -437,23 +408,24 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                                                                         "Transport binding returned null security");
             if (tls.enabled() && security == TransportBinding.Security.UNPROTECTED) {
                 throw new IllegalArgumentException("Listener " + socketName
-                                                           + " has TLS enabled, but transport binding " + binding.name()
-                                                           + " of type \"" + binding.type()
-                                                           + "\" is unprotected");
+                                                           + " has TLS enabled, but transport binding type \""
+                                                           + binding.type()
+                                                           + "\" at " + binding.configuredEndpoint()
+                                                           + " is unprotected");
             }
             if (!tls.enabled() && security == TransportBinding.Security.TLS) {
                 throw new IllegalArgumentException("Listener " + socketName
-                                                           + " does not have TLS enabled, but transport binding "
-                                                           + binding.name()
-                                                           + " of type \"" + binding.type()
-                                                           + "\" requires listener TLS");
+                                                           + " does not have TLS enabled, but transport binding type \""
+                                                           + binding.type()
+                                                           + "\" at " + binding.configuredEndpoint()
+                                                           + " requires listener TLS");
             }
             if (virtualHosts.virtualHostsEnabled() && security != TransportBinding.Security.TLS) {
                 throw new IllegalArgumentException("Listener " + socketName
-                                                           + " has TLS virtual hosts configured, but transport binding "
-                                                           + binding.name()
-                                                           + " of type \"" + binding.type()
-                                                           + "\" does not use listener TLS");
+                                                           + " has TLS virtual hosts configured, but transport binding type \""
+                                                           + binding.type()
+                                                           + "\" at " + binding.configuredEndpoint()
+                                                           + " does not use listener TLS");
             }
         }
     }
@@ -694,22 +666,23 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         if (cause instanceof Error) {
             return cause;
         }
-        return new IllegalStateException("Failed to " + action + " transport binding " + binding.name()
-                                                 + " of type \"" + binding.type() + "\" at "
+        return new IllegalStateException("Failed to " + action + " transport binding type \"" + binding.type()
+                                                 + "\" at "
                                                  + binding.configuredEndpoint(),
                                          cause);
     }
 
     private static IllegalStateException interruptedBindingStop(TransportBinding binding, InterruptedException cause) {
-        return new IllegalStateException("Interrupted while waiting for transport binding " + binding.name()
-                                                 + " to stop",
+        return new IllegalStateException("Interrupted while waiting for transport binding type \"" + binding.type()
+                                                 + "\" at " + binding.configuredEndpoint() + " to stop",
                                          cause);
     }
 
     private static IllegalStateException timedOutBindingStop(TransportBinding binding,
                                                             Duration gracefulPeriod,
                                                             TimeoutException cause) {
-        return new IllegalStateException("Timed out waiting for transport binding " + binding.name()
+        return new IllegalStateException("Timed out waiting for transport binding type \"" + binding.type()
+                                                 + "\" at " + binding.configuredEndpoint()
                                                  + " to stop after " + gracefulPeriod,
                                          cause);
     }
@@ -740,6 +713,11 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         }
     }
 
+    @FunctionalInterface
+    interface FatalListenerFailureHandler {
+        void handle(ServerListener listener, Throwable cause);
+    }
+
     private final class ListenerBindingPlanContext implements BindingPlanContext {
         @Override
         public ListenerConfig listenerConfig() {
@@ -751,14 +729,6 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     }
 
     private record BindingStopResult(Throwable failure, boolean forceSharedExecutorShutdown) {
-    }
-
-    private record BindingConfigId(String type, String name) {
-    }
-
-    @FunctionalInterface
-    interface FatalListenerFailureHandler {
-        void handle(ServerListener listener, Throwable cause);
     }
 
 }

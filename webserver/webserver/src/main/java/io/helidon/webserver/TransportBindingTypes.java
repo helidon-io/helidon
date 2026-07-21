@@ -16,17 +16,23 @@
 
 package io.helidon.webserver;
 
-import java.util.Timer;
+import io.helidon.common.Api;
 
-import io.helidon.webserver.spi.PortTransportBinding;
+/**
+ * Stable configuration and provider keys for built-in WebServer transport binding types.
+ */
+@Api.Internal
+public final class TransportBindingTypes {
+    /**
+     * TCP transport binding type.
+     */
+    public static final String TCP = "tcp";
 
-final class TcpTransportBinding extends SocketTransportBinding implements PortTransportBinding {
-    TcpTransportBinding(TransportBindingContext transportContext, Timer idleConnectionTimer) {
-        super(transportContext, TransportBindingTypes.TCP, idleConnectionTimer, transportContext.configuredAddress());
-    }
+    /**
+     * Unix domain socket transport binding type.
+     */
+    public static final String UDS = "uds";
 
-    @Override
-    public int port() {
-        return connectedPort();
+    private TransportBindingTypes() {
     }
 }

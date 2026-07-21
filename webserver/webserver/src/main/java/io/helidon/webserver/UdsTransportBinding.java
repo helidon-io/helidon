@@ -18,23 +18,18 @@ package io.helidon.webserver;
 
 import java.net.UnixDomainSocketAddress;
 import java.util.Objects;
+import java.util.Timer;
 
 final class UdsTransportBinding extends SocketTransportBinding {
-    static final String TYPE = "uds";
-
-    UdsTransportBinding(TransportBindingContext listenerContext, UdsTransportConfig config) {
-        super(listenerContext, TYPE, configName(config), socket(config));
-    }
-
-    private static String configName(UdsTransportConfig config) {
-        Objects.requireNonNull(config, "config");
-        return config.name();
+    UdsTransportBinding(TransportBindingContext listenerContext,
+                        UdsTransportConfig config,
+                        Timer idleConnectionTimer) {
+        super(listenerContext, TransportBindingTypes.UDS, idleConnectionTimer, socket(config));
     }
 
     private static UnixDomainSocketAddress socket(UdsTransportConfig config) {
         Objects.requireNonNull(config, "config");
         return config.socket()
-                .orElseThrow(() -> new IllegalArgumentException("UDS transport binding " + config.name()
-                                                                        + " requires a configured socket"));
+                .orElseThrow(() -> new IllegalArgumentException("UDS transport binding requires a configured socket"));
     }
 }

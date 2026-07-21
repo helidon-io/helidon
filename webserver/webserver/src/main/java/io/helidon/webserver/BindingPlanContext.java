@@ -16,9 +16,12 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.Api;
+
 /**
  * Listener configuration view used while planning transport bindings.
  */
+@Api.Internal
 public interface BindingPlanContext {
     /**
      * Listener configuration.

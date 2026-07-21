@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import io.helidon.builder.api.Option;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenValidator;
@@ -289,6 +290,7 @@ final class FactoryOption {
                 .name(name)
                 .declaringType(typeInfo)
                 .declaredType(type)
+                .annotations(FactoryPrototypeInfo.annotations(candidate))
                 .includeInEqualsAndHashCode(equality)
                 .includeInToString(toStringValue)
                 .confidential(confidential)
@@ -661,6 +663,10 @@ final class FactoryOption {
 
             option.provider(provider -> provider
                     .providerType(annotation.typeValue().orElseThrow())
+                    .providerIdentity(annotation.enumValue("identity", Option.Provider.Identity.class)
+                                                .orElse(Option.Provider.Identity.TYPE_AND_NAME))
+                    .configForm(annotation.enumValue("configForm", Option.Provider.ConfigForm.class)
+                                        .orElse(Option.Provider.ConfigForm.AUTO))
                     .discoverServices(annotation.booleanValue("discoverServices").orElse(true))
             );
         }

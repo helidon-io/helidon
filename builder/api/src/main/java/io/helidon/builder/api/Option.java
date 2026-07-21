@@ -23,6 +23,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
+
 /**
  * Prototype option annotations.
  */
@@ -115,63 +117,240 @@ public final class Option {
      * {@link java.util.Optional} value, a list of values, or an optional list of values. A single value or optional
      * value must have at most one configured provider entry.
      * <p>
-     * Configured provider entries are validated before services are created. Each entry is uniquely identified by the
-     * configured provider {@code type} and {@code name}. Duplicate configured entries with the same {@code type} and
-     * {@code name} are invalid and result in configuration failure instead of silently ignoring a later entry.
-     * <p>
      * When using an optional list, an absent configuration node does not by itself set the optional value; the value
      * stays empty unless builder values or service discovery provide entries. An explicitly empty list or object
      * configuration node produces {@code Optional.of(List.of())}.
      * <p>
-     * Option called {@code myProvider} that returns a single provider, or an {@link java.util.Optional} provider example
-     * in configuration:
+     * The following examples first use the compatibility defaults, {@link Provider.Identity#TYPE_AND_NAME
+     * TYPE_AND_NAME} with {@link Provider.ConfigForm#AUTO AUTO}. With those defaults, either object or list form is
+     * accepted. Option {@code myProvider} returning one value, or an {@link java.util.Optional} value, can use object
+     * form:
      * <pre>
      * my-type:
      *   my-provider:
-     *     provider-id:
+     *     provider-id: # object key supplies the instance name
+     *       type: provider-type
      *       provider-key1: "providerValue"
      *       provider-key2: "providerValue"
      * </pre>
      * <p>
-     * Option called {@code myProviders} that returns a list of providers in configuration:
+     * Option {@code myProviders} returning a Java {@link java.util.List} can use the same object form; the Java return
+     * type does not require list-form configuration. This example configures two instances of the same provider type:
      * <pre>
      * my-type:
      *   my-providers-discover-services: true # default of this value is controlled by annotation
      *   my-providers:
-     *     provider-id:
+     *     first-provider:
+     *       type: provider-type
      *       provider-key1: "providerValue"
      *       provider-key2: "providerValue"
-     *     provider2-id:
-     *       provider2-key1: "provider2Value"
+     *     second-provider:
+     *       type: provider-type
+     *       provider-key1: "anotherValue"
      * </pre>
+     * The same option can instead use list form with the compatibility defaults:
+     * <pre>
+     * my-type:
+     *   my-providers:
+     *     - type: provider-type
+     *       name: first-provider
+     *       provider-key1: "providerValue"
+     *       provider-key2: "providerValue"
+     *     - type: provider-type
+     *       name: second-provider
+     *       provider-key1: "anotherValue"
+     * </pre>
+     * In object form, each object key supplies an instance name and those names are therefore globally unique within
+     * the object. Object form does not define the order in which values are materialized. List form preserves the
+     * configured order, may reuse a name for a different provider type, and rejects an exact duplicate
+     * {@code (type, name)} pair. Object form is therefore intentionally less expressive than list form for
+     * {@link Provider.Identity#TYPE_AND_NAME TYPE_AND_NAME}.
      */
     @Target(ElementType.METHOD)
     @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface Provider {
         /**
-         * The service provider interface, or service contract for a non-configured option, that is used to discover
-         * implementations. For configured provider options, the type of the property is the service provided by that
-         * provider.
+         * Provider contract used to discover implementations for this option.
+         * <p>
+         * For a configured option, implementations of this contract are configured providers that create the option's
+         * values from configuration. For a non-configured option, implementations of this contract are themselves the
+         * option values. The configured-provider identity and configuration-form properties do not apply to a
+         * non-configured option.
          *
-         * @return type of the provider
+         * @return provider contract used for discovery
          */
         Class<?> value();
 
         /**
-         * Whether to discover services by default.
-         * When set to {@code true}, services discovered by the service loader, or by Helidon Service Registry if
-         * {@link io.helidon.builder.api.Prototype.RegistrySupport} is enabled, are used even if no configuration node
-         * exists for them. When set to {@code false}, configured provider options use only services that have a
-         * configuration node, and non-configured options ignore automatic discovery.
+         * Whether service discovery may add option values that do not have corresponding configuration.
+         * <p>
+         * For a configured provider option, provider implementations are always discovered so they can create entries
+         * that are present in configuration. A value of {@code false} only prevents those providers from adding
+         * unconfigured default values; it does not disable the discovery needed to create configured entries. For a
+         * non-configured provider option, {@code false} prevents discovered implementations from being added as option
+         * values.
+         * <p>
+         * Discovery uses the service loader, or Helidon Service Registry when
+         * {@link io.helidon.builder.api.Prototype.RegistrySupport} is enabled.
          * For configured provider options, this can be overridden by a sibling configuration option named
-         * {@code <option-config-key>-discover-services}.
-         * In case the option is not {@link io.helidon.builder.api.Option.Configured}, this value initializes the
-         * generated discovery flag, which can still be changed using the generated builder method.
+         * {@code <option-config-key>-discover-services}. For a non-configured provider option, this value initializes
+         * the generated discovery flag, which can still be changed using the generated builder method. The default is
+         * {@code true}.
          *
-         * @return whether to discover services by default for a provider
+         * @return whether service discovery may add values without matching configuration by default
          */
         boolean discoverServices() default true;
+
+        /**
+         * Values that constitute the identity of each configured provider instance.
+         * <p>
+         * Identity is independent of {@link #configForm() configuration syntax}. It defines which values distinguish
+         * configured instances, not whether the outer configuration is written as an object or a list. For example,
+         * {@link Identity#TYPE_ONLY TYPE_ONLY} can be combined with {@link ConfigForm#LIST LIST}, and
+         * {@link Identity#TYPE_AND_NAME TYPE_AND_NAME} can be combined with {@link ConfigForm#OBJECT OBJECT}.
+         * <p>
+         * With {@link Identity#TYPE_AND_NAME TYPE_AND_NAME}, an object key supplies the instance name, so object-form
+         * names are globally unique. List form may reuse a name for a different provider type, but an exact duplicate
+         * {@code (type, name)} pair is invalid. The default is {@link Identity#TYPE_AND_NAME TYPE_AND_NAME}. This
+         * property is ignored when the provider option is not also
+         * {@link io.helidon.builder.api.Option.Configured configured}.
+         *
+         * @return configured provider identity model
+         */
+        @Api.Incubating
+        Identity identity() default Identity.TYPE_AND_NAME;
+
+        /**
+         * Outer configuration container accepted for configured provider entries.
+         * <p>
+         * The form is independent of {@link #identity() provider identity}. It controls only whether the configured
+         * provider collection is an object, a list, or either. It is also independent of the option's Java type: a Java
+         * {@link java.util.List} option may use object-form configuration. The selected form does not constrain the
+         * provider-specific value within each entry beyond the metadata required by the selected identity model.
+         * <p>
+         * {@link ConfigForm#AUTO AUTO} preserves compatibility by resolving to {@link ConfigForm#OBJECT OBJECT} for
+         * {@link Identity#TYPE_ONLY TYPE_ONLY}, and to {@link ConfigForm#OBJECT_OR_LIST OBJECT_OR_LIST} for
+         * {@link Identity#TYPE_AND_NAME TYPE_AND_NAME}. Object form has unspecified materialization order; list form
+         * preserves configured order. An explicit form overrides the automatic choice. The default is
+         * {@link ConfigForm#AUTO AUTO}. This property is ignored when the provider option is not also
+         * {@link io.helidon.builder.api.Option.Configured configured}.
+         *
+         * @return accepted outer configuration form
+         */
+        @Api.Incubating
+        ConfigForm configForm() default ConfigForm.AUTO;
+
+        /**
+         * Identity model for configured provider instances.
+         * <p>
+         * Identity and {@link ConfigForm configuration form} are separate axes. Neither enum value selects object or
+         * list syntax by itself when an explicit form is configured.
+         */
+        @Api.Incubating
+        enum Identity {
+            /**
+             * Use provider type as the complete configured-instance identity.
+             * <p>
+             * At most one configured instance may exist for each provider type. In object form, the object key supplies
+             * the provider type; nested {@code type} and {@code name} metadata properties are forbidden. In list form,
+             * each entry must declare {@code type}, must not declare {@code name}, and provider types must be unique.
+             * The two forms represent the same set of unique provider types. Object form has unspecified
+             * materialization order, while list form preserves configured order.
+             * <p>
+             * This value selects identity only; it does not require object syntax. Use
+             * {@link ConfigForm#LIST LIST} or {@link ConfigForm#OBJECT_OR_LIST OBJECT_OR_LIST} when list syntax is
+             * intentionally supported. Provider-specific content within an entry retains the shape accepted by that
+             * provider.
+             */
+            TYPE_ONLY,
+
+            /**
+             * Use provider type and instance name together as the configured-instance identity.
+             * <p>
+             * In object form, the object key supplies the name and nested {@code type} selects the provider, defaulting
+             * to the object key when omitted. Object keys make names globally unique, and object form has unspecified
+             * materialization order. In list form, each entry declares {@code type}; {@code name} defaults to
+             * {@code type} when omitted. A list may reuse a name for a different provider type, while an exact duplicate
+             * {@code (type, name)} pair is invalid and causes configuration to fail. List form preserves configured
+             * order. Object form is intentionally less expressive because it cannot reuse a name across provider
+             * types. Both forms allow multiple differently named instances of the same provider type. The legacy
+             * single-key nested list-entry syntax remains accepted.
+             * <p>
+             * This value selects identity only; it does not enable list syntax. An explicit
+             * {@link ConfigForm#OBJECT OBJECT} requires an object, while {@link ConfigForm#LIST LIST} requires a list.
+             * Provider-specific content within an entry retains the shape accepted by that provider.
+             */
+            TYPE_AND_NAME
+        }
+
+        /**
+         * Accepted outer container for configured provider entries.
+         * <p>
+         * This enum controls syntax only. It does not select the configured provider identity model and does not impose
+         * a generic shape on provider-specific values stored within an entry.
+         */
+        @Api.Incubating
+        enum ConfigForm {
+            /**
+             * Select the outer configuration form from {@link Provider#identity() identity}.
+             * <p>
+             * {@link Identity#TYPE_ONLY TYPE_ONLY}
+             * resolves to {@link #OBJECT OBJECT}, while {@link Identity#TYPE_AND_NAME TYPE_AND_NAME} resolves to
+             * {@link #OBJECT_OR_LIST OBJECT_OR_LIST}.
+             * <p>
+             * Together with the default {@link Identity#TYPE_AND_NAME TYPE_AND_NAME} identity, this preserves the
+             * previous behavior that accepts either configured-provider object or list syntax. The form selected by
+             * this value controls only the outer container and its ordering semantics; it does not constrain
+             * provider-specific content within an entry.
+             */
+            AUTO,
+
+            /**
+             * Require the outer configured-provider container to be an object.
+             * <p>
+             * With {@link Identity#TYPE_ONLY TYPE_ONLY}, each object key is the provider type and nested {@code type}
+             * and {@code name} metadata is forbidden. With {@link Identity#TYPE_AND_NAME TYPE_AND_NAME}, the object key
+             * is the globally unique name and nested {@code type} selects the provider, defaulting to the object key.
+             * Differently named instances of the same type are supported. Object entries have unspecified
+             * materialization order.
+             * <p>
+             * This value selects syntax only. It does not select an identity model or constrain the shape of
+             * provider-specific content within an entry.
+             */
+            OBJECT,
+
+            /**
+             * Require the outer configured-provider container to be a list.
+             * <p>
+             * With {@link Identity#TYPE_ONLY TYPE_ONLY}, every list entry requires {@code type}, forbids {@code name},
+             * and types must be unique. With {@link Identity#TYPE_AND_NAME TYPE_AND_NAME}, {@code name} defaults to
+             * {@code type}, distinct names distinguish entries of one type, and the same name may be reused for another
+             * provider type. An exact duplicate {@code (type, name)} pair is invalid and causes configuration to fail;
+             * the legacy single-key nested entry syntax is also accepted. Entries are materialized in configured list
+             * order.
+             * <p>
+             * This value selects syntax only. It does not select an identity model or constrain provider-specific
+             * content beyond the metadata needed by list syntax.
+             */
+            LIST,
+
+            /**
+             * Accept either an object or a list as the outer configured-provider container.
+             * <p>
+             * Each entry is interpreted using the corresponding {@link #OBJECT OBJECT} or {@link #LIST LIST} rules and
+             * the identity selected by {@link Provider#identity()}. For
+             * {@link Identity#TYPE_AND_NAME TYPE_AND_NAME}, object keys supply globally unique names, while list form
+             * may reuse a name for different provider types and rejects an exact duplicate {@code (type, name)} pair.
+             * Both forms support multiple differently named instances of one type. Object form has unspecified
+             * materialization order; list form preserves configured order.
+             * <p>
+             * This value selects syntax only. It does not add name identity to
+             * {@link Identity#TYPE_ONLY TYPE_ONLY}, remove name identity from
+             * {@link Identity#TYPE_AND_NAME TYPE_AND_NAME}, or constrain provider-specific content within an entry.
+             */
+            OBJECT_OR_LIST
+        }
     }
 
     /**

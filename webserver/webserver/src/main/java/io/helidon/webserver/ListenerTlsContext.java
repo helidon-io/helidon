@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.tls.Tls;
 
 /**
@@ -27,6 +28,7 @@ import io.helidon.common.tls.Tls;
  * TLS handshakes so listener default TLS, virtual-host TLS selection, and virtual-host TLS reloads remain consistent
  * across all transport implementations.
  */
+@Api.Internal
 public interface ListenerTlsContext {
     /**
      * Default listener TLS configuration.
@@ -49,8 +51,10 @@ public interface ListenerTlsContext {
 
     /**
      * Select TLS for a client-presented SNI host.
+     * <p>
+     * The caller supplies the presented host unchanged. This method owns WebServer hostname normalization and validation.
      *
-     * @param presentedHost normalized SNI host presented by the client
+     * @param presentedHost SNI host presented by the client
      * @return selected TLS and SNI context
      * @throws RejectedSniException if the listener SNI policy rejects the host
      */
@@ -67,6 +71,7 @@ public interface ListenerTlsContext {
     /**
      * Selected listener TLS and SNI context.
      */
+    @Api.Internal
     final class Selection {
         private final Tls tls;
         private final SniContext sniContext;
@@ -109,6 +114,7 @@ public interface ListenerTlsContext {
     /**
      * Rejected SNI selection.
      */
+    @Api.Internal
     final class RejectedSniException extends IllegalArgumentException {
         /**
          * Whether to send a TLS {@code unrecognized_name} alert.

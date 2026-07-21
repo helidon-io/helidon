@@ -18,12 +18,14 @@ package io.helidon.webserver;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.spi.TransportBinding;
 import io.helidon.webserver.spi.TransportBindingFactory;
 
 /**
  * Unix domain socket transport binding factory.
  */
+@Api.Internal
 public final class UdsTransportBindingFactory implements TransportBindingFactory {
     private final UdsTransportConfig config;
 
@@ -43,12 +45,7 @@ public final class UdsTransportBindingFactory implements TransportBindingFactory
 
     @Override
     public String type() {
-        return UdsTransportBinding.TYPE;
-    }
-
-    @Override
-    public String name() {
-        return config.name();
+        return TransportBindingTypes.UDS;
     }
 
     @Override
@@ -70,6 +67,9 @@ public final class UdsTransportBindingFactory implements TransportBindingFactory
     @Override
     public TransportBinding create(TransportBindingContext context) {
         Objects.requireNonNull(context, "context");
-        return new UdsTransportBinding(context, config);
+        if (!(context instanceof ServerListener listener)) {
+            throw new IllegalArgumentException("Built-in UDS transport requires the WebServer listener runtime");
+        }
+        return new UdsTransportBinding(context, config, listener.idleConnectionTimer());
     }
 }

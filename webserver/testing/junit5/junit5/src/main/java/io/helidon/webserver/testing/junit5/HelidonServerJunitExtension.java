@@ -284,6 +284,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
 
         listenerConfigs.forEach((socketName, listenerBuilder) -> {
             if (DEFAULT_SOCKET_NAME.equals(socketName)) {
+                builder.clearBindings();
                 builder.from(listenerBuilder);
             } else {
                 ListenerConfig listenerConfig = builder.sockets().get(socketName);

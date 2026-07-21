@@ -29,13 +29,12 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.uri.UriHost;
-
 /**
  * Reads the TLS ClientHello bytes that appear before the selected TLS engine owns the connection.
  * <p>
  * WebServer uses this only for listener SNI virtual hosts: it captures the bytes that must be replayed into the TLS
- * engine after host selection, and extracts a normalized DNS SNI host without completing or otherwise interpreting TLS.
+ * engine after host selection, and extracts the raw ASCII SNI host without completing or otherwise interpreting TLS.
+ * Host validation and normalization are performed centrally during listener virtual-host selection.
  */
 final class ClientHelloPrefaceReader {
     private static final int MAX_PREFACE_BYTES = 64 * 1024;
@@ -230,14 +229,7 @@ final class ClientHelloPrefaceReader {
                 duplicate.position(position);
                 duplicate.get(bytes);
                 String asciiHost = asciiString(bytes);
-                if (asciiHost.endsWith(".")) {
-                    throw new IllegalArgumentException("TLS ClientHello SNI host name must not end with a dot");
-                }
-                UriHost uriHost = UriHost.create(asciiHost);
-                if (uriHost.kind() != UriHost.Kind.DNS) {
-                    throw new IllegalArgumentException("TLS ClientHello SNI host name must be a DNS name");
-                }
-                host = uriHost.value();
+                host = asciiHost;
             }
             position = nameEnd;
         }
@@ -303,7 +295,7 @@ final class ClientHelloPrefaceReader {
      * ClientHello bytes consumed before TLS engine selection.
      *
      * @param replayBuffer bytes to replay into the selected TLS engine
-     * @param sniHost normalized DNS SNI host from the ClientHello, if one was present
+     * @param sniHost raw ASCII SNI host from the ClientHello, if one was present
      */
     record ClientHelloPreface(ByteBuffer replayBuffer, Optional<String> sniHost) {
     }

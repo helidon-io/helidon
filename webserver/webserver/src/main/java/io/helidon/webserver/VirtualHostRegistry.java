@@ -137,7 +137,21 @@ final class VirtualHostRegistry implements ListenerTlsContext {
 
     @Override
     public ListenerTlsContext.Selection select(String presentedHost) {
-        String host = Objects.requireNonNull(presentedHost);
+        String rawHost = Objects.requireNonNull(presentedHost, "presentedHost");
+        if (rawHost.isEmpty()) {
+            throw new IllegalArgumentException("SNI host name must not be empty");
+        }
+        if (rawHost.chars().anyMatch(character -> character > 0x7F)) {
+            throw new IllegalArgumentException("SNI host name must contain only ASCII characters");
+        }
+        if (rawHost.endsWith(".")) {
+            throw new IllegalArgumentException("SNI host name must not end with a dot");
+        }
+        UriHost uriHost = UriHost.create(rawHost);
+        if (uriHost.kind() != UriHost.Kind.DNS) {
+            throw new IllegalArgumentException("SNI host name must be a DNS name");
+        }
+        String host = uriHost.value();
         HostEntry entry = match(host);
         if (entry != null) {
             SniMatchType matchType = entry.wildcard() ? SniMatchType.WILDCARD : SniMatchType.EXACT;

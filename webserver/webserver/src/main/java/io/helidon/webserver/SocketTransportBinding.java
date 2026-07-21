@@ -34,7 +34,6 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
@@ -46,8 +45,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.net.ssl.SSLParameters;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LazyValue;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketOptions;
@@ -55,7 +52,6 @@ import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.common.tls.Tls;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnectionSelector;
-import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
 import io.helidon.webserver.spi.TransportBinding;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -66,13 +62,9 @@ import static java.lang.System.Logger.Level.WARNING;
 
 abstract class SocketTransportBinding implements TransportBinding {
     private static final System.Logger LOGGER = System.getLogger(SocketTransportBinding.class.getName());
-    @SuppressWarnings("rawtypes")
-    private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() ->
-            HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class)).asList());
 
     private final TransportBindingContext transportContext;
     private final String type;
-    private final String name;
     private final String socketName;
     private final ListenerConfig listenerConfig;
     private final Timer idleConnectionTimer;
@@ -97,15 +89,14 @@ abstract class SocketTransportBinding implements TransportBinding {
 
     SocketTransportBinding(TransportBindingContext transportContext,
                            String type,
-                           String name,
+                           Timer idleConnectionTimer,
                            SocketAddress configuredAddress) {
         this.transportContext = Objects.requireNonNull(transportContext, "transportContext");
         this.type = Objects.requireNonNull(type, "type");
-        this.name = Objects.requireNonNull(name, "name");
         ListenerContext listenerContext = Objects.requireNonNull(transportContext.listenerContext(), "listenerContext");
         this.listenerConfig = listenerContext.config();
         this.socketName = listenerConfig.name();
-        this.idleConnectionTimer = transportContext.timer();
+        this.idleConnectionTimer = Objects.requireNonNull(idleConnectionTimer, "idleConnectionTimer");
         this.configuredAddress = Objects.requireNonNull(configuredAddress, "configuredAddress");
         this.connectionOptions = listenerConfig.connectionOptions();
         ProtocolConfigs protocols = ProtocolConfigs.create(listenerConfig.protocols()
@@ -126,7 +117,7 @@ abstract class SocketTransportBinding implements TransportBinding {
         List<ServerConnectionSelector> selectors = new ArrayList<>(listenerConfig.connectionSelectors());
 
         // for each discovered selector provider, add a selector for each configuration of that provider
-        SELECTOR_PROVIDERS.get()
+        listenerConfig.connectionSelectorProviders()
                 .forEach(provider -> {
                     List<ProtocolConfig> configurations = protocols.config(provider.protocolType(),
                                                                            provider.protocolConfigType());
@@ -148,13 +139,13 @@ abstract class SocketTransportBinding implements TransportBinding {
     }
 
     @Override
-    public String name() {
-        return name;
+    public String configuredEndpoint() {
+        return String.valueOf(configuredAddress);
     }
 
     @Override
-    public String configuredEndpoint() {
-        return String.valueOf(configuredAddress);
+    public boolean holdsIdleConnectionPermit() {
+        return true;
     }
 
     protected int connectedPort() {
@@ -169,7 +160,7 @@ abstract class SocketTransportBinding implements TransportBinding {
     @Override
     public void start() {
         if (configuredAddress instanceof UnixDomainSocketAddress && !listenerConfig.useNio()) {
-            throw new IllegalArgumentException("UDS transport binding " + name + " on listener " + socketName
+            throw new IllegalArgumentException("UDS transport binding on listener " + socketName
                                                        + " requires use-nio=true");
         }
         if (readerExecutor == null) {
@@ -247,7 +238,7 @@ abstract class SocketTransportBinding implements TransportBinding {
         } catch (RuntimeException | Error e) {
             failure = LifecycleFailures.add(failure, e);
         }
-        LifecycleFailures.throwIfFailed(failure, "Failed to stop " + type + " transport binding " + name);
+        LifecycleFailures.throwIfFailed(failure, "Failed to stop " + type + " transport binding");
         return result;
     }
 

@@ -16,6 +16,9 @@
 
 package io.helidon.webserver;
 
+import java.net.InetSocketAddress;
+import java.util.Timer;
+
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.tls.Tls;
 import io.helidon.webserver.spi.TransportBinding.Security;
@@ -34,6 +37,7 @@ class SocketTransportBindingTest {
         Tls listenerTls = tls();
         Limit requestLimit = mock(Limit.class);
         Limit connectionLimit = mock(Limit.class);
+        Timer idleConnectionTimer = mock(Timer.class);
         ListenerConfig listenerConfig = ListenerConfig.builder()
                 .tls(listenerTls)
                 .useNio(false)
@@ -49,10 +53,12 @@ class SocketTransportBindingTest {
         when(transportContext.listenerTls()).thenReturn(listenerTlsContext);
         when(transportContext.requestLimit()).thenReturn(requestLimit);
         when(transportContext.connectionLimit()).thenReturn(connectionLimit);
+        when(transportContext.configuredAddress()).thenReturn(new InetSocketAddress(0));
 
-        TcpTransportBinding binding = new TcpTransportBinding(transportContext, TcpTransportConfig.create());
+        TcpTransportBinding binding = new TcpTransportBinding(transportContext, idleConnectionTimer);
 
         assertThat(binding.security(), is(Security.TLS));
+        assertThat(binding.holdsIdleConnectionPermit(), is(true));
         verify(transportContext).listenerTls();
         verify(transportContext).connectionLimit();
         verify(listenerTlsContext).tls();

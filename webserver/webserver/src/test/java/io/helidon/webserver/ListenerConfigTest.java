@@ -23,6 +23,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.webserver.spi.TransportBindingFactory;
+import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
 import org.junit.jupiter.api.Test;
 
@@ -91,6 +92,25 @@ public class ListenerConfigTest {
     }
 
     @Test
+    void testConnectionSelectorProvidersDiscoveredByPrototype() {
+        ListenerConfig listenerConfig = ListenerConfig.builder().buildPrototype();
+
+        assertThat(listenerConfig.connectionSelectorProviders()
+                           .stream()
+                           .anyMatch(TestRequiredTransportConnectionSelectorProvider.class::isInstance),
+                   is(true));
+    }
+
+    @Test
+    void testConnectionSelectorProviderDiscoveryCanBeDisabled() {
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .connectionSelectorProvidersDiscoverServices(false)
+                .buildPrototype();
+
+        assertThat(listenerConfig.connectionSelectorProviders(), is(List.of()));
+    }
+
+    @Test
     void testDeprecatedMaxTcpConnectionsConfiguresMaxConnections() {
         Config config = Config.just("""
                 server:
@@ -146,13 +166,188 @@ public class ListenerConfigTest {
 
     @Test
     @SuppressWarnings("removal")
-    void testMaxConnectionsBuilderOverridesDeprecatedMaxTcpConnections() {
+    void testLaterDeprecatedMaxTcpConnectionsBuilderOverridesMaxConnections() {
         ListenerConfig listenerConfig = ListenerConfig.builder()
                 .maxConnections(-1)
                 .maxTcpConnections(23)
                 .buildPrototype();
 
+        assertThat(listenerConfig.maxConnections(), is(23));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testLaterMaxConnectionsBuilderOverridesDeprecatedMaxTcpConnections() {
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .maxTcpConnections(23)
+                .maxConnections(-1)
+                .buildPrototype();
+
         assertThat(listenerConfig.maxConnections(), is(-1));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testLaterDeprecatedMaxTcpConnectionsOverridesInheritedMaxConnections() {
+        ListenerConfig inherited = ListenerConfig.builder()
+                .maxConnections(42)
+                .buildPrototype();
+
+        ListenerConfig listenerConfig = ListenerConfig.builder(inherited)
+                .maxTcpConnections(23)
+                .buildPrototype();
+
+        assertThat(listenerConfig.maxConnections(), is(23));
+    }
+
+    @Test
+    void testProviderKeyedBindingObjectKeepsDefaultTcp() {
+        ListenerConfig listenerConfig = listenerConfig("""
+                server:
+                  bindings:
+                    uds:
+                      socket: "/tmp/server.sock"
+                """);
+
+        assertThat(bindingDescriptions(listenerConfig), hasItem("tcp/tcp/true"));
+        assertThat(bindingDescriptions(listenerConfig), hasItem("uds/uds/true"));
+    }
+
+    @Test
+    void testExplicitTcpDisableSuppressesDefaultTcp() {
+        ListenerConfig listenerConfig = listenerConfig("""
+                server:
+                  bindings:
+                    tcp:
+                      enabled: false
+                    uds:
+                      socket: "/tmp/server.sock"
+                """);
+
+        assertThat(bindingDescriptions(listenerConfig), hasItem("tcp/tcp/false"));
+        assertThat(bindingDescriptions(listenerConfig), hasItem("uds/uds/true"));
+        assertThat(bindingDescriptions(listenerConfig).stream()
+                           .filter(description -> description.startsWith("tcp/"))
+                           .count(),
+                   is(1L));
+    }
+
+    @Test
+    void testProgrammaticExplicitTcpDisableSuppressesDiscoveredDefault() {
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .buildPrototype())
+                .addBinding(UdsTransportConfig.builder()
+                                    .socket(UnixDomainSocketAddress.of("/tmp/server.sock"))
+                                    .buildPrototype())
+                .buildPrototype();
+
+        assertThat(bindingDescriptions(listenerConfig), hasItem("tcp/tcp/false"));
+        assertThat(bindingDescriptions(listenerConfig), hasItem("uds/uds/true"));
+        assertThat(bindingDescriptions(listenerConfig).stream()
+                           .filter(description -> description.startsWith("tcp/"))
+                           .count(),
+                   is(1L));
+    }
+
+    @Test
+    void testBindingListFormIsRejectedBeforeProviderLookup() {
+        Config config = Config.just("""
+                server:
+                  bindings:
+                    - type: missing-binding
+                """, MediaTypes.APPLICATION_YAML);
+
+        ConfigException failure = assertThrows(ConfigException.class, () -> ListenerConfig.builder()
+                .config(config.get("server"))
+                .buildPrototype());
+
+        assertThat(failure.getMessage(), containsString("Configured providers at server.bindings"));
+        assertThat(failure.getMessage(), containsString("must use object form"));
+    }
+
+    @Test
+    void testScalarBindingFormIsRejected() {
+        Config config = Config.just("""
+                server:
+                  bindings: uds
+                """, MediaTypes.APPLICATION_YAML);
+
+        ConfigException failure = assertThrows(ConfigException.class, () -> ListenerConfig.builder()
+                .config(config.get("server"))
+                .buildPrototype());
+
+        assertThat(failure.getMessage(), containsString("Configured providers at server.bindings"));
+        assertThat(failure.getMessage(), containsString("must use object form"));
+    }
+
+    @Test
+    void testNestedBindingNameIsRejectedBeforeProviderLookup() {
+        ConfigException failure = assertThrows(ConfigException.class, () -> listenerConfig("""
+                server:
+                  bindings:
+                    missing-binding:
+                      name: alternate
+                """));
+
+        assertThat(failure.getMessage(), containsString("Configured provider \"missing-binding\""));
+        assertThat(failure.getMessage(), containsString("must not declare \"name\""));
+        assertThat(failure.getMessage(), containsString("provider identity is TYPE_ONLY"));
+        assertThat(failure.getMessage(), containsString("provider type is the sole identity"));
+    }
+
+    @Test
+    void testMismatchedNestedBindingTypeIsRejectedBeforeProviderLookup() {
+        ConfigException failure = assertThrows(ConfigException.class, () -> listenerConfig("""
+                server:
+                  bindings:
+                    missing-binding:
+                      type: uds
+                """));
+
+        assertThat(failure.getMessage(), containsString("Configured provider \"missing-binding\""));
+        assertThat(failure.getMessage(), containsString("must not declare \"type\""));
+        assertThat(failure.getMessage(), containsString("provider identity is TYPE_ONLY"));
+        assertThat(failure.getMessage(), containsString("object key is the provider type"));
+    }
+
+    @Test
+    void testBuiltInBindingTypeConstants() {
+        assertThat(TransportBindingTypes.TCP, is("tcp"));
+        assertThat(TransportBindingTypes.UDS, is("uds"));
+    }
+
+    @Test
+    void testConfiguredProviderKeyMustMatchBindingType() {
+        TestTransportBindingProvider provider = new TestTransportBindingProvider();
+
+        ConfigException failure = assertThrows(ConfigException.class,
+                                               () -> provider.create(Config.empty(), "alias"));
+
+        assertThat(failure.getMessage(), containsString("provider key \"test-transport\""));
+        assertThat(failure.getMessage(), containsString("configured binding type \"alias\""));
+    }
+
+    @Test
+    void testConfiguredProviderFactoryTypeMustMatchProviderKey() {
+        TransportBindingFactoryProvider provider = new TransportBindingFactoryProvider() {
+            @Override
+            public String configKey() {
+                return TestTransportBindingConfig.TYPE;
+            }
+
+            @Override
+            public TransportBindingFactory create(Config config) {
+                return TestTransportBindingConfig.alternate("alternate", true);
+            }
+        };
+
+        ConfigException failure = assertThrows(ConfigException.class,
+                                               () -> provider.create(Config.empty(), TestTransportBindingConfig.TYPE));
+
+        assertThat(failure.getMessage(), containsString("provider key \"test-transport\""));
+        assertThat(failure.getMessage(), containsString("factory type \"alternate-test-transport\""));
     }
 
     // Verify that value of server2.shutdown-grace-period is present in ListenerConfiguration instance
@@ -222,5 +417,12 @@ public class ListenerConfigTest {
 
     private static String bindingDescription(TransportBindingFactory binding) {
         return binding.type() + "/" + binding.name() + "/" + binding.enabled();
+    }
+
+    private static ListenerConfig listenerConfig(String yaml) {
+        Config config = Config.just(yaml, MediaTypes.APPLICATION_YAML);
+        return ListenerConfig.builder()
+                .config(config.get("server"))
+                .buildPrototype();
     }
 }

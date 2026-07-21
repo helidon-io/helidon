@@ -52,12 +52,12 @@ class ClientHelloPrefaceReaderTest {
             + "a".repeat(62);
 
     @Test
-    void readsSniFromSingleRecordClientHello() throws IOException {
+    void readsRawSniFromSingleRecordClientHello() throws IOException {
         byte[] clientHello = clientHello("Api.Example.COM");
 
         ClientHelloPrefaceReader.ClientHelloPreface preface = read(record(clientHello));
 
-        assertThat(preface.sniHost(), is(Optional.of("api.example.com")));
+        assertThat(preface.sniHost(), is(Optional.of("Api.Example.COM")));
         assertThat(preface.replayBuffer().remaining(), is(record(clientHello).length));
     }
 
@@ -237,31 +237,31 @@ class ClientHelloPrefaceReaderTest {
     }
 
     @Test
-    void rejectsTrailingDotSniHostName() {
+    void preservesTrailingDotForListenerValidation() throws IOException {
         byte[] clientHello = clientHello("api.example.com.");
 
-        assertThrows(IllegalArgumentException.class, () -> read(record(clientHello)));
+        assertThat(read(record(clientHello)).sniHost(), is(Optional.of("api.example.com.")));
     }
 
     @Test
-    void rejectsTooLongSniHostName() {
+    void preservesTooLongSniHostNameForListenerValidation() throws IOException {
         byte[] clientHello = clientHello(TOO_LONG_DNS_NAME);
 
-        assertThrows(IllegalArgumentException.class, () -> read(record(clientHello)));
+        assertThat(read(record(clientHello)).sniHost(), is(Optional.of(TOO_LONG_DNS_NAME)));
     }
 
     @Test
-    void rejectsTooLongSniHostNameLabel() {
+    void preservesTooLongSniHostNameLabelForListenerValidation() throws IOException {
         byte[] clientHello = clientHello(DNS_LABEL_64);
 
-        assertThrows(IllegalArgumentException.class, () -> read(record(clientHello)));
+        assertThat(read(record(clientHello)).sniHost(), is(Optional.of(DNS_LABEL_64)));
     }
 
     @Test
-    void rejectsIpLiteralSniHostName() {
+    void preservesIpLiteralSniHostNameForListenerValidation() throws IOException {
         byte[] clientHello = clientHello("127.0.0.1");
 
-        assertThrows(IllegalArgumentException.class, () -> read(record(clientHello)));
+        assertThat(read(record(clientHello)).sniHost(), is(Optional.of("127.0.0.1")));
     }
 
     @Test

@@ -24,6 +24,7 @@ import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 /**
  * Transport binding factory provider for the built-in Unix domain socket listener binding.
  */
+@Api.Internal
 public class UdsTransportBindingFactoryProvider implements TransportBindingFactoryProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
@@ -34,14 +35,13 @@ public class UdsTransportBindingFactoryProvider implements TransportBindingFacto
 
     @Override
     public String configKey() {
-        return UdsTransportBinding.TYPE;
+        return TransportBindingTypes.UDS;
     }
 
     @Override
-    public TransportBindingFactory create(Config config, String name) {
+    public TransportBindingFactory create(Config config) {
         UdsTransportConfig udsConfig = UdsTransportConfig.builder()
                 .config(config)
-                .name(name)
                 .build();
         return UdsTransportBindingFactory.create(udsConfig);
     }
