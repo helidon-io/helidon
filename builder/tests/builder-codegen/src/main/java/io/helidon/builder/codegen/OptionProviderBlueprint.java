@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.builder.codegen;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -30,6 +32,26 @@ interface OptionProviderBlueprint {
      * @return provider type
      */
     TypeName providerType();
+
+    /**
+     * Configured provider identity.
+     * The compatibility default identifies providers by both type and name.
+     *
+     * @return configured provider identity
+     */
+    @Option.Default("TYPE_AND_NAME")
+    @Api.Internal
+    Option.Provider.Identity providerIdentity();
+
+    /**
+     * Configured provider outer configuration form.
+     * The compatibility default derives the accepted form from the provider identity.
+     *
+     * @return configured provider outer configuration form
+     */
+    @Option.Default("AUTO")
+    @Api.Internal
+    Option.Provider.ConfigForm configForm();
 
     /**
      * Whether to discover services by default.

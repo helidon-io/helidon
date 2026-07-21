@@ -21,24 +21,18 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
 /**
  * Configuration of the built-in Unix domain socket listener transport binding.
  */
+@Api.Incubating
 @Prototype.Blueprint
-@Prototype.Configured(root = false, value = UdsTransportBinding.TYPE)
+@Prototype.Configured(root = false, value = TransportBindingTypes.UDS)
 @Prototype.Provides(TransportBindingFactoryProvider.class)
 @Prototype.CustomMethods(UdsTransportConfigSupport.CustomMethods.class)
 interface UdsTransportConfigBlueprint {
-    /**
-     * Name of this binding.
-     *
-     * @return binding name
-     */
-    @Option.Default(UdsTransportBinding.TYPE)
-    String name();
-
     /**
      * Whether this binding is enabled.
      *
@@ -65,12 +59,4 @@ interface UdsTransportConfigBlueprint {
     @Option.Configured
     Optional<UnixDomainSocketAddress> socket();
 
-    /**
-     * Binding type.
-     *
-     * @return binding type
-     */
-    default String type() {
-        return UdsTransportBinding.TYPE;
-    }
 }

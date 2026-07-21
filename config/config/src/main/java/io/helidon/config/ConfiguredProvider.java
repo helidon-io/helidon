@@ -17,10 +17,6 @@ package io.helidon.config;
 
 /**
  * Providers that can be loaded from configuration should implement this interface.
- * <p>
- * Each configured provider entry is identified by its {@link io.helidon.config.NamedService#type()} and
- * {@link io.helidon.config.NamedService#name()}. Duplicate configured entries with the same type and name are invalid
- * and fail configuration validation.
  *
  * @param <T> type of the service this provider provides
  */

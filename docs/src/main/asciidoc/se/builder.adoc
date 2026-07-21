@@ -433,7 +433,7 @@ Interfaces:
 | `Option.Singular`      | For collection based options. Adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`)
 | `Option.Configured`    | For options that are configured from config (must be explicitly marked, default is not-configured), also ignored unless `@Prototype.Configured` is specified on the blueprint interface
 | `Option.Required`      | We can recognize required options through signature in most cases (any option that does not return an `Optional` and does not have a default value); this option is useful for primitive types, where we need an explicit value set, rather than using the primitive's default value
-| `Option.Provider`      | Satisfied by a provider implementation, see javadoc for details. For configured provider lists, each configured entry must have a unique provider `type` and `name`; duplicate `(type, name)` entries fail configuration validation.
+| `Option.Provider`      | Loads option values through a discovered provider contract. Configured provider options independently select instance identity and outer object/list configuration syntax; non-configured provider options use discovered implementations directly.
 | `Option.AllowedValues` | Allowed values for the property, not required for `enum`, where we create this automatically, though we can configure description of each value (works automatically for `enum` defined in the same module); the description is used for generated documentation
 | `Option.SameGeneric`   | Advanced configuration of a Map, where the map accepts two typed values, and we must use the same generic on setters (such as `Map<Class<Object>, Object>` - `<T> Builder put(Class<T>, T)`)
 | `Option.Redundant`     | Marks an option that is not used by equals and hashCode methods
@@ -443,6 +443,69 @@ Interfaces:
 | `Option.Decorator`     | Support for field decoration (to do side-effects on setter call)
 | `Option.ProtypedBy`    | When using a third party runtime type and we have a prototype that builds it, we can specify the prototype class name (or fully qualified class name if in a different package) to add prototype methods and to read from configuration using that prototype
 |===
+
+==== Provider Options
+
+`Option.Provider.value` identifies the provider contract to discover. For a configured option, implementations of that
+contract create option values from configuration. For a non-configured option, the discovered implementations are the
+option values themselves.
+
+`Option.Provider.discoverServices` defaults to `true`. For a configured option, providers are always discovered so they
+can create explicitly configured entries. Setting this property to `false` only prevents providers from contributing
+values without matching configuration. Configuration can override the annotation default using the sibling key
+`<option-config-key>-discover-services`. For a non-configured option, `false` prevents discovered implementations from
+being added automatically.
+
+Configured provider options have two independent settings:
+
+[cols="1,5"]
+|===
+| Setting | Meaning
+
+| `identity`
+| `TYPE_ONLY` identifies an instance only by provider type, so each type may occur once. `TYPE_AND_NAME` identifies an
+instance by the `(type, name)` pair and therefore permits differently named instances of the same provider type. The
+default is `TYPE_AND_NAME`.
+
+| `configForm`
+| `OBJECT`, `LIST`, or `OBJECT_OR_LIST` selects the accepted outer configuration container. `AUTO` resolves to `OBJECT`
+for `TYPE_ONLY` and to `OBJECT_OR_LIST` for `TYPE_AND_NAME`. The default is `AUTO`.
+|===
+
+The configuration form does not select the identity model, does not depend on whether the Java option is a single value
+or a `List`, and does not impose a generic shape on provider-specific content within an entry. Object form does not
+define materialization order; list form preserves configured order.
+
+With `TYPE_AND_NAME`, an object key supplies the instance name, so names are globally unique in object form. The
+following object configures `(metrics, primary)` and `(metrics, backup)`; their materialization order is unspecified:
+
+[source,yaml]
+----
+providers:
+  primary:
+    type: metrics
+    endpoint: "primary.example"
+  backup:
+    type: metrics
+    endpoint: "backup.example"
+----
+
+List form declares the name explicitly and preserves declaration order:
+
+[source,yaml]
+----
+providers:
+  - type: metrics
+    name: primary
+    endpoint: "primary.example"
+  - type: metrics
+    name: backup
+    endpoint: "backup.example"
+----
+
+Unlike object form, list form may reuse a name for a different provider type. An exact duplicate `(type, name)` pair in
+the list is invalid and causes configuration to fail. Object form is therefore intentionally less expressive than list
+form for `TYPE_AND_NAME`; the two forms are not equivalent representations with only an ordering difference.
 
 To configure default value(s) of an option, one of the following annotations can be used (mutually exclusive!).
 Most defaults support an array, to provide default values for collections.

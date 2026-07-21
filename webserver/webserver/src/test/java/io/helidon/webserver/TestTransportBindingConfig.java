@@ -20,7 +20,7 @@ import io.helidon.webserver.spi.TransportBinding;
 import io.helidon.webserver.spi.TransportBindingFactory;
 import io.helidon.webserver.spi.TransportBinding.Security;
 
-record TestTransportBindingConfig(String name,
+record TestTransportBindingConfig(String testId,
                                   boolean enabled,
                                   boolean failStart,
                                   boolean hangStop,
@@ -30,7 +30,9 @@ record TestTransportBindingConfig(String name,
                                   boolean blockSharedExecutor,
                                   boolean fatalAfterStart,
                                   Security security,
-                                  String bindingType) implements TransportBindingFactory {
+                                  String factoryType,
+                                  String runtimeType,
+                                  boolean holdsIdleConnectionPermit) implements TransportBindingFactory {
     static final String TYPE = "test-transport";
     static final String ALTERNATE_TYPE = "alternate-test-transport";
 
@@ -44,7 +46,7 @@ record TestTransportBindingConfig(String name,
 
     TestTransportBindingConfig(String name, boolean enabled, boolean failStart, boolean tlsEnabled) {
         this(name, enabled, failStart, false, false, false, false, false, false,
-             security(tlsEnabled), TYPE);
+             security(tlsEnabled), TYPE, TYPE, false);
     }
 
     TestTransportBindingConfig(String name,
@@ -52,7 +54,8 @@ record TestTransportBindingConfig(String name,
                                boolean failStart,
                                boolean tlsEnabled,
                                boolean hangStop) {
-        this(name, enabled, failStart, hangStop, false, false, false, false, false, security(tlsEnabled), TYPE);
+        this(name, enabled, failStart, hangStop, false, false, false, false, false,
+             security(tlsEnabled), TYPE, TYPE, false);
     }
 
     TestTransportBindingConfig(String name,
@@ -62,43 +65,47 @@ record TestTransportBindingConfig(String name,
                                boolean hangStop,
                                boolean portCapable) {
         this(name, enabled, failStart, hangStop, portCapable, false, false, false, false,
-             security(tlsEnabled), TYPE);
+             security(tlsEnabled), TYPE, TYPE, false);
     }
 
     static TestTransportBindingConfig listenerTls(String name) {
         return new TestTransportBindingConfig(name, true, false, false,
-                                              false, false, false, false, false, Security.TLS, TYPE);
+                                              false, false, false, false, false, Security.TLS, TYPE, TYPE, false);
     }
 
     static TestTransportBindingConfig tlsEquivalent(String name) {
         return new TestTransportBindingConfig(name, true, false, false,
-                                              false, false, false, false, false, Security.TLS_EQUIVALENT, TYPE);
+                                              false, false, false, false, false,
+                                              Security.TLS_EQUIVALENT, TYPE, TYPE, false);
     }
 
     static TestTransportBindingConfig nullSecurity(String name) {
         return new TestTransportBindingConfig(name, true, false, false,
-                                              false, false, false, false, false, null, TYPE);
+                                              false, false, false, false, false, null, TYPE, TYPE, false);
     }
 
     static TestTransportBindingConfig ignoreStopInterrupt(String name) {
         return new TestTransportBindingConfig(name, true, false, true,
-                                              false, true, false, false, false, Security.UNPROTECTED, TYPE);
+                                              false, true, false, false, false,
+                                              Security.UNPROTECTED, TYPE, TYPE, false);
     }
 
     static TestTransportBindingConfig forceStopWithBlockedExecutor(String name) {
         return new TestTransportBindingConfig(name, true, false, false,
-                                              false, false, true, true, false, Security.UNPROTECTED, TYPE);
+                                              false, false, true, true, false,
+                                              Security.UNPROTECTED, TYPE, TYPE, false);
     }
 
     static TestTransportBindingConfig fatalAfterStart(String name) {
         return new TestTransportBindingConfig(name, true, false, false,
-                                              false, false, false, false, true, Security.UNPROTECTED, TYPE);
+                                              false, false, false, false, true,
+                                              Security.UNPROTECTED, TYPE, TYPE, false);
     }
 
     static TestTransportBindingConfig alternate(String name, boolean enabled) {
         return new TestTransportBindingConfig(name, enabled, false, false,
                                               false, false, false, false, false,
-                                              security(false), ALTERNATE_TYPE);
+                                              security(false), ALTERNATE_TYPE, ALTERNATE_TYPE, false);
     }
 
     static TestTransportBindingConfig alternate(String name,
@@ -107,7 +114,7 @@ record TestTransportBindingConfig(String name,
                                                 boolean tlsEnabled) {
         return new TestTransportBindingConfig(name, enabled, failStart, false,
                                               false, false, false, false, false,
-                                              security(tlsEnabled), ALTERNATE_TYPE);
+                                              security(tlsEnabled), ALTERNATE_TYPE, ALTERNATE_TYPE, false);
     }
 
     static TestTransportBindingConfig alternate(String name,
@@ -117,7 +124,7 @@ record TestTransportBindingConfig(String name,
                                                 boolean hangStop) {
         return new TestTransportBindingConfig(name, enabled, failStart, hangStop,
                                               false, false, false, false, false,
-                                              security(tlsEnabled), ALTERNATE_TYPE);
+                                              security(tlsEnabled), ALTERNATE_TYPE, ALTERNATE_TYPE, false);
     }
 
     static TestTransportBindingConfig alternate(String name,
@@ -128,12 +135,30 @@ record TestTransportBindingConfig(String name,
                                                 boolean portCapable) {
         return new TestTransportBindingConfig(name, enabled, failStart, hangStop,
                                               portCapable, false, false, false, false,
-                                              security(tlsEnabled), ALTERNATE_TYPE);
+                                              security(tlsEnabled), ALTERNATE_TYPE, ALTERNATE_TYPE, false);
+    }
+
+    static TestTransportBindingConfig idlePermit(String name) {
+        return new TestTransportBindingConfig(name, true, false, false,
+                                              false, false, false, false, false,
+                                              Security.UNPROTECTED, TYPE, TYPE, true);
+    }
+
+    static TestTransportBindingConfig alternateIdlePermit(String name) {
+        return new TestTransportBindingConfig(name, true, false, false,
+                                              false, false, false, false, false,
+                                              Security.UNPROTECTED, ALTERNATE_TYPE, ALTERNATE_TYPE, true);
+    }
+
+    static TestTransportBindingConfig runtimeTypeMismatch(String name) {
+        return new TestTransportBindingConfig(name, true, false, false,
+                                              false, false, false, false, false,
+                                              Security.UNPROTECTED, TYPE, ALTERNATE_TYPE, false);
     }
 
     @Override
     public String type() {
-        return bindingType;
+        return factoryType;
     }
 
     @Override

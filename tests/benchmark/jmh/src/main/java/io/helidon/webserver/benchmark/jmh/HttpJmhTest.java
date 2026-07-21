@@ -150,6 +150,8 @@ public class HttpJmhTest {
     public void http1NewConnection(Blackhole bh) throws IOException {
         byte[] responseBuffer = new byte[1024];
         try (Socket socket = new Socket(SERVER_HOST, serverPort)) {
+            // Avoid exhausting ephemeral ports during sustained new-connection benchmarks.
+            socket.setSoLinger(true, 0);
             socket.setTcpNoDelay(true);
             socket.setSoTimeout(SOCKET_READ_TIMEOUT_MILLIS);
             OutputStream output = socket.getOutputStream();

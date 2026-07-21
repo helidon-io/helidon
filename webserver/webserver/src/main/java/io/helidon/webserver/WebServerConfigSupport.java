@@ -44,8 +44,14 @@ import io.helidon.webserver.spi.TransportBindingFactory;
 class WebServerConfigSupport {
     private static final String KEY_BINDINGS = "bindings";
     private static final String KEY_SERVICE_ENABLED = "enabled";
-    private static final String KEY_SERVICE_NAME = "name";
-    private static final String KEY_SERVICE_TYPE = "type";
+
+    static class MaxTcpConnectionsDecorator
+            implements Prototype.OptionDecorator<ListenerConfig.BuilderBase<?, ?>, Integer> {
+        @Override
+        public void decorate(ListenerConfig.BuilderBase<?, ?> builder, Integer maxTcpConnections) {
+            builder.maxConnections(maxTcpConnections);
+        }
+    }
 
     static class CustomMethods {
 
@@ -179,10 +185,53 @@ class WebServerConfigSupport {
                                                   + "socket(UnixDomainSocketAddress.of(path)).");
             }
 
-            preserveBindingConfigSemantics(target);
-            validateSingleBindingPerType(target);
-            normalizeTcpBinding(target);
-            normalizeMaxConnections(target);
+            Optional<Config> listenerConfig = target.config();
+            if (listenerConfig.isPresent()) {
+                Config tcpConfig = listenerConfig.get()
+                        .get(KEY_BINDINGS)
+                        .get(TransportBindingTypes.TCP);
+                if (tcpConfig.exists()
+                        && !tcpConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(true)) {
+                    boolean hasTcpBinding = false;
+                    for (TransportBindingFactory binding : target.bindings()) {
+                        if (TransportBindingTypes.TCP.equals(binding.type())) {
+                            hasTcpBinding = true;
+                            break;
+                        }
+                    }
+                    if (!hasTcpBinding) {
+                        TcpTransportConfig tcpBindingConfig = TcpTransportConfig.builder()
+                                .enabled(false)
+                                .buildPrototype();
+                        target.addBinding(TcpTransportBindingFactory.create(tcpBindingConfig));
+                    }
+                }
+            }
+
+            List<TransportBindingFactory> bindings = target.bindings();
+            Map<String, TransportBindingFactory> bindingsByType = new LinkedHashMap<>();
+            boolean hasTcpBinding = false;
+            for (TransportBindingFactory binding : bindings) {
+                String type = binding.type();
+                if (type == null) {
+                    throw new ConfigException("Transport binding factory type must not be null");
+                }
+                TransportBindingFactory existing = bindingsByType.putIfAbsent(type, binding);
+                if (existing != null) {
+                    throw new ConfigException("Multiple transport binding factories of type \"" + type
+                                                      + "\" are configured for listener \"" + target.name()
+                                                      + "\". A listener can have only one transport binding per type.");
+                }
+                if (TransportBindingTypes.TCP.equals(type)) {
+                    hasTcpBinding = true;
+                }
+            }
+            if (!hasTcpBinding) {
+                List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size() + 1);
+                normalizedBindings.add(TcpTransportBindingFactory.create(TcpTransportConfig.create()));
+                normalizedBindings.addAll(bindings);
+                target.bindings(normalizedBindings);
+            }
 
             if (target.connectionOptions().isEmpty()) {
                 target.connectionOptions(SocketOptions.create());
@@ -205,155 +254,6 @@ class WebServerConfigSupport {
                                                             .socketId(target.name())
                                                             .build());
             }
-        }
-
-        @SuppressWarnings("removal")
-        private static void normalizeMaxConnections(ListenerConfig.BuilderBase<?, ?> target) {
-            if (target.maxConnections().isEmpty()) {
-                target.maxConnections(target.maxTcpConnections());
-            }
-        }
-
-        private static void preserveBindingConfigSemantics(ListenerConfig.BuilderBase<?, ?> target) {
-            Optional<Config> listenerConfig = target.config();
-            if (listenerConfig.isEmpty()) {
-                return;
-            }
-
-            Config bindingsConfig = listenerConfig.get().get(KEY_BINDINGS);
-            if (!bindingsConfig.exists()) {
-                return;
-            }
-
-            List<ConfiguredBinding> configuredBindings = configuredBindings(bindingsConfig);
-            Map<String, String> bindingNamesByType = new LinkedHashMap<>();
-            for (ConfiguredBinding configuredBinding : configuredBindings) {
-                String type = configuredBinding.type();
-                String existingName = bindingNamesByType.putIfAbsent(type, configuredBinding.name());
-                if (existingName != null) {
-                    throw duplicateBindingType(null, type, existingName, configuredBinding.name());
-                }
-            }
-
-            preserveDisabledTcpBindings(target, configuredBindings);
-        }
-
-        private static void validateSingleBindingPerType(ListenerConfig.BuilderBase<?, ?> target) {
-            List<TransportBindingFactory> bindings = target.bindings();
-            Map<String, TransportBindingFactory> bindingsByType = new LinkedHashMap<>();
-            List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size());
-            boolean changed = false;
-
-            for (TransportBindingFactory binding : bindings) {
-                TransportBindingFactory existing = bindingsByType.putIfAbsent(binding.type(), binding);
-                if (existing != null) {
-                    if (existing.name().equals(binding.name())) {
-                        changed = true;
-                        continue;
-                    }
-                    throw duplicateBindingType(target.name(), binding.type(), existing.name(), binding.name());
-                }
-                normalizedBindings.add(binding);
-            }
-            if (changed) {
-                target.bindings(normalizedBindings);
-            }
-        }
-
-        private static void normalizeTcpBinding(ListenerConfig.BuilderBase<?, ?> target) {
-            List<TransportBindingFactory> bindings = target.bindings();
-
-            for (TransportBindingFactory binding : bindings) {
-                if (TcpTransportBinding.TYPE.equals(binding.type())) {
-                    return;
-                }
-            }
-
-            List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size() + 1);
-            normalizedBindings.add(TcpTransportBindingFactory.create(TcpTransportConfig.create()));
-            normalizedBindings.addAll(bindings);
-            target.bindings(normalizedBindings);
-        }
-
-        private static List<ConfiguredBinding> configuredBindings(Config bindingsConfig) {
-            List<Config> bindingConfigs = bindingsConfig.asNodeList()
-                    .orElseGet(List::of);
-            List<ConfiguredBinding> result = new ArrayList<>(bindingConfigs.size());
-            boolean isList = bindingsConfig.isList();
-            for (Config bindingConfig : bindingConfigs) {
-                result.add(configuredBinding(bindingConfig, isList));
-            }
-            return result;
-        }
-
-        private static ConfiguredBinding configuredBinding(Config bindingConfig, boolean isList) {
-            if (isList) {
-                String type = bindingConfig.get(KEY_SERVICE_TYPE).asString().orElse(null);
-                String name = bindingConfig.get(KEY_SERVICE_NAME).asString().orElse(type);
-                boolean enabled = bindingConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(true);
-
-                if (type == null) {
-                    List<Config> nestedConfigs = bindingConfig.asNodeList().orElseGet(List::of);
-                    if (nestedConfigs.size() != 1) {
-                        throw new ConfigException(
-                                "Transport binding configuration defined as a list must have a single node that is the "
-                                        + "type, with children containing the binding configuration. Failed on: "
-                                        + bindingConfig.key());
-                    }
-                    Config usedConfig = nestedConfigs.getFirst();
-                    name = usedConfig.name();
-                    type = usedConfig.get(KEY_SERVICE_TYPE).asString().orElse(name);
-                    enabled = usedConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(enabled);
-                }
-                return new ConfiguredBinding(type, name, enabled);
-            }
-
-            String name = bindingConfig.name();
-            String type = bindingConfig.get(KEY_SERVICE_TYPE).asString().orElse(name);
-            boolean enabled = bindingConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(true);
-
-            return new ConfiguredBinding(type, name, enabled);
-        }
-
-        private static void preserveDisabledTcpBindings(ListenerConfig.BuilderBase<?, ?> target,
-                                                        List<ConfiguredBinding> configuredBindings) {
-            for (ConfiguredBinding configuredBinding : configuredBindings) {
-                if (!configuredBinding.enabled()
-                        && TcpTransportBinding.TYPE.equals(configuredBinding.type())
-                        && !hasBinding(target.bindings(), configuredBinding)) {
-                    TcpTransportConfig tcpConfig = TcpTransportConfig.builder()
-                            .name(configuredBinding.name())
-                            .enabled(false)
-                            .buildPrototype();
-                    target.addBinding(TcpTransportBindingFactory.create(tcpConfig));
-                }
-            }
-        }
-
-        private static boolean hasBinding(List<TransportBindingFactory> bindings, ConfiguredBinding configuredBinding) {
-            for (TransportBindingFactory binding : bindings) {
-                if (binding.type().equals(configuredBinding.type())
-                        && binding.name().equals(configuredBinding.name())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private static ConfigException duplicateBindingType(String listenerName,
-                                                            String type,
-                                                            String firstName,
-                                                            String secondName) {
-            String target = listenerName == null ? "configured" : "configured for listener \"" + listenerName + "\"";
-            return new ConfigException("Multiple transport bindings of type \"" + type + "\" are " + target
-                                               + ": \"" + firstName + "\" and \"" + secondName + "\". A listener can "
-                                               + "have only one transport binding per type. The binding name is not a "
-                                               + "way to create another binding of the same type; if you want to "
-                                               + "override configuration for the \"" + type + "\" binding, use the \""
-                                               + type + "\" name.");
-        }
-
-        private record ConfiguredBinding(String type, String name, boolean enabled) {
         }
 
     }
@@ -379,6 +279,7 @@ class WebServerConfigSupport {
          * @param config TCP transport binding configuration
          */
         @Prototype.BuilderMethod
+        @Prototype.Annotated("io.helidon.common.Api.Incubating")
         static void addBinding(ListenerConfig.BuilderBase<?, ?> builder, TcpTransportConfig config) {
             builder.addBinding(TcpTransportBindingFactory.create(config));
         }
@@ -390,6 +291,7 @@ class WebServerConfigSupport {
          * @param config Unix domain socket transport binding configuration
          */
         @Prototype.BuilderMethod
+        @Prototype.Annotated("io.helidon.common.Api.Incubating")
         static void addBinding(ListenerConfig.BuilderBase<?, ?> builder, UdsTransportConfig config) {
             builder.addBinding(UdsTransportBindingFactory.create(config));
         }

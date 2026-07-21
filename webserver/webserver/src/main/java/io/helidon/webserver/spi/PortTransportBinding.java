@@ -16,9 +16,12 @@
 
 package io.helidon.webserver.spi;
 
+import io.helidon.common.Api;
+
 /**
  * Optional transport binding capability for bindings with a resolved runtime port.
  */
+@Api.Internal
 public interface PortTransportBinding extends TransportBinding {
     /**
      * Resolved runtime port.

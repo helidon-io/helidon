@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 import io.helidon.webserver.BindingPlanContext;
 import io.helidon.webserver.TransportBindingContext;
@@ -23,7 +24,18 @@ import io.helidon.webserver.TransportBindingContext;
 /**
  * Factory for a configured transport binding.
  */
+@Api.Internal
 public interface TransportBindingFactory extends NamedService {
+    /**
+     * The configured provider key is the sole binding identity.
+     *
+     * @return transport binding type
+     */
+    @Override
+    default String name() {
+        return type();
+    }
+
     /**
      * Whether this binding factory is enabled.
      *

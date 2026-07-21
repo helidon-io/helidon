@@ -18,6 +18,8 @@ package io.helidon.webserver.spi;
 
 import java.time.Duration;
 
+import io.helidon.common.Api;
+
 /**
  * Transport binding owned by a logical WebServer listener.
  * <p>
@@ -25,6 +27,7 @@ import java.time.Duration;
  * or another provider-defined transport. The listener owns shared request routing and shared lifecycle state; each binding
  * owns transport-specific resources and active transport work.
  */
+@Api.Internal
 public interface TransportBinding {
     /**
      * Transport binding type.
@@ -37,22 +40,20 @@ public interface TransportBinding {
     String type();
 
     /**
-     * Transport binding name.
-     * <p>
-     * This distinguishes bindings within a listener for uniqueness checks and diagnostics.
-     *
-     * @return transport binding name
-     */
-    default String name() {
-        return type();
-    }
-
-    /**
      * Configured endpoint summary for diagnostics.
      *
      * @return configured endpoint summary
      */
     String configuredEndpoint();
+
+    /**
+     * Whether this binding holds one listener connection permit while waiting for an accepted connection.
+     * <p>
+     * This is internal planning metadata. A binding must not hold more than one idle connection permit.
+     *
+     * @return whether the binding holds an idle connection permit
+     */
+    boolean holdsIdleConnectionPermit();
 
     /**
      * Transport security applied by this binding.
@@ -88,14 +89,12 @@ public interface TransportBinding {
     /**
      * Suspend the binding for checkpoint.
      */
-    default void suspend() {
-    }
+    void suspend();
 
     /**
      * Resume the binding after restore.
      */
-    default void resume() {
-    }
+    void resume();
 
     /**
      * Transport binding shutdown result.
@@ -123,7 +122,9 @@ public interface TransportBinding {
 
         /**
          * Binding protects the endpoint by provider-defined means that are equivalent to TLS from the listener security
-         * policy perspective, but does not use listener TLS configuration.
+         * policy perspective, but deliberately does not use listener TLS configuration. It may coexist with ordinary
+         * listener TLS configuration, but it cannot satisfy listener virtual-host TLS because it does not consume the
+         * listener's TLS selection or reload state.
          */
         TLS_EQUIVALENT,
 

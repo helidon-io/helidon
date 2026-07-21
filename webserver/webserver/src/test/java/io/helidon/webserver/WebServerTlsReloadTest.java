@@ -16,15 +16,23 @@
 
 package io.helidon.webserver;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509TrustManager;
+
 import io.helidon.common.tls.Tls;
+import io.helidon.common.tls.TlsManager;
 import io.helidon.common.tls.TlsMaterial;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -75,13 +83,10 @@ class WebServerTlsReloadTest {
 
     @Test
     @SuppressWarnings("removal")
-    void reloadDeprecatedTlsDefaultTcpBindingReloadsOriginalTlsWithMaterial() {
+    void reloadDeprecatedTlsDefaultTcpBindingUsesDirectTlsReload() {
         Tls listenerTls = tls();
         Tls reloadTls = mock(Tls.class);
         when(reloadTls.enabled()).thenReturn(true);
-        when(reloadTls.prototype()).thenReturn(Tls.builder()
-                                                .trustAll(true)
-                                                .buildPrototype());
         WebServer server = WebServer.builder()
                 .shutdownHook(false)
                 .tls(listenerTls)
@@ -89,14 +94,13 @@ class WebServerTlsReloadTest {
 
         server.reloadTls(reloadTls);
 
-        verify(listenerTls).reload(any(TlsMaterial.class));
-        verify(listenerTls, never()).reload(reloadTls);
-        verify(reloadTls, never()).reload(any(TlsMaterial.class));
+        verify(listenerTls).reload(reloadTls);
+        verify(reloadTls, never()).prototype();
     }
 
     @Test
     @SuppressWarnings("removal")
-    void reloadDeprecatedTlsReloadsListenerTlsWithMaterial() {
+    void reloadDeprecatedTlsReloadsListenerTlsDirectly() {
         Tls listenerTls = tls();
         Tls reloadTls = Tls.builder()
                 .trustAll(true)
@@ -110,7 +114,39 @@ class WebServerTlsReloadTest {
 
         server.reloadTls(reloadTls);
 
-        verify(listenerTls).reload(any(TlsMaterial.class));
+        verify(listenerTls).reload(reloadTls);
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void reloadDeprecatedTlsPreservesManagerBackedSource() throws NoSuchAlgorithmException {
+        SSLContext sslContext = SSLContext.getDefault();
+        TlsManager listenerManager = mock(TlsManager.class);
+        when(listenerManager.sslContext()).thenReturn(sslContext);
+        Tls listenerTls = Tls.builder()
+                .manager(listenerManager)
+                .build();
+
+        TlsManager sourceManager = mock(TlsManager.class);
+        when(sourceManager.sslContext()).thenReturn(sslContext);
+        Tls sourceTls = Tls.builder()
+                .manager(sourceManager)
+                .build();
+        X509TrustManager sourceState = mock(X509TrustManager.class);
+        when(sourceManager.trustManager()).thenReturn(Optional.of(sourceState));
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .tls(listenerTls)
+                .build();
+
+        server.reloadTls(sourceTls);
+
+        ArgumentCaptor<Tls> sourceCaptor = ArgumentCaptor.forClass(Tls.class);
+        verify(listenerManager).reload(sourceCaptor.capture());
+        Tls capturedSource = sourceCaptor.getValue();
+        assertSame(sourceTls, capturedSource);
+        assertSame(sourceManager, capturedSource.prototype().manager());
+        assertSame(sourceState, capturedSource.prototype().manager().trustManager().orElseThrow());
     }
 
     @Test

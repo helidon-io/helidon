@@ -18,23 +18,17 @@ package io.helidon.webserver;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
 /**
  * Configuration of the built-in TCP listener transport binding.
  */
+@Api.Incubating
 @Prototype.Blueprint
-@Prototype.Configured(root = false, value = TcpTransportBinding.TYPE)
+@Prototype.Configured(root = false, value = TransportBindingTypes.TCP)
 @Prototype.Provides(TransportBindingFactoryProvider.class)
 interface TcpTransportConfigBlueprint {
-    /**
-     * Name of this binding.
-     *
-     * @return binding name
-     */
-    @Option.Default(TcpTransportBinding.TYPE)
-    String name();
-
     /**
      * Whether this binding is enabled.
      *
@@ -53,12 +47,4 @@ interface TcpTransportConfigBlueprint {
     @Option.DefaultBoolean(false)
     boolean required();
 
-    /**
-     * Binding type.
-     *
-     * @return binding type
-     */
-    default String type() {
-        return TcpTransportBinding.TYPE;
-    }
 }

@@ -122,6 +122,9 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
 
     /**
      * Returns {@code true} if TLS is configured for the default socket.
+     * <p>
+     * This is strictly a listener TLS configuration query. It does not report effective transport security and is not
+     * changed by bindings that provide their own TLS-equivalent protection.
      *
      * @return whether TLS is enabled for the default socket
      */
@@ -138,6 +141,9 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
 
     /**
      * Returns {@code true} if TLS is configured for the named socket.
+     * <p>
+     * This is strictly a listener TLS configuration query. It does not report effective transport security and is not
+     * changed by bindings that provide their own TLS-equivalent protection.
      *
      * @param socketName the name of a socket
      * @return whether TLS is enabled for the socket, returns {@code false} if the socket does not exists

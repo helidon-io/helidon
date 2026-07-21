@@ -24,6 +24,7 @@ import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 /**
  * Transport binding factory provider for the built-in TCP listener binding.
  */
+@Api.Internal
 public class TcpTransportBindingFactoryProvider implements TransportBindingFactoryProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
@@ -34,14 +35,13 @@ public class TcpTransportBindingFactoryProvider implements TransportBindingFacto
 
     @Override
     public String configKey() {
-        return TcpTransportBinding.TYPE;
+        return TransportBindingTypes.TCP;
     }
 
     @Override
-    public TransportBindingFactory create(Config config, String name) {
+    public TransportBindingFactory create(Config config) {
         TcpTransportConfig tcpConfig = TcpTransportConfig.builder()
                 .config(config)
-                .name(name)
                 .build();
         return TcpTransportBindingFactory.create(tcpConfig);
     }

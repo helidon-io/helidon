@@ -16,16 +16,25 @@
 
 package io.helidon.webserver;
 
+import java.net.SocketAddress;
 import java.util.OptionalInt;
-import java.util.Timer;
 
+import io.helidon.common.Api;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.webserver.spi.TransportBinding;
 
 /**
  * Context shared with listener transport bindings.
  */
+@Api.Internal
 public interface TransportBindingContext {
+    /**
+     * Normalized listener address for port-capable transport bindings.
+     *
+     * @return configured listener address
+     */
+    SocketAddress configuredAddress();
+
     /**
      * Logical listener context.
      *
@@ -39,13 +48,6 @@ public interface TransportBindingContext {
      * @return listener router
      */
     Router router();
-
-    /**
-     * Timer shared by transport bindings for listener work.
-     *
-     * @return listener timer
-     */
-    Timer timer();
 
     /**
      * Listener-wide request concurrency limit.
@@ -78,8 +80,8 @@ public interface TransportBindingContext {
     /**
      * First bound listener port, if any.
      * <p>
-     * Port-capable bindings should use this value when present and when their own endpoint requests a random port, so all
-     * port-capable bindings under the same listener converge on one runtime port.
+     * Port-capable bindings should use this value when present and when the listener's configured port is {@code 0}, so
+     * all port-capable bindings under the same listener converge on one runtime port.
      *
      * @return bound listener port
      */

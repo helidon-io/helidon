@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.time.Duration;
 import java.util.Map;
@@ -40,11 +41,14 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
     private static final Map<String, DatagramSocket> BOUND_SOCKETS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> STARTS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> STOPS = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicInteger> SUSPENDS = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicInteger> RESUMES = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> PENDING_STOPS = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> PENDING_EXECUTOR_TASKS = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> EXECUTOR_TASKS_STARTED = new ConcurrentHashMap<>();
     private static final Map<String, ListenerTlsContext> LISTENER_TLS_CONTEXTS = new ConcurrentHashMap<>();
     private static final Map<String, Limit> CONNECTION_LIMITS = new ConcurrentHashMap<>();
+    private static final Map<String, SocketAddress> CONFIGURED_ADDRESSES = new ConcurrentHashMap<>();
 
     static void reset() {
         PLAN_CONTEXTS.clear();
@@ -55,12 +59,15 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         BOUND_SOCKETS.clear();
         STARTS.clear();
         STOPS.clear();
+        SUSPENDS.clear();
+        RESUMES.clear();
         PENDING_STOPS.clear();
         PENDING_EXECUTOR_TASKS.values().forEach(CountDownLatch::countDown);
         PENDING_EXECUTOR_TASKS.clear();
         EXECUTOR_TASKS_STARTED.clear();
         LISTENER_TLS_CONTEXTS.clear();
         CONNECTION_LIMITS.clear();
+        CONFIGURED_ADDRESSES.clear();
     }
 
     static ListenerConfig listenerConfigAtPlan(String name) {
@@ -88,6 +95,14 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         return counter(STOPS, name).get();
     }
 
+    static int suspends(String name) {
+        return counter(SUSPENDS, name).get();
+    }
+
+    static int resumes(String name) {
+        return counter(RESUMES, name).get();
+    }
+
     static void completeStop(String name) {
         CountDownLatch latch = PENDING_STOPS.remove(name);
         if (latch != null) {
@@ -108,6 +123,10 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         return CONNECTION_LIMITS.get(name);
     }
 
+    static SocketAddress configuredAddress(String name) {
+        return CONFIGURED_ADDRESSES.get(name);
+    }
+
     static void completeExecutorTask(String name) {
         CountDownLatch latch = PENDING_EXECUTOR_TASKS.remove(name);
         if (latch != null) {
@@ -121,19 +140,21 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
     }
 
     @Override
-    public TestTransportBindingConfig create(Config config, String name) {
-        return new TestTransportBindingConfig(name, config.get("enabled").asBoolean().orElse(false));
+    public TestTransportBindingConfig create(Config config) {
+        return new TestTransportBindingConfig(TestTransportBindingConfig.TYPE,
+                                              config.get("enabled").asBoolean().orElse(false));
     }
 
     static boolean canBind(TestTransportBindingConfig config, BindingPlanContext context) {
-        PLAN_CONTEXTS.put(config.name(), context);
+        PLAN_CONTEXTS.put(config.testId(), context);
         return config.enabled();
     }
 
     static TransportBinding create(TestTransportBindingConfig config, TransportBindingContext context) {
-        PORT_AT_CREATE.put(config.name(), context.boundPort().orElse(-1));
-        LISTENER_TLS_CONTEXTS.put(config.name(), context.listenerTls());
-        CONNECTION_LIMITS.put(config.name(), context.connectionLimit());
+        PORT_AT_CREATE.put(config.testId(), context.boundPort().orElse(-1));
+        LISTENER_TLS_CONTEXTS.put(config.testId(), context.listenerTls());
+        CONNECTION_LIMITS.put(config.testId(), context.connectionLimit());
+        CONFIGURED_ADDRESSES.put(config.testId(), context.configuredAddress());
         return new TestTransportBinding(context, config);
     }
 
@@ -141,16 +162,34 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         return counters.computeIfAbsent(name, _ -> new AtomicInteger());
     }
 
+    private static int bindDatagramSocket(String name) {
+        try {
+            DatagramSocket socket = new DatagramSocket(0, InetAddress.getLoopbackAddress());
+            closeBoundSocket(name);
+            BOUND_SOCKETS.put(name, socket);
+            return socket.getLocalPort();
+        } catch (SocketException e) {
+            throw new IllegalStateException("Failed to bind test transport socket", e);
+        }
+    }
+
+    private static void closeBoundSocket(String name) {
+        DatagramSocket socket = BOUND_SOCKETS.remove(name);
+        if (socket != null) {
+            socket.close();
+        }
+    }
+
     private record TestTransportBinding(TransportBindingContext context,
                                         TestTransportBindingConfig config) implements TransportBinding, PortTransportBinding {
         @Override
         public String type() {
-            return config.type();
+            return config.runtimeType();
         }
 
         @Override
-        public String name() {
-            return config.name();
+        public boolean holdsIdleConnectionPermit() {
+            return config.holdsIdleConnectionPermit();
         }
 
         @Override
@@ -160,20 +199,21 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
 
         @Override
         public void start() {
-            counter(STARTS, config.name()).incrementAndGet();
+            counter(STARTS, config.testId()).incrementAndGet();
             if (config.failStart()) {
-                throw new IllegalStateException("test transport start failed " + config.name());
+                throw new IllegalStateException("test transport start failed " + config.testId());
             }
             int portAtStart = context.boundPort().orElse(-1);
-            PORT_AT_START.put(config.name(), portAtStart);
+            PORT_AT_START.put(config.testId(), portAtStart);
             if (config.portCapable()) {
-                BOUND_PORTS.put(config.name(), portAtStart > 0 ? portAtStart : bindDatagramSocket(config.name()));
+                BOUND_PORTS.put(config.testId(),
+                                portAtStart > 0 ? portAtStart : bindDatagramSocket(config.testId()));
             }
             if (config.blockSharedExecutor()) {
                 CountDownLatch release = new CountDownLatch(1);
                 CountDownLatch started = new CountDownLatch(1);
-                PENDING_EXECUTOR_TASKS.put(config.name(), release);
-                EXECUTOR_TASKS_STARTED.put(config.name(), started);
+                PENDING_EXECUTOR_TASKS.put(config.testId(), release);
+                EXECUTOR_TASKS_STARTED.put(config.testId(), started);
                 context.listenerContext().executor().execute(() -> {
                     started.countDown();
                     while (release.getCount() != 0) {
@@ -189,17 +229,17 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
                 context.listenerContext().executor()
                         .execute(() -> context.fatalBindingFailure(this,
                                                                    new IllegalStateException("test transport fatal failure "
-                                                                                                     + config.name())));
+                                                                                                     + config.testId())));
             }
         }
 
         @Override
         public ShutdownResult stop(Duration gracefulPeriod) {
-            counter(STOPS, config.name()).incrementAndGet();
-            closeBoundSocket(config.name());
+            counter(STOPS, config.testId()).incrementAndGet();
+            closeBoundSocket(config.testId());
             if (config.hangStop()) {
                 CountDownLatch latch = new CountDownLatch(1);
-                PENDING_STOPS.put(config.name(), latch);
+                PENDING_STOPS.put(config.testId(), latch);
                 while (true) {
                     try {
                         latch.await();
@@ -219,6 +259,16 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         }
 
         @Override
+        public void suspend() {
+            counter(SUSPENDS, config.testId()).incrementAndGet();
+        }
+
+        @Override
+        public void resume() {
+            counter(RESUMES, config.testId()).incrementAndGet();
+        }
+
+        @Override
         public Security security() {
             return config.security();
         }
@@ -228,25 +278,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
             if (!config.portCapable()) {
                 return -1;
             }
-            return BOUND_PORTS.getOrDefault(config.name(), -1);
-        }
-    }
-
-    private static int bindDatagramSocket(String name) {
-        try {
-            DatagramSocket socket = new DatagramSocket(0, InetAddress.getLoopbackAddress());
-            closeBoundSocket(name);
-            BOUND_SOCKETS.put(name, socket);
-            return socket.getLocalPort();
-        } catch (SocketException e) {
-            throw new IllegalStateException("Failed to bind test transport socket", e);
-        }
-    }
-
-    private static void closeBoundSocket(String name) {
-        DatagramSocket socket = BOUND_SOCKETS.remove(name);
-        if (socket != null) {
-            socket.close();
+            return BOUND_PORTS.getOrDefault(config.testId(), -1);
         }
     }
 }

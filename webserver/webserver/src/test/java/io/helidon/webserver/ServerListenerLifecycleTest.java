@@ -23,10 +23,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.SocketTimeoutException;
+import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,19 +42,20 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
@@ -64,6 +68,8 @@ import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
+import io.helidon.webserver.spi.TransportBinding;
+import io.helidon.webserver.spi.TransportBindingFactory;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -77,11 +83,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -874,7 +877,6 @@ class ServerListenerLifecycleTest {
                 .port(0)
                 .bindingsDiscoverServices(false)
                 .addBinding(TcpTransportConfig.builder()
-                                    .name("primary")
                                     .required(true)
                                     .buildPrototype())
                 .build()
@@ -903,6 +905,41 @@ class ServerListenerLifecycleTest {
             assertThat(server.port(), is(-1));
             assertThat(Files.exists(socketPath), is(true));
         } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    @EnabledOnOs(OS.LINUX)
+    void udsTransportBindingRebindsAndAcceptsAfterSuspendResume(@TempDir Path tempDir) throws Exception {
+        Path socketPath = tempDir.resolve("server.sock");
+        BlockingConnection connection = new BlockingConnection();
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(connection);
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(udsBinding(socketPath))
+                .addConnectionSelector(selector)
+                .build()
+                .start();
+
+        try {
+            assertThat(Files.exists(socketPath), is(true));
+
+            server.suspend();
+            assertThat(Files.exists(socketPath), is(false));
+
+            server.resume();
+            assertThat(Files.exists(socketPath), is(true));
+
+            try (SocketChannel socket = SocketChannel.open(StandardProtocolFamily.UNIX)) {
+                socket.connect(UnixDomainSocketAddress.of(socketPath));
+                socket.write(ByteBuffer.wrap(new byte[] {'x'}));
+                assertThat(connection.awaitHandling(Duration.ofSeconds(5)), is(true));
+            }
+        } finally {
+            connection.release();
             stopUntilStopped(server);
         }
     }
@@ -970,21 +1007,22 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void explicitNamedTcpBindingFailsWithDiscoveredDefaultTcpBinding() {
-        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+    void explicitTcpBindingOverlaysDiscoveredDefaultTcpBinding() {
+        WebServer server = WebServer.builder()
                 .shutdownHook(false)
                 .address(InetAddress.getLoopbackAddress())
                 .port(0)
                 .addBinding(TcpTransportConfig.builder()
-                                    .name("primary")
                                     .required(true)
                                     .buildPrototype())
                 .build()
-                .start());
+                .start();
 
-        assertThat(failure.getMessage(), containsString("Multiple transport bindings of type \"tcp\""));
-        assertThat(failure.getMessage(), containsString("\"primary\" and \"tcp\""));
-        assertThat(failure.getMessage(), containsString("use the \"tcp\" name"));
+        try {
+            assertThat(server.port(), greaterThan(0));
+        } finally {
+            stopUntilStopped(server);
+        }
     }
 
     @Test
@@ -1033,6 +1071,8 @@ class ServerListenerLifecycleTest {
         ListenerConfig listenerConfig = TestTransportBindingProvider.listenerConfigAtPlan(TestTransportBindingConfig.TYPE);
         assertThat(listenerConfig, notNullValue());
         assertThat(listenerConfig.address(), is(address));
+        assertThat(TestTransportBindingProvider.configuredAddress(TestTransportBindingConfig.TYPE),
+                   is(new InetSocketAddress(address, 0)));
     }
 
     @Test
@@ -1055,42 +1095,107 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void listenerWarnsWhenActiveBindingsExceedMaxConnections() {
-        TestTransportBindingProvider.reset();
+    @EnabledOnOs(OS.LINUX)
+    void finiteConnectionLimitPreservesConcentratedTcpCapacityWithUdsBinding(@TempDir Path tempDir) throws Exception {
+        Path socketPath = tempDir.resolve("server.sock");
+        LatchingConnectionLimit connectionLimit = new LatchingConnectionLimit(3);
+        AtomicInteger releasesAtThirdHandling = new AtomicInteger(-1);
+        BlockingConnection first = new BlockingConnection();
+        BlockingConnection second = new BlockingConnection();
+        BlockingConnection third = new BlockingConnection(() -> releasesAtThirdHandling.set(
+                connectionLimit.releaseCount()));
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(first, second, third);
+        InetAddress address = InetAddress.getLoopbackAddress();
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .address(address)
+                .port(0)
+                .bindingsDiscoverServices(false)
+                .connectionSelectorProvidersDiscoverServices(false)
+                .addConnectionSelector(selector)
+                .buildPrototype();
+        TestTransportBindingContext context = new TestTransportBindingContext(new InetSocketAddress(address, 0),
+                                                                              listenerConfig,
+                                                                              connectionLimit);
+        Timer timer = new Timer("test-concentrated-connection-capacity", true);
+        UdsTransportBinding udsBinding = new UdsTransportBinding(context, udsBinding(socketPath), timer);
+        TcpTransportBinding tcpBinding = new TcpTransportBinding(context, timer);
 
-        try (TestLogHandler logHandler = TestLogHandler.install()) {
-            WebServer.builder()
-                    .shutdownHook(false)
-                    .bindingsDiscoverServices(false)
-                    .maxConnections(1)
-                    .addBinding(disabledTcpBinding())
-                    .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
-                    .addBinding(TestTransportBindingConfig.alternate("second", true))
-                    .build();
+        try {
+            udsBinding.start();
+            tcpBinding.start();
 
-            assertThat(logHandler.warningMessages(),
-                       hasItem(allOf(containsString("Listener @default has 2 active transport bindings"),
-                                     containsString("maxConnections is 1"),
-                                     containsString("may never accept a connection"))));
+            assertThat(Files.exists(socketPath), is(true));
+            assertThat(connectionLimit.awaitIdleReservations(Duration.ofSeconds(5)), is(true));
+
+            try (Socket firstSocket = new Socket(address, tcpBinding.port())) {
+                firstSocket.getOutputStream().write('x');
+                assertThat(first.awaitHandling(Duration.ofSeconds(5)), is(true));
+
+                try (Socket secondSocket = new Socket(address, tcpBinding.port())) {
+                    secondSocket.getOutputStream().write('x');
+                    assertThat(second.awaitHandling(Duration.ofSeconds(5)), is(true));
+
+                    assertThat(connectionLimit.awaitFourthAcquireBlocked(Duration.ofSeconds(5)), is(true));
+                    assertThat(connectionLimit.availablePermits(), is(0));
+                    assertThat(connectionLimit.releaseCount(), is(0));
+
+                    try (Socket thirdSocket = new Socket(address, tcpBinding.port())) {
+                        thirdSocket.getOutputStream().write('x');
+
+                        first.release();
+                        assertThat(third.awaitHandling(Duration.ofSeconds(5)), is(true));
+                        assertThat(releasesAtThirdHandling.get(), is(1));
+                    }
+                }
+            }
+            assertThat(context.bindingFailure(), nullValue());
+        } finally {
+            first.release();
+            second.release();
+            third.release();
+            try {
+                tcpBinding.stop(Duration.ofSeconds(5));
+            } finally {
+                try {
+                    udsBinding.stop(Duration.ofSeconds(5));
+                } finally {
+                    timer.cancel();
+                    context.close();
+                }
+            }
         }
     }
 
     @Test
-    void listenerDoesNotWarnWhenDisabledBindingsExceedMaxConnections() {
+    void listenerRejectsIdlePermitBindingsThatExceedMaxConnections() {
         TestTransportBindingProvider.reset();
 
-        try (TestLogHandler logHandler = TestLogHandler.install()) {
-            WebServer.builder()
-                    .shutdownHook(false)
-                    .bindingsDiscoverServices(false)
-                    .maxConnections(1)
-                    .addBinding(disabledTcpBinding())
-                    .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
-                    .addBinding(TestTransportBindingConfig.alternate("disabled", false))
-                    .build();
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .maxConnections(1)
+                .addBinding(disabledTcpBinding())
+                .addBinding(TestTransportBindingConfig.idlePermit("first"))
+                .addBinding(TestTransportBindingConfig.alternateIdlePermit("second"))
+                .build());
 
-            assertThat(logHandler.warningMessages(), empty());
-        }
+        assertThat(failureMessages(failure), containsString("max-connections=1"));
+        assertThat(failureMessages(failure), containsString("2 active transport bindings"));
+        assertThat(failureMessages(failure), containsString("reserve an idle connection permit"));
+    }
+
+    @Test
+    void eventDrivenBindingDoesNotConsumeIdlePermitCapacity() {
+        TestTransportBindingProvider.reset();
+
+        WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .maxConnections(1)
+                .addBinding(disabledTcpBinding())
+                .addBinding(TestTransportBindingConfig.idlePermit("idle"))
+                .addBinding(TestTransportBindingConfig.alternate("event-driven", true))
+                .build();
     }
 
     @Test
@@ -1116,7 +1221,7 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void explicitDefaultNamedTcpTransportBindingOrderControlsPortOwner() {
+    void explicitTcpTransportBindingOrderControlsPortOwnerWithPrototype() {
         TestTransportBindingProvider.reset();
         WebServer server = WebServer.builder()
                 .shutdownHook(false)
@@ -1136,21 +1241,19 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void explicitDefaultNamedTcpTransportBindingDoesNotSuppressNamedTcpTransportBinding() {
+    void duplicateTcpTransportBindingsFail() {
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
                 .shutdownHook(false)
                 .bindingsDiscoverServices(false)
                 .addBinding(TcpTransportConfig.create())
                 .addBinding(TcpTransportConfig.builder()
-                                    .name("primary")
                                     .required(true)
                                     .buildPrototype())
                 .build()
                 .start());
 
-        assertThat(failure.getMessage(), containsString("Multiple transport bindings of type \"tcp\""));
-        assertThat(failure.getMessage(), containsString("\"tcp\" and \"primary\""));
-        assertThat(failure.getMessage(), containsString("use the \"tcp\" name"));
+        assertThat(failure.getMessage(), containsString("Multiple configured provider instances of type \"tcp\""));
+        assertThat(failure.getMessage(), containsString("provider identity TYPE_ONLY permits one instance per type"));
     }
 
     @Test
@@ -1201,7 +1304,8 @@ class ServerListenerLifecycleTest {
         try {
             RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
 
-            assertThat(failureMessages(failure), containsString("Timed out waiting for transport binding hanging to stop"));
+            assertThat(failureMessages(failure),
+                       containsString("Timed out waiting for transport binding type \"test-transport\""));
         } finally {
             TestTransportBindingProvider.completeStop("hanging");
             stopUntilStopped(server);
@@ -1225,7 +1329,8 @@ class ServerListenerLifecycleTest {
             RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
             long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
 
-            assertThat(failureMessages(failure), containsString("Timed out waiting for transport binding hanging to stop"));
+            assertThat(failureMessages(failure),
+                       containsString("Timed out waiting for transport binding type \"test-transport\""));
             assertThat("stop should not wait a second binding-stop grace period",
                        elapsedMillis, lessThan(3_500L));
         } finally {
@@ -1282,6 +1387,28 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void listenerInvokesMandatoryBindingCheckpointLifecycle() {
+        TestTransportBindingProvider.reset();
+        LoomServer server = (LoomServer) WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .build()
+                .start();
+
+        try {
+            server.suspend();
+            assertThat(TestTransportBindingProvider.suspends("test"), is(1));
+
+            server.resume();
+            assertThat(TestTransportBindingProvider.resumes("test"), is(1));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void transportBindingStopsShareListenerGracePeriod() {
         TestTransportBindingProvider.reset();
         WebServer server = WebServer.builder()
@@ -1296,8 +1423,10 @@ class ServerListenerLifecycleTest {
         try {
             RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
 
-            assertThat(failureMessages(failure), containsString("Timed out waiting for transport binding first to stop"));
-            assertThat(failureMessages(failure), containsString("Timed out waiting for transport binding second to stop"));
+            assertThat(failureMessages(failure),
+                       containsString("Timed out waiting for transport binding type \"test-transport\""));
+            assertThat(failureMessages(failure),
+                       containsString("Timed out waiting for transport binding type \"alternate-test-transport\""));
         } finally {
             TestTransportBindingProvider.completeStop("first");
             TestTransportBindingProvider.completeStop("second");
@@ -1376,21 +1505,6 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void listenerPlanningFailsWhenExplicitNamedTcpTransportBindingIsDisabled() {
-        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
-                .shutdownHook(false)
-                .bindingsDiscoverServices(false)
-                .addBinding(TcpTransportConfig.builder()
-                                    .name("primary")
-                                    .enabled(false)
-                                    .buildPrototype())
-                .build()
-                .start());
-
-        assertThat(failureMessages(failure), containsString("has no active transport bindings"));
-    }
-
-    @Test
     void listenerPlanningFailsWhenConfigDisablesTcpTransportBinding() {
         Config config = Config.just("""
                 server:
@@ -1446,20 +1560,68 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(failure.getMessage(), containsString("Multiple transport bindings of type \"test-transport\""));
-        assertThat(failure.getMessage(), containsString("\"test\" and \"custom-test\""));
-        assertThat(failure.getMessage(), containsString("use the \"test-transport\" name"));
+        assertThat(failure.getMessage(),
+                   containsString("Multiple configured provider instances of type \"test-transport\""));
+        assertThat(failure.getMessage(), containsString("provider identity TYPE_ONLY permits one instance per type"));
     }
 
     @Test
-    void listenerPlanningFailsForDuplicateEnabledConfigTransportBinding() {
+    void listenerPlanningRejectsFactoryProviderKeyMismatch() {
+        TransportBindingFactory factory = new TransportBindingFactory() {
+            @Override
+            public String type() {
+                return "factory-type";
+            }
+
+            @Override
+            public String name() {
+                return "provider-key";
+            }
+
+            @Override
+            public boolean canBind(BindingPlanContext context) {
+                return true;
+            }
+
+            @Override
+            public TransportBinding create(TransportBindingContext context) {
+                throw new AssertionError("Factory must not create a binding after identity validation fails");
+            }
+        };
+
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(factory)
+                .build());
+
+        assertThat(failure.getMessage(), containsString("factory type \"factory-type\""));
+        assertThat(failure.getMessage(), containsString("provider key \"provider-key\""));
+    }
+
+    @Test
+    void listenerPlanningRejectsRuntimeBindingTypeMismatch() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(TestTransportBindingConfig.runtimeTypeMismatch("mismatch"))
+                .build());
+
+        assertThat(failure.getMessage(), containsString("factory type \"test-transport\""));
+        assertThat(failure.getMessage(), containsString("created binding type \"alternate-test-transport\""));
+    }
+
+    @Test
+    void listenerConfigurationRejectsBindingListForm() {
         Config config = Config.just("""
                 server:
                   bindings:
-                    - type: tcp
-                      name: primary
-                    - type: tcp
-                      name: secondary
+                    - tcp:
+                        required: true
+                    - uds:
+                        enabled: false
                 """, MediaTypes.APPLICATION_YAML);
 
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
@@ -1468,9 +1630,8 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(failure.getMessage(), containsString("Multiple transport bindings of type \"tcp\""));
-        assertThat(failure.getMessage(), containsString("\"primary\" and \"secondary\""));
-        assertThat(failure.getMessage(), containsString("use the \"tcp\" name"));
+        assertThat(failure.getMessage(), containsString("Configured providers at server.bindings"));
+        assertThat(failure.getMessage(), containsString("must use object form"));
     }
 
     @Test
@@ -1510,7 +1671,7 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void listenerTlsAllowsTlsEquivalentTransportBindings() {
+    void listenerTlsAllowsTlsEquivalentTransportBindingsAndReportsConfiguredTls() {
         TestTransportBindingProvider.reset();
         WebServer server = WebServer.builder()
                 .shutdownHook(false)
@@ -1527,10 +1688,72 @@ class ServerListenerLifecycleTest {
 
         try {
             assertThat(TestTransportBindingProvider.starts("test"), is(1));
+            assertThat(server.hasTls(), is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void tlsEquivalentBindingWithoutListenerTlsDoesNotReportConfiguredTls() {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(TestTransportBindingConfig.tlsEquivalent("test"))
+                .build()
+                .start();
+
+        try {
+            assertThat(TestTransportBindingProvider.starts("test"), is(1));
             assertThat(server.hasTls(), is(false));
         } finally {
             stopUntilStopped(server);
         }
+    }
+
+    @Test
+    void listenerTlsAllowsTcpAndTlsEquivalentBindingsTogether() {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .tls(Tls.builder()
+                             .trustAll(true)
+                             .build())
+                .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.create())
+                .addBinding(TestTransportBindingConfig.tlsEquivalent("test"))
+                .build()
+                .start();
+
+        try {
+            assertThat(TestTransportBindingProvider.starts("test"), is(1));
+            assertThat(server.hasTls(), is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void virtualHostTlsRejectsTlsEquivalentBinding() {
+        TestTransportBindingProvider.reset();
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .tls(Tls.builder()
+                             .trustAll(true)
+                             .build())
+                .addVirtualHost(virtualHost -> virtualHost.host("api.example.com")
+                        .tls(Tls.builder()
+                                     .trustAll(true)
+                                     .build()))
+                .bindingsDiscoverServices(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(TestTransportBindingConfig.tlsEquivalent("test"))
+                .build());
+
+        assertThat(failureMessages(failure), containsString("TLS virtual hosts configured"));
+        assertThat(failureMessages(failure), containsString("does not use listener TLS"));
     }
 
     @Test
@@ -1621,7 +1844,7 @@ class ServerListenerLifecycleTest {
                         .address(InetAddress.getLoopbackAddress())
                         .port(0)
                         .addProtocol(new TestRequiredTransportProtocolConfig("test-protocol",
-                                                                             Set.of(TcpTransportBinding.TYPE))))
+                                                                             Set.of(TransportBindingTypes.TCP))))
                 .buildPrototype();
 
         assertThat(serverConfig.sockets().get("admin").name(), is("admin"));
@@ -1790,48 +2013,6 @@ class ServerListenerLifecycleTest {
         }
     }
 
-    private static final class TestLogHandler extends Handler implements AutoCloseable {
-        private final Logger logger;
-        private final Level previousLevel;
-        private final List<LogRecord> records = new ArrayList<>();
-
-        private TestLogHandler(Logger logger) {
-            this.logger = logger;
-            this.previousLevel = logger.getLevel();
-            setLevel(Level.ALL);
-        }
-
-        static TestLogHandler install() {
-            Logger logger = Logger.getLogger(ServerListener.class.getName());
-            TestLogHandler handler = new TestLogHandler(logger);
-            logger.setLevel(Level.ALL);
-            logger.addHandler(handler);
-            return handler;
-        }
-
-        @Override
-        public void publish(LogRecord record) {
-            records.add(record);
-        }
-
-        @Override
-        public void flush() {
-        }
-
-        @Override
-        public void close() {
-            logger.removeHandler(this);
-            logger.setLevel(previousLevel);
-        }
-
-        private List<String> warningMessages() {
-            return records.stream()
-                    .filter(record -> record.getLevel().intValue() >= Level.WARNING.intValue())
-                    .map(LogRecord::getMessage)
-                    .toList();
-        }
-    }
-
     private static WebServer startTcpPortReuseServerWithRetry(InetAddress address) {
         RuntimeException lastBindFailure = null;
         for (int i = 0; i < 10; i++) {
@@ -1844,7 +2025,6 @@ class ServerListenerLifecycleTest {
                         .bindingsDiscoverServices(false)
                         .addBinding(new TestTransportBindingConfig("test", true, false, false, false, true))
                         .addBinding(TcpTransportConfig.builder()
-                                            .name("primary")
                                             .required(true)
                                             .buildPrototype())
                         .build()
@@ -2099,6 +2279,237 @@ class ServerListenerLifecycleTest {
         }
     }
 
+    private static final class TestTransportBindingContext
+            implements TransportBindingContext, ListenerContext, ListenerTlsContext, AutoCloseable {
+        private final SocketAddress configuredAddress;
+        private final ListenerConfig listenerConfig;
+        private final Limit connectionLimit;
+        private final Limit requestLimit = FixedLimit.create();
+        private final Router router = Router.empty();
+        private final Context context = Context.builder()
+                .id("test-transport-binding-context")
+                .build();
+        private final MediaContext mediaContext = MediaContext.create();
+        private final ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        private final DirectHandlers directHandlers = DirectHandlers.create();
+        private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        private final Tls tls = Tls.builder()
+                .enabled(false)
+                .build();
+        private final AtomicReference<Throwable> bindingFailure = new AtomicReference<>();
+
+        private TestTransportBindingContext(SocketAddress configuredAddress,
+                                            ListenerConfig listenerConfig,
+                                            Limit connectionLimit) {
+            this.configuredAddress = configuredAddress;
+            this.listenerConfig = listenerConfig;
+            this.connectionLimit = connectionLimit;
+        }
+
+        @Override
+        public SocketAddress configuredAddress() {
+            return configuredAddress;
+        }
+
+        @Override
+        public ListenerContext listenerContext() {
+            return this;
+        }
+
+        @Override
+        public Router router() {
+            return router;
+        }
+
+        @Override
+        public Limit requestLimit() {
+            return requestLimit;
+        }
+
+        @Override
+        public Limit connectionLimit() {
+            return connectionLimit;
+        }
+
+        @Override
+        public ListenerTlsContext listenerTls() {
+            return this;
+        }
+
+        @Override
+        public void fatalBindingFailure(TransportBinding binding, Throwable cause) {
+            bindingFailure.compareAndSet(null, cause);
+        }
+
+        @Override
+        public Context context() {
+            return context;
+        }
+
+        @Override
+        public MediaContext mediaContext() {
+            return mediaContext;
+        }
+
+        @Override
+        public ContentEncodingContext contentEncodingContext() {
+            return contentEncodingContext;
+        }
+
+        @Override
+        public DirectHandlers directHandlers() {
+            return directHandlers;
+        }
+
+        @Override
+        public ListenerConfig config() {
+            return listenerConfig;
+        }
+
+        @Override
+        public ExecutorService executor() {
+            return executor;
+        }
+
+        @Override
+        public Tls tls() {
+            return tls;
+        }
+
+        @Override
+        public boolean virtualHostsEnabled() {
+            return false;
+        }
+
+        @Override
+        public void validateVirtualHosts() {
+        }
+
+        @Override
+        public Selection select(String presentedHost) {
+            throw new AssertionError("TLS selection is not expected for an unprotected test binding");
+        }
+
+        @Override
+        public Selection selectWithoutSni() {
+            throw new AssertionError("TLS selection is not expected for an unprotected test binding");
+        }
+
+        private Throwable bindingFailure() {
+            return bindingFailure.get();
+        }
+
+        @Override
+        public void close() {
+            executor.shutdownNow();
+        }
+    }
+
+    private static final class LatchingConnectionLimit implements Limit {
+        private static final String NAME = "test-connection-limit";
+        private static final String TYPE = "test-fixed";
+
+        private final int permits;
+        private final Semaphore semaphore;
+        private final CountDownLatch idleReservations = new CountDownLatch(2);
+        private final CountDownLatch fourthAcquireBlocked = new CountDownLatch(1);
+        private final AtomicInteger acquireAttempts = new AtomicInteger();
+        private final AtomicInteger releases = new AtomicInteger();
+
+        private LatchingConnectionLimit(int permits) {
+            this.permits = permits;
+            this.semaphore = new Semaphore(permits);
+        }
+
+        @Override
+        public Limit copy() {
+            return new LatchingConnectionLimit(permits);
+        }
+
+        @Override
+        public String name() {
+            return NAME;
+        }
+
+        @Override
+        public String type() {
+            return TYPE;
+        }
+
+        @Override
+        public LimitAlgorithm.Outcome tryAcquireOutcome(boolean wait) {
+            int attempt = acquireAttempts.incrementAndGet();
+            if (semaphore.tryAcquire()) {
+                idleReservations.countDown();
+                return LimitAlgorithm.Outcome.immediateAcceptance(NAME, TYPE, newToken());
+            }
+            if (!wait) {
+                return LimitAlgorithm.Outcome.immediateRejection(NAME, TYPE);
+            }
+
+            long waitStarted = System.nanoTime();
+            if (attempt == 4) {
+                fourthAcquireBlocked.countDown();
+            }
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return LimitAlgorithm.Outcome.deferredRejection(NAME, TYPE, waitStarted, System.nanoTime());
+            }
+            idleReservations.countDown();
+            return LimitAlgorithm.Outcome.deferredAcceptance(NAME,
+                                                             TYPE,
+                                                             newToken(),
+                                                             waitStarted,
+                                                             System.nanoTime());
+        }
+
+        private LimitAlgorithm.Token newToken() {
+            return new LimitAlgorithm.Token() {
+                private final AtomicBoolean completed = new AtomicBoolean();
+
+                @Override
+                public void dropped() {
+                    complete();
+                }
+
+                @Override
+                public void ignore() {
+                    complete();
+                }
+
+                @Override
+                public void success() {
+                    complete();
+                }
+
+                private void complete() {
+                    if (completed.compareAndSet(false, true)) {
+                        releases.incrementAndGet();
+                        semaphore.release();
+                    }
+                }
+            };
+        }
+
+        private boolean awaitIdleReservations(Duration timeout) throws InterruptedException {
+            return idleReservations.await(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        }
+
+        private boolean awaitFourthAcquireBlocked(Duration timeout) throws InterruptedException {
+            return fourthAcquireBlocked.await(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        }
+
+        private int availablePermits() {
+            return semaphore.availablePermits();
+        }
+
+        private int releaseCount() {
+            return releases.get();
+        }
+    }
+
     private static final class PreRegistrationThenIdleConnectionSelector implements ServerConnectionSelector {
         private final AtomicBoolean preRegistrationSelected = new AtomicBoolean();
         private final ThreadLocal<Boolean> preRegistrationHandler = ThreadLocal.withInitial(() -> false);
@@ -2258,9 +2669,19 @@ class ServerListenerLifecycleTest {
         private final CountDownLatch release = new CountDownLatch(1);
         private final AtomicInteger gracefulCloses = new AtomicInteger();
         private final AtomicInteger forcedCloses = new AtomicInteger();
+        private final Runnable onHandling;
+
+        private BlockingConnection() {
+            this(() -> {});
+        }
+
+        private BlockingConnection(Runnable onHandling) {
+            this.onHandling = onHandling;
+        }
 
         @Override
         public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+            onHandling.run();
             handling.countDown();
             while (release.getCount() != 0) {
                 try {
@@ -2287,6 +2708,10 @@ class ServerListenerLifecycleTest {
 
         private boolean handlingStarted() {
             return handling.getCount() == 0;
+        }
+
+        private boolean awaitHandling(Duration timeout) throws InterruptedException {
+            return handling.await(timeout.toMillis(), TimeUnit.MILLISECONDS);
         }
 
         private int gracefulCloses() {
