@@ -19,9 +19,9 @@ package io.helidon.webserver;
 import io.helidon.common.Api;
 
 /**
- * Stable configuration and provider keys for built-in WebServer transport binding types.
+ * Fixed configuration and provider key values for built-in WebServer transport binding types.
  */
-@Api.Internal
+@Api.Incubating
 public final class TransportBindingTypes {
     /**
      * TCP transport binding type.
