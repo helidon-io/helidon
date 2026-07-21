@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 
 @AddConfig(key = "security.providers.1.oidc.token-signature-validation", value = "false")
+@AddConfig(key = "security.providers.1.oidc.cookie-encryption-enabled", value = "false")
 class RefreshTokenIT extends CommonLoginBase {
 
     @Test
