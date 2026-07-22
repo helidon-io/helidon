@@ -54,7 +54,7 @@ import static io.helidon.http.Status.OK_200;
 import static io.helidon.http.Status.PRECONDITION_FAILED_412;
 
 /**
- * LRA coordinator with Narayana like rest api.
+ * Mock LRA coordinator with Narayana like rest api for testing.
  */
 public class CoordinatorService implements HttpService {
 
@@ -84,6 +84,8 @@ public class CoordinatorService implements HttpService {
     private volatile boolean shuttingDown = false;
 
     CoordinatorService(LraPersistentRegistry lraPersistentRegistry, Supplier<URI> coordinatorUriSupplier, Config config) {
+        LOGGER.log(Level.WARNING,
+                   "The Helidon LRA coordinator is a mock/test tool and must not be used in production.");
         this.lraPersistentRegistry = lraPersistentRegistry;
         this.coordinatorURL = LazyValue.create(coordinatorUriSupplier);
         this.config = config;
@@ -443,7 +445,9 @@ public class CoordinatorService implements HttpService {
     }
 
     /**
-     * Coordinator builder.
+     * Mock LRA coordinator with Narayana like rest api for testing.
+     * <p>
+     * Builder for {@link CoordinatorService}.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, CoordinatorService> {
 

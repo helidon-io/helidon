@@ -30,8 +30,8 @@
 
     <artifactId>helidon-lra-coordinator-server</artifactId>
 
-    <name>Helidon LRA Coordinator</name>
-    <description>Narayana compatible LRA coordinator</description>
+    <name>Helidon LRA Mock Coordinator</name>
+    <description>Mock Narayana-compatible LRA coordinator for testing; not for production use</description>
 
     <properties>
         <mainClass>io.helidon.lra.coordinator.Main</mainClass>
@@ -261,7 +261,6 @@
         </plugins>
     </build>
 </project>
-
 
 
 
