@@ -68,6 +68,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -336,6 +337,156 @@ class TestMultipleRegistryLogging {
                    Set.of(failure.getMessage(), failure.getSuppressed()[0].getMessage()),
                    is(Set.of("first close failure", "second close failure")));
         assertThat("Registry is removed after publisher close attempts", metricsFactory.meterRegistryCount(), is(0));
+    }
+
+    @Test
+    @Timeout(10)
+    void testRegistryCloseWaitsForPublisherCleanup() throws Exception {
+        BlockingCloseMeterRegistry publisher = new BlockingCloseMeterRegistry();
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                                 .addPublisher(new TestPublisher(publisher))
+                                                                 .warnOnMultipleRegistries(false)
+                                                                 .build());
+        CountDownLatch secondCloseStarted = new CountDownLatch(1);
+        CountDownLatch secondCloseReturned = new CountDownLatch(1);
+        CountDownLatch factoryCloseReturned = new CountDownLatch(1);
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        try {
+            Future<?> firstClose = executor.submit(meterRegistry::close);
+            assertThat("Publisher close reached the coordinated point",
+                       publisher.closeStarted.await(5, TimeUnit.SECONDS),
+                       is(true));
+            assertThat("Registry remains enrolled during publisher cleanup",
+                       metricsFactory.meterRegistryCount(),
+                       is(1));
+
+            Future<?> secondClose = executor.submit(() -> {
+                secondCloseStarted.countDown();
+                meterRegistry.close();
+                secondCloseReturned.countDown();
+            });
+            assertThat("Concurrent registry close started",
+                       secondCloseStarted.await(5, TimeUnit.SECONDS),
+                       is(true));
+            assertThat("Concurrent registry close waits for publisher cleanup",
+                       secondCloseReturned.await(100, TimeUnit.MILLISECONDS),
+                       is(false));
+
+            Future<?> factoryClose = executor.submit(() -> {
+                metricsFactory.close();
+                factoryCloseReturned.countDown();
+            });
+            awaitFactoryClosed(metricsFactory);
+            assertThat("Factory close waits for registry publisher cleanup",
+                       factoryCloseReturned.await(100, TimeUnit.MILLISECONDS),
+                       is(false));
+
+            publisher.continueClose.countDown();
+            firstClose.get(5, TimeUnit.SECONDS);
+            secondClose.get(5, TimeUnit.SECONDS);
+            factoryClose.get(5, TimeUnit.SECONDS);
+
+            assertThat("Publisher is closed", publisher.isClosed(), is(true));
+            assertThat("Publisher close is attempted once", publisher.closeAttempts.get(), is(1));
+            assertThat("Registry is removed after publisher cleanup", metricsFactory.meterRegistryCount(), is(0));
+        } finally {
+            publisher.continueClose.countDown();
+            executor.shutdownNow();
+            metricsFactory.close();
+        }
+    }
+
+    @Test
+    @Timeout(10)
+    void testRegistryRejectsMetersWhileClosing() throws Exception {
+        String helidonMeterName = "helidonDuringClose";
+        String micrometerMeterName = "micrometerDuringClose";
+        BlockingCloseMeterRegistry publisher = new BlockingCloseMeterRegistry();
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                                 .addPublisher(new TestPublisher(publisher))
+                                                                 .warnOnMultipleRegistries(false)
+                                                                 .build());
+        CompositeMeterRegistry delegate = meterRegistry.unwrap(CompositeMeterRegistry.class);
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        try {
+            Future<?> registryClose = executor.submit(meterRegistry::close);
+            assertThat("Publisher close reached the coordinated point",
+                       publisher.closeStarted.await(5, TimeUnit.SECONDS),
+                       is(true));
+
+            assertThrows(IllegalStateException.class,
+                         () -> meterRegistry.getOrCreate(metricsFactory.counterBuilder(helidonMeterName)),
+                         "Creating a Helidon meter while the registry is closing");
+            delegate.counter(micrometerMeterName);
+
+            assertThat("Closing registry remains empty", meterRegistry.meters(), hasSize(0));
+            assertThat("Helidon meter is not registered with the composite",
+                       delegate.find(helidonMeterName).counter(),
+                       nullValue());
+            assertThat("Publisher receives no Helidon meter",
+                       publisher.find(helidonMeterName).counter(),
+                       nullValue());
+            assertThat("Direct registration reaches the publisher callback",
+                       publisher.find(micrometerMeterName).counter(),
+                       not(nullValue()));
+
+            publisher.continueClose.countDown();
+            registryClose.get(5, TimeUnit.SECONDS);
+
+            assertThrows(IllegalStateException.class,
+                         () -> meterRegistry.getOrCreate(metricsFactory.counterBuilder("afterClose")),
+                         "Creating a meter after registry close");
+        } finally {
+            publisher.continueClose.countDown();
+            executor.shutdownNow();
+            metricsFactory.close();
+        }
+    }
+
+    @Test
+    @Timeout(10)
+    void testPublisherCloseCanReenterConcurrentFactoryClose() throws Exception {
+        BlockingCloseMetersProvider metersProvider = new BlockingCloseMetersProvider();
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(),
+                                                                                   List.of(metersProvider));
+        CountDownLatch reentrantFactoryCloseReturned = new CountDownLatch(1);
+        BlockingCloseMeterRegistry publisher = new BlockingCloseMeterRegistry(() -> {
+            metricsFactory.close();
+            reentrantFactoryCloseReturned.countDown();
+        });
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                                 .addPublisher(new TestPublisher(publisher))
+                                                                 .warnOnMultipleRegistries(false)
+                                                                 .build());
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        try {
+            Future<?> registryClose = executor.submit(meterRegistry::close);
+            assertThat("Publisher close reached the coordinated point",
+                       publisher.closeStarted.await(5, TimeUnit.SECONDS),
+                       is(true));
+
+            Future<?> factoryClose = executor.submit(metricsFactory::close);
+            assertThat("Factory cleanup reached the coordinated point",
+                       metersProvider.closeStarted.await(5, TimeUnit.SECONDS),
+                       is(true));
+
+            publisher.continueClose.countDown();
+            assertThat("Publisher close can reenter concurrent factory close",
+                       reentrantFactoryCloseReturned.await(5, TimeUnit.SECONDS),
+                       is(true));
+            registryClose.get(5, TimeUnit.SECONDS);
+
+            metersProvider.continueClose.countDown();
+            factoryClose.get(5, TimeUnit.SECONDS);
+
+            assertThat("Registry is removed after reentrant close", metricsFactory.meterRegistryCount(), is(0));
+        } finally {
+            publisher.continueClose.countDown();
+            metersProvider.continueClose.countDown();
+            executor.shutdownNow();
+        }
     }
 
     @Test
@@ -818,6 +969,46 @@ class TestMultipleRegistryLogging {
         @Override
         public String type() {
             return "test";
+        }
+    }
+
+    private static class BlockingCloseMeterRegistry extends SimpleMeterRegistry {
+        private final CountDownLatch closeStarted = new CountDownLatch(1);
+        private final CountDownLatch continueClose = new CountDownLatch(1);
+        private final AtomicInteger closeAttempts = new AtomicInteger();
+        private final Runnable afterContinueClose;
+
+        private BlockingCloseMeterRegistry() {
+            this(() -> { });
+        }
+
+        private BlockingCloseMeterRegistry(Runnable afterContinueClose) {
+            this.afterContinueClose = afterContinueClose;
+        }
+
+        @Override
+        public void close() {
+            closeAttempts.incrementAndGet();
+            closeStarted.countDown();
+            await(continueClose);
+            afterContinueClose.run();
+            super.close();
+        }
+    }
+
+    private static class BlockingCloseMetersProvider implements MetersProvider, AutoCloseable {
+        private final CountDownLatch closeStarted = new CountDownLatch(1);
+        private final CountDownLatch continueClose = new CountDownLatch(1);
+
+        @Override
+        public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
+            return List.of();
+        }
+
+        @Override
+        public void close() {
+            closeStarted.countDown();
+            await(continueClose);
         }
     }
 
