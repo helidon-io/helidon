@@ -21,8 +21,11 @@ import io.helidon.config.Config;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.MetricsFactoryFactory__ServiceDescriptor;
 import io.helidon.metrics.providers.micrometer.OtlpPublisher;
 import io.helidon.metrics.providers.micrometer.PrometheusPublisher;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -33,6 +36,30 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 class TestRegistrySpecificPublisher {
+
+    @Test
+    void nonMicrometerRegistryDisablesEndpointWithoutFailure() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .discoverServices(false)
+                                                                                .discoverServicesFromServiceLoader(false)
+                                                                                .addServiceDescriptor(
+                                                                                        MetricsFactoryFactory__ServiceDescriptor.INSTANCE)
+                                                                                .putContractInstance(Config.class, Config.empty())
+                                                                                .build());
+        try {
+            MetricsFactory metricsFactory = manager.registry().get(MetricsFactory.class);
+            MetricsConfig metricsConfig = MetricsConfig.create();
+            MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+            MetricsFeature metricsFeature = new MetricsFeature(MetricsObserverConfig.builder()
+                                                                      .metricsConfig(metricsConfig)
+                                                                      .meterRegistry(meterRegistry)
+                                                                      .buildPrototype());
+
+            assertThat("Non-Micrometer registry disables the endpoint", metricsFeature.enabled(), is(false));
+        } finally {
+            manager.shutdown();
+        }
+    }
 
     @Test
     void endpointAvailabilityUsesSelectedRegistryPublishers() {

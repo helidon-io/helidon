@@ -220,6 +220,9 @@ class MicrometerMetricsFactory implements MetricsFactory {
             }
 
             if (closeCleanupStarted) {
+                if (meterRegistries.stream().anyMatch(MMeterRegistry::isClosingOnCurrentThread)) {
+                    return;
+                }
                 while (!closeComplete) {
                     lifecycleChanged.awaitUninterruptibly();
                 }

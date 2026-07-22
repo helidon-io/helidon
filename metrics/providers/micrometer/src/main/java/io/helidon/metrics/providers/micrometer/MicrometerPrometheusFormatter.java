@@ -237,8 +237,12 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     }
 
     static Optional<PrometheusMeterRegistry> prometheusMeterRegistry(MeterRegistry meterRegistry) {
-        io.micrometer.core.instrument.MeterRegistry mMeterRegistry =
-                meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+        io.micrometer.core.instrument.MeterRegistry mMeterRegistry;
+        try {
+            mMeterRegistry = meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+        } catch (ClassCastException ignored) {
+            return Optional.empty();
+        }
         if (mMeterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {
             return compositeMeterRegistry.getRegistries().stream()
                     .filter(PrometheusMeterRegistry.class::isInstance)

@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -96,7 +96,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final MicrometerMetricsFactory metricsFactory;
     private final MetricsConfig metricsConfig;
     private final SystemTagsManager systemTagsManager;
-    private boolean closed;
     private volatile boolean registeredWithFactory;
 
     /**
@@ -111,7 +110,10 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final Map<String, Set<io.helidon.metrics.api.Meter>> scopeMembership = new HashMap<>();
 
     private final Map<io.helidon.metrics.api.Meter.Id, MMeter<?>> metersById = new HashMap<>();
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Condition closeCompleted = lock.writeLock().newCondition();
+    private LifecycleState lifecycleState = LifecycleState.OPEN;
+    private volatile Thread closeThread;
 
     private MMeterRegistry(io.micrometer.core.instrument.MeterRegistry delegate,
                            MicrometerMetricsFactory metricsFactory,
@@ -146,14 +148,18 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public void close() {
-        boolean notifyClosed = false;
         lock.writeLock().lock();
         try {
-            if (closed) {
+            if (lifecycleState != LifecycleState.OPEN) {
+                if (lifecycleState == LifecycleState.CLOSING && closeThread != Thread.currentThread()) {
+                    while (lifecycleState == LifecycleState.CLOSING) {
+                        closeCompleted.awaitUninterruptibly();
+                    }
+                }
                 return;
             }
-            closed = true;
-            notifyClosed = true;
+            lifecycleState = LifecycleState.CLOSING;
+            closeThread = Thread.currentThread();
             onAddListeners.clear();
             onRemoveListeners.clear();
             meters.values().forEach(MMeter::markAsDeleted);
@@ -163,52 +169,80 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             metersById.clear();
         } finally {
             lock.writeLock().unlock();
-            if (notifyClosed) {
-                Throwable closeFailure = null;
-                try {
-                    if (registeredWithFactory) {
-                        metricsFactory.onMeterRegistryClosed(this);
-                    }
-                } catch (RuntimeException | Error e) {
-                    closeFailure = e;
-                }
+        }
 
-                CompositeMeterRegistry compositeMeterRegistry = (CompositeMeterRegistry) delegate;
-                for (io.micrometer.core.instrument.MeterRegistry publisher
-                        : List.copyOf(compositeMeterRegistry.getRegistries())) {
-                    try {
-                        publisher.close();
-                    } catch (RuntimeException | Error e) {
-                        if (closeFailure == null) {
-                            closeFailure = e;
-                        } else if (closeFailure != e) {
-                            closeFailure.addSuppressed(e);
-                        }
-                    } finally {
-                        compositeMeterRegistry.remove(publisher);
-                    }
-                }
-                try {
-                    compositeMeterRegistry.close();
-                } catch (RuntimeException | Error e) {
-                    if (closeFailure == null) {
-                        closeFailure = e;
-                    } else if (closeFailure != e) {
-                        closeFailure.addSuppressed(e);
-                    }
-                }
-                if (closeFailure instanceof RuntimeException e) {
-                    throw e;
-                }
-                if (closeFailure instanceof Error e) {
-                    throw e;
-                }
+        Throwable closeFailure = null;
+        CompositeMeterRegistry compositeMeterRegistry = (CompositeMeterRegistry) delegate;
+        List<io.micrometer.core.instrument.MeterRegistry> publishers = List.of();
+        try {
+            publishers = List.copyOf(compositeMeterRegistry.getRegistries());
+        } catch (RuntimeException | Error e) {
+            closeFailure = recordCloseFailure(closeFailure, e);
+        }
+        for (io.micrometer.core.instrument.MeterRegistry publisher : publishers) {
+            try {
+                publisher.close();
+            } catch (RuntimeException | Error e) {
+                closeFailure = recordCloseFailure(closeFailure, e);
             }
+            try {
+                compositeMeterRegistry.remove(publisher);
+            } catch (RuntimeException | Error e) {
+                closeFailure = recordCloseFailure(closeFailure, e);
+            }
+        }
+        try {
+            compositeMeterRegistry.close();
+        } catch (RuntimeException | Error e) {
+            closeFailure = recordCloseFailure(closeFailure, e);
+        }
+        try {
+            if (registeredWithFactory) {
+                metricsFactory.onMeterRegistryClosed(this);
+            }
+        } catch (RuntimeException | Error e) {
+            closeFailure = recordCloseFailure(closeFailure, e);
+        } finally {
+            lock.writeLock().lock();
+            try {
+                lifecycleState = LifecycleState.CLOSED;
+                closeThread = null;
+                closeCompleted.signalAll();
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+
+        if (closeFailure instanceof RuntimeException e) {
+            throw e;
+        }
+        if (closeFailure instanceof Error e) {
+            throw e;
+        }
+    }
+
+    private static Throwable recordCloseFailure(Throwable closeFailure, Throwable newFailure) {
+        if (closeFailure == null) {
+            return newFailure;
+        }
+        if (closeFailure != newFailure) {
+            closeFailure.addSuppressed(newFailure);
+        }
+        return closeFailure;
+    }
+
+    private void checkOpen() {
+        if (lifecycleState != LifecycleState.OPEN) {
+            throw new IllegalStateException("Meter registry is closed");
         }
     }
 
     void onRegistered() {
         registeredWithFactory = true;
+    }
+
+    boolean isClosingOnCurrentThread() {
+        return closeThread == Thread.currentThread();
     }
 
     @Override
@@ -407,6 +441,13 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     io.helidon.metrics.api.Meter getOrCreateUntyped(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
 
+        lock.readLock().lock();
+        try {
+            checkOpen();
+        } finally {
+            lock.readLock().unlock();
+        }
+
         // The Micrometer builders do not have a shared inherited declaration of the register method.
         // Each type of builder declares its own so we need to decide here which specific one to invoke.
         // That's so we can invoke the Micrometer builder's register method, which acts as
@@ -455,6 +496,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         lock.writeLock().lock();
         try {
+            if (lifecycleState != LifecycleState.OPEN) {
+                return;
+            }
             /*
             If we originated this callback by invoking the delegate registry, then there should be a builder
             waiting for us to use. If the meter was created in some other way, then there will be no builder and
@@ -527,6 +571,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         lock.writeLock().lock();
 
         try {
+            if (lifecycleState != LifecycleState.OPEN) {
+                return;
+            }
             MMeter<?> removedHelidonMeter = meters.remove(removedMeter);
             if (removedHelidonMeter == null) {
                 LOGGER.log(Level.WARNING, "No matching neutral meter for implementation meter " + removedMeter.getId());
@@ -592,6 +639,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         lock.readLock().lock();
 
         try {
+            checkOpen();
             MMeter<?> foundMeter = meterIfRegistered(mBuilder, id);
             if (foundMeter != null) {
                 return (HM) foundMeter;
@@ -609,6 +657,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         lock.writeLock().lock();
 
         try {
+            checkOpen();
             io.helidon.metrics.api.Meter previouslyRegisteredMeter = meterIfRegistered(mBuilder, id);
             if (previouslyRegisteredMeter != null) {
                 return previouslyRegisteredMeter;
@@ -631,6 +680,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
              did not run--if the meter already exists in the Micrometer meter registry, for example.
              */
             pendingBuildersInScope.remove(id);
+            checkOpen();
 
             HM result = (HM) meters.get(meter);
             if (result == null) {
@@ -740,6 +790,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         lock.writeLock().lock();
 
         try {
+            if (lifecycleState != LifecycleState.OPEN) {
+                return Optional.empty();
+            }
             Meter nativeMeter = delegate.find(id.name())
                     .tags(MTag.tags(tags))
                     .meter();
@@ -889,6 +942,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 throw e;
             }
         }
+    }
+
+    private enum LifecycleState {
+        OPEN,
+        CLOSING,
+        CLOSED
     }
 
     /**
