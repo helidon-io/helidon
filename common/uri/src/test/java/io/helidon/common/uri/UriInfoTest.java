@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,18 @@ class UriInfoTest {
                 () -> assertThat(uriInfo.toUri(), is(URI.create("http://localhost:80/")))
         );
     }
+
+    @Test
+    void testUppercaseHttpsDefaultPort() {
+        UriInfo uriInfo = UriInfo.builder()
+                .scheme("HTTPS")
+                .host("localhost")
+                .build();
+
+        assertThat(uriInfo.port(), is(443));
+        assertThat(uriInfo.authority(), is("localhost:443"));
+    }
+
     @Test
     void testFullyCustomized() {
         UriInfo uriInfo = UriInfo.builder()

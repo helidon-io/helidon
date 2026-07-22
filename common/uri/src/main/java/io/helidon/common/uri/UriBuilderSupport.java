@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,13 @@ final class UriBuilderSupport {
         }
 
         private static int defaultPort(String scheme) {
-            if ("http".equals(scheme)) {
+            if ("http".equalsIgnoreCase(scheme)) {
                 return 80;
             }
-            if ("https".equals(scheme)) {
+            if ("https".equalsIgnoreCase(scheme)) {
                 return 443;
             }
-            if (scheme.charAt(scheme.length() - 1) == 's') {
+            if (Character.toLowerCase(scheme.charAt(scheme.length() - 1)) == 's') {
                 return 443;
             }
             return 80;

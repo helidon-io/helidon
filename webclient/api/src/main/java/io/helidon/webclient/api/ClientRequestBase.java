@@ -816,7 +816,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     private void validateRequest() {
         String scheme = uri().scheme();
-        if (scheme == null || !SUPPORTED_SCHEMES.contains(scheme.toLowerCase())) {
+        if (scheme == null || !SUPPORTED_SCHEMES.contains(scheme)) {
             throw new IllegalArgumentException(
                     String.format("Not supported scheme %s, client supported schemes are: %s",
                                   uri().scheme(),

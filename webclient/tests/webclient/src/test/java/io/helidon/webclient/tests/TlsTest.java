@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,12 @@ public class TlsTest {
 
     private final Http1Client client;
     private final Http1Client secureClient;
+    private final Http1Client uppercaseSecureClient;
+    private final int serverPort;
 
     public TlsTest(WebServer server, Http1Client client) {
         this.client = client;
+        this.serverPort = server.port();
         Tls clientTls = Tls.builder()
                 .trust(trust -> trust
                         .keystore(store -> store
@@ -52,6 +55,10 @@ public class TlsTest {
                 .build();
         this.secureClient = Http1Client.builder()
                 .baseUri("https://localhost:" + server.port())
+                .tls(clientTls)
+                .build();
+        this.uppercaseSecureClient = Http1Client.builder()
+                .baseUri("HTTPS://localhost:" + server.port())
                 .tls(clientTls)
                 .build();
     }
@@ -74,6 +81,19 @@ public class TlsTest {
     @Test
     public void testConnectionOnHttps() {
         assertThat(secureClient.get().requestEntity(String.class), is("It works!"));
+    }
+
+    @Test
+    public void testConnectionOnUppercaseHttps() {
+        assertThat(uppercaseSecureClient.get().requestEntity(String.class), is("It works!"));
+    }
+
+    @Test
+    public void testConnectionOnUppercaseHttpsTemplate() {
+        assertThat(secureClient.get("HTTPS://localhost:{port}")
+                           .pathParam("port", String.valueOf(serverPort))
+                           .requestEntity(String.class),
+                   is("It works!"));
     }
 
     @Test
