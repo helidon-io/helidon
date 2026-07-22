@@ -29,7 +29,9 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
 /**
- * In memory Lra coordinator.
+ * Mock LRA coordinator with Narayana like rest api for testing.
+ * <p>
+ * Main entry point for the in-memory coordinator.
  */
 public class Main {
 

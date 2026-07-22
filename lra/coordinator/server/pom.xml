@@ -32,8 +32,8 @@
     <groupId>io.helidon.lra</groupId>
     <artifactId>helidon-lra-coordinator-server</artifactId>
 
-    <name>Helidon LRA Coordinator</name>
-    <description>Narayana compatible LRA coordinator</description>
+    <name>Helidon LRA Mock Coordinator</name>
+    <description>Mock Narayana-compatible LRA coordinator for testing; not for production use</description>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
@@ -161,4 +161,3 @@
         </profile>
     </profiles>
 </project>
-

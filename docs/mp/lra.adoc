@@ -407,7 +407,7 @@ In addition, participant also keeps track of timeouts, retries participant calls
 
 === Helidon LRA Coordinator
 
-CAUTION: Experimental tool, usage in production is not advised.
+CAUTION: Test tool, usage in production is not advised.
 
 [source,bash]
 .Build and run Helidon LRA coordinator

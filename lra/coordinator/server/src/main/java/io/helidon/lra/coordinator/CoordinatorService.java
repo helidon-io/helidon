@@ -55,7 +55,7 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
 /**
- * LRA coordinator with Narayana like rest api.
+ * Mock LRA coordinator with Narayana like rest api for testing.
  */
 public class CoordinatorService implements Service {
 
@@ -85,6 +85,8 @@ public class CoordinatorService implements Service {
     private Task persistTask = null;
 
     CoordinatorService(LraPersistentRegistry lraPersistentRegistry, Supplier<URI> coordinatorUriSupplier, Config config) {
+        LOGGER.log(Level.WARNING,
+                   "The Helidon LRA coordinator is a mock/test tool and must not be used in production.");
         this.lraPersistentRegistry = lraPersistentRegistry;
         coordinatorURL = LazyValue.create(coordinatorUriSupplier);
         this.config = config;
@@ -435,6 +437,8 @@ public class CoordinatorService implements Service {
     }
 
     /**
+     * Mock LRA coordinator with Narayana like rest api for testing.
+     * <p>
      * Coordinator builder.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, CoordinatorService> {
