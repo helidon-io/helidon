@@ -278,7 +278,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
         callRef.get().request(2);
         sendData(handler, "one", false);
@@ -326,7 +327,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
         Thread dataThread = Thread.startVirtualThread(() -> {
             sendData(handler, "one", false);
@@ -381,7 +383,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
         Thread dataThread = Thread.startVirtualThread(() -> sendData(handler, "one", false));
 
@@ -420,7 +423,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
 
         int messageCountInFrame = 256;
@@ -480,7 +484,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(listener),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
         CountDownLatch dataFinished = new CountDownLatch(1);
         Thread dataThread = Thread.startVirtualThread(() -> {
@@ -528,7 +533,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         AtomicInteger streamCloseCount = new AtomicInteger();
         handler.onStreamClosed(streamCloseCount::incrementAndGet);
         handler.init();
@@ -573,7 +579,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
 
         handler.init();
 
@@ -608,7 +615,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
 
         callRef.get().close(Status.OK, new Metadata());
@@ -648,7 +656,8 @@ class GrpcProtocolHandlerTest {
                                                                                 null,
                                                                                 Http2StreamState.OPEN,
                                                                                 route(callHandler),
-                                                                                GrpcConfig.create());
+                                                                                GrpcConfig.create(),
+                                                                                metrics);
         handler.init();
         Http2FrameHeader header = Http2FrameHeader.create(data.available(),
                                                           Http2FrameTypes.DATA,
