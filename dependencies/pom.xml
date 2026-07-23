@@ -87,7 +87,7 @@
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry>1.62.0</version.lib.opentelemetry>
         <version.lib.parsson>1.1.9</version.lib.parsson>
         <version.lib.postgresql>42.7.11</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
