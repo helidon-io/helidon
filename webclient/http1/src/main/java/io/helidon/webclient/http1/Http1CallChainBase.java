@@ -446,9 +446,9 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         Status responseStatus;
         try {
             responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-        } catch (UncheckedIOException e) {
-            if (closeOnReadFailure) {
-                // Normal response reads cannot reuse a connection after a timeout or close while reading status.
+        } catch (RuntimeException e) {
+            if (closeOnReadFailure || !(e instanceof UncheckedIOException)) {
+                // A connection cannot be reused after a malformed status or a normal response read failure.
                 try {
                     connection.closeResource();
                 } catch (Exception ex) {

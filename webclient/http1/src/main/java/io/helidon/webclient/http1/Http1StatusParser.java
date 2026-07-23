@@ -16,6 +16,8 @@
 
 package io.helidon.webclient.http1;
 
+import java.nio.charset.StandardCharsets;
+
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.LogFormatter;
@@ -81,7 +83,9 @@ public final class Http1StatusParser {
         reader.skip(1); // the new line
         newLine -= space;
         newLine--;
-        String phrase = reader.readAsciiString(newLine); // the rest of the line is reason phrase
+        // RFC 9112, Section 4 permits obs-text as defined by RFC 9110, Section 5.5.
+        // ISO-8859-1 preserves each permitted octet without replacement.
+        String phrase = reader.readString(newLine, StandardCharsets.ISO_8859_1);
         reader.skip(2); // skip the last CRLF
 
         try {
@@ -89,6 +93,8 @@ public final class Http1StatusParser {
         } catch (NumberFormatException e) {
             throw new IllegalStateException("HTTP Response did not contain numeric status code: "
                                                     + LogFormatter.escape(code));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("HTTP response contained an invalid reason phrase", e);
         }
     }
 }

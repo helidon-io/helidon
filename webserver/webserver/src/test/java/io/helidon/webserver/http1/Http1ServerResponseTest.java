@@ -42,6 +42,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
@@ -61,6 +62,7 @@ import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -192,6 +194,20 @@ class Http1ServerResponseTest {
                 () -> assertThat(response.headers().get(HeaderNames.VARY).get(), is("Origin")),
                 () -> assertThat(staleTrailer.defaultCase(), trailers.contains(staleTrailer), is(false))
         );
+    }
+
+    @Test
+    void customReasonPhrasePreservesObsText() {
+        BufferData buffer = BufferData.growing(128);
+
+        Http1ServerResponse.nonEntityBytes(ServerResponseHeaders.create(),
+                                           Status.create(400, "Caf\u00e9"),
+                                           buffer,
+                                           true,
+                                           true);
+
+        String response = new String(buffer.readBytes(), StandardCharsets.ISO_8859_1);
+        assertThat(response, startsWith("HTTP/1.1 400 Caf\u00e9\r\n"));
     }
 
     @Test

@@ -1088,6 +1088,41 @@ class Http1ClientTest {
     }
 
     @Test
+    void testMalformedReasonPhraseClosesConnection() {
+        String rawResponse = "HTTP/1.1 200 unsafe\u0000value\r\n\r\n";
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> client.get("http://localhost:" + dummyPort + "/test")
+                                                                .connection(connection)
+                                                                .request());
+
+        assertThat(exception.getMessage(), is("HTTP response contained an invalid reason phrase"));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void testMalformedReasonPhraseBeforeContinueClosesConnection() {
+        String rawContinueResponse = "HTTP/1.1 100 unsafe\u0000value\r\n\r\n";
+        String rawResponse = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+        Http1Client expectContinueClient = Http1Client.builder()
+                .sendExpectContinue(true)
+                .build();
+        Http1ClientRequest request = expectContinueClient.put("http://localhost:" + dummyPort + "/test");
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse, rawContinueResponse);
+        request.connection(connection);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> getHttp1ClientResponseFromOutputStream(request,
+                                                                                                     new String[] {"OK"}));
+
+        assertThat(exception.getMessage(), is("HTTP response contained an invalid reason phrase"));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
     void testInterimResponseBeforeContinueIsSkipped() {
         String rawContinueResponse = "HTTP/1.1 103 Early Hints\r\n"
                 + "Link: </style.css>; rel=preload\r\n"

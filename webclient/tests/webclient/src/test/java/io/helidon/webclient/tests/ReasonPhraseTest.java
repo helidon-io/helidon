@@ -39,6 +39,7 @@ import io.helidon.webclient.api.WebClient;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -126,6 +127,20 @@ class ReasonPhraseTest {
         MatcherAssert.assertThat(e.getMessage(), is("HTTP Response did not contain status code"));
     }
 
+    @Test
+    void malformedReasonPhraseBeforeContinue() {
+        var e = assertThrowsExactly(IllegalStateException.class,
+                                    () -> client
+                                            .put("/malformed-continue")
+                                            .sendExpectContinue(true)
+                                            .outputStream(os -> {
+                                                os.write("payload".getBytes(StandardCharsets.UTF_8));
+                                                os.close();
+                                            }));
+
+        MatcherAssert.assertThat(e.getMessage(), is("HTTP response contained an invalid reason phrase"));
+    }
+
     private static void startMockServer() {
         while (!socket.isClosed()) {
             try (var s = socket.accept();
@@ -136,12 +151,19 @@ class ReasonPhraseTest {
                 int bytesRecevied;
                 while ((bytesRecevied = is.read(bb.array())) != -1) {
                     baos.write(bb.array(), 0, bytesRecevied);
-                    if (is.available() == 0) {
+                    if (baos.toString(StandardCharsets.ISO_8859_1).contains(CRLF + CRLF)) {
                         break;
                     }
                 }
 
-                String requestContent = baos.toString();
+                String requestContent = baos.toString(StandardCharsets.ISO_8859_1);
+
+                if (requestContent.startsWith("PUT /malformed-continue ")) {
+                    writeLine("HTTP/1.1 100 unsafe\u0000value", os);
+                    writeLine("", os);
+                    os.flush();
+                    continue;
+                }
 
                 // parse out custom status header value
                 String customStatusLine = Arrays.stream(requestContent.split(CRLF))

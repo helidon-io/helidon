@@ -781,17 +781,30 @@ public class Status {
      * @param reasonPhrase the reason phrase; if {@code null} or a known reason phrase, an instance with the default
      *                     phrase is returned; otherwise, a new instance is returned
      * @return the matching Status
+     * @throws IllegalArgumentException if the reason phrase contains a character that is not allowed by HTTP
      */
     public static Status create(int statusCode, String reasonPhrase) {
         Status found = StatusHelper.find(statusCode);
+        if (reasonPhrase == null) {
+            if (found == null) {
+                return createNew(Family.of(statusCode), statusCode, null, String.valueOf(statusCode));
+            }
+            return found;
+        }
+        for (int i = 0; i < reasonPhrase.length(); i++) {
+            char reasonChar = reasonPhrase.charAt(i);
+            if (reasonChar != '\t'
+                    && (reasonChar < ' ' || reasonChar == '\u007f' || reasonChar > '\u00ff')) {
+                throw new IllegalArgumentException("Invalid reason phrase character at position " + (i + 1));
+            }
+        }
+
+        if (found != null && found.reasonPhrase().equalsIgnoreCase(reasonPhrase)) {
+            return found;
+        }
+
         if (found == null) {
             return createNew(Family.of(statusCode), statusCode, reasonPhrase, String.valueOf(statusCode));
-        }
-        if (reasonPhrase == null) {
-            return found;
-        }
-        if (found.reasonPhrase().equalsIgnoreCase(reasonPhrase)) {
-            return found;
         }
         return createNew(found.family(), statusCode, reasonPhrase, found.codeText());
     }

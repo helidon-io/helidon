@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,26 @@ public class GrpcHelperTest {
 
         assertThat(status.code(), is(412));
         assertThat(status.reasonPhrase(), is("Oops!"));
+    }
+
+    @Test
+    public void shouldFallBackForUnicodeStatusExceptionDescription() {
+        StatusException exception = Status.INVALID_ARGUMENT.withDescription("Oops \u0100").asException();
+        io.helidon.http.Status status = GrpcHelper.toHttpResponseStatus(exception);
+
+        assertThat(status.code(), is(400));
+        assertThat(status.reasonPhrase(), is("Bad Request"));
+    }
+
+    @Test
+    public void shouldFallBackForUnsafeStatusRuntimeExceptionDescription() {
+        StatusRuntimeException exception = Status.PERMISSION_DENIED
+                .withDescription("unsafe\r\nInjected: true")
+                .asRuntimeException();
+        io.helidon.http.Status status = GrpcHelper.toHttpResponseStatus(exception);
+
+        assertThat(status.code(), is(403));
+        assertThat(status.reasonPhrase(), is("Forbidden"));
     }
 
     @Test

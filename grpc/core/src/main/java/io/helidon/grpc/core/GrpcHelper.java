@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ public final class GrpcHelper {
 
     /**
      * Convert a gRPC {@link StatusException} to a {@link io.helidon.http.Status}.
+     * Descriptions that are not valid HTTP reason phrases are replaced with the default reason phrase of the mapped
+     * HTTP status.
      *
      * @param ex  the gRPC {@link StatusException} to convert
      *
@@ -83,6 +85,8 @@ public final class GrpcHelper {
 
     /**
      * Convert a gRPC {@link StatusRuntimeException} to a {@link io.helidon.http.Status}.
+     * Descriptions that are not valid HTTP reason phrases are replaced with the default reason phrase of the mapped
+     * HTTP status.
      *
      * @param ex  the gRPC {@link StatusRuntimeException} to convert
      *
@@ -94,25 +98,32 @@ public final class GrpcHelper {
 
     /**
      * Convert a gRPC {@link Status} to a {@link io.helidon.http.Status}.
+     * Descriptions that are not valid HTTP reason phrases are replaced with the default reason phrase of the mapped
+     * HTTP status.
      *
      * @param status  the gRPC {@link Status} to convert
      *
      * @return  the gRPC {@link Status} converted to a {@link io.helidon.http.Status}
      */
     public static io.helidon.http.Status toHttpResponseStatus(Status status) {
-        return switch (status.getCode()) {
-            case OK -> io.helidon.http.Status.create(200, status.getDescription());
-            case INVALID_ARGUMENT, OUT_OF_RANGE -> io.helidon.http.Status.create(400, status.getDescription());
-            case DEADLINE_EXCEEDED -> io.helidon.http.Status.create(408, status.getDescription());
-            case NOT_FOUND -> io.helidon.http.Status.create(404, status.getDescription());
-            case ALREADY_EXISTS -> io.helidon.http.Status.create(412, status.getDescription());
-            case PERMISSION_DENIED -> io.helidon.http.Status.create(403, status.getDescription());
-            case FAILED_PRECONDITION -> io.helidon.http.Status.create(412, status.getDescription());
-            case UNIMPLEMENTED -> io.helidon.http.Status.create(501, status.getDescription());
-            case UNAVAILABLE -> io.helidon.http.Status.create(503, status.getDescription());
-            case UNAUTHENTICATED -> io.helidon.http.Status.create(401, status.getDescription());
-            default -> io.helidon.http.Status.create(500, status.getDescription());
+        int statusCode = switch (status.getCode()) {
+            case OK -> 200;
+            case INVALID_ARGUMENT, OUT_OF_RANGE -> 400;
+            case DEADLINE_EXCEEDED -> 408;
+            case NOT_FOUND -> 404;
+            case ALREADY_EXISTS, FAILED_PRECONDITION -> 412;
+            case PERMISSION_DENIED -> 403;
+            case UNIMPLEMENTED -> 501;
+            case UNAVAILABLE -> 503;
+            case UNAUTHENTICATED -> 401;
+            default -> 500;
         };
+
+        try {
+            return io.helidon.http.Status.create(statusCode, status.getDescription());
+        } catch (IllegalArgumentException _) {
+            return io.helidon.http.Status.create(statusCode);
+        }
     }
 
     /**

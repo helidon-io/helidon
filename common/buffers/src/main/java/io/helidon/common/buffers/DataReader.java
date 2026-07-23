@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import io.helidon.common.Api;
@@ -265,15 +266,22 @@ public class DataReader {
     }
 
     /**
-     * Read ascii string.
+     * Read a string.
      *
-     * @param len number of bytes of the string
+     * @param len     number of bytes of the string
+     * @param charset character set to use
      * @return string value
+     * @throws NullPointerException if {@code charset} is {@code null}
      */
-    public String readAsciiString(int len) {
+    public String readString(int len, Charset charset) {
+        Objects.requireNonNull(charset, "charset");
         ensureAvailable(); // we have at least 1 byte
         if (len <= head.available()) { // fast case
-            String s = new String(head.bytes, head.position, len, StandardCharsets.US_ASCII);
+            Charset decodeCharset = charset;
+            if (StandardCharsets.ISO_8859_1.equals(charset) && isAscii(head.bytes, head.position, len)) {
+                decodeCharset = StandardCharsets.US_ASCII;
+            }
+            String s = new String(head.bytes, head.position, len, decodeCharset);
             head.position += len;
             return s;
         } else {
@@ -289,8 +297,28 @@ public class DataReader {
                     pullData();
                 }
             }
-            return new String(b, StandardCharsets.US_ASCII);
+            Charset decodeCharset = charset;
+            if (StandardCharsets.ISO_8859_1.equals(charset) && isAscii(b, 0, len)) {
+                decodeCharset = StandardCharsets.US_ASCII;
+            }
+            return new String(b, decodeCharset);
         }
+    }
+
+    /**
+     * Read ascii string.
+     *
+     * @param len number of bytes of the string
+     * @return string value
+     */
+    public String readAsciiString(int len) {
+        ensureAvailable(); // we have at least 1 byte
+        if (len <= head.available()) { // fast case
+            String s = new String(head.bytes, head.position, len, StandardCharsets.US_ASCII);
+            head.position += len;
+            return s;
+        }
+        return readString(len, StandardCharsets.US_ASCII);
     }
 
     /**
@@ -466,6 +494,15 @@ public class DataReader {
     public <T> void listener(DataListener<T> listener, T context) {
         this.listener = listener;
         this.context = context;
+    }
+
+    private static boolean isAscii(byte[] bytes, int offset, int length) {
+        for (int i = offset; i < offset + length; i++) {
+            if (bytes[i] < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private byte[] pullBytes() {

@@ -117,7 +117,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             buffer.write(HTTP_BYTES);
             String reasonPhrase = status.reasonPhrase() == null || status.reasonPhrase().isEmpty()
                     ? status.codeText() : status.reasonPhrase();
-            buffer.write((status.code() + " " + reasonPhrase).getBytes(StandardCharsets.US_ASCII));
+            buffer.write((status.code() + " " + reasonPhrase).getBytes(StandardCharsets.ISO_8859_1));
             buffer.write('\r');
             buffer.write('\n');
         }
