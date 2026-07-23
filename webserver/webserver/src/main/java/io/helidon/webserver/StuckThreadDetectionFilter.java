@@ -120,7 +120,7 @@ final class StuckThreadDetectionFilter implements Filter {
                                        System.nanoTime(),
                                        prologue.rawProtocol(),
                                        prologue.method().text(),
-                                       LogFormatter.escape(prologue.uriPath().rawPathNoParams()),
+                                       LogFormatter.escape(prologue.uriPath().path()),
                                        req.id(),
                                        req.serverSocketId(),
                                        req.socketId());

@@ -140,7 +140,7 @@ class StuckThreadDetectionFeatureTest {
                                                                "HTTP",
                                                                "1.1",
                                                                Method.GET,
-                                                               "/slow?secret=value",
+                                                               "http://alice:s3cr3t@localhost/slow?secret=value",
                                                                true));
         when(request.id()).thenReturn(7);
         when(request.serverSocketId()).thenReturn("server-socket");
@@ -166,6 +166,8 @@ class StuckThreadDetectionFeatureTest {
                 assertThat(warning.getMessage(), containsString("virtual: true"));
                 assertThat(warning.getMessage(), containsString("\tat "));
                 assertThat(warning.getMessage(), not(containsString("secret=value")));
+                assertThat(warning.getMessage(), not(containsString("alice")));
+                assertThat(warning.getMessage(), not(containsString("s3cr3t")));
                 assertThat("Request was reported more than once",
                            logs.records.poll(50, TimeUnit.MILLISECONDS),
                            is((LogRecord) null));
@@ -178,6 +180,9 @@ class StuckThreadDetectionFeatureTest {
                 LogRecord recovery = logs.await(Level.INFO);
                 assertThat(recovery.getMessage(), containsString("Request previously reported as stuck completed after"));
                 assertThat(recovery.getMessage(), containsString("GET /slow HTTP/1.1"));
+                assertThat(recovery.getMessage(), not(containsString("secret=value")));
+                assertThat(recovery.getMessage(), not(containsString("alice")));
+                assertThat(recovery.getMessage(), not(containsString("s3cr3t")));
             } finally {
                 release.countDown();
                 requestThread.join(5000);
