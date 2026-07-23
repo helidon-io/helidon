@@ -99,6 +99,7 @@ class GraphQlServiceTest {
         builder.register(GraphQlService.builder()
                                  .webContext("/legacy")
                                  .invocationHandler(new LegacyInvocationHandler())
+                                 .permitAll(true)
                                  .build());
     }
 
