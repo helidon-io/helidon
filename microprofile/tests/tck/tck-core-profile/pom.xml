@@ -32,7 +32,7 @@
 
     <properties>
         <tck.filename>jakarta-core-profile-tck-${version.lib.microprofile-core-profile}</tck.filename>
-        <tck.url>https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/staged/eftl/${tck.filename}.zip</tck.url>
+        <tck.url>https://download.eclipse.org/jakartaee/coreprofile/10.0/${tck.filename}.zip</tck.url>
         <tck.artifact>core-profile-tck-impl-${version.lib.microprofile-core-profile}</tck.artifact>
         <stage.dir>${project.build.directory}/tck</stage.dir>
     </properties>
