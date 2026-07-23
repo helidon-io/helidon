@@ -359,13 +359,14 @@ class GraphQlServerCodegenTest {
         String generated = Files.readString(generatedSources.getFirst(), StandardCharsets.UTF_8);
         String generatedScalar = Files.readString(scalarSources.getFirst(), StandardCharsets.UTF_8);
         assertThat(generated, containsString("class GraphEndpoint__GraphQlFeature implements HttpFeature"));
-        assertThat(generated, containsString("routing.register(GraphQlService.builder()"));
-        assertThat(generated, containsString(".webContext(\"/api/graphql\")"));
+        assertThat(generated,
+                   containsString("routing.register(GraphQlService.builder()\n"
+                                          + "                .config(config.get(\"graphql\"))\n"
+                                          + "                .webContext(\"/api/graphql\")"));
         assertThat(generated, containsString(".schemaUri(\"/schema\")"));
-        assertThat(generated, containsString(".permitAll(true)"));
+        assertThat(generated, not(containsString(".permitAll(true)")));
         assertThat(generated, containsString("Config config"));
         assertThat(generated, containsString("this.config = config;"));
-        assertThat(generated, containsString(".config(config.get(\"graphql\"))"));
         assertThat(generated, containsString("HttpEntryPoint.EntryPoints httpEntryPoints"));
         assertThat(generated, containsString("this.httpEntryPoints = httpEntryPoints;"));
         assertThat(generated,

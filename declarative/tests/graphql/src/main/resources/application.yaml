@@ -21,6 +21,7 @@ server:
       enabled: true
 
 graphql:
+  permit-all: true
   default-error-message: "Configured GraphQL Error"
   exception-white-list:
     - "java.lang.IllegalStateException"
