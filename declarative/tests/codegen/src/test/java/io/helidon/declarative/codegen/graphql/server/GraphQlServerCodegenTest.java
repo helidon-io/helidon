@@ -362,6 +362,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("routing.register(GraphQlService.builder()"));
         assertThat(generated, containsString(".webContext(\"/api/graphql\")"));
         assertThat(generated, containsString(".schemaUri(\"/schema\")"));
+        assertThat(generated, containsString(".permitAll(true)"));
         assertThat(generated, containsString("Config config"));
         assertThat(generated, containsString("this.config = config;"));
         assertThat(generated, containsString(".config(config.get(\"graphql\"))"));
