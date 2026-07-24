@@ -356,9 +356,14 @@ class GraphQlServerCodegenTest {
                         .equals("GraphEndpoint__GraphQlFeature__com_2e_example_2e_IsbnScalar__GraphQlScalar.java"))
                 .toList();
         assertThat(scalarSources.size(), is(1));
+        var scalarContractSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().equals("GraphEndpoint__GraphQlFeature__CustomScalar.java"))
+                .toList();
+        assertThat(scalarContractSources.size(), is(1));
 
         String generated = Files.readString(generatedSources.getFirst(), StandardCharsets.UTF_8);
         String generatedScalar = Files.readString(scalarSources.getFirst(), StandardCharsets.UTF_8);
+        String generatedScalarContract = Files.readString(scalarContractSources.getFirst(), StandardCharsets.UTF_8);
         assertThat(generated, containsString("class GraphEndpoint__GraphQlFeature implements HttpFeature"));
         assertThat(generated,
                    containsString("routing.register(GraphQlService.builder()\n"
@@ -430,10 +435,8 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString(".dataFetcher(\"title\", environment -> ((Book) environment.getSource()).title())"));
         assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
         assertThat(generated, containsString(".dataFetcher(\"isbn\", environment -> ((Book) environment.getSource()).isbn())"));
-        assertThat(generated, containsString("List<GeneratedGraphQl.CustomScalar> scalars"));
-        assertThat(generated,
-                   containsString("@Service.Named(\"com.example.GraphEndpoint__GraphQlFeature\") "
-                                          + "List<GeneratedGraphQl.CustomScalar> scalars"));
+        assertThat(generated, containsString("List<GraphEndpoint__GraphQlFeature__CustomScalar> scalars"));
+        assertThat(generated, not(containsString("@Service.Named")));
         assertThat(generated, not(containsString("GraphQlScalar<Isbn> scalar_0")));
         assertThat(generated, containsString("this.scalars = scalars;"));
         assertThat(generated, containsString("builder.scalar(graphQlScalar(\"ISBN\", Isbn.class));"));
@@ -448,12 +451,15 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("case graphql.language.ObjectValue objectValue"));
         assertThat(generatedScalar,
                    containsString("class GraphEndpoint__GraphQlFeature__com_2e_example_2e_IsbnScalar__GraphQlScalar "
-                                          + "implements GeneratedGraphQl.CustomScalar"));
+                                          + "implements GraphEndpoint__GraphQlFeature__CustomScalar"));
         assertThat(generatedScalar, containsString("@Service.Singleton"));
-        assertThat(generatedScalar,
-                   containsString("@Service.Named(\"com.example.GraphEndpoint__GraphQlFeature\")"));
+        assertThat(generatedScalar, not(containsString("@Service.Named")));
         assertThat(generatedScalar, containsString("private final GraphQlScalar<Isbn> delegate;"));
         assertThat(generatedScalar, containsString("@Service.Inject"));
+        assertThat(generatedScalarContract, containsString("@Service.Contract"));
+        assertThat(generatedScalarContract,
+                   containsString("interface GraphEndpoint__GraphQlFeature__CustomScalar "
+                                          + "extends GeneratedGraphQl.CustomScalar"));
         assertThat(generatedScalar, containsString("return \"ISBN\";"));
         assertThat(generatedScalar, containsString("return Isbn.class;"));
         assertThat(generatedScalar, containsString("return \"ISBN scalar\";"));
@@ -751,12 +757,27 @@ class GraphQlServerCodegenTest {
                        is(true));
             String featureSource = Files.readString(generatedFeature, StandardCharsets.UTF_8);
             String featureName = "com.example." + consumerName + ".GraphEndpoint__GraphQlFeature";
+            String featureContract = featureName + "__CustomScalar";
             assertThat(featureSource,
-                       containsString("@Service.Named(\"" + featureName + "\") "
-                                              + "List<GeneratedGraphQl.CustomScalar> scalars"));
+                       containsString("List<GraphEndpoint__GraphQlFeature__CustomScalar> scalars"));
+            assertThat(featureSource, not(containsString("@Service.Named")));
             assertThat(featureSource, not(containsString("GraphQlScalar<Money> scalar_0")));
             assertThat(featureSource,
                        containsString("this.scalars = scalars;"));
+
+            Path generatedContract = consumer.sourceOutput()
+                    .resolve(Path.of("com",
+                                          "example",
+                                          consumerName,
+                                          "GraphEndpoint__GraphQlFeature__CustomScalar.java"));
+            assertThat("Generated source should exist: " + generatedContract,
+                       Files.exists(generatedContract),
+                       is(true));
+            String contractSource = Files.readString(generatedContract, StandardCharsets.UTF_8);
+            assertThat(contractSource, containsString("@Service.Contract"));
+            assertThat(contractSource,
+                       containsString("interface GraphEndpoint__GraphQlFeature__CustomScalar "
+                                              + "extends GeneratedGraphQl.CustomScalar"));
 
             Path generatedAdapter = consumer.sourceOutput()
                     .resolve(Path.of("com",
@@ -769,8 +790,8 @@ class GraphQlServerCodegenTest {
                        is(true));
             String adapterSource = Files.readString(generatedAdapter, StandardCharsets.UTF_8);
             assertThat(adapterSource, containsString("@Service.Singleton"));
-            assertThat(adapterSource, containsString("@Service.Named(\"" + featureName + "\")"));
-            assertThat(adapterSource, containsString("implements GeneratedGraphQl.CustomScalar"));
+            assertThat(adapterSource, not(containsString("@Service.Named")));
+            assertThat(adapterSource, containsString("implements GraphEndpoint__GraphQlFeature__CustomScalar"));
             assertThat(adapterSource, containsString("private final GraphQlScalar<Money> delegate;"));
             assertThat(adapterSource, containsString("@Service.Inject"));
 
@@ -787,6 +808,7 @@ class GraphQlServerCodegenTest {
             assertThat(registry, containsString(featureName
                                                         + "__com_2e_example_2e_scalars_2e_MoneyScalar__"
                                                         + "GraphQlScalar__ServiceDescriptor"));
+            assertThat(registry, containsString(featureContract));
             assertThat(registry, containsString("io.helidon.graphql.GeneratedGraphQl.CustomScalar"));
             assertThat(registry,
                        not(containsString("com.example." + consumerName

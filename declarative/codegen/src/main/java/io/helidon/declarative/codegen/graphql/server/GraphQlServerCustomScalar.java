@@ -27,6 +27,7 @@ import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -54,9 +55,34 @@ class GraphQlServerCustomScalar {
         this.ctx = ctx;
     }
 
+    TypeName processContract(RegistryRoundContext roundContext, TypeInfo endpointTypeInfo, TypeName featureType) {
+        TypeName generatedType = TypeName.builder()
+                .packageName(featureType.packageName())
+                .className(featureType.className() + "__CustomScalar")
+                .build();
+        ClassModel.Builder classModel = ClassModel.builder()
+                .copyright(CodegenUtil.copyright(GENERATOR, endpointTypeInfo.typeName(), generatedType))
+                .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
+                                                               endpointTypeInfo.typeName(),
+                                                               generatedType,
+                                                               "0",
+                                                               ""))
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT))
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .classType(ElementKind.INTERFACE)
+                .type(generatedType)
+                .addInterface(GRAPHQL_SCALAR_SPI);
+        roundContext.addGeneratedType(generatedType,
+                                      classModel,
+                                      endpointTypeInfo.typeName(),
+                                      endpointTypeInfo.originatingElementValue());
+        return generatedType;
+    }
+
     void process(RegistryRoundContext roundContext,
                  TypeInfo endpointTypeInfo,
                  TypeName featureType,
+                 TypeName featureScalarContract,
                  ScalarSchemaType scalarType) {
         TypeInfo scalarTypeInfo = roundContext.typeInfo(scalarType.javaType().boxed())
                 .or(() -> roundContext.typeInfo(scalarType.javaType()))
@@ -75,7 +101,7 @@ class GraphQlServerCustomScalar {
                     scalarTypeInfo,
                     scalarAnnotations,
                     generatedType,
-                    featureType);
+                    featureScalarContract);
         }
     }
 
@@ -85,15 +111,14 @@ class GraphQlServerCustomScalar {
                          TypeInfo scalarTypeInfo,
                          Set<Annotation> scalarAnnotations,
                          TypeName generatedType,
-                         TypeName featureType) {
+                         TypeName featureScalarContract) {
         ClassModel.Builder classModel = ClassModel.builder()
                 .type(generatedType)
                 .copyright(CodegenUtil.copyright(GENERATOR, endpointTypeInfo.typeName(), generatedType))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, endpointTypeInfo.typeName(), generatedType, "0", ""))
                 .addAnnotation(DeclarativeTypes.SINGLETON_ANNOTATION)
-                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED, featureType.fqName()))
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addInterface(GRAPHQL_SCALAR_SPI)
+                .addInterface(featureScalarContract)
                 .addField(delegate -> delegate
                         .accessModifier(AccessModifier.PRIVATE)
                         .isFinal(true)

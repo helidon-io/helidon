@@ -88,7 +88,6 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_NON_NULL;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_QUERY;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCALAR;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCALAR_SPI;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCHEMA;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SERVER_CONTEXT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SERVER_ENDPOINT;
@@ -121,7 +120,6 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.a
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendObject;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendScalar;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.propertyName;
-import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static java.util.function.Predicate.not;
 
 class GraphQlServerExtension implements RegistryCodegenExtension {
@@ -137,9 +135,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                                   "Boolean",
                                                                   "ID");
     private static final Set<String> RESERVED_ENUM_VALUE_NAMES = Set.of("true", "false", "null");
-    private static final TypeName LIST_OF_GRAPHQL_SCALARS = TypeName.builder(TypeNames.LIST)
-            .addTypeArgument(GRAPHQL_SCALAR_SPI)
-            .build();
     private static final TypeName LIST_OF_ANNOTATIONS = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(TypeName.create(Annotation.class))
             .build();
@@ -714,6 +709,10 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .packageName(endpointTypeName.packageName())
                 .className(className)
                 .build();
+        TypeName scalarContract = customScalar.processContract(roundContext, type, generatedType);
+        TypeName listOfScalars = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(scalarContract)
+                .build();
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(GENERATOR, endpointTypeName, generatedType))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, endpointTypeName, generatedType, "1", ""))
@@ -744,7 +743,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         classModel.addField(field -> field
                 .accessModifier(AccessModifier.PRIVATE)
                 .isFinal(true)
-                .type(LIST_OF_GRAPHQL_SCALARS)
+                .type(listOfScalars)
                 .name("scalars"));
         classModel.addField(field -> field.accessModifier(AccessModifier.PRIVATE)
                 .isFinal(true).type(DeclarativeTypes.CONFIG).name("config"));
@@ -766,12 +765,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         constructor.addParameter(param -> param.type(GRAPHQL_ENTRY_POINTS).name("entryPoints"))
                 .addParameter(param -> param.type(HTTP_ENTRY_POINTS).name("httpEntryPoints"));
         constructor.addParameter(param -> param
-                        .addAnnotation(Annotation.create(SERVICE_ANNOTATION_NAMED, generatedType.fqName()))
-                        .type(LIST_OF_GRAPHQL_SCALARS)
+                        .type(listOfScalars)
                         .name("scalars"))
                 .addContentLine("this.scalars = scalars;");
         for (ScalarSchemaType scalarType : group.schemaTypes().scalarTypes()) {
-            customScalar.process(roundContext, type, generatedType, scalarType);
+            customScalar.process(roundContext, type, generatedType, scalarContract, scalarType);
         }
         constructor.addParameter(param -> param.type(DeclarativeTypes.CONFIG).name("config"))
                 .addContentLine("this.entryPoints = entryPoints;")
