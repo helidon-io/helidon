@@ -430,6 +430,10 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
         assertThat(generated, containsString(".dataFetcher(\"isbn\", environment -> ((Book) environment.getSource()).isbn())"));
         assertThat(generated, containsString("List<GeneratedGraphQl.CustomScalar> scalars"));
+        assertThat(generated, containsString("GraphQlScalar<Isbn> scalar_0"));
+        assertThat(generated,
+                   containsString("this.scalars = List.of("
+                                          + "com_2e_example_2e_IsbnScalar__GraphQlScalar.create(scalar_0));"));
         assertThat(generated, containsString("builder.scalar(graphQlScalar(\"ISBN\", Isbn.class));"));
         assertThat(generated, containsString("new Coercing<Object, Object>()"));
         assertThat(generated, containsString("scalar.serialize(dataFetcherResult)"));
@@ -442,8 +446,11 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("case graphql.language.ObjectValue objectValue"));
         assertThat(generatedScalar,
                    containsString("class com_2e_example_2e_IsbnScalar__GraphQlScalar "
-                                          + "implements GeneratedGraphQl.CustomScalar"));
-        assertThat(generatedScalar, containsString("private final GraphQlScalar<Isbn> delegate"));
+                                          + "{"));
+        assertThat(generatedScalar,
+                   containsString("static GeneratedGraphQl.CustomScalar create(GraphQlScalar<Isbn> delegate)"));
+        assertThat(generatedScalar, not(containsString("@Service.Singleton")));
+        assertThat(generatedScalar, not(containsString("@Service.Inject")));
         assertThat(generatedScalar, containsString("return \"ISBN\";"));
         assertThat(generatedScalar, containsString("return Isbn.class;"));
         assertThat(generatedScalar, containsString("return \"ISBN scalar\";"));
@@ -640,6 +647,137 @@ class GraphQlServerCodegenTest {
                            .distinct()
                            .count(),
                    is(2L));
+    }
+
+    @Test
+    void twoConsumersUseFeatureLocalScalarAdapters() throws IOException {
+        Path workDir = Path.of("target/test-compiler/graphql-server-two-consumer-custom-scalar");
+        var dependency = TestCompiler.builder()
+                .currentRelease()
+                .addModulepath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(workDir.resolve("dependency"))
+                .addSource("module-info.java", """
+                        module com.example.scalars {
+                            requires io.helidon.graphql;
+                            requires io.helidon.service.registry;
+
+                            exports com.example.scalars;
+                        }
+                        """)
+                .addSource("com/example/scalars/Money.java", """
+                        package com.example.scalars;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Scalar("MONEY")
+                        public record Money(String value) {
+                        }
+                        """)
+                .addSource("com/example/scalars/MoneyScalar.java", """
+                        package com.example.scalars;
+
+                        import io.helidon.graphql.spi.GraphQlScalar;
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Singleton
+                        public class MoneyScalar implements GraphQlScalar<Money> {
+                            @Override
+                            public Object serialize(Money value) {
+                                return value.value();
+                            }
+
+                            @Override
+                            public Money parseValue(Object value) {
+                                return new Money((String) value);
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String dependencyDiagnostics = String.join("\n", dependency.diagnostics());
+        assertThat(dependencyDiagnostics, dependency.success(), is(true));
+
+        for (String consumerName : List.of("a", "b")) {
+            var consumer = TestCompiler.builder()
+                    .currentRelease()
+                    .addModulepath(GRAPHQL_CLASSPATH)
+                    .addModulepathEntry(dependency.classOutput())
+                    .addProcessor(AptProcessor::new)
+                    .workDir(workDir.resolve(consumerName))
+                    .addSource("module-info.java", """
+                            module com.example.%1$s {
+                                requires com.example.scalars;
+                                requires io.helidon.common;
+                                requires io.helidon.common.context;
+                                requires io.helidon.common.types;
+                                requires io.helidon.config;
+                                requires io.helidon.graphql;
+                                requires io.helidon.graphql.server;
+                                requires io.helidon.service.registry;
+                                requires io.helidon.webserver;
+                                requires io.helidon.webserver.graphql;
+                            }
+                            """.formatted(consumerName))
+                    .addSource("GraphEndpoint.java", """
+                            package com.example.%1$s;
+
+                            import com.example.scalars.Money;
+                            import io.helidon.graphql.GraphQl;
+                            import io.helidon.webserver.graphql.GraphQlServer;
+
+                            @GraphQlServer.Endpoint
+                            class GraphEndpoint {
+                                @GraphQl.Query
+                                Money money() {
+                                    return new Money("%1$s");
+                                }
+                            }
+                            """.formatted(consumerName))
+                    .build()
+                    .compile();
+
+            String consumerDiagnostics = String.join("\n", consumer.diagnostics());
+            assertThat(consumerDiagnostics, consumer.success(), is(true));
+
+            Path generatedFeature = consumer.sourceOutput()
+                    .resolve(Path.of("com", "example", consumerName, "GraphEndpoint__GraphQlFeature.java"));
+            assertThat("Generated source should exist: " + generatedFeature,
+                       Files.exists(generatedFeature),
+                       is(true));
+            String featureSource = Files.readString(generatedFeature, StandardCharsets.UTF_8);
+            assertThat(featureSource, containsString("GraphQlScalar<Money> scalar_0"));
+            assertThat(featureSource,
+                       not(containsString("List<GeneratedGraphQl.CustomScalar> scalars)")));
+            assertThat(featureSource,
+                       containsString("this.scalars = List.of("
+                                              + "com_2e_example_2e_scalars_2e_MoneyScalar__GraphQlScalar.create(scalar_0));"));
+
+            Path generatedAdapter = consumer.sourceOutput()
+                    .resolve(Path.of("com",
+                                          "example",
+                                          consumerName,
+                                          "com_2e_example_2e_scalars_2e_MoneyScalar__GraphQlScalar.java"));
+            assertThat("Generated source should exist: " + generatedAdapter,
+                       Files.exists(generatedAdapter),
+                       is(true));
+            String adapterSource = Files.readString(generatedAdapter, StandardCharsets.UTF_8);
+            assertThat(adapterSource, not(containsString("@Service.Singleton")));
+            assertThat(adapterSource, not(containsString("@Service.Inject")));
+
+            Path registryMetadata = consumer.classOutput()
+                    .resolve(Path.of("META-INF",
+                                          "helidon",
+                                          "unnamed",
+                                          "com.example." + consumerName,
+                                          "service-registry.json"));
+            assertThat("Generated registry metadata should exist: " + registryMetadata,
+                       Files.exists(registryMetadata),
+                       is(true));
+            assertThat(Files.readString(registryMetadata, StandardCharsets.UTF_8),
+                       not(containsString("io.helidon.graphql.GeneratedGraphQl.CustomScalar")));
+        }
     }
 
     @Test

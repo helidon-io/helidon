@@ -706,10 +706,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     }
 
     private void process(RegistryRoundContext roundContext, GraphQlGroup group) {
-        for (ScalarSchemaType scalarType : group.schemaTypes().scalarTypes()) {
-            customScalar.process(roundContext, group.primaryEndpoint().typeInfo(), scalarType);
-        }
-
         TypeInfo type = group.primaryEndpoint().typeInfo();
         TypeName endpointTypeName = type.typeName();
         String className = featureClassName(group);
@@ -717,7 +713,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .packageName(endpointTypeName.packageName())
                 .className(className)
                 .build();
-
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(GENERATOR, endpointTypeName, generatedType))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, endpointTypeName, generatedType, "1", ""))
@@ -767,21 +762,24 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                     .addContent(fieldName)
                     .addContentLine(";");
         }
-        constructor.addParameter(param -> param
-                        .type(GRAPHQL_ENTRY_POINTS)
-                        .name("entryPoints"))
-                .addParameter(param -> param
-                        .type(HTTP_ENTRY_POINTS)
-                        .name("httpEntryPoints"))
-                .addParameter(param -> param
-                        .type(LIST_OF_GRAPHQL_SCALARS)
-                        .name("scalars"))
-                .addParameter(param -> param.type(DeclarativeTypes.CONFIG).name("config"))
+        constructor.addParameter(param -> param.type(GRAPHQL_ENTRY_POINTS).name("entryPoints"))
+                .addParameter(param -> param.type(HTTP_ENTRY_POINTS).name("httpEntryPoints"));
+        constructor.addContent("this.scalars = List.of(");
+        int scalarIndex = 0;
+        for (ScalarSchemaType scalarType : group.schemaTypes().scalarTypes()) {
+            String scalarName = "scalar_" + scalarIndex;
+            constructor.addParameter(param -> param
+                    .type(TypeName.builder(GraphQlServerCodegenTypes.GRAPHQL_CUSTOM_SCALAR_SPI)
+                                  .addTypeArgument(scalarType.javaType()).build())
+                    .name(scalarName));
+            constructor.addContent(scalarIndex++ == 0 ? "" : ", ");
+            constructor.addContent(customScalar.process(roundContext, type, scalarType))
+                    .addContent(".create(").addContent(scalarName).addContent(")");
+        }
+        constructor.addContentLine(");").addParameter(param -> param.type(DeclarativeTypes.CONFIG).name("config"))
                 .addContentLine("this.entryPoints = entryPoints;")
-                .addContentLine("this.httpEntryPoints = httpEntryPoints;")
-                .addContentLine("this.scalars = scalars;").addContentLine("this.config = config;");
+                .addContentLine("this.httpEntryPoints = httpEntryPoints;").addContentLine("this.config = config;");
         classModel.addConstructor(constructor);
-
         addSetupMethod(classModel, group);
         addSocketMethods(classModel, group);
         addSchemaMethod(classModel, group);
