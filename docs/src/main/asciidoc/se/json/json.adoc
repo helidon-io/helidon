@@ -144,6 +144,15 @@ API provides common serialization and deserialization methods:
 include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_1, indent=0]
 ----
 
+When the item type of a list is known, use the list helpers instead of creating a
+`GenericType` descriptor explicitly:
+
+[source,java]
+.Serializing and deserializing a list
+----
+include::{sourcedir}/se/json/JsonSnippets.java[tag=snippet_33, indent=0]
+----
+
 === Annotations
 
 Helidon JSON binding provides annotations to control serialization and deserialization behavior.

@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import io.helidon.common.GenericType;
 import io.helidon.json.binding.JsonBinding;
@@ -51,6 +52,16 @@ public enum BindingMethod {
         <T> T deserialize(JsonBinding jsonBinding, String json, GenericType<T> type) {
             return jsonBinding.deserialize(json, type);
         }
+
+        @Override
+        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType) {
+            return jsonBinding.serializeList(instance, itemType);
+        }
+
+        @Override
+        <T> List<T> deserializeList(JsonBinding jsonBinding, String json, Class<T> itemType) {
+            return jsonBinding.deserializeList(json, itemType);
+        }
     },
     BYTE_ARRAY {
         @Override
@@ -76,6 +87,16 @@ public enum BindingMethod {
         @Override
         <T> T deserialize(JsonBinding jsonBinding, String json, GenericType<T> type) {
             return jsonBinding.deserialize(json.getBytes(StandardCharsets.UTF_8), type);
+        }
+
+        @Override
+        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType) {
+            return new String(jsonBinding.serializeListToBytes(instance, itemType), StandardCharsets.UTF_8);
+        }
+
+        @Override
+        <T> List<T> deserializeList(JsonBinding jsonBinding, String json, Class<T> itemType) {
+            return jsonBinding.deserializeList(json.getBytes(StandardCharsets.UTF_8), itemType);
         }
     },
     READER_WRITER {
@@ -109,6 +130,18 @@ public enum BindingMethod {
         <T> T deserialize(JsonBinding jsonBinding, String json, GenericType<T> type) {
             return jsonBinding.deserialize(new StringReader(json), type);
         }
+
+        @Override
+        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType) {
+            StringWriter writer = new StringWriter();
+            jsonBinding.serializeList(writer, instance, itemType);
+            return writer.toString();
+        }
+
+        @Override
+        <T> List<T> deserializeList(JsonBinding jsonBinding, String json, Class<T> itemType) {
+            return jsonBinding.deserializeList(new StringReader(json), itemType);
+        }
     },
     STREAM {
         @Override
@@ -141,6 +174,18 @@ public enum BindingMethod {
         <T> T deserialize(JsonBinding jsonBinding, String json, GenericType<T> type) {
             return jsonBinding.deserialize(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), type);
         }
+
+        @Override
+        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            jsonBinding.serializeList(outputStream, instance, itemType);
+            return outputStream.toString(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        <T> List<T> deserializeList(JsonBinding jsonBinding, String json, Class<T> itemType) {
+            return jsonBinding.deserializeList(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), itemType);
+        }
     };
 
     abstract String serialize(JsonBinding jsonBinding, Object instance);
@@ -152,4 +197,8 @@ public enum BindingMethod {
     abstract <T> String serialize(JsonBinding jsonBinding, T instance, GenericType<? super T> type);
 
     abstract <T> T deserialize(JsonBinding jsonBinding, String json, GenericType<T> type);
+
+    abstract <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType);
+
+    abstract <T> List<T> deserializeList(JsonBinding jsonBinding, String json, Class<T> itemType);
 }
