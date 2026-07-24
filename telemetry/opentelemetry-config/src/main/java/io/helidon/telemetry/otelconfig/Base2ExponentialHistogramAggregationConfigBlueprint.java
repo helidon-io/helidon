@@ -27,6 +27,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = Base2ExponentialHistogramAggregationSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(Base2ExponentialHistogramAggregationSupport.CustomMethods.class)
+@Prototype.IncludeDefaultMethods
 interface Base2ExponentialHistogramAggregationConfigBlueprint {
 
     /**
@@ -44,5 +45,16 @@ interface Base2ExponentialHistogramAggregationConfigBlueprint {
      */
     @Option.Configured
     Optional<Integer> maxScale();
+
+    /**
+     * Whether the min and max should be recorded.
+     *
+     * @return whether to record min and max
+     */
+    @Option.DefaultBoolean(Base2ExponentialHistogramAggregationSupport.DEFAULT_RECORD_MIN_MAX)
+    @Option.Configured
+    default boolean recordMinMax() {
+        return Base2ExponentialHistogramAggregationSupport.DEFAULT_RECORD_MIN_MAX;
+    }
 
 }

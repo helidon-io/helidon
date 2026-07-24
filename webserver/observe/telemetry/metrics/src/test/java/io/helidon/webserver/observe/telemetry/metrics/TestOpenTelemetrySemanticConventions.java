@@ -51,6 +51,7 @@ import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetric
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -163,7 +164,8 @@ class TestOpenTelemetrySemanticConventions {
             and the timer's count is 1.
              */
 
-            List<String> jsonText = testLogHandler.messages(2);
+            List<String> jsonText =
+                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
 
             var root = JsonParser.create(jsonText.getFirst()).readJsonObject();
 
@@ -171,6 +173,16 @@ class TestOpenTelemetrySemanticConventions {
             var metricsEntries = metricsEntries(root);
 
             for (JsonObject metricsEntry : metricsEntries) {
+
+                /*
+                OTel can insert some of its own messages, which we can ignore for this test. Skip any for which the metric
+                name is not the name of our timer.
+                 */
+                var metricEntryName = metricsEntry.stringValue("name");
+                if (metricEntryName.isEmpty()
+                        || !metricEntryName.get().equals(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)) {
+                    continue;
+                }
 
                 var dataPoints = metricsEntry.objectValue("histogram").orElseThrow()
                         .arrayValue("dataPoints").orElseThrow()
@@ -259,9 +271,9 @@ class TestOpenTelemetrySemanticConventions {
                 assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
             }
 
-            var beforeJsonText = testLogHandler.messages(2);
-            var beforeRoot = JsonParser.create(beforeJsonText.getLast()).readJsonObject();
-            var beforeMeasurement = personalizedGreetingMeasurement(beforeRoot);
+            var beforeJsonText =
+                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
+            var beforeMeasurement = personalizedGreetingMeasurement(beforeJsonText);
 
             var startTime = System.nanoTime();
             try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
@@ -271,9 +283,9 @@ class TestOpenTelemetrySemanticConventions {
             }
             var elapsedTimeFromClient = System.nanoTime() - startTime;
 
-            var afterJsonText = testLogHandler.messages(2);
-            var afterRoot = JsonParser.create(afterJsonText.getLast()).readJsonObject();
-            var afterMeasurement = personalizedGreetingMeasurement(afterRoot);
+            var afterJsonText =
+                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
+            var afterMeasurement = personalizedGreetingMeasurement(afterJsonText);
 
             var personalizedGreetingCount = afterMeasurement.count() - beforeMeasurement.count();
             var personalizedGreetingTimeNanos = afterMeasurement.timeNanos() - beforeMeasurement.timeNanos();
@@ -283,6 +295,15 @@ class TestOpenTelemetrySemanticConventions {
                        personalizedGreetingTimeNanos,
                        allOf(greaterThan(0L), lessThanOrEqualTo(elapsedTimeFromClient)));
         }
+    }
+
+    private static PersonalizedGreetingMeasurement personalizedGreetingMeasurement(List<String> jsonText) {
+        var timerJson = jsonText.stream()
+                .filter(it -> it.contains(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME))
+                .reduce((first, second) -> second)
+                .orElseThrow();
+
+        return personalizedGreetingMeasurement(JsonParser.create(timerJson).readJsonObject());
     }
 
     private static PersonalizedGreetingMeasurement personalizedGreetingMeasurement(JsonObject root) {
