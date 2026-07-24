@@ -172,6 +172,48 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     @Test
+    void recordsOnceWhenResponseIsSentBeforeChainFailure() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicInteger recorded = new AtomicInteger();
+        Filter filter = filter(attributes -> {
+            recordedAttributes.set(attributes);
+            recorded.incrementAndGet();
+        }, true);
+        FilterChain chain = mock(FilterChain.class);
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+        IllegalArgumentException failure = new IllegalArgumentException("chain failure");
+        doAnswer(invocation -> {
+            whenSent.get().run();
+            throw failure;
+        }).when(chain).proceed();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                         () -> filter.filter(chain, request(), response(whenSent)));
+
+        assertThat(exception, sameInstance(failure));
+        assertThat(recorded.get(), is(1));
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.ERROR_TYPE)),
+                   is("IllegalArgumentException"));
+    }
+
+    @Test
+    void recordsOnceWhenChainFailsBeforeResponseIsSent() throws Exception {
+        AtomicInteger recorded = new AtomicInteger();
+        Filter filter = filter(attributes -> recorded.incrementAndGet(), true);
+        FilterChain chain = mock(FilterChain.class);
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+        IllegalArgumentException failure = new IllegalArgumentException("transport failure");
+        doThrow(failure).when(chain).proceed();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                         () -> filter.filter(chain, request(), response(whenSent)));
+        whenSent.get().run();
+
+        assertThat(exception, sameInstance(failure));
+        assertThat(recorded.get(), is(1));
+    }
+
+    @Test
     void legacyMetricsUseMatchingPatternWithoutWhenSent() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
         CountDownLatch recorded = new CountDownLatch(1);

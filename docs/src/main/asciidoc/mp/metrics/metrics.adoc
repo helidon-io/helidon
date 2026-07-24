@@ -106,12 +106,20 @@ telemetry:                              # <1>
       readers:                          # <5>
         - type: periodic
           interval: PT1S
+server:                                 # <6>
+  features:
+    observe:
+      observers:
+        metrics:
+          auto-http-metrics:
+            use-updated-http-metrics: true
 ----
 <1> Introduces telemetry-related settings.
 <2> Provides the required OTLP service name.
 <3> Introduces the OpenTelemetry metrics settings.
 <4> Configures an OTLP metrics exporter to transmit metrics data to a local Jaeger backend.
 <5> Configures a metrics reader which gathers data periodically, once per the configured interval, and uses the configured exporter to transmit that gathered metrics data.
+<6> Enables the updated HTTP metrics semantic-conventions behavior. It defaults to `false` to preserve the output from earlier Helidon 4.x releases.
 
 == API
 

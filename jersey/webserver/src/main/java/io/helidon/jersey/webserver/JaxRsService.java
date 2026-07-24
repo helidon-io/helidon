@@ -53,7 +53,6 @@ import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.GenericType;
@@ -92,7 +91,6 @@ public class JaxRsService implements HttpService {
     private final ResourceConfig resourceConfig;
     private final Container container;
     private final Application application;
-    private final String applicationPath;
 
     private JaxRsService(ResourceConfig resourceConfig,
                          ApplicationHandler appHandler,
@@ -101,7 +99,6 @@ public class JaxRsService implements HttpService {
         this.appHandler = appHandler;
         this.container = container;
         this.application = getApplication(resourceConfig);
-        this.applicationPath = applicationPath();
     }
 
     /**
@@ -326,7 +323,7 @@ public class JaxRsService implements HttpService {
             boolean matchedResourceMethod = requestContext.getUriInfo().getMatchedResourceMethod() != null;
             if (matchedResourceMethod) {
                 Resource matchedResource = requestContext.getUriInfo().getMatchedModelResource();
-                RoutePathSupport.provideRoute(ctx, () -> route(matchedResource));
+                RoutePathSupport.provideRoute(ctx, () -> route(req, matchedResource));
             }
             if (res.status() == Status.NOT_FOUND_404 && !matchedResourceMethod) {
                 // Jersey will not throw an exception, it will complete the request - but we must
@@ -353,11 +350,17 @@ public class JaxRsService implements HttpService {
         }
     }
 
-    private String route(Resource matchedResource) {
-        StringBuilder derivedPath = new StringBuilder(applicationPath);
+    private String route(ServerRequest req, Resource matchedResource) {
+        StringBuilder derivedPath = new StringBuilder(servicePath(req));
 
         appendPath(derivedPath, matchedResource);
         return derivedPath.toString();
+    }
+
+    private static String servicePath(ServerRequest req) {
+        return req.matchingPattern()
+                .map(pattern -> pattern.endsWith("/*") ? pattern.substring(0, pattern.length() - 2) : pattern)
+                .orElse("");
     }
 
     private static void appendPath(StringBuilder derivedPath, Resource resource) {
@@ -393,25 +396,6 @@ public class JaxRsService implements HttpService {
             derivedPath.append('/');
         }
         derivedPath.append(path, start, end);
-    }
-
-    private String applicationPath() {
-        ApplicationPath applicationPath = getRealClass(application.getClass()).getAnnotation(ApplicationPath.class);
-        if (applicationPath == null) {
-            return "";
-        }
-
-        StringBuilder result = new StringBuilder();
-        appendPath(result, applicationPath.value());
-        return result.toString();
-    }
-
-    private static Class<?> getRealClass(Class<?> object) {
-        Class<?> result = object;
-        while (result.isSynthetic()) {
-            result = result.getSuperclass();
-        }
-        return result;
     }
 
     private static class HelidonJerseyContainer implements Container {

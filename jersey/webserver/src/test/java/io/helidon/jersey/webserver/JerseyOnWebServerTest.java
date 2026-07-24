@@ -80,7 +80,7 @@ public class JerseyOnWebServerTest {
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("Hello Joe!"));
-        assertThat(LAST_ROUTE.get(), is("/app/greet/{name}"));
+        assertThat(LAST_ROUTE.get(), is("/jersey/greet/{name}"));
     }
 
     @Test
@@ -92,7 +92,7 @@ public class JerseyOnWebServerTest {
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("Hello Joe!"));
-        assertThat(LAST_ROUTE.get(), is("/app/greet/{name}"));
+        assertThat(LAST_ROUTE.get(), is("/jersey-relative/greet/{name}"));
     }
 
     @Test
@@ -104,7 +104,7 @@ public class JerseyOnWebServerTest {
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("Hello!"));
-        assertThat(LAST_ROUTE.get(), is("/foo/bar/greet"));
+        assertThat(LAST_ROUTE.get(), is("/jersey-trailing/greet"));
     }
 
     @Test

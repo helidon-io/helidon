@@ -18,6 +18,7 @@ package io.helidon.webserver.observe.telemetry.metrics;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -136,6 +137,9 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
         private void filterUpdated(FilterChain chain, RoutingRequest req, RoutingResponse res, long startTime) {
             var exception = new AtomicReference<Exception>();
             var routeSupplier = new AtomicReference<Supplier<String>>();
+            var chainComplete = new AtomicBoolean();
+            var responseSent = new AtomicBoolean();
+            var recorded = new AtomicBoolean();
             var measured = config.isMeasured(req.prologue().method(), req.prologue().uriPath());
             if (measured) {
                 RoutePathSupport.requestRoute(req.context(), routeSupplier::set);
@@ -145,24 +149,37 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             filters and in preparing the response entity, to more accurately capture as much as possible the full time the
             server spent responding to the request.
              */
+            Runnable recordMetrics = () -> {
+                if (recorded.compareAndSet(false, true)) {
+                    try {
+                        updateMetricsIfMeasured(req,
+                                                res,
+                                                measured,
+                                                startTime,
+                                                System.nanoTime(),
+                                                exception.get(),
+                                                routeSupplier.get());
+                    } catch (Throwable e) {
+                        LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
+                    }
+                }
+            };
             res.whenSent(() -> {
-                try {
-                    updateMetricsIfMeasured(req,
-                                            res,
-                                            measured,
-                                            startTime,
-                                            System.nanoTime(),
-                                            exception.get(),
-                                            routeSupplier.get());
-                } catch (Throwable e) {
-                    LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
+                responseSent.set(true);
+                if (chainComplete.get()) {
+                    recordMetrics.run();
                 }
             });
 
             try {
                 chain.proceed();
+                chainComplete.set(true);
+                if (responseSent.get()) {
+                    recordMetrics.run();
+                }
             } catch (Exception e) {
                 exception.set(e);
+                recordMetrics.run();
                 throw e;
             }
         }

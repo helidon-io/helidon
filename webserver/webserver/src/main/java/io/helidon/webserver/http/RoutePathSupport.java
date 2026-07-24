@@ -22,6 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 
@@ -37,6 +38,7 @@ import io.helidon.common.context.Context;
  * Then later, the requesting component uses the {@code Consumer<Supplier<String>>} it passed earlier to retrieve the route,
  * if any was reported.
  */
+@Api.Internal
 public final class RoutePathSupport {
     private static final String ROUTE_PATH_CONSUMERS = RoutePathSupport.class.getName() + ".consumers";
 
