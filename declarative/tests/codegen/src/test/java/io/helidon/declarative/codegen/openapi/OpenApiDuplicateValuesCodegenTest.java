@@ -137,6 +137,79 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void serverMustDeclareUrlVariables() {
+        var result = compile("openapi-server-missing-variable", """
+                @OpenApi.Server("https://{region}.api.example.com")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Server on com.example.InvalidOpenApiEndpoint "
+                                       + "for server https://{region}.api.example.com",
+                               "is missing a declaration for URL variable region");
+    }
+
+    @Test
+    void serverValidatesKnownConfigurationExpressionDefault() {
+        var result = compile("openapi-server-config-expression-default-unused-variable", """
+                @OpenApi.Server(
+                        value = "${openapi.server.url:https://api.example.com}",
+                        variables = @OpenApi.ServerVariable(name = "region", defaultValue = "us"))
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Server on com.example.InvalidOpenApiEndpoint "
+                                       + "for server ${openapi.server.url:https://api.example.com}",
+                               "declares server variable region which is not present in the URL");
+    }
+
+    @Test
+    void serverCannotDeclareUnusedVariables() {
+        var result = compile("openapi-server-unused-variable", """
+                @OpenApi.Server(
+                        value = "https://api.example.com",
+                        variables = @OpenApi.ServerVariable(name = "tenant", defaultValue = "acme"))
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Server on com.example.InvalidOpenApiEndpoint "
+                                       + "for server https://api.example.com",
+                               "declares server variable tenant which is not present in the URL");
+    }
+
+    @Test
     void serverVariableEnumerationMustContainDefault() {
         var result = compile("openapi-server-variable-invalid-enumeration", """
                 @OpenApi.Server(
@@ -402,6 +475,52 @@ class OpenApiDuplicateValuesCodegenTest {
         assertThat(generated, containsString(".in(\"header\")"));
         assertThat(generated, containsString("OpenApiDocumentContextSupport.resolveExpression(context, "
                                                      + "\"${openapi.api-key.name:X-API-Key}\")"));
+    }
+
+    @Test
+    void serverVariableValidationDefersUnknownConfigurationExpression() {
+        var result = compile("openapi-server-unknown-config-expression", """
+                @OpenApi.Server(
+                        value = "${openapi.server.url}",
+                        variables = @OpenApi.ServerVariable(name = "region", defaultValue = "us"))
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+    }
+
+    @Test
+    void serverVariableValidationAllowsLeadingEmbeddedConfigurationExpression() {
+        var result = compile("openapi-server-leading-config-expression", """
+                @OpenApi.Server(
+                        value = "${openapi.scheme:https}://api.example.com/{region}",
+                        variables = @OpenApi.ServerVariable(name = "region", defaultValue = "us"))
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
     }
 
     @Test
