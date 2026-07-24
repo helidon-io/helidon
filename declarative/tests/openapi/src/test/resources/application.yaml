@@ -17,6 +17,7 @@
 test:
   openapi:
     server-url: "https://openapi.example.test"
+    extension-value: '{"enabled":true,"retries":3,"tags":["generated","openapi"],"none":null}'
 
 server:
   port: 0

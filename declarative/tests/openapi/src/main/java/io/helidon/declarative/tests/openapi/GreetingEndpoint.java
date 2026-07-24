@@ -51,7 +51,11 @@ class GreetingEndpoint {
                        description = "Returns a documented greeting.",
                        tags = {"greeting", "documented"},
                        deprecated = true)
-    @OpenApi.Server(value = "https://api.example.com/greetings", description = "Operation server")
+    @OpenApi.Server(value = "https://{region}.api.example.com/greetings",
+                    description = "Operation server",
+                    variables = @OpenApi.ServerVariable(name = "region",
+                                                        defaultValue = "us",
+                                                        enumeration = {"us", "eu"}))
     @OpenApi.ExternalDocs(value = "https://helidon.io/docs/openapi", description = "Operation documentation")
     @OpenApi.Extension(name = "x-test-operation", value = "documented-greeting")
     @OpenApi.SecurityRequirement({
@@ -89,6 +93,12 @@ class GreetingEndpoint {
                                                 value = "Documented response header",
                                                 required = OpenApi.Required.TRUE,
                                                 deprecated = true),
+                      links = @OpenApi.Link(name = "documentedGreeting",
+                                            operationId = "findDocumentedGreeting",
+                                            parameters = @OpenApi.LinkParameter(name = "name",
+                                                                                value = "$response.body#/message"),
+                                            requestBody = "$response.body",
+                                            description = "Follow the documented greeting"),
                       content = @OpenApi.Content(value = ACCEPTED_MEDIA_TYPE,
                                                  schema = Message.class,
                                                  examples = @OpenApi.Example(name = "accepted-response",

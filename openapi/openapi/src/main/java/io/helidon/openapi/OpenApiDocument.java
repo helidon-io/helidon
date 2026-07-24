@@ -1287,7 +1287,18 @@ public final class OpenApiDocument {
 
         @Override
         public ServerVariable build() {
-            requireString(node, "default", "OpenAPI ServerVariable");
+            requireValue(node, "default", "OpenAPI ServerVariable");
+            if (node.containsKey("enum")) {
+                List<String> values = stringList(node.get("enum"));
+                if (values.isEmpty()) {
+                    throw new IllegalStateException("OpenAPI ServerVariable enum must contain at least one value");
+                }
+                String value = stringValue(node.get("default"))
+                        .orElseThrow(() -> new IllegalStateException("OpenAPI ServerVariable requires a string default"));
+                if (!values.contains(value)) {
+                    throw new IllegalStateException("OpenAPI ServerVariable enum must contain default value " + value);
+                }
+            }
             return new ServerVariable(node);
         }
     }

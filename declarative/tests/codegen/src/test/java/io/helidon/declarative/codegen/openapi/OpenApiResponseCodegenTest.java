@@ -35,6 +35,8 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
 import io.helidon.openapi.OpenApi;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
@@ -73,6 +75,8 @@ class OpenApiResponseCodegenTest {
             HttpRoute.class,
             HttpRouting.class,
             HttpRules.class,
+            JsonObject.class,
+            JsonString.class,
             LazyValue.class,
             Mappers.class,
             OpenApi.class,
@@ -140,6 +144,164 @@ class OpenApiResponseCodegenTest {
                                                      + "io.helidon.openapi.OpenApiDocumentContextSupport"
                                                      + ".resolveExpression(context, \"Greeting found\"))"));
         assertThat(generated, containsString(".response(\"404\", response -> response.description(\"Not Found\"))"));
+    }
+
+    @Test
+    void responseLinksAreGenerated() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-response-links"))
+                .addSource("LinkedOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/linked")
+                        class LinkedOpenApiEndpoint {
+                            @Http.GET
+                            @OpenApi.Response(
+                                    status = 200,
+                                    description = "Linked",
+                                    links = {
+                                            @OpenApi.Link(
+                                                    name = "follow",
+                                                    operationId = "getGreeting",
+                                                    parameters = @OpenApi.LinkParameter(
+                                                            name = "id",
+                                                            value = "$response.body#/id"),
+                                                    requestBody = "$response.body",
+                                                    description = "Follow the greeting"),
+                                            @OpenApi.Link(
+                                                    name = "relative",
+                                                    operationRef = "#/paths/~1greetings~1{id}/get")
+                                    })
+                            String get() {
+                                return "ok";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".link(\"follow\", link -> link"));
+        assertThat(generated, containsString(".operationId("));
+        assertThat(generated, containsString("\"getGreeting\""));
+        assertThat(generated, containsString(".parameters(JsonObject.builder().set(\"id\","));
+        assertThat(generated, containsString("\"$response.body#/id\""));
+        assertThat(generated, containsString(".requestBody(JsonString.create("));
+        assertThat(generated, containsString("\"$response.body\""));
+        assertThat(generated, containsString("\"Follow the greeting\""));
+        assertThat(generated, containsString(".link(\"relative\", link -> link"));
+        assertThat(generated, containsString(".operationRef("));
+        assertThat(generated, containsString("\"#/paths/~1greetings~1{id}/get\""));
+    }
+
+    @Test
+    void responseCannotDeclareDuplicateLinkNames() {
+        var result = compileInvalidResponseLinks(
+                "duplicate-names",
+                """
+                        @OpenApi.Link(name = "duplicate", operationId = "first"),
+                        @OpenApi.Link(name = "duplicate", operationId = "second")
+                        """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get for status 200",
+                               "cannot define link duplicate more than once");
+    }
+
+    @Test
+    void responseLinkRequiresOperationTarget() {
+        var result = compileInvalidResponseLinks(
+                "missing-target",
+                """
+                        @OpenApi.Link(name = "invalid")
+                        """);
+
+        assertCompilationFails(result,
+                               "link invalid must define exactly one of operationRef or operationId");
+    }
+
+    @Test
+    void responseLinkRejectsMultipleOperationTargets() {
+        var result = compileInvalidResponseLinks(
+                "multiple-targets",
+                """
+                        @OpenApi.Link(name = "invalid",
+                                      operationRef = "${link.ref:}",
+                                      operationId = "getGreeting")
+                        """);
+
+        assertCompilationFails(result,
+                               "link invalid must define exactly one of operationRef or operationId");
+    }
+
+    @Test
+    void responseLinkRejectsDuplicateParameterNames() {
+        var result = compileInvalidResponseLinks(
+                "duplicate-parameter-names",
+                """
+                        @OpenApi.Link(
+                                name = "next",
+                                operationId = "getGreeting",
+                                parameters = {
+                                        @OpenApi.LinkParameter(name = "id", value = "$response.body#/id"),
+                                        @OpenApi.LinkParameter(name = "id", value = "$request.path.id")
+                                })
+                        """);
+
+        assertCompilationFails(result,
+                               "link next cannot define parameter id more than once");
+    }
+
+    @Test
+    void responseLinkRejectsInvalidName() {
+        var result = compileInvalidResponseLinks(
+                "invalid-name",
+                """
+                        @OpenApi.Link(name = "invalid/name", operationId = "getGreeting")
+                        """);
+
+        assertCompilationFails(result,
+                               "has invalid link name invalid/name");
+    }
+
+    @Test
+    void responseLinkRequiresParameterName() {
+        var result = compileInvalidResponseLinks(
+                "missing-parameter-name",
+                """
+                        @OpenApi.Link(
+                                name = "next",
+                                operationId = "getGreeting",
+                                parameters = @OpenApi.LinkParameter(name = "", value = "$response.body#/id"))
+                        """);
+
+        assertCompilationFails(result,
+                               "link next requires a parameter name");
     }
 
     @Test
@@ -287,6 +449,52 @@ class OpenApiResponseCodegenTest {
                             }
                         }
                         """.formatted(status))
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+    }
+
+    private static TestCompiler.Result compileInvalidResponseLinks(String testName, String links) {
+        return TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-invalid-response-link-" + testName))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            @OpenApi.Response(
+                                    status = 200,
+                                    description = "Invalid",
+                                    links = {
+                                        %s
+                                    })
+                            String get() {
+                                return "ok";
+                            }
+                        }
+                        """.formatted(links))
                 .addSource("Main.java", """
                         package com.example;
 

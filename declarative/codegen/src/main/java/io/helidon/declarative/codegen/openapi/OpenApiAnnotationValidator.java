@@ -49,6 +49,40 @@ final class OpenApiAnnotationValidator {
                     .filter(not(String::isBlank))
                     .orElseThrow(() -> new CodegenException("@OpenApi.Server value is required"));
             validateUnique("@OpenApi.Server on " + owner, "server", url, urls);
+            Set<String> variableNames = new HashSet<>();
+            for (Annotation variable : server.annotationValues("variables").orElseGet(List::of)) {
+                String location = "@OpenApi.Server on " + owner + " for server " + url;
+                String name = stringValue(variable, "name")
+                        .filter(not(String::isBlank))
+                        .orElseThrow(() -> new CodegenException(location + " requires a server variable name"));
+                if (name.indexOf('{') >= 0 || name.indexOf('}') >= 0) {
+                    throw new CodegenException(location + " has invalid server variable name " + name
+                                                       + "; names cannot contain braces");
+                }
+                validateUnique(location, "server variable", name, variableNames);
+
+                String defaultValue = variable.stringValue("defaultValue")
+                        .orElseThrow(() -> new CodegenException(location + " for variable " + name
+                                                                       + " requires a default value"));
+                List<String> enumeration = variable.stringValues("enumeration").orElseGet(List::of);
+                if (!enumeration.isEmpty()) {
+                    String resolvedDefault = expressionDefaultValue(defaultValue);
+                    List<String> resolvedEnumeration = enumeration.stream()
+                            .map(this::expressionDefaultValue)
+                            .toList();
+                    boolean defaultIsKnown = !defaultValue.contains("${") || !resolvedDefault.equals(defaultValue);
+                    boolean enumerationIsKnown = enumeration.stream()
+                            .allMatch(value -> !value.contains("${")
+                                    || !expressionDefaultValue(value).equals(value));
+                    if (defaultIsKnown
+                            && enumerationIsKnown
+                            && !resolvedEnumeration.contains(resolvedDefault)) {
+                        throw new CodegenException(location + " for variable " + name
+                                                           + " must include default value " + resolvedDefault
+                                                           + " in its enumeration");
+                    }
+                }
+            }
         }
     }
 
@@ -123,6 +157,35 @@ final class OpenApiAnnotationValidator {
             if (!statuses.add(status)) {
                 throw new CodegenException("@OpenApi.Response on " + restMethodDescription
                                                    + " cannot define response status " + status + " more than once");
+            }
+            Set<String> linkNames = new HashSet<>();
+            for (Annotation link : response.annotationValues("links").orElseGet(List::of)) {
+                String location = "@OpenApi.Response on " + restMethodDescription + " for status " + status;
+                String name = stringValue(link, "name")
+                        .filter(not(String::isBlank))
+                        .orElseThrow(() -> new CodegenException(location + " requires a link name"));
+                if (!name.matches("[a-zA-Z0-9._-]+")) {
+                    throw new CodegenException(location + " has invalid link name " + name
+                                                       + "; names can contain only letters, digits, dots, hyphens,"
+                                                       + " and underscores");
+                }
+                validateUnique(location, "link", name, linkNames);
+
+                boolean hasOperationRef = hasConfiguredStringValue(link, "operationRef");
+                boolean hasOperationId = hasConfiguredStringValue(link, "operationId");
+                if (hasOperationRef == hasOperationId) {
+                    throw new CodegenException(location + " link " + name
+                                                       + " must define exactly one of operationRef or operationId");
+                }
+
+                Set<String> parameterNames = new HashSet<>();
+                for (Annotation parameter : link.annotationValues("parameters").orElseGet(List::of)) {
+                    String parameterName = stringValue(parameter, "name")
+                            .filter(not(String::isBlank))
+                            .orElseThrow(() -> new CodegenException(location + " link " + name
+                                                                           + " requires a parameter name"));
+                    validateUnique(location + " link " + name, "parameter", parameterName, parameterNames);
+                }
             }
         }
     }
