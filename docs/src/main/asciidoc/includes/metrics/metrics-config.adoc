@@ -127,6 +127,13 @@ Helidon decides whether to measure incoming requests as follows:
 
 The `auto-http-metrics.sockets` setting controls which sockets are included in the measurements; if not set, Helidon measures requests on all sockets.
 
+[NOTE]
+====
+The `auto-http-metrics.use-updated-http-metrics` setting controls the updated OpenTelemetry HTTP metric behavior. It
+defaults to `false` to retain the earlier Helidon 4.x duration, response-status, and `http.route` output. Set it to
+`true` to use the updated behavior.
+====
+
 ifdef::se-flavor[]
 [source,yaml]
 endif::se-flavor[]
@@ -142,6 +149,7 @@ server:
       observers:
         metrics:
           auto-http-metrics:
+            use-updated-http-metrics: true # <4>
             paths:
               - path: "/greet"              # <1>
                 methods: ["GET","HEAD"]
@@ -159,11 +167,13 @@ server.features.observe.observers.metrics.auto-http-metrics.paths.1.path=/greet/
 server.features.observe.observers.metrics.auto-http-metrics.paths.1.enabled=false
 
 server.features.observe.observers.metrics.auto-http-metrics.sockets=@default,private   # <3>
+server.features.observe.observers.metrics.auto-http-metrics.use-updated-http-metrics=true # <4>
 ----
 endif::mp-flavor[]
 <1> Measure `/greet` for only `GET` and `HEAD` requests.
 <2> Do not measure the personalized greeting requests.
 <3> Measure only endpoints on the default socket and the socket named `private`. Endpoints on other sockets (such as if you had an `admin` socket) are not measured.
+<4> Use the updated OpenTelemetry HTTP metric behavior.
 
 The xref:{rootdir}/config/io_helidon_webserver_observe_metrics_AutoHttpMetricsConfig.adoc[AutoHttpMetricsConfig documentation] describes the configuration more fully.
 

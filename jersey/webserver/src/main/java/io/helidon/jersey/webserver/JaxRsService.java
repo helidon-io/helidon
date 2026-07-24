@@ -48,6 +48,7 @@ import io.helidon.http.Status;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.RoutePathSupport;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -67,6 +68,7 @@ import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
+import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
@@ -318,7 +320,12 @@ public class JaxRsService implements HttpService {
             kpiMetricsContext.ifPresent(KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
             appHandler.handle(requestContext);
             writer.await();
-            if (res.status() == Status.NOT_FOUND_404 && requestContext.getUriInfo().getMatchedResourceMethod() == null) {
+            boolean matchedResourceMethod = requestContext.getUriInfo().getMatchedResourceMethod() != null;
+            if (matchedResourceMethod) {
+                Resource matchedResource = requestContext.getUriInfo().getMatchedModelResource();
+                RoutePathSupport.provideRoute(ctx, () -> route(req, matchedResource));
+            }
+            if (res.status() == Status.NOT_FOUND_404 && !matchedResourceMethod) {
                 // Jersey will not throw an exception, it will complete the request - but we must
                 // continue looking for the next route
                 // this is a tricky piece of code - the next can only be called if reset was successful
@@ -341,6 +348,54 @@ public class JaxRsService implements HttpService {
         } catch (Exception e) {
             throw new InternalServerException("Internal exception in JAX-RS processing", e);
         }
+    }
+
+    private String route(ServerRequest req, Resource matchedResource) {
+        StringBuilder derivedPath = new StringBuilder(servicePath(req));
+
+        appendPath(derivedPath, matchedResource);
+        return derivedPath.toString();
+    }
+
+    private static String servicePath(ServerRequest req) {
+        return req.matchingPattern()
+                .map(pattern -> pattern.endsWith("/*") ? pattern.substring(0, pattern.length() - 2) : pattern)
+                .orElse("");
+    }
+
+    private static void appendPath(StringBuilder derivedPath, Resource resource) {
+        if (resource == null) {
+            return;
+        }
+
+        appendPath(derivedPath, resource.getParent());
+
+        String resourcePath = resource.getPath();
+        appendPath(derivedPath, resourcePath);
+    }
+
+    private static void appendPath(StringBuilder derivedPath, String path) {
+        if (path == null || path.isBlank()) {
+            return;
+        }
+
+        int start = 0;
+        int end = path.length();
+        while (start < end && path.charAt(start) == '/') {
+            start++;
+        }
+        while (end > start && path.charAt(end - 1) == '/') {
+            end--;
+        }
+
+        if (start == end) {
+            return;
+        }
+
+        if (derivedPath.isEmpty() || derivedPath.charAt(derivedPath.length() - 1) != '/') {
+            derivedPath.append('/');
+        }
+        derivedPath.append(path, start, end);
     }
 
     private static class HelidonJerseyContainer implements Container {
