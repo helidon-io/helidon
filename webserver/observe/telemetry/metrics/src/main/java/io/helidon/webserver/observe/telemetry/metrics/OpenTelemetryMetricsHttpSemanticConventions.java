@@ -124,8 +124,17 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
         }
 
         @Override
+        @SuppressWarnings("removal")
         public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
             var startTime = System.nanoTime();
+            if (config.useUpdatedHttpMetrics()) {
+                filterUpdated(chain, req, res, startTime);
+            } else {
+                filterLegacy(chain, req, res, startTime);
+            }
+        }
+
+        private void filterUpdated(FilterChain chain, RoutingRequest req, RoutingResponse res, long startTime) {
             var exception = new AtomicReference<Exception>();
             var routeSupplier = new AtomicReference<Supplier<String>>();
             var measured = config.isMeasured(req.prologue().method(), req.prologue().uriPath());
@@ -155,6 +164,16 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                 chain.proceed();
             } catch (Exception e) {
                 exception.set(e);
+                throw e;
+            }
+        }
+
+        private void filterLegacy(FilterChain chain, RoutingRequest req, RoutingResponse res, long startTime) {
+            try {
+                chain.proceed();
+                Thread.ofVirtual().start(() -> updateLegacyMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
+            } catch (Exception e) {
+                Thread.ofVirtual().start(() -> updateLegacyMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
                 throw e;
             }
         }
@@ -203,6 +222,33 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             httpRequestDuration.record((endTime - startTime) / 1_000_000_000.0, attrBuilder.build());
         }
 
+        private void updateLegacyMetricsIfMeasured(RoutingRequest req,
+                                                   RoutingResponse resp,
+                                                   long startTime,
+                                                   long endTime,
+                                                   Exception exception) {
+            if (!config.isMeasured(req.prologue().method(), req.prologue().uriPath())) {
+                return;
+            }
+            AttributesBuilder attrBuilder = Attributes.builder();
+
+            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
+                    .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
+                    .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
+                    .put(AttributeKey.longKey(STATUS_CODE), legacyStatusCode(resp, exception))
+                    .put(AttributeKey.stringKey(HTTP_ROUTE), req.matchingPattern().orElse(""))
+                    .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
+
+            if (isOptedIn(config, SERVER_ADDRESS)) {
+                attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.requestedUri().host());
+            }
+            if (isOptedIn(config, SERVER_PORT)) {
+                attrBuilder.put(AttributeKey.longKey(SERVER_PORT), (long) req.requestedUri().port());
+            }
+
+            httpRequestDuration.record((endTime - startTime) / 1_000_000.0, attrBuilder.build());
+        }
+
         /**
          * Prefer the route established via {@link io.helidon.webserver.http.RoutePathSupport}, if any; otherwise, use the
          * matching pattern from the request.
@@ -227,6 +273,12 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     : resp.status().equals(Status.OK_200)
                             ? ""
                             : resp.status().codeText();
+        }
+
+        private long legacyStatusCode(RoutingResponse resp, Exception exception) {
+            return (exception != null)
+                    ? 0L
+                    : resp.status().code();
         }
 
     }

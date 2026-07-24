@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.is;
 class TestAutoMetricsConfig {
 
     @Test
+    @SuppressWarnings("removal")
     void testAutoMetricsConfig() {
         String configText = """
                 server:
@@ -55,6 +56,8 @@ class TestAutoMetricsConfig {
         var configFromText = Config.just(configText, MediaTypes.APPLICATION_YAML)
                 .get("server.features.observe.observers.metrics.auto-http-metrics");
         var config = AutoHttpMetricsConfig.create(configFromText);
+
+        assertThat("Updated HTTP metrics", config.useUpdatedHttpMetrics(), is(false));
 
         assertThat("GET /greet", config.isMeasured(Method.GET, UriPath.create("/greet")), is(true));
         assertThat("PUT /greet", config.isMeasured(Method.PUT, UriPath.create("/greet")), is(true));
@@ -100,6 +103,7 @@ class TestAutoMetricsConfig {
     }
 
     @Test
+    @SuppressWarnings("removal")
     void testWithNoAutoConfig() {
         String configText = """
                 server:
@@ -120,6 +124,17 @@ class TestAutoMetricsConfig {
         assertThat("GET /hi", config.isMeasured(Method.GET, UriPath.create("/hi")), is(true));
 
         assertThat("GET /metrics", config.isMeasured(Method.GET, UriPath.create("/metrics")), is(false));
+
+        assertThat("Updated HTTP metrics", config.useUpdatedHttpMetrics(), is(false));
+
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testUpdatedHttpMetrics() {
+        var config = AutoHttpMetricsConfig.create(Config.just("use-updated-http-metrics: true", MediaTypes.APPLICATION_YAML));
+
+        assertThat("Updated HTTP metrics", config.useUpdatedHttpMetrics(), is(true));
 
     }
 }

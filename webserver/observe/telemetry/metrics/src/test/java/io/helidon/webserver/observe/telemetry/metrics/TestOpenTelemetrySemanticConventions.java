@@ -105,6 +105,7 @@ class TestOpenTelemetrySemanticConventions {
                       observers:
                         metrics:
                           auto-http-metrics:
+                            use-updated-http-metrics: true
                             paths:
                               - path: /greet
                                 methods: ["OPTIONS"]
