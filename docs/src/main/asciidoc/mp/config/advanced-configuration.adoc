@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 - <<Creating MicroProfile Config Sources for Manual Setup of Config, Creating MicroProfile Config Sources for Manual Setup of Config>>
 - <<Creating Custom Config Sources, Creating Custom Config Sources>>
+- <<Creating Custom Config Filters, Creating Custom Config Filters>>
 - <<Creating MicroProfile Config Sources from meta-config, Creating MicroProfile Config Sources from meta-config>>
 - <<Extending Meta-Config to Create a Custom Config Source Type, Extending Meta-Config to Create a Custom Config Source Type>>
 - <<Creating MicroProfile Config Source from Helidon SE Config Source, Creating MicroProfile Config Source from Helidon SE Config Source>>
@@ -107,6 +108,51 @@ include::{sourcedir}/mp/config/AdvancedConfigurationSnippets.java[tag=snippet_3,
 <2> Returns the properties in this Config Source as a map.
 <3> Returns the value of the requested key, or `null` if the key is not available
 <4> Returns the ordinal of this Config Source.
+
+== Creating Custom Config Filters
+
+The MicroProfile Config specification does not define an SPI to intercept configuration values before they are
+returned to the application. Helidon provides `io.helidon.config.mp.spi.MpConfigFilter` for this purpose
+(for example to decrypt secrets, normalize values, or apply environment-specific transformations).
+
+Custom config filters are loaded using the Java Service Loader pattern by implementing
+`io.helidon.config.mp.spi.MpConfigFilter` and registering it as a service
+(using pass:normal[`META-INF/services/io.helidon.config.mp.spi.MpConfigFilter`] when using the classpath, or
+using the `provides` statement in `module-info.java` when using the module path).
+
+The interface `io.helidon.config.mp.spi.MpConfigFilter` defines the following methods:
+
+* `default void init(Config config)` - optional setup using a config instance that only includes filters with higher priority
+* `String apply(String propertyName, String value)` - transform the current value for the given property key
+
+Filters discovered on the classpath are applied automatically to every MicroProfile Config value retrieval.
+Use Helidon `@Weight` (or Jakarta `@Priority`) to control filter order. Helidon's built-in encryption support
+is implemented as an `MpConfigFilter`; see xref:{rootdir}/mp/security/configuration-secrets.adoc[Configuration Secrets].
+
+=== Example of a Custom Config Filter
+
+[source,java]
+----
+include::{sourcedir}/mp/config/AdvancedConfigurationSnippets.java[tag=snippet_7, indent=0]
+----
+<1> Optional initialization using higher-priority configuration.
+<2> Transforms the value for keys that start with `app.`.
+<3> Returns unchanged values for all other keys.
+
+Register the filter as a Java service:
+
+[source]
+.Classpath registration (`META-INF/services/io.helidon.config.mp.spi.MpConfigFilter`)
+----
+io.helidon.examples.TrimAppPropertiesFilter
+----
+
+[source,java]
+.Module-path registration (`module-info.java`)
+----
+provides io.helidon.config.mp.spi.MpConfigFilter
+    with io.helidon.examples.TrimAppPropertiesFilter;
+----
 
 == Creating MicroProfile Config Sources from meta-config
 

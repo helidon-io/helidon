@@ -38,7 +38,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Helidon {spec-name} is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse {spec-name}]. You can configure your applications using MicroProfile's config configuration sources and APIs. You can also extend the configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter`.
+Helidon {spec-name} is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse {spec-name}]. You can configure your applications using MicroProfile's config configuration sources and APIs. You can also extend the configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter` implementations, and using Helidon's `MpConfigFilter` SPI to intercept and transform configuration values.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -198,6 +198,7 @@ See link:{jdk-javadoc-url}/java.base/java/nio/file/WatchService.html
 ==== Encryption
 You can encrypt secrets using a master password and store them in a configuration file.
 The config encryption filter in MicroProfile Config is enabled by default.
+It is implemented as an `MpConfigFilter` (see <<Config-Filters, Config Filters>> below).
 For more information, see xref:{rootdir}/mp/security/configuration-secrets.adoc[Configuration Secrets].
 
 [source,properties]
@@ -211,6 +212,25 @@ client_secret_pke=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
 # The system needs to be configured to accept clear text
 client_secret_clear=${CLEAR=known_password}
 ----
+
+==== Config Filters [[Config-Filters]]
+The MicroProfile Config specification does not define a way to intercept configuration values as they are
+delivered to the application. Helidon provides the `io.helidon.config.mp.spi.MpConfigFilter` SPI for this purpose.
+
+Filters are discovered automatically through the Java Service Loader and applied to every value retrieved
+from MicroProfile Config. A built-in example is the encryption filter described above. You can also
+implement and register your own filters.
+
+To create a custom filter:
+
+1. Implement `io.helidon.config.mp.spi.MpConfigFilter`.
+2. Optionally implement `init(Config)` to set the filter up from higher-priority configuration.
+3. Register the implementation as a Java service (`META-INF/services/io.helidon.config.mp.spi.MpConfigFilter`
+   on the classpath, or a `provides` clause in `module-info.java` on the module path).
+
+Filter order can be controlled with Helidon `@Weight` (or Jakarta `@Priority`).
+See xref:advanced-configuration.adoc#_creating_custom_config_filters[Creating Custom Config Filters]
+for a complete example.
 
 ==== Meta Configuration
 You can configure the Config using Helidon MP Config meta configuration feature. The meta-config allows configuration of config sources and other
