@@ -78,10 +78,11 @@ public final class OpenApi {
     /**
      * Parameter serialization style.
      * <p>
-     * Declarative OpenAPI generation supports {@link #SIMPLE} style for path and header parameters, and {@link #FORM},
-     * {@link #SPACE_DELIMITED}, or {@link #PIPE_DELIMITED} style for query parameters. Delimited query styles require
-     * list-valued parameters and cannot use {@link Explode#TRUE}. Header parameters cannot use {@link Explode#TRUE}.
-     * {@link #DEEP_OBJECT}, {@link #MATRIX}, and {@link #LABEL} are not supported by declarative HTTP parameter binding.
+     * Declarative OpenAPI generation supports {@link #SIMPLE} style for path and header parameters, {@link #FORM} style
+     * for cookie parameters, and {@link #FORM}, {@link #SPACE_DELIMITED}, or {@link #PIPE_DELIMITED} style for query
+     * parameters. Delimited query styles require list-valued parameters and cannot use {@link Explode#TRUE}. Header
+     * parameters cannot use {@link Explode#TRUE}. {@link #DEEP_OBJECT}, {@link #MATRIX}, and {@link #LABEL} are not
+     * supported by declarative HTTP parameter binding.
      */
     public enum Style {
         /**
