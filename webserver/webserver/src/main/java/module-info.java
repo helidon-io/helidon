@@ -69,5 +69,7 @@ module io.helidon.webserver {
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.http1.Http1ProtocolConfigProvider;
     provides io.helidon.webserver.spi.ServerConnectionSelectorProvider with io.helidon.webserver.http1.Http1ConnectionProvider;
+    provides io.helidon.webserver.spi.ServerFeatureProvider
+            with io.helidon.webserver.StuckThreadDetectionFeatureProvider;
 
 }

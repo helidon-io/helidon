@@ -38,6 +38,7 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Request Handling, Request Handling>>
 ** <<Error Handling, Error Handling>>
 - <<Server Features, Server Features>>
+** <<Stuck Thread Detection, Stuck Thread Detection>>
 ** <<Access Log, Access Log>>
 ** <<Context, Context>>
 ** <<HSTS, HSTS>>
@@ -724,6 +725,9 @@ first.
 |<<Context, Context>>
 |1100
 
+|<<Stuck Thread Detection, Stuck Thread Detection>>
+|1050
+
 |<<Access Log, Access Log>>
 |1000
 
@@ -772,6 +776,47 @@ Context feature can be configured, all options shown below are also available bo
 when using builder.
 
 include::{rootdir}/config/io_helidon_webserver_context_ContextFeature.adoc[leveloffset=+1]
+
+=== Stuck Thread Detection
+
+Stuck thread detection is an opt-in WebServer feature that reports HTTP request threads which have been executing longer
+than a configured threshold. The feature starts one monitoring virtual thread for each selected server socket. Each monitor
+periodically scans only ordinary HTTP requests while they execute within the routing and filter chain; it does not enumerate
+JVM threads.
+
+The first scan after a request crosses the threshold logs a warning with the request method, path without query or matrix
+parameters, socket and request identifiers, thread state, and stack trace. If that request later completes, the feature logs
+an informational recovery message. Detection is diagnostic only and never interrupts a request thread.
+
+For HTTP/1.1, only the connection thread while it is processing a request is a candidate; idle keep-alive time is excluded.
+For HTTP/2, only ordinary HTTP stream threads are candidates; the connection reader and subprotocol processing such as gRPC
+streams are excluded. Post-routing transport cleanup and connections handed to an upgraded protocol are also excluded.
+Legitimately long-running handlers, such as server-sent events or long polling, can still be reported.
+
+==== Configuring Stuck Thread Detection in Your Code
+
+[source,java]
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_44, indent=0]
+----
+
+==== Configuring Stuck Thread Detection in a Configuration File
+
+[source,yaml]
+.Stuck thread detection configuration file
+----
+server:
+  features:
+    stuck-thread-detection:
+      threshold: PT10M
+      check-period: PT1M
+----
+
+With this configuration, a request becomes eligible after 10 minutes and is normally detected on the next scan, within the
+following minute. Both `threshold` and `check-period` must be positive durations representable in nanoseconds. The feature
+can be limited to named server sockets using the `sockets` option; an empty list selects all sockets.
+
+include::{rootdir}/config/io_helidon_webserver_StuckThreadDetectionFeature.adoc[leveloffset=+1]
 
 === Access Log
 
