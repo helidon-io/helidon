@@ -211,7 +211,7 @@ public class GraphQlService implements HttpService {
         boolean mutation = graphQlRequest.parsedQuery().map(ParsedQuery::mutation).orElse(false);
         if (getRequest && mutation) {
             graphQlRequest(req, res);
-        } else if (graphQlRequest.parsedQuery().map(ParsedQuery::introspection).orElse(false)) {
+        } else if (graphQlRequest.parsedQuery().map(ParsedQuery::introspectionOnly).orElse(false)) {
             introspectionAuthorization.handle(req, res);
         } else {
             graphQlRequest(req, res);
@@ -240,7 +240,8 @@ public class GraphQlService implements HttpService {
                                                        graphQlRequest.variables(),
                                                        contextValues);
         req.context().register(new GraphQlResponse(result));
-        if (resolverInvocation.invoked() || graphQlRequest.parsedQuery().map(ParsedQuery::introspection).orElse(false)) {
+        if (resolverInvocation.invoked()
+                || graphQlRequest.parsedQuery().map(ParsedQuery::introspectionOnly).orElse(false)) {
             graphQlResponse(req, res);
         } else {
             noResolverAuthorization.handle(req, res);
@@ -303,11 +304,18 @@ public class GraphQlService implements HttpService {
         ArrayDeque<SelectionSet> selectionSets = new ArrayDeque<>();
         operationDefinition.map(OperationDefinition::getSelectionSet)
                 .ifPresent(selectionSets::addLast);
-        boolean introspection = false;
-        while (!selectionSets.isEmpty() && !introspection) {
+        boolean introspectionField = false;
+        boolean applicationField = false;
+        while (!selectionSets.isEmpty() && !applicationField) {
             for (Selection<?> selection : selectionSets.removeFirst().getSelections()) {
                 switch (selection) {
-                case Field field -> introspection = field.getName().startsWith("__");
+                case Field field -> {
+                    if (field.getName().startsWith("__")) {
+                        introspectionField = true;
+                    } else {
+                        applicationField = true;
+                    }
+                }
                 case InlineFragment fragment -> selectionSets.addLast(fragment.getSelectionSet());
                 case FragmentSpread spread -> {
                     if (visitedFragments.add(spread.getName())) {
@@ -320,12 +328,13 @@ public class GraphQlService implements HttpService {
                     // Other selections do not identify request-level introspection.
                 }
                 }
-                if (introspection) {
+                if (applicationField) {
                     break;
                 }
             }
         }
-        return Optional.of(new ParsedQuery(Optional.of(document), Optional.empty(), mutation, introspection));
+        boolean introspectionOnly = introspectionField && !applicationField;
+        return Optional.of(new ParsedQuery(Optional.of(document), Optional.empty(), mutation, introspectionOnly));
     }
 
     private static Optional<OperationDefinition> operationDefinition(Document document, String operationName) {
@@ -749,6 +758,6 @@ public class GraphQlService implements HttpService {
     private record ParsedQuery(Optional<Document> document,
                                Optional<PreparsedDocumentEntry> parseError,
                                boolean mutation,
-                               boolean introspection) {
+                               boolean introspectionOnly) {
     }
 }

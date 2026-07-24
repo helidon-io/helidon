@@ -259,9 +259,21 @@ class GraphQlServiceTest {
             assertThat(response.status(), is(Status.OK_200));
         }
 
+        String mixedQuery = "query Mixed { kind: __typename ...ApplicationFields } "
+                + "fragment ApplicationFields on Query { hello }";
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("""
+                                {
+                                  "query": "%s"
+                                }
+                                """.formatted(mixedQuery))) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
         assertThat(ENTRY_POINTS.methodNames(),
                    is(List.of("<graphql-post>",
                               "<graphql-get>",
+                              "<graphql-post>",
                               "<graphql-post>",
                               "<graphql-post>",
                               "<graphql-post>")));

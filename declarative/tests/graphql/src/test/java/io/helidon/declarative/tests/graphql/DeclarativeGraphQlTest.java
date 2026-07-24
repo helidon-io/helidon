@@ -573,6 +573,16 @@ class DeclarativeGraphQlTest {
             assertThat(response.as(JsonObject.class).objectValue("data").orElseThrow().size(), is(0));
         }
 
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("""
+                                {
+                                  "query": "{ __schema { queryType { name } } graphQlSchema @skip(if: true) }"
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+
     }
 
     @Test
@@ -603,6 +613,18 @@ class DeclarativeGraphQlTest {
                                         "jackIsGreat");
         assertThat(nestedType.objectValue("explicitlySecuredBook").orElseThrow()
                            .stringValue("__typename").orElseThrow(), is("Book"));
+
+        JsonObject mixedType = graphQl("""
+                                               {
+                                                 "query": "{ root: __typename explicitlySecuredBook { nested: __typename } }"
+                                               }
+                                               """,
+                                       "/explicit-secured-graphql",
+                                       "jack",
+                                       "jackIsGreat");
+        assertThat(mixedType.stringValue("root").orElseThrow(), is("Query"));
+        assertThat(mixedType.objectValue("explicitlySecuredBook").orElseThrow()
+                           .stringValue("nested").orElseThrow(), is("Book"));
         assertThat(GraphQlEntryPointRecorder.authorizations(),
                    is(List.of(ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-introspection>()",
                               ExplicitSecureGraphEndpoint.class.getName() + ".<graphql-introspection>()")));
@@ -716,20 +738,16 @@ class DeclarativeGraphQlTest {
             assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
         }
 
-        JsonObject mixed = graphQlResponse("""
-                                                   {
-                                                     "query": "{ __schema { queryType { name } } graphQlIntrospection }"
-                                                   }
-                                                   """,
-                                           "/explicit-secured-graphql",
-                                           "jack",
-                                           "jackIsGreat");
-        JsonObject mixedData = mixed.objectValue("data").orElseThrow();
-        assertThat(mixedData.objectValue("__schema").orElseThrow()
-                           .objectValue("queryType").orElseThrow()
-                           .stringValue("name").orElseThrow(), is("Query"));
-        assertThat(mixedData.value("graphQlIntrospection").orElseThrow().type(), is(JsonValueType.NULL));
-        assertThat(mixed.arrayValue("errors").orElseThrow().toString(), containsString(CONFIGURED_ERROR_MESSAGE));
+        try (Http1ClientResponse response = client.post("/explicit-secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .submit("""
+                                {
+                                  "query": "{ __schema { queryType { name } } graphQlIntrospection }"
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.as(String.class), is("Internal Server Error"));
+        }
     }
 
     @Test
