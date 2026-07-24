@@ -709,10 +709,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .packageName(endpointTypeName.packageName())
                 .className(className)
                 .build();
-        TypeName scalarContract = customScalar.processContract(roundContext, type, generatedType);
-        TypeName listOfScalars = TypeName.builder(TypeNames.LIST)
-                .addTypeArgument(scalarContract)
-                .build();
+        List<ScalarSchemaType> scalarTypes = group.schemaTypes().scalarTypes();
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(GENERATOR, endpointTypeName, generatedType))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, endpointTypeName, generatedType, "1", ""))
@@ -740,11 +737,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .isFinal(true)
                 .type(HTTP_ENTRY_POINTS)
                 .name("httpEntryPoints"));
-        classModel.addField(field -> field
-                .accessModifier(AccessModifier.PRIVATE)
-                .isFinal(true)
-                .type(listOfScalars)
-                .name("scalars"));
         classModel.addField(field -> field.accessModifier(AccessModifier.PRIVATE)
                 .isFinal(true).type(DeclarativeTypes.CONFIG).name("config"));
 
@@ -764,12 +756,23 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         }
         constructor.addParameter(param -> param.type(GRAPHQL_ENTRY_POINTS).name("entryPoints"))
                 .addParameter(param -> param.type(HTTP_ENTRY_POINTS).name("httpEntryPoints"));
-        constructor.addParameter(param -> param
-                        .type(listOfScalars)
-                        .name("scalars"))
-                .addContentLine("this.scalars = scalars;");
-        for (ScalarSchemaType scalarType : group.schemaTypes().scalarTypes()) {
-            customScalar.process(roundContext, type, generatedType, scalarContract, scalarType);
+        if (!scalarTypes.isEmpty()) {
+            TypeName scalarContract = customScalar.processContract(roundContext, type, generatedType);
+            TypeName listOfScalars = TypeName.builder(TypeNames.LIST)
+                    .addTypeArgument(scalarContract)
+                    .build();
+            classModel.addField(field -> field
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isFinal(true)
+                    .type(listOfScalars)
+                    .name("scalars"));
+            constructor.addParameter(param -> param
+                            .type(listOfScalars)
+                            .name("scalars"))
+                    .addContentLine("this.scalars = scalars;");
+            for (ScalarSchemaType scalarType : scalarTypes) {
+                customScalar.process(roundContext, type, generatedType, scalarContract, scalarType);
+            }
         }
         constructor.addParameter(param -> param.type(DeclarativeTypes.CONFIG).name("config"))
                 .addContentLine("this.entryPoints = entryPoints;")
@@ -781,7 +784,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         addInvocationHandlerMethod(classModel);
         addRuntimeWiringMethod(classModel, group);
         addRequestAnnotationsMethod(classModel);
-        addScalarMethods(classModel);
+        if (!scalarTypes.isEmpty()) {
+            addScalarMethods(classModel);
+        }
         addContextParameterMethods(classModel, group.operations());
         addScalarInputValueMethod(classModel);
         addEnumInputMethods(classModel, enumInputTypes(group.operations(), group.schemaTypes().inputTypes()));

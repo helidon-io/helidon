@@ -883,6 +883,14 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("books: [Book!]"));
         assertThat(generated, containsString("byTags(tags: [String!]): String"));
         assertThat(generated, containsString("tags: [String!]"));
+        assertThat(generated, not(containsString("GraphEndpoint__GraphQlFeature__CustomScalar")));
+        assertThat(generated, not(containsString("this.scalars = scalars;")));
+        assertThat(generated, not(containsString("graphQlScalar(")));
+        assertThat(generated, not(containsString("graphQlScalarType(")));
+        assertThat(generated, not(containsString("scalarLiteralValue(")));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("com/example/GraphEndpoint__GraphQlFeature__CustomScalar.java")),
+                   is(false));
     }
 
     @Test
