@@ -21,12 +21,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Weight;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
@@ -39,27 +45,34 @@ import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
+import io.helidon.security.OutboundSecurityClientBuilder;
+import io.helidon.security.Principal;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityLevel;
+import io.helidon.security.SecurityRequestBuilder;
 import io.helidon.security.SecurityResponse;
+import io.helidon.security.SecurityTime;
+import io.helidon.security.Subject;
 import io.helidon.security.integration.common.AtnTracing;
 import io.helidon.security.integration.common.AtzTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
+import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.Service;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 import io.helidon.webserver.http.HttpEntryPoint;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-@SuppressWarnings("deprecation")
 @Service.Singleton
 @Weight(800)
-class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
+class HttpSecurityInterceptor implements Interception.EntryPointInterceptor, HttpEntryPoint.AuthorizationInterceptor {
     private static final System.Logger LOGGER = System.getLogger(HttpSecurityInterceptor.class.getName());
     private static final TypeName AUTHENTICATED_TYPE = TypeName.create("io.helidon.security.annotations.Authenticated");
     private static final TypeName AUTHORIZED_TYPE = TypeName.create("io.helidon.security.annotations.Authorized");
@@ -74,6 +87,7 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
     private final ReentrantReadWriteLock typeSecurityDefinitionLock = new ReentrantReadWriteLock();
     private final Map<Signature, HttpSecurityDefinition> methodSecurityDefinitions = new HashMap<>();
     private final ReentrantReadWriteLock methodSecurityDefinitionLock = new ReentrantReadWriteLock();
+    private final Set<InterceptionContext> noSecurityGenericContexts = ConcurrentHashMap.newKeySet();
 
     HttpSecurityInterceptor(Security security,
                             Config config,
@@ -86,13 +100,56 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
     }
 
     @Override
-    public void proceed(InterceptionContext ctx, Chain chain, ServerRequest req, ServerResponse res)
-            throws Exception {
+    public <T> T proceed(InterceptionContext ctx,
+                         Interception.Interceptor.Chain<T> chain,
+                         Object... args) throws Exception {
+        if (args.length == 2 && args[0] instanceof ServerRequest req && args[1] instanceof ServerResponse res) {
+            return proceedHttp(ctx, chain, args, req, res);
+        }
+
+        return proceedGeneric(ctx, chain, args);
+    }
+
+    @Override
+    public void authorize(InterceptionContext ctx,
+                          HttpEntryPoint.Interceptor.Chain chain,
+                          ServerRequest req,
+                          ServerResponse res) throws Exception {
+        HttpSecurityDefinition definition = methodSecurity(ctx);
+        if (!definition.requiresAuthorization()) {
+            chain.proceed(req, res);
+            return;
+        }
+
+        SecurityContext securityContext = req.context()
+                .get(SecurityContext.class)
+                .orElseThrow(() -> new IllegalStateException("No security context in request context. "
+                                                                     + "Make sure the ContextFeature is added to WebServer"));
+        EndpointConfig previousEndpointConfig = securityContext.endpointConfig();
+        var endpointConfig = EndpointConfig.builder()
+                .securityLevels(definition.securityLevels())
+                .build();
+        var ictx = new HttpSecurityInterceptorContext();
+        try {
+            securityContext.endpointConfig(endpointConfig);
+            authorize(req, res, ictx, SecurityTracing.get(req.context()), definition, securityContext);
+            if (!ictx.shouldFinish()) {
+                chain.proceed(req, res);
+            }
+        } finally {
+            securityContext.endpointConfig(previousEndpointConfig);
+        }
+    }
+
+    private <T> T proceedHttp(InterceptionContext ctx,
+                              Interception.Interceptor.Chain<T> chain,
+                              Object[] args,
+                              ServerRequest req,
+                              ServerResponse res) throws Exception {
         HttpSecurityDefinition definition = methodSecurity(ctx);
 
         if (definition.noSecurity()) {
-            chain.proceed(req, res);
-            return;
+            return chain.proceed(args);
         }
 
         /*
@@ -153,15 +210,15 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
         }
 
         if (ictx.shouldFinish()) {
-            return;
+            return null;
         }
 
-        chain.proceed(req, res);
+        T result = chain.proceed(args);
         if (definition.atzExplicit() && !securityContext.isAuthorized()) {
             if (res.status().family() == Status.Family.CLIENT_ERROR
                     || res.status().family() == Status.Family.SERVER_ERROR) {
                 // failure returned anyway - may have never reached the endpoint
-                return;
+                return result;
             }
             if (res.isSent()) {
                 LOGGER.log(Level.ERROR, "Authorization failure. Request for"
@@ -191,6 +248,81 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
         } finally {
             responseTracing.finish();
         }
+        return result;
+    }
+
+    private <T> T proceedGeneric(InterceptionContext ctx,
+                                 Interception.Interceptor.Chain<T> chain,
+                                 Object[] args) throws Exception {
+        if (noGenericSecurity(ctx)) {
+            return chain.proceed(args);
+        }
+
+        HttpSecurityDefinition definition = methodSecurity(ctx);
+
+        if (definition.noSecurity()) {
+            rememberNoGenericSecurity(ctx);
+            return chain.proceed(args);
+        }
+
+        Context context = Contexts.context()
+                .orElseThrow(() -> new IllegalStateException("No security context in active context. "
+                                                                     + "Make sure the ContextFeature is added to WebServer"));
+        ScopedSecurityContext securityContext = context.get(SecurityContext.class)
+                .map(ScopedSecurityContext::new)
+                .orElseThrow(() -> new IllegalStateException("No security context in active context. "
+                                                                     + "Make sure the ContextFeature is added to WebServer"));
+        SecurityEnvironment previousEnvironment = securityContext.env();
+        EndpointConfig previousEndpointConfig = securityContext.endpointConfig();
+        String resourceType = ctx.serviceInfo().serviceType().fqName();
+        SecurityEnvironment securityEnvironment = previousEnvironment.derive()
+                .addAttribute("resourceType", resourceType)
+                .addAttribute("entryPoint", ctx.elementInfo().elementName())
+                .build();
+        var ec = EndpointConfig.builder()
+                .securityLevels(definition.securityLevels())
+                .build();
+
+        boolean success = false;
+        try {
+            context.register(securityContext);
+            securityContext.env(securityEnvironment);
+            securityContext.endpointConfig(ec);
+
+            processSecurity(definition, securityContext);
+            success = !definition.atzExplicit();
+            T result = chain.proceed(args);
+            if (definition.atzExplicit() && !securityContext.isAuthorized()) {
+                LOGGER.log(Level.ERROR, "Authorization failure. Entry point"
+                        + " has failed, it was marked for explicit authorization, "
+                        + "yet authorization was never called on security context. The "
+                        + "method was invoked and may have changed data."
+                        + " Endpoint: " + ctx.serviceInfo().serviceType().fqName() + ", method: "
+                        + ctx.elementInfo().elementName());
+                throw new SecurityException(securityFailureMessage());
+            }
+            success = true;
+            return result;
+        } finally {
+            try {
+                if (definition.isAudited()) {
+                    boolean auditSuccess = success || (definition.atzExplicit() && securityContext.isAuthorized());
+                    audit(ctx, auditSuccess ? "OK" : "DENIED", resourceType, definition, securityContext);
+                }
+            } finally {
+                securityContext.env(previousEnvironment);
+                securityContext.endpointConfig(previousEndpointConfig);
+                context.unregister(securityContext);
+            }
+        }
+    }
+
+    private boolean noGenericSecurity(InterceptionContext ctx) {
+        return noSecurityGenericContexts.contains(ctx);
+    }
+
+    private void rememberNoGenericSecurity(InterceptionContext ctx) {
+        noSecurityGenericContexts.add(ctx);
     }
 
     private void processSecurity(ServerRequest req,
@@ -206,6 +338,18 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
         ictx.clearTrace();
 
         authorize(req, res, ictx, tracing, definition, securityContext);
+    }
+
+    private void processSecurity(HttpSecurityDefinition definition,
+                                 SecurityContext securityContext) {
+        var ictx = new HttpSecurityInterceptorContext();
+        authenticate(ictx, definition, securityContext);
+        if (ictx.shouldFinish()) {
+            return;
+        }
+        ictx.clearTrace();
+
+        authorize(ictx, definition, securityContext);
     }
 
     private void authorize(ServerRequest req,
@@ -301,6 +445,48 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
                          Map.of());
         }
         //noinspection DuplicatedCode
+        default -> {
+            ictx.traceSuccess(false);
+            ictx.traceDescription(response.description().orElse("UNKNOWN_RESPONSE: " + responseStatus));
+            ictx.shouldFinish(true);
+            SecurityException throwable = new SecurityException("Invalid SecurityStatus returned: " + responseStatus);
+            ictx.traceThrowable(throwable);
+            throw throwable;
+        }
+        }
+    }
+
+    private void authorize(HttpSecurityInterceptorContext ictx,
+                           HttpSecurityDefinition definition,
+                           SecurityContext securityContext) {
+        if (definition.atzExplicit()) {
+            return;
+        }
+
+        if (definition.requiresAuthorization()) {
+            SecurityClientBuilder<AuthorizationResponse> clientBuilder = securityContext.atzClientBuilder()
+                    .explicitProvider(definition.authorizer());
+
+            processAuthorization(ictx, clientBuilder);
+        }
+    }
+
+    private void processAuthorization(HttpSecurityInterceptorContext ictx,
+                                      SecurityClientBuilder<AuthorizationResponse> clientBuilder) {
+        AuthorizationResponse response = clientBuilder.submit();
+        SecurityResponse.SecurityStatus responseStatus = response.status();
+
+        switch (responseStatus) {
+        case SUCCESS -> {
+            // everything is fine, we can continue with processing
+        }
+        case FAILURE_FINISH, SUCCESS_FINISH, FAILURE, ABSTAIN -> {
+            ictx.traceSuccess(false);
+            ictx.traceDescription(response.description().orElse(responseStatus.toString()));
+            ictx.traceThrowable(response.throwable().orElse(null));
+            ictx.shouldFinish(true);
+            abortEntryPoint(response);
+        }
         default -> {
             ictx.traceSuccess(false);
             ictx.traceDescription(response.description().orElse("UNKNOWN_RESPONSE: " + responseStatus));
@@ -427,6 +613,68 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
         }
     }
 
+    private void authenticate(HttpSecurityInterceptorContext ictx,
+                              HttpSecurityDefinition definition,
+                              SecurityContext securityContext) {
+        if (!definition.requiresAuthentication()) {
+            return;
+        }
+
+        var clientBuilder = securityContext
+                .atnClientBuilder()
+                .optional(definition.authenticationOptional())
+                .update(it -> definition.authenticator().ifPresent(it::explicitProvider));
+        AuthenticationResponse response = clientBuilder.submit();
+        SecurityResponse.SecurityStatus responseStatus = response.status();
+
+        switch (responseStatus) {
+        case SUCCESS -> {
+            // everything is fine, we can continue with processing
+        }
+        case FAILURE_FINISH -> {
+            if (definition.authenticationOptional()) {
+                LOGGER.log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
+            } else {
+                ictx.traceSuccess(false);
+                ictx.traceDescription(response.description().orElse(responseStatus.toString()));
+                ictx.traceThrowable(response.throwable().orElse(null));
+                ictx.shouldFinish(true);
+                abortEntryPoint(response);
+            }
+        }
+        case FAILURE -> {
+            if (definition.authenticationOptional() && !definition.failOnFailureIfOptional()) {
+                LOGGER.log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
+            } else {
+                ictx.traceDescription(response.description().orElse(responseStatus.toString()));
+                ictx.traceThrowable(response.throwable().orElse(null));
+                ictx.traceSuccess(false);
+                ictx.shouldFinish(true);
+                abortEntryPoint(response);
+            }
+        }
+        case SUCCESS_FINISH, ABSTAIN -> {
+            if (responseStatus == SecurityResponse.SecurityStatus.ABSTAIN && definition.authenticationOptional()) {
+                LOGGER.log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
+            } else {
+                ictx.traceSuccess(false);
+                ictx.traceDescription(response.description().orElse(responseStatus.toString()));
+                ictx.traceThrowable(response.throwable().orElse(null));
+                ictx.shouldFinish(true);
+                abortEntryPoint(response);
+            }
+        }
+        default -> {
+            ictx.traceSuccess(false);
+            ictx.traceDescription(response.description().orElse("UNKNOWN_RESPONSE: " + responseStatus));
+            ictx.shouldFinish(true);
+            SecurityException throwable = new SecurityException("Invalid SecurityStatus returned: " + responseStatus);
+            ictx.traceThrowable(throwable);
+            throw throwable;
+        }
+        }
+    }
+
     private void abortRequest(ServerResponse res,
                               HttpSecurityInterceptorContext ictx,
                               SecurityResponse response,
@@ -456,6 +704,21 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
         } else {
             throw new HttpException(entity.get(), status, true);
         }
+    }
+
+    private void abortEntryPoint(SecurityResponse response) {
+        throw new SecurityException(securityFailureMessage(response));
+    }
+
+    private String securityFailureMessage(SecurityResponse response) {
+        if (config.get("debug").asBoolean().orElse(false)) {
+            return response.description().orElseGet(this::securityFailureMessage);
+        }
+        return securityFailureMessage();
+    }
+
+    private String securityFailureMessage() {
+        return "Security did not allow this request to proceed";
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -492,6 +755,33 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
                 .addParam(AuditEvent.AuditParam.plain("transport", "http"))
                 .addParam(AuditEvent.AuditParam.plain("resourceType", resourceName))
                 .addParam(AuditEvent.AuditParam.plain("targetUri", req.requestedUri().toUri()));
+
+        securityContext.audit(auditEvent);
+    }
+
+    private void audit(InterceptionContext ctx,
+                       String status,
+                       String resourceName,
+                       HttpSecurityDefinition methodSecurity,
+                       SecurityContext securityContext) {
+        SecurityEnvironment env = securityContext.env();
+        AuditEvent.AuditSeverity auditSeverity = "OK".equals(status)
+                ? methodSecurity.auditOkSeverity()
+                : methodSecurity.auditErrorSeverity();
+
+        SecurityAuditEvent auditEvent = SecurityAuditEvent
+                .audit(auditSeverity, methodSecurity.auditEventType(), methodSecurity.auditMessageFormat())
+                .addParam(AuditEvent.AuditParam.plain("method", env.method()))
+                .addParam(AuditEvent.AuditParam.plain("path", env.path().orElse(null)))
+                .addParam(AuditEvent.AuditParam.plain("status", status))
+                .addParam(AuditEvent.AuditParam.plain("subject",
+                                                      securityContext.user()
+                                                              .or(securityContext::service)
+                                                              .orElse(SecurityContext.ANONYMOUS)))
+                .addParam(AuditEvent.AuditParam.plain("transport", env.transport()))
+                .addParam(AuditEvent.AuditParam.plain("resourceType", resourceName))
+                .addParam(AuditEvent.AuditParam.plain("targetUri", env.targetUri()))
+                .addParam(AuditEvent.AuditParam.plain("entryPoint", ctx.elementInfo().elementName()));
 
         securityContext.audit(auditEvent);
     }
@@ -604,6 +894,152 @@ class HttpSecurityInterceptor implements HttpEntryPoint.Interceptor {
         }
 
         return definition;
+    }
+
+    private static final class ScopedSecurityContext implements SecurityContext {
+        private final SecurityContext delegate;
+        private final AtomicBoolean authorized = new AtomicBoolean();
+
+        private ScopedSecurityContext(SecurityContext delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public SecurityRequestBuilder<?> securityRequestBuilder() {
+            return delegate.securityRequestBuilder();
+        }
+
+        @Override
+        public SecurityRequestBuilder<?> securityRequestBuilder(SecurityEnvironment environment) {
+            return delegate.securityRequestBuilder(environment);
+        }
+
+        @Override
+        public SecurityClientBuilder<AuthenticationResponse> atnClientBuilder() {
+            return delegate.atnClientBuilder();
+        }
+
+        @Override
+        public AuthenticationResponse authenticate() {
+            return delegate.authenticate();
+        }
+
+        @Override
+        public SecurityClientBuilder<AuthorizationResponse> atzClientBuilder() {
+            authorized.set(true);
+            return delegate.atzClientBuilder();
+        }
+
+        @Override
+        public OutboundSecurityClientBuilder outboundClientBuilder() {
+            return delegate.outboundClientBuilder();
+        }
+
+        @Override
+        public AuthorizationResponse authorize(Object... resource) {
+            authorized.set(true);
+            return delegate.authorize(resource);
+        }
+
+        @Override
+        public boolean isAuthenticated() {
+            return delegate.isAuthenticated();
+        }
+
+        @Override
+        public boolean isAuthorized() {
+            return authorized.get();
+        }
+
+        @Override
+        public void logout() {
+            delegate.logout();
+        }
+
+        @Override
+        public boolean isUserInRole(String role, String authorizerName) {
+            return delegate.isUserInRole(role, authorizerName);
+        }
+
+        @Override
+        public boolean isUserInRole(String role) {
+            return delegate.isUserInRole(role);
+        }
+
+        @Override
+        public void audit(AuditEvent event) {
+            delegate.audit(event);
+        }
+
+        @Override
+        public Optional<Subject> service() {
+            return delegate.service();
+        }
+
+        @Override
+        public Optional<Subject> user() {
+            return delegate.user();
+        }
+
+        @Override
+        public void runAs(Subject subject, Runnable runnable) {
+            delegate.runAs(subject, runnable);
+        }
+
+        @Override
+        public void runAs(String role, Runnable runnable) {
+            delegate.runAs(role, runnable);
+        }
+
+        @Override
+        public Optional<Principal> userPrincipal() {
+            return delegate.userPrincipal();
+        }
+
+        @Override
+        public Optional<Principal> servicePrincipal() {
+            return delegate.servicePrincipal();
+        }
+
+        @Override
+        public SpanContext tracingSpan() {
+            return delegate.tracingSpan();
+        }
+
+        @Override
+        public Tracer tracer() {
+            return delegate.tracer();
+        }
+
+        @Override
+        public String id() {
+            return delegate.id();
+        }
+
+        @Override
+        public SecurityTime serverTime() {
+            return delegate.serverTime();
+        }
+
+        @Override
+        public SecurityEnvironment env() {
+            return delegate.env();
+        }
+
+        @Override
+        public void env(SecurityEnvironment env) {
+            delegate.env(env);
+        }
+
+        @Override
+        public EndpointConfig endpointConfig() {
+            return delegate.endpointConfig();
+        }
+
+        @Override
+        public void endpointConfig(EndpointConfig ec) {
+            delegate.endpointConfig(ec);
+        }
     }
 
     private record Signature(TypeName declaringType,

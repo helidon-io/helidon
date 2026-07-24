@@ -49,6 +49,7 @@
         <module>scheduling</module>
         <module>metrics</module>
         <module>tracing</module>
+        <module>graphql</module>
         <module>websocket</module>
         <module>cors</module>
         <module>grpc</module>

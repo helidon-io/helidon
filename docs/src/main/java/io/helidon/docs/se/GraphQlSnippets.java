@@ -18,10 +18,16 @@ package io.helidon.docs.se;
 import java.util.List;
 
 import io.helidon.config.Config;
+import io.helidon.graphql.GraphQl;
 import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.logging.common.LogConfig;
+import io.helidon.service.registry.Binding;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.graphql.GraphQlService;
+import io.helidon.webserver.graphql.GraphQlServer;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
@@ -86,5 +92,68 @@ class GraphQlSnippets {
                                          .build()))
                 .build();
         // end::snippet_1[]
+    }
+
+    // tag::snippet_3[]
+    @Service.GenerateBinding
+    static class DeclarativeMain {
+        public static void main(String[] args) {
+            LogConfig.configureRuntime();
+            ServiceRegistryManager.start(ApplicationBinding.create());
+        }
+    }
+    // end::snippet_3[]
+
+    // tag::snippet_4[]
+    @GraphQlServer.Endpoint
+    static class CatalogEndpoint {
+        @GraphQl.Query
+        @GraphQl.Description("Looks up a book by ISBN")
+        Book book(@GraphQl.Argument("isbn") @GraphQl.Description("ISBN of the book") String isbn) {
+            return new Book("Dune", BookStatus.AVAILABLE, List.of("classic"), isbn);
+        }
+
+        @GraphQl.Query
+        String search(@GraphQl.Argument("criteria") @GraphQl.NonNull BookSearch criteria) {
+            return criteria.phrase() + ":" + criteria.status();
+        }
+
+        @GraphQl.Mutation
+        boolean update(@GraphQl.Argument("enabled") boolean enabled) {
+            return enabled;
+        }
+
+        @GraphQlServer.Field
+        String summary(@GraphQlServer.Source Book book,
+                       @GraphQl.Argument("prefix") String prefix) {
+            return prefix + ": " + book.title();
+        }
+    }
+
+    @GraphQl.Entity
+    @GraphQl.Description("Book result")
+    record Book(@GraphQl.NonNull String title,
+                @GraphQl.Name("state") BookStatus status,
+                List<String> tags,
+                @GraphQl.Ignore String internal) {
+    }
+
+    @GraphQl.Entity
+    record BookSearch(@GraphQl.NonNull String phrase,
+                      @GraphQl.NonNull BookStatus status) {
+    }
+
+    @GraphQl.Entity
+    enum BookStatus {
+        AVAILABLE,
+        @GraphQl.Name("OUT_OF_PRINT")
+        OUT
+    }
+    // end::snippet_4[]
+
+    private static class ApplicationBinding {
+        static Binding create() {
+            return null;
+        }
     }
 }
