@@ -32,11 +32,22 @@ import io.helidon.webserver.WebServer;
 @OpenApi.License(value = "Apache License 2.0",
                  identifier = "Apache-2.0",
                  url = "https://www.apache.org/licenses/LICENSE-2.0")
-@OpenApi.Server(value = "${test.openapi.server-url}", description = "Test server")
+@OpenApi.Server(value = "${test.openapi.server-url}:{port}{basePath}",
+                description = "Test server",
+                variables = {
+                        @OpenApi.ServerVariable(name = "port",
+                                                defaultValue = "8443",
+                                                enumeration = {"8443", "443"},
+                                                description = "HTTPS port"),
+                        @OpenApi.ServerVariable(name = "basePath",
+                                                defaultValue = "",
+                                                description = "Optional base path")
+                })
 @OpenApi.Tag(value = "greeting", description = "Greeting operations")
 @OpenApi.Tag(value = "farewell", description = "Farewell operations")
 @OpenApi.ExternalDocs(value = "https://helidon.io/docs", description = "Helidon documentation")
 @OpenApi.Extension(name = "x-test-document", value = "declarative-openapi")
+@OpenApi.Extension(name = "x-test-typed", value = "${test.openapi.extension-value}", parseValue = true)
 @OpenApi.SecurityScheme(name = "bearerAuth",
                         type = "http",
                         description = "Bearer token authentication",

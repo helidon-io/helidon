@@ -18,13 +18,16 @@ package io.helidon.openapi;
 
 import java.math.BigDecimal;
 
+import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValue;
 import io.helidon.json.JsonValueType;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OpenApiSourceBaseTest {
 
@@ -68,9 +71,56 @@ class OpenApiSourceBaseTest {
         assertThat(value.asString().value(), is("42 is the answer"));
     }
 
+    @Test
+    void extensionValuePreservesStringWhenParsingIsDisabled() {
+        JsonValue value = TestSource.extension("x-test", "true", false);
+
+        assertThat(value.type(), is(JsonValueType.STRING));
+        assertThat(value.asString().value(), is("true"));
+    }
+
+    @Test
+    void extensionValueParsesExactlyOneJsonValue() {
+        JsonValue value = TestSource.extension(
+                "x-test",
+                "{\"enabled\":true,\"retries\":3,\"tags\":[\"generated\",\"openapi\"],\"none\":null}",
+                true);
+
+        assertThat(value.type(), is(JsonValueType.OBJECT));
+        JsonObject object = value.asObject();
+        assertThat(object.booleanValue("enabled").orElseThrow(), is(true));
+        assertThat(object.intValue("retries").orElseThrow(), is(3));
+        assertThat(object.arrayValue("tags").orElseThrow().get(1).orElseThrow().asString().value(), is("openapi"));
+        assertThat(object.value("none").orElseThrow().type(), is(JsonValueType.NULL));
+    }
+
+    @Test
+    void extensionValueRejectsInvalidJson() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> TestSource.extension("x-test", "{invalid}", true));
+
+        assertThat(exception.getMessage(), containsString("OpenAPI extension x-test"));
+        assertThat(exception.getMessage(), containsString("exactly one valid JSON value"));
+    }
+
+    @Test
+    void extensionValueRejectsTrailingContent() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> TestSource.extension("x-test", "true false", true));
+
+        assertThat(exception.getMessage(), containsString("OpenAPI extension x-test"));
+        assertThat(exception.getMessage(), containsString("exactly one valid JSON value"));
+    }
+
     private static final class TestSource extends OpenApiSourceBase {
         private static JsonValue example(String value) {
             return exampleValue(value);
+        }
+
+        private static JsonValue extension(String name, String value, boolean parseValue) {
+            return extensionValue(name, value, parseValue);
         }
 
         @Override

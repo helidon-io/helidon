@@ -109,6 +109,62 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void serverCannotDeclareDuplicateVariables() {
+        var result = compile("openapi-duplicate-server-variables", """
+                @OpenApi.Server(
+                        value = "https://{region}.api.example.com",
+                        variables = {
+                                @OpenApi.ServerVariable(name = "region", defaultValue = "us"),
+                                @OpenApi.ServerVariable(name = "region", defaultValue = "eu")
+                        })
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Server on com.example.InvalidOpenApiEndpoint "
+                                       + "for server https://{region}.api.example.com",
+                               "cannot define server variable region more than once");
+    }
+
+    @Test
+    void serverVariableEnumerationMustContainDefault() {
+        var result = compile("openapi-server-variable-invalid-enumeration", """
+                @OpenApi.Server(
+                        value = "https://{region}.api.example.com",
+                        variables = @OpenApi.ServerVariable(
+                                name = "region",
+                                defaultValue = "apac",
+                                enumeration = {"us", "eu"}))
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Server on com.example.InvalidOpenApiEndpoint "
+                                       + "for server https://{region}.api.example.com for variable region",
+                               "must include default value apac in its enumeration");
+    }
+
+    @Test
     void documentCannotDeclareDuplicateTags() {
         var result = compile("openapi-duplicate-document-tags", """
                 @OpenApi.Tag("greeting")
@@ -152,6 +208,32 @@ class OpenApiDuplicateValuesCodegenTest {
         assertCompilationFails(result,
                                "@OpenApi.Extension on com.example.InvalidOpenApiEndpoint",
                                "cannot define extension x-test more than once");
+    }
+
+    @Test
+    void parsedExtensionDelegatesToGeneratedSourceBase() throws IOException {
+        var result = compile("openapi-parsed-extension", """
+                @OpenApi.Extension(name = "x-test",
+                                   value = "${test.extension:[true,42]}",
+                                   parseValue = true)
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString("document.extension(\"x-test\", extensionValue(\"x-test\", "));
+        assertThat(generated, containsString("resolveExpression(context, \"${test.extension:[true,42]}\"), true));"));
     }
 
     @Test
@@ -277,7 +359,12 @@ class OpenApiDuplicateValuesCodegenTest {
     @Test
     void securitySchemeAllowsConfigurationExpressionDefaults() throws IOException {
         var result = compile("openapi-security-scheme-config-expression-defaults", """
-                @OpenApi.Server("https://${openapi.host:api.example.com}")
+                @OpenApi.Server(
+                        value = "https://${openapi.host:api.example.com}/{region}",
+                        variables = @OpenApi.ServerVariable(
+                                name = "region",
+                                defaultValue = "${openapi.region:us}",
+                                enumeration = {"${openapi.region.us:us}", "eu"}))
                 @OpenApi.SecurityScheme(name = "apiKeyAuth",
                                         type = "apiKey",
                                         in = "${openapi.api-key.in:header}",
@@ -300,7 +387,15 @@ class OpenApiDuplicateValuesCodegenTest {
 
         String generated = generatedSource(result);
         assertThat(generated, containsString("OpenApiDocumentContextSupport.resolveExpression(context, "
-                                                     + "\"https://${openapi.host:api.example.com}\")"));
+                                                     + "\"https://${openapi.host:api.example.com}/{region}\")"));
+        assertThat(generated, containsString(".variable(\"region\", variable -> variable.value("
+                                                     + "io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"${openapi.region:us}\"))"));
+        assertThat(generated, containsString(".allowedValues(java.util.List.of("
+                                                     + "io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"${openapi.region.us:us}\"), "
+                                                     + "io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"eu\")))"));
         assertThat(generated, containsString("OpenApiDocumentContextSupport.resolveExpression(context, "
                                                      + "\"${openapi.title:Test}\")"));
         assertThat(generated, containsString(".type(\"apiKey\")"));

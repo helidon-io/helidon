@@ -100,9 +100,21 @@ values, and external documentation URLs, can use Helidon config expressions only
 `generated.resolve-config-expressions`. When enabled, Helidon resolves those expressions at runtime when serving the
 generated OpenAPI document. When disabled, which is the default, Helidon uses annotation text values literally.
 
+`@OpenApi.Extension` values are OpenAPI strings by default. Set `parseValue` to `true` to parse the runtime-resolved
+annotation value as exactly one JSON value, including a boolean, number, string, `null`, array, or object. Invalid JSON is
+rejected when the generated OpenAPI document source runs.
+
+For templated server URLs, declare each substitution using `@OpenApi.ServerVariable`. Each variable requires a name and
+default value and can also declare an enumeration of allowed values and a description.
+
+Response metadata can declare links using `@OpenApi.Link`. A link identifies its target using exactly one of `operationRef`
+or `operationId`. `@OpenApi.LinkParameter` values and `requestBody` support literal strings and OpenAPI runtime
+expressions; use the programmatic `OpenApiDocument.LinkBuilder` for other OpenAPI value types.
+
 Annotation string values that identify or select generated metadata, such as extension names, tag names, security scheme
-names and types, media types, parameter names and locations, and security requirement scheme names and scopes, are resolved
-when OpenAPI metadata is generated. For those values Helidon uses the expression default value, if one is present.
+names and types, media types, parameter names and locations, link and link-parameter names, and security requirement scheme
+names and scopes, are resolved when OpenAPI metadata is generated. For those values Helidon uses the expression default
+value, if one is present.
 
 For generated security scheme components, prefer the type-specific annotations
 `@OpenApi.ApiKeySecurityScheme`, `@OpenApi.HttpSecurityScheme`, `@OpenApi.MutualTlsSecurityScheme`,

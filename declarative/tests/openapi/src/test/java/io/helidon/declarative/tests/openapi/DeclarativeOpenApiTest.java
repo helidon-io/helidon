@@ -37,6 +37,7 @@ import org.yaml.snakeyaml.Yaml;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItems;
@@ -130,10 +131,26 @@ class DeclarativeOpenApiTest {
         assertThat(externalDocs.get("url"), is("https://helidon.io/docs"));
         assertThat(externalDocs.get("description"), is("Helidon documentation"));
         assertThat(document.get("x-test-document"), is("declarative-openapi"));
+        Map<String, Object> typedExtension = object(document, "x-test-typed");
+        assertThat(typedExtension.get("enabled"), is(true));
+        assertThat(typedExtension.get("retries"), instanceOf(Number.class));
+        assertThat(((Number) typedExtension.get("retries")).intValue(), is(3));
+        assertThat(list(typedExtension, "tags"), contains("generated", "openapi"));
+        assertThat(typedExtension, hasKey("none"));
+        assertThat(typedExtension.get("none"), is(nullValue()));
 
         Map<String, Object> server = object(list(document, "servers").getFirst());
-        assertThat(server.get("url"), is("https://openapi.example.test"));
+        assertThat(server.get("url"), is("https://openapi.example.test:{port}{basePath}"));
         assertThat(server.get("description"), is("Test server"));
+        Map<String, Object> serverVariables = object(server, "variables");
+        Map<String, Object> port = object(serverVariables, "port");
+        assertThat(port.get("default"), is("8443"));
+        assertThat(list(port, "enum"), contains("8443", "443"));
+        assertThat(port.get("description"), is("HTTPS port"));
+        Map<String, Object> basePath = object(serverVariables, "basePath");
+        assertThat(basePath.get("default"), is(""));
+        assertThat(basePath.get("description"), is("Optional base path"));
+        assertThat(basePath, not(hasKey("enum")));
 
         Map<String, Object> securitySchemes = object(object(document, "components"), "securitySchemes");
         Map<String, Object> bearerAuth = object(securitySchemes, "bearerAuth");
@@ -232,6 +249,12 @@ class DeclarativeOpenApiTest {
         assertThat(documentedHeader.get("required"), is(true));
         assertThat(documentedHeader.get("deprecated"), is(true));
         assertThat(object(documentedHeader, "schema").get("type"), is("string"));
+
+        Map<String, Object> link = object(object(response, "links"), "documentedGreeting");
+        assertThat(link.get("operationId"), is("findDocumentedGreeting"));
+        assertThat(object(link, "parameters").get("name"), is("$response.body#/message"));
+        assertThat(link.get("requestBody"), is("$response.body"));
+        assertThat(link.get("description"), is("Follow the documented greeting"));
     }
 
     @Test
@@ -294,8 +317,11 @@ class DeclarativeOpenApiTest {
         Map<String, Object> operation = operation(document, "/greetings/documented/{name}", "get");
 
         Map<String, Object> server = object(list(operation, "servers").getFirst());
-        assertThat(server.get("url"), is("https://api.example.com/greetings"));
+        assertThat(server.get("url"), is("https://{region}.api.example.com/greetings"));
         assertThat(server.get("description"), is("Operation server"));
+        Map<String, Object> region = object(object(server, "variables"), "region");
+        assertThat(region.get("default"), is("us"));
+        assertThat(list(region, "enum"), contains("us", "eu"));
 
         Map<String, Object> externalDocs = object(operation, "externalDocs");
         assertThat(externalDocs.get("url"), is("https://helidon.io/docs/openapi"));

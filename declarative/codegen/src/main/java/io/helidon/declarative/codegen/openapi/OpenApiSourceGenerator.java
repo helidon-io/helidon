@@ -60,6 +60,7 @@ import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_AN
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_QUERY_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_REQUEST_PARAMS_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.JSON_OBJECT;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.JSON_SCHEMA_PROVIDER;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.JSON_STRING;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_CONTACT_ANNOTATION;
@@ -407,6 +408,37 @@ final class OpenApiSourceGenerator {
                 .ifPresent(name -> method.addContent(".name(")
                         .addContent(expressions.stringExpression(name))
                         .addContentLine(")"));
+        for (Annotation variable : server.annotationValues("variables").orElseGet(List::of)) {
+            String variableName = variable.stringValue("name")
+                    .filter(not(String::isBlank))
+                    .orElseThrow(() -> new CodegenException("@OpenApi.ServerVariable name is required"));
+            String defaultValue = variable.stringValue("defaultValue")
+                    .orElseThrow(() -> new CodegenException("@OpenApi.ServerVariable defaultValue is required"));
+            method.addContent(".variable(")
+                    .addContent(expressions.validatedStringExpression(variableName))
+                    .addContent(", variable -> variable.value(")
+                    .addContent(expressions.stringExpression(defaultValue))
+                    .addContentLine(")")
+                    .increaseContentPadding();
+            List<String> enumeration = variable.stringValues("enumeration").orElseGet(List::of);
+            if (!enumeration.isEmpty()) {
+                method.addContent(".allowedValues(java.util.List.of(");
+                for (int i = 0; i < enumeration.size(); i++) {
+                    if (i > 0) {
+                        method.addContent(", ");
+                    }
+                    method.addContent(expressions.stringExpression(enumeration.get(i)));
+                }
+                method.addContentLine("))");
+            }
+            variable.stringValue("description")
+                    .filter(not(String::isBlank))
+                    .ifPresent(description -> method.addContent(".description(")
+                            .addContent(expressions.stringExpression(description))
+                            .addContentLine(")"));
+            method.addContentLine(")")
+                    .decreaseContentPadding();
+        }
         method.addContentLine(statement ? ");" : ")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
@@ -476,13 +508,16 @@ final class OpenApiSourceGenerator {
         }
         String value = extension.stringValue("value")
                 .orElseThrow(() -> new CodegenException("@OpenApi.Extension value is required"));
+        boolean parseValue = extension.booleanValue("parseValue").orElse(false);
         method.addContent(call)
                 .addContent("(")
                 .addContent(expressions.validatedStringExpression(name))
+                .addContent(", extensionValue(")
+                .addContent(expressions.validatedStringExpression(name))
                 .addContent(", ")
-                .addContent(JSON_STRING)
-                .addContent(".create(")
                 .addContent(expressions.stringExpression(value))
+                .addContent(", ")
+                .addContent(Boolean.toString(parseValue))
                 .addContentLine(statement ? "));" : "))");
     }
 
@@ -933,6 +968,60 @@ final class OpenApiSourceGenerator {
                         .addContent(expressions.stringExpression(summary))
                         .addContentLine(")"));
         addResponseHeaders(method, restMethod, response, componentNames);
+        for (Annotation link : response.annotationValues("links").orElseGet(List::of)) {
+            String linkName = link.stringValue("name")
+                    .filter(not(String::isBlank))
+                    .orElseThrow(() -> new CodegenException("@OpenApi.Link name is required"));
+            method.addContent(".link(")
+                    .addContent(expressions.validatedStringExpression(linkName))
+                    .addContentLine(", link -> link")
+                    .increaseContentPadding()
+                    .increaseContentPadding();
+            link.stringValue("operationRef")
+                    .filter(not(String::isBlank))
+                    .ifPresent(operationRef -> method.addContent(".operationRef(")
+                            .addContent(expressions.stringExpression(operationRef))
+                            .addContentLine(")"));
+            link.stringValue("operationId")
+                    .filter(not(String::isBlank))
+                    .ifPresent(operationId -> method.addContent(".operationId(")
+                            .addContent(expressions.stringExpression(operationId))
+                            .addContentLine(")"));
+            List<Annotation> linkParameters = link.annotationValues("parameters").orElseGet(List::of);
+            if (!linkParameters.isEmpty()) {
+                method.addContent(".parameters(")
+                        .addContent(JSON_OBJECT)
+                        .addContent(".builder()");
+                for (Annotation parameter : linkParameters) {
+                    String name = parameter.stringValue("name")
+                            .filter(not(String::isBlank))
+                            .orElseThrow(() -> new CodegenException("@OpenApi.LinkParameter name is required"));
+                    String value = parameter.stringValue()
+                            .orElseThrow(() -> new CodegenException("@OpenApi.LinkParameter value is required"));
+                    method.addContent(".set(")
+                            .addContent(expressions.validatedStringExpression(name))
+                            .addContent(", ")
+                            .addContent(expressions.stringExpression(value))
+                            .addContent(")");
+                }
+                method.addContentLine(".build())");
+            }
+            link.stringValue("requestBody")
+                    .filter(not(String::isBlank))
+                    .ifPresent(requestBody -> method.addContent(".requestBody(")
+                            .addContent(JSON_STRING)
+                            .addContent(".create(")
+                            .addContent(expressions.stringExpression(requestBody))
+                            .addContentLine("))"));
+            link.stringValue("description")
+                    .filter(not(String::isBlank))
+                    .ifPresent(description -> method.addContent(".description(")
+                            .addContent(expressions.stringExpression(description))
+                            .addContentLine(")"));
+            method.addContentLine(")")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
+        }
 
         for (Annotation content : contentAnnotations) {
             addContent(method, restMethod.produces(), content, responseType, hasEntity, componentNames);

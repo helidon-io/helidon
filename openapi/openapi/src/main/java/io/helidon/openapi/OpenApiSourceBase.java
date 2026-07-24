@@ -103,6 +103,34 @@ public abstract class OpenApiSourceBase implements OpenApiDocumentSource {
     }
 
     /**
+     * Create an OpenAPI extension value from resolved annotation text.
+     *
+     * @param name extension name
+     * @param value resolved annotation value
+     * @param parseValue whether to parse the value as JSON
+     * @return extension JSON value
+     * @throws IllegalArgumentException if parsing is enabled and the value is not exactly one valid JSON value
+     */
+    @Api.Internal
+    protected static JsonValue extensionValue(String name, String value, boolean parseValue) {
+        if (!parseValue) {
+            return JsonString.create(value);
+        }
+        try {
+            JsonParser parser = JsonParser.create(value.strip());
+            JsonValue result = parser.readJsonValue();
+            if (!parser.hasNext()) {
+                return result;
+            }
+        } catch (JsonException e) {
+            throw new IllegalArgumentException("OpenAPI extension " + name
+                                                       + " must contain exactly one valid JSON value", e);
+        }
+        throw new IllegalArgumentException("OpenAPI extension " + name
+                                                   + " must contain exactly one valid JSON value");
+    }
+
+    /**
      * Add a component schema from a JSON schema provider to the OpenAPI document.
      *
      * @param document OpenAPI document builder

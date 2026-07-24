@@ -320,6 +320,13 @@ public final class OpenApi {
         String description() default "";
 
         /**
+         * Server variables.
+         *
+         * @return server variables
+         */
+        ServerVariable[] variables() default {};
+
+        /**
          * Server name.
          * <p>
          * Rendered only for OpenAPI 3.2 output.
@@ -342,6 +349,44 @@ public final class OpenApi {
          * @return servers
          */
         Server[] value();
+    }
+
+    /**
+     * OpenAPI Server Variable Object metadata.
+     */
+    @Target({})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface ServerVariable {
+        /**
+         * Variable name.
+         *
+         * @return variable name
+         */
+        String name();
+
+        /**
+         * Default value.
+         * <p>
+         * The default value can be empty. When {@link #enumeration()} is set, it must contain the default value.
+         *
+         * @return default value
+         */
+        String defaultValue();
+
+        /**
+         * Allowed values.
+         *
+         * @return allowed values
+         */
+        String[] enumeration() default {};
+
+        /**
+         * Variable description.
+         *
+         * @return description
+         */
+        String description() default "";
     }
 
     /**
@@ -510,12 +555,13 @@ public final class OpenApi {
      * <p>
      * On a method parameter, this annotation decorates the generated parameter from the declarative HTTP binding; it
      * cannot change the bound parameter {@link #name()} or {@link #in()} location. On a method, this annotation must
-     * declare non-blank {@link #name()} and {@link #in()} values which match an existing generated path, query, or header
-     * parameter.
+     * declare non-blank {@link #name()} and {@link #in()} values which match an existing generated path, query, header,
+     * or cookie parameter.
      * <p>
-     * Path parameters are always required and cannot be made optional. Query and header parameters which are required by
-     * the Java signature or HTTP binding cannot be made optional. {@link #allowReserved()} can be used only for query
-     * parameters. If {@link #content()} is configured, {@link #style()} and {@link #explode()} must not be configured.
+     * Path parameters are always required and cannot be made optional. Query, header, and cookie parameters which are
+     * required by the Java signature or HTTP binding cannot be made optional. {@link #allowReserved()} can be used only
+     * for query parameters. If {@link #content()} is configured, {@link #style()} and {@link #explode()} must not be
+     * configured.
      * <p>
      * Generated OpenAPI omits declarative header parameters named {@code Accept}, {@code Content-Type}, or
      * {@code Authorization}. Use media type metadata, request body metadata, or security metadata to describe those
@@ -547,8 +593,8 @@ public final class OpenApi {
          * Parameter location. Defaults to the HTTP binding location on parameter-target usage.
          * <p>
          * Method-target usage requires a non-blank value matching a generated parameter location. Supported generated
-         * locations are {@code path}, {@code query}, and {@code header}. Parameter-target usage cannot override the
-         * generated parameter location.
+         * locations are {@code path}, {@code query}, {@code header}, and {@code cookie}. Parameter-target usage cannot
+         * override the generated parameter location.
          *
          * @return location
          */
@@ -557,7 +603,7 @@ public final class OpenApi {
         /**
          * Requiredness override.
          * <p>
-         * Path parameters are always required. Required query and header parameters cannot be made optional.
+         * Path parameters are always required. Required query, header, and cookie parameters cannot be made optional.
          *
          * @return requiredness
          */
@@ -736,6 +782,94 @@ public final class OpenApi {
          * @return headers
          */
         Header[] headers() default {};
+
+        /**
+         * Response links.
+         *
+         * @return links
+         */
+        Link[] links() default {};
+    }
+
+    /**
+     * OpenAPI Link Object metadata.
+     * <p>
+     * A link must define exactly one of {@link #operationRef()} or {@link #operationId()}.
+     * <p>
+     * Declarative OpenAPI generation supports string-valued link parameters and request bodies. Use
+     * {@link OpenApiDocument.LinkBuilder} for other OpenAPI value types.
+     */
+    @Target({})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Link {
+        /**
+         * Link name.
+         *
+         * @return link name
+         */
+        String name();
+
+        /**
+         * Operation reference.
+         * <p>
+         * Mutually exclusive with {@link #operationId()}.
+         *
+         * @return operation reference
+         */
+        String operationRef() default "";
+
+        /**
+         * Operation ID.
+         * <p>
+         * Mutually exclusive with {@link #operationRef()}.
+         *
+         * @return operation ID
+         */
+        String operationId() default "";
+
+        /**
+         * Parameters passed to the linked operation.
+         *
+         * @return link parameters
+         */
+        LinkParameter[] parameters() default {};
+
+        /**
+         * Literal string or runtime expression used as the linked operation request body.
+         *
+         * @return request body
+         */
+        String requestBody() default "";
+
+        /**
+         * Link description.
+         *
+         * @return description
+         */
+        String description() default "";
+    }
+
+    /**
+     * OpenAPI Link Object parameter metadata.
+     */
+    @Target({})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface LinkParameter {
+        /**
+         * Parameter name.
+         *
+         * @return parameter name
+         */
+        String name();
+
+        /**
+         * Literal string or runtime expression passed to the linked operation.
+         *
+         * @return parameter value
+         */
+        String value();
     }
 
     /**
@@ -949,10 +1083,22 @@ public final class OpenApi {
 
         /**
          * Extension value.
+         * <p>
+         * By default, the value is rendered as an OpenAPI string. Set {@link #parseValue()} to {@code true} to parse
+         * the resolved value as JSON.
          *
          * @return value
          */
         String value();
+
+        /**
+         * Whether to parse the resolved {@link #value()} as JSON.
+         * <p>
+         * When enabled, the resolved value must contain exactly one valid JSON value.
+         *
+         * @return whether to parse the value
+         */
+        boolean parseValue() default false;
     }
 
     /**
