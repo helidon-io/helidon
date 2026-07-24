@@ -25,6 +25,18 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 
 include::{rootdir}/config/io_helidon_security_providers_oidc_OidcProvider.adoc[leveloffset=+2,tag=config]
 
+==== Available OIDC config options
+The OIDC provider reads the same `oidc` configuration node into `io.helidon.security.providers.oidc.common.OidcConfig`.
+The provider configuration table above lists the provider wrapper options, such as outbound token propagation.
+The table below lists the OIDC settings available on that same configuration node.
+
+include::{rootdir}/config/io_helidon_security_providers_oidc_common_OidcConfig.adoc[leveloffset=+3,tag=config]
+
+==== Available client credentials config options
+When `outbound-type` is set to `CLIENT_CREDENTIALS`, the nested `client-credentials` configuration uses these options.
+
+include::{rootdir}/config/io_helidon_security_providers_oidc_common_ClientCredentialsConfig.adoc[leveloffset=+3,tag=config]
+
 === Example code
 See the link:{helidon-github-examples-url}/security/idcs-login[example] on GitHub.
 
