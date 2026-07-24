@@ -524,8 +524,8 @@ public final class SecurityHandler implements Handler, ProtocolUpgradeHandler, R
 
         if (audited.isEmpty()) {
             // use defaults
-            if (method == Method.GET || method == Method.HEAD) {
-                // get and head are not audited by default
+            if (method == Method.GET || method == Method.HEAD || method == Method.QUERY) {
+                // get, head, and query are not audited by default
                 return;
             }
             //do nothing - we want to audit

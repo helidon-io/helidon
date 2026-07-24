@@ -91,4 +91,29 @@ class HttpMethodTest {
             assertThat(constant + " has duplicate value: " + value, allValues.add(value), is(true));
         }
     }
+
+    @Test
+    void testMethodProperties() {
+        assertAll(
+                () -> assertThat(Method.GET.isSafe(), is(true)),
+                () -> assertThat(Method.GET.isIdempotent(), is(true)),
+                () -> assertThat(Method.GET.isCacheable(), is(true)),
+
+                () -> assertThat(Method.POST.isSafe(), is(false)),
+                () -> assertThat(Method.POST.isIdempotent(), is(false)),
+                () -> assertThat(Method.POST.isCacheable(), is(true)),
+
+                () -> assertThat(Method.QUERY.isSafe(), is(true)),
+                () -> assertThat(Method.QUERY.isIdempotent(), is(true)),
+                () -> assertThat(Method.QUERY.isCacheable(), is(true)),
+
+                () -> assertThat(Method.PUT.isSafe(), is(false)),
+                () -> assertThat(Method.PUT.isIdempotent(), is(true)),
+                () -> assertThat(Method.PUT.isCacheable(), is(false)),
+
+                () -> assertThat(Method.DELETE.isSafe(), is(false)),
+                () -> assertThat(Method.DELETE.isIdempotent(), is(true)),
+                () -> assertThat(Method.DELETE.isCacheable(), is(false))
+        );
+    }
 }

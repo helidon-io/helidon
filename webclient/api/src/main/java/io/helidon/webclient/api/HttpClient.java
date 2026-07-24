@@ -190,4 +190,23 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> extends ReleasableRe
     default REQ patch() {
         return method(Method.PATCH);
     }
+
+    /**
+     * Shortcut for query method with a path.
+     *
+     * @param uri path to resolve against base URI, or full URI
+     * @return a new request (not thread safe)
+     */
+    default REQ query(String uri) {
+        return (REQ) method(Method.QUERY).uri(uri);
+    }
+
+    /**
+     * Shortcut for query method with default path.
+     *
+     * @return a new request (not thread safe)
+     */
+    default REQ query() {
+        return method(Method.QUERY);
+    }
 }

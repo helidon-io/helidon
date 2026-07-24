@@ -77,6 +77,16 @@ public final class HeaderNames {
     public static final HeaderName ACCEPT_DATETIME = HeaderNameEnum.ACCEPT_DATETIME;
     /**
      * The {@value} header name.
+     * Specifies which query document formats this server supports.
+     */
+    public static final String ACCEPT_QUERY_NAME = Strings.ACCEPT_QUERY_NAME;
+    /**
+     * The {@value #ACCEPT_QUERY_NAME} header name.
+     * Specifies which query document formats this server supports.
+     */
+    public static final HeaderName ACCEPT_QUERY = HeaderNameEnum.ACCEPT_QUERY;
+    /**
+     * The {@value} header name.
      * CORS configuration.
      */
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME = Strings.ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME;
