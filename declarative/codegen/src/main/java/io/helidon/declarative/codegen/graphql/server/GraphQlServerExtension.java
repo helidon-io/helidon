@@ -121,6 +121,7 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.a
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendObject;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendScalar;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.propertyName;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static java.util.function.Predicate.not;
 
 class GraphQlServerExtension implements RegistryCodegenExtension {
@@ -764,19 +765,15 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         }
         constructor.addParameter(param -> param.type(GRAPHQL_ENTRY_POINTS).name("entryPoints"))
                 .addParameter(param -> param.type(HTTP_ENTRY_POINTS).name("httpEntryPoints"));
-        constructor.addContent("this.scalars = List.of(");
-        int scalarIndex = 0;
+        constructor.addParameter(param -> param
+                        .addAnnotation(Annotation.create(SERVICE_ANNOTATION_NAMED, generatedType.fqName()))
+                        .type(LIST_OF_GRAPHQL_SCALARS)
+                        .name("scalars"))
+                .addContentLine("this.scalars = scalars;");
         for (ScalarSchemaType scalarType : group.schemaTypes().scalarTypes()) {
-            String scalarName = "scalar_" + scalarIndex;
-            constructor.addParameter(param -> param
-                    .type(TypeName.builder(GraphQlServerCodegenTypes.GRAPHQL_CUSTOM_SCALAR_SPI)
-                                  .addTypeArgument(scalarType.javaType()).build())
-                    .name(scalarName));
-            constructor.addContent(scalarIndex++ == 0 ? "" : ", ");
-            constructor.addContent(customScalar.process(roundContext, type, scalarType))
-                    .addContent(".create(").addContent(scalarName).addContent(")");
+            customScalar.process(roundContext, type, generatedType, scalarType);
         }
-        constructor.addContentLine(");").addParameter(param -> param.type(DeclarativeTypes.CONFIG).name("config"))
+        constructor.addParameter(param -> param.type(DeclarativeTypes.CONFIG).name("config"))
                 .addContentLine("this.entryPoints = entryPoints;")
                 .addContentLine("this.httpEntryPoints = httpEntryPoints;").addContentLine("this.config = config;");
         classModel.addConstructor(constructor);

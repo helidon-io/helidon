@@ -29,9 +29,12 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
+import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.ScalarSchemaType;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
+import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_CUSTOM_SCALAR_SPI;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DESCRIPTION;
@@ -51,13 +54,16 @@ class GraphQlServerCustomScalar {
         this.ctx = ctx;
     }
 
-    TypeName process(RegistryRoundContext roundContext, TypeInfo endpointTypeInfo, ScalarSchemaType scalarType) {
+    void process(RegistryRoundContext roundContext,
+                 TypeInfo endpointTypeInfo,
+                 TypeName featureType,
+                 ScalarSchemaType scalarType) {
         TypeInfo scalarTypeInfo = roundContext.typeInfo(scalarType.javaType().boxed())
                 .or(() -> roundContext.typeInfo(scalarType.javaType()))
                 .orElseThrow(() -> new CodegenException("Unknown Java GraphQL scalar type "
                                                                 + scalarType.javaType().fqName(),
                                                         scalarType.originatingElement()));
-        TypeName generatedType = customScalarAdapterName(endpointTypeInfo.typeName(), scalarType.javaType());
+        TypeName generatedType = customScalarAdapterName(featureType, scalarType.javaType());
         if (generatedScalarTypes.add(generatedType)) {
             Set<Annotation> scalarAnnotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, scalarTypeInfo));
             TypeName customScalar = TypeName.builder(GRAPHQL_CUSTOM_SCALAR_SPI)
@@ -68,9 +74,9 @@ class GraphQlServerCustomScalar {
                     customScalar,
                     scalarTypeInfo,
                     scalarAnnotations,
-                    generatedType);
+                    generatedType,
+                    featureType);
         }
-        return generatedType;
     }
 
     private void process(RegistryRoundContext roundContext,
@@ -78,81 +84,87 @@ class GraphQlServerCustomScalar {
                          TypeName customScalar,
                          TypeInfo scalarTypeInfo,
                          Set<Annotation> scalarAnnotations,
-                         TypeName generatedType) {
+                         TypeName generatedType,
+                         TypeName featureType) {
         ClassModel.Builder classModel = ClassModel.builder()
                 .type(generatedType)
                 .copyright(CodegenUtil.copyright(GENERATOR, endpointTypeInfo.typeName(), generatedType))
                 .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, endpointTypeInfo.typeName(), generatedType, "0", ""))
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE);
+                .addAnnotation(DeclarativeTypes.SINGLETON_ANNOTATION)
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED, featureType.fqName()))
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addInterface(GRAPHQL_SCALAR_SPI)
+                .addField(delegate -> delegate
+                        .accessModifier(AccessModifier.PRIVATE)
+                        .isFinal(true)
+                        .type(customScalar)
+                        .name("delegate"));
 
         classModel.addConstructor(constructor -> constructor
-                .accessModifier(AccessModifier.PRIVATE));
-
-        classModel.addMethod(method -> method
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .isStatic(true)
-                .returnType(GRAPHQL_SCALAR_SPI)
-                .name("create")
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
                 .addParameter(delegate -> delegate
                         .type(customScalar)
                         .name("delegate"))
-                .addContent("return new ")
-                .addContent(GRAPHQL_SCALAR_SPI)
-                .addContentLine("() {")
-                .increaseContentPadding()
-                .addContentLine("@Override")
-                .addContentLine("public String name() {")
-                .increaseContentPadding()
+                .addContentLine("this.delegate = delegate;"));
+
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.STRING)
+                .name("name")
                 .addContent("return ")
                 .addContentLiteral(scalarName(scalarTypeInfo, scalarAnnotations))
-                .addContentLine(";")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine()
-                .addContentLine("@Override")
-                .addContentLine("public Class<?> type() {")
-                .increaseContentPadding()
+                .addContentLine(";"));
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeName.builder(TypeName.create(Class.class))
+                                    .addTypeArgument(TypeNames.WILDCARD)
+                                    .build())
+                .name("type")
                 .addContent("return ")
                 .addContent(scalarTypeInfo.typeName())
-                .addContentLine(".class;")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine()
-                .addContentLine("@Override")
-                .addContentLine("public String description() {")
-                .increaseContentPadding()
+                .addContentLine(".class;"));
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.STRING)
+                .name("description")
                 .addContent("return ")
                 .addContentLiteral(description(scalarAnnotations).orElse(""))
-                .addContentLine(";")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine()
-                .addContentLine("@Override")
-                .addContentLine("public Object serialize(Object value) {")
-                .increaseContentPadding()
+                .addContentLine(";"));
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.OBJECT)
+                .name("serialize")
+                .addParameter(value -> value
+                        .type(TypeNames.OBJECT)
+                        .name("value"))
                 .addContent("return java.util.Objects.requireNonNull(delegate.serialize((")
                 .addContent(scalarTypeInfo.typeName())
-                .addContentLine(") value), \"serialize result\");")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine()
-                .addContentLine("@Override")
-                .addContentLine("public Object parseValue(Object value) {")
-                .increaseContentPadding()
-                .addContentLine("return java.util.Objects.requireNonNull(delegate.parseValue(value), \"parseValue result\");")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine()
-                .addContentLine("@Override")
-                .addContentLine("public Object parseLiteral(Object value) {")
-                .increaseContentPadding()
+                .addContentLine(") value), \"serialize result\");"));
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.OBJECT)
+                .name("parseValue")
+                .addParameter(value -> value
+                        .type(TypeNames.OBJECT)
+                        .name("value"))
+                .addContentLine("return java.util.Objects.requireNonNull(delegate.parseValue(value), \"parseValue result\");"));
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.OBJECT)
+                .name("parseLiteral")
+                .addParameter(value -> value
+                        .type(TypeNames.OBJECT)
+                        .name("value"))
                 .addContentLine("return java.util.Objects.requireNonNull(")
                 .addContentLine("        delegate.parseValue(java.util.Objects.requireNonNull(value)),")
-                .addContentLine("        \"parseLiteral result\");")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .decreaseContentPadding()
-                .addContentLine("};"));
+                .addContentLine("        \"parseLiteral result\");"));
 
         roundContext.addGeneratedType(generatedType,
                                       classModel,
@@ -160,10 +172,12 @@ class GraphQlServerCustomScalar {
                                       endpointTypeInfo.originatingElementValue());
     }
 
-    private static TypeName customScalarAdapterName(TypeName endpointType, TypeName scalarType) {
+    private static TypeName customScalarAdapterName(TypeName featureType, TypeName scalarType) {
         return TypeName.builder()
-                .packageName(endpointType.packageName())
-                .className(javaIdentifierSuffix(scalarType.fqName()) + "Scalar__GraphQlScalar")
+                .packageName(featureType.packageName())
+                .className(featureType.className() + "__"
+                                   + javaIdentifierSuffix(scalarType.fqName())
+                                   + "Scalar__GraphQlScalar")
                 .build();
     }
 
