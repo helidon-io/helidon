@@ -24,7 +24,8 @@ import java.util.stream.Collectors;
 import io.helidon.config.Config;
 import io.helidon.http.Method;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -33,6 +34,7 @@ abstract class WebClientMetric implements WebClientService {
 
     private static final int ERROR_STATUS_CODE = 400;
 
+    private final MetricsFactory metricsFactory;
     private final MeterRegistry registry;
     private final Set<String> methods;
     private final String nameFormat;
@@ -41,7 +43,8 @@ abstract class WebClientMetric implements WebClientService {
     private final boolean errors;
 
     WebClientMetric(Builder builder) {
-        this.registry = Metrics.globalRegistry();
+        this.registry = Services.get(MeterRegistry.class);
+        this.metricsFactory = registry.metricsFactory();
         this.methods = builder.methods;
         this.nameFormat = builder.nameFormat;
         this.description = builder.description;
@@ -60,6 +63,10 @@ abstract class WebClientMetric implements WebClientService {
 
     MeterRegistry meterRegistry() {
         return registry;
+    }
+
+    MetricsFactory metricsFactory() {
+        return metricsFactory;
     }
 
     Set<String> methods() {

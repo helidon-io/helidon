@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
-import io.helidon.common.LazyValue;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 /**
  * Common ancestor for DbClient metrics.
@@ -34,7 +34,8 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
     private final MeterMetadata meta;
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
-    private final LazyValue<MeterRegistry> registry = LazyValue.create(Metrics::globalRegistry);
+    private final MetricsFactory metricsFactory;
+    private final MeterRegistry registry;
     private final ConcurrentHashMap<String, T> cache = new ConcurrentHashMap<>();
     private final boolean measureErrors;
     private final boolean measureSuccess;
@@ -47,6 +48,8 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
     protected MetricService(MetricBuilderBase<?, ?> builder) {
         super(builder);
 
+        this.registry = Services.get(MeterRegistry.class);
+        this.metricsFactory = registry.metricsFactory();
         BiFunction<String, DbStatementType, String> nameFunction = builder.nameFormat();
         this.meta = builder.meta();
 
@@ -72,6 +75,10 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
      */
     protected abstract String defaultNamePrefix();
 
+    protected MetricsFactory metricsFactory() {
+        return metricsFactory;
+    }
+
     @Override
     protected DbClientServiceContext apply(DbClientServiceContext context) {
         DbStatementType dbStatementType = context.statementType();
@@ -85,7 +92,7 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
             if (description != null) {
                 builder = builder.description(description);
             }
-            return metric(registry.get(), builder.build());
+            return metric(registry, builder.build());
         });
 
         executeMetric(metric, context.statementFuture());

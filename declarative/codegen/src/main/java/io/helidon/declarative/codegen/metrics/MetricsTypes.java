@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ final class MetricsTypes {
     static final TypeName ANNOTATION_GAUGE = TypeName.create("io.helidon.metrics.api.Metrics.Gauge");
 
     static final TypeName METER_REGISTRY = TypeName.create("io.helidon.metrics.api.MeterRegistry");
+    static final TypeName METRICS_FACTORY = TypeName.create("io.helidon.metrics.api.MetricsFactory");
     static final TypeName GAUGE = TypeName.create("io.helidon.metrics.api.Gauge");
     static final TypeName COUNTER = TypeName.create("io.helidon.metrics.api.Counter");
     static final TypeName TIMER = TypeName.create("io.helidon.metrics.api.Timer");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
@@ -103,7 +102,7 @@ public abstract class ServiceLoader__ServiceDescriptor implements ServiceDescrip
         private final Set<ResolvedType> contracts;
         private final TypeName providerImpl;
         private final double weight;
-        private final LazyValue<Object> instance;
+        private final ServiceLoader.Provider<Object> provider;
 
         private ServiceProviderDescriptor(TypeName providerInterface,
                                           TypeName providerImpl,
@@ -113,7 +112,7 @@ public abstract class ServiceLoader__ServiceDescriptor implements ServiceDescrip
             this.contracts = Set.of(ResolvedType.create(providerInterface));
             this.providerImpl = providerImpl;
             this.weight = weight;
-            this.instance = LazyValue.create(provider);
+            this.provider = provider;
         }
 
         @Override
@@ -135,7 +134,7 @@ public abstract class ServiceLoader__ServiceDescriptor implements ServiceDescrip
 
         @Override
         public Object instantiate(DependencyContext ctx, InterceptionMetadata metadata) {
-            return instance.get();
+            return provider.get();
         }
 
         @Override

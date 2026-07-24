@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,6 +51,9 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.testing.junit5.Testing;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -75,6 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Testing.Test
 class GrpcProtocolHandlerTest {
 
     private static final HeaderName GRPC_ACCEPT_ENCODING = HeaderNames.create("grpc-accept-encoding");
@@ -83,6 +88,14 @@ class GrpcProtocolHandlerTest {
     @AfterAll
     static void closeExecutor() {
         EXECUTOR.close();
+    }
+
+    private final GrpcProtocolSelector.Metrics metrics;
+
+    GrpcProtocolHandlerTest(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+        this.metrics = new GrpcProtocolSelector.Metrics(
+                new AtomicReference<>(new GrpcProtocolSelector.MetricsOwner(metricsFactory, meterRegistry)),
+                new ConcurrentHashMap<>());
     }
 
     @Test
@@ -97,7 +110,8 @@ class GrpcProtocolHandlerTest {
                                                               null,
                                                               Http2StreamState.OPEN,
                                                               null,
-                                                              GrpcConfig.create());
+                                                              GrpcConfig.create(),
+                                                              metrics);
         handler.initCompression(null, headers);
         assertThat(handler.identityCompressor(), is(true));
     }
@@ -114,7 +128,8 @@ class GrpcProtocolHandlerTest {
                                                               null,
                                                               Http2StreamState.OPEN,
                                                               null,
-                                                              GrpcConfig.create());
+                                                              GrpcConfig.create(),
+                                                              metrics);
         handler.initCompression(null, headers);
         assertThat(handler.identityCompressor(), is(false));
     }
@@ -133,7 +148,8 @@ class GrpcProtocolHandlerTest {
                                                               null,
                                                               GrpcConfig.builder()
                                                                       .enableCompression(false)
-                                                                      .build());
+                                                                      .build(),
+                                                              metrics);
         handler.initCompression(null, headers);
         assertThat(handler.identityCompressor(), is(true));
     }
@@ -195,7 +211,8 @@ class GrpcProtocolHandlerTest {
                                                                                 null,
                                                                                 Http2StreamState.OPEN,
                                                                                 route(listener),
-                                                                                GrpcConfig.create());
+                                                                                GrpcConfig.create(),
+                                                                                metrics);
         handler.init();
         handler.rstStream(new Http2RstStream(io.helidon.http.http2.Http2ErrorCode.CANCEL));
         assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
@@ -217,7 +234,8 @@ class GrpcProtocolHandlerTest {
                                                                                 null,
                                                                                 Http2StreamState.HALF_CLOSED_LOCAL,
                                                                                 null,
-                                                                                GrpcConfig.create());
+                                                                                GrpcConfig.create(),
+                                                                                metrics);
 
         Http2FrameHeader header = Http2FrameHeader.create(0,
                                                           Http2FrameTypes.DATA,
@@ -260,7 +278,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
         callRef.get().request(2);
         sendData(handler, "one", false);
@@ -308,7 +327,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
         Thread dataThread = Thread.startVirtualThread(() -> {
             sendData(handler, "one", false);
@@ -363,7 +383,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
         Thread dataThread = Thread.startVirtualThread(() -> sendData(handler, "one", false));
 
@@ -402,7 +423,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
 
         int messageCountInFrame = 256;
@@ -462,7 +484,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(listener),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
         CountDownLatch dataFinished = new CountDownLatch(1);
         Thread dataThread = Thread.startVirtualThread(() -> {
@@ -510,7 +533,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         AtomicInteger streamCloseCount = new AtomicInteger();
         handler.onStreamClosed(streamCloseCount::incrementAndGet);
         handler.init();
@@ -555,7 +579,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
 
         handler.init();
 
@@ -590,7 +615,8 @@ class GrpcProtocolHandlerTest {
                                                 null,
                                                 Http2StreamState.OPEN,
                                                 route(callHandler),
-                                                GrpcConfig.create());
+                                                GrpcConfig.create(),
+                                                metrics);
         handler.init();
 
         callRef.get().close(Status.OK, new Metadata());
@@ -630,7 +656,8 @@ class GrpcProtocolHandlerTest {
                                                                                 null,
                                                                                 Http2StreamState.OPEN,
                                                                                 route(callHandler),
-                                                                                GrpcConfig.create());
+                                                                                GrpcConfig.create(),
+                                                                                metrics);
         handler.init();
         Http2FrameHeader header = Http2FrameHeader.create(data.available(),
                                                           Http2FrameTypes.DATA,
@@ -669,7 +696,8 @@ class GrpcProtocolHandlerTest {
                                                                                 GrpcRouteHandler.methodDefinition(definition,
                                                                                                                    null,
                                                                                                                    WeightedBag.create()),
-                                                                                GrpcConfig.create());
+                                                                                GrpcConfig.create(),
+                                                                                metrics);
 
         handler.init();
 
@@ -736,7 +764,8 @@ class GrpcProtocolHandlerTest {
                 null,
                 Http2StreamState.OPEN,
                 route(callHandler),
-                GrpcConfig.create());
+                GrpcConfig.create(),
+                metrics);
 
         handler.init();
 
@@ -744,7 +773,7 @@ class GrpcProtocolHandlerTest {
         assertThat(grpcConnectionContext.get().sniMatchedHost(), is(Optional.of("*.example.com")));
     }
 
-    private static ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
+    private ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
         GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
                                                                                 Http2Headers.create(WritableHeaders.create()),
                                                                                 streamWriter,
@@ -753,7 +782,8 @@ class GrpcProtocolHandlerTest {
                                                                                 Http2StreamState.OPEN,
                                                                                 route(new ServerCall.Listener<>() {
                                                                                 }),
-                                                                                GrpcConfig.create());
+                                                                                GrpcConfig.create(),
+                                                                                metrics);
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(GRPC_ACCEPT_ENCODING, "identity");
         handler.initCompression(null, headers);

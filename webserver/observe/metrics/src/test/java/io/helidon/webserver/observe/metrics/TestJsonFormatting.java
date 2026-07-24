@@ -29,9 +29,8 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
-import io.helidon.metrics.api.SystemTagsManager;
-import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
 
@@ -52,19 +51,19 @@ class TestJsonFormatting {
                                  .defaultValue("application"))
                 .build();
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(metricsConfig);
-        SystemTagsManager.instance(metricsConfig);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
 
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c1"));
+        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c1"));
         assertThat("Initial counter value", c.count(), is(0L));
         c.increment();
         assertThat("After increment", c.count(), is(1L));
 
-        Counter c1WithTag = meterRegistry.getOrCreate(Counter.builder("c1")
-                                                              .tags(Set.of(Tag.create("t1", "v1"))));
+        Counter c1WithTag = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c1")
+                                                              .tags(Set.of(metricsFactory.tagCreate("t1", "v1"))));
         c1WithTag.increment(4L);
 
-        Timer d = meterRegistry.getOrCreate(Timer.builder("t1"));
+        Timer d = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t1"));
         d.record(3, TimeUnit.SECONDS);
 
 
@@ -94,15 +93,15 @@ class TestJsonFormatting {
                                  .defaultValue("application"))
                 .build();
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(metricsConfig);
-        SystemTagsManager.instance(metricsConfig);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
 
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c2"));
+        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c2"));
         assertThat("Initial counter value", c.count(), is(0L));
         c.increment();
         assertThat("After increment", c.count(), is(1L));
 
-        Timer d = meterRegistry.getOrCreate(Timer.builder("t2"));
+        Timer d = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t2"));
         d.record(7, TimeUnit.SECONDS);
 
         JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
@@ -126,10 +125,10 @@ class TestJsonFormatting {
                                  .defaultValue("application"))
                 .build();
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(metricsConfig);
-        SystemTagsManager.instance(metricsConfig);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
 
-        Timer t = meterRegistry.getOrCreate(Timer.builder("timerWithMilliseconds")
+        Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timerWithMilliseconds")
                                                     .baseUnit("milliseconds"));
         t.record(Duration.ofMillis(256));
 
@@ -161,14 +160,14 @@ class TestJsonFormatting {
                 .jsonUnitsDefault(TimeUnit.MILLISECONDS)
                 .build();
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(metricsConfig);
-        SystemTagsManager.instance(metricsConfig);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
 
-        Timer timerWithMicroSeconds = meterRegistry.getOrCreate(Timer.builder("timerWithMicroSeconds")
+        Timer timerWithMicroSeconds = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timerWithMicroSeconds")
                                                     .baseUnit("microseconds"));
         timerWithMicroSeconds.record(Duration.ofMillis(3256));
 
-        Timer timerWithNoUnits = meterRegistry.getOrCreate(Timer.builder("timerWithNoUnits"));
+        Timer timerWithNoUnits = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timerWithNoUnits"));
         timerWithNoUnits.record(Duration.ofMillis(128));
 
         JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
@@ -198,12 +197,10 @@ class TestJsonFormatting {
                    metadataTimerWithNoUnitsJson.stringValue("unit").orElseThrow(), is("MILLISECONDS"));
 
     }
-
-
-
     private static JsonObject checkAndCast(Optional<Object> metricsOutput) {
         assertThat("Result", metricsOutput, OptionalMatcher.optionalPresent());
         assertThat("Result", metricsOutput.get(), is(instanceOf(JsonObject.class)));
         return (JsonObject) metricsOutput.get();
     }
+
 }

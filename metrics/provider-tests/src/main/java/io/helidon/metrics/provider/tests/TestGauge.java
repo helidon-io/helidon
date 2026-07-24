@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -29,11 +30,13 @@ import static org.hamcrest.Matchers.is;
 
 class TestGauge {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = Services.get(MeterRegistry.class);
     }
 
     @Test
@@ -42,8 +45,8 @@ class TestGauge {
         long initial = 4L;
         long incr = 3L;
         Custom c = new Custom(initial);
-        Gauge<Double> g = meterRegistry.getOrCreate(Gauge.builder("a",
-                                                                  c::value));
+        Gauge<Double> g = meterRegistry.getOrCreate(metricsFactory.gaugeBuilder("a",
+                                                                                c::value));
 
         assertThat("Gauge before update", g.value(), is((double) initial));
 
@@ -57,9 +60,9 @@ class TestGauge {
         int initial = 11;
         int incr = 4;
         AtomicInteger i = new AtomicInteger(initial);
-        Gauge g = meterRegistry.getOrCreate(Gauge.builder("b",
-                                                          i,
-                                                          theInt -> (double) theInt.get()));
+        Gauge g = meterRegistry.getOrCreate(metricsFactory.gaugeBuilder("b",
+                                                                        i,
+                                                                        theInt -> (double) theInt.get()));
         assertThat("Gauge before update", i.get(), is(initial));
 
         i.getAndAdd(incr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,41 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.concurrent.TimeUnit;
+import io.helidon.testing.junit5.TestJunitExtension;
 
-import io.helidon.metrics.api.MetricsFactory;
-
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.Extension;
-import org.junit.jupiter.api.extension.ExtensionContext;
-
-public class MicrometerMetricsTestsJunitExtension implements Extension,
-                                                             BeforeAllCallback {
-
-    static void clear() {
-
-        MetricsFactory.closeAll();
-
-        // And clear out Micrometer's global registry explicitly to be extra sure.
-        io.micrometer.core.instrument.MeterRegistry mmGlobal = io.micrometer.core.instrument.Metrics.globalRegistry;
-        mmGlobal.clear();
-
-        int delayMS = 250;
-        int maxSecondsToWait = 5;
-        int iterationsRemaining = (maxSecondsToWait * 1000) / delayMS;
-
-        while (iterationsRemaining > 0 && !mmGlobal.getMeters().isEmpty()) {
-            iterationsRemaining--;
-            try {
-                TimeUnit.MILLISECONDS.sleep(delayMS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Error awaiting clear-out of meter registries to finish", e);
-            }
-        }
-    }
-
-    @Override
-    public void beforeAll(ExtensionContext extensionContext) throws Exception {
-        clear();
-    }
+public class MicrometerMetricsTestsJunitExtension extends TestJunitExtension {
 }

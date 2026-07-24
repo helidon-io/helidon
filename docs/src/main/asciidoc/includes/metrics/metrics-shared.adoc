@@ -30,18 +30,6 @@ ifdef::se-flavor[:prom-output-scope-prefix: ]
 
 Metrics is one of the Helidon observability features.
 
-// @Deprecated(forRemoval = true) Remove the following note starting in Helidon 5.
-[NOTE]
-.Recommended Configuration Setting
-====
-Beginning with Helidon 4.1, strongly consider assigning the config setting
-[source,properties]
-----
-metrics.gc-time-type = gauge
-----
-See the <<controlling-gc-time,longer discussion below>> in the  Configuration section.
-====
-
 // end::overview[]
 
 // tag::usage-body[]
@@ -124,15 +112,15 @@ link:{javadoc-base-url}/io.helidon.common.features.api/io/helidon/common/feature
 
 You can configure publishers in the `publishers` configuration section under the top level `metrics` node or under `server.features.observe.observers.metrics`. If you do not set up publishers explicitly, Helidon uses an inferred Prometheus publisher for backward compatibility. See <<understanding_inferred,this later section>> for details.
 
-Publishers in Helidon's Micrometer-based metrics implementation use Micrometer `MeterRegistry` implementations. For each enabled publisher, Helidon adds the corresponding meter registry to Micrometer's global registry. This has these important effects:
+Publishers in Helidon's Micrometer-based metrics implementation use Micrometer `MeterRegistry` implementations. Each Helidon meter registry owns a composite Micrometer registry containing one registry for each enabled publisher. This has these important effects:
 
-* {meters_uc} which Helidon or your code registers using the Helidon metrics API are registered in all active Micrometer meter registries.
-* Each Helidon meter registered has an implementation in every active Micrometer meter registry.
-* When Helidon or your code updates a Helidon {meter}, Micrometer applies the change to every corresponding {meter} from each active meter registry.
+* {meters_uc} which Helidon or your code registers in a Helidon meter registry are registered in all active publisher registries owned by that registry.
+* Each Helidon meter has an implementation in every active publisher registry belonging to its Helidon registry.
+* When Helidon or your code updates a Helidon {meter}, Micrometer applies the change to every corresponding {meter} in the publisher registries belonging to that Helidon registry.
 
-As a result, configuring more than one active meter registry can affect performance.
+As a result, configuring more than one active publisher for a Helidon meter registry can affect performance.
 
-NOTE: Make sure at least one of the configured publishers is enabled. If not, Micrometer does not have any active meter registry implementations and the registered metrics are no-ops. Helidon logs a warning in this case during the metrics observer initialization.
+NOTE: Make sure at least one publisher configured for each Helidon meter registry is enabled. If not, that Helidon registry has no active publisher registries, its registered metrics are no-ops, and Helidon logs a warning when the registry is created.
 
 ===== Configuring an OTLP Publisher
 

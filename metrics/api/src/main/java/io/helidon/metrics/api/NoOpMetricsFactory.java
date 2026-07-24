@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.function.ToDoubleFunction;
  */
 class NoOpMetricsFactory implements MetricsFactory {
 
-    private static final Clock SYSTEM_CLOCK = new Clock() {
+    private final Clock systemClock = new Clock() {
         @Override
         public <R> R unwrap(Class<? extends R> c) {
             return c.cast(this);
@@ -41,11 +41,21 @@ class NoOpMetricsFactory implements MetricsFactory {
             return System.nanoTime();
         }
     };
-    private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
-    private final MetricsConfig metricsConfig = MetricsConfig.create();
 
-    static NoOpMetricsFactory create() {
-        return new NoOpMetricsFactory();
+    private final MeterRegistry meterRegistry;
+    private final MetricsConfig metricsConfig;
+
+    NoOpMetricsFactory() {
+        this(MetricsConfig.create());
+    }
+
+    private NoOpMetricsFactory(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
+         this.meterRegistry = new NoOpMeterRegistry(this);
+    }
+
+    static NoOpMetricsFactory create(MetricsConfig metricsConfig) {
+        return new NoOpMetricsFactory(metricsConfig);
     }
 
     @Override
@@ -58,28 +68,18 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public MeterRegistry globalRegistry(MetricsConfig metricsConfig) {
-        return meterRegistry;
-    }
-
-    @Override
-    public MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill) {
-        return meterRegistry;
-    }
-
-    @Override
     public MetricsConfig metricsConfig() {
         return metricsConfig;
     }
 
     @Override
     public NoOpMeterRegistry.Builder meterRegistryBuilder() {
-        return NoOpMeterRegistry.builder();
+        return NoOpMeterRegistry.builder(this);
     }
 
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
-        return new NoOpMeterRegistry();
+        return new NoOpMeterRegistry(this);
     }
 
     @Override
@@ -108,7 +108,7 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     @Override
     public Clock clockSystem() {
-        return SYSTEM_CLOCK;
+        return systemClock;
     }
 
     @Override

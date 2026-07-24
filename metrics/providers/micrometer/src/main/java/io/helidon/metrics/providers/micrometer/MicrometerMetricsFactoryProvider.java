@@ -15,74 +15,49 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
+import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
-
-import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.config.MeterFilter;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Provides the Micrometer meter registry to use as a delegate for the implementation of the Helidon metrics API.
  */
 public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider {
 
-    private final List<MicrometerMetricsFactory> metricsFactories = new ArrayList<>();
-
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
     @Api.Internal
     public MicrometerMetricsFactoryProvider() {
-        observeGlobalRegistry();
-        addSystemTagsFilter();
     }
 
     @Override
     public MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
-        return save(MicrometerMetricsFactory.create(metricsConfig, metersProviders));
+        return create(rootConfig, metricsConfig, metersProviders, GlobalServiceRegistry.registry());
     }
 
     @Override
-    public void close() {
-        metricsFactories.forEach(MetricsFactory::close);
-        metricsFactories.clear();
-        MMeterRegistry.clearMultipleInstantiationInfo();
-        List<Meter> meters = List.copyOf(Metrics.globalRegistry.getMeters());
-        meters.forEach(Metrics.globalRegistry::remove);
-    }
-
-    private MicrometerMetricsFactory save(MicrometerMetricsFactory metricsFactory) {
-        metricsFactories.add(metricsFactory);
-        return metricsFactory;
-    }
-
-    private void onMeterAdded(Meter meter) {
-        metricsFactories.forEach(mf -> mf.onMeterAdded(meter));
-    }
-
-    private void onMeterRemoved(Meter meter) {
-        metricsFactories.forEach(mf -> mf.onMeterRemoved(meter));
-    }
-
-    private void observeGlobalRegistry() {
-        Metrics.globalRegistry.config().onMeterAdded(this::onMeterAdded);
-        Metrics.globalRegistry.config().onMeterRemoved(this::onMeterRemoved);
-    }
-
-    private void addSystemTagsFilter() {
-        Metrics.globalRegistry
-                .config()
-                .meterFilter(MeterFilter.commonTags(SystemTagsMeterFilterManager
-                                                            .instance()
-                                                            .tags()));
+    public MetricsFactory create(Config rootConfig,
+                                 MetricsConfig metricsConfig,
+                                 Collection<MetersProvider> metersProviders,
+                                 ServiceRegistry serviceRegistry) {
+        Collection<MeterRegistryLifeCycleListener> lifeCycleListeners =
+                serviceRegistry.all(MeterRegistryLifeCycleListener.class);
+        SpanContextSupplierProvider spanContextSupplierProvider =
+                serviceRegistry.first(SpanContextSupplierProvider.class)
+                        .orElseGet(NoOpSpanContextSupplierProvider::new);
+        return MicrometerMetricsFactory.create(metricsConfig,
+                                               metersProviders,
+                                               lifeCycleListeners,
+                                               spanContextSupplierProvider);
     }
 }

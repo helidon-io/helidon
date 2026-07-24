@@ -16,24 +16,42 @@
 
 package io.helidon.metrics.api;
 
+import java.util.Collection;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class MetricsFactoryFactory implements Supplier<MetricsFactory> {
     private final Config config;
+    private final ServiceRegistry serviceRegistry;
+    private final Collection<MetricsFactory> metricsFactories = new ConcurrentLinkedQueue<>();
 
-    MetricsFactoryFactory(Config config) {
+    MetricsFactoryFactory(Config config, ServiceRegistry serviceRegistry) {
         this.config = config;
+        this.serviceRegistry = serviceRegistry;
     }
 
     @Override
     public MetricsFactory get() {
-        return MetricsFactoryManager.getOrCreateMetricsFactory(config);
+        MetricsFactory metricsFactory = createMetricsFactory(config);
+        metricsFactories.add(metricsFactory);
+        return metricsFactory;
+    }
+
+    MetricsFactory createMetricsFactory(Config rootConfig) {
+        return MetricsFactoryManager.create(rootConfig, serviceRegistry);
+    }
+
+    @Service.PreDestroy
+    void preDestroy() {
+        metricsFactories.forEach(MetricsFactory::close);
+        metricsFactories.clear();
     }
 }

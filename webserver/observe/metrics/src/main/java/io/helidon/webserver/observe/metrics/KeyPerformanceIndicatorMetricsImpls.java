@@ -17,9 +17,10 @@ package io.helidon.webserver.observe.metrics;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.metrics.api.BuiltInMeterNameFormat;
@@ -28,6 +29,7 @@ import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 
 class KeyPerformanceIndicatorMetricsImpls {
@@ -54,7 +56,7 @@ class KeyPerformanceIndicatorMetricsImpls {
     static final String LOAD_NAME = "load";
     static final String KPI_METERS_SCOPE = Meter.Scope.VENDOR;
 
-    private static final Map<String, KeyPerformanceIndicatorSupport.Metrics> KPI_METRICS = new HashMap<>();
+    private static final Map<KpiMetricsKey, Basic> KPI_METRICS = new ConcurrentHashMap<>();
 
     // Maps camelCase names to snake_case, but only for those names that are actually different in the two cases.
     private static final Map<String, String> CAMEL_TO_SNAKE_CASE_METER_NAMES = Map.of("inFlight", "in_flight",
@@ -77,10 +79,16 @@ class KeyPerformanceIndicatorMetricsImpls {
                                                       String meterNamePrefix,
                                                       KeyPerformanceIndicatorMetricsConfig kpiConfig,
                                                       BuiltInMeterNameFormat builtInMeterNameFormat) {
-        return KPI_METRICS.computeIfAbsent(meterNamePrefix, prefix ->
-                kpiConfig.extended()
-                        ? new Extended(kpiMeterRegistry, meterNamePrefix, kpiConfig, builtInMeterNameFormat)
-                        : new Basic(kpiMeterRegistry, meterNamePrefix, builtInMeterNameFormat));
+        KpiMetricsKey key = new KpiMetricsKey(kpiMeterRegistry, meterNamePrefix);
+        return KPI_METRICS.compute(key, (ignored, metrics) -> {
+            if (metrics != null) {
+                metrics.retain();
+                return metrics;
+            }
+            return kpiConfig.extended()
+                    ? new Extended(key, kpiConfig, builtInMeterNameFormat)
+                    : new Basic(key, builtInMeterNameFormat);
+        });
     }
 
     static void close() {
@@ -93,15 +101,21 @@ class KeyPerformanceIndicatorMetricsImpls {
     private static class Basic implements KeyPerformanceIndicatorSupport.Metrics {
 
         private final Counter totalCount;
+        private final KpiMetricsKey key;
         private final MeterRegistry meterRegistry;
         private final List<Meter> meters = new ArrayList<>();
         private final BuiltInMeterNameFormat builtInMeterNameFormat;
+        private int owners = 1;
 
-        protected Basic(MeterRegistry kpiMeterRegistry, String meterNamePrefix, BuiltInMeterNameFormat builtInMeterNameFormat) {
+        protected Basic(KpiMetricsKey key, BuiltInMeterNameFormat builtInMeterNameFormat) {
+            MeterRegistry kpiMeterRegistry = key.meterRegistry;
+            String meterNamePrefix = key.meterNamePrefix;
+            MetricsFactory metricsFactory = kpiMeterRegistry.metricsFactory();
+            this.key = key;
             meterRegistry = kpiMeterRegistry;
             this.builtInMeterNameFormat = builtInMeterNameFormat;
             totalCount = add(kpiMeterRegistry.getOrCreate(
-                    Counter.builder(meterNamePrefix + meterName(REQUESTS_COUNT_NAME))
+                    metricsFactory.counterBuilder(meterNamePrefix + meterName(REQUESTS_COUNT_NAME))
                             .description(
                                     "Each request (regardless of HTTP method) will increase this counter")
                             .scope(KPI_METERS_SCOPE)));
@@ -114,8 +128,17 @@ class KeyPerformanceIndicatorMetricsImpls {
 
         @Override
         public void close() {
-            meters.forEach(meterRegistry::remove);
-            KPI_METRICS.clear();
+            KPI_METRICS.computeIfPresent(key, (ignored, metrics) -> {
+                if (metrics != this || --owners > 0) {
+                    return metrics;
+                }
+                meters.forEach(meterRegistry::remove);
+                return null;
+            });
+        }
+
+        private void retain() {
+            owners++;
         }
 
         protected <M extends Meter> M add(M meter) {
@@ -150,43 +173,44 @@ class KeyPerformanceIndicatorMetricsImpls {
         private final long longRunningRequestThresdholdMs;
         private AtomicInteger inflightRequestsCount = new AtomicInteger();
 
-        protected Extended(MeterRegistry kpiMeterRegistry,
-                           String meterNamePrefix,
+        protected Extended(KpiMetricsKey key,
                            KeyPerformanceIndicatorMetricsConfig kpiConfig,
                            BuiltInMeterNameFormat builtInMeterNameFormat) {
-            this(kpiMeterRegistry, meterNamePrefix, kpiConfig.longRunningRequestThreshold(), builtInMeterNameFormat);
+            this(key, kpiConfig.longRunningRequestThreshold(), builtInMeterNameFormat);
         }
 
-        private Extended(MeterRegistry kpiMeterRegistry,
-                         String meterNamePrefix,
+        private Extended(KpiMetricsKey key,
                          Duration longRunningRequestThreshold,
                          BuiltInMeterNameFormat builtInMeterNameFormat) {
-            super(kpiMeterRegistry, meterNamePrefix, builtInMeterNameFormat);
+            super(key, builtInMeterNameFormat);
             this.longRunningRequestThresdholdMs = longRunningRequestThreshold.toMillis();
+            MeterRegistry kpiMeterRegistry = key.meterRegistry;
+            String meterNamePrefix = key.meterNamePrefix;
+            MetricsFactory metricsFactory = kpiMeterRegistry.metricsFactory();
 
-            inflightRequests = kpiMeterRegistry.getOrCreate(
-                    Gauge.builder(meterNamePrefix + meterName(INFLIGHT_REQUESTS_NAME),
+            inflightRequests = add(kpiMeterRegistry.getOrCreate(
+                    metricsFactory.gaugeBuilder(meterNamePrefix + meterName(INFLIGHT_REQUESTS_NAME),
                                   inflightRequestsCount,
                                   AtomicInteger::get)
                             .scope(KPI_METERS_SCOPE)
-                            .description("Measures the number of requests currently being processed"));
+                            .description("Measures the number of requests currently being processed")));
 
-            longRunningRequests = kpiMeterRegistry.getOrCreate(
-                    Counter.builder(meterNamePrefix + LONG_RUNNING_REQUESTS_NAME)
+            longRunningRequests = add(kpiMeterRegistry.getOrCreate(
+                    metricsFactory.counterBuilder(meterNamePrefix + LONG_RUNNING_REQUESTS_NAME)
                             .description("Measures the total number of long-running requests and rates at which they occur")
                             .scope(KPI_METERS_SCOPE)
-            );
+            ));
 
-            load = kpiMeterRegistry.getOrCreate(Counter.builder(meterNamePrefix + meterName(LOAD_NAME))
-                                                        .description(LOAD_DESCRIPTION)
-                                                        .scope(KPI_METERS_SCOPE));
+            load = add(kpiMeterRegistry.getOrCreate(metricsFactory.counterBuilder(meterNamePrefix + meterName(LOAD_NAME))
+                                                            .description(LOAD_DESCRIPTION)
+                                                            .scope(KPI_METERS_SCOPE)));
 
             deferredRequests = new DeferredRequests();
-            kpiMeterRegistry.getOrCreate(Gauge.builder(meterNamePrefix + meterName(DEFERRED_NAME),
-                                                       deferredRequests,
-                                                       DeferredRequests::value)
-                                                 .description("Measures deferred requests")
-                                                 .scope(KPI_METERS_SCOPE));
+            add(kpiMeterRegistry.getOrCreate(metricsFactory.gaugeBuilder(meterNamePrefix + meterName(DEFERRED_NAME),
+                                                           deferredRequests,
+                                                           DeferredRequests::value)
+                                                     .description("Measures deferred requests")
+                                                     .scope(KPI_METERS_SCOPE)));
         }
 
         @Override
@@ -241,6 +265,33 @@ class KeyPerformanceIndicatorMetricsImpls {
             double value() {
                 return hits - load;
             }
+        }
+    }
+
+    private static final class KpiMetricsKey {
+        private final MeterRegistry meterRegistry;
+        private final String meterNamePrefix;
+
+        private KpiMetricsKey(MeterRegistry meterRegistry, String meterNamePrefix) {
+            this.meterRegistry = Objects.requireNonNull(meterRegistry);
+            this.meterNamePrefix = Objects.requireNonNull(meterNamePrefix);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+            if (!(other instanceof KpiMetricsKey otherKey)) {
+                return false;
+            }
+            return meterRegistry == otherKey.meterRegistry
+                    && meterNamePrefix.equals(otherKey.meterNamePrefix);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * System.identityHashCode(meterRegistry) + meterNamePrefix.hashCode();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,20 +49,20 @@ class GrpcDisabledMetricsTest extends GrpcBaseMetricsTest {
     }
 
     @AfterAll
-    static void checkMetrics() {
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+    static void checkMetrics(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+        Tag okTag = okStatusTag(metricsFactory);
 
-        for (Tag tag : METHOD_TAGS) {
+        for (Tag tag : grpcMethodTags(metricsFactory)) {
             Optional<Counter> counter = meterRegistry.counter(CALL_STARTED, List.of(tag));
             assertThat(counter.isEmpty(), is(true));
 
-            Optional<Timer> timer = meterRegistry.timer(CALL_DURATION, List.of(tag, OK_TAG));
+            Optional<Timer> timer = meterRegistry.timer(CALL_DURATION, List.of(tag, okTag));
             assertThat(timer.isEmpty(), is(true));
 
-            Optional<DistributionSummary> summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            Optional<DistributionSummary> summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(tag, okTag));
             assertThat(summary.isEmpty(), is(true));
 
-            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(tag, okTag));
             assertThat(summary.isEmpty(), is(true));
         }
     }

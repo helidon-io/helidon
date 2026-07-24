@@ -23,12 +23,9 @@ import java.io.UncheckedIOException;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.socket.HelidonSocket;
@@ -48,7 +45,7 @@ import io.helidon.http.http2.Http2StreamState;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.api.ClientConnection;
@@ -100,14 +97,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     static final BufferData PING_FRAME = BufferData.create("PING");
     static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
     static final int DATA_PREFIX_LENGTH = 5;
-    static final Tag OK_TAG = Tag.create("grpc.status", "OK");
 
     record MethodMetrics(Counter callStarted,
                                    Timer callDuration,
                                    DistributionSummary sentMessageSize,
                                    DistributionSummary recvMessageSize) { }
-
-    private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
     private final GrpcClientImpl grpcClient;
     private final GrpcChannel grpcChannel;
@@ -486,32 +480,37 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         String baseUri = grpcChannel.baseUri().toString();
         String methodName = methodDescriptor.getFullMethodName();
 
-        methodMetrics = METHOD_METRICS.get().computeIfAbsent(baseUri + methodName, uri -> {
-            MeterRegistry meterRegistry = Metrics.globalRegistry();
-            Tag grpcMethod = Tag.create("grpc.method", methodName);
-            Tag grpcTarget = Tag.create("grpc.target", baseUri);
+        methodMetrics = grpcChannel.methodMetrics().computeIfAbsent(baseUri + methodName, uri -> {
+            MetricsFactory metricsFactory = grpcChannel.metricsFactory();
+            MeterRegistry meterRegistry = grpcChannel.meterRegistry();
 
-            Counter.Builder callStartedBuilder = Counter.builder("grpc.client.attempt.started")
+            Tag okTag = metricsFactory.tagCreate("grpc.status", "OK");
+            Tag grpcMethod = metricsFactory.tagCreate("grpc.method", methodName);
+            Tag grpcTarget = metricsFactory.tagCreate("grpc.target", baseUri);
+
+            Counter.Builder callStartedBuilder = metricsFactory.counterBuilder("grpc.client.attempt.started")
                     .scope(VENDOR)
                     .tags(List.of(grpcMethod, grpcTarget));
             Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
 
-            Timer.Builder callDurationOkBuilder = Timer.builder("grpc.client.attempt.duration")
+            Timer.Builder callDurationOkBuilder = metricsFactory.timerBuilder("grpc.client.attempt.duration")
                     .scope(VENDOR)
                     .baseUnit(Timer.BaseUnits.MILLISECONDS)
-                    .tags(List.of(grpcMethod, grpcTarget, OK_TAG));
+                    .tags(List.of(grpcMethod, grpcTarget, okTag));
             Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
 
-            DistributionSummary.Builder sendMessageSizeBuilder = DistributionSummary.builder(
-                            "grpc.client.attempt.sent_total_compressed_message_size")
+            DistributionSummary.Builder sendMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
+                            "grpc.client.attempt.sent_total_compressed_message_size",
+                            metricsFactory.distributionStatisticsConfigBuilder())
                     .scope(VENDOR)
-                    .tags(List.of(grpcMethod, grpcTarget, OK_TAG));
+                    .tags(List.of(grpcMethod, grpcTarget, okTag));
             DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
 
-            DistributionSummary.Builder recvMessageSizeBuilder = DistributionSummary.builder(
-                            "grpc.client.attempt.rcvd_total_compressed_message_size")
+            DistributionSummary.Builder recvMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
+                            "grpc.client.attempt.rcvd_total_compressed_message_size",
+                            metricsFactory.distributionStatisticsConfigBuilder())
                     .scope(VENDOR)
-                    .tags(List.of(grpcMethod, grpcTarget, OK_TAG));
+                    .tags(List.of(grpcMethod, grpcTarget, okTag));
             DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);

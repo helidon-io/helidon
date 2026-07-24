@@ -73,7 +73,7 @@ final class MetricTimer extends MetricService<Timer> {
 
     @Override
     protected Timer metric(MeterRegistry registry, MeterMetadata meta) {
-        return registry.getOrCreate(meta.apply(Timer.builder(meta.name())));
+        return registry.getOrCreate(meta.apply(metricsFactory().timerBuilder(meta.name())));
     }
 
     /**

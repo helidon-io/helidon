@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,15 +27,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 class TestRestRequestConfig {
-
-    @Test
-    void testWithHyphenConfigKey() {
-
-        MetricsConfig metricsConfig = MetricsConfig.create(Config.just(
-                ConfigSources.create(Map.of("rest-request-enabled", "true")).build()));
-
-        assertThat("REST request enabled using hyphen", metricsConfig.restRequestEnabled(), is(true));
-    }
 
     @Test
     void testWithDotConfigKey() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,14 +30,6 @@ import org.junit.jupiter.api.BeforeAll;
 
 abstract class GrpcBaseMetricsTest extends BaseStringServiceTest {
 
-    static final Tag OK_TAG = Tag.create("grpc.status", "OK");
-    static final Tag[] METHOD_TAGS = {
-            Tag.create("grpc.method", "StringService/Upper"),
-            Tag.create("grpc.method", "StringService/Lower"),
-            Tag.create("grpc.method", "StringService/Echo"),
-            Tag.create("grpc.method", "StringService/Split"),
-            Tag.create("grpc.method", "StringService/Join")
-    };
     static final String CALL_STARTED = "grpc.server.call.started";
     static final String CALL_DURATION = "grpc.server.call.duration";
     static final String SENT_MESSAGE_SIZE = "grpc.server.call.sent_total_compressed_message_size";
@@ -53,13 +45,27 @@ abstract class GrpcBaseMetricsTest extends BaseStringServiceTest {
     }
 
     @BeforeAll
-    static void initialize() {
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
-        for (Tag tag : METHOD_TAGS) {
+    static void initialize(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+        Tag okTag = okStatusTag(metricsFactory);
+        for (Tag tag : grpcMethodTags(metricsFactory)) {
             meterRegistry.remove(CALL_STARTED, List.of(tag));
-            meterRegistry.remove(CALL_DURATION, List.of(tag, OK_TAG));
-            meterRegistry.remove(SENT_MESSAGE_SIZE, List.of(tag, OK_TAG));
-            meterRegistry.remove(RCVD_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            meterRegistry.remove(CALL_DURATION, List.of(tag, okTag));
+            meterRegistry.remove(SENT_MESSAGE_SIZE, List.of(tag, okTag));
+            meterRegistry.remove(RCVD_MESSAGE_SIZE, List.of(tag, okTag));
         }
+    }
+
+    static Tag okStatusTag(MetricsFactory metricsFactory) {
+        return metricsFactory.tagCreate("grpc.status", "OK");
+    }
+
+    static Tag[] grpcMethodTags(MetricsFactory metricsFactory) {
+        return new Tag[] {
+                metricsFactory.tagCreate("grpc.method", "StringService/Upper"),
+                metricsFactory.tagCreate("grpc.method", "StringService/Lower"),
+                metricsFactory.tagCreate("grpc.method", "StringService/Echo"),
+                metricsFactory.tagCreate("grpc.method", "StringService/Split"),
+                metricsFactory.tagCreate("grpc.method", "StringService/Join")
+        };
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package io.helidon.faulttolerance;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.service.registry.Services;
 
 /**
  * CircuitBreaker protects a potentially failing endpoint from overloading and the application
@@ -49,7 +52,8 @@ public interface CircuitBreaker extends FtHandler, RuntimeType.Api<CircuitBreake
      * @return a new circuit breaker
      */
     static CircuitBreaker create(CircuitBreakerConfig config) {
-        return new CircuitBreakerImpl(config);
+        return new CircuitBreakerImpl(config,
+                                      LazyValue.create(() -> Services.get(MeterRegistry.class)));
     }
 
     /**

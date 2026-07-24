@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@ package io.helidon.metrics.provider.tests;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -28,16 +29,18 @@ import static org.hamcrest.Matchers.sameInstance;
 
 class TestCounter {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = Services.get(MeterRegistry.class);
     }
 
     @Test
     void testIncr() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c1"));
+        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c1"));
         assertThat("Initial counter value", c.count(), is(0L));
         c.increment();
         assertThat("After increment", c.count(), is(1L));
@@ -45,7 +48,7 @@ class TestCounter {
 
     @Test
     void incrWithValue() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c2"));
+        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c2"));
         assertThat("Initial counter value", c.count(), is(0L));
         c.increment(3L);
         assertThat("After increment", c.count(), is(3L));
@@ -55,7 +58,7 @@ class TestCounter {
     void incrBoth() {
         long initialValue = 0;
         long incr = 2L;
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c3"));
+        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c3"));
         assertThat("Initial counter value", c.count(), is(initialValue));
         c.increment(incr);
         assertThat("After increment", c.count(), is(initialValue + incr));
@@ -63,7 +66,7 @@ class TestCounter {
         initialValue += incr;
         incr = 3L;
 
-        Counter cAgain = meterRegistry.getOrCreate(Counter.builder("c3"));
+        Counter cAgain = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c3"));
         assertThat("Looked up instance", cAgain, is(sameInstance(c)));
         assertThat("Value after one update", cAgain.count(), is(initialValue));
 

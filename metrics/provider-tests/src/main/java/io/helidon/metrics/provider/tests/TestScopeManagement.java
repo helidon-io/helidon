@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,11 @@ import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
-import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,15 +48,15 @@ class TestScopeManagement {
                 .scoping(ScopingConfig.builder()
                                  .clearDefaultValue())
                 .build();
-        MeterRegistry reg = MetricsFactory.getInstance().globalRegistry();
-        SystemTagsManager.instance(metricsConfig);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry reg = metricsFactory.createMeterRegistry(metricsConfig);
 
         // We explicitly set the scope for the counter and not for the timer.
         // With no default scope set in the config used to initialBuilders the MeterRegistry, only the counter will have a scope.
 
-        Counter c1 = reg.getOrCreate(Counter.builder("c1")
+        Counter c1 = reg.getOrCreate(metricsFactory.counterBuilder("c1")
                                              .scope("app"));
-        Timer t1 = reg.getOrCreate(Timer.builder("t1"));
+        Timer t1 = reg.getOrCreate(metricsFactory.timerBuilder("t1"));
 
         List<Meter> scopedMeters = new ArrayList<>();
         reg.meters(Set.of("app")).forEach(scopedMeters::add);
@@ -89,15 +88,15 @@ class TestScopeManagement {
                 .scoping(ScopingConfig.builder()
                                  .defaultValue("def-scope"))
                 .build();
-        MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
-        SystemTagsManager.instance(metricsConfig);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry reg = metricsFactory.createMeterRegistry(metricsConfig);
 
         // The config sets a default scope value of def-scope. So the counter gets its explicit setting
         // and the timer gets the default scope value because it has no explicit setting.
 
-        Counter c1 = reg.getOrCreate(Counter.builder("c1")
+        Counter c1 = reg.getOrCreate(metricsFactory.counterBuilder("c1")
                                              .scope("app"));
-        Timer t1 = reg.getOrCreate(Timer.builder("t1"));
+        Timer t1 = reg.getOrCreate(metricsFactory.timerBuilder("t1"));
 
         List<Meter> scopedMeters = new ArrayList<>();
         reg.meters(Set.of("app")).forEach(scopedMeters::add);
@@ -136,10 +135,11 @@ class TestScopeManagement {
     @Test
     void checkDefaultScope() {
         MetricsConfig metricsConfig = MetricsConfig.create(); // Make sure to use the defaults, not leftovers from earlier tests
-        MetricsFactory.getInstance().globalRegistry(metricsConfig);
-        SystemTagsManager.instance(metricsConfig);
-
-        Counter counter = Metrics.getOrCreate(Counter.builder("defaultScopedCounter"));
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        Counter counter = metricsFactory
+                .createMeterRegistry(metricsConfig)
+                .getOrCreate(metricsFactory.counterBuilder("defaultScopedCounter"));
         assertThat("Unspecified scope", counter.scope(), OptionalMatcher.optionalValue(is(Meter.Scope.DEFAULT)));
     }
+
 }

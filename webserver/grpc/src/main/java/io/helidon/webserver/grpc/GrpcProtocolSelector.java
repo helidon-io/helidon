@@ -16,6 +16,11 @@
 
 package io.helidon.webserver.grpc;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.common.context.Contexts;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
@@ -25,6 +30,9 @@ import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.StreamFlowControl;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
@@ -36,6 +44,7 @@ import io.helidon.webserver.http2.spi.SubProtocolResult;
 public class GrpcProtocolSelector implements Http2SubProtocolSelector {
 
     private final GrpcConfig grpcConfig;
+    private final Metrics metrics = new Metrics();
 
     private GrpcProtocolSelector(GrpcConfig grpcConfig) {
         this.grpcConfig = grpcConfig;
@@ -81,6 +90,18 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                     return new SubProtocolResult(true,
                                                  new GrpcProtocolHandlerNotFound(streamWriter, streamId, currentStreamState));
                 }
+
+                if (grpcConfig.enableMetrics() && metrics.owner().get() == null) {
+                    MetricsOwner owner = Contexts.runInContext(ctx.listenerContext().context(),
+                                                               () -> {
+                                                                   MeterRegistry meterRegistry =
+                                                                           Services.get(MeterRegistry.class);
+                                                                   return new MetricsOwner(meterRegistry.metricsFactory(),
+                                                                                           meterRegistry);
+                                                               });
+                    metrics.owner().compareAndSet(null, owner);
+                }
+
                 return new SubProtocolResult(true,
                                              new GrpcProtocolHandler<>(ctx,
                                                                        headers,
@@ -89,9 +110,19 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                                                                        flowControl,
                                                                        currentStreamState,
                                                                        route,
-                                                                       grpcConfig));
+                                                                       grpcConfig,
+                                                                       metrics));
             }
         }
         return NOT_SUPPORTED;
     }
+
+    record Metrics(AtomicReference<MetricsOwner> owner,
+                   Map<String, GrpcProtocolHandler.MethodMetrics> methodMetrics) {
+        Metrics() {
+            this(new AtomicReference<>(), new ConcurrentHashMap<>());
+        }
+    }
+
+    record MetricsOwner(MetricsFactory factory, MeterRegistry registry) { }
 }

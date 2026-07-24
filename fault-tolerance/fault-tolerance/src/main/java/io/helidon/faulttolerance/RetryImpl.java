@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Service;
 
@@ -43,7 +44,8 @@ class RetryImpl implements Retry {
     private Counter retryCounterMetric;
 
     @Service.Inject
-    RetryImpl(RetryConfig retryConfig) {
+    RetryImpl(RetryConfig retryConfig,
+              Supplier<MeterRegistry> meterRegistry) {
         this.name = retryConfig.name().orElseGet(() -> "retry-" + System.identityHashCode(retryConfig));
         this.errorChecker = ErrorChecker.create(retryConfig.skipOn(), retryConfig.applyOn());
         this.maxTimeNanos = retryConfig.overallTimeout().toNanos();
@@ -52,9 +54,11 @@ class RetryImpl implements Retry {
 
         this.metricsEnabled = retryConfig.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
-            Tag nameTag = Tag.create("name", name);
-            callsCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_CALLS_TOTAL, nameTag);
-            retryCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_RETRIES_TOTAL, nameTag);
+            var mr = meterRegistry.get();
+            var mf = mr.metricsFactory();
+            Tag nameTag = MetricsUtils.tag(mf, "name", name);
+            callsCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_RETRY_CALLS_TOTAL, nameTag);
+            retryCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_RETRY_RETRIES_TOTAL, nameTag);
         }
     }
 
@@ -186,4 +190,3 @@ class RetryImpl implements Retry {
         }
     }
 }
-

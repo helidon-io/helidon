@@ -52,9 +52,12 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
     }
 
     /**
-     * Assigns {@code MetricsSettings} which will be used in creating the {@code MetricsSupport} instance at build-time.
+     * Assigns metrics settings for the observer endpoint, including whether the endpoint is enabled and its access controls.
+     * With a custom {@link io.helidon.metrics.api.MeterRegistry}, the settings also describe the registry-specific behavior.
+     * With the shared registry, registry-specific behavior uses the settings from that registry's owning
+     * {@link io.helidon.metrics.api.MetricsFactory} while the endpoint settings assigned here still apply.
      *
-     * @return the metrics settings to assign for use in building the {@code MetricsSupport} instance
+     * @return metrics settings for the observer endpoint and, when configured, a custom registry
      */
     @Option.Configured(merge = true)
     @Option.DefaultMethod("create")
@@ -64,7 +67,7 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * If you want to have multiple meter registries with different
      * endpoints, you may create them using
      * {@snippet :
-     *      MeterRegistry meterRegistry = MetricsFactory.getInstance()
+     *      MeterRegistry meterRegistry = Services.get(MetricsFactory.class)
      *              .createMeterRegistry(metricsConfig);
      *      MetricsFeature.builder()
      *              .meterRegistry(meterRegistry) // further settings on the feature builder, etc.
@@ -75,7 +78,8 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * If this method is not called,
      * {@link MetricsFeature} would use the shared
      * instance as provided by
-     * {@link io.helidon.metrics.api.MetricsFactory#globalRegistry()}.
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class)
+     * Services.get(MeterRegistry.class)}.
      *
      * @return meterRegistry to use in this metric support
      */
