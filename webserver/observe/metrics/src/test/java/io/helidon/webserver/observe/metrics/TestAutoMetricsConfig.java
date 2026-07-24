@@ -29,7 +29,6 @@ import static org.hamcrest.Matchers.is;
 class TestAutoMetricsConfig {
 
     @Test
-    @SuppressWarnings("removal")
     void testAutoMetricsConfig() {
         String configText = """
                 server:
@@ -103,7 +102,6 @@ class TestAutoMetricsConfig {
     }
 
     @Test
-    @SuppressWarnings("removal")
     void testWithNoAutoConfig() {
         String configText = """
                 server:
@@ -130,7 +128,6 @@ class TestAutoMetricsConfig {
     }
 
     @Test
-    @SuppressWarnings("removal")
     void testUpdatedHttpMetrics() {
         var config = AutoHttpMetricsConfig.create(Config.just("use-updated-http-metrics: true", MediaTypes.APPLICATION_YAML));
 

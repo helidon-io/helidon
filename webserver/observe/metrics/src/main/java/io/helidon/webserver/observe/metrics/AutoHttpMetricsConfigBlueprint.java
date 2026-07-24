@@ -80,9 +80,7 @@ interface AutoHttpMetricsConfigBlueprint {
      * provided route when one is available. The default retains the prior Helidon 4.x metric output.
      *
      * @return whether to use the updated automatic HTTP metrics behavior
-     * @deprecated this temporary Helidon 4.x compatibility setting is planned for removal in the next major release
      */
-    @Deprecated(forRemoval = true, since = "4.5.2")
     @Option.Configured
     @Option.DefaultBoolean(false)
     default boolean useUpdatedHttpMetrics() {

@@ -124,7 +124,6 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
         }
 
         @Override
-        @SuppressWarnings("removal")
         public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
             var startTime = System.nanoTime();
             if (config.useUpdatedHttpMetrics()) {

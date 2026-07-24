@@ -224,7 +224,6 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         }, useUpdatedHttpMetrics);
     }
 
-    @SuppressWarnings("removal")
     private static Filter filter(Consumer<Attributes> recorder, boolean useUpdatedHttpMetrics) {
         DoubleHistogram histogram = mock(DoubleHistogram.class);
         doAnswer(invocation -> {

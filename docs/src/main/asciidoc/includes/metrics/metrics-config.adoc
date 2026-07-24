@@ -129,9 +129,9 @@ The `auto-http-metrics.sockets` setting controls which sockets are included in t
 
 [NOTE]
 ====
-The deprecated `auto-http-metrics.use-updated-http-metrics` setting temporarily controls the updated OpenTelemetry HTTP
-metric behavior. It defaults to `false` to retain the earlier Helidon 4.x duration, response-status, and `http.route`
-output. Set it to `true` to use the updated behavior; the setting is planned for removal in the next major release.
+The `auto-http-metrics.use-updated-http-metrics` setting controls the updated OpenTelemetry HTTP metric behavior. It
+defaults to `false` to retain the earlier Helidon 4.x duration, response-status, and `http.route` output. Set it to
+`true` to use the updated behavior.
 ====
 
 ifdef::se-flavor[]
