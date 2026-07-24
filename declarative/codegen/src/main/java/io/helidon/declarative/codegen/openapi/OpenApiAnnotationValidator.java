@@ -18,10 +18,13 @@ package io.helidon.declarative.codegen.openapi;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.common.types.Annotation;
@@ -31,6 +34,8 @@ import static java.util.function.Predicate.not;
 final class OpenApiAnnotationValidator {
     private static final String DEFAULT_MEDIA_TYPE = "application/json";
     private static final Set<String> API_KEY_LOCATIONS = Set.of("query", "header", "cookie");
+    private static final Pattern CONFIG_REFERENCE_PATTERN =
+            Pattern.compile("(?<!\\\\)\\$\\{([^}:]+)(:.+?)?}");
 
     void validateTags(String owner, List<Annotation> tags) {
         Set<String> names = new HashSet<>();
@@ -49,7 +54,7 @@ final class OpenApiAnnotationValidator {
                     .filter(not(String::isBlank))
                     .orElseThrow(() -> new CodegenException("@OpenApi.Server value is required"));
             validateUnique("@OpenApi.Server on " + owner, "server", url, urls);
-            Set<String> variableNames = new HashSet<>();
+            Set<String> variableNames = new LinkedHashSet<>();
             for (Annotation variable : server.annotationValues("variables").orElseGet(List::of)) {
                 String location = "@OpenApi.Server on " + owner + " for server " + url;
                 String name = stringValue(variable, "name")
@@ -81,6 +86,65 @@ final class OpenApiAnnotationValidator {
                                                            + " must include default value " + resolvedDefault
                                                            + " in its enumeration");
                     }
+                }
+            }
+            Matcher urlExpression = CONFIG_REFERENCE_PATTERN.matcher(url);
+            String resolvedUrl;
+            if (urlExpression.find()
+                    && urlExpression.start() == 0
+                    && urlExpression.end() == url.length()) {
+                String expressionDefault = urlExpression.group(2);
+                if (expressionDefault == null) {
+                    continue;
+                }
+                resolvedUrl = expressionDefault.substring(1);
+            } else {
+                resolvedUrl = url;
+            }
+            Set<String> urlVariableNames = new LinkedHashSet<>();
+            Matcher embeddedExpression = CONFIG_REFERENCE_PATTERN.matcher(resolvedUrl);
+            int expressionStart = -1;
+            int expressionEnd = -1;
+            if (embeddedExpression.find()) {
+                expressionStart = embeddedExpression.start() + 1;
+                expressionEnd = embeddedExpression.end();
+            }
+            int searchFrom = 0;
+            while (searchFrom < resolvedUrl.length()) {
+                int openBrace = resolvedUrl.indexOf('{', searchFrom);
+                if (openBrace < 0) {
+                    break;
+                }
+                if (openBrace == expressionStart) {
+                    searchFrom = expressionEnd;
+                    if (embeddedExpression.find()) {
+                        expressionStart = embeddedExpression.start() + 1;
+                        expressionEnd = embeddedExpression.end();
+                    } else {
+                        expressionStart = -1;
+                        expressionEnd = -1;
+                    }
+                    continue;
+                }
+                int closeBrace = resolvedUrl.indexOf('}', openBrace + 1);
+                if (closeBrace < 0) {
+                    break;
+                }
+                urlVariableNames.add(resolvedUrl.substring(openBrace + 1, closeBrace));
+                searchFrom = closeBrace + 1;
+            }
+            for (String urlVariableName : urlVariableNames) {
+                if (!variableNames.contains(urlVariableName)) {
+                    throw new CodegenException("@OpenApi.Server on " + owner + " for server " + url
+                                                       + " is missing a declaration for URL variable "
+                                                       + urlVariableName);
+                }
+            }
+            for (String variableName : variableNames) {
+                if (!urlVariableNames.contains(variableName)) {
+                    throw new CodegenException("@OpenApi.Server on " + owner + " for server " + url
+                                                       + " declares server variable " + variableName
+                                                       + " which is not present in the URL");
                 }
             }
         }
