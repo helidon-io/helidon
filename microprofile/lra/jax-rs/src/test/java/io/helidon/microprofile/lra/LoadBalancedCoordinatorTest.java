@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,6 +100,8 @@ import static org.hamcrest.Matchers.not;
 @AddBean(NonJaxRsCompleteOrCompensate.class)
 @AddBean(NonJaxRsCompleteOrCompensateCS.class)
 @AddBean(NonJaxRsCompleteOrCompensateSingle.class)
+@AddConfig(key = NonJaxRsCallbackAuthenticator.CONFIG_SECRET_KEY, value = ParticipantTest.TEST_CALLBACK_SECRET)
+@AddConfig(key = ParticipantService.CONFIG_PARTICIPANT_URL_KEY, value = "http://localhost:0")
 @AddBean(StartAndAfter.class)
 @AddBean(DontEnd.class)
 @AddBean(Timeout.class)

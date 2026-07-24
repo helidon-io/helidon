@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import static org.hamcrest.Matchers.is;
 @AddBean(InMemorySpanExporter.class)
 @AddBean(InMemorySpanExporterProvider.class)
 @AddExtension(TelemetryCdiExtension.class)
+@AddConfig(key = "server.features.observe.enabled", value = "false")
 @AddConfigBlock("""
         otel.service.name=helidon-mp-telemetry
         otel.sdk.disabled=false

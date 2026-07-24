@@ -32,6 +32,16 @@
             <groupId>io.helidon.microprofile.telemetry</groupId>
             <artifactId>helidon-microprofile-telemetry</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.lra</groupId>
+            <artifactId>helidon-microprofile-lra</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

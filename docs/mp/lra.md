@@ -244,6 +244,10 @@ that current participant is leaving the LRA. Method body is executed after leave
 signal is sent. As a result, participant methods complete and compensate won’t
 be called when the particular LRA ends.
 
+Applications that use `@Leave` must configure `mp.lra.participant.url` so the
+leave request identifies the same participant links that were registered when
+the application joined the LRA.
+
 - Header [LRA_HTTP_CONTEXT_HEADER][lra-http-context] - ID of the LRA transaction
 
 ```java
@@ -346,15 +350,18 @@ public void whenLRAFinishes(URI lraId, LRAStatus status) {
 
 ## Configuration
 
-Optional configuration options:
+Configuration options:
 
-| Key                                     | Type    | Default value                           | Description                                                                                                               |
-|-----------------------------------------|---------|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| `mp.lra.coordinator.url`                | string  | `http://localhost:8070/lra-coordinator` | Url of coordinator.                                                                                                       |
-| `mp.lra.coordinator.propagation.active` | boolean |                                         | Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints.           |
-| `mp.lara.participant.url`               | string  |                                         | Url of the LRA enabled service overrides standard base uri, so coordinator can call load-balancer instead of the service. |
-| `mp.lra.coordinator.timeout`            | string  |                                         | Timeout for synchronous communication with coordinator.                                                                   |
-| `mp.lra.coordinator.timeout-unit`       | string  |                                         | Timeout unit for synchronous communication with coordinator.                                                              |
+| Key                                                    | Type    | Default value                           | Description                                                                                                                                                                                                                                                                                                                         |
+|--------------------------------------------------------|---------|-----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `mp.lra.coordinator.url`                               | string  | `http://localhost:8070/lra-coordinator` | Url of coordinator.                                                                                                                                                                                                                                                                                                                 |
+| `mp.lra.coordinator.propagation.active`                | boolean |                                         | Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints.                                                                                                                                                                                                                     |
+| `mp.lra.participant.url`                               | string  |                                         | Canonical, externally reachable URL of the LRA-enabled service. This property is required when the application declares a non-JAX-RS participant callback or uses `@Leave`. The value must be an absolute HTTP or HTTPS URI with a host and may include a path and port, but not user info, query, or fragment. An explicit port `0` uses the bound default server listener port and is intended for direct-listener tests; configure the actual public port when callbacks pass through a proxy or load balancer. |
+| `mp.lra.coordinator.timeout`                           | string  |                                         | Timeout for synchronous communication with coordinator.                                                                                                                                                                                                                                                                             |
+| `mp.lra.coordinator.timeout-unit`                      | string  |                                         | Timeout unit for synchronous communication with coordinator.                                                                                                                                                                                                                                                                        |
+| `lra.participant.non-jax-rs.context-path`              | string  | `/lra-participant`                      | Context path for non-JAX-RS participant callbacks.                                                                                                                                                                                                                                                                                   |
+| `lra.participant.non-jax-rs.callback-auth.secret`      | string  |                                         | Base64 URL-encoded callback-signing secret. This property is required when the application declares a non-JAX-RS participant callback. The decoded secret must contain at least 32 bytes.                                                                                                                                             |
+| `lra.participant.non-jax-rs.callback-auth.compatibility-mode` | boolean | `false`                         | Use unsigned callback URLs and accept unsigned callback requests. Enable this property only temporarily while upgrading from a version that does not sign callback URLs.                                                                                                                                                            |
 
 Example of LRA configuration:
 
@@ -368,9 +375,82 @@ mp.lra:
 1. Url of coordinator
 2. Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and
    `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints
-3. Url of the LRA enabled service overrides standard base uri, so coordinator
-   can call load-balancer instead of the service
+3. Canonical, externally reachable URL of the LRA-enabled service
 <!--@mdc :: -->
+
+### Non-JAX-RS Callback Authentication
+
+Helidon authenticates non-JAX-RS participant callbacks with a capability
+embedded in each callback URL. The capability is bound to the LRA identifier,
+callback type, participant class, and participant method. Applications that
+declare non-JAX-RS participant callbacks must configure a canonical callback
+origin using `mp.lra.participant.url` and
+`lra.participant.non-jax-rs.callback-auth.secret` with at least 32 bytes of
+Base64 URL-encoded secret material.
+
+Helidon does not derive non-JAX-RS callback URLs from the authority of an
+incoming request. Generate the secret with a cryptographically secure random
+number generator and use a separate secret for each application deployment.
+Share the secret only among replicas that serve the same callbacks. Store the
+secret in a protected configuration source rather than in application source
+control.
+
+Callback URLs contain authentication material and must be handled as
+credentials. Use TLS, or an equivalently protected trusted transport, for both
+coordinator registration and participant callback traffic. Avoid recording
+complete callback URLs in application, proxy, or access logs. Do not change the
+signing secret until all LRAs registered with the existing secret have drained.
+Changing it alters the registered callback URLs and can also prevent an
+`@Leave` request from matching the participant registration.
+
+```yaml
+mp.lra:
+  participant.url: "https://participant.example/application"
+lra.participant.non-jax-rs.callback-auth:
+  secret: "<base64-url-encoded-secret>"
+  compatibility-mode: false
+```
+
+#### Rolling Upgrade
+
+The compatibility setting supports a rolling upgrade from a version that
+registered unsigned non-JAX-RS callback URLs. Compatibility mode deliberately
+preserves the previous behavior: upgraded nodes both generate and accept
+unsigned callback URLs. A request containing an invalid capability is rejected
+even in compatibility mode; only a request without a capability receives legacy
+handling.
+
+If the previous deployment did not configure `mp.lra.participant.url`, or the
+exact origin and path of existing participant links cannot be preserved, use a
+drain-first upgrade:
+
+1. On the old version, quiesce requests that can start LRAs or register
+   participants. Keep completion, compensation, callback, and leave traffic
+   available.
+2. Wait until all existing participant registrations finish.
+3. Configure the canonical participant URL and signing secret, then upgrade the
+   replicas.
+
+When the exact origin and path already registered with the coordinator can be
+preserved, use this rolling procedure:
+
+1. Configure the same canonical `mp.lra.participant.url` and signing secret,
+   and set `compatibility-mode` to `true` for every replica. Preserve the
+   participant origin and path already advertised to the coordinator; changing
+   participant links prevents `@Leave` from matching an in-flight registration.
+   The previous Helidon version ignores the callback-authentication settings.
+2. Upgrade the replicas one at a time. Keep compatibility mode enabled on every
+   upgraded replica.
+3. After all replicas run the new version, quiesce requests that can start LRAs
+   or register participants. Keep completion, compensation, callback, and leave
+   traffic available so existing LRAs can finish.
+4. Wait for every LRA registered before or during compatibility mode to finish
+   and verify that no compatibility-era participant registrations remain.
+5. Set `compatibility-mode` to `false` and restart all replicas. Replicas may
+   restart one at a time, but LRA creation and participant registration must
+   remain quiesced until every replica uses strict mode.
+6. Resume LRA traffic. New callback URLs are signed and unsigned callbacks are
+   rejected.
 
 For more information continue to [MicroProfile Long Running Actions
 specification][microprofile-lon].
@@ -546,6 +626,9 @@ LRA testing feature has the following default configuration:
 - helidon.lra.participant.use-build-time-index: `false` - Participant annotation
   inspection ignores Jandex index files created in build time, it helps to avoid
   issues with additional test resources
+- mp.lra.participant.url: `http://localhost:0` - participant callbacks use the
+  random default server listener port; override this setting with `@AddConfig`
+  when callbacks use a proxy, load balancer, or another public origin
 
 Testing LRA coordinator is started on additional named socket
 `test-lra-coordinator` configured with default index `500`. Default index can be

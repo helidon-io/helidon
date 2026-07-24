@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.microprofile.telemetry;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.opentelemetry.sdk.common.CompletableResultCode;
@@ -40,15 +41,18 @@ public class InMemorySpanExporter implements SpanExporter {
      * In-memory span exporter inspired by TCKs.
      */
     public List<SpanData> getFinishedSpanItems(int spanCount) {
-        assertSpanCount(spanCount);
-        return finishedSpanItems.stream().sorted(comparingLong(SpanData::getStartEpochNanos).reversed())
-                .collect(Collectors.toList());
+        return getFinishedSpanItems(spanCount, span -> true);
     }
 
-    public void assertSpanCount(int spanCount) {
+    public List<SpanData> getFinishedSpanItems(int spanCount, Predicate<SpanData> predicate) {
         Awaitility.await()
                 .pollDelay(3, SECONDS).atMost(10, SECONDS)
-                .untilAsserted(() -> assertThat(finishedSpanItems.size(), Matchers.is(spanCount)));
+                .untilAsserted(() -> assertThat(finishedSpanItems.stream().filter(predicate).count(),
+                                                Matchers.is((long) spanCount)));
+        return finishedSpanItems.stream()
+                .filter(predicate)
+                .sorted(comparingLong(SpanData::getStartEpochNanos).reversed())
+                .collect(Collectors.toList());
     }
 
     public void reset() {

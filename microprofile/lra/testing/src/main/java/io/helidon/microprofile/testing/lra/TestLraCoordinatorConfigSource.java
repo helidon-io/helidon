@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,12 @@ public class TestLraCoordinatorConfigSource implements ConfigSource {
             // Avoid using persistent tx log in test LRA coordinator
             "helidon.lra.coordinator.persistence", "false",
             // Avoid using build time Jandex index
-            "helidon.lra.participant.use-build-time-index", "false");
+            "helidon.lra.participant.use-build-time-index", "false",
+            // Fixed test-only callback signing secret
+            "lra.participant.non-jax-rs.callback-auth.secret",
+            "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+            // Advertise callbacks on the random default server port
+            "mp.lra.participant.url", "http://localhost:0");
 
     /**
      * Initialized by service locator.
@@ -57,7 +62,7 @@ public class TestLraCoordinatorConfigSource implements ConfigSource {
 
     @Override
     public int getOrdinal() {
-        return 5000;
+        return 900;
     }
 
     @Override
