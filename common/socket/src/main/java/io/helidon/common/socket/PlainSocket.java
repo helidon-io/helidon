@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,6 +131,24 @@ public sealed class PlainSocket implements HelidonSocket permits TlsSocket {
     @Override
     public int read(BufferData buffer) {
         return buffer.readFrom(inputStream);
+    }
+
+    /**
+     * Read bytes directly from the socket input stream into a caller-provided array.
+     *
+     * @param bytes destination array
+     * @param offset destination offset
+     * @param length maximum number of bytes to read
+     * @return number of bytes read, or {@code -1} at end of input
+     * @throws IndexOutOfBoundsException if the offset or length is outside the destination array
+     * @throws UncheckedIOException if the socket read fails
+     */
+    public int read(byte[] bytes, int offset, int length) {
+        try {
+            return inputStream.read(bytes, offset, length);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
