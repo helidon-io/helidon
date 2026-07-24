@@ -21,7 +21,7 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 // tag::overview[]
 The link:{openapi-spec-url}[OpenAPI specification] defines a standard way to express the interface exposed by a REST service.
 
-OpenAPI support in Helidon {flavor-uc} focuses on serving a static OpenAPI document and exposing it via the `/openapi` endpoint.
+OpenAPI support in Helidon {flavor-uc} focuses on serving an OpenAPI document and exposing it via the `/openapi` endpoint.
 
 The OpenAPI support in Helidon {flavor-uc} performs
 two main tasks:
@@ -29,10 +29,10 @@ two main tasks:
 * Build an in-memory model of the REST API your service implements.
 * Expose the model in text format (YAML or JSON) via the `/openapi` endpoint.
 
-:static-source-info: a static OpenAPI document file packaged as part of your service
+:openapi-source-info: a static OpenAPI document file packaged as part of your service, generated OpenAPI document sources, or both
 
 To construct the model, Helidon gathers information about the service API from
-{static-source-info}.
+{openapi-source-info}.
 
 
 // end::overview[]
@@ -46,6 +46,8 @@ To construct the model, Helidon gathers information about the service API from
 // With the entire level 3 section here and conditional text for SE and MP, AsciiDoctor is happy.
 ifdef::se-flavor[]
 Your application supplies data for the OpenAPI model using a static OpenAPI file.
+When you use Helidon Declarative endpoints, Helidon can also generate OpenAPI
+data from annotations at build time.
 endif::[]
 
 ifdef::se-flavor[]
@@ -54,6 +56,71 @@ Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`,
 or `META-INF/openapi.json`. Tools such as Swagger let you describe your app's API
 and they then generate an OpenAPI document file which you can include in your application
 so OpenAPI can use it.
+
+endif::se-flavor[]
+
+ifdef::se-flavor[]
+===== Generate OpenAPI data from declarative endpoints
+For classes annotated with
+link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Endpoint.html[`@RestServer.Endpoint`],
+Helidon generates OpenAPI data when the endpoint type, one of its methods, or one of its method parameters uses an
+endpoint-applicable `OpenApi` annotation. To opt in without adding OpenAPI-specific metadata, annotate the endpoint with
+`@OpenApi.Endpoint`. Helidon derives the generated data from the HTTP method, path, media type, parameter, status, and
+response metadata and from the Java signatures.
+
+The following annotation placements opt an endpoint into OpenAPI processing:
+
+* On the endpoint type: `Document`, `Hidden`, `SecuritySchemeRequirement`, `SecurityRequirement`, or
+  `SecurityRequirements`.
+* On an endpoint method: `Operation`, `Hidden`, `Server`, `Servers`, `ExternalDocs`, `Extension`, `Extensions`,
+  `SecuritySchemeRequirement`, `SecurityRequirement`, `SecurityRequirements`, `Parameter`, `Parameters`, `RequestBody`,
+  `Response`, or `Responses`.
+* On a method parameter: `Parameter` or `Parameters`.
+
+Document-only companion annotations such as `Info`, `Contact`, `License`, `Tag`, and security scheme declarations do not
+opt an endpoint into generation by themselves.
+
+`OpenApi.Endpoint` and endpoint-level `Hidden` and security requirement annotations declared on a declarative REST
+endpoint contract also apply to its implementations. `OpenApi.Document` describes only its declaring document metadata
+type and is not inherited by endpoint implementations.
+
+The final composed OpenAPI document must contain Info metadata. Supply it using `@OpenApi.Document` and `@OpenApi.Info`
+on an application type, from a custom
+link:{openapi-javadoc-base-url}/io/helidon/openapi/spi/OpenApiDocumentSource.html[`OpenApiDocumentSource`], or from a static
+OpenAPI document when static and generated content are merged.
+In a multi-module application, annotation processing must generate OpenAPI metadata while compiling every module that
+declares opted-in declarative endpoints. Adding `@OpenApi.Document` only in the final application module does not include
+unannotated endpoints from previously compiled modules.
+Use link:{openapi-javadoc-base-url}/io/helidon/openapi/OpenApi.html[`io.helidon.openapi.OpenApi`]
+annotations to add OpenAPI-specific details such as document info, operation descriptions, parameters, responses,
+schemas, security, tags, servers, external docs, and extensions.
+
+Annotation string values that become OpenAPI text values, such as document info, descriptions, server URLs, example
+values, and external documentation URLs, can use Helidon config expressions only when the OpenAPI feature config enables
+`generated.resolve-config-expressions`. When enabled, Helidon resolves those expressions at runtime when serving the
+generated OpenAPI document. When disabled, which is the default, Helidon uses annotation text values literally.
+
+`@OpenApi.Extension` values are OpenAPI strings by default. Set `parseValue` to `true` to parse the runtime-resolved
+annotation value as exactly one JSON value, including a boolean, number, string, `null`, array, or object. Invalid JSON is
+rejected when the generated OpenAPI document source runs.
+
+For templated server URLs, declare each substitution using `@OpenApi.ServerVariable`. Each variable requires a name and
+default value and can also declare an enumeration of allowed values and a description.
+
+Response metadata can declare links using `@OpenApi.Link`. A link identifies its target using exactly one of `operationRef`
+or `operationId`. `@OpenApi.LinkParameter` values and `requestBody` support literal strings and OpenAPI runtime
+expressions; use the programmatic `OpenApiDocument.LinkBuilder` for other OpenAPI value types.
+
+Annotation string values that identify or select generated metadata, such as extension names, tag names, security scheme
+names and types, media types, parameter names and locations, link and link-parameter names, and security requirement scheme
+names and scopes, are resolved when OpenAPI metadata is generated. For those values Helidon uses the expression default
+value, if one is present.
+
+For generated security scheme components, prefer the type-specific annotations
+`@OpenApi.ApiKeySecurityScheme`, `@OpenApi.HttpSecurityScheme`, `@OpenApi.MutualTlsSecurityScheme`,
+`@OpenApi.OAuth2SecurityScheme`, and `@OpenApi.OidcSecurityScheme`. Each exposes only the OpenAPI fields relevant to
+that scheme type. Use the generic `@OpenApi.SecurityScheme` only when you need the lower-level OpenAPI Security Scheme
+Object shape directly; Helidon rejects fields that do not apply to the selected scheme type.
 
 endif::se-flavor[]
 // end::furnish-openapi-info[]

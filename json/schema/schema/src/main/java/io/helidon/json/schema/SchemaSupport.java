@@ -93,6 +93,7 @@ final class SchemaSupport {
          * @param schema schema
          * @return json object
          */
+        @Prototype.PrototypeMethod
         static JsonObject generateObject(Schema schema) {
             JsonObject.Builder builder = JsonObject.builder();
             builder.set("$schema", "https://json-schema.org/draft/2020-12/schema");
@@ -108,6 +109,7 @@ final class SchemaSupport {
          * @param schema schema
          * @return json object
          */
+        @Prototype.PrototypeMethod
         static JsonObject generateObjectNoKeywords(Schema schema) {
             JsonObject.Builder builder = JsonObject.builder();
             schema.root().generate(builder);

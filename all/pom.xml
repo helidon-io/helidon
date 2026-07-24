@@ -471,6 +471,14 @@
             <artifactId>helidon-openapi</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.openapi</groupId>
+            <artifactId>helidon-openapi-31</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.openapi</groupId>
+            <artifactId>helidon-openapi-32</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-common</artifactId>
         </dependency>

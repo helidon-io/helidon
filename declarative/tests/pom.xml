@@ -48,6 +48,7 @@
         <module>http</module>
         <module>scheduling</module>
         <module>metrics</module>
+        <module>openapi</module>
         <module>tracing</module>
         <module>websocket</module>
         <module>cors</module>
