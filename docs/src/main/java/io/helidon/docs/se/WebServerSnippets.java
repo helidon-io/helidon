@@ -16,6 +16,7 @@
 package io.helidon.docs.se;
 
 import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
@@ -44,6 +45,8 @@ import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ProxyProtocolV2Data;
+import io.helidon.webserver.TcpTransportConfig;
+import io.helidon.webserver.UdsTransportConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.accesslog.AccessLogFeature;
@@ -461,6 +464,19 @@ class WebServerSnippets {
 
         server.reloadVirtualHostTls(apiMaterial, "api.example.com");
         // end::snippet_42[]
+    }
+
+    void snippet_43() {
+        // tag::snippet_43[]
+        WebServer.builder()
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .build())
+                .addBinding(UdsTransportConfig.builder()
+                                    .socket(UnixDomainSocketAddress.of("/var/run/helidon.sock"))
+                                    .required(true)
+                                    .build());
+        // end::snippet_43[]
     }
 
     void snippet_32() {

@@ -400,7 +400,7 @@ final class FactoryPrototypeInfo {
                 .toList();
     }
 
-    private static List<Annotation> annotations(Annotated it) {
+    static List<Annotation> annotations(Annotated it) {
         List<Annotation> annotations = new ArrayList<>();
 
         // annotations to be added to generated code
@@ -415,22 +415,21 @@ final class FactoryPrototypeInfo {
                 .forEach(annotations::add);
 
         for (var annotation : it.allAnnotations()) {
-            var annotationType = annotation.typeName();
-            List<String> enclosingNames = annotationType.enclosingNames();
-            if (enclosingNames.isEmpty()) {
-                continue;
-            }
-            if (enclosingNames.size() != 1) {
-                continue;
-            }
-            if (Api.class.getSimpleName().equals(enclosingNames.getFirst())
-                    && Api.class.getPackageName().equals(annotationType.packageName())) {
+            if (isApiAnnotation(annotation)) {
                 // this is an API annotation, add them all (stability, maybe Since) to the generated prototype
                 annotations.add(annotation);
             }
         }
 
         return annotations;
+    }
+
+    static boolean isApiAnnotation(Annotation annotation) {
+        var annotationType = annotation.typeName();
+        List<String> enclosingNames = annotationType.enclosingNames();
+        return enclosingNames.size() == 1
+                && Api.class.getSimpleName().equals(enclosingNames.getFirst())
+                && Api.class.getPackageName().equals(annotationType.packageName());
     }
 
     private static Optional<TypeInfo> customMethodsTypeInfo(RoundContext ctx,

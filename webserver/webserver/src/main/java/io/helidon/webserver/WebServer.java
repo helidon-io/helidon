@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -121,6 +122,9 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
 
     /**
      * Returns {@code true} if TLS is configured for the default socket.
+     * <p>
+     * This is strictly a listener TLS configuration query. It does not report effective transport security and is not
+     * changed by bindings that provide their own TLS-equivalent protection.
      *
      * @return whether TLS is enabled for the default socket
      */
@@ -137,6 +141,9 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
 
     /**
      * Returns {@code true} if TLS is configured for the named socket.
+     * <p>
+     * This is strictly a listener TLS configuration query. It does not report effective transport security and is not
+     * changed by bindings that provide their own TLS-equivalent protection.
      *
      * @param socketName the name of a socket
      * @return whether TLS is enabled for the socket, returns {@code false} if the socket does not exists
@@ -149,7 +156,7 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param tls new TLS configuration
      * @deprecated use {@link #reloadTls(TlsMaterial)}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "27.0.0")
     default void reloadTls(Tls tls) {
         reloadTls(DEFAULT_SOCKET_NAME, tls);
     }
@@ -161,7 +168,7 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param tls new TLS configuration
      * @deprecated use {@link #reloadTls(io.helidon.common.tls.TlsMaterial, String)}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "27.0.0")
     void reloadTls(String socketName, Tls tls);
 
     /**
@@ -170,6 +177,7 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param material new TLS material
      */
     default void reloadTls(TlsMaterial material) {
+        Objects.requireNonNull(material, "material");
         reloadTls(material, DEFAULT_SOCKET_NAME);
     }
 
@@ -180,6 +188,8 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param socketName socket name to reload TLS material on
      */
     default void reloadTls(TlsMaterial material, String socketName) {
+        Objects.requireNonNull(material, "material");
+        Objects.requireNonNull(socketName, "socketName");
         throw new UnsupportedOperationException("TLS material reload is not supported by this WebServer implementation");
     }
 
@@ -190,6 +200,8 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param host configured virtual host name
      */
     default void reloadVirtualHostTls(TlsMaterial material, String host) {
+        Objects.requireNonNull(material, "material");
+        Objects.requireNonNull(host, "host");
         reloadVirtualHostTls(material, DEFAULT_SOCKET_NAME, host);
     }
 
@@ -201,6 +213,9 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param host configured virtual host name
      */
     default void reloadVirtualHostTls(TlsMaterial material, String socketName, String host) {
+        Objects.requireNonNull(material, "material");
+        Objects.requireNonNull(socketName, "socketName");
+        Objects.requireNonNull(host, "host");
         throw new UnsupportedOperationException("Virtual host TLS material reload is not supported by this WebServer "
                                                         + "implementation");
     }

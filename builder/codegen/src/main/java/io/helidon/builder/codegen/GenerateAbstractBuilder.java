@@ -30,6 +30,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
@@ -502,20 +503,34 @@ final class GenerateAbstractBuilder {
 
                 if (option.provider().isPresent()) {
                     OptionProvider optionProvider = option.provider().get();
+                    TypeName providerContainerType = providerContainerType(option.declaredType());
 
-                    // using a code block, so we can reuse the same variable names for multiple providers
-                    TypeName providerType = optionProvider.providerType();
+                    if (optionConfigured && (providerContainerType.isList() || providerContainerType.isSet())) {
+                        OptionConfigured configuredOption = option.configured().orElseThrow();
+                        preBuildBuilder.addContent(CONFIG_BUILDER_SUPPORT)
+                                .addContent(".validateProviderConfig(config, \"")
+                                .addContent(configuredOption.configKey())
+                                .addContent("\", ")
+                                .addContent(Option.Provider.Identity.class)
+                                .addContent(".")
+                                .addContent(optionProvider.providerIdentity().name())
+                                .addContent(", ")
+                                .addContent(Option.Provider.ConfigForm.class)
+                                .addContent(".")
+                                .addContent(optionProvider.configForm().name())
+                                .addContentLine(");");
+                    }
 
                     if (prototypeInfo.registrySupport()) {
                         serviceRegistryPropertyDiscovery(preBuildBuilder,
                                                          optionHandler,
                                                          optionConfigured,
-                                                         providerType);
+                                                         optionProvider);
                     } else {
                         serviceLoaderPropertyDiscovery(preBuildBuilder,
                                                        optionHandler,
                                                        optionConfigured,
-                                                       providerType);
+                                                       optionProvider);
                     }
 
                 } else if (option.registryService()) {
@@ -623,15 +638,33 @@ final class GenerateAbstractBuilder {
         preBuildBuilder.addContentLine(");");
     }
 
+    private static void configuredProviderSettings(ContentBuilder<?> content,
+                                                   OptionInfo option,
+                                                   OptionProvider optionProvider) {
+        content.addContent(CONFIG_BUILDER_SUPPORT)
+                .addContent(".ProviderSettings.create(")
+                .addContent(Option.Provider.Identity.class)
+                .addContent(".")
+                .addContent(optionProvider.providerIdentity().name())
+                .addContent(", ")
+                .addContent(Option.Provider.ConfigForm.class)
+                .addContent(".")
+                .addContent(optionProvider.configForm().name())
+                .addContent(", ")
+                .addContent(option.name())
+                .addContent("DiscoverServices), ");
+    }
+
     private static void serviceLoaderPropertyDiscovery(Method.Builder preBuildBuilder,
                                                        OptionHandler optionHandler,
                                                        boolean propertyConfigured,
-                                                       TypeName providerType) {
+                                                       OptionProvider optionProvider) {
 
         TypeHandler typeHandler = optionHandler.typeHandler();
         OptionInfo option = optionHandler.option();
         TypeName typeName = option.declaredType();
         TypeName providerValueType = providerValueType(optionHandler);
+        TypeName providerType = optionProvider.providerType();
 
         if (propertyConfigured) {
             OptionConfigured configured = option.configured().get();
@@ -659,8 +692,7 @@ final class GenerateAbstractBuilder {
                         .addContent(".class, ")
                         .addContent(providerValueType.genericTypeName())
                         .addContent(".class, ")
-                        .addContent(option.name())
-                        .addContent("DiscoverServices, ")
+                        .update(it -> configuredProviderSettings(it, option, optionProvider))
                         .update(it -> optionalProviderExisting(it, option, optionalSet))
                         .addContentLine(");")
                         .decreaseContentPadding()
@@ -683,8 +715,7 @@ final class GenerateAbstractBuilder {
                         .addContent(".class, ")
                         .addContent(providerValueType.genericTypeName())
                         .addContent(".class, ")
-                        .addContent(option.name())
-                        .addContent("DiscoverServices, ")
+                        .update(it -> configuredProviderSettings(it, option, optionProvider))
                         .addContent(option.name())
                         .addContentLine("));");
             } else {
@@ -697,8 +728,7 @@ final class GenerateAbstractBuilder {
                         .addContent(".class, ")
                         .addContent(typeHandler.type().genericTypeName())
                         .addContent(".class, ")
-                        .addContent(option.name())
-                        .addContent("DiscoverServices, ")
+                        .update(it -> configuredProviderSettings(it, option, optionProvider))
                         .addContent(Optional.class)
                         .addContent(".ofNullable(")
                         .addContent(option.name())
@@ -881,11 +911,12 @@ final class GenerateAbstractBuilder {
     private static void serviceRegistryPropertyDiscovery(Method.Builder preBuildBuilder,
                                                          OptionHandler optionHandler,
                                                          boolean propertyConfigured,
-                                                         TypeName providerType) {
+                                                         OptionProvider optionProvider) {
         TypeHandler typeHandler = optionHandler.typeHandler();
         OptionInfo option = optionHandler.option();
         TypeName typeName = option.declaredType();
         TypeName providerValueType = providerValueType(optionHandler);
+        TypeName providerType = optionProvider.providerType();
 
         if (propertyConfigured) {
             OptionConfigured configured = option.configured().get();
@@ -896,6 +927,7 @@ final class GenerateAbstractBuilder {
                                                                    configured,
                                                                    providerType,
                                                                    providerValueType,
+                                                                   optionProvider,
                                                                    optionalProviderSet(typeName));
             } else if (typeName.isList() || typeName.isSet()) {
                 preBuildBuilder.addContent("this.add")
@@ -914,8 +946,7 @@ final class GenerateAbstractBuilder {
                         .addContentLine(".class,")
                         .addContent(providerValueType.genericTypeName())
                         .addContentLine(".class,")
-                        .addContent(option.name())
-                        .addContentLine("DiscoverServices,")
+                        .update(it -> configuredProviderSettings(it, option, optionProvider))
                         .addContent(option.name())
                         .addContentLine("));")
                         .decreaseContentPadding()
@@ -936,8 +967,7 @@ final class GenerateAbstractBuilder {
                         .addContentLine(".class,")
                         .addContent(typeHandler.type().genericTypeName())
                         .addContentLine(".class,")
-                        .addContent(option.name())
-                        .addContentLine("DiscoverServices,")
+                        .update(it -> configuredProviderSettings(it, option, optionProvider))
                         .addContent(Optional.class)
                         .addContent(".ofNullable(")
                         .addContent(option.name())
@@ -1021,6 +1051,7 @@ final class GenerateAbstractBuilder {
                                                                           OptionConfigured configured,
                                                                           TypeName providerType,
                                                                           TypeName providerValueType,
+                                                                          OptionProvider optionProvider,
                                                                           boolean optionalSet) {
         preBuildBuilder.addContentLine("{")
                 .addContent("var optionConfig = config.get(\"")
@@ -1048,8 +1079,7 @@ final class GenerateAbstractBuilder {
                 .addContentLine(".class,")
                 .addContent(providerValueType.genericTypeName())
                 .addContentLine(".class,")
-                .addContent(option.name())
-                .addContentLine("DiscoverServices,")
+                .update(it -> configuredProviderSettings(it, option, optionProvider))
                 .update(it -> optionalProviderExisting(it, option, optionalSet))
                 .addContentLine(");")
                 .decreaseContentPadding()

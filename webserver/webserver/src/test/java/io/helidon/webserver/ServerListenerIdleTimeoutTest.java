@@ -165,6 +165,56 @@ class ServerListenerIdleTimeoutTest {
         }
     }
 
+    @Test
+    void stopForceClosesConnectionsWhenGracePeriodAlreadyElapsed() throws Exception {
+        RecordingTimer timer = new RecordingTimer();
+        BlockingGracefulCloseConnection connection = new BlockingGracefulCloseConnection();
+        ServerListener listener = newServerListener(timer, new SingleConnectionSelector(connection));
+        AtomicReference<Throwable> lifecycleFailure = new AtomicReference<>();
+        Thread lifecycleThread = null;
+
+        try {
+            listener.start();
+            timer.awaitTask(0);
+
+            try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), listener.port())) {
+                socket.getOutputStream().write('x');
+                assertThat(connection.awaitHandling(), is(true));
+
+                lifecycleThread = Thread.ofPlatform()
+                        .name("test-idle-timeout-zero-grace-force-close")
+                        .start(() -> {
+                            try {
+                                listener.stop();
+                            } catch (RuntimeException | Error e) {
+                                lifecycleFailure.set(e);
+                            }
+                        });
+
+                assertThat(connection.awaitGracefulClose(), is(true));
+                lifecycleThread.join(TimeUnit.MILLISECONDS.toMillis(250));
+                assertThat("listener stop should wait for the binding to reach force-close",
+                           lifecycleThread.isAlive(),
+                           is(true));
+
+                connection.releaseGracefulClose();
+                assertThat(connection.awaitForcedClose(), is(true));
+                lifecycleThread.join(TimeUnit.SECONDS.toMillis(5));
+
+                assertThat(lifecycleThread.isAlive(), is(false));
+                assertThat(lifecycleFailure.get(), nullValue());
+            }
+        } finally {
+            connection.releaseGracefulClose();
+            connection.releaseHandling();
+            if (lifecycleThread != null && lifecycleThread.isAlive()) {
+                lifecycleThread.interrupt();
+            }
+            listener.stop();
+            timer.cancel();
+        }
+    }
+
     private static void lifecycleWaitsForRunningIdleTimeoutTaskWhenTimerPurgeFails(boolean suspend) throws Exception {
         ThrowingPurgeTimer timer = new ThrowingPurgeTimer();
         PurgeFailureConnection connection = new PurgeFailureConnection();
@@ -312,7 +362,8 @@ class ServerListenerIdleTimeoutTest {
                                   timer,
                                   MediaContext.create(),
                                   ContentEncodingContext.create(),
-                                  DirectHandlers.create());
+                                  DirectHandlers.create(),
+                                  (failedListener, _) -> failedListener.stop());
     }
 
     private static WebServerConfig listenerConfig() {
@@ -488,6 +539,69 @@ class ServerListenerIdleTimeoutTest {
 
         private void releaseIdleClose() {
             releaseIdleClose.countDown();
+        }
+
+        private void releaseHandling() {
+            releaseHandling.countDown();
+        }
+    }
+
+    private static final class BlockingGracefulCloseConnection implements ServerConnection {
+        private final CountDownLatch handling = new CountDownLatch(1);
+        private final CountDownLatch gracefulCloseEntered = new CountDownLatch(1);
+        private final CountDownLatch forcedCloseEntered = new CountDownLatch(1);
+        private final CountDownLatch releaseGracefulClose = new CountDownLatch(1);
+        private final CountDownLatch releaseHandling = new CountDownLatch(1);
+
+        @Override
+        public void handle(io.helidon.common.concurrency.limits.Limit limit) {
+            handling.countDown();
+            while (releaseHandling.getCount() != 0) {
+                try {
+                    releaseHandling.await(1, TimeUnit.SECONDS);
+                } catch (InterruptedException _) {
+                    // Deliberately ignore interrupts so force-close must release the connection.
+                }
+            }
+        }
+
+        @Override
+        public Duration idleTime() {
+            return Duration.ZERO;
+        }
+
+        @Override
+        public void close(boolean interrupt) {
+            if (interrupt) {
+                forcedCloseEntered.countDown();
+                releaseGracefulClose.countDown();
+                releaseHandling.countDown();
+                return;
+            }
+            gracefulCloseEntered.countDown();
+            while (releaseGracefulClose.getCount() != 0) {
+                try {
+                    releaseGracefulClose.await(1, TimeUnit.SECONDS);
+                } catch (InterruptedException _) {
+                    // Deliberately ignore interrupts so listener timeout cannot stand in for force-close.
+                }
+            }
+        }
+
+        private boolean awaitHandling() throws InterruptedException {
+            return handling.await(5, TimeUnit.SECONDS);
+        }
+
+        private boolean awaitGracefulClose() throws InterruptedException {
+            return gracefulCloseEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private boolean awaitForcedClose() throws InterruptedException {
+            return forcedCloseEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private void releaseGracefulClose() {
+            releaseGracefulClose.countDown();
         }
 
         private void releaseHandling() {

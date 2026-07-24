@@ -32,6 +32,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Configuration, Configuration>>
 ** <<Configuring the WebServer in Your Code, Configuring the WebServer in Your Code>>
 ** <<Configuring the WebServer in a Configuration File, Configuring the WebServer in a Configuration File>>
+** <<Configuring Listener Transport Bindings, Configuring Listener Transport Bindings>>
 ** <<Configuring TLS, Configuring TLS>>
 ** <<Configuration Options, Configuration Options>>
 - <<Routing, Routing>>
@@ -100,6 +101,58 @@ include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_2, indent=0]
 <1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can
 just use `Config.create()`
 <2> Server expects the configuration tree located on the node of `server`
+
+=== Configuring Listener Transport Bindings
+
+Listener transport binding configuration is incubating. `server.bindings` is one object keyed by binding type.
+The object key is the binding's only identity; list form and nested `type` or `name` properties are invalid.
+The stable built-in keys are also available as `TransportBindingTypes.TCP` and `TransportBindingTypes.UDS`.
+
+Configuring another binding does not remove the default TCP binding. TCP remains active unless
+`bindings.tcp.enabled` is explicitly set to `false`.
+
+[source,yaml]
+.TCP and UDS listener bindings
+----
+server:
+  port: 8080
+  bindings:
+    uds:
+      socket: "/var/run/helidon.sock"
+      required: true
+----
+
+For a UDS-only listener, explicitly disable TCP:
+
+[source,yaml]
+.UDS-only listener
+----
+server:
+  bindings:
+    tcp:
+      enabled: false
+    uds:
+      socket: "/var/run/helidon.sock"
+      required: true
+----
+
+The equivalent programmatic configuration uses the typed binding configuration APIs:
+
+[source,java]
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_43, indent=0]
+----
+
+Port-capable bindings inherit the listener host and port. Configure another listener when another host,
+port, or UDS path is required.
+
+`max-connections` is shared by all connection-oriented bindings. A binding that waits in `accept` reserves one permit;
+therefore, with a finite limit `L` and `N` active bindings holding idle reservations, concentrated traffic has worst-case
+immediately usable capacity `L - N + 1`. The shared limit does not provide per-binding quotas or strict fairness, and
+configuration fails when `L < N`.
+
+Binding runtime, factory, provider, planning, context, TLS-selection, and protocol-handoff contracts are
+internal Helidon integration APIs, not a supported third-party transport SPI.
 
 === Configuring TLS
 
@@ -282,15 +335,25 @@ server:
 
 ==== Configuring TLS over Unix Domain Sockets
 
-TLS can be combined with a Unix domain socket listener by configuring `bind-address` with a
-`unix:/path/to/socket` address and configuring `tls` as usual. Unix domain socket listeners use the
-NIO socket-channel transport, so keep `use-nio` set to `true`, which is the default.
+TLS can be combined with a Unix domain socket listener by configuring the explicit `uds` transport binding
+with a socket path and configuring `tls` as usual. Disable the default `tcp` binding
+when the listener should only bind the Unix domain socket. Unix domain socket listeners use the NIO
+socket-channel transport, so keep `use-nio` set to `true`, which is the default.
+
+Server-side UDS is no longer selected using `bind-address: "unix:..."`; that form is rejected.
+Migrate the path to `bindings.uds.socket`. Because TCP is an overlay default, disable it explicitly for a
+UDS-only listener.
 
 [source,yaml]
 .WebServer TLS over Unix domain socket configuration in `application.yaml`
 ----
 server:
-  bind-address: "unix:/var/run/service.sock"
+  bindings:
+    tcp:
+      enabled: false
+    uds:
+      socket: "/var/run/service.sock"
+      required: true
   tls:
     private-key:
       keystore:

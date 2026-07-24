@@ -17,6 +17,11 @@
 package io.helidon.webserver.tests.http2;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLParameters;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
@@ -45,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SniTest {
     private static final String SNI_HOST = "api.example.com";
+    private static final String MIXED_CASE_SNI_HOST = "Api.Example.COM";
     private static final String OTHER_HOST = "admin.example.com";
     private static final String DIFFERENT_HOST = "other.example.com";
 
@@ -112,6 +118,35 @@ class SniTest {
 
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(SNI_HOST + "|" + SNI_HOST));
+        }
+    }
+
+    @Test
+    void normalizesRawMixedCaseSni() {
+        SNIHostName rawSni = new SNIHostName(MIXED_CASE_SNI_HOST);
+        assertThat(new String(rawSni.getEncoded(), StandardCharsets.US_ASCII), is(MIXED_CASE_SNI_HOST));
+
+        SSLParameters parameters = new SSLParameters();
+        parameters.setEndpointIdentificationAlgorithm("");
+        parameters.setServerNames(List.of(rawSni));
+
+        Http2Client rawSniClient = Http2Client.builder()
+                .baseUri(URI.create("https://localhost:" + server.port() + "/"))
+                .shareConnectionCache(false)
+                .tls(tls -> tls
+                        .sslParameters(parameters)
+                        .trustAll(true))
+                .build();
+        try {
+            try (Http2ClientResponse response = rawSniClient.get("/sni")
+                    .header(HeaderValues.create(HeaderNames.HOST, SNI_HOST))
+                    .request()) {
+
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class), is(SNI_HOST + "|" + SNI_HOST));
+            }
+        } finally {
+            rawSniClient.closeResource();
         }
     }
 

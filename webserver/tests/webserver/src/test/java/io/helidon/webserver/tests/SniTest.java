@@ -61,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SniTest {
     private static final String SNI_HOST = "api.example.com";
+    private static final String MIXED_CASE_SNI_HOST = "Api.Example.COM";
     private static final String OTHER_HOST = "admin.example.com";
     private static final String DIFFERENT_HOST = "other.example.com";
     private static final String DEFAULT_CIPHER = "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384";
@@ -170,6 +171,34 @@ class SniTest {
                 .requestEntity(String.class);
 
         assertThat(entity, is(SNI_HOST + "|" + SNI_HOST));
+    }
+
+    @Test
+    void normalizesRawMixedCaseSni() {
+        SNIHostName rawSni = new SNIHostName(MIXED_CASE_SNI_HOST);
+        assertThat(new String(rawSni.getEncoded(), StandardCharsets.US_ASCII), is(MIXED_CASE_SNI_HOST));
+
+        SSLParameters parameters = new SSLParameters();
+        parameters.setCipherSuites(new String[] {VIRTUAL_HOST_CIPHER});
+        parameters.setEndpointIdentificationAlgorithm("");
+        parameters.setServerNames(List.of(rawSni));
+
+        Http1Client rawSniClient = Http1Client.builder()
+                .baseUri(URI.create("https://localhost:" + server.port() + "/"))
+                .shareConnectionCache(false)
+                .tls(tls -> tls
+                        .sslParameters(parameters)
+                        .trustAll(true))
+                .build();
+        try {
+            String entity = rawSniClient.get("/sni")
+                    .header(HeaderValues.create(HeaderNames.HOST, SNI_HOST))
+                    .requestEntity(String.class);
+
+            assertThat(entity, is(SNI_HOST + "|" + SNI_HOST));
+        } finally {
+            rawSniClient.closeResource();
+        }
     }
 
     @Test
