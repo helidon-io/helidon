@@ -236,7 +236,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
                 .autoHttpMetrics(AutoHttpMetricsConfig.builder()
                                          .useUpdatedHttpMetrics(useUpdatedHttpMetrics)
                                          .build())
-                .build();
+                .buildPrototype();
         return filter(histogram, config);
     }
 
