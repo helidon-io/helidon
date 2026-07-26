@@ -50,6 +50,7 @@ import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasStr
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
+import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.STATUS_CODE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -127,7 +128,10 @@ class TestOpenTelemetrySemanticConventions {
                              (req, resp) -> {
                                  RoutePathSupport.provideRoute(req.context(), () -> "/useContextRoute");
                                  resp.send("Hello, World!");
-                             }))
+                             })
+                        .get("/fail", (req, resp) -> {
+                            throw new IllegalStateException("expected failure");
+                        }))
                 .routing("private", r -> r.any("/greet",
                                                (req, resp) -> {
                                                    switch (req.prologue().method().text()) {
@@ -309,6 +313,37 @@ class TestOpenTelemetrySemanticConventions {
             assertThat("Personalized greeting time",
                        personalizedGreetingTimeNanos,
                        allOf(greaterThan(0L), lessThanOrEqualTo(elapsedTimeFromClient)));
+        }
+    }
+
+    @Test
+    void checkFailureUsesFinalResponseStatus() {
+        try (TestLogHandler testLogHandler = TestLogHandler.create(
+                Logger.getLogger(OtlpJsonLoggingMetricExporter.class.getName()));
+                Http1ClientResponse response = defaultClient.get("/fail")
+                        .accept(MediaTypes.TEXT_PLAIN)
+                        .request()) {
+
+            assertThat("Failure endpoint", response.status().code(), is(500));
+
+            JsonObject root = nextHttpRequestDurationRoot(testLogHandler);
+            boolean foundFailureMetric = false;
+            for (JsonObject metricsEntry : metricsEntries(root)) {
+                if (!OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME.equals(metricsEntry.stringValue("name").orElse(null))) {
+                    continue;
+                }
+                for (JsonValue dataPoint : metricsEntry.objectValue("histogram").orElseThrow()
+                        .arrayValue("dataPoints").orElseThrow().values()) {
+                    Map<String, Object> attributes = dataPoint.asObject().arrayValue("attributes")
+                            .map(JsonTestUtil::asAttributesMap)
+                            .orElseGet(Map::of);
+                    if ("/fail".equals(attributes.get(HTTP_ROUTE))
+                            && Integer.valueOf(500).equals(attributes.get(STATUS_CODE))) {
+                        foundFailureMetric = true;
+                    }
+                }
+            }
+            assertThat("Metric with final failure status", foundFailureMetric, is(true));
         }
     }
 

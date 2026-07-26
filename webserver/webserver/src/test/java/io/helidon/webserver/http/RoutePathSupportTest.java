@@ -16,8 +16,11 @@
 
 package io.helidon.webserver.http;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -126,5 +129,42 @@ class RoutePathSupportTest {
         assertThat(routes, hasSize(threadCount));
         assertThat(routes, everyItem(is("/test")));
         assertThat(invocations.get(), is(1));
+    }
+
+    @Test
+    void concurrentFirstConsumersAllReceiveRoute() throws Exception {
+        Context context = Context.create();
+        int consumerCount = 16;
+        CyclicBarrier start = new CyclicBarrier(consumerCount);
+        CountDownLatch done = new CountDownLatch(consumerCount);
+        List<AtomicReference<Supplier<String>>> routeSuppliers = new ArrayList<>();
+        List<Thread> threads = new ArrayList<>();
+
+        for (int i = 0; i < consumerCount; i++) {
+            AtomicReference<Supplier<String>> routeSupplier = new AtomicReference<>();
+            routeSuppliers.add(routeSupplier);
+            Thread thread = Thread.ofVirtual().start(() -> {
+                try {
+                    start.await();
+                    RoutePathSupport.requestRoute(context, routeSupplier::set);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    done.countDown();
+                }
+            });
+            threads.add(thread);
+        }
+
+        assertThat(done.await(5, TimeUnit.SECONDS), is(true));
+        RoutePathSupport.provideRoute(context, () -> "/test");
+
+        for (Thread thread : threads) {
+            thread.join();
+        }
+        for (AtomicReference<Supplier<String>> routeSupplier : routeSuppliers) {
+            assertThat(routeSupplier.get(), notNullValue());
+            assertThat(routeSupplier.get().get(), is("/test"));
+        }
     }
 }

@@ -214,6 +214,22 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     @Test
+    void doesNotRecordWhenChainFailsWithoutResponse() throws Exception {
+        AtomicInteger recorded = new AtomicInteger();
+        Filter filter = filter(attributes -> recorded.incrementAndGet(), true);
+        FilterChain chain = mock(FilterChain.class);
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+        IllegalArgumentException failure = new IllegalArgumentException("transport failure");
+        doThrow(failure).when(chain).proceed();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                         () -> filter.filter(chain, request(), response(whenSent)));
+
+        assertThat(exception, sameInstance(failure));
+        assertThat(recorded.get(), is(0));
+    }
+
+    @Test
     void legacyMetricsUseMatchingPatternWithoutWhenSent() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
         CountDownLatch recorded = new CountDownLatch(1);

@@ -69,6 +69,9 @@ public class JerseyOnWebServerTest {
                          JaxRsService.create(Config.empty(), ResourceConfig.forApplication(new RelativePathApplication())));
         routing.register("/jersey-trailing",
                          JaxRsService.create(Config.empty(), ResourceConfig.forApplication(new TrailingSlashPathApplication())));
+        routing.register("/jersey-locator",
+                         JaxRsService.create(Config.empty(), ResourceConfig.forApplication(new LocatorApplication())));
+        routing.register("/", JaxRsService.create(Config.empty(), ResourceConfig.forApplication(new RootApplication())));
     }
 
     @Test
@@ -105,6 +108,30 @@ public class JerseyOnWebServerTest {
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("Hello!"));
         assertThat(LAST_ROUTE.get(), is("/jersey-trailing/greet"));
+    }
+
+    @Test
+    public void testSubResourceLocatorPath() {
+        REQUEST_ROUTE.set(true);
+
+        var response = client.get("/jersey-locator/widgets/42/details")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Details 42!"));
+        assertThat(LAST_ROUTE.get(), is("/jersey-locator/widgets/{id}/details"));
+    }
+
+    @Test
+    public void testRootMountedRootResourcePath() {
+        REQUEST_ROUTE.set(true);
+
+        var response = client.get("/")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Root!"));
+        assertThat(LAST_ROUTE.get(), is("/"));
     }
 
     @Test
@@ -154,6 +181,21 @@ public class JerseyOnWebServerTest {
         }
     }
 
+    @ApplicationPath("/app")
+    public static class LocatorApplication extends Application {
+        @Override
+        public Set<Class<?>> getClasses() {
+            return Set.of(WidgetsEndpoint.class);
+        }
+    }
+
+    public static class RootApplication extends Application {
+        @Override
+        public Set<Class<?>> getClasses() {
+            return Set.of(RootEndpoint.class);
+        }
+    }
+
     @Path("/greet/{name}")
     public static class JaxRsEndpoint {
         @GET
@@ -178,6 +220,37 @@ public class JerseyOnWebServerTest {
         @Produces(MediaType.TEXT_PLAIN)
         public String greet() {
             return "Hello!";
+        }
+    }
+
+    @Path("/widgets/{id}")
+    public static class WidgetsEndpoint {
+        @Path("details")
+        public DetailsEndpoint details(@jakarta.ws.rs.PathParam("id") String id) {
+            return new DetailsEndpoint(id);
+        }
+    }
+
+    public static class DetailsEndpoint {
+        private final String id;
+
+        DetailsEndpoint(String id) {
+            this.id = id;
+        }
+
+        @GET
+        @Produces(MediaType.TEXT_PLAIN)
+        public String details() {
+            return "Details " + id + "!";
+        }
+    }
+
+    @Path("/")
+    public static class RootEndpoint {
+        @GET
+        @Produces(MediaType.TEXT_PLAIN)
+        public String root() {
+            return "Root!";
         }
     }
 }

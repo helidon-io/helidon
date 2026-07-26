@@ -66,11 +66,12 @@ import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
+import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
-import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
+import org.glassfish.jersey.uri.UriTemplate;
 
 /**
  * WebServer {@link io.helidon.webserver.http.HttpService} that adds support for a JAX-RS application.
@@ -320,10 +321,10 @@ public class JaxRsService implements HttpService {
             kpiMetricsContext.ifPresent(KeyPerformanceIndicatorSupport.DeferrableRequestContext::requestProcessingStarted);
             appHandler.handle(requestContext);
             writer.await();
-            boolean matchedResourceMethod = requestContext.getUriInfo().getMatchedResourceMethod() != null;
+            ExtendedUriInfo uriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
+            boolean matchedResourceMethod = uriInfo.getMatchedResourceMethod() != null;
             if (matchedResourceMethod) {
-                Resource matchedResource = requestContext.getUriInfo().getMatchedModelResource();
-                RoutePathSupport.provideRoute(ctx, () -> route(req, matchedResource));
+                RoutePathSupport.provideRoute(ctx, () -> route(req, uriInfo.getMatchedTemplates()));
             }
             if (res.status() == Status.NOT_FOUND_404 && !matchedResourceMethod) {
                 // Jersey will not throw an exception, it will complete the request - but we must
@@ -350,28 +351,19 @@ public class JaxRsService implements HttpService {
         }
     }
 
-    private String route(ServerRequest req, Resource matchedResource) {
+    private String route(ServerRequest req, List<UriTemplate> matchedTemplates) {
         StringBuilder derivedPath = new StringBuilder(servicePath(req));
 
-        appendPath(derivedPath, matchedResource);
-        return derivedPath.toString();
+        for (int i = matchedTemplates.size() - 1; i >= 0; i--) {
+            appendPath(derivedPath, matchedTemplates.get(i).getTemplate());
+        }
+        return derivedPath.isEmpty() ? "/" : derivedPath.toString();
     }
 
     private static String servicePath(ServerRequest req) {
         return req.matchingPattern()
                 .map(pattern -> pattern.endsWith("/*") ? pattern.substring(0, pattern.length() - 2) : pattern)
                 .orElse("");
-    }
-
-    private static void appendPath(StringBuilder derivedPath, Resource resource) {
-        if (resource == null) {
-            return;
-        }
-
-        appendPath(derivedPath, resource.getParent());
-
-        String resourcePath = resource.getPath();
-        appendPath(derivedPath, resourcePath);
     }
 
     private static void appendPath(StringBuilder derivedPath, String path) {

@@ -73,12 +73,14 @@ public final class RoutePathSupport {
     }
 
     private static RoutePathConsumers routePathConsumers(Context context) {
-        return context.get(ROUTE_PATH_CONSUMERS, RoutePathConsumers.class)
-                .orElseGet(() -> {
-                    RoutePathConsumers consumers = new RoutePathConsumers();
-                    context.register(ROUTE_PATH_CONSUMERS, consumers);
-                    return consumers;
-                });
+        synchronized (context) {
+            return context.get(ROUTE_PATH_CONSUMERS, RoutePathConsumers.class)
+                    .orElseGet(() -> {
+                        RoutePathConsumers consumers = new RoutePathConsumers();
+                        context.register(ROUTE_PATH_CONSUMERS, consumers);
+                        return consumers;
+                    });
+        }
     }
 
     private static Supplier<String> memoize(Supplier<String> supplier) {

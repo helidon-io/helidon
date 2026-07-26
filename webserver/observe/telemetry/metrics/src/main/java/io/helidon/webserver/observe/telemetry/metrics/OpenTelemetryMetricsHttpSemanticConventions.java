@@ -179,7 +179,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                 }
             } catch (Exception e) {
                 exception.set(e);
-                recordMetrics.run();
+                chainComplete.set(true);
+                if (responseSent.get()) {
+                    recordMetrics.run();
+                }
                 throw e;
             }
         }
