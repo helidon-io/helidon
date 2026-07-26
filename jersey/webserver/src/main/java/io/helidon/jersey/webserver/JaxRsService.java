@@ -323,7 +323,7 @@ public class JaxRsService implements HttpService {
             writer.await();
             ExtendedUriInfo uriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
             boolean matchedResourceMethod = uriInfo.getMatchedResourceMethod() != null;
-            if (matchedResourceMethod) {
+            if (matchedResourceMethod || res.status() != Status.NOT_FOUND_404) {
                 RoutePathSupport.provideRoute(ctx, () -> route(req, uriInfo.getMatchedTemplates()));
             }
             if (res.status() == Status.NOT_FOUND_404 && !matchedResourceMethod) {
