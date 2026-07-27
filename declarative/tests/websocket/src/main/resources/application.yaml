@@ -17,3 +17,6 @@
 server:
   port: 8080
   host: 0.0.0.0
+  protocols:
+    websocket:
+      max-buffered-message-size: "16 B"

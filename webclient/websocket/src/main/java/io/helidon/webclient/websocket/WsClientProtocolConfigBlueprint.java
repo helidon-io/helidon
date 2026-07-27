@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,23 +21,34 @@ import java.util.List;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webclient.spi.ProtocolConfig;
+import io.helidon.websocket.WsProtocolConfig;
 
 /**
- * Configuration of an HTTP/1.1 client.
+ * WebSocket client protocol configuration.
  */
 @Prototype.Blueprint
 @Prototype.Configured
-interface WsClientProtocolConfigBlueprint extends ProtocolConfig {
+interface WsClientProtocolConfigBlueprint extends ProtocolConfig, WsProtocolConfig {
     @Override
     default String type() {
         return WsProtocolProvider.CONFIG_KEY;
     }
 
+    /**
+     * Name of this protocol configuration.
+     *
+     * @return protocol configuration name
+     */
     @Option.Configured
     @Option.Default(WsProtocolProvider.CONFIG_KEY)
     @Override
     String name();
 
+    /**
+     * WebSocket sub-protocols requested by the client.
+     *
+     * @return requested WebSocket sub-protocols
+     */
     @Option.Configured
     @Option.Singular
     List<String> subProtocols();

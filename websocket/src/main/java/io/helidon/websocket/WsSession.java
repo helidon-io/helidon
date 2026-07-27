@@ -27,6 +27,15 @@ import io.helidon.http.HttpPrologue;
  */
 public interface WsSession {
     /**
+     * WebSocket protocol configuration for this session.
+     *
+     * @return WebSocket protocol configuration
+     */
+    default WsProtocolConfig protocolConfig() {
+        return WsProtocolConfigSupport.DEFAULT;
+    }
+
+    /**
      * Send text fragment.
      *
      * @param text text to send

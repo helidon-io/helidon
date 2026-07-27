@@ -18,15 +18,18 @@ package io.helidon.common.buffers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BufferDataTest {
@@ -34,6 +37,46 @@ class BufferDataTest {
         return Stream.of(new TestContext("fixed", BufferData.create(1024)),
                          new TestContext("growing", BufferData.growing(0)),
                          new TestContext("byte[]", BufferData.create(new byte[1024]).clear()));
+    }
+
+    @Test
+    void growingBufferRetainsCompleteBufferDataWriteWhenCapacityIncreases() {
+        byte[] firstBytes = new byte[200];
+        byte[] secondBytes = new byte[100];
+        Arrays.fill(firstBytes, (byte) 1);
+        Arrays.fill(secondBytes, (byte) 2);
+
+        BufferData buffer = BufferData.growing(0);
+        buffer.write(BufferData.create(firstBytes));
+        buffer.write(secondBytes);
+
+        byte[] expected = new byte[300];
+        System.arraycopy(firstBytes, 0, expected, 0, firstBytes.length);
+        System.arraycopy(secondBytes, 0, expected, firstBytes.length, secondBytes.length);
+        assertArrayEquals(expected, buffer.readBytes());
+    }
+
+    @Test
+    void growingBufferRetainsLimitedBufferDataWriteWhenCapacityIncreases() {
+        byte[] firstBytes = new byte[100];
+        byte[] secondBytes = new byte[150];
+        byte[] thirdBytes = new byte[100];
+        Arrays.fill(firstBytes, (byte) 1);
+        Arrays.fill(secondBytes, (byte) 2);
+        Arrays.fill(thirdBytes, (byte) 3);
+
+        BufferData source = BufferData.create(secondBytes);
+        BufferData buffer = BufferData.growing(0);
+        buffer.write(firstBytes);
+        buffer.write(source, 100);
+        buffer.write(thirdBytes);
+
+        byte[] expected = new byte[300];
+        System.arraycopy(firstBytes, 0, expected, 0, firstBytes.length);
+        System.arraycopy(secondBytes, 0, expected, firstBytes.length, 100);
+        System.arraycopy(thirdBytes, 0, expected, 200, thirdBytes.length);
+        assertArrayEquals(expected, buffer.readBytes());
+        assertThat(source.available(), is(50));
     }
 
     @ParameterizedTest

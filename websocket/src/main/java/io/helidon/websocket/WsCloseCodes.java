@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public final class WsCloseCodes {
      */
     public static final int VIOLATED_POLICY = 1008;
     /**
-     * Endpoint won't process large frame.
+     * Endpoint won't process a large frame or message.
      */
     public static final int TOO_BIG = 1009;
     /**
