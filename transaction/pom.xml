@@ -37,6 +37,7 @@
 
     <modules>
         <module>transaction</module>
+        <module>jdbc</module>
         <module>jta</module>
         <module>narayana</module>
     </modules>

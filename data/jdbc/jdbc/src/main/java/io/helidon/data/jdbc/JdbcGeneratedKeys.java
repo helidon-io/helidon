@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.data.jdbc;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+/**
+ * Stores generated key configuration until a mapper is selected.
+ */
+final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
+    private final JdbcStatement statement;
+    private final List<String> columns = new ArrayList<>();
+    /** Normalized names used to reject ambiguous duplicates. */
+    private final Set<String> normalizedColumns = new HashSet<>();
+    private boolean mapped;
+
+    /**
+     * Creates a generated-key configuration stage.
+     *
+     * @param statement owning statement
+     */
+    JdbcGeneratedKeys(JdbcStatement statement) {
+        this.statement = Objects.requireNonNull(statement, "Generated-key statement must not be null");
+    }
+
+    /**
+     * Adds one requested generated column.
+     *
+     * @param columnName generated column name
+     * @return this stage
+     */
+    @Override
+    public JdbcClient.GeneratedKeys addColumn(String columnName) {
+        ensureConfiguring();
+        statement.ensureMutable();
+        String normalized = JdbcPreparationPlan.validateGeneratedColumn(columnName, columns.size());
+        if (!normalizedColumns.add(normalized)) {
+            throw new IllegalArgumentException("Duplicate generated column name: " + columnName);
+        }
+        columns.add(columnName);
+        return this;
+    }
+
+    /**
+     * Selects generated-key row mapping and freezes column configuration.
+     *
+     * @param mapper generated-key mapper
+     * @param <T> mapped type
+     * @return mapped rows stage
+     */
+    @Override
+    public <T> JdbcClient.Rows<T> map(JdbcClient.RowMapper<T> mapper) {
+        ensureConfiguring();
+        statement.ensureMutable();
+        Objects.requireNonNull(mapper, "Generated-key mapper must not be null");
+        JdbcPreparationPlan plan = JdbcPreparationPlan.generatedKeys(columns);
+        mapped = true;
+        return new JdbcRows<>(statement, mapper, plan);
+    }
+
+    /**
+     * Rejects changes after mapping finalizes this stage.
+     */
+    private void ensureConfiguring() {
+        if (mapped) {
+            throw new IllegalStateException("Generated-key mapping was already selected");
+        }
+    }
+}

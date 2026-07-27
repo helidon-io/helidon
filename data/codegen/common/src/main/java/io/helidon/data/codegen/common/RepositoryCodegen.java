@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,8 +89,17 @@ class RepositoryCodegen implements CodegenExtension {
         }
     }
 
-    // Analyse repository interfaces:
-    // check whether interface extends just a single data repository (generator)
+    /**
+     * Selects the one repository generator that owns an interface.
+     * <p>
+     * Inherited repository APIs establish ownership first. Marker annotations
+     * establish ownership when no recognized base interface is present.
+     *
+     * @param repositoryInterface metadata for the candidate interface
+     * @param interfaceAssignment owners of recognized repository APIs
+     * @return selected generator
+     * @throws CodegenException if ownership is missing or ambiguous
+     */
     private RepositoryGenerator analyseInterfaces(TypeInfo repositoryInterface,
                                                   Map<TypeName, RepositoryGenerator> interfaceAssignment) {
         Set<RepositoryGenerator> assigned = new HashSet<>(repositoryGenerators.size());
@@ -106,11 +115,24 @@ class RepositoryCodegen implements CodegenExtension {
                                                .orElseGet(repositoryInterface::typeName));
         }
         if (assigned.isEmpty()) {
-            throw new CodegenException("Interface extends no data repository provider's interface",
-                                       repositoryInterface.originatingElement()
-                                               .orElseGet(repositoryInterface::typeName));
+            // Repositories selected only by annotation have no owned base interface. Reject ambiguity instead of
+            // depending on service loading order.
+            repositoryGenerators.stream()
+                    .filter(generator -> generator.annotations()
+                            .stream()
+                            .anyMatch(repositoryInterface::hasAnnotation))
+                    .forEach(assigned::add);
+            if (assigned.isEmpty()) {
+                throw new CodegenException("Interface extends no data repository provider's interface",
+                                           repositoryInterface.originatingElement()
+                                                   .orElseGet(repositoryInterface::typeName));
+            }
+            if (assigned.size() > 1) {
+                throw new CodegenException("Repository annotation is owned by multiple data repository generators",
+                                           repositoryInterface.originatingElement()
+                                                   .orElseGet(repositoryInterface::typeName));
+            }
         }
-        // There is exactly one element in the set
         return assigned.stream()
                 .findFirst()
                 .get();
