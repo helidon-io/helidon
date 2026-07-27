@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,16 +49,16 @@ public abstract class BasePersistenceGenerator
         Objects.requireNonNull(codegenContext, "Codegen context value is null");
         Objects.requireNonNull(repositoryGenerator, "Data repository generator value is null");
 
-        TypeName repositoryClassName = repositoryClassName(interfaceInfo.typeName());
-        RepositoryInfo repositoryInfo = repositoryGenerator.createRepositoryInfo(interfaceInfo, codegenContext);
-
-        // only generate if matches required provider, or if the provider annotation is not present
-        boolean should = interfaceInfo.findAnnotation(DataCommonCodegenTypes.PROVIDER)
-                .flatMap(Annotation::value)
-                .orElse(provider())
-                .equals(provider());
+        // A missing provider annotation does not select every generator. Existing providers remain defaults, while
+        // providers such as JDBC can require explicit selection.
+        var configuredProvider = interfaceInfo.findAnnotation(DataCommonCodegenTypes.PROVIDER)
+                .flatMap(Annotation::value);
+        boolean should = configuredProvider.map(provider()::equals)
+                .orElseGet(this::generateByDefault);
 
         if (should) {
+            TypeName repositoryClassName = repositoryClassName(interfaceInfo.typeName());
+            RepositoryInfo repositoryInfo = repositoryGenerator.createRepositoryInfo(interfaceInfo, codegenContext);
             ClassModel.Builder classModel = ClassModel.builder();
 
             generateRepositoryClass(codegenContext,
@@ -81,6 +81,18 @@ public abstract class BasePersistenceGenerator
      * @return provider name
      */
     protected abstract String provider();
+
+    /**
+     * Checks whether this generator runs when a repository omits {@code @Data.Provider}.
+     * <p>
+     * Existing generators remain enabled by default. A provider that requires
+     * explicit selection overrides this method and returns {@code false}.
+     *
+     * @return {@code true} when this generator is a default provider
+     */
+    protected boolean generateByDefault() {
+        return true;
+    }
 
     /**
      * Data repository interface implementing class name for specific persistence provider.

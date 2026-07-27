@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,29 @@ import java.util.Optional;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
+import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.data.codegen.common.RepositoryInfo;
 
-// Interfaces info builder.
+/**
+ * Builds metadata for repository interfaces.
+ */
 class RepositoryInfoBuilder extends RepositoryInfo.Builder {
 
     RepositoryInfoBuilder(CodegenContext codegenContext) {
         super(codegenContext);
     }
 
+    /**
+     * Builds repository metadata, including repositories that do not declare an entity type.
+     *
+     * @return repository metadata
+     * @throws CodegenException if metadata for a declared entity type is unavailable
+     */
     @Override
     public RepositoryInfo build() {
-        // Search for entity class from top level interfaces
         TypeName entity = TypeName.create(Object.class);
         TypeName id = TypeName.create(Object.class);
         if (interfaces().containsKey(DataCodegenTypes.CRUD_REPOSITORY)) {
@@ -50,6 +59,16 @@ class RepositoryInfoBuilder extends RepositoryInfo.Builder {
         }
         Optional<TypeInfo> maybeEntityInfo = codegenContext().typeInfo(entity);
         if (maybeEntityInfo.isEmpty()) {
+            if (interfaces().isEmpty() && entity.equals(TypeName.create(Object.class))) {
+                // Repositories selected only by annotation have no entity metadata. An Object descriptor preserves the
+                // existing RepositoryInfo contract without requiring an entity.
+                TypeInfo placeholder = TypeInfo.builder()
+                        .typeName(entity)
+                        .kind(ElementKind.CLASS)
+                        .accessModifier(AccessModifier.PUBLIC)
+                        .build();
+                return new RepositoryInfo(interfaceInfo(), interfaces(), placeholder, id);
+            }
             throw new CodegenException("Could not find " + entity + " entity type information");
         }
         return new RepositoryInfo(interfaceInfo(), interfaces(), maybeEntityInfo.get(), id);
