@@ -470,6 +470,31 @@ class TenantAuthenticationHandlerTest {
     }
 
     @Test
+    public void testRedirectAppendsAuthorizationParametersToEndpoint() {
+        OidcConfig oidcConfig = oidcConfig(NONE);
+        String authorizationEndpoint = "http://localhost:1234/authorize";
+        Map<String, String> expectedLocationPrefixes = Map.of(
+                authorizationEndpoint, authorizationEndpoint + "?client_id=test&",
+                authorizationEndpoint + "?", authorizationEndpoint + "?client_id=test&",
+                authorizationEndpoint + "?domain=identity%2Fdomain",
+                authorizationEndpoint + "?domain=identity%2Fdomain&client_id=test&",
+                authorizationEndpoint + "?domain=identity-domain&",
+                authorizationEndpoint + "?domain=identity-domain&client_id=test&");
+
+        for (Map.Entry<String, String> expected : expectedLocationPrefixes.entrySet()) {
+            TenantAuthenticationHandler authenticationHandler = authenticationHandler(oidcConfig, expected.getKey());
+            AuthenticationResponse response = authenticationHandler.authenticate(DEFAULT_TENANT_ID, requestWithCookies());
+            String location = response.responseHeaders()
+                    .get(HeaderNames.LOCATION.defaultCase())
+                    .getFirst();
+
+            assertThat("Authorization endpoint: " + expected.getKey(),
+                       location,
+                       startsWith(expected.getValue()));
+        }
+    }
+
+    @Test
     public void testRedirectSetsCookieCounter() {
         OidcConfig oidcConfig = OidcConfig.builder()
                 .clientId("test")
@@ -523,9 +548,13 @@ class TenantAuthenticationHandlerTest {
     }
 
     private static TenantAuthenticationHandler authenticationHandler(OidcConfig oidcConfig) {
+        return authenticationHandler(oidcConfig, "http://localhost:1234/authorize");
+    }
+
+    private static TenantAuthenticationHandler authenticationHandler(OidcConfig oidcConfig, String authorizationEndpoint) {
         Tenant tenant = mock(Tenant.class);
         when(tenant.tenantConfig()).thenReturn(oidcConfig);
-        when(tenant.authorizationEndpointUri()).thenReturn("http://localhost:1234/authorize");
+        when(tenant.authorizationEndpointUri()).thenReturn(authorizationEndpoint);
         return new TenantAuthenticationHandler(oidcConfig, tenant, false, true);
     }
 
