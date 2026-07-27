@@ -19,6 +19,8 @@ package io.helidon.webserver.http;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -41,6 +43,7 @@ import io.helidon.common.context.Context;
 @Api.Internal
 public final class RoutePathSupport {
     private static final String ROUTE_PATH_CONSUMERS = RoutePathSupport.class.getName() + ".consumers";
+    private static final Lock ROUTE_PATH_CONSUMERS_LOCK = new ReentrantLock();
 
     private RoutePathSupport() {
     }
@@ -73,13 +76,21 @@ public final class RoutePathSupport {
     }
 
     private static RoutePathConsumers routePathConsumers(Context context) {
-        synchronized (context) {
+        RoutePathConsumers existingConsumers = context.get(ROUTE_PATH_CONSUMERS, RoutePathConsumers.class).orElse(null);
+        if (existingConsumers != null) {
+            return existingConsumers;
+        }
+
+        ROUTE_PATH_CONSUMERS_LOCK.lock();
+        try {
             return context.get(ROUTE_PATH_CONSUMERS, RoutePathConsumers.class)
                     .orElseGet(() -> {
                         RoutePathConsumers consumers = new RoutePathConsumers();
                         context.register(ROUTE_PATH_CONSUMERS, consumers);
                         return consumers;
                     });
+        } finally {
+            ROUTE_PATH_CONSUMERS_LOCK.unlock();
         }
     }
 
