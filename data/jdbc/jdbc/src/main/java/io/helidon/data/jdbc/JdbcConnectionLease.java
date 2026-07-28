@@ -42,7 +42,9 @@ interface JdbcConnectionLease extends AutoCloseable {
     @Override
     void close() throws SQLException;
 
-    /** Supplies an owned or transaction-bound lease for one operation. */
+    /**
+     * Supplies an owned or transaction-bound lease for one operation.
+     */
     @FunctionalInterface
     interface Provider {
         /**
@@ -64,11 +66,12 @@ interface JdbcConnectionLease extends AutoCloseable {
         return dataSource -> new Owned(dataSource.getConnection());
     }
 
-    /** Lease that closes its physical connection when the operation ends. */
+    /**
+     * Lease that closes its physical connection when the operation ends.
+     */
     final class Owned implements JdbcConnectionLease {
-        /** Connection owned by this lease. */
+
         private final Connection connection;
-        /** Whether ownership has already been released. */
         private boolean closed;
 
         /**

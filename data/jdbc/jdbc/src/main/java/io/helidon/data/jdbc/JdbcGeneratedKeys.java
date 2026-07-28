@@ -25,9 +25,11 @@ import java.util.Set;
  * Stores generated key configuration until a mapper is selected.
  */
 final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
+
     private final JdbcStatement statement;
     private final List<String> columns = new ArrayList<>();
-    /** Normalized names used to reject ambiguous duplicates. */
+
+    // JDBC column names are compared without regard to case.
     private final Set<String> normalizedColumns = new HashSet<>();
     private boolean mapped;
 
@@ -49,6 +51,7 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
     @Override
     public JdbcClient.GeneratedKeys addColumn(String columnName) {
         ensureConfiguring();
+        // Another terminal stage may already have claimed the shared statement.
         statement.ensureMutable();
         String normalized = JdbcPreparationPlan.validateGeneratedColumn(columnName, columns.size());
         if (!normalizedColumns.add(normalized)) {

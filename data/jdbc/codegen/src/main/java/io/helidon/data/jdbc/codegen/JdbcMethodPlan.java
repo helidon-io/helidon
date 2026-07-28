@@ -38,7 +38,8 @@ import io.helidon.common.types.TypedElementInfo;
  * interpret annotations or SQL structure at runtime.
  */
 final class JdbcMethodPlan {
-    /** Standard SQL-null type selected for each supported Java scalar. */
+
+    // This table must stay aligned with the scalar types supported by the runtime.
     private static final Map<String, String> NULL_TYPES = Map.ofEntries(
             Map.entry(Boolean.class.getName(), "BOOLEAN"),
             Map.entry(Byte.class.getName(), "TINYINT"),
@@ -444,11 +445,8 @@ final class JdbcMethodPlan {
      * Internal operation selected before source emission.
      */
     enum Operation {
-        /** Query rows. */
         QUERY,
-        /** Ordinary update count. */
         UPDATE,
-        /** Update followed by generated-key rows. */
         GENERATED_KEYS
     }
 
@@ -456,11 +454,8 @@ final class JdbcMethodPlan {
      * Supported materialized cardinalities.
      */
     enum ReturnShape {
-        /** Exactly one value. */
         ITEM,
-        /** Zero or one value. */
         OPTIONAL,
-        /** All values. */
         LIST
     }
 
@@ -468,15 +463,10 @@ final class JdbcMethodPlan {
      * Supported mapping strategies.
      */
     enum MappingKind {
-        /** No row mapping for an update count. */
         NONE,
-        /** Built-in scalar column-one mapping. */
         SCALAR,
-        /** Generated record construction. */
         RECORD,
-        /** Application mapper selected by its exact generic service contract. */
         SERVICE,
-        /** Application mapper selected by its concrete service type. */
         EXPLICIT
     }
 

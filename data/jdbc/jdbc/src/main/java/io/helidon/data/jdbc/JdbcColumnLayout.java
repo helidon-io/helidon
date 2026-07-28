@@ -29,20 +29,23 @@ import io.helidon.data.DataException;
  * <p>Generated record mappers and application row mappers may address values
  * by label. Resolving metadata once on the first label lookup keeps subsequent
  * lookups out of the per-row hot path without penalizing index-only mapping.
- * This class uses only the result set's labels and names; it does not inspect
+ * This class uses only the result set's labels and names. It does not inspect
  * database primary-key metadata or infer object identity.</p>
  */
 final class JdbcColumnLayout {
-    /** Sentinel stored for a normalized label assigned to more than one column. */
+
+    // Zero cannot be a valid JDBC column index.
     private static final int AMBIGUOUS_INDEX = 0;
 
-    /** Number of physical columns in the result set. */
     private final int columnCount;
-    /** Metadata retained only for the lifetime of the provider-owned result set. */
+
+    // Retained only while the provider owns the result set.
     private final ResultSetMetaData metadata;
-    /** Operation used to translate failures from lazy metadata access. */
+
+    // Carries safe operation details into failures raised during lazy metadata access.
     private final JdbcOperation operation;
-    /** Lower-case label keys mapped to one-based indexes, initialized on first label access. */
+
+    // Built on first label access so index-only mapping does not pay this cost.
     private Map<String, Integer> indexes;
 
     /**
@@ -140,6 +143,7 @@ final class JdbcColumnLayout {
                     throw new DataException("Result column " + index
                                                     + " has neither a usable label nor column name");
                 }
+                // Keep duplicate labels unusable without rejecting unrelated unique labels.
                 resolved.merge(label.toLowerCase(Locale.ROOT),
                                index,
                                (existing, duplicate) -> AMBIGUOUS_INDEX);

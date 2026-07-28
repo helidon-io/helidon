@@ -32,11 +32,12 @@ import java.util.Objects;
  */
 final class JdbcOperation {
 
-    /** SQL text after any compile-time declarative marker rewriting. */
+    // Named markers have already been rewritten before this operation is created.
     private final String sql;
-    /** Ordered bind snapshots; the array is cloned by the statement stage before construction. */
+
+    // The statement stage clones this array before construction.
     private final Bind[] binds;
-    /** Result and statement-preparation contract selected by the terminal. */
+
     private final JdbcPreparationPlan preparationPlan;
 
     /**
@@ -60,7 +61,7 @@ final class JdbcOperation {
      * <p>The scanner is deliberately lexical rather than a SQL parser. It
      * ignores question marks in quoted values, quoted identifiers, comments,
      * and common vendor operators. Declarative named markers have already been
-     * rewritten by the annotation processor; a runtime named marker is
+     * rewritten by the annotation processor. A runtime named marker is
      * rejected because this client stage accepts positional JDBC SQL.</p>
      *
      * @param sql SQL text to scan
@@ -120,9 +121,10 @@ final class JdbcOperation {
      * position.</p>
      */
     static final class Bind {
-        /** Captured value passed to the JDBC setter; may be null for a typed SQL NULL. */
+
+        // A null value is valid only when an explicit JDBC type is present.
         private final Object value;
-        /** Explicit JDBC type, or null when the driver may infer the type. */
+
         private final JDBCType type;
 
         /**
@@ -152,6 +154,7 @@ final class JdbcOperation {
             if (value instanceof byte[] bytes) {
                 return bytes.clone();
             }
+            // Timestamp extends Date, so preserve its nanoseconds before the Date branch.
             if (value instanceof Timestamp timestamp) {
                 Timestamp copy = new Timestamp(timestamp.getTime());
                 copy.setNanos(timestamp.getNanos());
@@ -203,13 +206,10 @@ final class JdbcOperation {
      * driver and database.</p>
      */
     private static final class MarkerScanner {
-        /** SQL text being scanned. */
+
         private final String sql;
-        /** Cached character length of {@link #sql}. */
         private final int length;
-        /** Current scan offset. */
         private int index;
-        /** Number of real positional markers found so far. */
         private int count;
 
         /**
@@ -234,7 +234,6 @@ final class JdbcOperation {
             return scanner.count;
         }
 
-        /** Walks the SQL text and dispatches protected regions or markers. */
         private void scan() {
             while (index < length) {
                 char current = sql.charAt(index);
@@ -264,7 +263,7 @@ final class JdbcOperation {
             }
         }
 
-        /** Counts a question mark unless it begins a recognized literal operator. */
+        // Question mark operators must not consume a bind position.
         private void positionalMarker() {
             char next = peek(1);
             if (next == '?' || next == '|' || next == '&') {
@@ -275,7 +274,7 @@ final class JdbcOperation {
             }
         }
 
-        /** Rejects runtime named markers because this stage accepts positional SQL only. */
+        // Generated code rewrites named markers before reaching the client.
         private void namedMarker() {
             char next = peek(1);
             if (next == ':' || next == '=') {
@@ -289,7 +288,7 @@ final class JdbcOperation {
             index++;
         }
 
-        /** Skips a quoted SQL string or identifier, honoring doubled delimiters. */
+        // SQL escapes a delimiter by doubling it.
         private void quoted(char delimiter) {
             index++;
             while (index < length) {
@@ -307,7 +306,6 @@ final class JdbcOperation {
             throw malformed("Unterminated quoted SQL region");
         }
 
-        /** Skips a bracket-quoted identifier. */
         private void bracketIdentifier() {
             index++;
             while (index < length) {
@@ -325,7 +323,6 @@ final class JdbcOperation {
             throw malformed("Unterminated bracket-quoted identifier");
         }
 
-        /** Skips a line comment. */
         private void lineComment() {
             index += 2;
             while (index < length) {
@@ -336,7 +333,7 @@ final class JdbcOperation {
             }
         }
 
-        /** Skips a nested block comment. */
+        // Some databases allow block comments to be nested.
         private void blockComment() {
             index += 2;
             int depth = 1;
@@ -357,7 +354,6 @@ final class JdbcOperation {
             throw malformed("Unterminated block comment");
         }
 
-        /** Skips an Oracle alternative quoted string. */
         private void oracleQuoted() {
             char opening = sql.charAt(index + 2);
             char closing = switch (opening) {
@@ -375,10 +371,10 @@ final class JdbcOperation {
                 }
                 index++;
             }
-            throw malformed("Unterminated Oracle quoted string");
+            throw malformed("Unterminated alternative quoted string");
         }
 
-        /** Skips a PostgreSQL dollar-quoted region when one is present. */
+        // A lone dollar sign is ordinary SQL text, not an opening delimiter.
         private boolean dollarQuoted() {
             int delimiterEnd = index + 1;
             while (delimiterEnd < length && sql.charAt(delimiterEnd) != '$') {
@@ -393,7 +389,7 @@ final class JdbcOperation {
             String delimiter = sql.substring(index, delimiterEnd + 1);
             int contentEnd = sql.indexOf(delimiter, delimiterEnd + 1);
             if (contentEnd < 0) {
-                throw malformed("Unterminated PostgreSQL dollar-quoted string");
+                throw malformed("Unterminated dollar-quoted string");
             }
             index = contentEnd + delimiter.length();
             return true;

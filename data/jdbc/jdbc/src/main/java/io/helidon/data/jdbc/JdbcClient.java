@@ -19,18 +19,23 @@ import java.sql.JDBCType;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.data.DataException;
 import io.helidon.service.registry.Service;
 
 /**
- * Runs statements for generated JDBC repository implementations.
+ * Defines JDBC contracts used by generated repositories and application row mappers.
  * <p>
  * Creating and binding a statement performs no database work. A terminal
  * operation acquires the JDBC resources, fully materializes any result, and
  * releases every resource before returning. The client is safe to share.
  * Statement and result stages are single use and are not safe for concurrent
  * use.
+ * <p>
+ * Direct statement execution is internal.
  */
+@SuppressWarnings("checkstyle:JavadocType") // Checkstyle does not recognize @hidden on nested types.
+@Api.Preview
 @Service.Contract
 public interface JdbcClient {
 
@@ -41,12 +46,17 @@ public interface JdbcClient {
      * @return statement description
      * @throws NullPointerException if the SQL is {@code null}
      * @throws IllegalArgumentException if the SQL is blank, malformed, or contains named markers
+     * @hidden internal contract used by generated code
      */
+    @Api.Internal
     Statement create(String sql);
 
     /**
      * Mutable description of one prepared JDBC operation.
+     *
+     * @hidden internal contract used by generated code
      */
+    @Api.Internal
     interface Statement {
 
         /**
@@ -122,7 +132,10 @@ public interface JdbcClient {
      * <p>
      * The stage preserves column order. It is single use, is not safe for
      * concurrent use, and performs no JDBC work.
+     *
+     * @hidden internal contract used by generated code
      */
+    @Api.Internal
     interface GeneratedKeys {
 
         /**
@@ -152,7 +165,9 @@ public interface JdbcClient {
      * Materialized result terminals for a mapped query or generated-key result.
      *
      * @param <T> mapped type
+     * @hidden internal contract used by generated code
      */
+    @Api.Internal
     interface Rows<T> {
 
         /**
@@ -198,6 +213,7 @@ public interface JdbcClient {
      *
      * @param <T> mapped type
      */
+    @Api.Preview
     @Service.Contract
     @FunctionalInterface
     interface RowMapper<T> {
@@ -215,6 +231,7 @@ public interface JdbcClient {
     /**
      * Restricted view of the current result row.
      */
+    @Api.Preview
     interface Row {
 
         /**

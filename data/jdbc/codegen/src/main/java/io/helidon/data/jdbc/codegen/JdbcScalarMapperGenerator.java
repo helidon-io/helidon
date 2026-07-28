@@ -21,7 +21,7 @@ import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.TypeName;
 
 /**
- * Emits the public client mapping stage for fixed scalar results.
+ * Emits the client mapping stage for fixed scalar results.
  */
 final class JdbcScalarMapperGenerator {
 

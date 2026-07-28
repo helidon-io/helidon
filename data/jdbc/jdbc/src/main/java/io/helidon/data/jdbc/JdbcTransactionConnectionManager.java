@@ -39,12 +39,13 @@ import io.helidon.transaction.spi.TxLifeCycle;
  */
 @Service.Singleton
 final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnectionLease.Provider {
-    /** Transaction support type owned by this connection manager. */
+
     private static final String JDBC = "jdbc";
-    /** Executor used only for the synchronous JDBC connection-abort contract. */
+
+    // Connection.abort requires an executor even though transaction completion is synchronous.
     private static final Executor ABORT_EXECUTOR = Runnable::run;
 
-    /** Per-thread transaction and invocation associations. */
+    // Transaction context is synchronous and does not propagate to another thread.
     private final ThreadLocal<State> local = new ThreadLocal<>();
 
     /** {@inheritDoc} */
@@ -96,6 +97,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                     throw new SQLException("A datasource used for local JDBC transactions must supply auto-commit connections");
                 }
                 connection.setAutoCommit(false);
+                // Publish the connection only after it is ready for transaction use.
                 association.connection = connection;
             } catch (SQLException | RuntimeException | Error failure) {
                 invalidate(connection, failure);
@@ -236,6 +238,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             failJdbcAssociation(state, txIdentity, association);
             failedContext = true;
         }
+        // A failed context can only roll back, even when the lifecycle requests commit.
         boolean effectiveCommit = commit && !failedContext;
         association.beginCompletion();
         RuntimeException runtimeFailure = null;
@@ -250,6 +253,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         } catch (Error failure) {
             errorFailure = failure;
         } finally {
+            // Clear thread state before propagating a completion failure.
             state.jdbcTransactions.remove(txIdentity);
             if (txIdentity.equals(state.activeJdbc)) {
                 state.activeJdbc = null;
@@ -290,6 +294,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         } catch (SQLException | RuntimeException | Error failure) {
             completionFailure = failure;
             if (commit) {
+                // A rollback attempt cannot prove that the commit did not reach the database.
                 try {
                     connection.rollback();
                 } catch (SQLException | RuntimeException | Error rollbackFailure) {
@@ -300,6 +305,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
         if (completionFailure != null) {
             association.failed(CompletionOutcome.UNKNOWN);
+            // Restoring auto commit after an unknown outcome could commit pending work.
             invalidate(connection, completionFailure);
             throwTransactionFailure(commit
                                             ? "Local JDBC transaction commit failed with unknown outcome"
@@ -311,6 +317,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         CompletionOutcome outcome = commit ? CompletionOutcome.COMMITTED : CompletionOutcome.ROLLED_BACK;
         association.completed(outcome);
         try {
+            // Auto commit is the only connection setting changed by this provider.
             connection.setAutoCommit(true);
         } catch (SQLException | RuntimeException | Error restoreFailure) {
             association.failed(outcome);
@@ -335,6 +342,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      * @param primaryFailure failure which required invalidation
      */
     private static void invalidate(Connection connection, Throwable primaryFailure) {
+        // Abort first to prevent normal pool reuse, then close as a fallback.
         try {
             connection.abort(ABORT_EXECUTOR);
         } catch (SQLException | RuntimeException | Error abortFailure) {
@@ -565,8 +573,11 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         }
     }
 
-    /** Validated lifecycle states of one connection association. */
+    /**
+     * Validated lifecycle states of one connection association.
+     */
     private enum AssociationState {
+
         ACTIVE,
         SUSPENDED,
         COMPLETING,
@@ -574,46 +585,51 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         FAILED
     }
 
-    /** Outcome of JDBC transaction completion, independent of connection cleanup. */
+    /**
+     * Outcome of JDBC transaction completion, independent of connection cleanup.
+     */
     private enum CompletionOutcome {
+
         COMMITTED,
         ROLLED_BACK,
         UNKNOWN
     }
 
-    /** All lifecycle state associated with one thread. */
+    /**
+     * All lifecycle state associated with one thread.
+     */
     private static final class State {
-        /** Nested transaction-support invocations. */
+
         private final ArrayDeque<String> invocationTypes = new ArrayDeque<>();
-        /** JDBC transactions known to this thread. */
         private final Map<String, Association> jdbcTransactions = new HashMap<>();
-        /** Non-JDBC transactions used to reject unsafe local participation. */
+
+        // Foreign transactions are tracked so JDBC cannot claim local participation.
         private final Map<String, String> foreignTransactions = new HashMap<>();
-        /** Validated states of non-JDBC transaction associations. */
         private final Map<String, AssociationState> foreignStates = new HashMap<>();
-        /** Currently active JDBC transaction, if any. */
+
         private String activeJdbc;
-        /** Currently active non-JDBC transaction, if any. */
         private String activeForeign;
-        /** JDBC context which must reject further acquisition, if any. */
+
+        // Failed contexts remain visible so later acquisition fails closed.
         private String failedJdbc;
-        /** Foreign context which must reject further acquisition, if any. */
         private String failedForeign;
     }
 
-    /** Lazily populated connection state for one JDBC transaction. */
+    /**
+     * Lazily populated connection state for one JDBC transaction.
+     */
     private static final class Association {
-        /** Transaction identity used in state-transition diagnostics. */
+
         private final String txIdentity;
-        /** Current validated association state. */
         private AssociationState state = AssociationState.ACTIVE;
-        /** Datasource identity fixed by the first operation. */
+
+        // The first operation fixes the only datasource identity allowed in the transaction.
         private Object dataSourceIdentity;
-        /** Whether the datasource identity has been fixed. */
         private boolean dataSourceIdentitySet;
-        /** Transaction-owned physical connection. */
+
         private Connection connection;
-        /** Completion outcome recorded before connection cleanup. */
+
+        // Cleanup decisions depend on whether the database outcome is known.
         private CompletionOutcome outcome;
 
         /**
@@ -650,7 +666,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             state = next;
         }
 
-        /** Starts connection completion, including fail-closed rollback. */
+        // A failed association may still own a connection that requires rollback.
         private void beginCompletion() {
             if (state != AssociationState.ACTIVE && state != AssociationState.FAILED) {
                 failLifecycle();
@@ -682,7 +698,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             outcome = completionOutcome;
         }
 
-        /** Marks the association unusable after an invalid lifecycle transition. */
+        // Completed associations remain terminal, while every other invalid transition fails closed.
         private void failLifecycle() {
             if (state != AssociationState.COMPLETED) {
                 state = AssociationState.FAILED;
@@ -703,18 +719,19 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     }
 
     /**
-     * Marker for immutable value identities; ordinary pooled datasources continue to use object identity.
+     * Marker for immutable value identities.
+     * Ordinary pooled datasources continue to use object identity.
      */
     interface StableIdentity {
     }
 
     /**
-     * Logical operation lease. Its close is intentionally a no-op; transaction completion owns the physical connection.
+     * Logical operation lease.
+     * Its close is a no-op because transaction completion owns the physical connection.
      */
     private static final class TransactionLease implements JdbcConnectionLease {
-        /** Physical connection owned by transaction completion. */
+
         private final Connection connection;
-        /** Whether this logical operation has released its lease. */
         private boolean closed;
 
         /**

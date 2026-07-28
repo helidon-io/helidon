@@ -22,19 +22,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
 
 /**
- * Creates statement stages for the public {@link JdbcClient} contract.
+ * Creates statement stages for generated JDBC repository execution.
  * <p>
  * No connection is borrowed until a terminal operation reaches
  * {@link JdbcRunner}. The client is safe to share. Each returned
  * {@link JdbcStatement} is single use and is not safe for concurrent use.
  */
 final class JdbcClientImpl implements JdbcClient {
-    /** Maximum number of distinct SQL strings retained in the marker-count cache. */
+
+    // Bounds memory use when callers supply dynamic SQL.
     private static final int MAX_ANALYZED_SQL = 256;
 
     private final JdbcRunner runner;
     private final ConcurrentHashMap<String, Integer> parameterCounts = new ConcurrentHashMap<>();
-    /** Tracks reservations separately so competing insertions cannot exceed the cache limit. */
+
+    // A separate counter prevents concurrent insertions from exceeding the cache limit.
     private final AtomicInteger parameterCountEntries = new AtomicInteger();
 
     /**
@@ -82,6 +84,7 @@ final class JdbcClientImpl implements JdbcClient {
             if (reserveCacheEntry()) {
                 Integer existing = parameterCounts.putIfAbsent(sql, parameterCount);
                 if (existing != null) {
+                    // Another thread inserted the same SQL, so release this reservation.
                     parameterCountEntries.decrementAndGet();
                     parameterCount = existing;
                 }

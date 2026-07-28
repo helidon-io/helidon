@@ -37,7 +37,8 @@ import io.helidon.data.DataException;
  * Callback-scoped row implementation backed by one provider-owned result set.
  */
 final class JdbcRow implements JdbcClient.Row {
-    /** Scalar types that can be requested without application mapping code. */
+
+    // This list must stay aligned with the scalar types accepted by code generation.
     private static final Set<Class<?>> SUPPORTED_TYPES = Set.of(Boolean.class,
                                                                  Byte.class,
                                                                  Short.class,
@@ -56,7 +57,8 @@ final class JdbcRow implements JdbcClient.Row {
                                                                  Date.class,
                                                                  Time.class,
                                                                  Timestamp.class);
-    /** Primitive requests normalized for the JDBC {@code getObject} contract. */
+
+    // ResultSet.getObject accepts reference types rather than primitive class tokens.
     private static final Map<Class<?>, Class<?>> PRIMITIVE_WRAPPERS = Map.of(boolean.class, Boolean.class,
                                                                              byte.class, Byte.class,
                                                                              short.class, Short.class,
@@ -65,13 +67,11 @@ final class JdbcRow implements JdbcClient.Row {
                                                                              float.class, Float.class,
                                                                              double.class, Double.class);
 
-    /** Provider-owned result set positioned on the current row. */
     private final ResultSet resultSet;
-    /** Validated column labels and bounds for the current result. */
     private final JdbcColumnLayout columns;
-    /** Operation metadata used when translating a driver failure. */
     private final JdbcOperation operation;
-    /** Whether application mapping code may currently read this view. */
+
+    // Access is allowed only while the mapper callback is running.
     private boolean active;
 
     /**
@@ -111,12 +111,10 @@ final class JdbcRow implements JdbcClient.Row {
         return normalized;
     }
 
-    /** Opens this view for the mapper's current invocation. */
     void activate() {
         active = true;
     }
 
-    /** Closes this view as soon as the mapper invocation finishes. */
     void deactivate() {
         active = false;
     }
@@ -184,6 +182,7 @@ final class JdbcRow implements JdbcClient.Row {
         try {
             Object value;
             if (targetType == byte[].class) {
+                // getBytes is the portable JDBC path for binary values.
                 value = resultSet.getBytes(index);
             } else {
                 value = resultSet.getObject(index, targetType);
@@ -208,7 +207,6 @@ final class JdbcRow implements JdbcClient.Row {
         }
     }
 
-    /** Rejects access outside the mapper callback. */
     private void ensureActive() {
         if (!active) {
             throw new IllegalStateException("JDBC row is valid only during its mapper callback");

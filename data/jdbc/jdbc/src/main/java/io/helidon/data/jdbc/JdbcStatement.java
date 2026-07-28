@@ -27,10 +27,12 @@ import java.util.Optional;
  * the bindings into an immutable operation and hands ownership to the runner.
  */
 final class JdbcStatement implements JdbcClient.Statement {
+
     private final JdbcRunner runner;
     private final String sql;
     private final JdbcOperation.Bind[] binds;
-    /** Prevents mutation or execution after a terminal starts. */
+
+    // A terminal freezes the statement, so later mutation or execution must fail.
     private boolean terminalStarted;
 
     /**

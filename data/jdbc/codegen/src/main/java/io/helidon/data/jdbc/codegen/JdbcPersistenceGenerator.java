@@ -27,10 +27,11 @@ import io.helidon.data.codegen.common.spi.PersistenceGenerator.StatementGenerato
 import io.helidon.data.codegen.common.spi.RepositoryGenerator;
 
 /**
- * Persistence generator for explicit SQL repositories using the public JDBC client.
+ * Persistence generator for explicit SQL repositories using the JDBC client.
  */
 final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
-    /** Generator identity recorded in generated source. */
+
+    // Recorded in generated source so its origin remains traceable.
     static final TypeName GENERATOR = TypeName.create(JdbcPersistenceGenerator.class);
 
     /** {@inheritDoc} */

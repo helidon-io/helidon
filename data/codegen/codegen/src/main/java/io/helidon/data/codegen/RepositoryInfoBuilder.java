@@ -42,6 +42,7 @@ class RepositoryInfoBuilder extends RepositoryInfo.Builder {
      */
     @Override
     public RepositoryInfo build() {
+        // Search for entity class from top level interfaces
         TypeName entity = TypeName.create(Object.class);
         TypeName id = TypeName.create(Object.class);
         if (interfaces().containsKey(DataCodegenTypes.CRUD_REPOSITORY)) {

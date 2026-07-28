@@ -22,6 +22,7 @@ module io.helidon.data.jdbc {
     requires transitive java.sql;
 
     requires io.helidon.builder.api;
+    requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.data;
     requires io.helidon.data.sql.common;
