@@ -192,6 +192,57 @@ class StuckThreadDetectionFeatureTest {
     }
 
     @Test
+    void reportsConnectAuthority() throws Exception {
+        var config = StuckThreadDetectionConfig.builder()
+                .threshold(Duration.ofMillis(20))
+                .checkPeriod(Duration.ofMillis(5))
+                .buildPrototype();
+        var filter = new StuckThreadDetectionFilter(config, WebServer.DEFAULT_SOCKET_NAME);
+        var started = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var failure = new AtomicReference<Throwable>();
+        RoutingRequest request = mock(RoutingRequest.class);
+        when(request.prologue()).thenReturn(HttpPrologue.create("HTTP/1.1",
+                                                               "HTTP",
+                                                               "1.1",
+                                                               Method.CONNECT,
+                                                               "example.com:443",
+                                                               true));
+        when(request.id()).thenReturn(10);
+        when(request.serverSocketId()).thenReturn("server-socket");
+        when(request.socketId()).thenReturn("connection-socket");
+        try (TestLogHandler logs = new TestLogHandler()) {
+            filter.afterStart(mock(WebServer.class));
+            Thread requestThread = Thread.ofVirtual().start(() -> {
+                try {
+                    filter.filter(() -> {
+                        started.countDown();
+                        try {
+                            release.await();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(e);
+                        }
+                    }, request, mock(RoutingResponse.class));
+                } catch (Throwable t) {
+                    failure.set(t);
+                }
+            });
+            try {
+                assertThat("Request handler did not start", started.await(5, TimeUnit.SECONDS), is(true));
+
+                LogRecord warning = logs.await(Level.WARNING);
+                assertThat(warning.getMessage(), containsString("CONNECT example.com:443 HTTP/1.1"));
+            } finally {
+                release.countDown();
+                requestThread.join(5000);
+                filter.afterStop();
+            }
+        }
+        assertThat("Request handler failed", failure.get(), is((Throwable) null));
+    }
+
+    @Test
     void warningLoggingDoesNotBlockRequestCompletion() throws Exception {
         var config = StuckThreadDetectionConfig.builder()
                 .threshold(Duration.ofMillis(20))

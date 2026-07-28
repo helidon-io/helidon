@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import io.helidon.http.LogFormatter;
+import io.helidon.http.Method;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
@@ -116,11 +117,15 @@ final class StuckThreadDetectionFilter implements Filter {
 
         Thread thread = Thread.currentThread();
         var prologue = req.prologue();
+        String path = prologue.uriPath().path();
+        if (Method.CONNECT.equals(prologue.method()) && path.isEmpty()) {
+            path = prologue.uriPath().rawPathNoParams();
+        }
         var active = new ActiveRequest(thread,
                                        System.nanoTime(),
                                        prologue.rawProtocol(),
                                        prologue.method().text(),
-                                       LogFormatter.escape(prologue.uriPath().path()),
+                                       LogFormatter.escape(path),
                                        req.id(),
                                        req.serverSocketId(),
                                        req.socketId());

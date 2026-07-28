@@ -17,9 +17,16 @@
 package io.helidon.webserver.http1;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.parameters.Parameters;
+import io.helidon.common.uri.UriAuthority;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriPathSegment;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -231,6 +238,19 @@ public final class Http1Prologue {
         }
 
         try {
+            if (Method.CONNECT.equals(method)) {
+                UriAuthority authority = UriAuthority.create(path);
+                if (!authority.hasPort()) {
+                    throw new IllegalArgumentException("CONNECT authority must include a port");
+                }
+                return HttpPrologue.create(protocol,
+                                           "HTTP",
+                                           "1.1",
+                                           method,
+                                           new AuthorityFormPath(path),
+                                           UriQuery.empty(),
+                                           UriFragment.empty());
+            }
             return HttpPrologue.create(protocol,
                                        "HTTP",
                                        "1.1",
@@ -259,5 +279,43 @@ public final class Http1Prologue {
         }
 
         return new String(bytes, StandardCharsets.US_ASCII);
+    }
+
+    private record AuthorityFormPath(String rawPath) implements UriPath {
+        private static final Parameters EMPTY_PARAMETERS = Parameters.empty("uri/authority");
+
+        @Override
+        public String rawPathNoParams() {
+            return rawPath;
+        }
+
+        @Override
+        public String path() {
+            return "";
+        }
+
+        @Override
+        public Parameters matrixParameters() {
+            return EMPTY_PARAMETERS;
+        }
+
+        @Override
+        public UriPath absolute() {
+            return this;
+        }
+
+        @Override
+        public List<UriPathSegment> segments() {
+            return List.of();
+        }
+
+        @Override
+        public void validate() {
+        }
+
+        @Override
+        public String toString() {
+            return rawPath;
+        }
     }
 }

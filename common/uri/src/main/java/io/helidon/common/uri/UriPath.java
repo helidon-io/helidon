@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ public interface UriPath {
     /**
      * Decoded path without matrix parameters.
      *
-     * @return path without matrix parameters
+     * @return path without matrix parameters, never {@code null}; an empty string if the URI has no path
      * @see #matrixParameters()
      */
     String path();
