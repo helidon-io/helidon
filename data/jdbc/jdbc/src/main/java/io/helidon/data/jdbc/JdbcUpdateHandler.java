@@ -24,7 +24,7 @@ import java.util.Optional;
  * Handles update counts and materialized generated-key results.
  */
 final class JdbcUpdateHandler {
-    /** Shared materialized row handling for generated keys. */
+
     private final JdbcQueryHandler queryHandler;
 
     /**
@@ -47,6 +47,7 @@ final class JdbcUpdateHandler {
         scope.require(JdbcPreparationPlan.ResultKind.UPDATE);
         boolean resultSetAvailable = scope.statement().execute();
         if (resultSetAvailable) {
+            // Close every result channel before reporting the incompatible result.
             boolean unexpected = scope.drainFromCurrent(true);
             throw scope.unexpectedResult(unexpected);
         }
@@ -54,6 +55,7 @@ final class JdbcUpdateHandler {
         if (count < 0) {
             throw scope.unexpectedResult(false);
         }
+        // One update count is valid. Any later result channel is not.
         scope.rejectFollowingResults();
         return count;
     }
@@ -123,9 +125,11 @@ final class JdbcUpdateHandler {
         scope.require(JdbcPreparationPlan.ResultKind.GENERATED_KEYS);
         boolean resultSetAvailable = scope.statement().execute();
         if (resultSetAvailable) {
+            // Generated keys must come from getGeneratedKeys. Drain this incompatible result before failing.
             boolean unexpected = scope.drainFromCurrent(true);
             throw scope.unexpectedResult(unexpected);
         }
+        // Generated keys are valid only when the primary channel reports an update count.
         if (scope.largeUpdateCount() < 0) {
             throw scope.unexpectedResult(false);
         }

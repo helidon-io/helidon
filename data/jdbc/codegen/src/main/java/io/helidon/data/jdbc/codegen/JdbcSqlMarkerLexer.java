@@ -23,14 +23,16 @@ import java.util.Objects;
  * Lexes declarative named and positional parameters without parsing SQL.
  * <p>
  * Marker-like text inside quoted regions and comments is copied unchanged.
- * Named markers are rewritten to JDBC {@code ?}; positional markers already
+ * Named markers are rewritten to JDBC {@code ?}. Positional markers already
  * have that form. Mixing the two styles is rejected.
  */
 final class JdbcSqlMarkerLexer {
+
     private final String source;
     private final int length;
     private final StringBuilder jdbcSql;
-    /** Named markers retain their names. Positional markers use an empty string. */
+
+    // Empty entries preserve the number and order of positional markers.
     private final List<String> markers = new ArrayList<>();
     private int index;
     private boolean named;
@@ -76,30 +78,43 @@ final class JdbcSqlMarkerLexer {
         while (index < length) {
             char current = source.charAt(index);
             if (current == '\'') {
+                // A single quote starts a string literal. Markers inside it are ordinary text.
                 copyQuoted('\'');
             } else if (current == '"') {
+                // A double quote starts a quoted identifier. Markers inside it are ordinary text.
                 copyQuoted('"');
             } else if (current == '`') {
+                // Some databases use backticks for quoted identifiers. Treat their contents as protected.
                 copyQuoted('`');
             } else if (current == '[') {
+                // Some databases use brackets for quoted identifiers. Treat their contents as protected.
                 copyBracketIdentifier();
             } else if (current == '-' && peek(1) == '-') {
+                // A line comment may contain marker-like text that must remain unchanged.
                 copyLineComment();
             } else if (current == '/' && peek(1) == '*') {
+                // A block comment may contain marker-like text that must remain unchanged.
                 copyBlockComment();
             } else if ((current == 'q' || current == 'Q') && peek(1) == '\'' && index + 2 < length) {
+                // Oracle alternative quoting protects everything up to its matching delimiter.
                 copyOracleQuoted();
             } else if (current == '$' && copyDollarQuoted()) {
-                // The complete dollar-quoted region has already been copied.
+                // The helper copied the complete quoted region and advanced past it.
+                // Its contents must not be scanned for bind markers.
             } else if (current == ':') {
+                // A colon may start a named marker or a literal SQL operator.
                 namedMarker();
             } else if (current == '?') {
+                // A question mark may be a positional marker or a database operator.
                 positionalMarker();
             } else if (current == '#' && Character.isJavaIdentifierStart(peek(1))) {
+                // Reject alternate parameter syntax so repositories use one supported marker form.
                 throw malformed("Hash-prefixed parameters are not supported");
             } else if (current == '<' && templateAttribute()) {
+                // Template expansion is not part of the fixed SQL binding contract.
                 throw malformed("SQL template attributes are not supported");
             } else {
+                // Ordinary SQL is copied without interpreting its grammar.
                 jdbcSql.append(current);
                 index++;
             }
@@ -259,7 +274,7 @@ final class JdbcSqlMarkerLexer {
                 return;
             }
         }
-        throw malformed("Unterminated Oracle quoted string");
+        throw malformed("Unterminated alternative quoted string");
     }
 
     /**
@@ -282,7 +297,7 @@ final class JdbcSqlMarkerLexer {
         String delimiter = source.substring(index, delimiterEnd + 1);
         int contentEnd = source.indexOf(delimiter, delimiterEnd + 1);
         if (contentEnd < 0) {
-            throw malformed("Unterminated PostgreSQL dollar-quoted string");
+            throw malformed("Unterminated dollar-quoted string");
         }
         int end = contentEnd + delimiter.length();
         jdbcSql.append(source, index, end);
@@ -333,11 +348,9 @@ final class JdbcSqlMarkerLexer {
      * Marker syntax used by a statement.
      */
     enum MarkerStyle {
-        /** No bind markers. */
+
         NONE,
-        /** Named markers. */
         NAMED,
-        /** Positional markers. */
         POSITIONAL
     }
 

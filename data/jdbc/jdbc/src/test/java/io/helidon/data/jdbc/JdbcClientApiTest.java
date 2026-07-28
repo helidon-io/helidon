@@ -15,9 +15,17 @@
  */
 package io.helidon.data.jdbc;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.classfile.AttributedElement;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,6 +36,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class JdbcClientApiTest {
+    private static final ClassDesc API_PREVIEW = ClassDesc.of("io.helidon.common.Api$Preview");
+    private static final ClassDesc API_INTERNAL = ClassDesc.of("io.helidon.common.Api$Internal");
 
     @Test
     void keepsThePublicRuntimeSurfaceSmall() {
@@ -66,6 +76,24 @@ class JdbcClientApiTest {
                    is(true));
     }
 
+    @Test
+    void limitsExecutionToGeneratedCode() throws IOException {
+        ClassModel client = classModel(JdbcClient.class);
+
+        assertThat(stabilityAnnotations(client), is(Set.of(API_PREVIEW)));
+        assertThat(stabilityAnnotations(classModel(JdbcClient.RowMapper.class)), is(Set.of(API_PREVIEW)));
+        assertThat(stabilityAnnotations(classModel(JdbcClient.Row.class)), is(Set.of(API_PREVIEW)));
+        assertThat(stabilityAnnotations(classModel(JdbcClient.Statement.class)), is(Set.of(API_INTERNAL)));
+        assertThat(stabilityAnnotations(classModel(JdbcClient.GeneratedKeys.class)), is(Set.of(API_INTERNAL)));
+        assertThat(stabilityAnnotations(classModel(JdbcClient.Rows.class)), is(Set.of(API_INTERNAL)));
+        assertThat(stabilityAnnotations(client.methods()
+                                                .stream()
+                                                .filter(method -> method.methodName().equalsString("create"))
+                                                .findFirst()
+                                                .orElseThrow()),
+                   is(Set.of(API_INTERNAL)));
+    }
+
     /**
      * Collects the public method names declared directly by an API type.
      *
@@ -94,6 +122,35 @@ class JdbcClientApiTest {
                                 .map(Class::getSimpleName)
                                 .collect(Collectors.joining(",", "(", ")"))
                         + ":" + method.getReturnType().getSimpleName())
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Reads the class model for an API type.
+     *
+     * @param type API type
+     * @return parsed class model
+     * @throws IOException if the class cannot be read
+     */
+    private static ClassModel classModel(Class<?> type) throws IOException {
+        String resourceName = type.getName().replace('.', '/') + ".class";
+        try (InputStream input = Objects.requireNonNull(type.getClassLoader().getResourceAsStream(resourceName))) {
+            return ClassFile.of().parse(input.readAllBytes());
+        }
+    }
+
+    /**
+     * Returns the API stability annotations declared on a class-file element.
+     *
+     * @param element class-file element
+     * @return stability annotation types
+     */
+    private static Set<ClassDesc> stabilityAnnotations(AttributedElement element) {
+        return element.findAttribute(Attributes.runtimeInvisibleAnnotations())
+                .stream()
+                .flatMap(attribute -> attribute.annotations().stream())
+                .map(java.lang.classfile.Annotation::classSymbol)
+                .filter(annotation -> API_PREVIEW.equals(annotation) || API_INTERNAL.equals(annotation))
                 .collect(Collectors.toSet());
     }
 }

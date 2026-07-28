@@ -112,6 +112,7 @@ final class JdbcQueryHandler {
     <T> Optional<T> optionalScalar(JdbcRunner.ExecutionScope scope,
                                    Class<T> scalarType,
                                    ResultSet resultSet) throws SQLException {
+        // The outer optional represents row presence. The inner optional represents SQL NULL.
         Optional<Optional<T>> row = optional(scope,
                                              current -> current.optional(1, scalarType),
                                              resultSet);
@@ -188,6 +189,7 @@ final class JdbcQueryHandler {
         scope.require(JdbcPreparationPlan.ResultKind.QUERY);
         boolean resultSetAvailable = scope.statement().execute();
         if (!resultSetAvailable) {
+            // Drain the update count and any later channels before reporting the mismatch.
             boolean unexpected = scope.drainFromCurrent(false);
             throw scope.unexpectedResult(unexpected);
         }
@@ -211,6 +213,7 @@ final class JdbcQueryHandler {
             throw new DataException("JDBC " + scope.operation().preparationPlan().resultKind()
                                             + " did not provide an expected result set");
         }
+        // Register ownership before metadata access so setup failures still close the result set.
         scope.resultSet(resultSet);
         JdbcColumnLayout columns = JdbcColumnLayout.create(resultSet.getMetaData(), scope.operation());
         return new JdbcResultCursor<>(scope, resultSet, columns, mapper);
@@ -222,17 +225,19 @@ final class JdbcQueryHandler {
      * @param <T> mapped type
      */
     private static final class JdbcResultCursor<T> {
-        /** Runner scope used to validate trailing result channels. */
+
+        // The scope validates that no unexpected result follows this one.
         private final JdbcRunner.ExecutionScope scope;
-        /** Current result set. */
         private final ResultSet resultSet;
-        /** Application or generated mapper. */
         private final JdbcClient.RowMapper<T> mapper;
-        /** Scoped row view reused for this result set. */
+
+        // Reused because it is valid only during a mapper callback.
         private final JdbcRow row;
-        /** Whether a row has already been advanced and awaits mapping. */
+
+        // Set after advancing and cleared after mapping the current row.
         private boolean ready;
-        /** Whether JDBC exhaustion and trailing-result validation have completed. */
+
+        // Prevents repeated result advancement after the cursor is exhausted.
         private boolean exhausted;
 
         /**
@@ -270,6 +275,7 @@ final class JdbcQueryHandler {
             ready = resultSet.next();
             if (!ready) {
                 exhausted = true;
+                // JDBC exposes later results only after the accepted result set is exhausted.
                 scope.rejectFollowingResults();
             }
             return ready;
@@ -294,6 +300,7 @@ final class JdbcQueryHandler {
                 }
                 return value;
             } finally {
+                // A mapper must not retain a usable row view after its callback returns.
                 row.deactivate();
             }
         }

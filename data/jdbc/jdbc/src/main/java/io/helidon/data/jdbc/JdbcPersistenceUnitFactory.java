@@ -47,21 +47,18 @@ import io.helidon.service.registry.ServiceInstance;
  */
 @Service.Singleton
 final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcClient> {
-    /** Root configuration node for JDBC persistence units. */
+
+    // All JDBC persistence units are read from this configuration branch.
     static final String CONFIG_KEY = "data.persistence-units.jdbc";
-    /** Provider qualifier value used by declarative repositories. */
+
     private static final String PROVIDER = "jdbc";
-    /** Qualifier shared by every client created by this provider. */
     private static final Qualifier PROVIDER_QUALIFIER = Qualifier.builder()
             .typeName(Data.ProviderType.TYPE)
             .value(PROVIDER)
             .build();
 
-    /** Registry datasource services available for named lookup. */
     private final Supplier<List<ServiceInstance<DataSource>>> dataSources;
-    /** Root application configuration supplier. */
     private final Supplier<Config> config;
-    /** Shared local transaction connection manager. */
     private final JdbcTransactionConnectionManager connectionManager;
 
     /**
@@ -86,6 +83,7 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         List<Config> units = config.get().get(CONFIG_KEY).asNodeList().orElse(List.of());
         List<JdbcPersistenceUnitConfig> validatedUnits = new ArrayList<>(units.size());
         Set<String> names = new HashSet<>();
+        // Validate every unit before driver loading or script execution can cause side effects.
         for (Config unitConfig : units) {
             validateConnectionSource(unitConfig);
             JdbcPersistenceUnitConfig unit = JdbcPersistenceUnitConfig.create(unitConfig);
@@ -139,6 +137,7 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     private JdbcClient createClient(JdbcPersistenceUnitConfig unit) {
         DataSource dataSource = connectionSource(unit);
         List<Path> scripts = new ArrayList<>(2);
+        // Drop runs before initialization when both scripts are configured.
         unit.dropScript().ifPresent(scripts::add);
         unit.initScript().ifPresent(scripts::add);
         JdbcScriptRunner.execute(unit.name(), dataSource, scripts);
@@ -209,16 +208,18 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
      * Minimal DataSource adaptation for the existing direct SQL connection configuration.
      */
     private static final class DirectDataSource implements DataSource, JdbcTransactionConnectionManager.IdentitySource {
-        /** Configured JDBC URL. */
+
         private final String url;
-        /** Driver selected by the shared SQL driver utility. */
         private final Driver driver;
-        /** Default connection properties. */
+
+        // Copied for each connection so a driver cannot mutate the shared defaults.
         private final Properties defaults;
-        /** Value identity used to prevent mixed-datasource transactions. */
+
+        // Equivalent direct configurations must share one transaction identity.
         private final DirectIdentity transactionIdentity;
-        /** Optional JDBC log writer. */
+
         private volatile PrintWriter logWriter;
+
         /**
          * Creates a datasource over one driver and connection configuration.
          *
@@ -357,15 +358,16 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         }
     }
 
-    /** Immutable identity for equivalent direct datasource adapters. */
+    /**
+     * Immutable identity for equivalent direct datasource adapters.
+     */
     private static final class DirectIdentity implements JdbcTransactionConnectionManager.StableIdentity {
-        /** JDBC URL. */
+
         private final String url;
-        /** Driver implementation name. */
         private final String driverClass;
-        /** Configured username, if any. */
         private final String username;
-        /** Defensive copy of the configured password, if any. */
+
+        // The array is copied at construction so configuration changes cannot alter the identity.
         private final char[] password;
 
         /**

@@ -40,13 +40,10 @@ import io.helidon.data.DataException;
  * before the terminal returns.
  */
 final class JdbcRunner {
-    /** Datasource used to acquire operation leases. */
+
     private final DataSource dataSource;
-    /** Provider of owned or transaction-bound connection leases. */
     private final JdbcConnectionLease.Provider leaseProvider;
-    /** Materialized query semantics. */
     private final JdbcQueryHandler queryHandler;
-    /** Update and generated-key semantics. */
     private final JdbcUpdateHandler updateHandler;
 
     /**
@@ -146,6 +143,7 @@ final class JdbcRunner {
      * @return terminal result
      */
     private <T> T run(JdbcOperation operation, HandlerAction<T> action) {
+        // Explicit cleanup preserves every failure in resource ownership order.
         JdbcConnectionLease lease = null;
         PreparedStatement statement = null;
         ExecutionScope scope = null;
@@ -166,6 +164,7 @@ final class JdbcRunner {
 
         Connection connection = lease == null ? null : lease.connection();
         ResultSet resultSet = scope == null ? null : scope.resultSet();
+        // Some drivers discard warnings when their owning resource closes.
         preserveWarnings(failure, connection, statement, resultSet);
         Throwable cleanupFailure = closeAll(resultSet, statement, lease);
         if (cleanupFailure != null) {
@@ -174,6 +173,7 @@ final class JdbcRunner {
             } else if (failure instanceof SQLException) {
                 failure.addSuppressed(cleanupFailure);
             } else {
+                // Add JDBC context when the primary failure came from application code.
                 failure.addSuppressed(cleanupException(operation, cleanupFailure));
             }
         }
@@ -250,10 +250,12 @@ final class JdbcRunner {
      */
     private static void rejectFollowingResults(ExecutionScope scope) throws SQLException {
         if (scope.operation().preparationPlan().resultKind() == JdbcPreparationPlan.ResultKind.QUERY) {
+            // getMoreResults closes the current result set, so copy its warnings first.
             scope.captureCurrentResultWarnings();
         }
         boolean nextIsResultSet = scope.statement().getMoreResults(java.sql.Statement.CLOSE_CURRENT_RESULT);
         if (scope.operation().preparationPlan().resultKind() == JdbcPreparationPlan.ResultKind.QUERY) {
+            // The driver closed the exhausted result set during advancement.
             scope.clearCurrentResultSet();
         }
         if (drainFromCurrent(scope.statement(), nextIsResultSet)) {
@@ -330,6 +332,7 @@ final class JdbcRunner {
                 connection.clearWarnings();
             }
         } catch (Throwable warningFailure) {
+            // Warning access must not turn successful work into a failure.
             if (primary != null) {
                 primary.addSuppressed(warningFailure);
             }
@@ -344,6 +347,7 @@ final class JdbcRunner {
      */
     private static void addWarnings(Throwable primary, SQLWarning warning) {
         if (primary == null) {
+            // Warnings remain diagnostic and are not promoted on successful work.
             return;
         }
         for (SQLWarning current = warning; current != null; current = current.getNextWarning()) {
@@ -460,13 +464,14 @@ final class JdbcRunner {
      * Runner-owned view of one prepared operation.
      */
     static final class ExecutionScope {
-        /** Immutable operation metadata. */
+
         private final JdbcOperation operation;
-        /** Prepared and bound statement. */
         private final PreparedStatement statement;
-        /** Warnings captured before an exhausted query result is closed. */
+
+        // Some drivers discard result warnings as soon as the result is exhausted.
         private final List<Throwable> capturedWarnings = new ArrayList<>();
-        /** Current provider-owned result set. */
+
+        // Registered here so the runner closes it on every exit path.
         private ResultSet resultSet;
 
         /**

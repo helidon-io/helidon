@@ -23,10 +23,10 @@ import io.helidon.data.DataException;
  * Creates consistent data exceptions without including bind values.
  */
 final class JdbcExceptionTranslator {
-    /** Maximum SQL diagnostic length before truncation. */
+
+    // Limits the amount of SQL copied into an exception message.
     private static final int MAX_SQL_LENGTH = 512;
 
-    /** Prevents construction of this translation utility. */
     private JdbcExceptionTranslator() {
     }
 

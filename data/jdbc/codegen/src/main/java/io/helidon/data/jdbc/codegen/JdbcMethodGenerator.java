@@ -37,7 +37,7 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.data.codegen.common.RepositoryInfo;
 
 /**
- * Emits repository implementations as direct calls to the public JDBC client.
+ * Emits repository implementations as direct calls to the JDBC client.
  */
 final class JdbcMethodGenerator {
 

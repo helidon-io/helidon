@@ -35,10 +35,10 @@ import io.helidon.data.DataException;
  * JDBC resources.
  */
 final class JdbcScriptRunner {
-    /** Unicode byte-order mark accepted at the start of a UTF-8 script. */
+
+    // UTF-8 scripts may begin with this marker.
     private static final char BYTE_ORDER_MARK = '\ufeff';
 
-    /** Prevents construction of this utility. */
     private JdbcScriptRunner() {
     }
 
@@ -62,6 +62,7 @@ final class JdbcScriptRunner {
                 .map(path -> load(unitName, path))
                 .toList();
 
+        // Explicit cleanup keeps rollback and close failures in their original order.
         Connection connection = null;
         Statement statement = null;
         boolean manualCommit = false;
@@ -69,12 +70,15 @@ final class JdbcScriptRunner {
         Throwable failure = null;
         try {
             connection = dataSource.getConnection();
+            // Keep the datasource's transaction mode instead of changing it for bootstrap.
             manualCommit = !connection.getAutoCommit();
             statement = connection.createStatement();
             for (Script script : scripts) {
                 execute(unitName, statement, script);
             }
+            // Close before commit so a failure can still roll back a manual commit connection.
             Statement completedStatement = statement;
+            // Prevent cleanup from closing the same statement again if close reports a failure.
             statement = null;
             completedStatement.close();
             if (manualCommit) {
@@ -86,6 +90,7 @@ final class JdbcScriptRunner {
         }
 
         if (failure != null && manualCommit && !completed && connection != null) {
+            // Roll back only when the datasource supplied a manual commit connection.
             try {
                 connection.rollback();
             } catch (Throwable rollbackFailure) {
@@ -111,6 +116,7 @@ final class JdbcScriptRunner {
             String sql = script.statements().get(index);
             try {
                 boolean resultSet = statement.execute(sql);
+                // One script statement may expose several result channels.
                 while (resultSet || statement.getUpdateCount() != -1) {
                     resultSet = statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
                 }
@@ -215,6 +221,7 @@ final class JdbcScriptRunner {
                     current.append(character);
                     state = State.BACKTICK_QUOTE;
                 } else if (character == '-' && next(content, index) == '-') {
+                    // Keep tokens on either side of a removed comment separated.
                     current.append(' ');
                     index++;
                     state = State.LINE_COMMENT;
@@ -293,6 +300,7 @@ final class JdbcScriptRunner {
             }
         }
 
+        // A line comment may end at the end of the file without a newline.
         if (state != State.NORMAL && state != State.LINE_COMMENT) {
             throw new DataException("JDBC persistence unit '" + unitName
                                             + "' script '" + path
@@ -460,22 +468,15 @@ final class JdbcScriptRunner {
      * Script lexical state.
      */
     private enum State {
-        /** Ordinary SQL text. */
+
         NORMAL("SQL text"),
-        /** Single-quoted string. */
         SINGLE_QUOTE("single-quoted string"),
-        /** Double-quoted identifier or string. */
         DOUBLE_QUOTE("double-quoted text"),
-        /** Backtick-quoted identifier. */
         BACKTICK_QUOTE("backtick-quoted text"),
-        /** Line comment. */
         LINE_COMMENT("line comment"),
-        /** Block comment. */
         BLOCK_COMMENT("block comment"),
-        /** Dollar-quoted body. */
         DOLLAR_QUOTE("dollar-quoted text");
 
-        /** Diagnostic description. */
         private final String description;
 
         State(String description) {
