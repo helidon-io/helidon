@@ -80,8 +80,18 @@ class ServiceManager<T> {
     }
 
     Optional<List<ServiceInstance<T>>> activeInstances(Lookup lookup) {
-        if (!fixedInstance && Service.PerLookup.TYPE.equals(provider.descriptor().scope())) {
-            return Optional.empty();
+        ServiceDescriptor<T> descriptor = provider.descriptor();
+        if (Service.PerLookup.TYPE.equals(descriptor.scope())) {
+            if (!fixedInstance) {
+                return Optional.empty();
+            }
+
+            FactoryType factoryType = descriptor.factoryType();
+            if (factoryType != FactoryType.NONE
+                    && factoryType != FactoryType.SERVICE
+                    && !Contracts.requestedProvider(lookup, descriptor, factoryType)) {
+                return Optional.empty();
+            }
         }
 
         Activator<T> serviceActivator;

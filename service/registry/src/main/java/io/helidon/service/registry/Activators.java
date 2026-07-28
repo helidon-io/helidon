@@ -429,16 +429,28 @@ final class Activators {
     }
 
     static class FixedSupplierActivator<T> extends BaseActivator<T> {
+        private final Supplier<T> instanceSupplier;
         private final Supplier<Optional<List<QualifiedInstance<T>>>> instances;
 
         FixedSupplierActivator(ServiceProvider<T> provider, Supplier<T> instanceSupplier) {
             super(provider, null);
 
+            this.instanceSupplier = instanceSupplier;
             instances = LazyValue.create(() -> {
                 List<QualifiedInstance<T>> values = List.of(QualifiedInstance.create(instanceSupplier.get(),
                                                                                      provider.descriptor().qualifiers()));
                 return Optional.of(values);
             });
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+            if (requestedProvider(lookup, FactoryType.SUPPLIER)) {
+                return Optional.of(List.of(QualifiedInstance.create((T) instanceSupplier,
+                                                                    provider.descriptor().qualifiers())));
+            }
+            return targetInstances();
         }
 
         @Override

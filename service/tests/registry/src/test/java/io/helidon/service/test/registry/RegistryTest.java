@@ -226,6 +226,27 @@ public class RegistryTest {
     }
 
     @Test
+    public void testRegistryFirstActiveDoesNotCreateFixedPerLookupInstance() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry serviceRegistry = manager.registry();
+        ServiceSupplier.reset();
+        ServiceSupplier explicit = new ServiceSupplier();
+
+        Services.registry(serviceRegistry);
+        try {
+            Services.set(ServiceSupplier.class, explicit);
+
+            assertThat(serviceRegistry.firstActive(SuppliedContract.class).isEmpty(), is(true));
+            assertThat(ServiceSupplier.instances(), is(0));
+
+            assertThat(serviceRegistry.firstActive(ServiceSupplier.class).orElseThrow(), sameInstance(explicit));
+            assertThat(ServiceSupplier.instances(), is(0));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
     public void testRegistryAll() {
         List<MyContract> myContracts = registry.all(MyContract.class);
         assertThat(myContracts, hasSize(2));
