@@ -28,9 +28,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Compile-time correspondence between repository parameters and JDBC positions.
  */
-final class JdbcSqlParameterPlan {
-    private final String sql;
-    private final List<Bind> binds;
+record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
 
     /**
      * Creates an immutable parameter plan.
@@ -38,9 +36,7 @@ final class JdbcSqlParameterPlan {
      * @param sql positional SQL
      * @param binds ordered bindings
      */
-    private JdbcSqlParameterPlan(String sql, List<Bind> binds) {
-        this.sql = sql;
-        this.binds = binds;
+    JdbcSqlParameterPlan {
     }
 
     /**
@@ -62,9 +58,9 @@ final class JdbcSqlParameterPlan {
             throw failure(method, e.getMessage());
         }
         List<Bind> binds = switch (parsed.style()) {
-        case NONE -> noMarkers(parameters, method);
-        case NAMED -> namedBindings(parsed.markers(), parameters, method);
-        case POSITIONAL -> positionalBindings(parsed.markers().size(), parameters, method);
+            case NONE -> noMarkers(parameters, method);
+            case NAMED -> namedBindings(parsed.markers(), parameters, method);
+            case POSITIONAL -> positionalBindings(parsed.markers().size(), parameters, method);
         };
         return new JdbcSqlParameterPlan(parsed.sql(), List.copyOf(binds));
     }
@@ -180,14 +176,6 @@ final class JdbcSqlParameterPlan {
      */
     private static CodegenException failure(TypedElementInfo method, String message) {
         return new CodegenException(message, method.originatingElementValue());
-    }
-
-    String sql() {
-        return sql;
-    }
-
-    List<Bind> binds() {
-        return binds;
     }
 
     /**

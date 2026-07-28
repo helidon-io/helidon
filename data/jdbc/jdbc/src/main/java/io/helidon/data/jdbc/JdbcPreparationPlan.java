@@ -24,32 +24,22 @@ import java.util.Set;
 
 /**
  * Immutable statement preparation and primary-result contract.
+ * @param generatedColumns  Empty for operations that do not request generated keys.
  */
-final class JdbcPreparationPlan {
+record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns) {
 
     /**
      * Primary result expected from JDBC.
      */
     enum ResultKind {
-        /** Query result set. */
         QUERY,
-        /** Update count. */
         UPDATE,
-        /** Generated-key result set following an update. */
         GENERATED_KEYS
     }
 
-    /** Shared empty generated-column list. */
     private static final List<String> NO_COLUMNS = List.of();
-    /** Shared query preparation. */
     private static final JdbcPreparationPlan QUERY = new JdbcPreparationPlan(ResultKind.QUERY, NO_COLUMNS);
-    /** Shared update preparation. */
     private static final JdbcPreparationPlan UPDATE = new JdbcPreparationPlan(ResultKind.UPDATE, NO_COLUMNS);
-
-    /** Expected result kind. */
-    private final ResultKind resultKind;
-    /** Generated columns, empty for ordinary operations. */
-    private final List<String> generatedColumns;
 
     /**
      * Creates a validated preparation plan.
@@ -57,9 +47,7 @@ final class JdbcPreparationPlan {
      * @param resultKind expected result kind
      * @param generatedColumns generated columns
      */
-    private JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns) {
-        this.resultKind = resultKind;
-        this.generatedColumns = generatedColumns;
+    JdbcPreparationPlan {
     }
 
     /**
@@ -88,6 +76,7 @@ final class JdbcPreparationPlan {
      */
     static JdbcPreparationPlan generatedKeys(List<String> columnNames) {
         Objects.requireNonNull(columnNames, "Generated column names must not be null");
+        // Revalidate at the immutable boundary instead of relying on the mutable builder.
         List<String> copy = new ArrayList<>(columnNames);
         Set<String> unique = new HashSet<>(copy.size());
         for (int index = 0; index < copy.size(); index++) {
@@ -119,7 +108,8 @@ final class JdbcPreparationPlan {
      *
      * @return result kind
      */
-    ResultKind resultKind() {
+    @Override
+    public ResultKind resultKind() {
         return resultKind;
     }
 
@@ -128,7 +118,8 @@ final class JdbcPreparationPlan {
      *
      * @return generated columns
      */
-    List<String> generatedColumns() {
+    @Override
+    public List<String> generatedColumns() {
         return generatedColumns;
     }
 }

@@ -92,6 +92,9 @@ class JdbcMethodGeneratorTest {
 
         assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         String source = Files.readString(result.sourceOutput().resolve("example/PokemonRepository__Jdbc.java"));
+        assertThat(source, containsString("@SuppressWarnings"));
+        assertThat(source, containsString("\"helidon:api:preview\""));
+        assertThat(source, containsString("\"helidon:api:internal\""));
         assertThat(source, containsString("where STATE = ? and OWNER = ? or PREVIOUS_STATE = ?"));
         assertThat(source, containsString("jdbcStatement.bind(1, state);"));
         assertThat(source, containsString("jdbcStatement.bindNull(2, JDBCType.BIGINT);"));

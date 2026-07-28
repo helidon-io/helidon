@@ -20,13 +20,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
+
 /**
  * Declares JDBC behavior for Helidon Data repository methods.
  * <p>
  * Each repository method supplies one SQL statement and may specify how the
- * statement is executed or mapped. Code generation reads these annotations.
- * The JDBC provider does not inspect them at runtime.
+ * statement is executed or mapped. Code generation reads these annotations,
+ * the JDBC provider does not inspect them at runtime.
  */
+@Api.Preview
 public final class Jdbc {
 
     /**
@@ -37,10 +40,10 @@ public final class Jdbc {
     }
 
     /**
-     * Declares the SQL executed by a repository method.
+     * Declares the SQL statement executed by a repository method.
      * <p>
-     * SQL may use named markers matching Java parameter names or positional
-     * JDBC markers. A statement must use one style consistently.
+     * SQL statement may use named markers matching Java parameter names or
+     * positional JDBC markers. A statement must use one style consistently.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.SOURCE)
@@ -70,7 +73,7 @@ public final class Jdbc {
     }
 
     /**
-     * Execution choices supported by the initial JDBC repository provider.
+     * Execution choices supported by the JDBC repository provider.
      */
     public enum ExecutionType {
         /**
@@ -93,8 +96,8 @@ public final class Jdbc {
     /**
      * Requests generated keys from an update statement.
      * <p>
-     * An empty value uses the driver's default generated keys. Otherwise, the
-     * names are passed to JDBC in declaration order.
+     * An empty value uses the default generated keys by the JDBC driver.
+     * Otherwise, the provided values are passed to JDBC in declaration order.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.SOURCE)

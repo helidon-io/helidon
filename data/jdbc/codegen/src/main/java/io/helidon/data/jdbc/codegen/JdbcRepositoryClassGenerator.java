@@ -15,6 +15,8 @@
  */
 package io.helidon.data.jdbc.codegen;
 
+import java.util.List;
+
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
@@ -62,6 +64,11 @@ final class JdbcRepositoryClassGenerator {
                                                                className,
                                                                "1",
                                                                ""))
+                .addAnnotation(Annotation.builder()
+                                       .type(SuppressWarnings.class)
+                                       .property("value", List.of("helidon:api:preview",
+                                                                 "helidon:api:internal"))
+                                       .build())
                 .classType(ElementKind.CLASS)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addInterface(repositoryType)

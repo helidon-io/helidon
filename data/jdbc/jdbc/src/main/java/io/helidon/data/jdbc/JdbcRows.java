@@ -24,10 +24,12 @@ import java.util.Optional;
  * @param <T> mapped type
  */
 final class JdbcRows<T> implements JdbcClient.Rows<T> {
+
     private final JdbcStatement statement;
     private final JdbcClient.RowMapper<T> mapper;
     private final JdbcPreparationPlan plan;
-    /** Scalar type whose optional terminal accepts SQL NULL, when applicable. */
+
+    // Distinguishes a nullable scalar terminal from ordinary row mapping.
     private final Class<T> optionalScalarType;
 
     /**
