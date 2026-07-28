@@ -693,10 +693,10 @@ class ServerListenerLifecycleTest {
 
             assertThat(stopStarted.await(5, TimeUnit.SECONDS), is(true));
             assertThat(connection.awaitForcedClose(), is(true));
+            assertPortEventuallyRefusesConnections(port);
             assertThat("stop should wait for the running idle timeout task",
                        stopDone.getCount(),
                        is(1L));
-            assertPortRefusesConnections(port);
 
             connection.releaseIdleClose();
             stopThread.join(TimeUnit.SECONDS.toMillis(5));
@@ -752,10 +752,10 @@ class ServerListenerLifecycleTest {
 
             assertThat(suspendStarted.await(5, TimeUnit.SECONDS), is(true));
             assertThat(connection.awaitForcedClose(), is(true));
+            assertPortEventuallyRefusesConnections(port);
             assertThat("suspend should wait for the running idle timeout task",
                        suspendDone.getCount(),
                        is(1L));
-            assertPortRefusesConnections(port);
 
             connection.releaseIdleClose();
             suspendThread.join(TimeUnit.SECONDS.toMillis(5));
@@ -934,13 +934,24 @@ class ServerListenerLifecycleTest {
         }
     }
 
-    private static void assertPortRefusesConnections(int port) throws Exception {
+    private static void assertPortEventuallyRefusesConnections(int port) throws Exception {
         assertThat(port > 0, is(true));
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 250);
-            throw new AssertionError("Listener socket still accepted connections on port " + port);
-        } catch (ConnectException | SocketTimeoutException _) {
-            // validates that the listener socket is closed while shutdown waits for idle-timeout cleanup
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        int attempts = 0;
+        while (true) {
+            try (Socket socket = new Socket()) {
+                attempts++;
+                socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 250);
+            } catch (ConnectException | SocketTimeoutException _) {
+                // validates that the listener socket is closed while shutdown waits for idle-timeout cleanup
+                return;
+            }
+            if (System.nanoTime() >= deadline) {
+                throw new AssertionError("Listener socket still accepted connections on port "
+                                                 + port + " after " + attempts + " attempts");
+            }
+            // A blocking accept may briefly complete a handshake while the listener socket close unwinds.
+            TimeUnit.MILLISECONDS.sleep(10);
         }
     }
 
