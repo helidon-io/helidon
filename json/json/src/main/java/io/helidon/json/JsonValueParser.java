@@ -19,6 +19,7 @@ package io.helidon.json;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Base64;
+import java.util.List;
 import java.util.Set;
 
 class JsonValueParser implements JsonParser {
@@ -91,9 +92,10 @@ class JsonValueParser implements JsonParser {
                 }
             } else if (current.type() == JsonValueType.ARRAY) {
                 JsonArray array = current.asArray();
+                List<JsonValue> arrayValues = array.values();
                 //We need to calculate how many values we need to add + how many commas
                 //value size needs to be multiplied by 2, because for every value we will add , (-1 for the last object)
-                int size = (array.values().size() * 2) - 1;
+                int size = (arrayValues.size() * 2) - 1;
                 if (index < 0) {
                     index = 0;
                 } else if (values[index] != JsonNoopValue.INSTANCE) {
@@ -102,16 +104,16 @@ class JsonValueParser implements JsonParser {
                 }
                 ensureCapacity(Math.max(1, size + 1));
                 putValue(index++, JsonControlValue.ARRAY_END);
-                if (array.values().isEmpty()) {
+                if (arrayValues.isEmpty()) {
                     index--;
                 } else {
-                    for (JsonValue value : array.values()) {
+                    for (JsonValue value : arrayValues) {
                         putValue(index + --size, value);
                         if (size > 0) {
                             putValue(index + --size, JsonControlValue.COMMA);
                         }
                     }
-                    index += (array.values().size() * 2) - 2;
+                    index += (arrayValues.size() * 2) - 2;
                 }
             }
         }
