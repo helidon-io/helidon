@@ -45,6 +45,7 @@
         <dependency>
             <groupId>io.helidon.metrics.providers</groupId>
             <artifactId>helidon-metrics-providers-micrometer</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
