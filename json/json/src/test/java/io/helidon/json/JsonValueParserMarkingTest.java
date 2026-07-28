@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for JsonValueParser marking mechanism.
- * JsonValueParser uses a replay queue to implement marking/resetToMark functionality.
+ * JsonValueParser snapshots traversal state to implement marking/resetToMark functionality.
  */
 class JsonValueParserMarkingTest {
 
@@ -94,10 +95,10 @@ class JsonValueParserMarkingTest {
 
     @Test
     public void testMarkAndResetToMarkWithObject() {
-        JsonValue original = JsonObject.create(
-                Map.of("key1", JsonString.create("value1"),
-                       "key2", JsonNumber.create(new BigDecimal("42")))
-        );
+        JsonValue original = JsonObject.builder()
+                .set("key1", JsonString.create("value1"))
+                .set("key2", JsonNumber.create(new BigDecimal("42")))
+                .build();
         JsonParser parser = JsonParser.create(original);
 
         parser.mark();
@@ -225,14 +226,14 @@ class JsonValueParserMarkingTest {
     public void testComplexObjectWithMarkReset() {
         JsonValue original = JsonObject.create(
                 Map.of("users", JsonArray.create(
-                        JsonObject.create(Map.of(
-                                "name", JsonString.create("Alice"),
-                                "active", JsonBoolean.TRUE
-                        )),
-                        JsonObject.create(Map.of(
-                                "name", JsonString.create("Bob"),
-                                "active", JsonBoolean.FALSE
-                        ))
+                        JsonObject.builder()
+                                .set("name", "Alice")
+                                .set("active", true)
+                                .build(),
+                        JsonObject.builder()
+                                .set("name", "Bob")
+                                .set("active", false)
+                                .build()
                 ))
         );
         JsonParser parser = JsonParser.create(original);
@@ -268,10 +269,10 @@ class JsonValueParserMarkingTest {
 
     @Test
     public void testMarkAndSkip() {
-        JsonValue original = JsonObject.create(
-                Map.of("skipMe", JsonString.create("skipped"),
-                       "keepMe", JsonString.create("kept"))
-        );
+        JsonValue original = JsonObject.builder()
+                .set("skipMe", JsonString.create("skipped"))
+                .set("keepMe", JsonString.create("kept"))
+                .build();
         JsonParser parser = JsonParser.create(original);
 
         assertThat(parser.currentByte(), is((byte) '{'));
@@ -308,6 +309,129 @@ class JsonValueParserMarkingTest {
 
         // Cannot mark again - this is expected behavior for JsonValueParser
         assertThrows(IllegalStateException.class, parser::mark);
+    }
+
+    @Test
+    void testMarkSkipResetAndSkipRootScalars() {
+        List<JsonValue> values = List.of(JsonString.create("value"),
+                                         JsonNumber.create(42),
+                                         JsonBoolean.TRUE,
+                                         JsonNull.instance());
+
+        for (JsonValue value : values) {
+            JsonParser parser = JsonParser.create(value);
+            parser.mark();
+            parser.skip();
+            assertThat(parser.hasNext(), is(false));
+
+            parser.resetToMark();
+            assertThat(parser.readJsonValue(), is(value));
+            parser.skip();
+            assertThat(parser.hasNext(), is(false));
+        }
+    }
+
+    @Test
+    void testResetRestoresEveryNestedTokenBoundary() {
+        JsonValue original = JsonObject.builder()
+                .set("array", JsonArray.create(
+                        JsonObject.builder().set("name", "value").build(),
+                        JsonArray.empty(),
+                        JsonNumber.create(7)))
+                .set("tail", true)
+                .build();
+        List<String> expected = remainingTokens(JsonParser.create(original));
+
+        for (int markPosition = 0; markPosition < expected.size(); markPosition++) {
+            JsonParser parser = JsonParser.create(original);
+            for (int i = 0; i < markPosition; i++) {
+                parser.nextToken();
+            }
+
+            parser.mark();
+            List<String> beforeReset = remainingTokens(parser);
+            parser.resetToMark();
+            List<String> afterReset = remainingTokens(parser);
+
+            assertThat(beforeReset, is(expected.subList(markPosition, expected.size())));
+            assertThat(afterReset, is(beforeReset));
+        }
+    }
+
+    @Test
+    void testMarkResetAndRepeatedlySkipNestedContainer() {
+        assertMarkResetAndRepeatedlySkipNestedContainer(
+                JsonObject.builder().set("nested", JsonArray.createStrings(List.of("one", "two"))).build(),
+                (byte) '}');
+        assertMarkResetAndRepeatedlySkipNestedContainer(
+                JsonArray.create(JsonString.create("one"), JsonObject.builder().set("two", 2).build()),
+                (byte) ']');
+    }
+
+    @Test
+    void testResetRestoresFramesBeyondInitialCapacity() {
+        JsonValue value = JsonString.create("leaf");
+        int nestingDepth = 10;
+        for (int i = 0; i < nestingDepth; i++) {
+            value = JsonArray.create(value);
+        }
+
+        JsonParser parser = JsonParser.create(value);
+        for (int i = 1; i < nestingDepth; i++) {
+            assertThat(parser.nextToken(), is((byte) '['));
+        }
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("leaf"));
+
+        List<String> expected = null;
+        for (int i = 0; i < 2; i++) {
+            parser.mark();
+            List<String> actual = remainingTokens(parser);
+            parser.resetToMark();
+            if (expected == null) {
+                expected = actual;
+            } else {
+                assertThat(actual, is(expected));
+            }
+        }
+        assertThat(remainingTokens(parser), is(expected));
+    }
+
+    private static void assertMarkResetAndRepeatedlySkipNestedContainer(JsonValue nestedContainer, byte endToken) {
+        JsonParser parser = JsonParser.create(JsonArray.create(nestedContainer, JsonString.create("after")));
+
+        assertThat(parser.nextToken(), is(nestedContainer.jsonStartChar()));
+        parser.mark();
+        parser.skip();
+        assertThat(parser.currentByte(), is(endToken));
+
+        parser.resetToMark();
+        assertThat(parser.currentByte(), is(nestedContainer.jsonStartChar()));
+        parser.skip();
+        assertThat(parser.currentByte(), is(endToken));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("after"));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    private static List<String> remainingTokens(JsonParser parser) {
+        List<String> result = new ArrayList<>();
+        result.add(currentToken(parser));
+        while (parser.hasNext()) {
+            parser.nextToken();
+            result.add(currentToken(parser));
+        }
+        return result;
+    }
+
+    private static String currentToken(JsonParser parser) {
+        return switch (parser.currentByte()) {
+        case '"' -> "\"" + parser.readString();
+        case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> "#" + parser.readBigDecimal().toPlainString();
+        default -> Character.toString(parser.currentByte());
+        };
     }
 
     private static void assertMarkAndResetToMarkWithEmptyContainer(JsonValue value, byte start, byte end) {

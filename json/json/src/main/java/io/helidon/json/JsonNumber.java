@@ -24,6 +24,7 @@ import io.helidon.common.Api;
 
 /**
  * Represents a JSON number value.
+ * Equality follows {@link BigDecimal#equals(Object)}, including its scale-sensitive semantics.
  */
 @Api.Preview
 public final class JsonNumber extends JsonValue {
@@ -223,6 +224,22 @@ public final class JsonNumber extends JsonValue {
     @Override
     public JsonValueType type() {
         return JsonValueType.NUMBER;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof JsonNumber that)) {
+            return false;
+        }
+        return bigDecimalValue().equals(that.bigDecimalValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return bigDecimalValue().hashCode();
     }
 
     @Override

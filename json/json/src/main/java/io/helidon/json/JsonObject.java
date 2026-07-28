@@ -18,41 +18,34 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import io.helidon.common.Api;
 
 /**
  * Represents a JSON object value containing key-value pairs.
- * Keys must not be {@code null}.
+ * Keys and values must not be {@code null}.
  */
 @Api.Preview
 public final class JsonObject extends JsonValue {
 
-    static final JsonObject EMPTY_OBJECT = JsonObject.create(List.of());
+    static final JsonObject EMPTY_OBJECT = new JsonObject(new LinkedHashMap<>());
 
-    private final List<Pair> pairs;
     private final LinkedHashMap<String, JsonValue> content;
-    private final boolean resolved;
-
-    private JsonObject(List<Pair> pairs) {
-        this.pairs = pairs;
-        this.content = new LinkedHashMap<>();
-        this.resolved = false;
-    }
+    private final Set<String> keys;
 
     private JsonObject(LinkedHashMap<String, JsonValue> content) {
         this.content = content;
-        this.pairs = new ArrayList<>();
-        this.resolved = true;
+        this.keys = Collections.unmodifiableSet(content.keySet());
     }
 
     /**
@@ -73,8 +66,9 @@ public final class JsonObject extends JsonValue {
     public static JsonObject create(Map<String, JsonValue> content) {
         Objects.requireNonNull(content, "content cannot be null");
         LinkedHashMap<String, JsonValue> copiedContent = new LinkedHashMap<>(content);
-        for (String key : copiedContent.keySet()) {
-            Objects.requireNonNull(key, "key cannot be null");
+        for (Map.Entry<String, JsonValue> entry : copiedContent.entrySet()) {
+            Objects.requireNonNull(entry.getKey(), "key cannot be null");
+            Objects.requireNonNull(entry.getValue(), "value cannot be null");
         }
         return new JsonObject(copiedContent);
     }
@@ -88,8 +82,8 @@ public final class JsonObject extends JsonValue {
         return EMPTY_OBJECT;
     }
 
-    static JsonObject create(List<Pair> pairs) {
-        return new JsonObject(pairs);
+    static JsonObject createFromOwnedMap(LinkedHashMap<String, JsonValue> content) {
+        return new JsonObject(content);
     }
 
     @Override
@@ -105,7 +99,6 @@ public final class JsonObject extends JsonValue {
      */
     public boolean containsKey(String key) {
         Objects.requireNonNull(key, "key cannot be null");
-        ensureResolvedKeys();
         return content.containsKey(key);
     }
 
@@ -502,22 +495,20 @@ public final class JsonObject extends JsonValue {
      * @return a set of JsonString keys
      */
     public Set<JsonString> keys() {
-        if (pairs.isEmpty() && !content.isEmpty()) {
-            content.forEach((key, value) -> {
-                pairs.add(new Pair(JsonString.create(key), value));
-            });
+        Set<JsonString> result = new LinkedHashSet<>(content.size());
+        for (String key : keys) {
+            result.add(JsonString.create(key));
         }
-        return pairs.stream().map(Pair::key).collect(Collectors.toSet());
+        return result;
     }
 
     /**
-     * Return a set of all keys in this object as String instances.
+     * Return an unmodifiable set of all keys in this object as String instances.
      *
-     * @return a set of String keys
+     * @return an unmodifiable set of String keys
      */
     public Set<String> keysAsStrings() {
-        ensureResolvedKeys();
-        return content.keySet();
+        return keys;
     }
 
     /**
@@ -526,7 +517,7 @@ public final class JsonObject extends JsonValue {
      * @return the size of this object
      */
     public int size() {
-        return pairs.size();
+        return content.size();
     }
 
     @Override
@@ -536,7 +527,6 @@ public final class JsonObject extends JsonValue {
 
     @Override
     public void toJson(JsonGenerator generator) {
-        ensureResolvedKeys();
         generator.writeObjectStart();
         for (var entry : content.entrySet()) {
             generator.write(entry.getKey(), entry.getValue());
@@ -546,8 +536,7 @@ public final class JsonObject extends JsonValue {
 
     @Override
     public int hashCode() {
-        ensureResolvedKeys();
-        return Objects.hash(content);
+        return content.hashCode();
     }
 
     @Override
@@ -559,30 +548,16 @@ public final class JsonObject extends JsonValue {
             return true;
         }
 
-        this.ensureResolvedKeys();
-        that.ensureResolvedKeys();
-
-        if (!this.content.keySet().containsAll(that.content.keySet())) {
-            return false;
-        }
-        return this.content.values().containsAll(that.content.values());
+        return content.equals(that.content);
     }
 
     private JsonValue valueForKey(String key) {
         Objects.requireNonNull(key, "key cannot be null");
-        ensureResolvedKeys();
         return content.get(key);
     }
 
-    private void ensureResolvedKeys() {
-        if (!resolved) {
-            for (Pair pair : pairs) {
-                content.put(pair.key.value(), pair.value);
-            }
-        }
-    }
-
-    record Pair(JsonString key, JsonValue value) {
+    Iterator<Map.Entry<String, JsonValue>> entryIterator() {
+        return content.entrySet().iterator();
     }
 
     /**
@@ -612,7 +587,6 @@ public final class JsonObject extends JsonValue {
          */
         public Builder from(JsonObject object) {
             Objects.requireNonNull(object, "object cannot be null");
-            object.ensureResolvedKeys();
             values.putAll(object.content);
             return this;
         }

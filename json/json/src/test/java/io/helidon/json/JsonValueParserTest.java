@@ -18,6 +18,7 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,6 +55,16 @@ class JsonValueParserTest {
         assertThat(parser.readJsonValue(), is(original));
         assertThat(parser.readDouble(), is(123.45));
         assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    void testJsonValueParserReadsIntegralTypes() {
+        JsonParser parser = JsonParser.create(JsonNumber.create(123));
+        JsonParser longParser = JsonParser.create(JsonNumber.create(9_876_543_210L));
+
+        assertThat(parser.readByte(), is((byte) 123));
+        assertThat(parser.readShort(), is((short) 123));
+        assertThat(longParser.readLong(), is(9_876_543_210L));
     }
 
     @Test
@@ -406,7 +417,7 @@ class JsonValueParserTest {
     }
 
     @Test
-    public void testJsonValueParserExpandsStackForLargeObject() {
+    public void testJsonValueParserTraversesLargeObject() {
         Map<String, JsonValue> values = new LinkedHashMap<>();
         for (int i = 0; i < 120; i++) {
             values.put("key" + i, JsonNumber.create(i + 1));
@@ -436,7 +447,7 @@ class JsonValueParserTest {
     }
 
     @Test
-    public void testJsonValueParserExpandsReplayQueue() {
+    public void testJsonValueParserResetsAfterManyTokens() {
         Map<String, JsonValue> values = new LinkedHashMap<>();
         for (int i = 0; i < 12; i++) {
             values.put("key" + i, JsonNumber.create(i + 1));
@@ -455,7 +466,7 @@ class JsonValueParserTest {
     }
 
     @Test
-    public void testJsonValueParserKeepsOuterTokensWhenNestedObjectGrowsStack() {
+    public void testJsonValueParserKeepsOuterTokensAroundLargeNestedObject() {
         StringBuilder json = new StringBuilder("{\"a\":{");
         for (int i = 0; i < 120; i++) {
             if (i > 0) {
@@ -471,6 +482,91 @@ class JsonValueParserTest {
         while (parser.hasNext()) {
             parser.nextToken();
         }
+    }
+
+    @Test
+    void testJsonValueParserTraversesRepeatedlyAccessedParsedObject() {
+        StringBuilder json = new StringBuilder("{");
+        Map<String, String> expected = new LinkedHashMap<>();
+        for (int i = 0; i < 25; i++) {
+            if (i > 0) {
+                json.append(',');
+            }
+            String key = "key" + i;
+            String value = "value" + i;
+            expected.put(key, value);
+            json.append('"').append(key).append("\":\"").append(value).append('"');
+        }
+        json.append('}');
+
+        JsonObject object = JsonParser.create(json.toString()).readJsonObject();
+        assertThat(object.stringValue("key24").orElseThrow(), is("value24"));
+        assertThat(object.stringValue("key24").orElseThrow(), is("value24"));
+
+        JsonParser parser = JsonParser.create(object);
+        Map<String, String> actual = new LinkedHashMap<>();
+        byte token = parser.nextToken();
+        while (token != '}') {
+            assertThat(token, is((byte) '"'));
+            String key = parser.readString();
+            assertThat(parser.nextToken(), is((byte) ':'));
+            assertThat(parser.nextToken(), is((byte) '"'));
+            actual.put(key, parser.readString());
+            token = parser.nextToken();
+            if (token == ',') {
+                token = parser.nextToken();
+            }
+        }
+
+        assertThat(actual, is(expected));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    void testJsonValueParserPreservesWideNestedArray() {
+        List<JsonValue> values = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
+            values.add(JsonString.create("value" + i));
+        }
+        JsonParser parser = JsonParser.create(JsonArray.create(JsonArray.create(values), JsonString.create("after")));
+
+        assertThat(parser.nextToken(), is((byte) '['));
+        for (int i = 0; i < 50; i++) {
+            assertThat(parser.nextToken(), is((byte) '"'));
+            assertThat(parser.readString(), is("value" + i));
+            if (i < 49) {
+                assertThat(parser.nextToken(), is((byte) ','));
+            }
+        }
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("after"));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    void testJsonValueParserGrowsWithNestingDepth() {
+        JsonValue value = JsonString.create("leaf");
+        String expected = "\"";
+        for (int i = 0; i < 12; i++) {
+            if (i % 2 == 0) {
+                value = JsonArray.create(value);
+                expected = "[" + expected + "]";
+            } else {
+                value = JsonObject.builder().set("nested", value).build();
+                expected = "{\":" + expected + "}";
+            }
+        }
+
+        JsonParser parser = JsonParser.create(value);
+        StringBuilder actual = new StringBuilder().append((char) parser.currentByte());
+        while (parser.hasNext()) {
+            actual.append((char) parser.nextToken());
+        }
+
+        assertThat(actual.toString(), is(expected));
     }
 
     @Test
