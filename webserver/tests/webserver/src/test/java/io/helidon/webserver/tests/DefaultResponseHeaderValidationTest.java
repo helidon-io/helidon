@@ -48,12 +48,20 @@ class DefaultResponseHeaderValidationTest {
         rules.get("/header", (req, res) -> {
             res.headers().add(HeaderValues.create(HeaderNames.create(HEADER_NAME), "safe\r\n" + INJECTED_HEADER));
             res.send("body");
-        });
+        }).get("/reason-phrase", (req, res) -> res.status(Status.create(400, "unsafe\r\n" + INJECTED_HEADER)).send());
     }
 
     @Test
     void defaultResponseHeaderValidationRejectsLineBreaks() {
         String response = socketHttpClient.sendAndReceive(Method.GET, "/header", null);
+
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Status.INTERNAL_SERVER_ERROR_500));
+        assertThat(response, not(containsString("\n" + INJECTED_HEADER + "\n")));
+    }
+
+    @Test
+    void defaultResponseValidationRejectsReasonPhraseLineBreaks() {
+        String response = socketHttpClient.sendAndReceive(Method.GET, "/reason-phrase", null);
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Status.INTERNAL_SERVER_ERROR_500));
         assertThat(response, not(containsString("\n" + INJECTED_HEADER + "\n")));

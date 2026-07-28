@@ -112,9 +112,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 readHeaders(reader);
                 responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
             }
-        } catch (UncheckedIOException e) {
-            // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
-            // data of this request on the next use of this connection
+        } catch (RuntimeException e) {
+            // A connection cannot be reused after a malformed status or a response read failure.
             try {
                 connection.closeResource();
             } catch (Exception ex) {
@@ -474,8 +473,17 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     // we treat this as receiving 100-Continue
                     responseStatus = null;
                     connection.allowExpectContinue(false);
+                } catch (RuntimeException e) {
+                    try {
+                        connection.closeResource();
+                    } catch (Exception ex) {
+                        e.addSuppressed(ex);
+                    }
+                    throw e;
                 } finally {
-                    connection.readTimeout(originalRequest.readTimeout());
+                    if (connection.isConnected()) {
+                        connection.readTimeout(originalRequest.readTimeout());
+                    }
                 }
                 if (responseStatus == Status.CONTINUE_100) {
                     // there is the status and (usually) empty headers. We ignore such headers

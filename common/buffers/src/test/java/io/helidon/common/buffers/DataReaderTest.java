@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,48 @@
 package io.helidon.common.buffers;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DataReaderTest {
+
+    @Test
+    void testReadString() {
+        byte[] data = "Caf\u00e9".getBytes(StandardCharsets.ISO_8859_1);
+        DataReader dataReader = DataReader.create(() -> data);
+
+        assertThat(dataReader.readString(data.length, StandardCharsets.ISO_8859_1), is("Caf\u00e9"));
+    }
+
+    @Test
+    void testReadStringAcrossBuffers() {
+        byte[][] data = {
+                "Ca".getBytes(StandardCharsets.ISO_8859_1),
+                "f\u00e9".getBytes(StandardCharsets.ISO_8859_1)
+        };
+        AtomicInteger index = new AtomicInteger();
+        DataReader dataReader = DataReader.create(() -> index.get() < data.length ? data[index.getAndIncrement()] : null);
+
+        assertThat(dataReader.readString(4, StandardCharsets.ISO_8859_1), is("Caf\u00e9"));
+    }
+
+    @Test
+    void testReadStringRejectsNullCharsetBeforePullingData() {
+        AtomicInteger pulls = new AtomicInteger();
+        DataReader dataReader = DataReader.create(() -> {
+            pulls.incrementAndGet();
+            return new byte[] {0};
+        });
+
+        assertThrows(NullPointerException.class, () -> dataReader.readString(1, null));
+        assertThat(pulls.get(), is(0));
+    }
 
     @Test
     void testFindNewLineWithLoneCR() {

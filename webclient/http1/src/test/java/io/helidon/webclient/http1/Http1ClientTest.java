@@ -911,6 +911,40 @@ class Http1ClientTest {
         }
     }
 
+    @Test
+    void testMalformedReasonPhraseClosesConnection() {
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection("200 unsafe\u0000value", null);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                       () -> client.get("http://localhost:" + dummyPort + "/test")
+                                                               .connection(connection)
+                                                               .request());
+
+        assertThat(exception.getMessage(), is("HTTP response contained an invalid reason phrase"));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void testMalformedReasonPhraseBeforeContinueClosesConnection() {
+        Http1Client expectContinueClient = Http1Client.builder()
+                .sendExpectContinue(true)
+                .build();
+        Http1ClientRequest request = expectContinueClient.put("http://localhost:" + dummyPort + "/test");
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection("HTTP/1.1 100 unsafe\u0000value\r\n\r\n");
+        request.connection(connection);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                       () -> getHttp1ClientResponseFromOutputStream(request,
+                                                                                                    new String[] {"OK"}));
+
+        assertThat(exception.getMessage(), is("HTTP response contained an invalid reason phrase"));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
     // validates that HEAD is not allowed with entity payload
     @Test
     void testHeadMethod() {
@@ -1728,7 +1762,7 @@ class Http1ClientTest {
 
             String responseMessage = !requestFailed ? "HTTP/1.1 " + responseStatus + "\r\n"
                     : "HTTP/1.1 400 Bad Request\r\n";
-            serverWriter.write(BufferData.create(responseMessage.getBytes(StandardCharsets.UTF_8)));
+            serverWriter.write(BufferData.create(responseMessage.getBytes(StandardCharsets.ISO_8859_1)));
 
             // Send the headers
             if (!resHeaders.contains(HeaderNames.CONTENT_LENGTH)

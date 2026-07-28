@@ -18,7 +18,6 @@ package io.helidon.webclient.http1;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
@@ -260,9 +259,8 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         do {
             try {
                 responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-            } catch (UncheckedIOException e) {
-                // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
-                // data of this request on the next use of this connection
+            } catch (RuntimeException e) {
+                // A connection cannot be reused after a malformed status or a response read failure.
                 try {
                     connection.closeResource();
                 } catch (Exception ex) {
