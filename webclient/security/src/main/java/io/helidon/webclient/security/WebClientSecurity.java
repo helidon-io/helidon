@@ -138,7 +138,8 @@ public class WebClientSecurity implements WebClientService {
                     .clearHeaders()
                     .clearQueryParams();
 
-            outboundEnv.method(request.method().text())
+            outboundEnv.transport(request.uri().scheme())
+                    .method(request.method().text())
                     .path(request.uri().path().path())
                     .targetUri(request.uri().toUri())
                     .queryParams(request.uri().query())
