@@ -817,6 +817,81 @@ class GraphQlServerCodegenTest {
     }
 
     @Test
+    void typeUseNonNullOuterTypesContributeToSdl() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-outer-type-non-null"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            java.lang.@GraphQl.NonNull String result() {
+                                return "result";
+                            }
+
+                            @GraphQl.Query
+                            String lookup(@GraphQl.Argument("value") java.lang.@GraphQl.NonNull String value) {
+                                return value;
+                            }
+
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+
+                            @GraphQl.Query
+                            String search(BookSearch criteria) {
+                                return criteria.phrase();
+                            }
+
+                            @GraphQlServer.Field
+                            java.lang.@GraphQl.NonNull String summary(@GraphQlServer.Source Book book) {
+                                return book.title();
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(java.lang.@GraphQl.NonNull String title) {
+                        }
+                        """)
+                .addSource("BookSearch.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record BookSearch(java.lang.@GraphQl.NonNull String phrase) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = Files.readString(result.sourceOutput()
+                                                    .resolve("com/example/GraphEndpoint__GraphQlFeature.java"),
+                                            StandardCharsets.UTF_8);
+        assertThat(generated, containsString("result: String!"));
+        assertThat(generated, containsString("lookup(value: String!): String"));
+        assertThat(generated, containsString("title: String!"));
+        assertThat(generated, containsString("summary: String!"));
+        assertThat(generated, containsString("phrase: String!"));
+    }
+
+    @Test
     void typeUseNonNullListElementsContributeToSdl() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()

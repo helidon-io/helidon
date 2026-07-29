@@ -689,7 +689,8 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank));
         boolean nonNull = parameter.typeName().primitive()
-                || Annotations.findFirst(GRAPHQL_NON_NULL, annotations).isPresent();
+                || hasNonNull(annotations)
+                || hasNonNull(parameter.typeName());
         String schemaType = nonNull ? valueType.graphQlName() + "!" : valueType.graphQlName();
         return new Argument(parameter,
                             validatedGraphQlName,
@@ -1413,7 +1414,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
 
         private String outputType(TypeName type, boolean nonNull, Object originatingElement) {
             String graphQlType = outputType(type, originatingElement);
-            return nonNull ? graphQlType + "!" : graphQlType;
+            return nonNull || hasNonNull(type) ? graphQlType + "!" : graphQlType;
         }
 
         private List<ObjectSchemaType> objectTypes() {
@@ -1819,7 +1820,10 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
             }
             String graphQlName = graphQlName(annotations, defaultName, element.originatingElementValue());
             InputSchemaFieldType fieldType = inputFieldType(typeInfo, element);
-            String schemaType = element.typeName().primitive() || hasNonNull(annotations)
+            boolean nonNull = element.typeName().primitive()
+                    || hasNonNull(annotations)
+                    || hasNonNull(element.typeName());
+            String schemaType = nonNull
                     ? fieldType.graphQlName() + "!"
                     : fieldType.graphQlName();
             InputSchemaField previous = fields.putIfAbsent(graphQlName,
