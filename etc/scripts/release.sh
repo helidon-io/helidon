@@ -241,14 +241,19 @@ create_tag() {
   # Create and push a git tag
   git tag -f "${version}"
 
-  # Add an SSH based remote
-  git_remote=$(git config --get remote.origin.url | \
-    sed -e "s,https://[^@]*@\([^/]*\)/,git@\1:," \
-        -e "s,https://\([^/]*\)/,git@\1:,")
-  git remote remove release > /dev/null 2>&1 || true
-  git remote add release "${git_remote}"
+  push_remote=origin
+  if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
+    # Add an SSH based remote if not running in GitHub action
+    git_remote=$(git config --get remote.origin.url | \
+      sed -e "s,https://[^@]*@\([^/]*\)/,git@\1:," \
+          -e "s,https://\([^/]*\)/,git@\1:,")
+    git remote remove release > /dev/null 2>&1 || true
+    git remote add release "${git_remote}"
+    push_remote=release
+  fi
 
-  git push --force release refs/tags/"${version}":refs/tags/"${version}"
+  git push --force "${push_remote}" \
+        refs/tags/"${version}":refs/tags/"${version}"
 
   echo "version=${version}" >&6
   echo "tag=refs/tags/${version}" >&6
