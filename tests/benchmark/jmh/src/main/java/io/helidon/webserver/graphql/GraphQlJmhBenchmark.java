@@ -123,13 +123,18 @@ public class GraphQlJmhBenchmark {
                         .version(HttpClient.Version.HTTP_1_1)
                         .connectTimeout(Duration.ofSeconds(10))
                         .build();
+                URI graphQlUri = URI.create("http://" + SERVER_HOST + ":" + server.port() + "/graphql?query=" + ENCODED_QUERY);
                 getRequest = HttpRequest.newBuilder()
                         .GET()
+                        .uri(graphQlUri)
+                        .build();
+                HttpRequest preflightRequest = HttpRequest.newBuilder()
+                        .GET()
                         .timeout(Duration.ofSeconds(10))
-                        .uri(URI.create("http://" + SERVER_HOST + ":" + server.port() + "/graphql?query=" + ENCODED_QUERY))
+                        .uri(graphQlUri)
                         .build();
 
-                HttpResponse<String> response = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
+                HttpResponse<String> response = httpClient.send(preflightRequest, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() != 200) {
                     throw new IllegalStateException("GraphQL benchmark preflight returned status "
                                                             + response.statusCode()
