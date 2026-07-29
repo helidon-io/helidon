@@ -118,33 +118,43 @@ public class GraphQlJmhBenchmark {
                     .routing(routing -> routing.register(graphQlService))
                     .build()
                     .start();
-            httpClient = HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .build();
-            getRequest = HttpRequest.newBuilder()
-                    .GET()
-                    .uri(URI.create("http://" + SERVER_HOST + ":" + server.port() + "/graphql?query=" + ENCODED_QUERY))
-                    .build();
+            try {
+                httpClient = HttpClient.newBuilder()
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .connectTimeout(Duration.ofSeconds(10))
+                        .build();
+                getRequest = HttpRequest.newBuilder()
+                        .GET()
+                        .timeout(Duration.ofSeconds(10))
+                        .uri(URI.create("http://" + SERVER_HOST + ":" + server.port() + "/graphql?query=" + ENCODED_QUERY))
+                        .build();
 
-            HttpResponse<String> response = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
-                throw new IllegalStateException("GraphQL benchmark preflight returned status "
-                                                        + response.statusCode()
-                                                        + ": "
-                                                        + response.body());
-            }
-            JsonObject result = JsonParser.create(response.body()).readJsonObject();
-            JsonObject data = result.objectValue("data", JsonObject.empty());
-            JsonArray numbers = data.arrayValue("numbers", JsonArray.empty());
-            List<Integer> numberValues = numbers.values()
-                    .stream()
-                    .map(value -> value.asNumber().intValue())
-                    .toList();
-            if (result.containsKey("errors")
-                    || !"world".equals(data.stringValue("hello", null))
-                    || !List.of(1, 2, 3).equals(numberValues)) {
-                throw new IllegalStateException("GraphQL benchmark preflight returned unexpected data: " + result);
+                HttpResponse<String> response = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() != 200) {
+                    throw new IllegalStateException("GraphQL benchmark preflight returned status "
+                                                            + response.statusCode()
+                                                            + ": "
+                                                            + response.body());
+                }
+                JsonObject result = JsonParser.create(response.body()).readJsonObject();
+                JsonObject data = result.objectValue("data", JsonObject.empty());
+                JsonArray numbers = data.arrayValue("numbers", JsonArray.empty());
+                List<Integer> numberValues = numbers.values()
+                        .stream()
+                        .map(value -> value.asNumber().intValue())
+                        .toList();
+                if (result.containsKey("errors")
+                        || !"world".equals(data.stringValue("hello", null))
+                        || !List.of(1, 2, 3).equals(numberValues)) {
+                    throw new IllegalStateException("GraphQL benchmark preflight returned unexpected data: " + result);
+                }
+            } catch (IOException | InterruptedException | RuntimeException e) {
+                try {
+                    server.stop();
+                } catch (RuntimeException stopException) {
+                    e.addSuppressed(stopException);
+                }
+                throw e;
             }
         }
 

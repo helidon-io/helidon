@@ -914,6 +914,16 @@ class GraphQlServerCodegenTest {
                             }
 
                             @GraphQl.Query
+                            java.util.@GraphQl.NonNull List<Book> nonNullBooks() {
+                                return List.of(new Book("Dune", List.of("classic")));
+                            }
+
+                            @GraphQl.Query
+                            java.util.@GraphQl.NonNull List<@GraphQl.NonNull Book> fullyNonNullBooks() {
+                                return List.of(new Book("Dune", List.of("classic")));
+                            }
+
+                            @GraphQl.Query
                             String byTags(@GraphQl.Argument("tags") List<@GraphQl.NonNull String> tags) {
                                 return tags.toString();
                             }
@@ -956,6 +966,8 @@ class GraphQlServerCodegenTest {
                                                     .resolve("com/example/GraphEndpoint__GraphQlFeature.java"),
                                             StandardCharsets.UTF_8);
         assertThat(generated, containsString("books: [Book!]"));
+        assertThat(generated, containsString("nonNullBooks: [Book]!"));
+        assertThat(generated, containsString("fullyNonNullBooks: [Book!]!"));
         assertThat(generated, containsString("byTags(tags: [String!]): String"));
         assertThat(generated, containsString("tags: [String!]"));
         assertThat(generated, not(containsString("GraphEndpoint__GraphQlFeature__CustomScalar")));
