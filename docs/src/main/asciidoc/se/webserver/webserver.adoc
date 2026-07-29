@@ -998,12 +998,15 @@ server:
   features:
     static-content:
       pre-compressed-enabled: true
+      pre-compressed-cross-origin-sourcing-enabled: true
       pre-compressed-encodings:
         br: br
         gzip: gz
       classpath:
         - context: "/assets"
           location: "/public"
+        - context: "/isolated-assets"
+          location: "/isolated"
           pre-compressed-cross-origin-sourcing-enabled: false
       path:
         - context: "/"
@@ -1012,9 +1015,10 @@ server:
 ----
 
 Classpath sidecars must come from the same classpath resource origin as the logical resource by default. The
-classpath handler-level `pre-compressed-cross-origin-sourcing-enabled` option can be set to `true` only when the
-application intentionally sources sidecars from different classpath entries. Helidon does not validate that sidecar files
-are fresher than the logical resource.
+feature-level `pre-compressed-cross-origin-sourcing-enabled` option provides the default for all classpath handlers.
+A classpath handler can override that default explicitly. Enable cross-origin sourcing only when the application
+intentionally sources sidecars from different classpath entries. Helidon does not validate that sidecar files are fresher
+than the logical resource.
 
 
 == Media types support

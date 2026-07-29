@@ -64,7 +64,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     private final TemporaryStorage tmpStorage;
 
     ClassPathContentHandler(ClasspathHandlerConfig config) {
-        super(config, config.preCompressedCrossOriginSourcingEnabled());
+        super(config, config.preCompressedCrossOriginSourcingEnabled().orElse(false));
 
         this.classLoader = config.classLoader()
                 .or(() -> Optional.ofNullable(Thread.currentThread().getContextClassLoader()))

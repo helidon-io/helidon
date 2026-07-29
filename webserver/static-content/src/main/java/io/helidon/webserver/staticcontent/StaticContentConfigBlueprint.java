@@ -161,6 +161,16 @@ interface StaticContentConfigBlueprint extends Prototype.Factory<StaticContentFe
     boolean preCompressedEnabled();
 
     /**
+     * Whether classpath sidecar resources may be sourced from a different classpath origin than the logical resource
+     * by default for feature-registered handlers.
+     *
+     * @return whether cross-origin classpath sidecar sourcing is enabled by default
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean preCompressedCrossOriginSourcingEnabled();
+
+    /**
      * Maps response content codings to pre-compressed file suffixes; the default map is br to br and gzip to gz,
      * handler-level maps replace this map rather than merging with it, an explicit empty map disables sidecar lookups by
      * default, keys must be concrete valid HTTP-token content codings other than {@code identity} and {@code *}, and

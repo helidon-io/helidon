@@ -53,13 +53,14 @@ interface ClasspathHandlerConfigBlueprint extends BaseHandlerConfigBlueprint {
     Optional<ClassLoader> classLoader();
 
     /**
-     * Whether sidecar resources may be sourced from a different classpath origin than the logical resource.
+     * Whether sidecar resources may be sourced from a different classpath origin than the logical resource. When not
+     * configured, feature-registered handlers inherit the feature-level value and direct services default to
+     * {@code false}.
      *
-     * @return whether cross-origin classpath sidecar sourcing is enabled
+     * @return whether cross-origin classpath sidecar sourcing is explicitly enabled or disabled
      */
     @Option.Configured
-    @Option.DefaultBoolean(false)
-    boolean preCompressedCrossOriginSourcingEnabled();
+    Optional<Boolean> preCompressedCrossOriginSourcingEnabled();
 
     /**
      * Classpath content usually starts from a {@link ClasspathHandlerConfig#location()} on classpath, and resolves all

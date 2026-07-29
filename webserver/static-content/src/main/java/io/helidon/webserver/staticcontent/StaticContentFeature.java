@@ -48,6 +48,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
     private final Map<String, String> preCompressedEncodings;
     private final boolean enabled;
     private final boolean preCompressedEnabled;
+    private final boolean preCompressedCrossOriginSourcingEnabled;
     private final Set<String> sockets;
     private final Optional<String> welcome;
 
@@ -57,6 +58,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
         if (enabled) {
             this.contentTypeMapping = config.contentTypes();
             this.preCompressedEnabled = config.preCompressedEnabled();
+            this.preCompressedCrossOriginSourcingEnabled = config.preCompressedCrossOriginSourcingEnabled();
             this.preCompressedEncodings = StaticContentConfigSupport.normalizePreCompressedEncodings(
                     config.preCompressedEncodings());
             this.memoryCache = config.memoryCache()
@@ -77,6 +79,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
             this.temporaryStorage = null;
             this.contentTypeMapping = null;
             this.preCompressedEnabled = false;
+            this.preCompressedCrossOriginSourcingEnabled = false;
             this.preCompressedEncodings = Map.of();
         }
     }
@@ -213,6 +216,9 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                         .temporaryStorage(handlerTmpStorage)
                         .update(it -> welcome.ifPresent(it::welcome))
                         .preCompressedEnabled(sourceConfig.preCompressedEnabled().orElse(preCompressedEnabled))
+                        .preCompressedCrossOriginSourcingEnabled(
+                                sourceConfig.preCompressedCrossOriginSourcingEnabled()
+                                        .orElse(preCompressedCrossOriginSourcingEnabled))
                         .preCompressedEncodings(sourceConfig.preCompressedEncodings()
                                                         .orElse(preCompressedEncodings))
                         .classLoader(handlerClassLoader)
