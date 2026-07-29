@@ -113,7 +113,7 @@ abstract class ContentEncodingDisabledAbstract {
 
         @Override
         public ContentEncoder encoder(Headers headers) {
-            return null;
+            return ContentEncoder.NO_OP;
         }
 
     }

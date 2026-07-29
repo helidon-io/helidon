@@ -205,10 +205,6 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             throw new BadRequestException("Invalid Accept-Encoding header");
         }
 
-        if (!contentEncodingEnabled()) {
-            return ContentEncoder.NO_OP;
-        }
-
         Optional<AcceptEncoding.CodingQuality> selected = acceptEncoding.best(contentEncodingIds);
         if (selected.isEmpty()) {
             throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true)

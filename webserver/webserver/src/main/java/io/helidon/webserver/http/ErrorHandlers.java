@@ -256,9 +256,6 @@ public final class ErrorHandlers {
                                         ServerRequest request,
                                         RoutingResponse response) {
         ContentEncodingContext contentEncodingContext = ctx.listenerContext().contentEncodingContext();
-        if (!contentEncodingContext.contentEncodingEnabled()) {
-            return;
-        }
         try {
             contentEncodingContext.encoder(request.headers());
         } catch (HttpException _) {

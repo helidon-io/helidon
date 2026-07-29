@@ -265,7 +265,6 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     protected byte[] entityBytes(byte[] configuredEntity, int position, int length) {
         byte[] entity = configuredEntity;
         if (automaticContentEncoding
-                && contentEncodingContext.contentEncodingEnabled()
                 && length > 0
                 && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
@@ -293,7 +292,6 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected OutputStream contentEncode(OutputStream outputStream) {
         if (automaticContentEncoding
-                && contentEncodingContext.contentEncodingEnabled()
                 && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             encoder.headers(headers());

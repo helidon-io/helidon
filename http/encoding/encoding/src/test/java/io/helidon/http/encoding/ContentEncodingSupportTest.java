@@ -453,6 +453,11 @@ class ContentEncodingSupportTest {
         assertNotAcceptable(context, "gzip;q=0, *;q=0");
     }
 
+    @Test
+    void testRuntimeEncoderRejectsIdentityWithoutProviders() {
+        assertNotAcceptable(ContentEncodingContext.create(), "identity;q=0");
+    }
+
     private static ContentEncodingContext context() {
         return context(gzipEncoder());
     }
