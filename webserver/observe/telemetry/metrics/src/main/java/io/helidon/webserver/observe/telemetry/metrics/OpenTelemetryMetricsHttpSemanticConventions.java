@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.http.Status;
@@ -28,7 +27,6 @@ import io.helidon.service.registry.Service;
 import io.helidon.telemetry.otelconfig.HelidonOpenTelemetry;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
-import io.helidon.webserver.http.RoutePathSupport;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
@@ -136,14 +134,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
 
         private void filterUpdated(FilterChain chain, RoutingRequest req, RoutingResponse res, long startTime) {
             var exception = new AtomicReference<Exception>();
-            var routeSupplier = new AtomicReference<Supplier<String>>();
             var chainComplete = new AtomicBoolean();
             var responseSent = new AtomicBoolean();
             var recorded = new AtomicBoolean();
             var measured = config.isMeasured(req.prologue().method(), req.prologue().uriPath());
-            if (measured) {
-                RoutePathSupport.requestRoute(req.context(), routeSupplier::set);
-            }
             /*
             Update the timer in whenSent rather than here in this filter. That way we include time spent in running succeeding
             filters and in preparing the response entity, to more accurately capture as much as possible the full time the
@@ -157,8 +151,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                                                 measured,
                                                 startTime,
                                                 System.nanoTime(),
-                                                exception.get(),
-                                                routeSupplier.get());
+                                                exception.get());
                     } catch (Throwable e) {
                         LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
                     }
@@ -211,8 +204,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                                              boolean measured,
                                              Long startTime,
                                              long endTime,
-                                             Exception exception,
-                                             Supplier<String> routeSupplier) {
+                                             Exception exception) {
             if (!measured) {
                 return;
             }
@@ -222,8 +214,11 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
-                    .put(AttributeKey.stringKey(HTTP_ROUTE), route(req, routeSupplier))
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
+
+            req.matchingPattern()
+                    .filter(route -> !route.isBlank())
+                    .ifPresent(route -> attrBuilder.put(AttributeKey.stringKey(HTTP_ROUTE), route));
 
             if (isOptedIn(config, SERVER_ADDRESS)) {
                 attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.requestedUri().host());
@@ -266,24 +261,6 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             }
 
             httpRequestDuration.record((endTime - startTime) / 1_000_000.0, attrBuilder.build());
-        }
-
-        /**
-         * Prefer the route established via {@link io.helidon.webserver.http.RoutePathSupport}, if any; otherwise, use the
-         * matching pattern from the request.
-         *
-         * @param req request
-         * @param routeSupplier supplier of route via {@code RoutePathSupport}
-         * @return route
-         */
-        private String route(RoutingRequest req, Supplier<String> routeSupplier) {
-            if (routeSupplier != null) {
-                String route = routeSupplier.get();
-                if (route != null && !route.isBlank()) {
-                    return route;
-                }
-            }
-            return req.matchingPattern().orElse("");
         }
 
         private String errorType(RoutingResponse resp, Exception exception) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
@@ -65,6 +66,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     private HttpPrologue prologue;
     private Context context;
     private String matchingPattern;
+    private Supplier<Optional<String>> matchingPatternSupplier;
 
     Http1ServerRequest(ConnectionContext ctx,
                        HttpSecurity security,
@@ -222,11 +224,25 @@ abstract class Http1ServerRequest implements RoutingRequest {
     @Override
     public RoutingRequest matchingPattern(String matchingPattern) {
         this.matchingPattern = matchingPattern;
+        this.matchingPatternSupplier = null;
+        return this;
+    }
+
+    @Override
+    public RoutingRequest matchingPattern(Supplier<Optional<String>> matchingPattern) {
+        Objects.requireNonNull(matchingPattern, "Parameter 'matchingPattern' is null!");
+        this.matchingPatternSupplier = LazyValue.create(() -> Objects.requireNonNull(matchingPattern.get(),
+                                                                                     "Matching pattern supplier returned null"));
+        this.matchingPattern = null;
         return this;
     }
 
     @Override
     public Optional<String> matchingPattern() {
+        Supplier<Optional<String>> matchingPatternSupplier = this.matchingPatternSupplier;
+        if (matchingPatternSupplier != null) {
+            return matchingPatternSupplier.get();
+        }
         return Optional.ofNullable(matchingPattern);
     }
 

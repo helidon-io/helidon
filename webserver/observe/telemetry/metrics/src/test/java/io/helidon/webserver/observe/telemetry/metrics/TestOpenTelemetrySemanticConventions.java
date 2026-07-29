@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -35,7 +36,7 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http.RoutePathSupport;
+import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
@@ -121,12 +122,12 @@ class TestOpenTelemetrySemanticConventions {
                 .routing(r -> r.get("/greet/{name}",
                                     (req, resp) ->
                                             resp.send("Hello, " + req.path().segments().get(1).value() + "!"))
-                        .get("/useContext",
+                        .get("/useLazyRoute",
                              /*
-                             Mimics what the JaxRsServer does in providing the route to route consumers.
+                             Mimics what the JaxRsServer does in refining the route after matching.
                               */
                              (req, resp) -> {
-                                 RoutePathSupport.provideRoute(req.context(), () -> "/useContextRoute");
+                                 ((RoutingRequest) req).matchingPattern(() -> Optional.of("/useLazyRouteOverride"));
                                  resp.send("Hello, World!");
                              })
                         .get("/fail", (req, resp) -> {
@@ -162,7 +163,7 @@ class TestOpenTelemetrySemanticConventions {
                 Http1ClientResponse greetOptionsResponse = privateClient.options("/greet")
                         .accept(MediaTypes.TEXT_PLAIN)
                         .request();
-                Http1ClientResponse useContextResponse = defaultClient.get("/useContext")
+                Http1ClientResponse useLazyRouteResponse = defaultClient.get("/useLazyRoute")
                         .accept(MediaTypes.TEXT_PLAIN)
                         .request();
                 TestLogHandler testLogHandler = TestLogHandler.create(
@@ -173,7 +174,7 @@ class TestOpenTelemetrySemanticConventions {
             assertThat("Admin endpoint", adminResponse.status().code(), is(200));
             assertThat("Metrics endpoint via default socket", metricsOnDefaultResponse.status().code(), is(404));
             assertThat("Private endpoint HEAD", greetOptionsResponse.status().code(), is(200));
-            assertThat("Use context endpoint", useContextResponse.status().code(), is(200));
+            assertThat("Use lazy route endpoint", useLazyRouteResponse.status().code(), is(200));
 
             List<String> socketNamesInTimers = new ArrayList<>();
 
@@ -266,8 +267,8 @@ class TestOpenTelemetrySemanticConventions {
             assertThat("Routes seen", routesSeen, allOf(hasItem("/greet"),
                                                         hasItem("/greet/{name}"),
                                                         not(hasItem("/observe/metrics")),
-                                                        not(hasItem("/useContext")),
-                                                        hasItem("/useContextRoute")));
+                                                        not(hasItem("/useLazyRoute")),
+                                                        hasItem("/useLazyRouteOverride")));
 
             Set<String> unexpectedlyUntimedSockets = new HashSet<>(Set.of("@default", "private"));
             socketNamesInTimers.forEach(unexpectedlyUntimedSockets::remove);
