@@ -78,6 +78,8 @@ class Http1PrologueTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "example.com:443",
+            "service+name:443",
+            "service%2Dname:443",
             "192.0.2.10:8443",
             "[2001:db8::1]:9443"
     })
@@ -95,10 +97,13 @@ class Http1PrologueTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "example.com",
+            ":443",
             "user@example.com:443",
             "http://example.com:443",
             "example.com:443?query=value",
             "example.com:443#fragment",
+            "service/name:443",
+            "service%2Gname:443",
             "[2001:db8::1]",
             "2001:db8::1:443",
             "example.com:not-a-port",

@@ -239,9 +239,54 @@ public final class Http1Prologue {
 
         try {
             if (Method.CONNECT.equals(method)) {
-                UriAuthority authority = UriAuthority.create(path);
-                if (!authority.hasPort()) {
-                    throw new IllegalArgumentException("CONNECT authority must include a port");
+                if (path.charAt(0) == '[') {
+                    UriAuthority authority = UriAuthority.create(path);
+                    if (!authority.hasPort()) {
+                        throw new IllegalArgumentException("CONNECT authority must include a port");
+                    }
+                } else {
+                    int portSeparator = path.lastIndexOf(':');
+                    if (portSeparator <= 0 || path.indexOf(':') != portSeparator) {
+                        throw new IllegalArgumentException("CONNECT authority must contain a host and port");
+                    }
+
+                    String host = path.substring(0, portSeparator);
+                    for (int i = 0; i < host.length(); i++) {
+                        char c = host.charAt(i);
+                        if ((c >= 'a' && c <= 'z')
+                                || (c >= 'A' && c <= 'Z')
+                                || (c >= '0' && c <= '9')
+                                || switch (c) {
+                                    case '-', '.', '_', '~', '!', '$', '&', '\'', '(', ')', '*', '+',
+                                         ',', ';', '=' -> true;
+                                    default -> false;
+                                }) {
+                            continue;
+                        }
+                        if (c == '%'
+                                && i + 2 < host.length()
+                                && Character.digit(host.charAt(i + 1), 16) >= 0
+                                && Character.digit(host.charAt(i + 2), 16) >= 0) {
+                            i += 2;
+                            continue;
+                        }
+                        throw new IllegalArgumentException("CONNECT authority contains an invalid host");
+                    }
+
+                    if (portSeparator == path.length() - 1) {
+                        throw new IllegalArgumentException("CONNECT authority port cannot be blank");
+                    }
+                    int port = 0;
+                    for (int i = portSeparator + 1; i < path.length(); i++) {
+                        char c = path.charAt(i);
+                        if (c < '0' || c > '9') {
+                            throw new IllegalArgumentException("CONNECT authority port must contain only digits");
+                        }
+                        port = port * 10 + c - '0';
+                        if (port > 65535) {
+                            throw new IllegalArgumentException("CONNECT authority port must be between 0 and 65535");
+                        }
+                    }
                 }
                 return HttpPrologue.create(protocol,
                                            "HTTP",

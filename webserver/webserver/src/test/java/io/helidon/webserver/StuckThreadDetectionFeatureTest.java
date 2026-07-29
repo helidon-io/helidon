@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -27,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.buffers.DataReader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.HttpPrologue;
@@ -34,6 +36,7 @@ import io.helidon.http.Method;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
+import io.helidon.webserver.http1.Http1Prologue;
 import io.helidon.webserver.spi.ServerFeature.ServerFeatureContext;
 import org.junit.jupiter.api.Test;
 
@@ -193,6 +196,26 @@ class StuckThreadDetectionFeatureTest {
 
     @Test
     void reportsConnectAuthority() throws Exception {
+        DataReader reader = DataReader.create(() -> "CONNECT example.com:443 HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertConnectLog(prologue, "example.com:443", null);
+    }
+
+    @Test
+    void doesNotReportUnverifiedConnectAuthority() throws Exception {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
+                                                    "1.1",
+                                                    Method.CONNECT,
+                                                    "alice:s3cr3t@example.com:443",
+                                                    true);
+
+        assertConnectLog(prologue, null, "alice:s3cr3t");
+    }
+
+    private void assertConnectLog(HttpPrologue prologue, String expected, String unexpected) throws Exception {
         var config = StuckThreadDetectionConfig.builder()
                 .threshold(Duration.ofMillis(20))
                 .checkPeriod(Duration.ofMillis(5))
@@ -202,12 +225,7 @@ class StuckThreadDetectionFeatureTest {
         var release = new CountDownLatch(1);
         var failure = new AtomicReference<Throwable>();
         RoutingRequest request = mock(RoutingRequest.class);
-        when(request.prologue()).thenReturn(HttpPrologue.create("HTTP/1.1",
-                                                               "HTTP",
-                                                               "1.1",
-                                                               Method.CONNECT,
-                                                               "example.com:443",
-                                                               true));
+        when(request.prologue()).thenReturn(prologue);
         when(request.id()).thenReturn(10);
         when(request.serverSocketId()).thenReturn("server-socket");
         when(request.socketId()).thenReturn("connection-socket");
@@ -229,10 +247,19 @@ class StuckThreadDetectionFeatureTest {
                 }
             });
             try {
-                assertThat("Request handler did not start", started.await(5, TimeUnit.SECONDS), is(true));
+                boolean handlerStarted = started.await(5, TimeUnit.SECONDS);
+                if (!handlerStarted) {
+                    assertThat("Request handler failed before it started", failure.get(), is((Throwable) null));
+                }
+                assertThat("Request handler did not start", handlerStarted, is(true));
 
                 LogRecord warning = logs.await(Level.WARNING);
-                assertThat(warning.getMessage(), containsString("CONNECT example.com:443 HTTP/1.1"));
+                if (expected != null) {
+                    assertThat(warning.getMessage(), containsString("CONNECT " + expected + " HTTP/1.1"));
+                }
+                if (unexpected != null) {
+                    assertThat(warning.getMessage(), not(containsString(unexpected)));
+                }
             } finally {
                 release.countDown();
                 requestThread.join(5000);

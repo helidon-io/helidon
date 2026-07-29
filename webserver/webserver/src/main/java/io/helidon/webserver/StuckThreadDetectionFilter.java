@@ -118,7 +118,9 @@ final class StuckThreadDetectionFilter implements Filter {
         Thread thread = Thread.currentThread();
         var prologue = req.prologue();
         String path = prologue.uriPath().path();
-        if (Method.CONNECT.equals(prologue.method()) && path.isEmpty()) {
+        if (Method.CONNECT.equals(prologue.method())
+                && path.isEmpty()
+                && prologue.uriPath().segments().isEmpty()) {
             path = prologue.uriPath().rawPathNoParams();
         }
         var active = new ActiveRequest(thread,
