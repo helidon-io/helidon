@@ -21,6 +21,7 @@ import java.util.Map;
 
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
@@ -86,7 +87,13 @@ public class DirectHandlers {
 
         Status status = response.status();
         res.status(status);
-        response.headers().forEach(res::header);
+        response.headers().forEach(header -> {
+            if (HeaderNames.VARY.equals(header.headerName())) {
+                res.headers().add(header);
+            } else {
+                res.header(header);
+            }
+        });
         if (!keepAlive && httpException.request().protocolVersion().startsWith("HTTP/1.")) {
             res.header(HeaderValues.CONNECTION_CLOSE);
         }

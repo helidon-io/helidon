@@ -97,7 +97,10 @@ class StaticContentTest {
         Files.writeString(externalDir.resolve("resource.txt"), "External content");
         Files.writeString(alternateRoot.resolve("resource.txt"), "Alternate content");
 
-        builder.register("/classpath", createService(ClasspathHandlerConfig.create("web")))
+        builder.any("/vary-path/*",
+                    (request, response) -> response.header(HeaderNames.VARY, HeaderNames.ORIGIN_NAME).next())
+                .register("/vary-path", createService(FileSystemHandlerConfig.create(staticRoot)))
+                .register("/classpath", createService(ClasspathHandlerConfig.create("web")))
                 .register("/singleclasspath", createService(ClasspathHandlerConfig.create("web/resource.txt")))
                 .register("/path", createService(FileSystemHandlerConfig.create(staticRoot)))
                 .register("/path-disabled", createService(FileSystemHandlerConfig.builder()
@@ -282,6 +285,29 @@ class StaticContentTest {
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-5/14"));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
             assertThat(response.as(String.class), is("otli"));
+        }
+    }
+
+    @Test
+    void testConditionalSidecarMergesVaryFromException() {
+        String etag;
+        try (Http1ClientResponse response = testClient.get("/vary-path/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            etag = response.headers().get(HeaderNames.ETAG).get();
+        }
+
+        try (Http1ClientResponse response = testClient.get("/vary-path/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .header(HeaderNames.IF_NONE_MATCH, etag)
+                .request()) {
+
+            assertThat(response.status(), is(Status.NOT_MODIFIED_304));
+            assertThat(response.headers(),
+                       HttpHeaderMatcher.hasHeader(HeaderNames.VARY,
+                                                   HeaderNames.ORIGIN_NAME,
+                                                   HeaderNames.ACCEPT_ENCODING_NAME));
         }
     }
 
