@@ -150,14 +150,28 @@ class OidcFeatureTest {
         assertThat(response, not(containsString("&state=ok&post_logout_redirect_uri=https://example.test/alternate")));
     }
 
+    @Test
+    void testLogoutAppendsParametersToEndpointQuery() throws Exception {
+        String logoutEndpoint = "http://idp.example.test/logout?domain=identity%2Fdomain";
+        String response = logoutResponse("ok", URI.create(logoutEndpoint));
+
+        assertThat(response,
+                   containsString("Location: " + logoutEndpoint
+                                          + "&id_token_hint=dummy-id-token&post_logout_redirect_uri=http://127.0.0.1:"));
+    }
+
     private static String logoutResponse(String state) throws Exception {
+        return logoutResponse(state, URI.create("http://idp.example.test/logout"));
+    }
+
+    private static String logoutResponse(String state, URI logoutEndpoint) throws Exception {
         OidcConfig oidcConfig = OidcConfig.builder()
                 .clientId("id")
                 .clientSecret("secret")
                 .identityUri(URI.create("http://idp.example.test/identity"))
                 .tokenEndpointUri(URI.create("http://idp.example.test/token"))
                 .authorizationEndpointUri(URI.create("http://idp.example.test/authorize"))
-                .logoutEndpointUri(URI.create("http://idp.example.test/logout"))
+                .logoutEndpointUri(logoutEndpoint)
                 .signJwk(JwkKeys.builder().build())
                 .oidcMetadataWellKnown(false)
                 .logoutEnabled(true)
