@@ -410,6 +410,11 @@ class TenantAuthenticationHandler {
             scopeString = URLEncoder.encode(scopes.toString(), StandardCharsets.UTF_8);
 
             String authorizationEndpoint = tenant.authorizationEndpointUri();
+            String authorizationQuery = URI.create(authorizationEndpoint).getRawQuery();
+            String querySeparator = "?";
+            if (authorizationQuery != null) {
+                querySeparator = authorizationQuery.isEmpty() || authorizationQuery.endsWith("&") ? "" : "&";
+            }
             String nonce = UUID.randomUUID().toString();
             String redirectUri;
             if (DEFAULT_TENANT_ID.equals(tenantId)) {
@@ -419,7 +424,7 @@ class TenantAuthenticationHandler {
                                              + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantId));
             }
 
-            String queryString = "?" + "client_id=" + tenantConfig.clientId() + "&"
+            String queryString = querySeparator + "client_id=" + tenantConfig.clientId() + "&"
                     + "response_type=code&"
                     + "redirect_uri=" + redirectUri + "&"
                     + "scope=" + scopeString + "&"
