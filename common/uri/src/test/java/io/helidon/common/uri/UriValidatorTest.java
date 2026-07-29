@@ -177,6 +177,7 @@ class UriValidatorTest {
         // IPvFuture
         validateHost("[v9.abc:def]");
         validateHost("[v9.abc:def*]");
+        validateHost("[Vf.foo-bar]");
     }
 
     @Test

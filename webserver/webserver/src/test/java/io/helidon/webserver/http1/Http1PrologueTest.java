@@ -81,7 +81,9 @@ class Http1PrologueTest {
             "service+name:443",
             "service%2Dname:443",
             "192.0.2.10:8443",
-            "[2001:db8::1]:9443"
+            "[2001:db8::1]:9443",
+            "[v1.fe80]:443",
+            "[Vf.foo-bar]:443"
     })
     void testConnectAuthorityForm(String authority) {
         DataReader reader = DataReader.create(() -> ("CONNECT " + authority + " HTTP/1.1\r\n")
@@ -105,6 +107,9 @@ class Http1PrologueTest {
             "service/name:443",
             "service%2Gname:443",
             "[2001:db8::1]",
+            "[v1.]:443",
+            "[vG.fe80]:443",
+            "[v1.fe80]x:443",
             "2001:db8::1:443",
             "example.com:not-a-port",
             "example.com:65536"

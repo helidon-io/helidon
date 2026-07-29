@@ -240,7 +240,7 @@ public final class UriValidator {
 
         String host = ipLiteral.substring(1, ipLiteral.length() - 1);
         checkNotBlank(Segment.HOST, "Host", ipLiteral, host);
-        if (host.charAt(0) == 'v') {
+        if (host.charAt(0) == 'v' || host.charAt(0) == 'V') {
             // IP future - starts with version `v1` etc.
             validateIpFuture(ipLiteral, host);
             return;

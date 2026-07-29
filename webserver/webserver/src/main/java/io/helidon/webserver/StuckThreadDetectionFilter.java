@@ -142,21 +142,17 @@ final class StuckThreadDetectionFilter implements Filter {
         try {
             chain.proceed();
         } finally {
-            complete(active);
-        }
-    }
-
-    private void complete(ActiveRequest active) {
-        activeRequests.remove(active);
-        if (active.complete(System.nanoTime())) {
-            completedRequests.offer(active);
-            if (!running.get()) {
-                completedRequests.remove(active);
-                return;
-            }
-            Thread thread = monitorThread.get();
-            if (thread != null) {
-                LockSupport.unpark(thread);
+            activeRequests.remove(active);
+            if (active.complete(System.nanoTime())) {
+                completedRequests.offer(active);
+                if (!running.get()) {
+                    completedRequests.remove(active);
+                    return;
+                }
+                Thread monitor = monitorThread.get();
+                if (monitor != null) {
+                    LockSupport.unpark(monitor);
+                }
             }
         }
     }
