@@ -36,6 +36,9 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
@@ -101,14 +104,18 @@ public class GraphQlJmhBenchmark {
         private InvocationHandler invocationHandler;
 
         @Setup
-        public void setup() {
+        public void setup() throws IOException, InterruptedException {
             LogConfig.configureRuntime();
 
             GraphQLSchema schema = schema();
             invocationHandler = InvocationHandler.create(schema);
+            GraphQlService graphQlService = GraphQlService.builder()
+                    .invocationHandler(invocationHandler)
+                    .permitAll(true)
+                    .build();
             server = WebServer.builder()
                     .host(SERVER_HOST)
-                    .routing(routing -> routing.register(GraphQlService.create(schema)))
+                    .routing(routing -> routing.register(graphQlService))
                     .build()
                     .start();
             httpClient = HttpClient.newBuilder()
@@ -119,6 +126,26 @@ public class GraphQlJmhBenchmark {
                     .GET()
                     .uri(URI.create("http://" + SERVER_HOST + ":" + server.port() + "/graphql?query=" + ENCODED_QUERY))
                     .build();
+
+            HttpResponse<String> response = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new IllegalStateException("GraphQL benchmark preflight returned status "
+                                                        + response.statusCode()
+                                                        + ": "
+                                                        + response.body());
+            }
+            JsonObject result = JsonParser.create(response.body()).readJsonObject();
+            JsonObject data = result.objectValue("data", JsonObject.empty());
+            JsonArray numbers = data.arrayValue("numbers", JsonArray.empty());
+            List<Integer> numberValues = numbers.values()
+                    .stream()
+                    .map(value -> value.asNumber().intValue())
+                    .toList();
+            if (result.containsKey("errors")
+                    || !"world".equals(data.stringValue("hello", null))
+                    || !List.of(1, 2, 3).equals(numberValues)) {
+                throw new IllegalStateException("GraphQL benchmark preflight returned unexpected data: " + result);
+            }
         }
 
         @TearDown
