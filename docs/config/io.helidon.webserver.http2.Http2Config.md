@@ -105,6 +105,18 @@ HTTP/2 server configuration
 </tr>
 <tr>
 <td>
+<code>max-<wbr>headers-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>16384</code>
+</td>
+<td>Configure the maximum allowed headers size, which must be greater than <code>0</code></td>
+</tr>
+<tr>
+<td>
 <code>max-<wbr>empty-<wbr>frames</code>
 </td>
 <td>
@@ -199,7 +211,7 @@ HTTP/2 server configuration
 <td>
 <code>8192</code>
 </td>
-<td>The maximum field section size that the sender is prepared to accept in bytes</td>
+<td>The maximum field section size the server advertises to clients using the HTTP/2 <code>SETTINGS_<wbr>MAX_<wbr>HEADER_<wbr>LIST_<wbr>SIZE</code> setting</td>
 </tr>
 <tr>
 <td>

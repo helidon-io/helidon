@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -60,6 +61,8 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
@@ -101,6 +104,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -128,6 +132,7 @@ class Http1ClientTest {
     private static final String CLIENT_SEND_LOGGER_NAME = Http1LoggingConnectionListener.class.getName() + ".cl-send";
 
     @Test
+    @SuppressWarnings("deprecation")
     void testMaxHeaderSizeFail() {
         Http1Client client = Http1Client.create(builder -> builder.protocolConfig(pc -> pc.maxHeaderSize(15)));
 
@@ -135,12 +140,145 @@ class Http1ClientTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void testMaxHeaderSizeSuccess() {
         Http1Client client = Http1Client.builder()
                 .protocolConfig(pc -> pc.maxHeaderSize(500))
                 .build();
 
         validateSuccessfulResponse(client, new FakeHttp1ClientConnection());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void testMaxHeadersSizeBackwardCompatibleAlias() {
+        Http1ClientProtocolConfig defaultConfig = Http1ClientProtocolConfig.create();
+        Http1ClientProtocolConfig config = Http1ClientProtocolConfig.builder()
+                .maxHeadersSize(512)
+                .build();
+        Http1ClientProtocolConfig legacyConfig = Http1ClientProtocolConfig.builder()
+                .maxHeaderSize(256)
+                .build();
+
+        assertThat(defaultConfig.maxHeaderSize(), is(16384));
+        assertThat(defaultConfig.maxHeadersSize(), is(16384));
+        assertThat(config.maxHeaderSize(), is(512));
+        assertThat(config.maxHeadersSize(), is(512));
+        assertThat(legacyConfig.maxHeaderSize(), is(256));
+        assertThat(legacyConfig.maxHeadersSize(), is(256));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void deprecatedBuilderGetterRetainsBaseDefaultBeforeBuild() {
+        Http1ClientProtocolConfig.Builder builder = Http1ClientProtocolConfig.builder();
+
+        assertThat(builder.maxHeaderSize(), is(16384));
+        assertThat(builder.maxHeadersSize(), is(16384));
+
+        builder.maxHeadersSize(512);
+
+        assertThat(builder.maxHeaderSize(), is(16384));
+        assertThat(builder.maxHeadersSize(), is(512));
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonPositiveHeaderSizes")
+    @SuppressWarnings("deprecation")
+    void deprecatedHeaderSizeRejectsNonPositiveValues(int value) {
+        assertThrows(IllegalArgumentException.class,
+                     () -> Http1ClientProtocolConfig.builder().maxHeaderSize(value).build());
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonPositiveHeaderSizes")
+    void deprecatedHeaderSizeConfigRejectsNonPositiveValues(int value) {
+        Config config = Config.create(ConfigSources.create(Map.of("max-header-size", Integer.toString(value))));
+
+        assertThrows(IllegalArgumentException.class, () -> Http1ClientProtocolConfig.create(config));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void unbuiltBuilderCopyRetainsCommonHeaderLimit() {
+        Http1ClientProtocolConfig.Builder source = Http1ClientProtocolConfig.builder()
+                .maxHeadersSize(512);
+
+        Http1ClientProtocolConfig config = Http1ClientProtocolConfig.builder()
+                .from(source)
+                .build();
+
+        assertThat(config.maxHeaderSize(), is(512));
+        assertThat(config.maxHeadersSize(), is(512));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void unbuiltBuilderCopyRetainsHeaderLimitSetterOrder() {
+        Http1ClientProtocolConfig legacyThenCommon = Http1ClientProtocolConfig.builder()
+                .from(Http1ClientProtocolConfig.builder()
+                              .maxHeaderSize(256)
+                              .maxHeadersSize(512))
+                .build();
+        Http1ClientProtocolConfig commonThenLegacy = Http1ClientProtocolConfig.builder()
+                .from(Http1ClientProtocolConfig.builder()
+                              .maxHeadersSize(512)
+                              .maxHeaderSize(256))
+                .build();
+
+        assertThat(legacyThenCommon.maxHeaderSize(), is(512));
+        assertThat(legacyThenCommon.maxHeadersSize(), is(512));
+        assertThat(commonThenLegacy.maxHeaderSize(), is(256));
+        assertThat(commonThenLegacy.maxHeadersSize(), is(256));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void unbuiltBuilderCopyClearsStaleLegacyHeaderLimit() {
+        Http1ClientProtocolConfig.Builder source = Http1ClientProtocolConfig.builder()
+                .maxHeadersSize(512);
+        Http1ClientProtocolConfig.Builder target = Http1ClientProtocolConfig.builder()
+                .maxHeaderSize(256);
+
+        Http1ClientProtocolConfig config = target.from(source).build();
+
+        assertThat(config.maxHeaderSize(), is(512));
+        assertThat(config.maxHeadersSize(), is(512));
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonPositiveHeaderSizes")
+    @SuppressWarnings("deprecation")
+    void unbuiltBuilderCopyRejectsExplicitInvalidLegacyHeaderLimit(int value) {
+        Http1ClientProtocolConfig.Builder source = Http1ClientProtocolConfig.builder()
+                .maxHeaderSize(value);
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> Http1ClientProtocolConfig.builder().from(source).build());
+    }
+
+    @Test
+    void deprecatedBuilderGetterDescriptorIsPreserved() throws NoSuchMethodException {
+        var method = Http1ClientProtocolConfig.BuilderBase.class.getMethod("maxHeaderSize");
+
+        assertThat(method.getReturnType(), sameInstance(int.class));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void customProtocolConfigRetainsLegacyHeaderLimit() {
+        Http1Client client = Http1Client.builder()
+                .protocolConfig(customProtocolConfig(15))
+                .build();
+
+        validateFailedResponse(client, new FakeHttp1ClientConnection(), "Header size exceeded");
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonPositiveHeaderSizes")
+    void customProtocolConfigRejectsNonPositiveLegacyHeaderLimit(int value) {
+        assertThrows(IllegalArgumentException.class,
+                     () -> Http1ClientConfigSupport.maxHeadersSize(customProtocolConfig(value)));
     }
 
     @Test
@@ -1355,6 +1493,35 @@ class Http1ClientTest {
         assertThat(response.status(), is(Status.OK_200));
         String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
         assertThat(responseHeaderValue, is(headerValue.trim()));
+    }
+
+    private static Stream<Integer> nonPositiveHeaderSizes() {
+        return Stream.of(0, -1, Integer.MIN_VALUE);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static Http1ClientProtocolConfig customProtocolConfig(int maxHeaderSize) {
+        return new Http1ClientProtocolConfig() {
+            @Override
+            public String name() {
+                return "custom";
+            }
+
+            @Override
+            public boolean defaultKeepAlive() {
+                return true;
+            }
+
+            @Override
+            public int maxHeaderSize() {
+                return maxHeaderSize;
+            }
+
+            @Override
+            public int maxStatusLineLength() {
+                return 256;
+            }
+        };
     }
 
     private static void validateSuccessfulResponse(Http1Client client, ClientConnection connection) {

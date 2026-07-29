@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,28 @@
 
 package io.helidon.http.http2;
 
+import java.time.Duration;
+
 import io.helidon.http.HeaderNames;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class DynamicTableTest {
+    @Test
+    void entryLargerThanMaximumEmptiesTable() {
+        Http2Headers.DynamicTable table = Http2Headers.DynamicTable.create(40);
+        table.add(HeaderNames.create("a"), "b");
+
+        assertTimeoutPreemptively(Duration.ofSeconds(1),
+                                  () -> table.add(HeaderNames.create("large"), "large-value"));
+
+        assertThat(table.currentTableSize(), is(0));
+    }
+
     @Test
     void testDynamicTable() {
         Http2Settings settings = Http2Settings.builder()

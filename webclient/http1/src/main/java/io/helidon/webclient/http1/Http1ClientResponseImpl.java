@@ -262,7 +262,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         DataReader reader = connection.reader();
         Headers result = Http1HeadersParser.readHeaders(
                 reader,
-                protocolConfig.maxHeaderSize(),
+                Http1ClientConfigSupport.maxHeadersSize(protocolConfig),
                 protocolConfig.validateResponseHeaders()
         );
         if (!entityAllowed && reader.available() > 0) {

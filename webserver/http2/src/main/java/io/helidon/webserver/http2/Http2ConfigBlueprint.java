@@ -48,11 +48,16 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
     int maxFrameSize();
 
     /**
-     * The maximum field section size that the sender is prepared to accept in bytes.
+     * The maximum field section size the server advertises to clients using the HTTP/2
+     * {@code SETTINGS_MAX_HEADER_LIST_SIZE} setting.
+     * <p>
+     * This setting is sent to the peer as an HTTP/2 protocol hint. Helidon's local request header size
+     * enforcement is configured by {@link #maxHeadersSize()}.
+     * <p>
      * See RFC 9113 section 6.5.2 for details.
      * Default is 8192.
      *
-     * @return maximal header list size in bytes
+     * @return maximal header list size in bytes advertised in the HTTP/2 settings
      */
     @Option.Configured
     @Option.DefaultInt(8192)

@@ -40,5 +40,14 @@ interface OptionDecoratorsBlueprint {
     @Option.Decorator(OptionDecoratorsSupport.StringDecorator.class)
     Set<String> mars();
 
+    @Option.DefaultInt(42)
+    int replacementValue();
+
+    @Deprecated(since = "4.3.0")
+    @Option.Deprecated("replacementValue")
+    @Option.Decorator(OptionDecoratorsSupport.IntDecorator.class)
+    @Option.DefaultInt(42)
+    int legacyValue();
+
     record Foo(String a, int b) { }
 }

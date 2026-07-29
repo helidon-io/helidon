@@ -778,12 +778,14 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                     int discardedDataLength = buffer.failAndDiscard(e);
                     try {
                         failInboundLocked(e);
+                        reset(e.code());
                         incrementInboundWindowSizeLocked(discardedDataLength);
                     } finally {
                         Thread.startVirtualThread(() -> completeTrailersFailure(e));
                     }
                 } else {
                     failInboundLocked(e);
+                    reset(e.code());
                 }
                 inboundStateChanged.signalAll();
                 return;
@@ -844,6 +846,21 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     /**
+     * Fails inbound reads waiting on this stream.
+     *
+     * @param failure failure that should be observed by inbound readers
+     */
+    void failInbound(Http2Exception failure) {
+        inboundStateLock.lock();
+        try {
+            failInboundLocked(failure);
+            inboundStateChanged.signalAll();
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
+    /**
      * Determines whether the caller should keep polling for inbound {@code DATA}
      * frames. Once final headers or trailers mark the response complete, reads
      * stop even if no explicit empty data frame is received.
@@ -853,6 +870,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private boolean expectsEntityData() {
         inboundStateLock.lock();
         try {
+            throwIfInboundFailed();
             return (state == Http2StreamState.OPEN || state == Http2StreamState.HALF_CLOSED_LOCAL)
                     && readState != ReadState.END
                     && hasEntity;
@@ -896,13 +914,17 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             return;
         }
         if (headers.status() == Status.SWITCHING_PROTOCOLS_101) {
-            failInboundLocked(new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                                 "HTTP/2 response must not use 101 Switching Protocols"));
+            Http2Exception failure = new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                                        "HTTP/2 response must not use 101 Switching Protocols");
+            failInboundLocked(failure);
+            reset(failure.code());
             return;
         }
         if (endOfStream) {
-            failInboundLocked(new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                                 "Informational response must not end the stream"));
+            Http2Exception failure = new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                                        "Informational response must not end the stream");
+            failInboundLocked(failure);
+            reset(failure.code());
             return;
         }
 
@@ -947,8 +969,12 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     private void failInboundLocked(Http2Exception failure) {
         inboundFailure = failure;
+        StreamBuffer buffer = this.buffer;
+        if (buffer != null) {
+            buffer.fail(failure);
+        }
+        trailers.completeExceptionally(failure);
         close();
-        reset(failure.code());
     }
 
     private static int dataContentLength(Http2FrameData frameData) {

@@ -150,6 +150,7 @@ class Http1ClientTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void testMaxHeaderSizeFail() {
         Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI)
                 .protocolConfig(it -> it.maxHeaderSize(15)));
@@ -158,6 +159,7 @@ class Http1ClientTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void testMaxHeaderSizeSuccess() {
         Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI)
                 .protocolConfig(it -> it.maxHeaderSize(500)));

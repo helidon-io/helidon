@@ -111,6 +111,54 @@ class Http2ConnectionTest {
     }
 
     @Test
+    void streamContextDoesNotRetainEmptyContinuations() {
+        Http2Connection.StreamContext streamContext =
+                new Http2Connection.StreamContext(1, 16_384, mock(Http2ServerStream.class));
+        Http2FrameHeader headers = Http2FrameHeader.create(0,
+                                                           Http2FrameTypes.HEADERS,
+                                                           Http2Flag.HeaderFlags.create(0),
+                                                           1);
+        streamContext.addHeadersToBeContinued(headers, BufferData.empty());
+
+        Http2FrameHeader continuation = Http2FrameHeader.create(0,
+                                                                Http2FrameTypes.CONTINUATION,
+                                                                Http2Flag.ContinuationFlags.create(0),
+                                                                1);
+        for (int i = 0; i < 1_000; i++) {
+            streamContext.addContinuation(new Http2FrameData(continuation, BufferData.empty()));
+        }
+
+        assertThat(streamContext.contData().length, is(1));
+    }
+
+    @Test
+    void streamContextLimitsRetainedHeaderFrames() {
+        Http2Connection.StreamContext streamContext =
+                new Http2Connection.StreamContext(1, Long.MAX_VALUE, mock(Http2ServerStream.class));
+        Http2FrameHeader headers = Http2FrameHeader.create(1,
+                                                           Http2FrameTypes.HEADERS,
+                                                           Http2Flag.HeaderFlags.create(0),
+                                                           1);
+        streamContext.addHeadersToBeContinued(headers, BufferData.create(new byte[1]));
+
+        Http2FrameHeader continuation = Http2FrameHeader.create(1,
+                                                                Http2FrameTypes.CONTINUATION,
+                                                                Http2Flag.ContinuationFlags.create(0),
+                                                                1);
+        for (int i = 1; i < 8_192; i++) {
+            streamContext.addContinuation(new Http2FrameData(continuation, BufferData.create(new byte[1])));
+        }
+
+        Http2FrameData excessContinuation = new Http2FrameData(continuation, BufferData.create(new byte[1]));
+        Http2Exception exception = assertThrows(Http2Exception.class,
+                                                () -> streamContext.addContinuation(excessContinuation));
+        assertAll(
+                () -> assertThat(exception.code(), is(Http2ErrorCode.ENHANCE_YOUR_CALM)),
+                () -> assertThat(streamContext.contData().length, is(8_192))
+        );
+    }
+
+    @Test
     void pingAckWrapsUncheckedIOException() {
         DataWriter writer = mock(DataWriter.class);
         doThrow(new UncheckedIOException(new SocketException("Broken pipe")))

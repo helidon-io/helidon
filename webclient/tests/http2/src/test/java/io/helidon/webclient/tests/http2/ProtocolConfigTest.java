@@ -36,6 +36,7 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 class ProtocolConfigTest {
     @Test
+    @SuppressWarnings("deprecation")
     void testProtocolConfigWorks() {
         Config config = Config.just(ConfigSources.classpath("protocol-config-test.yaml"));
         // reproducer for #7802 - h2 protocol not recognized
@@ -60,6 +61,7 @@ class ProtocolConfigTest {
 
         Http2ClientProtocolConfig http2cast = (Http2ClientProtocolConfig) http2Config;
         assertThat(http2cast.priorKnowledge(), is(true));
+        assertThat(http2cast.maxHeadersSize(), is(21000));
         assertThat(http2cast.validateResponseHeaders(), is(false));
         assertThat(http2cast.log().unsafeRawData(), is(false));
         assertThat(Http2ClientProtocolConfig.create().log().unsafeRawData(), is(false));
@@ -74,6 +76,7 @@ class ProtocolConfigTest {
 
         Http1ClientProtocolConfig http1cast = (Http1ClientProtocolConfig) http1Config;
         assertThat(http1cast.maxHeaderSize(), is(20000));
+        assertThat(http1cast.maxHeadersSize(), is(20000));
         assertThat(http1cast.validateRequestHeaders(), is(false));
         assertThat(http1cast.log().unsafeRawData(), is(false));
         assertThat(Http1ClientProtocolConfig.create().log().unsafeRawData(), is(false));
@@ -85,5 +88,10 @@ class ProtocolConfigTest {
         Config http1LogConfig = Config.create(ConfigSources.create(Map.of("log.recv-log", "false")));
         Http1ClientProtocolConfig configuredHttp1 = Http1ClientProtocolConfig.create(http1LogConfig);
         assertThat(configuredHttp1.log().receiveLog(), is(false));
+        Config legacyHttp1SizeConfig = Config.create(ConfigSources.create(Map.of("max-headers-size", "23000",
+                                                                                  "max-header-size", "22000")));
+        Http1ClientProtocolConfig legacyHttp1Size = Http1ClientProtocolConfig.create(legacyHttp1SizeConfig);
+        assertThat(legacyHttp1Size.maxHeaderSize(), is(22000));
+        assertThat(legacyHttp1Size.maxHeadersSize(), is(22000));
     }
 }

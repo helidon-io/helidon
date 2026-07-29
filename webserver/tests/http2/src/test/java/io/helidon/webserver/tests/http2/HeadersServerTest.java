@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -59,6 +60,7 @@ import io.helidon.webserver.http2.Http2Upgrader;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.testing.junit5.Socket;
 import io.helidon.webserver.testing.junit5.http2.Http2TestClient;
 import io.helidon.webserver.testing.junit5.http2.Http2TestConnection;
 
@@ -76,6 +78,9 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 @ServerTest
 public class HeadersServerTest {
 
+    private static final String SMALL_MAX_HEADERS_SOCKET = "small-max-headers";
+    private static final String LARGE_ENTITY_BUFFER_SOCKET = "large-entity-buffer";
+    private static final int SMALL_MAX_HEADERS_SIZE = 100;
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String DATA = "Helidon!!!".repeat(10);
     private static final Header TEST_TRAILER_HEADER = HeaderValues.create("test-trailer", "trailer-value");
@@ -102,12 +107,25 @@ public class HeadersServerTest {
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
         Http2Config http2Config = Http2Config.builder()
                 .sendErrorDetails(true)
+                .maxHeadersSize(128_000)
                 .maxHeaderListSize(128_000)
                 .build();
         Http2Config responseValidationDisabledConfig = Http2Config.builder()
                 .sendErrorDetails(true)
+                .maxHeadersSize(128_000)
                 .maxHeaderListSize(128_000)
                 .validateResponseHeaders(false)
+                .build();
+        Http2Config smallMaxHeadersConfig = Http2Config.builder()
+                .sendErrorDetails(true)
+                .maxHeadersSize(SMALL_MAX_HEADERS_SIZE)
+                .maxHeaderListSize(128_000)
+                .build();
+        Http2Config largeEntityBufferConfig = Http2Config.builder()
+                .sendErrorDetails(true)
+                .maxHeadersSize(16_384)
+                .maxHeaderListSize(128_000)
+                .maxBufferedEntitySize(Size.create(Long.MAX_VALUE))
                 .build();
 
         serverBuilder.port(-1)
@@ -127,6 +145,18 @@ public class HeadersServerTest {
                 .addConnectionSelector(Http2ConnectionSelector.builder()
                                                .http2Config(responseValidationDisabledConfig)
                                                .build()));
+        serverBuilder.putSocket(SMALL_MAX_HEADERS_SOCKET, socket -> socket
+                .port(-1)
+                .protocolsDiscoverServices(false)
+                .addConnectionSelector(Http2ConnectionSelector.builder()
+                                               .http2Config(smallMaxHeadersConfig)
+                                               .build()));
+        serverBuilder.putSocket(LARGE_ENTITY_BUFFER_SOCKET, socket -> socket
+                .port(-1)
+                .protocolsDiscoverServices(false)
+                .addConnectionSelector(Http2ConnectionSelector.builder()
+                                               .http2Config(largeEntityBufferConfig)
+                                               .build()));
     }
 
     @SetUpRoute
@@ -136,6 +166,11 @@ public class HeadersServerTest {
 
     @SetUpRoute("response-validation-disabled")
     static void responseValidationDisabledRouter(HttpRouting.Builder router) {
+        routes(router);
+    }
+
+    @SetUpRoute(SMALL_MAX_HEADERS_SOCKET)
+    static void smallMaxHeadersRouter(HttpRouting.Builder router) {
         routes(router);
     }
 
@@ -280,6 +315,86 @@ public class HeadersServerTest {
             } catch (IOException e) {
                 // this is expected
             }
+        }
+    }
+
+    @Test
+    void oversizedIgnoredRequestHeaderCountsAgainstLimit(@Socket(SMALL_MAX_HEADERS_SOCKET) Http2TestClient testClient) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            connection.completeHandshake(TIMEOUT);
+
+            WritableHeaders<?> writableHeaders = WritableHeaders.create();
+            writableHeaders.add(HeaderValues.create(HeaderNames.X_HELIDON_CN, "a".repeat(128)));
+            Http2Headers headers = Http2Headers.create(writableHeaders);
+            headers.method(GET);
+            headers.path("/cont-in");
+            headers.scheme(connection.clientUri().scheme());
+            headers.authority(connection.clientUri().authority());
+            connection.writer()
+                    .writeHeaders(headers,
+                                  1,
+                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                  FlowControl.Outbound.NOOP);
+
+            connection.assertGoAway(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                    "Request Header Fields Too Large",
+                                    TIMEOUT);
+        }
+    }
+
+    @Test
+    void splitHeaderBlockLimitIsIndependentOfBufferedEntityLimit(
+            @Socket(LARGE_ENTITY_BUFFER_SOCKET) Http2TestClient testClient) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            connection.completeHandshake(TIMEOUT);
+            connection.writer().write(new Http2FrameData(
+                    Http2FrameHeader.create(16_384,
+                                            Http2FrameTypes.HEADERS,
+                                            Http2Flag.HeaderFlags.create(0),
+                                            1),
+                    BufferData.create(new byte[16_384])));
+            for (int i = 0; i < 3; i++) {
+                connection.writer().write(new Http2FrameData(
+                        Http2FrameHeader.create(16_384,
+                                                Http2FrameTypes.CONTINUATION,
+                                                Http2Flag.ContinuationFlags.create(0),
+                                                1),
+                        BufferData.create(new byte[16_384])));
+            }
+            connection.writer().write(new Http2FrameData(
+                    Http2FrameHeader.create(1,
+                                            Http2FrameTypes.CONTINUATION,
+                                            Http2Flag.ContinuationFlags.create(Http2Flag.END_OF_HEADERS),
+                                            1),
+                    BufferData.create(new byte[1])));
+
+            connection.assertGoAway(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                    "Request Header Fields Too Large",
+                                    TIMEOUT);
+        }
+    }
+
+    @Test
+    void decodedHeaderLimitStopsHpackDecode(@Socket(SMALL_MAX_HEADERS_SOCKET) Http2TestClient testClient) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            connection.completeHandshake(TIMEOUT);
+            byte[] headerBlock = {
+                    (byte) 0x82, (byte) 0x86, (byte) 0x84,
+                    (byte) 0x90, (byte) 0x90, (byte) 0x90,
+                    0
+            };
+            Http2Flag.HeaderFlags flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
+            connection.writer()
+                    .write(new Http2FrameData(
+                            Http2FrameHeader.create(headerBlock.length,
+                                                    Http2FrameTypes.HEADERS,
+                                                    flags,
+                                                    1),
+                            BufferData.create(headerBlock)));
+
+            connection.assertGoAway(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                    "Request Header Fields Too Large",
+                                    TIMEOUT);
         }
     }
 

@@ -24,7 +24,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
 /**
  * Configuration of an HTTP/1.1 client.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = Http1ClientConfigSupport.ProtocolConfigDecorator.class)
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods("maxBufferedEntitySize")
 interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig {
@@ -54,10 +54,17 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig 
     boolean defaultKeepAlive();
 
     /**
-     * Configure the maximum allowed header size of the response.
+     * Configure the maximum allowed headers size of the response, which must be greater than {@code 0}.
+     * <p>
+     * If both {@code max-header-size} and {@code max-headers-size} are configured, the deprecated
+     * {@code max-header-size} key takes precedence for backward compatibility.
      *
-     * @return  maximum header size
+     * @return maximum headers size
+     * @deprecated use {@link #maxHeadersSize()} instead
      */
+    @Deprecated(since = "27.0.0")
+    @Option.Deprecated("maxHeadersSize")
+    @Option.Decorator(Http1ClientConfigSupport.MaxHeaderSizeDecorator.class)
     @Option.Configured
     @Option.DefaultInt(16384)
     int maxHeaderSize();

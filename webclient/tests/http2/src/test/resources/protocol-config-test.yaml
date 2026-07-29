@@ -21,4 +21,5 @@ client:
       validate-request-headers: false
     h2:
       prior-knowledge: true
+      max-headers-size: 21000
       validate-response-headers: false

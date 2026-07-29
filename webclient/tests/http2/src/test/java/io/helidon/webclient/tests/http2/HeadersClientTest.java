@@ -72,6 +72,7 @@ class HeadersClientTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String DATA = "Helidon!!!".repeat(10);
     private static final String INVALID_CONTENT_TYPE = "text/plain; charset=";
+    private static final int CONTINUATION_HEADER_SIZE = 100_000;
     private static final Vertx VERTX = Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(1000*60*60));
     private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private static HttpServer SERVER;
@@ -190,6 +191,7 @@ class HeadersClientTest {
         CLIENT = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .readContinueTimeout(Duration.ofSeconds(2))
+                .protocolConfig(it -> it.maxHeadersSize(CONTINUATION_HEADER_SIZE))
                 .build();
         RELAXED_CLIENT = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")

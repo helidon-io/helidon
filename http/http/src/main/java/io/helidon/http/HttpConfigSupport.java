@@ -23,6 +23,15 @@ final class HttpConfigSupport {
     private HttpConfigSupport() {
     }
 
+    static final class BuilderDecorator implements Prototype.BuilderDecorator<HttpConfig.BuilderBase<?, ?>> {
+        @Override
+        public void decorate(HttpConfig.BuilderBase<?, ?> target) {
+            if (target.maxHeadersSize() <= 0) {
+                throw new IllegalArgumentException("Max headers size must be greater than 0");
+            }
+        }
+    }
+
     static final class HttpConfigCustomMethods {
         private HttpConfigCustomMethods() {
         }

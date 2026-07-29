@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -81,6 +82,8 @@ import static java.lang.System.Logger.Level.WARNING;
 public class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
+    private static final int MAX_QUEUED_HEADER_FRAMES = 8192;
+    private static final long MIN_HEADER_BLOCK_SIZE = 64 * 1024;
     private static final long NO_PING_ACK = Long.MIN_VALUE;
     private static final Http2Headers EMPTY_INBOUND_HEADERS = Http2Headers.create(WritableHeaders.create());
     private static final Http2Stream DROPPED_INBOUND_HEADERS_STREAM = new DroppedInboundHeadersStream();
@@ -147,7 +150,10 @@ public class Http2ClientConnection {
         this.protocolConfig = http2Client.protocolConfig();
         this.clientConfig = http2Client.clientConfig();
         this.clearReadTimeoutAfterInitialSettings = clearReadTimeoutAfterInitialSettings;
-        this.pendingInboundHeaders = new PendingInboundHeaders(protocolConfig.maxHeaderListSize());
+        long maxHeaderBlockSize = Math.max(protocolConfig.maxFrameSize(),
+                                           Math.max(MIN_HEADER_BLOCK_SIZE,
+                                                    4L * Math.max(0, protocolConfig.maxHeadersSize())));
+        this.pendingInboundHeaders = new PendingInboundHeaders(maxHeaderBlockSize);
         this.sendListener = http2Client.sendListener();
         this.recvListener = http2Client.recvListener();
         this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
@@ -874,6 +880,11 @@ public class Http2ClientConnection {
         this.reader.ensureAvailable();
         BufferData frameHeaderBuffer = this.reader.readBuffer(FRAME_HEADER_LENGTH);
         Http2FrameHeader frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
+        if ((frameHeader.type() == Http2FrameType.HEADERS || frameHeader.type() == Http2FrameType.CONTINUATION)
+                && frameHeader.length() > protocolConfig.maxFrameSize()) {
+            throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
+                                     "Frame size " + frameHeader.length() + " is too big");
+        }
         frameHeader.type().checkLength(frameHeader.length());
         BufferData data = readFrameData(frameHeader);
         return handle(frameHeader, data);
@@ -936,10 +947,28 @@ public class Http2ClientConnection {
                                               Http2Headers headerDecodeBasis,
                                               Http2FrameData... headerFrames) {
         // Keep HPACK decode on the connection thread so the shared dynamic table advances in wire order.
+        int maxHeadersSize = protocolConfig.maxHeadersSize();
+        if (maxHeadersSize <= 0) {
+            return Http2Headers.create(stream,
+                                       inboundDynamicTable,
+                                       inboundHuffman,
+                                       headerDecodeBasis,
+                                       headerFrames);
+        }
+
+        long[] decodedHeadersSize = new long[1];
         return Http2Headers.create(stream,
                                    inboundDynamicTable,
                                    inboundHuffman,
                                    headerDecodeBasis,
+                                   Set.of(),
+                                   decodedSize -> {
+                                       decodedHeadersSize[0] += decodedSize;
+                                       if (decodedHeadersSize[0] > maxHeadersSize) {
+                                           throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                                                    "Response Header Fields Too Large");
+                                       }
+                                   },
                                    headerFrames);
     }
 
@@ -1134,44 +1163,48 @@ public class Http2ClientConnection {
         // Http2LoggingFrameListener inspects BufferData without advancing it; copying here would drain the live payload.
         recvListener.frame(ctx, streamId, data);
 
+        Http2ClientStream headerStream = null;
         Http2FrameData[] headerFrames;
         boolean endOfStream;
-        if (frameHeader.type() == Http2FrameType.HEADERS) {
-            if (!endOfHeaders(frameHeader)) {
-                pendingInboundHeaders.begin(frameHeader, data);
-                return true;
-            }
-            endOfStream = frameHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
-            headerFrames = new Http2FrameData[] {new Http2FrameData(frameHeader, data)};
-        } else {
-            pendingInboundHeaders.add(frameHeader, data);
-            if (!endOfHeaders(frameHeader)) {
-                return true;
-            }
-            endOfStream = pendingInboundHeaders.endOfStream();
-            headerFrames = pendingInboundHeaders.frames();
-            pendingInboundHeaders.clear();
-        }
-
-        Http2ClientStream headerStream = stream(streamId);
-        if (headerStream == null) {
-            validateKnownAbandonedClientStream(streamId, frameHeader.type());
-            // Keep the shared inbound HPACK table in sync even if the application already closed the stream.
-            decodeDroppedInboundHeaders(headerFrames);
-            logDroppedFrame(frameHeader.type(), streamId);
-            return true;
-        }
-
-        Http2Headers headers = decodeInboundHeaders(headerStream, headerFrames);
-        beforeDeliverInboundHeaders(headerStream, headers, endOfStream);
         try {
+            if (frameHeader.type() == Http2FrameType.HEADERS) {
+                if (!endOfHeaders(frameHeader)) {
+                    pendingInboundHeaders.begin(frameHeader, data);
+                    return true;
+                }
+                endOfStream = frameHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
+                headerFrames = new Http2FrameData[] {new Http2FrameData(frameHeader, data)};
+            } else {
+                pendingInboundHeaders.add(frameHeader, data);
+                if (!endOfHeaders(frameHeader)) {
+                    return true;
+                }
+                endOfStream = pendingInboundHeaders.endOfStream();
+                headerFrames = pendingInboundHeaders.frames();
+                pendingInboundHeaders.clear();
+            }
+
+            headerStream = stream(streamId);
+            if (headerStream == null) {
+                validateKnownAbandonedClientStream(streamId, frameHeader.type());
+                // Keep the shared inbound HPACK table in sync even if the application already closed the stream.
+                decodeDroppedInboundHeaders(headerFrames);
+                logDroppedFrame(frameHeader.type(), streamId);
+                return true;
+            }
+
+            Http2Headers headers = decodeInboundHeaders(headerStream, headerFrames);
+            beforeDeliverInboundHeaders(headerStream, headers, endOfStream);
             headerStream.inboundHeaders(headers, endOfStream);
+            recvListener.headers(ctx, streamId, headers);
+            return true;
         } catch (Http2Exception e) {
-            headerStream.reset(e.code());
+            Http2ClientStream failedStream = headerStream == null ? stream(streamId) : headerStream;
+            if (failedStream != null) {
+                failedStream.reset(e.code());
+            }
             throw e;
         }
-        recvListener.headers(ctx, streamId, headers);
-        return true;
     }
 
     private boolean knownAbandonedClientStream(int streamId) {
@@ -1265,17 +1298,16 @@ public class Http2ClientConnection {
      * the terminating {@code END_HEADERS} frame arrives.
      * The client keeps a single HPACK dynamic table per connection, so the raw
      * frames must stay on the connection thread and be decoded only once the
-     * full block is available in wire order. This also enforces the negotiated
-     * header-list cap while the block is still in flight, mirroring the server path.
+     * full block is available in wire order.
      */
     static final class PendingInboundHeaders {
         private final List<Http2FrameData> headerFrames = new ArrayList<>();
-        private final long maxHeaderListSize;
+        private final long maxHeaderBlockSize;
         private Http2FrameHeader firstHeader;
-        private long headerListSize;
+        private long headerBlockSize;
 
-        PendingInboundHeaders(long maxHeaderListSize) {
-            this.maxHeaderListSize = maxHeaderListSize;
+        PendingInboundHeaders(long maxHeaderBlockSize) {
+            this.maxHeaderBlockSize = maxHeaderBlockSize;
         }
 
         /**
@@ -1286,9 +1318,9 @@ public class Http2ClientConnection {
          */
         void begin(Http2FrameHeader frameHeader, BufferData data) {
             clear();
+            addAndValidateHeaderBlockSize(frameHeader);
             firstHeader = frameHeader;
             headerFrames.add(new Http2FrameData(frameHeader, data));
-            addAndValidateHeaderListSize(frameHeader.length());
         }
 
         /**
@@ -1301,8 +1333,13 @@ public class Http2ClientConnection {
             if (headerFrames.isEmpty()) {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received continuation without headers.");
             }
-            headerFrames.add(new Http2FrameData(frameHeader, data));
-            addAndValidateHeaderListSize(frameHeader.length());
+            if (frameHeader.length() > 0 && headerFrames.size() >= MAX_QUEUED_HEADER_FRAMES) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Too many header block fragments.");
+            }
+            addAndValidateHeaderBlockSize(frameHeader);
+            if (frameHeader.length() > 0) {
+                headerFrames.add(new Http2FrameData(frameHeader, data));
+            }
         }
 
         /**
@@ -1346,23 +1383,13 @@ public class Http2ClientConnection {
         void clear() {
             headerFrames.clear();
             firstHeader = null;
-            headerListSize = 0;
+            headerBlockSize = 0;
         }
 
-        /**
-         * Tracks the encoded header bytes accumulated for the current block and
-         * rejects peers that exceed the configured header-list budget before decode.
-         *
-         * @param headerSizeIncrement bytes contributed by the next frame
-         */
-        private void addAndValidateHeaderListSize(int headerSizeIncrement) {
-            if (maxHeaderListSize <= 0) {
-                return;
-            }
-            headerListSize += headerSizeIncrement;
-            if (headerListSize > maxHeaderListSize) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                         "Response Header Fields Too Large");
+        private void addAndValidateHeaderBlockSize(Http2FrameHeader frameHeader) {
+            headerBlockSize += frameHeader.length();
+            if (maxHeaderBlockSize > 0 && headerBlockSize > maxHeaderBlockSize) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Header block too large.");
             }
         }
     }

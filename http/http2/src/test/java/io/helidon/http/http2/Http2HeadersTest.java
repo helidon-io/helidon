@@ -19,7 +19,9 @@ package io.helidon.http.http2;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HexFormat;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongConsumer;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderName;
@@ -46,6 +48,49 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class Http2HeadersTest {
     private static final HeaderName CUSTOM_HEADER_NAME = HeaderNames.create("custom-key");
     private static final Method CUSTOM_METHOD = Method.create("SEARCH");
+
+    @Test
+    void incrementallyIndexedEntryLargerThanTableIsDecodedWithoutInsertion() {
+        DynamicTable dynamicTable = DynamicTable.create(40);
+
+        Headers requestHeaders = headers("400178086161616161616161", dynamicTable).httpHeaders();
+
+        assertThat(requestHeaders.get(HeaderNames.create("x")).get(), is("aaaaaaaa"));
+        assertThat(dynamicTable.currentTableSize(), is(0));
+    }
+
+    @Test
+    void callbackDecodeArgumentsAreValidatedAtTheApiBoundary() {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2HuffmanDecoder huffman = Http2HuffmanDecoder.create();
+        Http2Headers basis = Http2Headers.create(WritableHeaders.create());
+
+        NullPointerException ignoredHeaders = assertThrows(NullPointerException.class,
+                                                            () -> Http2Headers.create(null,
+                                                                                      dynamicTable,
+                                                                                      huffman,
+                                                                                      basis,
+                                                                                      null,
+                                                                                      _ -> { }));
+        assertThat(ignoredHeaders.getMessage(), is("ignoredHeaders"));
+        NullPointerException consumer = assertThrows(NullPointerException.class,
+                                                      () -> Http2Headers.create(null,
+                                                                                dynamicTable,
+                                                                                huffman,
+                                                                                basis,
+                                                                                Set.of(),
+                                                                                (LongConsumer) null));
+        assertThat(consumer.getMessage(), is("decodedHeaderSizeConsumer"));
+        NullPointerException frames = assertThrows(NullPointerException.class,
+                                                    () -> Http2Headers.create(null,
+                                                                              dynamicTable,
+                                                                              huffman,
+                                                                              basis,
+                                                                              Set.of(),
+                                                                              _ -> { },
+                                                                              (Http2FrameData[]) null));
+        assertThat(frames.getMessage(), is("frames"));
+    }
 
     /*
     https://www.rfc-editor.org/rfc/rfc7541.html#appendix-C.2.1

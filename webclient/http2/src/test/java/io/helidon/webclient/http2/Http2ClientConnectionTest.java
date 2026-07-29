@@ -34,6 +34,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
@@ -81,10 +82,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -103,6 +107,7 @@ import static org.mockito.Mockito.when;
 class Http2ClientConnectionTest {
     private static final Duration TEST_WAIT_TIMEOUT = Duration.ofSeconds(10);
     private static final io.helidon.http.HeaderName SHARED_HEADER = HeaderNames.create("x-shared");
+    private static final io.helidon.http.HeaderName LARGE_HEADER = HeaderNames.create("x-large");
     private static final io.helidon.http.HeaderName GRPC_STATUS_HEADER = HeaderNames.create("grpc-status");
     private static final Http2StreamConfig STREAM_CONFIG = new Http2StreamConfig() {
         @Override
@@ -120,6 +125,53 @@ class Http2ClientConnectionTest {
             return Duration.ofSeconds(1);
         }
     };
+
+    @Test
+    void pendingInboundHeadersDoNotRetainEmptyContinuations() {
+        Http2ClientConnection.PendingInboundHeaders pendingHeaders =
+                new Http2ClientConnection.PendingInboundHeaders(16_384);
+        Http2FrameHeader headers = Http2FrameHeader.create(0,
+                                                           Http2FrameTypes.HEADERS,
+                                                           Http2Flag.HeaderFlags.create(0),
+                                                           1);
+        pendingHeaders.begin(headers, BufferData.empty());
+
+        Http2FrameHeader continuation = Http2FrameHeader.create(0,
+                                                                Http2FrameTypes.CONTINUATION,
+                                                                Http2Flag.ContinuationFlags.create(0),
+                                                                1);
+        for (int i = 0; i < 1_000; i++) {
+            pendingHeaders.add(continuation, BufferData.empty());
+        }
+
+        assertThat(pendingHeaders.frames().length, is(1));
+    }
+
+    @Test
+    void pendingInboundHeadersLimitsRetainedFragments() {
+        Http2ClientConnection.PendingInboundHeaders pendingHeaders =
+                new Http2ClientConnection.PendingInboundHeaders(Long.MAX_VALUE);
+        Http2FrameHeader headers = Http2FrameHeader.create(1,
+                                                           Http2FrameTypes.HEADERS,
+                                                           Http2Flag.HeaderFlags.create(0),
+                                                           1);
+        pendingHeaders.begin(headers, BufferData.create(new byte[1]));
+
+        Http2FrameHeader continuation = Http2FrameHeader.create(1,
+                                                                Http2FrameTypes.CONTINUATION,
+                                                                Http2Flag.ContinuationFlags.create(0),
+                                                                1);
+        for (int i = 1; i < 8_192; i++) {
+            pendingHeaders.add(continuation, BufferData.create(new byte[1]));
+        }
+
+        Http2Exception exception = assertThrows(Http2Exception.class,
+                                                () -> pendingHeaders.add(continuation,
+                                                                         BufferData.create(new byte[1])));
+        assertThat(exception.code(), is(Http2ErrorCode.ENHANCE_YOUR_CALM));
+        assertThat(exception.getMessage(), is("Too many header block fragments."));
+        assertThat(pendingHeaders.frames().length, is(8_192));
+    }
 
     private static Http2FrameData encodedHeaderFrame(int streamId,
                                                      Http2Headers headers,
@@ -182,7 +234,15 @@ class Http2ClientConnectionTest {
                                                              Http2Headers headers,
                                                              Http2Headers.DynamicTable dynamicTable,
                                                              Http2HuffmanEncoder huffman) {
-        BufferData data = BufferData.create(256);
+        return encodedSplitHeaderFrames(streamId, headers, dynamicTable, huffman, 256);
+    }
+
+    private static Http2FrameData[] encodedSplitHeaderFrames(int streamId,
+                                                             Http2Headers headers,
+                                                             Http2Headers.DynamicTable dynamicTable,
+                                                             Http2HuffmanEncoder huffman,
+                                                             int bufferSize) {
+        BufferData data = BufferData.create(bufferSize);
         headers.write(dynamicTable, huffman, data);
         data.rewind();
 
@@ -339,6 +399,345 @@ class Http2ClientConnectionTest {
             firstStream.close();
             secondStream.close();
             connection.close();
+        }
+    }
+
+    @Test
+    void decodedResponseHeadersExceedingConfiguredLimitCloseConnection() {
+        int maxHeadersSize = 29;
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(maxHeadersSize)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), false);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2FrameData[] response = encodedSplitHeaderFrames(stream.streamId(),
+                                                                 encodedResponseHeaders(false),
+                                                                 inboundTable,
+                                                                 Http2HuffmanEncoder.create());
+            long encodedSize = response[0].header().length() + response[1].header().length();
+            assertThat(encodedSize, lessThan((long) maxHeadersSize));
+
+            try {
+                test.offerInbound(response);
+                test.assertConnectionClosed();
+                Http2Exception exception = assertThrows(Http2Exception.class,
+                                                        () -> stream.readHeaders(Duration.ofMillis(100)));
+                assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(exception.getMessage(), is("Response Header Fields Too Large"));
+            } finally {
+                stream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void rawStatusLengthCountsAgainstConfiguredLimit() {
+        int maxHeadersSize = 12;
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(maxHeadersSize)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), false);
+
+            byte[] headerBlock = {
+                    0x08, 0x0A,
+                    '0', '0', '0', '0', '0', '0', '0', '2', '0', '0'
+            };
+            Http2FrameData response = new Http2FrameData(
+                    Http2FrameHeader.create(headerBlock.length,
+                                            Http2FrameTypes.HEADERS,
+                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                            stream.streamId()),
+                    BufferData.create(headerBlock));
+
+            try {
+                test.offerInbound(response);
+                test.assertConnectionClosed();
+                Http2Exception exception = assertThrows(Http2Exception.class,
+                                                        () -> stream.readHeaders(Duration.ofMillis(100)));
+                assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(exception.getMessage(), is("Response Header Fields Too Large"));
+            } finally {
+                stream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void decodedResponseHeadersExceedingConfiguredLimitFailSiblingStreams() {
+        int maxHeadersSize = 29;
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(maxHeadersSize)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream firstStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream secondStream = connection.createStream(STREAM_CONFIG);
+
+            firstStream.writeHeaders(requestHeaders(), false);
+            secondStream.writeHeaders(requestHeaders(), false);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2FrameData[] response = encodedSplitHeaderFrames(firstStream.streamId(),
+                                                                 encodedResponseHeaders(false),
+                                                                 inboundTable,
+                                                                 Http2HuffmanEncoder.create());
+            long encodedSize = response[0].header().length() + response[1].header().length();
+            assertThat(encodedSize, lessThan((long) maxHeadersSize));
+
+            try {
+                test.offerInbound(response);
+                test.assertConnectionClosed();
+                Http2Exception firstException = assertThrows(Http2Exception.class,
+                                                             () -> firstStream.readHeaders(Duration.ofMillis(100)));
+                assertThat(firstException.code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(firstException.getMessage(), is("Response Header Fields Too Large"));
+                Http2Exception secondException = assertThrows(Http2Exception.class,
+                                                              () -> secondStream.readHeaders(Duration.ofMillis(100)));
+                assertThat(secondException.code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(secondException.getMessage(), is("Response Header Fields Too Large"));
+            } finally {
+                firstStream.close();
+                secondStream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void connectionFailurePropagatesToSiblingBodyAndTrailers() throws Exception {
+        int maxHeadersSize = 29;
+        ExecutorService readExecutor = Executors.newSingleThreadExecutor();
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(maxHeadersSize)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream failingStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream siblingStream = connection.createStream(STREAM_CONFIG);
+
+            failingStream.writeHeaders(requestHeaders(), false);
+            siblingStream.writeHeaders(requestHeaders(), false);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            WritableHeaders<?> siblingResponseHeaders = WritableHeaders.create();
+            siblingResponseHeaders.set(HeaderNames.TRAILER, "grpc-status");
+            Http2FrameData siblingResponse = encodedHeaderFrame(siblingStream.streamId(),
+                                                                 Http2Headers.create(siblingResponseHeaders)
+                                                                         .status(Status.OK_200),
+                                                                 inboundTable,
+                                                                 huffman);
+            Http2FrameData[] failingResponse = encodedSplitHeaderFrames(failingStream.streamId(),
+                                                                        encodedResponseHeaders(false),
+                                                                        inboundTable,
+                                                                        huffman);
+
+            try {
+                test.offerInbound(siblingResponse);
+                assertThat(siblingStream.readHeaders().status(), is(Status.OK_200));
+
+                CountDownLatch bodyReadStarted = new CountDownLatch(1);
+                CompletableFuture<BufferData> bodyRead = CompletableFuture.supplyAsync(() -> {
+                    bodyReadStarted.countDown();
+                    return siblingStream.read();
+                }, readExecutor);
+                assertTrue(bodyReadStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+
+                test.offerInbound(failingResponse);
+                test.assertConnectionClosed();
+
+                ExecutionException bodyFailure = assertThrows(ExecutionException.class,
+                                                              () -> bodyRead.get(TEST_WAIT_TIMEOUT.toMillis(),
+                                                                                 TimeUnit.MILLISECONDS));
+                assertTrue(bodyFailure.getCause() instanceof Http2Exception);
+                Http2Exception bodyException = (Http2Exception) bodyFailure.getCause();
+                assertThat(bodyException.code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(bodyException.getMessage(), is("Response Header Fields Too Large"));
+
+                Http2Exception subsequentBodyException = assertThrows(Http2Exception.class, siblingStream::read);
+                assertThat(subsequentBodyException.code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(subsequentBodyException.getMessage(), is("Response Header Fields Too Large"));
+
+                ExecutionException trailersFailure = assertThrows(ExecutionException.class,
+                                                                  () -> siblingStream.trailers()
+                                                                          .get(TEST_WAIT_TIMEOUT.toMillis(),
+                                                                               TimeUnit.MILLISECONDS));
+                assertTrue(trailersFailure.getCause() instanceof Http2Exception);
+                Http2Exception trailersException = (Http2Exception) trailersFailure.getCause();
+                assertThat(trailersException.code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(trailersException.getMessage(), is("Response Header Fields Too Large"));
+            } finally {
+                failingStream.close();
+                siblingStream.close();
+                connection.close();
+            }
+        } finally {
+            readExecutor.shutdownNow();
+        }
+    }
+
+    @Test
+    void splitHeaderBlockLimitIsIndependentOfBufferedEntityLimit() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(Size.create(Long.MAX_VALUE))) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), false);
+
+            test.offerInbound(new Http2FrameData(Http2FrameHeader.create(16_384,
+                                                                         Http2FrameTypes.HEADERS,
+                                                                         Http2Flag.HeaderFlags.create(0),
+                                                                         stream.streamId()),
+                                                 BufferData.create(new byte[16_384])),
+                              new Http2FrameData(Http2FrameHeader.create(16_384,
+                                                                         Http2FrameTypes.CONTINUATION,
+                                                                         Http2Flag.ContinuationFlags.create(0),
+                                                                         stream.streamId()),
+                                                 BufferData.create(new byte[16_384])),
+                              new Http2FrameData(Http2FrameHeader.create(16_384,
+                                                                         Http2FrameTypes.CONTINUATION,
+                                                                         Http2Flag.ContinuationFlags.create(0),
+                                                                         stream.streamId()),
+                                                 BufferData.create(new byte[16_384])),
+                              new Http2FrameData(Http2FrameHeader.create(16_384,
+                                                                         Http2FrameTypes.CONTINUATION,
+                                                                         Http2Flag.ContinuationFlags.create(0),
+                                                                         stream.streamId()),
+                                                 BufferData.create(new byte[16_384])),
+                              new Http2FrameData(Http2FrameHeader.create(1,
+                                                                         Http2FrameTypes.CONTINUATION,
+                                                                         Http2Flag.ContinuationFlags.create(0),
+                                                                         stream.streamId()),
+                                                 BufferData.create(new byte[1])));
+
+            try {
+                test.assertConnectionClosed();
+                Http2Exception exception = assertThrows(Http2Exception.class,
+                                                        () -> stream.readHeaders(Duration.ofMillis(100)));
+                assertThat(exception.code(), is(Http2ErrorCode.ENHANCE_YOUR_CALM));
+                assertThat(exception.getMessage(), is("Header block too large."));
+            } finally {
+                stream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void connectionFatalHeaderFailureDoesNotWaitForConnectionWriter() throws Exception {
+        int maxHeadersSize = 29;
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(maxHeadersSize)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream failingStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream siblingStream = connection.createStream(STREAM_CONFIG);
+
+            failingStream.writeHeaders(requestHeaders(), false);
+            siblingStream.writeHeaders(requestHeaders(), false);
+
+            Http2FrameData[] response = encodedSplitHeaderFrames(failingStream.streamId(),
+                                                                 encodedResponseHeaders(false),
+                                                                 Http2Headers.DynamicTable.create(
+                                                                         Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                                                                 Http2HuffmanEncoder.create());
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            CompletableFuture<Void> activeWrite = CompletableFuture.runAsync(
+                    () -> connection.writer().write(dataFrame(failingStream.streamId(), new byte[1024], false)));
+
+            assertTrue(blockedWrite.awaitEntered());
+            try {
+                test.offerInbound(response);
+                verify(test.clientConnection, timeout(1_000)).closeResource();
+                assertFalse(activeWrite.isDone());
+
+                Http2Exception failingException = assertThrows(Http2Exception.class,
+                                                                () -> failingStream.readHeaders(Duration.ofMillis(100)));
+                assertThat(failingException.code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(failingException.getMessage(), is("Response Header Fields Too Large"));
+                Http2Exception siblingException = assertThrows(Http2Exception.class,
+                                                                () -> siblingStream.readHeaders(Duration.ofMillis(100)));
+                assertThat(siblingException.code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(siblingException.getMessage(), is("Response Header Fields Too Large"));
+            } finally {
+                blockedWrite.release();
+            }
+            activeWrite.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            failingStream.close();
+            siblingStream.close();
+        }
+    }
+
+    @Test
+    void oversizedFrameIsRejectedBeforePayloadRead() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), false);
+
+            int maxFrameSize = test.clientConfig.protocolConfig().maxFrameSize();
+            Http2FrameHeader oversizedHeader = Http2FrameHeader.create(maxFrameSize + 1,
+                                                                        Http2FrameTypes.HEADERS,
+                                                                        Http2Flag.HeaderFlags.create(
+                                                                                Http2Flag.END_OF_HEADERS),
+                                                                        stream.streamId());
+            try {
+                test.offerInbound(new Http2FrameData(oversizedHeader, BufferData.empty()));
+
+                Http2Exception exception = assertThrows(Http2Exception.class,
+                                                        () -> stream.readHeaders(Duration.ofMillis(100)));
+                assertThat(exception.code(), is(Http2ErrorCode.FRAME_SIZE));
+                test.assertConnectionClosed();
+            } finally {
+                stream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void configuredMaxHeadersSizeAllowsLargerSplitHeaderBlock() {
+        int maxHeadersSize = 80_000;
+        String largeValue = "a".repeat(40_000);
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(maxHeadersSize)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), false);
+
+            WritableHeaders<?> writable = WritableHeaders.create();
+            writable.set(LARGE_HEADER, largeValue);
+            Http2Headers responseHeaders = Http2Headers.create(writable)
+                    .status(Status.OK_200);
+            Http2FrameData[] response = encodedSplitHeaderFrames(stream.streamId(),
+                                                                 responseHeaders,
+                                                                 Http2Headers.DynamicTable.create(
+                                                                         Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                                                                 Http2HuffmanEncoder.create(),
+                                                                 maxHeadersSize);
+            long encodedSize = response[0].header().length() + response[1].header().length();
+            assertThat(encodedSize, greaterThan(16_384L));
+            assertThat(encodedSize, lessThan((long) maxHeadersSize));
+
+            try {
+                test.offerInbound(response);
+
+                Http2Headers headers = stream.readHeaders();
+                assertThat(headers.status(), is(Status.OK_200));
+                assertThat(headers.httpHeaders().get(LARGE_HEADER).get(), is(largeValue));
+            } finally {
+                stream.close();
+                connection.close();
+            }
         }
     }
 
@@ -2558,14 +2957,40 @@ class Http2ClientConnectionTest {
         private final ClientConnection clientConnection;
 
         private MockedConnectionTestContext() {
-            this(mock(ClientConnection.class));
+            this(mock(ClientConnection.class), -1, null, null);
         }
 
         private MockedConnectionTestContext(ClientConnection clientConnection) {
-            Http2ClientProtocolConfig protocolConfig = Http2ClientProtocolConfig.builder()
+            this(clientConnection, -1, null, null);
+        }
+
+        private MockedConnectionTestContext(int maxHeadersSize) {
+            this(mock(ClientConnection.class), -1, maxHeadersSize, null);
+        }
+
+        private MockedConnectionTestContext(Size maxBufferedEntitySize) {
+            this(mock(ClientConnection.class), -1, null, maxBufferedEntitySize);
+        }
+
+        private MockedConnectionTestContext(long maxHeaderListSize, Integer maxHeadersSize) {
+            this(mock(ClientConnection.class), maxHeaderListSize, maxHeadersSize, null);
+        }
+
+        private MockedConnectionTestContext(ClientConnection clientConnection,
+                                            long maxHeaderListSize,
+                                            Integer maxHeadersSize,
+                                            Size maxBufferedEntitySize) {
+            Http2ClientProtocolConfig.Builder protocolConfigBuilder = Http2ClientProtocolConfig.builder()
                     .ping(true)
                     .pingTimeout(Duration.ofMillis(100))
-                    .build();
+                    .maxHeaderListSize(maxHeaderListSize);
+            if (maxHeadersSize != null) {
+                protocolConfigBuilder.maxHeadersSize(maxHeadersSize);
+            }
+            if (maxBufferedEntitySize != null) {
+                protocolConfigBuilder.maxBufferedEntitySize(maxBufferedEntitySize);
+            }
+            Http2ClientProtocolConfig protocolConfig = protocolConfigBuilder.build();
 
             this.clientConfig = Http2ClientConfig.builder()
                     .protocolConfig(protocolConfig)

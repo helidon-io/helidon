@@ -105,6 +105,7 @@ class ConcurrentStreamsLimitTest {
                                    .sendErrorDetails(true)
                                    .maxRapidResets(-1)
                                    .maxConcurrentStreams(MAX_CONCURRENT_STREAMS)
+                                   .maxHeadersSize(512)
                                    .maxHeaderListSize(128_000)
                                    .build());
     }
@@ -549,6 +550,29 @@ class ConcurrentStreamsLimitTest {
             assertOkResponse(h2conn, 3);
         } finally {
             releaseHandlers.countDown();
+        }
+    }
+
+    @Test
+    void decodedHeadersForRejectedRequestStillUseLocalLimit(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            writeRejectedRequestHeaders(h2conn, 1);
+
+            assertErrorResponse(h2conn, 1, Status.UNSUPPORTED_MEDIA_TYPE_415);
+            Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+
+            byte[] headerBlock = new byte[20];
+            Arrays.fill(headerBlock, (byte) 0x90);
+            h2conn.writer().write(new Http2FrameData(
+                    Http2FrameHeader.create(headerBlock.length,
+                                            Http2FrameTypes.HEADERS,
+                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS
+                                                                                | Http2Flag.END_OF_STREAM),
+                                            1),
+                    BufferData.create(headerBlock)));
+
+            assertGoAwayError(h2conn, Http2ErrorCode.ENHANCE_YOUR_CALM);
         }
     }
 

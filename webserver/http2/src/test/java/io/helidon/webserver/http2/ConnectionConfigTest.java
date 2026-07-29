@@ -33,10 +33,19 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ConnectionConfigTest {
+
+    @Test
+    void rejectsNonPositiveMaxHeadersSize() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> Http2Config.builder().maxHeadersSize(0).build());
+        assertThrows(IllegalArgumentException.class,
+                     () -> Http2Config.builder().maxHeadersSize(-1).build());
+    }
 
     // Verify that HTTP/2 connection provider is properly configured from config file
     @Test
@@ -53,6 +62,7 @@ class ConnectionConfigTest {
 
         assertAll(
                 () -> assertThat("maxFrameSize", http2Config.maxFrameSize(), is(8192)),
+                () -> assertThat("maxHeadersSize", http2Config.maxHeadersSize(), is(6144)),
                 () -> assertThat("maxHeaderListSize", http2Config.maxHeaderListSize(), is(4096L)),
                 () -> assertThat("maxConcurrentStreams", http2Config.maxConcurrentStreams(), is(16384L)),
                 () -> assertThat("validatePath", http2Config.validatePath(), is(false)),
@@ -74,6 +84,7 @@ class ConnectionConfigTest {
                 .http2Config(Http2Config.builder()
                                      .name("@default")
                                      .maxFrameSize(4096)
+                                     .maxHeadersSize(3072)
                                      .maxHeaderListSize(2048L)
                                      .log(it -> it.unsafeRawData(true))
                                      .build())
@@ -82,6 +93,7 @@ class ConnectionConfigTest {
         Http2Connection conn = (Http2Connection) selector.connection(mockContext());
         // Verify values to be updated from configuration file
         assertThat(conn.config().maxFrameSize(), is(4096));
+        assertThat(conn.config().maxHeadersSize(), is(3072));
         assertThat(conn.config().maxHeaderListSize(), is(2048L));
         assertThat(conn.config().log().unsafeRawData(), is(true));
         // Verify Http2Settings values to be updated from configuration file
