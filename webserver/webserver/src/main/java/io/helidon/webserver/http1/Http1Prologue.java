@@ -257,27 +257,7 @@ public final class Http1Prologue {
                     }
 
                     String host = path.substring(0, portSeparator);
-                    for (int i = 0; i < host.length(); i++) {
-                        char c = host.charAt(i);
-                        if ((c >= 'a' && c <= 'z')
-                                || (c >= 'A' && c <= 'Z')
-                                || (c >= '0' && c <= '9')
-                                || switch (c) {
-                                    case '-', '.', '_', '~', '!', '$', '&', '\'', '(', ')', '*', '+',
-                                         ',', ';', '=' -> true;
-                                    default -> false;
-                                }) {
-                            continue;
-                        }
-                        if (c == '%'
-                                && i + 2 < host.length()
-                                && Character.digit(host.charAt(i + 1), 16) >= 0
-                                && Character.digit(host.charAt(i + 2), 16) >= 0) {
-                            i += 2;
-                            continue;
-                        }
-                        throw new IllegalArgumentException("CONNECT authority contains an invalid host");
-                    }
+                    UriValidator.validateNonIpLiteral(host);
                 }
 
                 if (portSeparator == path.length() - 1) {

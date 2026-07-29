@@ -107,6 +107,8 @@ class Http1PrologueTest {
             "service/name:443",
             "service%2Gname:443",
             "[2001:db8::1]",
+            "[1:2:3]:443",
+            "[1.2.3.4]:443",
             "[v1.]:443",
             "[vG.fe80]:443",
             "[v1.fe80]x:443",

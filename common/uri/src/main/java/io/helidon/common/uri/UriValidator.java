@@ -309,6 +309,7 @@ public final class UriValidator {
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(2));
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(3));
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(4));
+                        segments += 2;
                     } else {
                         throw new UriValidationException(Segment.HOST,
                                                          ipLiteral.toCharArray(),
@@ -337,6 +338,11 @@ public final class UriValidator {
             throw new UriValidationException(Segment.HOST,
                                              ipLiteral.toCharArray(),
                                              "Host IPv6 address contains too many segments");
+        }
+        if (!skipped && segments < 8) {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             "Host IPv6 address contains too few segments");
         }
     }
 
