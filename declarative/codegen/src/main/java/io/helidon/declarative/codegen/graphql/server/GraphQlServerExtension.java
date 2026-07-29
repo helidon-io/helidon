@@ -85,7 +85,6 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_IGNORE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_MUTATION;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_NAME;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_NON_NULL;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_QUERY;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCALAR;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCHEMA;
@@ -1823,9 +1822,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
             boolean nonNull = element.typeName().primitive()
                     || hasNonNull(annotations)
                     || hasNonNull(element.typeName());
-            String schemaType = nonNull
-                    ? fieldType.graphQlName() + "!"
-                    : fieldType.graphQlName();
+            String schemaType = nonNull ? fieldType.graphQlName() + "!" : fieldType.graphQlName();
             InputSchemaField previous = fields.putIfAbsent(graphQlName,
                                                            new InputSchemaField(element,
                                                                                 graphQlName,
