@@ -785,8 +785,10 @@ periodically scans only ordinary HTTP requests while they execute within the rou
 JVM threads.
 
 The first scan after a request crosses the threshold logs a warning with the request method, path without query or matrix
-parameters, socket and request identifiers, thread state, and stack trace. If that request later completes, the feature logs
-an informational recovery message. Detection is diagnostic only and never interrupts a request thread.
+parameters, socket and request identifiers, thread state, and stack trace. If that request later completes, the feature
+normally logs an informational recovery message. Recovery logging is bounded and best effort; when a burst exceeds the
+recovery queue capacity, the monitor logs an informational summary with the number of omitted individual recovery messages.
+Detection is diagnostic only and never interrupts a request thread.
 
 For HTTP/1.1, only the connection thread while it is processing a request is a candidate; idle keep-alive time is excluded.
 For HTTP/2, only ordinary HTTP stream threads are candidates; the connection reader and subprotocol processing such as gRPC
