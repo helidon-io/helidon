@@ -30,6 +30,7 @@ import java.util.Set;
 
 import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
@@ -210,7 +211,11 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
         Optional<AcceptEncoding.CodingQuality> selected = acceptEncoding.best(contentEncodingIds);
         if (selected.isEmpty()) {
-            throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true);
+            throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true)
+                    .header(HeaderValues.create(HeaderNames.VARY,
+                                                true,
+                                                false,
+                                                HeaderNames.ACCEPT_ENCODING_NAME));
         }
         String selectedCoding = selected.get().coding();
         if (AcceptEncoding.IDENTITY.equals(selectedCoding)) {

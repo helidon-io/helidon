@@ -529,6 +529,7 @@ class ContentEncodingSupportTest {
         HttpException actual = assertThrows(HttpException.class, () -> context.encoder(headers(headerValue)));
 
         assertThat(actual.status(), is(Status.NOT_ACCEPTABLE_406));
+        assertThat(actual.headers().get(HeaderNames.VARY).get(), is(HeaderNames.ACCEPT_ENCODING_NAME));
     }
 
     private record TestEncoding(ContentEncoder encoder,

@@ -135,6 +135,19 @@ class ContentEncodingContextTest {
     }
 
     @Test
+    void testNoAcceptableContentEncodingAddsVaryAcceptEncoding() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/hello")
+                .header(HeaderNames.ACCEPT_ENCODING, "zstd, identity;q=0")
+                .request()) {
+
+            assertThat(response.status(), equalTo(Status.NOT_ACCEPTABLE_406));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY,
+                                                                       HeaderNames.ACCEPT_ENCODING_NAME));
+        }
+    }
+
+    @Test
     void testAutomaticContentEncodingAddsVaryAcceptEncodingForOutputStream() {
         try (Http1ClientResponse response = client.method(Method.GET)
                 .uri("/stream")
