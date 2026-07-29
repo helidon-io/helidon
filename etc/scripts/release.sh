@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -218,7 +218,7 @@ update_version(){
 }
 
 create_tag() {
-  local git_branch version current_version
+  local git_branch version current_version git_remote
 
   current_version=$(current_version)
   version=${current_version%-SNAPSHOT}
@@ -240,7 +240,20 @@ create_tag() {
 
   # Create and push a git tag
   git tag -f "${version}"
-  git push --force origin refs/tags/"${version}":refs/tags/"${version}"
+
+  push_remote=origin
+  if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
+    # Add an SSH based remote if not running in GitHub action
+    git_remote=$(git config --get remote.origin.url | \
+      sed -e "s,https://[^@]*@\([^/]*\)/,git@\1:," \
+          -e "s,https://\([^/]*\)/,git@\1:,")
+    git remote remove release > /dev/null 2>&1 || true
+    git remote add release "${git_remote}"
+    push_remote=release
+  fi
+
+  git push --force "${push_remote}" \
+        refs/tags/"${version}":refs/tags/"${version}"
 
   echo "version=${version}" >&6
   echo "tag=refs/tags/${version}" >&6
