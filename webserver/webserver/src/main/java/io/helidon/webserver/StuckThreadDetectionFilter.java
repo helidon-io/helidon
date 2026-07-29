@@ -19,10 +19,11 @@ package io.helidon.webserver;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
@@ -39,10 +40,13 @@ import io.helidon.webserver.http.RoutingResponse;
 final class StuckThreadDetectionFilter implements Filter {
     private static final System.Logger LOGGER = System.getLogger(StuckThreadDetectionFilter.class.getName());
     private static final long STOP_WAIT_NANOS = Duration.ofSeconds(1).toNanos();
+    static final int MAX_QUEUED_RECOVERIES = 32;
+    static final int MAX_RECOVERY_LOGS_PER_CYCLE = 8;
 
     private final Set<ActiveRequest> activeRequests = ConcurrentHashMap.newKeySet();
-    private final ConcurrentLinkedQueue<ActiveRequest> completedRequests = new ConcurrentLinkedQueue<>();
+    private final ArrayBlockingQueue<ActiveRequest> completedRequests = new ArrayBlockingQueue<>(MAX_QUEUED_RECOVERIES);
     private final AtomicBoolean running = new AtomicBoolean();
+    private final AtomicLong omittedRecoveries = new AtomicLong();
     private final AtomicReference<Thread> monitorThread = new AtomicReference<>();
     private final long checkPeriodNanos;
     private final long thresholdNanos;
@@ -65,6 +69,7 @@ final class StuckThreadDetectionFilter implements Filter {
         }
         activeRequests.clear();
         completedRequests.clear();
+        omittedRecoveries.set(0);
         running.set(true);
         try {
             thread.start();
@@ -86,6 +91,7 @@ final class StuckThreadDetectionFilter implements Filter {
         Thread thread = monitorThread.getAndSet(null);
         if (thread == null) {
             completedRequests.clear();
+            omittedRecoveries.set(0);
             return;
         }
         thread.interrupt();
@@ -103,6 +109,7 @@ final class StuckThreadDetectionFilter implements Filter {
             }
         }
         completedRequests.clear();
+        omittedRecoveries.set(0);
         if (interrupted) {
             Thread.currentThread().interrupt();
         }
@@ -144,31 +151,61 @@ final class StuckThreadDetectionFilter implements Filter {
         } finally {
             activeRequests.remove(active);
             if (active.complete(System.nanoTime())) {
-                completedRequests.offer(active);
-                if (!running.get()) {
-                    completedRequests.remove(active);
-                    return;
-                }
-                Thread monitor = monitorThread.get();
-                if (monitor != null) {
-                    LockSupport.unpark(monitor);
-                }
+                enqueueRecovery(active);
             }
+        }
+    }
+
+    private void enqueueRecovery(ActiveRequest active) {
+        if (!running.get()) {
+            return;
+        }
+        if (!completedRequests.offer(active)) {
+            omittedRecoveries.incrementAndGet();
+        }
+        if (!running.get()) {
+            completedRequests.remove(active);
+            return;
+        }
+        Thread monitor = monitorThread.get();
+        if (monitor != null) {
+            LockSupport.unpark(monitor);
         }
     }
 
     private void monitorRequests() {
         long nextScan = System.nanoTime() + checkPeriodNanos;
         while (running.get()) {
-            ActiveRequest completed;
-            while ((completed = completedRequests.poll()) != null) {
-                if (running.get()) {
-                    logRecovery(completed);
+            int loggedRecoveries = 0;
+            try {
+                long omitted = omittedRecoveries.getAndSet(0);
+                if (omitted != 0 && running.get() && LOGGER.isLoggable(System.Logger.Level.INFO)) {
+                    LOGGER.log(System.Logger.Level.INFO,
+                               omitted + (omitted == 1
+                                       ? " request recovery log message was omitted for socket "
+                                       : " request recovery log messages were omitted for socket ") + socketName
+                                       + " because the bounded recovery queue was full");
+                    loggedRecoveries++;
                 }
+                ActiveRequest completed;
+                while (loggedRecoveries < MAX_RECOVERY_LOGS_PER_CYCLE
+                        && (completed = completedRequests.poll()) != null) {
+                    if (running.get()) {
+                        logRecovery(completed);
+                    }
+                    loggedRecoveries++;
+                }
+            } catch (RuntimeException e) {
+                LOGGER.log(System.Logger.Level.ERROR,
+                           "Failed to report recovered requests for socket " + socketName,
+                           e);
             }
 
             long nanosUntilScan = nextScan - System.nanoTime();
             if (nanosUntilScan > 0) {
+                if (!completedRequests.isEmpty() || omittedRecoveries.get() != 0) {
+                    continue;
+                }
                 LockSupport.parkNanos(this, nanosUntilScan);
                 if (Thread.interrupted()) {
                     return;
@@ -231,7 +268,7 @@ final class StuckThreadDetectionFilter implements Filter {
                     } finally {
                         if (reported) {
                             if (active.finishReport() && running.get()) {
-                                logRecovery(active);
+                                enqueueRecovery(active);
                             }
                         } else {
                             active.abortReport();

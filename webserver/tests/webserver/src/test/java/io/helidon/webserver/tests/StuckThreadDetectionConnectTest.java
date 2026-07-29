@@ -51,7 +51,11 @@ class StuckThreadDetectionConnectTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        builder.route(HttpRoute.builder()
+        builder.addFilter((chain, req, res) -> {
+            assertThat(req.path().segments(), is(List.of()));
+            chain.proceed();
+        })
+                .route(HttpRoute.builder()
                               .methods(Method.CONNECT)
                               .handler((req, res) -> {
                                   assertThat(req.path().segments(), is(List.of()));

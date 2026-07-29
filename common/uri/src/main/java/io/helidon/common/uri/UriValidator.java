@@ -272,6 +272,11 @@ public final class UriValidator {
         int segments = 0; // max segments is 8 (full IPv6 address)
         String inProgress = host;
         while (!inProgress.isEmpty()) {
+            if (segments >= 8) {
+                throw new UriValidationException(Segment.HOST,
+                                                 ipLiteral.toCharArray(),
+                                                 "Host IPv6 address contains too many segments");
+            }
             if (inProgress.length() == 1) {
                 segments++;
                 validateH16(ipLiteral, inProgress);
@@ -310,6 +315,11 @@ public final class UriValidator {
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(3));
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(4));
                         segments += 2;
+                        if (segments > 8) {
+                            throw new UriValidationException(Segment.HOST,
+                                                             ipLiteral.toCharArray(),
+                                                             "Host IPv6 address contains too many segments");
+                        }
                     } else {
                         throw new UriValidationException(Segment.HOST,
                                                          ipLiteral.toCharArray(),

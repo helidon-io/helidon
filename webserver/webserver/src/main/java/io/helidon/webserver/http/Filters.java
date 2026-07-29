@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriPathSegment;
 import io.helidon.http.HttpException;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.Status;
@@ -186,6 +187,11 @@ public final class Filters implements ServerLifecycle {
         @Override
         public Parameters matrixParameters() {
             return uriPath.matrixParameters();
+        }
+
+        @Override
+        public List<UriPathSegment> segments() {
+            return uriPath.segments();
         }
 
         @Override

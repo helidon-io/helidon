@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -332,6 +333,154 @@ class StuckThreadDetectionFeatureTest {
     }
 
     @Test
+    void boundsRecoveryBacklogWhenInfoLoggingBlocks() throws Exception {
+        var config = StuckThreadDetectionConfig.builder()
+                .threshold(Duration.ofNanos(1))
+                .checkPeriod(Duration.ofNanos(1))
+                .buildPrototype();
+        var filter = new StuckThreadDetectionFilter(config, WebServer.DEFAULT_SOCKET_NAME);
+        int requestCount = StuckThreadDetectionFilter.MAX_QUEUED_RECOVERIES + 2;
+        var handlersStarted = new CountDownLatch(requestCount);
+        var releaseFirstRequest = new CountDownLatch(1);
+        var releaseRequests = new CountDownLatch(1);
+        var probeStarted = new CountDownLatch(1);
+        var releaseProbe = new CountDownLatch(1);
+        var infoStarted = new CountDownLatch(1);
+        var releaseInfo = new CountDownLatch(1);
+        var failure = new AtomicReference<Throwable>();
+        var requestThreads = new ArrayList<Thread>(requestCount);
+        var probeThread = new AtomicReference<Thread>();
+        RoutingRequest request = mock(RoutingRequest.class);
+        when(request.prologue()).thenReturn(HttpPrologue.create("HTTP/1.1",
+                                                               "HTTP",
+                                                               "1.1",
+                                                               Method.GET,
+                                                               "/recovery-backlog",
+                                                               true));
+        when(request.id()).thenReturn(11);
+        when(request.serverSocketId()).thenReturn("server-socket");
+        when(request.socketId()).thenReturn("connection-socket");
+        RoutingRequest probeRequest = mock(RoutingRequest.class);
+        when(probeRequest.prologue()).thenReturn(HttpPrologue.create("HTTP/1.1",
+                                                                    "HTTP",
+                                                                    "1.1",
+                                                                    Method.GET,
+                                                                    "/recovery-probe",
+                                                                    true));
+        when(probeRequest.id()).thenReturn(12);
+        when(probeRequest.serverSocketId()).thenReturn("server-socket");
+        when(probeRequest.socketId()).thenReturn("connection-socket");
+        try (TestLogHandler logs = new TestLogHandler(Level.INFO, infoStarted, releaseInfo)) {
+            filter.afterStart(mock(WebServer.class));
+            for (int i = 0; i < requestCount; i++) {
+                CountDownLatch releaseRequest = i == 0 ? releaseFirstRequest : releaseRequests;
+                requestThreads.add(Thread.ofVirtual().start(() -> {
+                    try {
+                        filter.filter(() -> {
+                            handlersStarted.countDown();
+                            try {
+                                releaseRequest.await();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new IllegalStateException(e);
+                            }
+                        }, request, mock(RoutingResponse.class));
+                    } catch (Throwable t) {
+                        failure.compareAndSet(null, t);
+                    }
+                }));
+            }
+            try {
+                assertThat("Request handlers did not start", handlersStarted.await(5, TimeUnit.SECONDS), is(true));
+                for (int i = 0; i < requestCount; i++) {
+                    logs.await(Level.WARNING);
+                }
+
+                releaseFirstRequest.countDown();
+                assertThat("Recovery logger was not entered", infoStarted.await(5, TimeUnit.SECONDS), is(true));
+                releaseRequests.countDown();
+                for (Thread requestThread : requestThreads) {
+                    requestThread.join(5000);
+                    assertThat("Blocked recovery logging blocked request completion", requestThread.isAlive(), is(false));
+                }
+                assertThat("Request handler failed", failure.get(), is((Throwable) null));
+
+                probeThread.set(Thread.ofVirtual().start(() -> {
+                    try {
+                        filter.filter(() -> {
+                            probeStarted.countDown();
+                            try {
+                                releaseProbe.await();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new IllegalStateException(e);
+                            }
+                        }, probeRequest, mock(RoutingResponse.class));
+                    } catch (Throwable t) {
+                        failure.compareAndSet(null, t);
+                    }
+                }));
+                assertThat("Probe request handler did not start", probeStarted.await(5, TimeUnit.SECONDS), is(true));
+
+                releaseInfo.countDown();
+                int recoveryLogsBeforeScan = 0;
+                boolean sawOmittedSummary = false;
+                while (true) {
+                    LogRecord record = logs.records.poll(10, TimeUnit.SECONDS);
+                    if (record == null) {
+                        throw new AssertionError("Probe request was not reported");
+                    }
+                    if (record.getLevel().equals(Level.WARNING)
+                            && record.getMessage().contains("/recovery-probe")) {
+                        break;
+                    }
+                    if (record.getLevel().equals(Level.INFO)) {
+                        recoveryLogsBeforeScan++;
+                        if (record.getMessage().contains("bounded recovery queue was full")) {
+                            assertThat(record.getMessage(), containsString("1 request recovery log message was omitted"));
+                            sawOmittedSummary = true;
+                        }
+                    }
+                }
+                assertThat("Recovery backlog delayed the next stuck-request scan",
+                           recoveryLogsBeforeScan <= StuckThreadDetectionFilter.MAX_RECOVERY_LOGS_PER_CYCLE,
+                           is(true));
+
+                releaseProbe.countDown();
+                probeThread.get().join(5000);
+                assertThat("Probe request did not finish", probeThread.get().isAlive(), is(false));
+                boolean sawProbeRecovery = false;
+                while (!sawOmittedSummary || !sawProbeRecovery) {
+                    LogRecord record = logs.records.poll(10, TimeUnit.SECONDS);
+                    if (record == null) {
+                        throw new AssertionError("Recovery backlog was not fully reported");
+                    }
+                    if (record.getLevel().equals(Level.INFO)) {
+                        if (record.getMessage().contains("bounded recovery queue was full")) {
+                            assertThat(record.getMessage(), containsString("1 request recovery log message was omitted"));
+                            sawOmittedSummary = true;
+                        }
+                        sawProbeRecovery |= record.getMessage().contains("/recovery-probe");
+                    }
+                }
+                assertThat("Request handler failed", failure.get(), is((Throwable) null));
+            } finally {
+                releaseFirstRequest.countDown();
+                releaseRequests.countDown();
+                releaseProbe.countDown();
+                releaseInfo.countDown();
+                for (Thread requestThread : requestThreads) {
+                    requestThread.join(5000);
+                }
+                if (probeThread.get() != null) {
+                    probeThread.get().join(5000);
+                }
+                filter.afterStop();
+            }
+        }
+    }
+
+    @Test
     void stopPreservesCallerInterruptAndWaitsForMonitor() throws Exception {
         var filter = new StuckThreadDetectionFilter(StuckThreadDetectionFeature.create().prototype(),
                                                     WebServer.DEFAULT_SOCKET_NAME);
@@ -403,21 +552,36 @@ class StuckThreadDetectionFeatureTest {
         private final CountDownLatch warningStarted;
         private final CountDownLatch releaseWarning;
         private final boolean ignoreWarningInterrupt;
+        private final Level blockedLevel;
 
         private TestLogHandler() {
-            this(null, null, false);
+            this(Level.WARNING, null, null, false);
         }
 
         private TestLogHandler(CountDownLatch warningStarted, CountDownLatch releaseWarning) {
-            this(warningStarted, releaseWarning, false);
+            this(Level.WARNING, warningStarted, releaseWarning, false);
         }
 
         private TestLogHandler(CountDownLatch warningStarted,
                                CountDownLatch releaseWarning,
                                boolean ignoreWarningInterrupt) {
+            this(Level.WARNING, warningStarted, releaseWarning, ignoreWarningInterrupt);
+        }
+
+        private TestLogHandler(Level blockedLevel,
+                               CountDownLatch warningStarted,
+                               CountDownLatch releaseWarning) {
+            this(blockedLevel, warningStarted, releaseWarning, false);
+        }
+
+        private TestLogHandler(Level blockedLevel,
+                               CountDownLatch warningStarted,
+                               CountDownLatch releaseWarning,
+                               boolean ignoreWarningInterrupt) {
             this.warningStarted = warningStarted;
             this.releaseWarning = releaseWarning;
             this.ignoreWarningInterrupt = ignoreWarningInterrupt;
+            this.blockedLevel = blockedLevel;
             setLevel(Level.ALL);
             logger.setLevel(Level.ALL);
             logger.setUseParentHandlers(false);
@@ -426,7 +590,7 @@ class StuckThreadDetectionFeatureTest {
 
         @Override
         public void publish(LogRecord record) {
-            if (warningStarted != null && record.getLevel().equals(Level.WARNING)) {
+            if (warningStarted != null && record.getLevel().equals(blockedLevel)) {
                 warningStarted.countDown();
                 boolean interrupted = false;
                 while (true) {

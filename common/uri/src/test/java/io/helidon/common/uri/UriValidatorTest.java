@@ -235,6 +235,9 @@ class UriValidatorTest {
         invokeExpectFailure("Host IPv6 address contains too many segments: "
                                     + "[0000:0000:0000:0000:0000:0000:0000:0000:0000:0000]",
                             "[0000:0000:0000:0000:0000:0000:0000:0000:0000:0000]");
+        String overlongLiteral = "[" + "1:".repeat(500) + "1]";
+        invokeExpectFailure("Host IPv6 address contains too many segments: " + overlongLiteral,
+                            overlongLiteral);
         invokeExpectFailure("Host IPv6 address contains too few segments: [1:2:3]",
                             "[1:2:3]");
         invokeExpectFailure("Host IPv6 address contains too few segments: [1.2.3.4]",
