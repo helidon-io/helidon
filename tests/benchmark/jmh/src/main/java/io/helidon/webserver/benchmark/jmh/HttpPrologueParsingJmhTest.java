@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.webserver.http1.Http1Prologue;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -46,5 +48,24 @@ public class HttpPrologueParsingJmhTest {
         HttpPrologue prologue = new Http1Prologue(DataReader.create(() -> ENCODED_PROLOGUE), 1024, false)
                 .readPrologue();
         bh.consume(prologue);
+    }
+
+    @Benchmark
+    public void connectAuthority(ConnectAuthorityState state, Blackhole bh) {
+        HttpPrologue prologue = new Http1Prologue(DataReader.create(() -> state.prologue), 1024, false)
+                .readPrologue();
+        bh.consume(prologue);
+    }
+
+    @State(Scope.Benchmark)
+    public static class ConnectAuthorityState {
+        @Param({"example.com:443", "[2001:db8::1]:9443"})
+        private String authority;
+        private byte[] prologue;
+
+        @Setup
+        public void setup() {
+            prologue = ("CONNECT " + authority + " HTTP/1.1\r\n").getBytes(StandardCharsets.UTF_8);
+        }
     }
 }
