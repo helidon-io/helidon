@@ -38,7 +38,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -77,7 +76,7 @@ class JdbcBindSnapshotTest {
 
         ArgumentCaptor<byte[]> captured = ArgumentCaptor.forClass(byte[].class);
         verify(preparedStatement).setBytes(eq(1), captured.capture());
-        assertArrayEquals(new byte[] {1, 2, 3}, captured.getValue());
+        assertThat(captured.getValue(), is(new byte[] {1, 2, 3}));
         assertThat(captured.getValue(), not(sameInstance(value)));
     }
 
@@ -155,7 +154,7 @@ class JdbcBindSnapshotTest {
 
         ArgumentCaptor<byte[]> captured = ArgumentCaptor.forClass(byte[].class);
         verify(preparedStatement).setBytes(eq(1), captured.capture());
-        assertArrayEquals(new byte[] {4, 5, 6}, captured.getValue());
+        assertThat(captured.getValue(), is(new byte[] {4, 5, 6}));
     }
 
     @Test
@@ -191,7 +190,7 @@ class JdbcBindSnapshotTest {
                 .map(byte[].class)
                 .one();
 
-        assertArrayEquals(new byte[] {7, 8, 9}, second);
+        assertThat(second, is(new byte[] {7, 8, 9}));
         assertThat(second, not(sameInstance(first)));
     }
 

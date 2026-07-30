@@ -40,7 +40,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.eq;
@@ -156,7 +155,7 @@ class JdbcGeneratedKeyScalarMatrixTest {
                 .one();
 
         if (type == byte[].class) {
-            assertArrayEquals((byte[]) expected, (byte[]) actual);
+            assertThat((byte[]) actual, is((byte[]) expected));
             verify(resultSet).getBytes(1);
         } else {
             assertThat(actual, is(expected));
