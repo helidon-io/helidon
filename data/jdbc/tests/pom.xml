@@ -59,7 +59,6 @@
         <dependency>
             <groupId>io.helidon.transaction</groupId>
             <artifactId>helidon-transaction</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.transaction</groupId>
@@ -90,6 +89,16 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <!-- Main sources use transaction annotations with source retention. -->
+                    <ignoredNonTestScopedDependencies>
+                        io.helidon.transaction:helidon-transaction
+                    </ignoredNonTestScopedDependencies>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

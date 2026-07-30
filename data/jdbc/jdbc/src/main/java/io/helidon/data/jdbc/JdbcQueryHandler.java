@@ -229,10 +229,8 @@ final class JdbcQueryHandler {
         // The scope validates that no unexpected result follows this one.
         private final JdbcRunner.ExecutionScope scope;
         private final ResultSet resultSet;
+        private final JdbcColumnLayout columns;
         private final JdbcClient.RowMapper<T> mapper;
-
-        // Reused because it is valid only during a mapper callback.
-        private final JdbcRow row;
 
         // Set after advancing and cleared after mapping the current row.
         private boolean ready;
@@ -254,8 +252,8 @@ final class JdbcQueryHandler {
                                  JdbcClient.RowMapper<T> mapper) {
             this.scope = scope;
             this.resultSet = resultSet;
+            this.columns = columns;
             this.mapper = mapper;
-            this.row = new JdbcRow(resultSet, columns, scope.operation());
         }
 
         /**
@@ -292,7 +290,8 @@ final class JdbcQueryHandler {
                 throw new NoSuchElementException("No more JDBC rows");
             }
             ready = false;
-            row.activate();
+            // Each callback gets a distinct view so an expired reference can never expose a later row.
+            JdbcRow row = new JdbcRow(resultSet, columns, scope.operation());
             try {
                 T value = mapper.map(row);
                 if (value == null) {
@@ -301,7 +300,7 @@ final class JdbcQueryHandler {
                 return value;
             } finally {
                 // A mapper must not retain a usable row view after its callback returns.
-                row.deactivate();
+                row.expire();
             }
         }
     }

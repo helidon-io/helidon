@@ -57,12 +57,7 @@ final class JdbcMethodGenerator {
     static void generate(RepositoryInfo repositoryInfo,
                          ClassModel.Builder classModel,
                          CodegenContext context) {
-        List<TypedElementInfo> methods = repositoryInfo.interfaceInfo()
-                .elementInfo()
-                .stream()
-                .filter(element -> element.kind() == ElementKind.METHOD)
-                .filter(element -> element.elementModifiers().contains(Modifier.ABSTRACT))
-                .toList();
+        List<TypedElementInfo> methods = JdbcTypeHierarchy.abstractMethods(repositoryInfo.interfaceInfo(), context);
         Map<String, Integer> generatedNames = new HashMap<>();
         List<JdbcMethodPlan> plans = new ArrayList<>(methods.size());
         for (TypedElementInfo method : methods) {
@@ -187,9 +182,9 @@ final class JdbcMethodGenerator {
     private static TypeName findImplementedInterface(TypeInfo typeInfo,
                                                      TypeName contract,
                                                      Map<String, TypeName> inheritedSubstitutions) {
-        Map<String, TypeName> substitutions = substitutions(typeInfo, inheritedSubstitutions);
+        Map<String, TypeName> substitutions = JdbcTypeHierarchy.substitutions(typeInfo, inheritedSubstitutions);
         for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
-            TypeName resolvedType = substitute(interfaceInfo.typeName(), substitutions);
+            TypeName resolvedType = JdbcTypeHierarchy.substitute(interfaceInfo.typeName(), substitutions);
             if (resolvedType.genericTypeName().equals(contract)) {
                 return resolvedType;
             }
@@ -203,81 +198,13 @@ final class JdbcMethodGenerator {
         }
         return typeInfo.superTypeInfo()
                 .map(superType -> {
-                    TypeName resolvedType = substitute(superType.typeName(), substitutions);
+                    TypeName resolvedType = JdbcTypeHierarchy.substitute(superType.typeName(), substitutions);
                     TypeInfo resolvedInfo = TypeInfo.builder(superType)
                             .typeName(resolvedType)
                             .build();
                     return findImplementedInterface(resolvedInfo, contract, substitutions);
                 })
                 .orElse(null);
-    }
-
-    /**
-     * Resolves the current declaration's type variables from its actual type
-     * arguments.
-     *
-     * @param typeInfo current hierarchy node
-     * @param inherited substitutions inherited from the child declaration
-     * @return substitutions visible while traversing this node
-     */
-    private static Map<String, TypeName> substitutions(TypeInfo typeInfo,
-                                                       Map<String, TypeName> inherited) {
-        List<TypeName> arguments = typeInfo.typeName().typeArguments();
-        if (arguments.isEmpty()) {
-            return inherited;
-        }
-        List<String> parameters = typeInfo.declaredType().typeParameters();
-        if (parameters.isEmpty()) {
-            parameters = typeInfo.declaredType()
-                    .typeArguments()
-                    .stream()
-                    .filter(TypeName::generic)
-                    .map(TypeName::className)
-                    .toList();
-        }
-        Map<String, TypeName> result = new LinkedHashMap<>(inherited);
-        for (int index = 0; index < arguments.size() && index < parameters.size(); index++) {
-            String parameter = parameters.get(index);
-            int boundStart = parameter.indexOf(' ');
-            result.put(boundStart < 0 ? parameter : parameter.substring(0, boundStart),
-                       substitute(arguments.get(index), inherited));
-        }
-        return result;
-    }
-
-    /**
-     * Substitutes generic variables recursively in one type name.
-     *
-     * @param type source type
-     * @param substitutions known generic substitutions
-     * @return resolved type
-     */
-    private static TypeName substitute(TypeName type, Map<String, TypeName> substitutions) {
-        TypeName replacement = type.generic()
-                && !type.array()
-                && type.typeArguments().isEmpty()
-                ? substitutions.get(type.className())
-                : null;
-        if (replacement != null) {
-            return replacement;
-        }
-        TypeName.Builder builder = TypeName.builder(type)
-                .typeArguments(type.typeArguments()
-                                       .stream()
-                                       .map(argument -> substitute(argument, substitutions))
-                                       .toList())
-                .lowerBounds(type.lowerBounds()
-                                     .stream()
-                                     .map(bound -> substitute(bound, substitutions))
-                                     .toList())
-                .upperBounds(type.upperBounds()
-                                     .stream()
-                                     .map(bound -> substitute(bound, substitutions))
-                                     .toList());
-        type.componentType()
-                .map(component -> substitute(component, substitutions))
-                .ifPresent(builder::componentType);
-        return builder.build();
     }
 
     /**

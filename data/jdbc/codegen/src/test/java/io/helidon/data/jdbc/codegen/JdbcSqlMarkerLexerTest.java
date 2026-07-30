@@ -82,11 +82,20 @@ class JdbcSqlMarkerLexerTest {
     }
 
     @Test
+    void preservesSqlOutsideMarkerSyntax() {
+        String sql = "select <name> from #contacts where ID = :id";
+
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.sql(), is("select <name> from #contacts where ID = ?"));
+        assertThat(result.markers(), is(List.of("id")));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+    }
+
+    @Test
     void rejectsMixedMarkersAndMalformedRegions() {
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select :id, ?"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select :user.id"));
-        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select #name"));
-        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select <name>"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select 'unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select \"unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select `unterminated"));

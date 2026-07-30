@@ -71,8 +71,9 @@ final class JdbcRow implements JdbcClient.Row {
     private final JdbcColumnLayout columns;
     private final JdbcOperation operation;
 
-    // Access is allowed only while the mapper callback is running.
-    private boolean active;
+    // Expiration uses a private lock so application synchronization on the row cannot block the provider.
+    private final Object accessLock = new Object();
+    private boolean active = true;
 
     /**
      * Creates a callback-scoped view of one result row.
@@ -111,58 +112,64 @@ final class JdbcRow implements JdbcClient.Row {
         return normalized;
     }
 
-    void activate() {
-        active = true;
-    }
-
-    void deactivate() {
-        active = false;
+    void expire() {
+        synchronized (accessLock) {
+            active = false;
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     public <T> Optional<T> optional(int index, Class<T> type) {
-        ensureActive();
-        validateIndex(index);
-        return Optional.ofNullable(read(index, type));
+        synchronized (accessLock) {
+            ensureActive();
+            validateIndex(index);
+            return Optional.ofNullable(read(index, type));
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     public <T> Optional<T> optional(String label, Class<T> type) {
-        ensureActive();
-        Objects.requireNonNull(label, "Column label must not be null");
-        if (label.isBlank()) {
-            throw new IllegalArgumentException("Column label must not be blank");
+        synchronized (accessLock) {
+            ensureActive();
+            Objects.requireNonNull(label, "Column label must not be null");
+            if (label.isBlank()) {
+                throw new IllegalArgumentException("Column label must not be blank");
+            }
+            return Optional.ofNullable(read(columns.index(label), type));
         }
-        return Optional.ofNullable(read(columns.index(label), type));
     }
 
     /** {@inheritDoc} */
     @Override
     public <T> T required(int index, Class<T> type) {
-        ensureActive();
-        validateIndex(index);
-        T value = read(index, type);
-        if (value == null) {
-            throw new DataException("Required result column " + index + " contains SQL NULL");
+        synchronized (accessLock) {
+            ensureActive();
+            validateIndex(index);
+            T value = read(index, type);
+            if (value == null) {
+                throw new DataException("Required result column " + index + " contains SQL NULL");
+            }
+            return value;
         }
-        return value;
     }
 
     /** {@inheritDoc} */
     @Override
     public <T> T required(String label, Class<T> type) {
-        ensureActive();
-        Objects.requireNonNull(label, "Column label must not be null");
-        if (label.isBlank()) {
-            throw new IllegalArgumentException("Column label must not be blank");
+        synchronized (accessLock) {
+            ensureActive();
+            Objects.requireNonNull(label, "Column label must not be null");
+            if (label.isBlank()) {
+                throw new IllegalArgumentException("Column label must not be blank");
+            }
+            T value = read(columns.index(label), type);
+            if (value == null) {
+                throw new DataException("Required result column '" + label + "' contains SQL NULL");
+            }
+            return value;
         }
-        T value = read(columns.index(label), type);
-        if (value == null) {
-            throw new DataException("Required result column '" + label + "' contains SQL NULL");
-        }
-        return value;
     }
 
     /**

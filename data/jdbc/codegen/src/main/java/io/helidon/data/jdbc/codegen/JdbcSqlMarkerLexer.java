@@ -24,7 +24,8 @@ import java.util.Objects;
  * <p>
  * Marker-like text inside quoted regions and comments is copied unchanged.
  * Named markers are rewritten to JDBC {@code ?}. Positional markers already
- * have that form. Mixing the two styles is rejected.
+ * have that form. Mixing the two styles is rejected. Other SQL text is copied
+ * without validation so database syntax remains the driver's concern.
  */
 final class JdbcSqlMarkerLexer {
 
@@ -107,14 +108,8 @@ final class JdbcSqlMarkerLexer {
             } else if (current == '?') {
                 // A question mark may be a positional marker or a database operator.
                 positionalMarker();
-            } else if (current == '#' && Character.isJavaIdentifierStart(peek(1))) {
-                // Reject alternate parameter syntax so repositories use one supported marker form.
-                throw malformed("Hash-prefixed parameters are not supported");
-            } else if (current == '<' && templateAttribute()) {
-                // Template expansion is not part of the fixed SQL binding contract.
-                throw malformed("SQL template attributes are not supported");
             } else {
-                // Ordinary SQL is copied without interpreting its grammar.
+                // Preserve database syntax that has no bearing on JDBC marker recognition.
                 jdbcSql.append(current);
                 index++;
             }
@@ -303,24 +298,6 @@ final class JdbcSqlMarkerLexer {
         jdbcSql.append(source, index, end);
         index = end;
         return true;
-    }
-
-    /**
-     * Checks whether the current less-than sign starts an unsupported template
-     * attribute.
-     *
-     * @return whether a template attribute was recognized
-     */
-    private boolean templateAttribute() {
-        int current = index + 1;
-        if (current >= length || !Character.isJavaIdentifierStart(source.charAt(current))) {
-            return false;
-        }
-        current++;
-        while (current < length && Character.isJavaIdentifierPart(source.charAt(current))) {
-            current++;
-        }
-        return current < length && source.charAt(current) == '>';
     }
 
     /**

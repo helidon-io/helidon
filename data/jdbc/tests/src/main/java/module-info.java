@@ -23,6 +23,7 @@ module io.helidon.data.jdbc.tests {
     requires io.helidon.data;
     requires io.helidon.data.jdbc;
     requires io.helidon.service.registry;
+    requires io.helidon.transaction;
 
     exports io.helidon.data.jdbc.tests;
 }

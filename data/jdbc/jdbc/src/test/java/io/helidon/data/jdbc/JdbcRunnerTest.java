@@ -26,6 +26,9 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.data.DataException;
@@ -36,9 +39,11 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcRunnerTest {
@@ -171,7 +176,7 @@ class JdbcRunnerTest {
 
         byte[] bytes = {1, 2, 3, 4};
         byte[] result = client.create("SELECT ?").bind(1, bytes).map(byte[].class).one();
-        assertArrayEquals(bytes, result);
+        assertThat(result, is(bytes));
     }
 
     @Test
@@ -200,6 +205,40 @@ class JdbcRunnerTest {
         assertThrows(IllegalStateException.class, () -> escaped.get().required(1, String.class));
         assertThrows(DataException.class,
                      () -> client.create("SELECT 'value'").map(row -> null).one());
+    }
+
+    @Test
+    void permanentlyExpiresRowsBeforeAdvancingTheCursor() {
+        client.create("INSERT INTO POKEMON(NAME) VALUES (?)").bind(1, "one").execute();
+        client.create("INSERT INTO POKEMON(NAME) VALUES (?)").bind(1, "two").execute();
+        AtomicReference<JdbcClient.Row> first = new AtomicReference<>();
+        AtomicReference<JdbcClient.Row> second = new AtomicReference<>();
+
+        try (var executor = Executors.newSingleThreadExecutor()) {
+            List<String> names = client.create("SELECT NAME FROM POKEMON ORDER BY ID")
+                    .map(row -> {
+                        if (first.compareAndSet(null, row)) {
+                            return row.required(1, String.class);
+                        }
+                        second.set(row);
+                        assertThrows(IllegalStateException.class,
+                                     () -> first.get().required(1, String.class));
+                        CompletionException failure = assertThrows(
+                                CompletionException.class,
+                                () -> CompletableFuture.supplyAsync(
+                                                () -> first.get().required(1, String.class),
+                                                executor)
+                                        .join());
+                        assertThat(failure.getCause(), instanceOf(IllegalStateException.class));
+                        return row.required(1, String.class);
+                    })
+                    .list();
+
+            assertThat(names, is(List.of("one", "two")));
+            assertThat(first.get(), not(sameInstance(second.get())));
+            assertThrows(IllegalStateException.class, () -> first.get().required(1, String.class));
+            assertThrows(IllegalStateException.class, () -> second.get().required(1, String.class));
+        }
     }
 
     /**

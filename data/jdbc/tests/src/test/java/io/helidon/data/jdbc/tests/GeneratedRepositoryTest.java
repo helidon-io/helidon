@@ -219,6 +219,42 @@ class GeneratedRepositoryTest {
         }
     }
 
+    @Test
+    void appliesTransactionAnnotationsOnGeneratedRepositoryMethods() {
+        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        try {
+            TransactionalContactRepository repository = manager.registry().get(TransactionalContactRepository.class);
+
+            assertThrows(TxException.class, () -> repository.mandatory("mandatory-outside"));
+            assertThat(repository.findByName("mandatory-outside"), is(Optional.empty()));
+
+            repository.required("required-outside");
+            repository.never("never-outside");
+            assertThat(repository.findByName("required-outside"), is(Optional.of("required-outside")));
+            assertThat(repository.findByName("never-outside"), is(Optional.of("never-outside")));
+
+            invokeAndRollBack(() -> repository.mandatory("mandatory-joined"));
+            invokeAndRollBack(() -> repository.required("required-joined"));
+            invokeAndRollBack(() -> repository.supported("supported-joined"));
+            assertThat(repository.findByName("mandatory-joined"), is(Optional.empty()));
+            assertThat(repository.findByName("required-joined"), is(Optional.empty()));
+            assertThat(repository.findByName("supported-joined"), is(Optional.empty()));
+
+            invokeAndRollBack(() -> repository.inNewTransaction("new-suspended"));
+            invokeAndRollBack(() -> repository.unsupported("unsupported-suspended"));
+            assertThat(repository.findByName("new-suspended"), is(Optional.of("new-suspended")));
+            assertThat(repository.findByName("unsupported-suspended"), is(Optional.of("unsupported-suspended")));
+
+            Tx.transaction(Tx.Type.REQUIRED, () -> {
+                assertThrows(TxException.class, () -> repository.never("never-inside"));
+                return null;
+            });
+            assertThat(repository.findByName("never-inside"), is(Optional.empty()));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
     private static void exerciseGeneratedOperations(ContactRepository repository, Tx.Type type) {
         Tx.transaction(type, () -> {
             repository.findAll();
@@ -226,5 +262,12 @@ class GeneratedRepositoryTest {
             repository.insert("propagation-" + type);
             return null;
         });
+    }
+
+    private static void invokeAndRollBack(Runnable invocation) {
+        assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, () -> {
+            invocation.run();
+            throw new IllegalStateException("force rollback");
+        }));
     }
 }
