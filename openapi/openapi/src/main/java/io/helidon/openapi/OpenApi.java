@@ -28,6 +28,10 @@ import io.helidon.common.Api;
 
 /**
  * OpenAPI document annotations.
+ * <p>
+ * Declarative OpenAPI annotations do not model operation callbacks or top-level webhooks. Applications can contribute
+ * these items using a static OpenAPI document or an {@link io.helidon.openapi.spi.OpenApiDocumentSource}; Helidon
+ * composes those items with annotation-generated content.
  */
 @Api.Preview
 @Api.Since("27.0.0")
