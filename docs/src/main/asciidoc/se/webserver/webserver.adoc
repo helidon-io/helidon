@@ -986,8 +986,9 @@ the same client-order rule for equal-quality ties. For equal quality, implicit `
 sidecar and runtime candidates but precedes wildcard-derived runtime candidates. If no acceptable sidecar or runtime
 encoder exists and the client rejects `identity`, Helidon responds with `406 Not Acceptable`. Dynamically encoded static
 responses ignore byte ranges, omit `Content-Length`, and use weak entity tags.
-When pre-compressed lookup is disabled, range requests are served from the identity representation even if listener
-content encoding is configured and the request includes `Accept-Encoding`.
+When pre-compressed lookup is disabled, range requests are served from the identity representation when identity is
+acceptable, even if listener content encoding is configured and the request includes `Accept-Encoding`. If identity is
+rejected, Helidon responds with `406 Not Acceptable` and `Vary: Accept-Encoding`.
 Malformed `Accept-Encoding` values, such as invalid coding tokens, unsupported parameters, or invalid `q` values, are
 rejected with `400 Bad Request`.
 
