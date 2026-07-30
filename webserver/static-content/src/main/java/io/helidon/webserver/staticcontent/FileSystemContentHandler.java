@@ -161,8 +161,8 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                         cacheInMemoryLogicalPath(requestedResource, logicalPath);
                         CachedHandler handler = selectFileSystemHandler(
                                 inMemoryMaybe.get(),
-                                                                        req,
-                                                                        logicalPath);
+                                req,
+                                logicalPath);
                         return handler.handle(handlerCache(), method, req, res, requestedResource);
                     }
 

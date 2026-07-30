@@ -220,7 +220,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                                 sourceConfig.preCompressedCrossOriginSourcingEnabled()
                                         .orElse(preCompressedCrossOriginSourcingEnabled))
                         .preCompressedEncodings(sourceConfig.preCompressedEncodings()
-                                                        .orElse(preCompressedEncodings))
+                                .orElse(preCompressedEncodings))
                         .classLoader(handlerClassLoader)
                         .contentTypes(contentTypeMap)
                         .build();
@@ -256,7 +256,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                         .memoryCache(handlerCache)
                         .preCompressedEnabled(sourceConfig.preCompressedEnabled().orElse(preCompressedEnabled))
                         .preCompressedEncodings(sourceConfig.preCompressedEncodings()
-                                                        .orElse(preCompressedEncodings))
+                                .orElse(preCompressedEncodings))
                         .contentTypes(contentTypeMap)
                         .build();
 
