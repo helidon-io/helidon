@@ -338,10 +338,18 @@ public final class OidcFeature implements HttpFeature {
                                   String stateQuery) {
         try {
             String idToken = idTokenCookieHandler.decrypt(encryptedIdToken);
-            StringBuilder sb = new StringBuilder(tenant.logoutEndpointUri()
-                                                         + "?id_token_hint="
-                                                         + idToken
-                                                         + "&post_logout_redirect_uri=" + postLogoutUri(req));
+            URI logoutEndpoint = tenant.logoutEndpointUri();
+            String logoutQuery = logoutEndpoint.getRawQuery();
+            String querySeparator = "?";
+            if (logoutQuery != null) {
+                querySeparator = logoutQuery.isEmpty() || logoutQuery.endsWith("&") ? "" : "&";
+            }
+            StringBuilder sb = new StringBuilder(logoutEndpoint.toString())
+                    .append(querySeparator)
+                    .append("id_token_hint=")
+                    .append(idToken)
+                    .append("&post_logout_redirect_uri=")
+                    .append(postLogoutUri(req));
 
             if (stateQuery != null) {
                 sb.append(stateQuery);
