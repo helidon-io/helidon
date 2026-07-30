@@ -268,6 +268,10 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
                 && length > 0
                 && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
+            if (encoder == ContentEncoder.NO_OP) {
+                mergeVaryAcceptEncoding();
+                return entity;
+            }
             // we want to preserve optimization here, let's create a new byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
             OutputStream os = encoder.apply(baos);
