@@ -713,6 +713,15 @@ abstract class StaticContentHandler implements HttpService {
         return etag != null && (etag.startsWith("W/") || etag.startsWith("w/"));
     }
 
+    private static void clearSelectedRepresentationHeaders(ServerResponseHeaders headers) {
+        headers.remove(HeaderNames.CONTENT_ENCODING);
+        headers.remove(HeaderNames.CONTENT_LENGTH);
+        headers.remove(HeaderNames.CONTENT_RANGE);
+        headers.remove(HeaderNames.CONTENT_TYPE);
+        headers.remove(HeaderNames.ETAG);
+        headers.remove(HeaderNames.LAST_MODIFIED);
+    }
+
     private enum CandidateType {
         SIDECAR(0),
         RUNTIME(1),
@@ -831,15 +840,6 @@ abstract class StaticContentHandler implements HttpService {
         public SidecarCache sidecarCache() {
             return delegate.sidecarCache();
         }
-    }
-
-    private static void clearSelectedRepresentationHeaders(ServerResponseHeaders headers) {
-        headers.remove(HeaderNames.CONTENT_ENCODING);
-        headers.remove(HeaderNames.CONTENT_LENGTH);
-        headers.remove(HeaderNames.CONTENT_RANGE);
-        headers.remove(HeaderNames.CONTENT_TYPE);
-        headers.remove(HeaderNames.ETAG);
-        headers.remove(HeaderNames.LAST_MODIFIED);
     }
 
     private record CachedHandlerNotAcceptable(CachedHandler identityHandler,
