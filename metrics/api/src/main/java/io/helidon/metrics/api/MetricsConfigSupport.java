@@ -66,10 +66,6 @@ class MetricsConfigSupport {
     }
 
     @Prototype.ConfigFactoryMethod("tags")
-    static List<Tag> createTags(Config globalTagExpression) {
-        return createTags(globalTagExpression.asString().get());
-    }
-
     static List<Tag> createTags(String pairs) {
         // Use a TreeMap to order by tag name.
         Map<String, Tag> result = new TreeMap<>();

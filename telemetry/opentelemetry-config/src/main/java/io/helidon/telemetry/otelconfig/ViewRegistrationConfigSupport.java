@@ -78,9 +78,8 @@ class ViewRegistrationConfigSupport {
             return attributeName -> attributePattern.matcher(attributeName).matches();
         }
 
-        @Prototype.ConfigFactoryMethod
-        static InstrumentSelector createInstrumentSelector(Config config) {
-            var instrumentSelectorConfig = InstrumentSelectorConfig.create(config);
+        @Prototype.RuntimeTypeFactoryMethod
+        static InstrumentSelector createInstrumentSelector(InstrumentSelectorConfig instrumentSelectorConfig) {
             var builder = InstrumentSelector.builder();
 
             instrumentSelectorConfig.meterName().ifPresent(builder::setMeterName);

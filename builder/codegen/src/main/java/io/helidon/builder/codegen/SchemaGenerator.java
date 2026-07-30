@@ -370,32 +370,18 @@ class SchemaGenerator {
     }
 
     private TypeName optionTypeName(OptionInfo optionInfo) {
-        var typeName = optionInfo.declaredType();
-        if (typeName.isOptional()) {
-            typeName = typeName.typeArguments().getFirst();
-        }
+        var typeName = optionValueType(optionInfo.declaredType());
         if (typeName.equals(Types.CHAR_ARRAY)) {
             return TypeNames.STRING;
-        }
-        if (typeName.isSet() || typeName.isList()) {
-            typeName = typeName.typeArguments().getFirst();
-        } else if (typeName.isMap()) {
-            typeName = typeName.typeArguments().get(1);
         }
 
         if (optionInfo.prototypedBy().isPresent()) {
             return optionInfo.prototypedBy().get();
         }
 
-        // check configured factory method
-        var configuredDeclaredTypeName = optionInfo.configured()
+        var configuredFactory = optionInfo.configured()
                 .flatMap(OptionConfigured::factoryMethod)
-                .map(FactoryMethod::declaringType)
                 .orElse(null);
-        if (configuredDeclaredTypeName != null) {
-            return configuredDeclaredTypeName;
-        }
-
         // check runtime factory method
         var runtimeParamTypeName = optionInfo.runtimeType()
                 .flatMap(RuntimeTypeInfo::factoryMethod)
@@ -405,7 +391,56 @@ class SchemaGenerator {
             return runtimeParamTypeName;
         }
 
+        // check configured factory method
+        var configuredParamTypeName = optionInfo.configured()
+                .flatMap(OptionConfigured::factoryMethod)
+                .flatMap(FactoryMethod::parameterType)
+                .orElse(null);
+        if (configuredParamTypeName != null
+                && !(configuredParamTypeName.equals(Types.CONFIG) || configuredParamTypeName.equals(Types.COMMON_CONFIG))) {
+            return configuredParamTypeName;
+        }
+
+        // check configured factory method return type for raw Config factories
+        var configuredReturnTypeName = optionInfo.configured()
+                .flatMap(OptionConfigured::factoryMethod)
+                .map(FactoryMethod::returnType)
+                .map(this::optionValueType)
+                .orElse(null);
+        if (configuredReturnTypeName != null) {
+            if (configuredFactory != null) {
+                var paramType = configuredFactory.parameterType().orElse(null);
+                if (paramType != null && (paramType.equals(Types.CONFIG) || paramType.equals(Types.COMMON_CONFIG))) {
+                    if (configuredFactory.declaringType().className().endsWith("CustomMethods")) {
+                        var methodInfo = optionInfo.interfaceMethod().orElse(null);
+                        logger.log(Level.WARNING, "Raw Config option", methodInfo);
+                    }
+                }
+            }
+            return configuredReturnTypeName;
+        }
+
+        var configuredDeclaredTypeName = optionInfo.configured()
+                .flatMap(OptionConfigured::factoryMethod)
+                .map(FactoryMethod::declaringType)
+                .orElse(null);
+        if (configuredDeclaredTypeName != null) {
+            return configuredDeclaredTypeName;
+        }
+
         return typeName.boxed();
+    }
+
+    private TypeName optionValueType(TypeName typeName) {
+        if (typeName.isOptional()) {
+            typeName = typeName.typeArguments().getFirst();
+        }
+        if (typeName.isSet() || typeName.isList()) {
+            typeName = typeName.typeArguments().getFirst();
+        } else if (typeName.isMap()) {
+            typeName = typeName.typeArguments().get(1);
+        }
+        return typeName;
     }
 
     private String optionKind(OptionInfo optionInfo) {

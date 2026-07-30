@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.Method;
 
@@ -101,9 +100,7 @@ class CorsConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("maxAge")
-        static Duration maxAgeFromConfig(Config config) {
-            String value = config.asString().get();
-
+        static Duration maxAgeFromConfig(String value) {
             try {
                 int seconds = Integer.parseInt(value);
                 return Duration.ofSeconds(seconds);

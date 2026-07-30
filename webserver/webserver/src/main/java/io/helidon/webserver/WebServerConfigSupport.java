@@ -33,7 +33,6 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Builder;
 import io.helidon.common.socket.SocketOptions;
-import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.http.HttpRouting;
@@ -185,8 +184,7 @@ class WebServerConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("bindAddress")
-        static SocketAddress createBindAddress(Config config) {
-            String address = config.asString().get();
+        static SocketAddress createBindAddress(String address) {
             // unix:/path/to/socket
             if (address.startsWith(UNIX_DOMAIN_SOCKET_PREFIX)) {
                 String path = address.substring(UNIX_DOMAIN_SOCKET_PREFIX.length());

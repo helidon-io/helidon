@@ -51,6 +51,34 @@ final class CmResolverImpl implements CmResolver {
 
     private static final System.Logger LOGGER =
             System.getLogger(CmResolverImpl.class.getName());
+    private static final Set<String> VALUE_TYPES = Set.of(
+            DEFAULT_TYPE,
+            "String",
+            "Boolean",
+            "Byte",
+            "Short",
+            "Integer",
+            "Long",
+            "Float",
+            "Double",
+            "Character",
+            "java.lang.Boolean",
+            "java.lang.Byte",
+            "java.lang.Short",
+            "java.lang.Integer",
+            "java.lang.Long",
+            "java.lang.Float",
+            "java.lang.Double",
+            "java.lang.Character",
+            "java.math.BigDecimal",
+            "java.math.BigInteger",
+            "java.net.URI",
+            "java.time.Duration",
+            "java.time.Instant",
+            "java.time.LocalDate",
+            "java.time.LocalDateTime",
+            "java.time.OffsetDateTime",
+            "java.time.ZonedDateTime");
 
     private final CmModel metadata;
     private final Map<String, List<CmType>> prefixes = new TreeMap<>();
@@ -67,6 +95,7 @@ final class CmResolverImpl implements CmResolver {
         this.metadata = metadata;
         initTypes();
         resolveTypes();
+        warnUnresolvedOptionTypes();
         initTree();
     }
 
@@ -176,6 +205,28 @@ final class CmResolverImpl implements CmResolver {
             }
             providers.put(entry.getKey(), Collections.unmodifiableMap(sorted));
         }
+    }
+
+    private void warnUnresolvedOptionTypes() {
+        for (var type : resolvedTypes.values()) {
+            for (var option : type.options()) {
+                if (!isResolvedOptionType(option)) {
+                    LOGGER.log(Level.WARNING,
+                            "Unresolved config metadata option type: {0}.{1} uses {2}",
+                            type.typeName(),
+                            option.key().orElse("<merge>"),
+                            option.typeName());
+                }
+            }
+        }
+    }
+
+    private boolean isResolvedOptionType(CmOption option) {
+        var typeName = option.typeName();
+        return VALUE_TYPES.contains(typeName)
+                || resolvedTypes.containsKey(typeName)
+                || enums.containsKey(typeName)
+                || option.provider() && contracts.contains(typeName);
     }
 
     private void initTree() {
