@@ -890,6 +890,10 @@ public final class OpenApi {
 
     /**
      * OpenAPI Header Object metadata.
+     * <p>
+     * Declarative OpenAPI annotations do not model Header Object {@code example}, {@code examples}, or {@code explode}
+     * metadata. Use a static OpenAPI document or an {@link io.helidon.openapi.spi.OpenApiDocumentSource} to contribute
+     * such metadata.
      */
     @Target({})
     @Retention(RetentionPolicy.CLASS)
