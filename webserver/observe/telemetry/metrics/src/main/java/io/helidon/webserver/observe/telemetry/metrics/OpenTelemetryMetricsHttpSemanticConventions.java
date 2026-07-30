@@ -18,6 +18,8 @@ package io.helidon.webserver.observe.telemetry.metrics;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
 import io.helidon.http.Status;
@@ -41,6 +43,8 @@ import io.opentelemetry.semconv.ErrorAttributes;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
+
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Provider of automatic metrics for HTTP requests which implements the OpenTelemetry server HTTP semantic conventions.
@@ -108,6 +112,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     }
 
     static class MetricsRecordingFilter implements Filter {
+        private static final System.Logger LOGGER = System.getLogger(MetricsRecordingFilter.class.getName());
 
         private final DoubleHistogram httpRequestDuration;
         private final AutoHttpMetricsConfig config;
@@ -120,15 +125,67 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
         @Override
         public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
             var startTime = System.nanoTime();
+            if (config.useUpdatedHttpMetrics()) {
+                filterUpdated(chain, req, res, startTime);
+            } else {
+                filterLegacy(chain, req, res, startTime);
+            }
+        }
+
+        private void filterUpdated(FilterChain chain, RoutingRequest req, RoutingResponse res, long startTime) {
+            var exception = new AtomicReference<Exception>();
+            var chainComplete = new AtomicBoolean();
+            var responseSent = new AtomicBoolean();
+            var recorded = new AtomicBoolean();
+            var measured = config.isMeasured(req.prologue().method(), req.prologue().uriPath());
             /*
-            Duplicating the synch/async handling in the normal and exception case avoids the overhead of using an Optional to hold
-            the exception (if any) for use in a lambda.
+            Update the timer in whenSent rather than here in this filter. That way we include time spent in running succeeding
+            filters and in preparing the response entity, to more accurately capture as much as possible the full time the
+            server spent responding to the request.
              */
+            Runnable recordMetrics = () -> {
+                if (recorded.compareAndSet(false, true)) {
+                    try {
+                        updateMetricsIfMeasured(req,
+                                                res,
+                                                measured,
+                                                startTime,
+                                                System.nanoTime(),
+                                                exception.get());
+                    } catch (Throwable e) {
+                        LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
+                    }
+                }
+            };
+            res.whenSent(() -> {
+                responseSent.set(true);
+                if (chainComplete.get()) {
+                    recordMetrics.run();
+                }
+            });
+
             try {
                 chain.proceed();
-                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
+                chainComplete.set(true);
+                if (responseSent.get()) {
+                    recordMetrics.run();
+                }
             } catch (Exception e) {
-                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
+                exception.set(e);
+                chainComplete.set(true);
+                if (responseSent.get()) {
+                    recordMetrics.run();
+                }
+                throw e;
+            }
+        }
+
+        private void filterLegacy(FilterChain chain, RoutingRequest req, RoutingResponse res, long startTime) {
+            try {
+                chain.proceed();
+                Thread.ofVirtual().start(() -> updateLegacyMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
+            } catch (Exception e) {
+                Thread.ofVirtual().start(() -> updateLegacyMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
                 throw e;
             }
         }
@@ -144,10 +201,11 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
 
         private void updateMetricsIfMeasured(RoutingRequest req,
                                              RoutingResponse resp,
+                                             boolean measured,
                                              Long startTime,
                                              long endTime,
                                              Exception exception) {
-            if (!config.isMeasured(req.prologue().method(), req.prologue().uriPath())) {
+            if (!measured) {
                 return;
             }
             AttributesBuilder attrBuilder = Attributes.builder();
@@ -155,9 +213,12 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
-                    .put(AttributeKey.longKey(STATUS_CODE), statusCode(resp, exception))
-                    .put(AttributeKey.stringKey(HTTP_ROUTE), req.matchingPattern().orElse(""))
+                    .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
+
+            req.matchingPattern()
+                    .filter(route -> !route.isBlank())
+                    .ifPresent(route -> attrBuilder.put(AttributeKey.stringKey(HTTP_ROUTE), route));
 
             if (isOptedIn(config, SERVER_ADDRESS)) {
                 attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.requestedUri().host());
@@ -172,6 +233,33 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             don't currently have a way to get the HTTP version at runtime from a request.
              */
 
+            httpRequestDuration.record((endTime - startTime) / 1_000_000_000.0, attrBuilder.build());
+        }
+
+        private void updateLegacyMetricsIfMeasured(RoutingRequest req,
+                                                   RoutingResponse resp,
+                                                   long startTime,
+                                                   long endTime,
+                                                   Exception exception) {
+            if (!config.isMeasured(req.prologue().method(), req.prologue().uriPath())) {
+                return;
+            }
+            AttributesBuilder attrBuilder = Attributes.builder();
+
+            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
+                    .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
+                    .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
+                    .put(AttributeKey.longKey(STATUS_CODE), legacyStatusCode(resp, exception))
+                    .put(AttributeKey.stringKey(HTTP_ROUTE), req.matchingPattern().orElse(""))
+                    .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
+
+            if (isOptedIn(config, SERVER_ADDRESS)) {
+                attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.requestedUri().host());
+            }
+            if (isOptedIn(config, SERVER_PORT)) {
+                attrBuilder.put(AttributeKey.longKey(SERVER_PORT), (long) req.requestedUri().port());
+            }
+
             httpRequestDuration.record((endTime - startTime) / 1_000_000.0, attrBuilder.build());
         }
 
@@ -183,10 +271,11 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                             : resp.status().codeText();
         }
 
-        private long statusCode(RoutingResponse resp, Exception exception) {
+        private long legacyStatusCode(RoutingResponse resp, Exception exception) {
             return (exception != null)
                     ? 0L
                     : resp.status().code();
         }
+
     }
 }

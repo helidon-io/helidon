@@ -18,6 +18,9 @@ package io.helidon.webserver.http2;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderNames;
@@ -39,9 +42,72 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 class Http2ServerRequestTest {
+    @Test
+    void matchingPatternSupplierIsInvokedOnce() {
+        Http2ServerRequest request = Http2ServerRequest.create(mock(ConnectionContext.class),
+                                                               HttpSecurity.create(),
+                                                               HttpPrologue.create("HTTP/2.0",
+                                                                                   "HTTP",
+                                                                                   "2.0",
+                                                                                   Method.GET,
+                                                                                   "/resource",
+                                                                                   false),
+                                                               Http2Headers.create(WritableHeaders.create()),
+                                                               ContentDecoder.NO_OP,
+                                                               1,
+                                                               false,
+                                                               () -> null,
+                                                               null,
+                                                               0,
+                                                               0);
+        AtomicInteger invocations = new AtomicInteger();
+
+        request.matchingPattern(() -> {
+            invocations.incrementAndGet();
+            return Optional.of("/resource/{id}");
+        });
+
+        assertThat(request.matchingPattern(), is(Optional.of("/resource/{id}")));
+        assertThat(request.matchingPattern(), is(Optional.of("/resource/{id}")));
+        assertThat(invocations.get(), is(1));
+
+        assertThrows(NullPointerException.class,
+                     () -> request.matchingPattern((Supplier<Optional<String>>) null));
+        request.matchingPattern(() -> null);
+        assertThrows(NullPointerException.class, request::matchingPattern);
+    }
+
+    @Test
+    void matchingPatternSettersReplacePreviousValue() {
+        Http2ServerRequest request = Http2ServerRequest.create(mock(ConnectionContext.class),
+                                                               HttpSecurity.create(),
+                                                               HttpPrologue.create("HTTP/2.0",
+                                                                                   "HTTP",
+                                                                                   "2.0",
+                                                                                   Method.GET,
+                                                                                   "/resource",
+                                                                                   false),
+                                                               Http2Headers.create(WritableHeaders.create()),
+                                                               ContentDecoder.NO_OP,
+                                                               1,
+                                                               false,
+                                                               () -> null,
+                                                               null,
+                                                               0,
+                                                               0);
+
+        request.matchingPattern("/initial");
+        request.matchingPattern(() -> Optional.of("/lazy"));
+        assertThat(request.matchingPattern(), is(Optional.of("/lazy")));
+
+        request.matchingPattern("/final");
+        assertThat(request.matchingPattern(), is(Optional.of("/final")));
+    }
+
     @Test
     void testHeadersSynthesizeHostFromAuthority() {
         Http2Headers headers = Http2Headers.create(WritableHeaders.create())

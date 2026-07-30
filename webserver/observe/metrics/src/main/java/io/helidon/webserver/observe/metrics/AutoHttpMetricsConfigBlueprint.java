@@ -28,6 +28,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Blueprint(decorator = AutoHttpMetricsConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(AutoHttpMetricsConfigSupport.CustomMethods.class)
+@Prototype.IncludeDefaultMethods
 interface AutoHttpMetricsConfigBlueprint {
 
     /**
@@ -70,5 +71,20 @@ interface AutoHttpMetricsConfigBlueprint {
      */
     @Option.Configured
     List<String> optIn();
+
+    /**
+     * Whether to use the updated automatic HTTP metrics behavior.
+     * <p>
+     * When enabled, OpenTelemetry automatic HTTP metrics are recorded when the response is sent, use seconds for the
+     * duration value, retain the response status when request processing throws an exception, and use the framework-
+     * provided route when one is available. The default retains the prior Helidon 4.x metric output.
+     *
+     * @return whether to use the updated automatic HTTP metrics behavior
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    default boolean useUpdatedHttpMetrics() {
+        return false;
+    }
 
 }

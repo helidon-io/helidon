@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -34,6 +36,7 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
@@ -48,6 +51,7 @@ import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasStr
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
+import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.STATUS_CODE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -56,6 +60,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -102,6 +107,7 @@ class TestOpenTelemetrySemanticConventions {
                       observers:
                         metrics:
                           auto-http-metrics:
+                            use-updated-http-metrics: true
                             paths:
                               - path: /greet
                                 methods: ["OPTIONS"]
@@ -115,7 +121,18 @@ class TestOpenTelemetrySemanticConventions {
                 .config(config.get("server"))
                 .routing(r -> r.get("/greet/{name}",
                                     (req, resp) ->
-                                            resp.send("Hello, " + req.path().segments().get(1).value() + "!")))
+                                            resp.send("Hello, " + req.path().segments().get(1).value() + "!"))
+                        .get("/useLazyRoute",
+                             /*
+                             Mimics what the JaxRsServer does in refining the route after matching.
+                              */
+                             (req, resp) -> {
+                                 ((RoutingRequest) req).matchingPattern(() -> Optional.of("/useLazyRouteOverride"));
+                                 resp.send("Hello, World!");
+                             })
+                        .get("/fail", (req, resp) -> {
+                            throw new IllegalStateException("expected failure");
+                        }))
                 .routing("private", r -> r.any("/greet",
                                                (req, resp) -> {
                                                    switch (req.prologue().method().text()) {
@@ -146,6 +163,9 @@ class TestOpenTelemetrySemanticConventions {
                 Http1ClientResponse greetOptionsResponse = privateClient.options("/greet")
                         .accept(MediaTypes.TEXT_PLAIN)
                         .request();
+                Http1ClientResponse useLazyRouteResponse = defaultClient.get("/useLazyRoute")
+                        .accept(MediaTypes.TEXT_PLAIN)
+                        .request();
                 TestLogHandler testLogHandler = TestLogHandler.create(
                         Logger.getLogger(OtlpJsonLoggingMetricExporter.class.getName()))) {
 
@@ -154,6 +174,7 @@ class TestOpenTelemetrySemanticConventions {
             assertThat("Admin endpoint", adminResponse.status().code(), is(200));
             assertThat("Metrics endpoint via default socket", metricsOnDefaultResponse.status().code(), is(404));
             assertThat("Private endpoint HEAD", greetOptionsResponse.status().code(), is(200));
+            assertThat("Use lazy route endpoint", useLazyRouteResponse.status().code(), is(200));
 
             List<String> socketNamesInTimers = new ArrayList<>();
 
@@ -168,33 +189,7 @@ class TestOpenTelemetrySemanticConventions {
 
             var root = JsonParser.create(jsonText.getFirst()).readJsonObject();
 
-            var top = root.arrayValue("resourceMetrics");
-
-            Stream<JsonValue> scopeMetricsEntries;
-
-            /*
-            The top node might be resourceMetrics which is an array of resource/scopeMetrics tuples, or it might be a single
-            resource/scopeMetrics tuple.
-             */
-            if (top.isPresent()) {
-                scopeMetricsEntries =
-                        top.get().asArray().values().stream()
-                                .flatMap(resourceMetricEntry -> resourceMetricEntry.asArray().values().stream())
-                                .map(JsonValue::asObject)
-                                .flatMap(resourceMetric -> resourceMetric.arrayValue("scopeMetrics").stream());
-            } else {
-                scopeMetricsEntries = root.arrayValue("scopeMetrics").orElseThrow().values().stream();
-            }
-
-            List<JsonObject> metricsEntries = scopeMetricsEntries
-                    .flatMap(scopeMetricsEntry -> scopeMetricsEntry.asObject()
-                            .arrayValue("metrics")
-                            .orElseThrow()
-                            .values()
-                            .stream())
-                    .map(JsonValue::asObject)
-                    .toList();
-
+            List<JsonObject> metricsEntries = metricsEntries(root);
             Set<String> routesSeen = new HashSet<>();
 
             for (JsonObject metricsEntry : metricsEntries) {
@@ -271,7 +266,9 @@ class TestOpenTelemetrySemanticConventions {
 
             assertThat("Routes seen", routesSeen, allOf(hasItem("/greet"),
                                                         hasItem("/greet/{name}"),
-                                                        not(hasItem("/observe/metrics"))));
+                                                        not(hasItem("/observe/metrics")),
+                                                        not(hasItem("/useLazyRoute")),
+                                                        hasItem("/useLazyRouteOverride")));
 
             Set<String> unexpectedlyUntimedSockets = new HashSet<>(Set.of("@default", "private"));
             socketNamesInTimers.forEach(unexpectedlyUntimedSockets::remove);
@@ -281,5 +278,149 @@ class TestOpenTelemetrySemanticConventions {
             throw new RuntimeException(e);
         }
 
+    }
+
+    @Test
+    void checkPersonalizedGreetingTime() {
+
+        // Use default socket.
+        try (TestLogHandler testLogHandler = TestLogHandler.create(
+                Logger.getLogger(OtlpJsonLoggingMetricExporter.class.getName()))) {
+
+            try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
+                    .accept(MediaTypes.TEXT_PLAIN)
+                    .request()) {
+                assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
+            }
+
+            var beforeRoot = nextHttpRequestDurationRoot(testLogHandler);
+            var beforeMeasurement = personalizedGreetingMeasurement(beforeRoot);
+
+            var startTime = System.nanoTime();
+            try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
+                    .accept(MediaTypes.TEXT_PLAIN)
+                    .request()) {
+                assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
+            }
+            var elapsedTimeFromClient = System.nanoTime() - startTime;
+
+            var afterRoot = nextHttpRequestDurationRoot(testLogHandler);
+            var afterMeasurement = personalizedGreetingMeasurement(afterRoot);
+
+            var personalizedGreetingCount = afterMeasurement.count() - beforeMeasurement.count();
+            var personalizedGreetingTimeNanos = afterMeasurement.timeNanos() - beforeMeasurement.timeNanos();
+
+            assertThat("Personalized greeting count", personalizedGreetingCount, is(1L));
+            assertThat("Personalized greeting time",
+                       personalizedGreetingTimeNanos,
+                       allOf(greaterThan(0L), lessThanOrEqualTo(elapsedTimeFromClient)));
+        }
+    }
+
+    @Test
+    void checkFailureUsesFinalResponseStatus() {
+        try (TestLogHandler testLogHandler = TestLogHandler.create(
+                Logger.getLogger(OtlpJsonLoggingMetricExporter.class.getName()));
+                Http1ClientResponse response = defaultClient.get("/fail")
+                        .accept(MediaTypes.TEXT_PLAIN)
+                        .request()) {
+
+            assertThat("Failure endpoint", response.status().code(), is(500));
+
+            JsonObject root = nextHttpRequestDurationRoot(testLogHandler);
+            boolean foundFailureMetric = false;
+            for (JsonObject metricsEntry : metricsEntries(root)) {
+                if (!OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME.equals(metricsEntry.stringValue("name").orElse(null))) {
+                    continue;
+                }
+                for (JsonValue dataPoint : metricsEntry.objectValue("histogram").orElseThrow()
+                        .arrayValue("dataPoints").orElseThrow().values()) {
+                    Map<String, Object> attributes = dataPoint.asObject().arrayValue("attributes")
+                            .map(JsonTestUtil::asAttributesMap)
+                            .orElseGet(Map::of);
+                    if ("/fail".equals(attributes.get(HTTP_ROUTE))
+                            && Integer.valueOf(500).equals(attributes.get(STATUS_CODE))) {
+                        foundFailureMetric = true;
+                    }
+                }
+            }
+            assertThat("Metric with final failure status", foundFailureMetric, is(true));
+        }
+    }
+
+    private static JsonObject nextHttpRequestDurationRoot(TestLogHandler testLogHandler) {
+        String jsonText = testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)))
+                .stream()
+                .filter(it -> it.contains(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME))
+                .findFirst()
+                .orElseThrow();
+
+        return JsonParser.create(jsonText).readJsonObject();
+    }
+
+    private static PersonalizedGreetingMeasurement personalizedGreetingMeasurement(JsonObject root) {
+        var personalizedGreetingTimeNanos = new AtomicLong();
+        var personalizedGreetingCount = new AtomicLong();
+
+        metricsEntries(root).stream()
+                .filter(metricsEntry -> metricsEntry.stringValue("name")
+                        .filter(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME::equals)
+                        .isPresent())
+                .forEach(metricsEntry -> {
+                    var unit = metricsEntry.stringValue("unit").orElseThrow();
+                    assertThat("Duration unit", unit, is("s"));
+
+                    metricsEntry.objectValue("histogram").orElseThrow()
+                            .arrayValue("dataPoints").orElseThrow()
+                            .values()
+                            .stream()
+                            .map(JsonValue::asObject)
+                            .filter(dataPoint -> "/greet/{name}".equals(dataPoint.arrayValue("attributes")
+                                    .map(JsonTestUtil::asAttributesMap)
+                                    .orElseGet(Map::of)
+                                    .get(HTTP_ROUTE)))
+                            .forEach(dataPoint -> {
+                                var duration = dataPoint.doubleValue("sum").orElseThrow();
+                                var durationNanos = Math.round(duration * 1_000_000_000.0);
+
+                                personalizedGreetingTimeNanos.addAndGet(durationNanos);
+                                personalizedGreetingCount.addAndGet(Long.parseLong(dataPoint.stringValue("count").orElseThrow()));
+                            });
+                });
+
+        return new PersonalizedGreetingMeasurement(personalizedGreetingCount.get(), personalizedGreetingTimeNanos.get());
+    }
+
+    private record PersonalizedGreetingMeasurement(long count, long timeNanos) {
+    }
+
+    static List<JsonObject> metricsEntries(JsonObject root) {
+
+        var top = root.arrayValue("resourceMetrics");
+
+        Stream<JsonValue> scopeMetricsEntries;
+
+        /*
+        The top node might be resourceMetrics which is an array of resource/scopeMetrics tuples, or it might be a single
+        resource/scopeMetrics tuple.
+         */
+        if (top.isPresent()) {
+            scopeMetricsEntries =
+                    top.get().asArray().values().stream()
+                            .flatMap(resourceMetricEntry -> resourceMetricEntry.asArray().values().stream())
+                            .map(JsonValue::asObject)
+                            .flatMap(resourceMetric -> resourceMetric.arrayValue("scopeMetrics").stream());
+        } else {
+            scopeMetricsEntries = root.arrayValue("scopeMetrics").orElseThrow().values().stream();
+        }
+
+        return scopeMetricsEntries
+                .flatMap(scopeMetricsEntry -> scopeMetricsEntry.asObject()
+                        .arrayValue("metrics")
+                        .orElseThrow()
+                        .values()
+                        .stream())
+                .map(JsonValue::asObject)
+                .toList();
     }
 }

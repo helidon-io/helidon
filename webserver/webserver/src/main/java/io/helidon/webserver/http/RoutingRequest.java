@@ -16,6 +16,10 @@
 
 package io.helidon.webserver.http;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
+
 import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RoutedPath;
@@ -51,6 +55,20 @@ public interface RoutingRequest extends ServerRequest {
      */
     @Api.Internal
     default RoutingRequest matchingPattern(String matchingPattern) {
+        return this;
+    }
+
+    /**
+     * Update the pattern used to match this request using a supplier. Such as "/foo/{bar}".
+     * The supplier is invoked at most once, when the matching pattern is first requested.
+     * For internal use only to Helidon.
+     *
+     * @param matchingPattern matching pattern supplier, returning an empty optional if no pattern is available
+     * @return this instance
+     */
+    @Api.Internal
+    default RoutingRequest matchingPattern(Supplier<Optional<String>> matchingPattern) {
+        Objects.requireNonNull(matchingPattern, "Parameter 'matchingPattern' is null!");
         return this;
     }
 }
