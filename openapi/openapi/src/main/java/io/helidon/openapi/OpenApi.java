@@ -29,9 +29,11 @@ import io.helidon.common.Api;
 /**
  * OpenAPI document annotations.
  * <p>
- * Declarative OpenAPI annotations do not model operation callbacks or top-level webhooks. Applications can contribute
- * these items using a static OpenAPI document or an {@link io.helidon.openapi.spi.OpenApiDocumentSource}; Helidon
- * composes those items with annotation-generated content.
+ * Declarative OpenAPI annotations do not model operation callbacks or OpenAPI 3.1 and 3.2 top-level webhooks. To
+ * describe a callback, use a static OpenAPI document or an {@link io.helidon.openapi.spi.OpenApiDocumentSource} that
+ * defines the complete containing operation, and configure Helidon not to generate the same path and method from
+ * annotations. A static document or document source can also define top-level webhooks. Combining static and generated
+ * content uses {@link OpenApiGeneratedMode#MERGE MERGE} mode and requires non-conflicting content.
  */
 @Api.Preview
 @Api.Since("27.0.0")
@@ -512,9 +514,11 @@ public final class OpenApi {
          * Complete OpenAPI path template for this operation. This is useful when the Helidon route template cannot be
          * represented directly as an OpenAPI path. The value is not relative to the declarative HTTP path annotation.
          * <p>
-         * This element configures only the path template; it does not configure Path Item Object metadata such as
-         * {@code $ref}, summary, description, or path-level servers. Contribute such metadata using a static OpenAPI
-         * document or an {@link io.helidon.openapi.spi.OpenApiDocumentSource}.
+         * This element configures only the path template. Use a static OpenAPI document or an
+         * {@link io.helidon.openapi.spi.OpenApiDocumentSource} to define Path Item Object summary, description, or
+         * path-level servers. If a Path Item {@code $ref} accompanies locally generated fields, the referenced Path Item
+         * must not define any of the same fields; otherwise the static document or document source must own the complete
+         * Path Item and Helidon must not also generate the same path and method from annotations.
          * <p>
          * Path overrides must start with {@code /} and must declare the same path parameters as the generated route.
          * Use simple OpenAPI path parameters such as {@code {id}}. Regex constraints, optional path segments, wildcards,
@@ -605,8 +609,10 @@ public final class OpenApi {
          * locations are {@code path}, {@code query}, {@code header}, and {@code cookie}. Parameter-target usage cannot
          * override the generated parameter location.
          * <p>
-         * Declarative OpenAPI annotations do not support OpenAPI 3.2 {@code querystring} parameters. Use a static OpenAPI
-         * document or an {@link io.helidon.openapi.spi.OpenApiDocumentSource} to contribute such parameters.
+         * Declarative OpenAPI annotations do not support OpenAPI 3.2 {@code querystring} parameters. To use one, define
+         * the complete containing operation in a static OpenAPI document or an
+         * {@link io.helidon.openapi.spi.OpenApiDocumentSource}, and configure Helidon not to generate the same path and
+         * method from annotations.
          *
          * @return location
          */
@@ -761,9 +767,10 @@ public final class OpenApi {
         /**
          * HTTP status code in the range {@code 100..599}. A method can declare at most one response for each status.
          * <p>
-         * This element supports exact status codes only. Use a static OpenAPI document or an
-         * {@link io.helidon.openapi.spi.OpenApiDocumentSource} to declare {@code default} or a wildcard response range
-         * ({@code 1XX} through {@code 5XX}).
+         * This element supports exact status codes only. To declare {@code default} or a wildcard response range
+         * ({@code 1XX} through {@code 5XX}), define the complete containing operation in a static OpenAPI document or an
+         * {@link io.helidon.openapi.spi.OpenApiDocumentSource}, and configure Helidon not to generate the same path and
+         * method from annotations.
          *
          * @return status code
          */
@@ -892,8 +899,9 @@ public final class OpenApi {
      * OpenAPI Header Object metadata.
      * <p>
      * Declarative OpenAPI annotations do not model Header Object {@code example}, {@code examples}, or {@code explode}
-     * metadata. Use a static OpenAPI document or an {@link io.helidon.openapi.spi.OpenApiDocumentSource} to contribute
-     * such metadata.
+     * metadata. To use such metadata, define the complete containing operation in a static OpenAPI document or an
+     * {@link io.helidon.openapi.spi.OpenApiDocumentSource}, and configure Helidon not to generate the same path and
+     * method from annotations.
      */
     @Target({})
     @Retention(RetentionPolicy.CLASS)
@@ -964,8 +972,10 @@ public final class OpenApi {
      * OpenAPI Media Type Object metadata.
      * <p>
      * Declarative OpenAPI annotations do not model {@code encoding} metadata, including per-part content types and
-     * headers, or OpenAPI 3.2 {@code prefixEncoding} and {@code itemEncoding}. Use a static OpenAPI document or an
-     * {@link io.helidon.openapi.spi.OpenApiDocumentSource} to contribute such metadata.
+     * headers, or OpenAPI 3.2 {@code prefixEncoding} and {@code itemEncoding}. To use such metadata, define the complete
+     * containing operation in a static OpenAPI document or an
+     * {@link io.helidon.openapi.spi.OpenApiDocumentSource}, and configure Helidon not to generate the same path and
+     * method from annotations.
      */
     @Target({})
     @Retention(RetentionPolicy.CLASS)
@@ -1095,7 +1105,9 @@ public final class OpenApi {
      * <p>
      * Declarative OpenAPI annotations do not apply extensions to other OpenAPI objects, including servers, responses,
      * headers, and links. Use a static OpenAPI document or an
-     * {@link io.helidon.openapi.spi.OpenApiDocumentSource} to contribute such extensions.
+     * {@link io.helidon.openapi.spi.OpenApiDocumentSource} to define such extensions. If the extended object belongs to
+     * an operation, the static document or document source must own the complete operation and Helidon must not also
+     * generate the same path and method from annotations.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
