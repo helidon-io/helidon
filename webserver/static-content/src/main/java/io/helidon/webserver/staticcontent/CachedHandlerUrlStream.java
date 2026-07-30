@@ -25,6 +25,7 @@ import java.time.Instant;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.HttpException;
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
@@ -71,7 +72,7 @@ record CachedHandlerUrlStream(MediaType mediaType,
                                                           response.headers(),
                                                           ServerResponseHeaders::lastModified,
                                                           !ifNoneMatchPresent);
-            } catch (io.helidon.http.HttpException e) {
+            } catch (HttpException e) {
                 representation.apply(e);
                 e.header(representation.etagHeader(etag));
                 throw e;

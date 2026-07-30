@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -324,7 +325,7 @@ public class StaticContentPreCompressedJmhTest {
         }
 
         @Override
-        public java.util.List<UriPathSegment> segments() {
+        public List<UriPathSegment> segments() {
             return delegate.segments();
         }
 

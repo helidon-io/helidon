@@ -17,6 +17,7 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -135,7 +136,7 @@ class SingleFileContentHandler extends FileBasedContentHandler {
                                                          it -> Optional.ofNullable(realPath.get()).map(Path::getParent),
                                                          ResponseRepresentation.encoded(coding)));
             });
-        } catch (java.net.URISyntaxException e) {
+        } catch (URISyntaxException e) {
             throw new IOException(e);
         }
     }

@@ -19,6 +19,7 @@ package io.helidon.webserver.staticcontent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.System.Logger.Level;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -267,7 +268,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                                                          it -> Optional.ofNullable(realRoot.get()),
                                                          ResponseRepresentation.encoded(coding)));
             });
-        } catch (java.net.URISyntaxException e) {
+        } catch (URISyntaxException e) {
             throw new IOException(e);
         }
     }
