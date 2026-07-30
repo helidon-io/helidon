@@ -1092,6 +1092,10 @@ public final class OpenApi {
      * <p>
      * Type-level usage applies only to {@link Document @OpenApi.Document} metadata types. Method-level usage applies to
      * generated operations.
+     * <p>
+     * Declarative OpenAPI annotations do not apply extensions to other OpenAPI objects, including servers, responses,
+     * headers, and links. Use a static OpenAPI document or an
+     * {@link io.helidon.openapi.spi.OpenApiDocumentSource} to contribute such extensions.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
