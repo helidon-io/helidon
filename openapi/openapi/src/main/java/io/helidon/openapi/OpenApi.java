@@ -955,6 +955,10 @@ public final class OpenApi {
 
     /**
      * OpenAPI Media Type Object metadata.
+     * <p>
+     * Declarative OpenAPI annotations do not model {@code encoding} metadata, including per-part content types and
+     * headers, or OpenAPI 3.2 {@code prefixEncoding} and {@code itemEncoding}. Use a static OpenAPI document or an
+     * {@link io.helidon.openapi.spi.OpenApiDocumentSource} to contribute such metadata.
      */
     @Target({})
     @Retention(RetentionPolicy.CLASS)
