@@ -392,6 +392,19 @@ class StaticContentTest {
     }
 
     @Test
+    void testFileSystemPreCompressedDisabledRangeRejectsUnavailableIdentity() {
+        try (Http1ClientResponse response = testClient.get("/path-disabled/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip, identity;q=0")
+                .header(HeaderNames.RANGE, "bytes=0-3")
+                .request()) {
+
+            assertThat(response.status(), is(Status.NOT_ACCEPTABLE_406));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        }
+    }
+
+    @Test
     void testFileSystemPreCompressedRejectsQZero() {
         try (Http1ClientResponse response = testClient.get("/path/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "br;q=0")

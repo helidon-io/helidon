@@ -330,7 +330,11 @@ abstract class StaticContentHandler implements HttpService {
                     throw new BadRequestException("Invalid Accept-Encoding header");
                 }
                 if (acceptEncoding.identity().isEmpty()) {
-                    throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true);
+                    throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true)
+                            .header(HeaderValues.create(HeaderNames.VARY,
+                                                       true,
+                                                       false,
+                                                       HeaderNames.ACCEPT_ENCODING_NAME));
                 }
                 return identityHandler.withRepresentation(ResponseRepresentation.identity(acceptEncoding.present()));
             }
