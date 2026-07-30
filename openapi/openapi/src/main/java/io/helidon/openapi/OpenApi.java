@@ -512,6 +512,10 @@ public final class OpenApi {
          * Complete OpenAPI path template for this operation. This is useful when the Helidon route template cannot be
          * represented directly as an OpenAPI path. The value is not relative to the declarative HTTP path annotation.
          * <p>
+         * This element configures only the path template; it does not configure Path Item Object metadata such as
+         * {@code $ref}, summary, description, or path-level servers. Contribute such metadata using a static OpenAPI
+         * document or an {@link io.helidon.openapi.spi.OpenApiDocumentSource}.
+         * <p>
          * Path overrides must start with {@code /} and must declare the same path parameters as the generated route.
          * Use simple OpenAPI path parameters such as {@code {id}}. Regex constraints, optional path segments, wildcards,
          * escaped path characters, greedy parameters, and path parameter names containing path or template metacharacters
