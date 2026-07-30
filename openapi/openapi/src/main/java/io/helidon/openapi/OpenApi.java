@@ -757,6 +757,10 @@ public final class OpenApi {
     public @interface Response {
         /**
          * HTTP status code in the range {@code 100..599}. A method can declare at most one response for each status.
+         * <p>
+         * This element supports exact status codes only. Use a static OpenAPI document or an
+         * {@link io.helidon.openapi.spi.OpenApiDocumentSource} to declare {@code default} or a wildcard response range
+         * ({@code 1XX} through {@code 5XX}).
          *
          * @return status code
          */
