@@ -19,6 +19,7 @@ package io.helidon.codegen;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -199,7 +200,7 @@ public final class JavadocWriter {
 
     private void writeRawEndElement(String tag) {
         buf.append("</");
-        buf.append(tag.toLowerCase());
+        buf.append(tag.toLowerCase(Locale.ROOT));
         buf.append(">");
     }
 
@@ -271,18 +272,19 @@ public final class JavadocWriter {
     }
 
     private static boolean isClosedBy(String openTag, String startTag) {
-        return switch (openTag) {
+        return switch (openTag.toLowerCase(Locale.ROOT)) {
             case "li" -> isElement(startTag, "li");
-            case "optgroup" -> isElement(startTag, "optgroup");
+            case "optgroup" -> isElement(startTag, "optgroup", "hr");
             case "tfoot" -> isElement(startTag, "tbody");
             case "colgroup" -> !isElement(startTag, "col");
+            case "caption" -> isElement(startTag, "colgroup", "thead", "tbody", "tfoot", "tr");
             case "dt", "dd" -> isElement(startTag, "dt", "dd");
-            case "p" -> isElement(startTag, "address", "article", "aside", "blockquote", "dir", "div", "dl",
-                    "fieldset", "footer", "form", "h1", "h2", "h3", "h4", "h5",
-                    "h6", "header", "hgroup", "hr", "menu", "nav", "ol", "p",
-                    "pre", "section", "table", "ul");
+            case "p" -> isElement(startTag, "address", "article", "aside", "blockquote", "details", "dialog",
+                    "dir", "div", "dl", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3",
+                    "h4", "h5", "h6", "header", "hgroup", "hr", "main", "menu", "nav", "ol", "p", "pre", "search",
+                    "section", "table", "ul");
             case "rt", "rp" -> isElement(startTag, "rt", "rp");
-            case "option" -> isElement(startTag, "option", "optgroup");
+            case "option" -> isElement(startTag, "option", "optgroup", "hr");
             case "thead", "tbody" -> isElement(startTag, "tbody", "tfoot");
             case "tr" -> isElement(startTag, "tr", "tbody", "tfoot");
             case "td", "th" -> isElement(startTag, "td", "th", "tr", "tbody", "tfoot");

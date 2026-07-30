@@ -15,6 +15,9 @@
  */
 package io.helidon.codegen;
 
+import java.util.List;
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -132,9 +135,37 @@ class JavadocWriterTest {
     }
 
     @Test
+    void testOptionalParagraphCloseBeforeModernBlockElements() {
+        for (var tag : List.of("details", "dialog", "figcaption", "figure", "main", "search")) {
+            var actual = html("<p>Intro<" + tag + ">Content");
+            assertThat(actual, is("<p>Intro</p><" + tag + ">Content</" + tag + ">"));
+        }
+    }
+
+    @Test
+    void testOptionalOptionCloseBeforeHorizontalRule() {
+        var actual = html("<select><option>One<hr><option>Two");
+        assertThat(actual, is("<select><option>One</option><hr><option>Two</option></select>"));
+    }
+
+    @Test
+    void testOptionalOptgroupCloseBeforeHorizontalRule() {
+        var actual = html("<select><optgroup>One<hr><optgroup>Two");
+        assertThat(actual, is("<select><optgroup>One</optgroup><hr><optgroup>Two</optgroup></select>"));
+    }
+
+    @Test
     void testOptionalTableElementClose() {
         var actual = html("<table><tr><td>A<td>B<tr><td>C");
         assertThat(actual, is("<table><tr><td>A</td><td>B</td></tr><tr><td>C</td></tr></table>"));
+    }
+
+    @Test
+    void testOptionalCaptionCloseBeforeTableStructure() {
+        for (var tag : List.of("colgroup", "thead", "tbody", "tfoot", "tr")) {
+            var actual = html("<table><caption>Title<" + tag + ">");
+            assertThat(actual, is("<table><caption>Title</caption><" + tag + "></" + tag + "></table>"));
+        }
     }
 
     @Test
@@ -142,6 +173,18 @@ class JavadocWriterTest {
         var actual = html("<table><tbody><tr><td>A<tbody><tr><td>B");
         assertThat(actual,
                    is("<table><tbody><tr><td>A</td></tr></tbody><tbody><tr><td>B</td></tr></tbody></table>"));
+    }
+
+    @Test
+    void testMixedCaseElementsUnderTurkishLocale() {
+        var defaultLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr"));
+            var actual = html("<UL><LI>One<LI>Two");
+            assertThat(actual, is("<UL><LI>One</li><LI>Two</li></ul>"));
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
     }
 
     @Test
