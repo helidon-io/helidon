@@ -1,28 +1,13 @@
-# Helidon Docs
+# Helidon Documentation
 
-This project hosts the Helidon documentation and builds the aggregated javadocs.
+<!--@pages config/manifest.md -->
 
-## Build
-
-Build the docs and javadocs:
-```bash
-mvn package -Pjavadoc
-```
-
-Build just the docs:
-```bash
-mvn package
-```
-
-Build just the javadocs:
-```bash
-mvn package -Pjavadoc -Dhelidon.sitegen.skip=true
-```
-
-## Serve
-
-```bash
-mvn sitegen:serve
-```
-
-Open http://localhost:8080 in a browser.
+- [Get Started](get-started.md)
+- [Helidon SE](se/README.md)
+- [Helidon MP](mp/README.md)
+- [Helidon CLI](cli.md)
+- [Dependency Management](dependency-management.md)
+- [Config Reference](config/config_reference.md) <!--@icon i-lucide-cogs -->
+- [Service Reference](service-reference.md)
+- [Javadocs](https://helidon.io/docs/v4/apidocs/) <!--@icon i-lucide-book-open
+  -->

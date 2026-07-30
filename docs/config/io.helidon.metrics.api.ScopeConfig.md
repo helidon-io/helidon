@@ -1,0 +1,68 @@
+# io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Scope<wbr>Config
+
+## Description
+
+Configuration settings for a scope within the <code>Metrics<wbr>Config<wbr>Blueprint#<wbr>METRICS_<wbr>CONFIG_<wbr>KEY</code> config section
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether the scope is enabled</td>
+</tr>
+<tr>
+<td>
+<a id="filter"></a>
+<a href="io.helidon.metrics.scoping.scopes.FilterConfig.md">
+<code>filter</code>
+</a>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>Configuration for filter</td>
+</tr>
+<tr>
+<td>
+<code>name</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Name of the scope to which the configuration applies</td>
+</tr>
+</tbody>
+</table>
+
+
+
+## Usages
+
+- <a href="io.helidon.metrics.api.ScopingConfig.md#scopes"><code>metrics.<wbr>scoping.<wbr>scopes</code></a>
+- <a href="io.helidon.metrics.api.ScopingConfig.md#scopes"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>scoping.<wbr>scopes</code></a>
+
+---
+
+See the [manifest](manifest.md) for all available types.
