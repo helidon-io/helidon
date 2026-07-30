@@ -604,6 +604,9 @@ public final class OpenApi {
          * Method-target usage requires a non-blank value matching a generated parameter location. Supported generated
          * locations are {@code path}, {@code query}, {@code header}, and {@code cookie}. Parameter-target usage cannot
          * override the generated parameter location.
+         * <p>
+         * Declarative OpenAPI annotations do not support OpenAPI 3.2 {@code querystring} parameters. Use a static OpenAPI
+         * document or an {@link io.helidon.openapi.spi.OpenApiDocumentSource} to contribute such parameters.
          *
          * @return location
          */
