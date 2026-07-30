@@ -57,6 +57,7 @@ class StaticContentTest {
     private static Path alternateRoot;
     private static Path rootLink;
     private static Path singleLink;
+    private static Path singleSidecarLink;
     private static Path singleParentLink;
 
     private final DirectClient testClient;
@@ -125,6 +126,12 @@ class StaticContentTest {
             builder.register("/singlelink", createService(FileSystemHandlerConfig.create(singleLink)));
         } else {
             singleLink = null;
+        }
+        singleSidecarLink = tempDir.resolve("current-sidecar-file");
+        if (createSymbolicLink(singleSidecarLink, resource)) {
+            builder.register("/single-sidecar-link", createService(FileSystemHandlerConfig.create(singleSidecarLink)));
+        } else {
+            singleSidecarLink = null;
         }
         singleParentLink = tempDir.resolve("current-parent");
         if (createSymbolicLink(singleParentLink, staticRoot)) {
@@ -581,6 +588,22 @@ class StaticContentTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+    }
+
+    @Test
+    void testFileSystemSingleFileSidecarUsesPinnedTarget() throws Exception {
+        assumeTrue(singleSidecarLink != null, "Symbolic links cannot be created");
+        Files.writeString(singleSidecarLink.resolveSibling(singleSidecarLink.getFileName() + ".gz"),
+                          "Untrusted gzip content");
+
+        try (Http1ClientResponse response = testClient.get("/single-sidecar-link")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip, identity;q=0")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+            assertThat(response.as(String.class), is("Gzip content"));
         }
     }
 

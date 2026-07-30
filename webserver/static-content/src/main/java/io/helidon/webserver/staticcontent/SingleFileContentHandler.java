@@ -19,7 +19,6 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,24 +32,19 @@ class SingleFileContentHandler extends FileBasedContentHandler {
 
     private final boolean cacheInMemory;
     private final Path path;
-    private final Path configuredParent;
     // The configured file is pinned for the handler instance lifetime, including stop/start cycles.
     private final AtomicReference<Path> realPath = new AtomicReference<>();
-    // The configured parent is pinned separately for resolving sibling pre-compressed files.
-    private final AtomicReference<Path> realParent = new AtomicReference<>();
 
     SingleFileContentHandler(FileSystemHandlerConfig config) {
         super(config);
 
         this.cacheInMemory = config.cachedFiles().contains(".") || config.cachedFiles().contains("/");
         this.path = config.location().toAbsolutePath().normalize();
-        this.configuredParent = Objects.requireNonNull(path.getParent());
     }
 
     @Override
     public void beforeStart() {
         try {
-            realParent();
             Optional<Path> maybeResolvedPath = contentPath(path);
             if (cacheInMemory) {
                 // directly cache in memory
@@ -120,7 +114,15 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         String logicalFileName = fileName(path);
         try {
             return selectHandler(identityHandler, request, (coding, suffix) -> {
-                Path sidecar = path.resolveSibling(logicalFileName + "." + suffix);
+                Path pinnedPath = realPath.get();
+                if (pinnedPath == null) {
+                    Optional<Path> maybePinnedPath = contentPath(path);
+                    if (maybePinnedPath.isEmpty()) {
+                        return Optional.empty();
+                    }
+                    pinnedPath = maybePinnedPath.get();
+                }
+                Path sidecar = pinnedPath.resolveSibling(fileName(pinnedPath) + "." + suffix);
                 if (sidecarPath(sidecar).isEmpty()) {
                     return Optional.empty();
                 }
@@ -130,7 +132,7 @@ class SingleFileContentHandler extends FileBasedContentHandler {
                                                          ServerResponseHeaders::lastModified,
                                                          this::sidecarPath,
                                                          false,
-                                                         it -> Optional.ofNullable(realParent.get()),
+                                                         it -> Optional.ofNullable(realPath.get()).map(Path::getParent),
                                                          ResponseRepresentation.encoded(coding)));
             });
         } catch (java.net.URISyntaxException e) {
@@ -162,39 +164,17 @@ class SingleFileContentHandler extends FileBasedContentHandler {
     }
 
     private Optional<Path> sidecarPath(Path sidecar) {
-        if (!sidecar.startsWith(configuredParent) || !Files.exists(sidecar)) {
+        Path pinnedPath = realPath.get();
+        if (pinnedPath == null || !Files.exists(sidecar)) {
             return Optional.empty();
         }
 
         try {
-            Optional<Path> maybeRealParent = realParent();
-            if (maybeRealParent.isEmpty()) {
-                return Optional.empty();
-            }
-            Path currentRealParent = maybeRealParent.get();
-            Path expectedPath = currentRealParent.resolve(configuredParent.relativize(sidecar)).normalize();
-            Path expectedRealPath = expectedPath.toRealPath();
             Path resolvedSidecar = sidecar.toRealPath();
-            if (expectedRealPath.startsWith(currentRealParent) && resolvedSidecar.equals(expectedRealPath)) {
+            if (resolvedSidecar.startsWith(pinnedPath.getParent())) {
                 return Optional.of(resolvedSidecar);
             }
             return Optional.empty();
-        } catch (IOException | SecurityException e) {
-            return Optional.empty();
-        }
-    }
-
-    private Optional<Path> realParent() {
-        Path currentRealParent = realParent.get();
-        if (currentRealParent != null) {
-            return Optional.of(currentRealParent);
-        }
-        try {
-            Path resolvedParent = configuredParent.toRealPath();
-            if (realParent.compareAndSet(null, resolvedParent)) {
-                return Optional.of(resolvedParent);
-            }
-            return Optional.ofNullable(realParent.get());
         } catch (IOException | SecurityException e) {
             return Optional.empty();
         }
