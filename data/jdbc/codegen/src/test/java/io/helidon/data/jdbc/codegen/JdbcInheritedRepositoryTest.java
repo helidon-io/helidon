@@ -1,0 +1,214 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.data.jdbc.codegen;
+
+import java.io.IOException;
+import java.nio.file.Files;
+
+import io.helidon.codegen.testing.TestCompiler;
+
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.data.jdbc.codegen.JdbcCodegenTestSupport.assertCompilationFailure;
+import static io.helidon.data.jdbc.codegen.JdbcCodegenTestSupport.compiler;
+import static io.helidon.data.jdbc.codegen.JdbcCodegenTestSupport.occurrences;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+class JdbcInheritedRepositoryTest {
+
+    @Test
+    void generatesInheritedMethodsWithResolvedGenericTypes() throws IOException {
+        TestCompiler.Result result = compiler()
+                .addSource("InheritedRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+
+                        interface GenericRepository<T, ID> {
+                            @Jdbc.Statement("select VALUE from ITEM where ID = :id")
+                            T find(ID id);
+                        }
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface InheritedRepository extends GenericRepository<String, Long> {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        String source = Files.readString(result.sourceOutput().resolve("example/InheritedRepository__Jdbc.java"));
+        assertThat(source, containsString("String find(Long id)"));
+        assertThat(source, containsString("jdbcStatement.bind(1, id);"));
+        assertThat(source, containsString("return jdbcStatement.map(String.class).one();"));
+    }
+
+    @Test
+    void usesTheClosestMethodDeclaration() throws IOException {
+        TestCompiler.Result result = compiler()
+                .addSource("OverrideRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+
+                        interface ParentRepository {
+                            @Jdbc.Statement("select OLD_VALUE from ITEM")
+                            String find();
+                        }
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface OverrideRepository extends ParentRepository {
+                            @Override
+                            @Jdbc.Statement("select NEW_VALUE from ITEM")
+                            String find();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        String source = Files.readString(result.sourceOutput().resolve("example/OverrideRepository__Jdbc.java"));
+        assertThat(source, containsString("select NEW_VALUE from ITEM"));
+        assertThat(source, not(containsString("select OLD_VALUE from ITEM")));
+    }
+
+    @Test
+    void generatesDiamondMethodsOnceAndIgnoresConcreteMethods() throws IOException {
+        TestCompiler.Result result = compiler()
+                .addSource("DiamondRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+
+                        interface SharedRepository {
+                            @Jdbc.Statement("select VALUE from ITEM")
+                            String find();
+
+                            default String localDefault() {
+                                return "default";
+                            }
+
+                            static String localStatic() {
+                                return "static";
+                            }
+                        }
+
+                        interface LeftRepository extends SharedRepository {
+                        }
+
+                        interface RightRepository extends SharedRepository {
+                        }
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface DiamondRepository extends LeftRepository, RightRepository {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        String source = Files.readString(result.sourceOutput().resolve("example/DiamondRepository__Jdbc.java"));
+        assertThat(occurrences(source, "String find()"), is(1));
+        assertThat(source, not(containsString("localDefault")));
+        assertThat(source, not(containsString("localStatic")));
+    }
+
+    @Test
+    void usesTheMostSpecificCovariantReturnType() throws IOException {
+        TestCompiler.Result result = compiler()
+                .addSource("CovariantRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+
+                        interface ObjectRepository {
+                            @Jdbc.Statement("select VALUE from ITEM")
+                            Object find();
+                        }
+
+                        interface StringRepository {
+                            @Jdbc.Statement("select VALUE from ITEM")
+                            String find();
+                        }
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface CovariantRepository extends ObjectRepository, StringRepository {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        String source = Files.readString(result.sourceOutput().resolve("example/CovariantRepository__Jdbc.java"));
+        assertThat(source, containsString("String find()"));
+    }
+
+    @Test
+    void reportsInvalidInheritedMethodsAtTheirDeclaration() {
+        assertCompilationFailure("InvalidInheritedRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+
+                        interface InvalidParentRepository {
+                            String find();
+                        }
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface InvalidInheritedRepository extends InvalidParentRepository {
+                        }
+                        """,
+                                 "JDBC repository method requires @Jdbc.Statement");
+    }
+
+    @Test
+    void rejectsConflictingMethodsFromUnrelatedParents() {
+        assertCompilationFailure("ConflictingInheritedRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+
+                        interface LeftRepository {
+                            @Jdbc.Statement("select LEFT_VALUE from ITEM")
+                            String find();
+                        }
+
+                        interface RightRepository {
+                            @Jdbc.Statement("select RIGHT_VALUE from ITEM")
+                            String find();
+                        }
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface ConflictingInheritedRepository extends LeftRepository, RightRepository {
+                        }
+                        """,
+                                 "Inherited repository methods have conflicting JDBC or transaction annotations: find()");
+    }
+}

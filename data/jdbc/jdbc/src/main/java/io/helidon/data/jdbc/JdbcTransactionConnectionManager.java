@@ -33,6 +33,23 @@ import io.helidon.transaction.spi.TxLifeCycle;
 /**
  * Associates one lazily acquired connection with a local JDBC transaction.
  * <p>
+ * Transaction propagation and JDBC resource association are separate
+ * responsibilities. {@code JdbcTxSupport} in {@code transaction/jdbc} owns
+ * propagation and sends {@link TxLifeCycle} events without depending on JDBC
+ * APIs. This listener consumes those events and manages the datasource
+ * identity, connection association, and internal connection leases used by
+ * {@code JdbcClient}.
+ * <p>
+ * The listener belongs to Data JDBC because the provider owns every JDBC
+ * resource. Keeping it here also avoids a dependency from
+ * {@code transaction/jdbc} back to the Data JDBC runtime or a public
+ * cross-module SPI for internal connection leases. Generated repositories and
+ * the transaction module never receive the physical connection.
+ * <p>
+ * Lifecycle events may come from another transaction provider. This listener
+ * records such a transaction as foreign and rejects local JDBC acquisition
+ * rather than implying that an ordinary connection joined that transaction.
+ * <p>
  * Each transaction may use one datasource identity. A confirmed completion
  * restores auto commit before closing the connection. An unknown outcome
  * invalidates the connection instead of returning it for normal reuse.
