@@ -1476,6 +1476,56 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void memoryCacheClearInvalidatesInFlightReservation() throws Exception {
+        MemoryCache memoryCache = MemoryCache.create(builder -> builder.enabled(true)
+                .capacity(Size.create(5)));
+        TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
+                                                               .location(Paths.get("."))
+                                                               .memoryCache(memoryCache)
+                                                               .build(),
+                                                           true);
+        CountDownLatch supplierEntered = new CountDownLatch(1);
+        CountDownLatch releaseSupplier = new CountDownLatch(1);
+
+        try (var executor = Executors.newSingleThreadExecutor()) {
+            Future<Optional<CachedHandlerInMemory>> inFlight = executor.submit(() ->
+                    handler.cacheInMemory("first", 5, () -> {
+                        supplierEntered.countDown();
+                        try {
+                            if (!releaseSupplier.await(10, TimeUnit.SECONDS)) {
+                                throw new IllegalStateException("Timed out awaiting supplier release");
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException("Interrupted while awaiting supplier release", e);
+                        }
+                        return inMemoryHandler("12345");
+                    }));
+            try {
+                assertThat(supplierEntered.await(5, TimeUnit.SECONDS), is(true));
+
+                handler.releaseCache();
+
+                assertThat("Clearing a handler should release in-flight capacity",
+                           handler.canCacheInMemory(5),
+                           is(true));
+            } finally {
+                releaseSupplier.countDown();
+            }
+
+            assertThat("A load completed after the handler was cleared should be discarded",
+                       inFlight.get(5, TimeUnit.SECONDS),
+                       is(Optional.empty()));
+            assertThat("A load completed after the handler was cleared should not recreate the cache",
+                       handler.cacheInMemory("first"),
+                       is(Optional.empty()));
+            assertThat("A late completion should not release the reservation twice",
+                       handler.canCacheInMemory(6),
+                       is(false));
+        }
+    }
+
+    @Test
     void preCompressedPreconditionErrorDoesNotSetResponseContentEncoding() {
         byte[] bytes = "Brotli content".getBytes(StandardCharsets.UTF_8);
         CachedHandler handler = new CachedHandlerInMemory(MediaTypes.TEXT_PLAIN,
