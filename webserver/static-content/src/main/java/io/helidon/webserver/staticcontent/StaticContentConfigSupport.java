@@ -51,6 +51,42 @@ final class StaticContentConfigSupport {
         return Collections.unmodifiableMap(result);
     }
 
+    private static MediaType createContentTypes(Config config) {
+        return config.asString()
+                .map(MediaTypes::create)
+                .get();
+    }
+
+    private static String normalizeCoding(String configured) {
+        String coding = configured.trim().toLowerCase(Locale.ROOT);
+        if (coding.isEmpty()) {
+            throw new IllegalArgumentException("Pre-compressed content coding must not be empty");
+        }
+        if ("identity".equals(coding) || "*".equals(coding)) {
+            throw new IllegalArgumentException("Pre-compressed content coding must not be " + configured);
+        }
+        try {
+            HttpToken.validate(coding);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid pre-compressed content coding: " + configured, e);
+        }
+        return coding;
+    }
+
+    private static String normalizeSuffix(String configured) {
+        String suffix = configured.trim();
+        while (suffix.startsWith(".")) {
+            suffix = suffix.substring(1);
+        }
+        if (suffix.isEmpty()) {
+            throw new IllegalArgumentException("Pre-compressed suffix must not be empty");
+        }
+        if (suffix.indexOf('/') != -1 || suffix.indexOf('\\') != -1) {
+            throw new IllegalArgumentException("Pre-compressed suffix must not contain path separators: " + configured);
+        }
+        return suffix;
+    }
+
     static class BaseMethods {
         private BaseMethods() {
         }
@@ -59,7 +95,6 @@ final class StaticContentConfigSupport {
         static MediaType createContentTypes(Config config) {
             return StaticContentConfigSupport.createContentTypes(config);
         }
-
     }
 
     static class FileSystemMethods {
@@ -109,41 +144,4 @@ final class StaticContentConfigSupport {
             return StaticContentConfigSupport.createContentTypes(config);
         }
     }
-
-    private static MediaType createContentTypes(Config config) {
-        return config.asString()
-                .map(MediaTypes::create)
-                .get();
-    }
-
-    private static String normalizeCoding(String configured) {
-        String coding = configured.trim().toLowerCase(Locale.ROOT);
-        if (coding.isEmpty()) {
-            throw new IllegalArgumentException("Pre-compressed content coding must not be empty");
-        }
-        if ("identity".equals(coding) || "*".equals(coding)) {
-            throw new IllegalArgumentException("Pre-compressed content coding must not be " + configured);
-        }
-        try {
-            HttpToken.validate(coding);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid pre-compressed content coding: " + configured, e);
-        }
-        return coding;
-    }
-
-    private static String normalizeSuffix(String configured) {
-        String suffix = configured.trim();
-        while (suffix.startsWith(".")) {
-            suffix = suffix.substring(1);
-        }
-        if (suffix.isEmpty()) {
-            throw new IllegalArgumentException("Pre-compressed suffix must not be empty");
-        }
-        if (suffix.indexOf('/') != -1 || suffix.indexOf('\\') != -1) {
-            throw new IllegalArgumentException("Pre-compressed suffix must not contain path separators: " + configured);
-        }
-        return suffix;
-    }
-
 }
