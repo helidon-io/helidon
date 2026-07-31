@@ -410,7 +410,8 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .createCookie(largeAccessCookieValue)
                 .build()
                 .toString();
-        String idcsIdEncryptionDisabledCookie = idcsIdEncryptionDisabled.idTokenCookieHandler()
+        OidcCookieHandler idcsIdEncryptionDisabledHandler = idcsIdEncryptionDisabled.idTokenCookieHandler();
+        String idcsIdEncryptionDisabledCookie = idcsIdEncryptionDisabledHandler
                 .createCookie(largeCookieValue)
                 .build()
                 .value();
@@ -434,9 +435,14 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                   () -> assertThat("ID token compression should not control access token compression",
                                    idcsIdCompressionDisabledAccessCookie.length() < 4096,
                                    is(true)),
-                  () -> assertThat("ID token compression should remain inert when ID token encryption is disabled",
-                                   idcsIdEncryptionDisabledCookie,
-                                   is(largeCookieValue)));
+                  () -> assertThat("ID token compression should work when ID token encryption is disabled",
+                                   idcsIdEncryptionDisabledCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat(idcsIdEncryptionDisabledHandler
+                                           .findCookie(Map.of("Cookie",
+                                                              List.of(idcsIdEncryptionDisabledHandler.cookieName()
+                                                                              + "=" + idcsIdEncryptionDisabledCookie))),
+                                   is(Optional.of(largeCookieValue))));
     }
 
     @Test

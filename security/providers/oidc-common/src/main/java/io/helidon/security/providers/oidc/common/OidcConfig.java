@@ -1689,7 +1689,8 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Whether to GZIP-compress the access token cookie before encryption when this reduces its size.
+         * Whether to GZIP-compress the access token cookie when this reduces its size.
+         * When encryption is enabled, compression is applied before encryption.
          * Defaults to {@code true} when the top-level {@code server-type} is {@code idcs}, and to {@code false}
          * otherwise. Disabling compression affects newly written cookies only; compressed cookies remain readable.
          *
@@ -1697,7 +1698,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * @return updated builder instance
          */
         @ConfiguredOption(value = "true if server-type is idcs; false otherwise",
-                          description = "Whether to GZIP-compress the access token cookie before encryption when this "
+                          description = "Whether to GZIP-compress the access token cookie when this "
                                   + "reduces its size.")
         public Builder cookieCompressionEnabled(boolean cookieCompressionEnabled) {
             this.tokenCookieBuilder.compressionEnabled(cookieCompressionEnabled);
@@ -1720,7 +1721,8 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Whether to GZIP-compress the ID token cookie before encryption when this reduces its size.
+         * Whether to GZIP-compress the ID token cookie when this reduces its size.
+         * When encryption is enabled, compression is applied before encryption.
          * Defaults to {@code true} when the top-level {@code server-type} is {@code idcs}, and to {@code false}
          * otherwise. Disabling compression affects newly written cookies only; compressed cookies remain readable.
          *
@@ -1729,7 +1731,7 @@ public final class OidcConfig extends TenantConfigImpl {
          */
         @ConfiguredOption(key = "cookie-compression-id-enabled",
                           value = "true if server-type is idcs; false otherwise",
-                          description = "Whether to GZIP-compress the ID token cookie before encryption when this "
+                          description = "Whether to GZIP-compress the ID token cookie when this "
                                   + "reduces its size.")
         public Builder cookieCompressionEnabledIdToken(boolean cookieCompressionEnabled) {
             this.idTokenCookieBuilder.compressionEnabled(cookieCompressionEnabled);

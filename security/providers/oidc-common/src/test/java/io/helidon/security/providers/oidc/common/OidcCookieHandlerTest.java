@@ -104,6 +104,15 @@ class OidcCookieHandlerTest {
     }
 
     @Test
+    void testUncompressedHandlerPreservesCompressionPrefix() {
+        String expectedValue = "~tenant";
+
+        Optional<String> cookie = handler.findCookie(Map.of("Cookie", List.of("COOKIE=" + expectedValue)));
+
+        assertThat(cookie, is(Optional.of(expectedValue)));
+    }
+
+    @Test
     void testDefaultHandlerRejectsLegacyEncryptedCookie() {
         OidcCookieHandler encryptedHandler = encryptedHandler();
 
@@ -242,6 +251,32 @@ class OidcCookieHandlerTest {
     }
 
     @Test
+    void testCompressedUnencryptedCookieRoundTripAndSize() {
+        String expectedValue =
+                "eyJhY2Nlc3NUb2tlbiI6ImV5SnliMnhsY3lJNld5SmhaRzFwYmlJc0luVnpaWElpWFgwPSJ9".repeat(65);
+        OidcCookieHandler compressedHandler = unencryptedHandler(true);
+        SetCookie compressedCookie = compressedHandler.createCookie(expectedValue).build();
+        SetCookie uncompressedCookie = unencryptedHandler(false).createCookie(expectedValue).build();
+        String compressed = compressedCookie.value();
+
+        assertAll(() -> assertThat(compressedHandler
+                                           .findCookie(Map.of("Cookie", List.of("COOKIE=" + compressed))),
+                                   is(Optional.of(expectedValue))),
+                  () -> assertThat("Compressed value must use the cookie-safe format",
+                                   compressed.startsWith("~"),
+                                   is(true)),
+                  () -> assertThat("Compression must reduce the unencrypted cookie size",
+                                   compressed.length() < uncompressedCookie.value().length(),
+                                   is(true)),
+                  () -> assertThat("Compressed cookie must fit into the browser cookie limit",
+                                   compressedCookie.toString().length() < 4096,
+                                   is(true)),
+                  () -> assertThat("The equivalent uncompressed cookie must demonstrate the size regression",
+                                   uncompressedCookie.toString().length() > 4096,
+                                   is(true)));
+    }
+
+    @Test
     void testCompressedHandlerReadsExistingUncompressedCookie() {
         String expectedValue = "existingCookieValue";
         String encrypted = encryptedHandler().createCookie(expectedValue).build().value();
@@ -273,6 +308,18 @@ class OidcCookieHandlerTest {
                 .findCookie(Map.of("Cookie", List.of("COOKIE=" + encrypted)));
 
         assertThat(cookie, is(Optional.of(expectedValue)));
+    }
+
+    @Test
+    void testCompressionDisabledUnencryptedHandlerReadsCompressedCookie() {
+        String expectedValue = largeIdTokenValue();
+        String compressed = unencryptedHandler(true).createCookie(expectedValue).build().value();
+
+        Optional<String> cookie = unencryptedHandler(false)
+                .findCookie(Map.of("Cookie", List.of("COOKIE=" + compressed)));
+
+        assertAll(() -> assertThat(compressed.startsWith("~"), is(true)),
+                  () -> assertThat(cookie, is(Optional.of(expectedValue))));
     }
 
     @Test
@@ -318,8 +365,33 @@ class OidcCookieHandlerTest {
         String decrypted = currentCipher(ENCRYPTION_PASSWORD)
                 .decrypt(versionedPayload(encrypted))
                 .toDecodedString();
+        String unencrypted = unencryptedHandler(true).createCookie(expectedValue).build().value();
 
-        assertThat(decrypted, is(expectedValue));
+        assertAll(() -> assertThat(decrypted, is(expectedValue)),
+                  () -> assertThat(unencrypted, is(expectedValue)));
+    }
+
+    @Test
+    void testUnencryptedCompressionDoesNotExpandEncodedCookie() {
+        String expectedValue = "a".repeat(25);
+        String unencrypted = unencryptedHandler(true).createCookie(expectedValue).build().value();
+        String encrypted = compressedHandler().createCookie(expectedValue).build().value();
+        byte[] compressedPayload = currentCipher(ENCRYPTION_PASSWORD)
+                .decrypt(versionedPayload(encrypted))
+                .toBytes();
+
+        assertAll(() -> assertThat(compressedPayload[0], is((byte) 1)),
+                  () -> assertThat(unencrypted, is(expectedValue)));
+    }
+
+    @Test
+    void testMalformedUnencryptedCompressedCookieRejected() {
+        assertAll(() -> assertThrows(CryptoException.class,
+                                     () -> unencryptedHandler(false)
+                                             .findCookie(Map.of("Cookie", List.of("COOKIE=~not-base64")))),
+                  () -> assertThrows(CryptoException.class,
+                                     () -> unencryptedHandler(false)
+                                             .findCookie(Map.of("Cookie", List.of("COOKIE=~Y29va2llVmFsdWU=")))));
     }
 
     @Test
@@ -425,6 +497,14 @@ class OidcCookieHandlerTest {
 
     private static OidcCookieHandler compressedHandler() {
         return encryptedHandler(false, false, true);
+    }
+
+    private static OidcCookieHandler unencryptedHandler(boolean compressionEnabled) {
+        return OidcCookieHandler.builder()
+                .encryptionEnabled(false)
+                .compressionEnabled(compressionEnabled)
+                .cookieName("COOKIE")
+                .build();
     }
 
     private static OidcCookieHandler encryptedHandler(boolean legacyCookieEncryption,

@@ -47,6 +47,7 @@ public class OidcCookieHandler {
     private static final System.Logger LOGGER = System.getLogger(OidcCookieHandler.class.getName());
     private static final byte COMPRESSED_BASE64_VALUE = 0;
     private static final byte COMPRESSED_RAW_VALUE = 1;
+    private static final String COMPRESSED_VALUE_PREFIX = "~";
     private static final int COMPRESSION_BUFFER_SIZE = 1024;
     private static final int MAX_COOKIE_VALUE_SIZE = 64 * 1024;
     private static final int MAX_DECOMPRESSED_BASE64_VALUE_SIZE = MAX_COOKIE_VALUE_SIZE / 4 * 3;
@@ -119,8 +120,39 @@ public class OidcCookieHandler {
             this.decryptFunction = it -> new String(decompress(cookieEncryption.decrypt(it)),
                                                     StandardCharsets.UTF_8);
         } else {
-            this.encryptFunction = Function.identity();
-            this.decryptFunction = Function.identity();
+            if (builder.compressionEnabled) {
+                this.encryptFunction = it -> {
+                    byte[] valueBytes = it.getBytes(StandardCharsets.UTF_8);
+                    byte[] compressed = compress(valueBytes);
+                    if (compressed == valueBytes) {
+                        return it;
+                    }
+                    String encoded = COMPRESSED_VALUE_PREFIX + Base64.getEncoder().encodeToString(compressed);
+                    return encoded.length() < valueBytes.length ? encoded : it;
+                };
+            } else {
+                this.encryptFunction = Function.identity();
+            }
+            if (builder.compressionConfigured) {
+                // OIDC token values use Base64 or Base64URL, neither of which contains the compression prefix.
+                this.decryptFunction = it -> {
+                    if (!it.startsWith(COMPRESSED_VALUE_PREFIX)) {
+                        return it;
+                    }
+                    try {
+                        byte[] compressed = Base64.getDecoder().decode(it.substring(COMPRESSED_VALUE_PREFIX.length()));
+                        byte[] decompressed = decompress(compressed);
+                        if (decompressed == compressed) {
+                            throw new CryptoException("OIDC compressed cookie has an unsupported format");
+                        }
+                        return new String(decompressed, StandardCharsets.UTF_8);
+                    } catch (IllegalArgumentException e) {
+                        throw new CryptoException("OIDC cookie decompression failed", e);
+                    }
+                };
+            } else {
+                this.decryptFunction = Function.identity();
+            }
         }
 
         if (LOGGER.isLoggable(Level.TRACE)) {
@@ -167,7 +199,7 @@ public class OidcCookieHandler {
 
     /**
      * Locate cookie in a map of headers and return its value.
-     * If the cookie is encrypted, decrypts the cookie value.
+     * If the cookie is encrypted or compressed, restores the original cookie value.
      *
      * @param headers headers to process
      * @return cookie value, or empty if the cookie could not be found
@@ -195,13 +227,13 @@ public class OidcCookieHandler {
     }
 
     /**
-     * Decrypt a cipher text into clear text (if encryption is enabled).
+     * Restore an encrypted or compressed cookie value.
      *
-     * @param cipherText cipher text to decrypt
-     * @return secret
+     * @param value stored cookie value
+     * @return original cookie value
      */
-    public String decrypt(String cipherText) {
-        return decryptFunction.apply(cipherText);
+    public String decrypt(String value) {
+        return decryptFunction.apply(value);
     }
 
     String createCookieOptions() {
@@ -311,6 +343,7 @@ public class OidcCookieHandler {
         private char[] encryptionPassword;
         private boolean encryptionEnabled;
         private boolean compressionEnabled;
+        private boolean compressionConfigured;
         private boolean legacyCookieEncryption;
         private boolean legacyCookieFallback;
 
@@ -374,6 +407,7 @@ public class OidcCookieHandler {
 
         Builder compressionEnabled(boolean compressionEnabled) {
             this.compressionEnabled = compressionEnabled;
+            this.compressionConfigured = true;
             return this;
         }
 
