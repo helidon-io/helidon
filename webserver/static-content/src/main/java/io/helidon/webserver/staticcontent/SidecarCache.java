@@ -82,14 +82,8 @@ final class SidecarCache {
         }
     }
 
-    private CachedHandler reusable(String coding) throws IOException {
-        CachedHandler cachedHandler = entries.get(coding);
-        if (cachedHandler == null
-                || cachedHandler == MissingHandler.INSTANCE
-                || cachedHandler.available()) {
-            return cachedHandler;
-        }
-        return null;
+    private CachedHandler reusable(String coding) {
+        return entries.get(coding);
     }
 
     private static Optional<CachedHandler> result(CachedHandler handler) {
