@@ -117,6 +117,10 @@ class UriPathNoParam implements UriPath {
 
          we use decoded and normalized path to match routing, so we need to resolve all of that
          */
+        if (rawPath.indexOf('/') == -1 && rawPath.indexOf(':') > 0) {
+            return "";
+        }
+
         int percent = rawPath.indexOf('%');
         int dot = rawPath.indexOf(".");
         int doubleSlash = rawPath.indexOf("//");

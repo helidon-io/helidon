@@ -52,11 +52,29 @@ class UriPathTest {
         assertThat(path.path(), is("/foo/bar"));
     }
 
-    @Test
-    void opaqueUriHasEmptyPath() {
-        UriPath path = UriPath.create("example.com:443");
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "example.com:443",
+            "localhost:443",
+            "[::1]:443",
+            "service%2Dname:443"
+    })
+    void authorityFormHasEmptyPath(String rawPath) {
+        UriPath path = UriPath.create(rawPath);
 
-        assertThat(path.rawPath(), is("example.com:443"));
+        assertThat(path.rawPath(), is(rawPath));
         assertThat(path.path(), is(""));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/first:second",
+            "first/second:third"
+    })
+    void colonInPath(String rawPath) {
+        UriPath path = UriPath.create(rawPath);
+
+        assertThat(path.rawPath(), is(rawPath));
+        assertThat(path.path(), is(rawPath));
     }
 }
