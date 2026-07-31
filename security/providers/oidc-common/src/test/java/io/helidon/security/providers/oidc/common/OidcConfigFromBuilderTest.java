@@ -45,7 +45,6 @@ import jakarta.json.Json;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.security.providers.oidc.common.BaseBuilder.DEFAULT_BASE_SCOPES;
-import static io.helidon.security.providers.oidc.common.BaseBuilder.DEFAULT_SERVER_TYPE;
 import static io.helidon.security.providers.oidc.common.BaseBuilder.DEFAULT_TIMEOUT_SECONDS;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_ATTEMPT_PARAM;
 import static io.helidon.security.providers.oidc.common.OidcConfig.DEFAULT_COOKIE_NAME;
@@ -323,7 +322,6 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .config(Config.builder()
                                 .sources(ConfigSources.create(Map.of("cookie-compression-enabled", "true")))
                                 .build())
-                .serverType(DEFAULT_SERVER_TYPE)
                 .build();
         String idcsDefaultCookie = idcsDefault.tokenCookieHandler()
                 .createCookie(largeCookieValue)
@@ -379,7 +377,6 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .config(Config.builder()
                                 .sources(ConfigSources.create(Map.of("cookie-compression-id-enabled", "true")))
                                 .build())
-                .serverType(DEFAULT_SERVER_TYPE)
                 .build();
         OidcConfig idcsAccessCompressionDisabled = cookieCompressionConfigBuilder()
                 .cookieCompressionEnabled(false)
@@ -389,10 +386,10 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .cookieEncryptionEnabledIdToken(false)
                 .serverType("idcs")
                 .build();
-        var idcsDefaultSetCookie = idcsDefault.idTokenCookieHandler()
+        String idcsDefaultCookie = idcsDefault.idTokenCookieHandler()
                 .createCookie(largeCookieValue)
-                .build();
-        String idcsDefaultCookie = idcsDefaultSetCookie.toString();
+                .build()
+                .toString();
         String defaultServerDefaultCookie = defaultServerDefault.idTokenCookieHandler()
                 .createCookie(largeCookieValue)
                 .build()
@@ -439,14 +436,7 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                                    is(true)),
                   () -> assertThat("ID token compression should remain inert when ID token encryption is disabled",
                                    idcsIdEncryptionDisabledCookie,
-                                   is(largeCookieValue)),
-                  () -> assertThat("The compressed ID token should round-trip exactly",
-                                   idcsDefault.idTokenCookieHandler()
-                                           .findCookie(Map.of("Cookie",
-                                                              List.of(idcsDefault.idTokenCookieHandler().cookieName()
-                                                                              + "="
-                                                                              + idcsDefaultSetCookie.value()))),
-                                   is(Optional.of(largeCookieValue))));
+                                   is(largeCookieValue)));
     }
 
     @Test

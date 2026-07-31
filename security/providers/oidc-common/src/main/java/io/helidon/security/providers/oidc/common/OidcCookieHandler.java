@@ -108,12 +108,13 @@ public class OidcCookieHandler {
                                                          builder.legacyCookieEncryption,
                                                          builder.legacyCookieFallback);
             // Older instances can decrypt legacy password-encrypted cookies, but cannot decompress their payload.
-            // Named encryption ignores the legacy flag, so compression remains safe in that mode.
+            // Named encryption ignores the legacy flag; rolling upgrades using it must control compression explicitly.
             boolean legacyPasswordEncryption = builder.legacyCookieEncryption && builder.encryptionName == null;
-            Function<byte[], byte[]> beforeEncryption = builder.compressionEnabled && !legacyPasswordEncryption
-                    ? OidcCookieHandler::compress
-                    : Function.identity();
-            this.encryptFunction = it -> cookieEncryption.encrypt(beforeEncryption.apply(it.getBytes(StandardCharsets.UTF_8)));
+            boolean compressionEnabled = builder.compressionEnabled && !legacyPasswordEncryption;
+            this.encryptFunction = it -> {
+                byte[] valueBytes = it.getBytes(StandardCharsets.UTF_8);
+                return cookieEncryption.encrypt(compressionEnabled ? compress(valueBytes) : valueBytes);
+            };
             // Marker-aware decompression also accepts uncompressed cookies created by older instances.
             this.decryptFunction = it -> new String(decompress(cookieEncryption.decrypt(it)),
                                                     StandardCharsets.UTF_8);
@@ -254,7 +255,7 @@ public class OidcCookieHandler {
         boolean base64Value;
         int maxDecompressedValueSize;
         // The leading marker identifies both compression and the original representation. GZIPInputStream below
-        // validates the following 0x1f, 0x8b magic bytes; no marker means this is an uncompressed legacy value.
+        // validates the following 0x1f, 0x8b magic bytes; no marker means this is an uncompressed value.
         if (value[0] == COMPRESSED_BASE64_VALUE) {
             base64Value = true;
             maxDecompressedValueSize = MAX_DECOMPRESSED_BASE64_VALUE_SIZE;
@@ -270,17 +271,10 @@ public class OidcCookieHandler {
 
         try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(value, 1, value.length - 1),
                                                         COMPRESSION_BUFFER_SIZE)) {
-            byte[] buffer = new byte[COMPRESSION_BUFFER_SIZE];
-            ByteArrayOutputStream result = new ByteArrayOutputStream(Math.min(value.length,
-                                                                              maxDecompressedValueSize));
-            int count;
-            while ((count = gzip.read(buffer)) != -1) {
-                if (result.size() > maxDecompressedValueSize - count) {
-                    throw new CryptoException("OIDC decompressed cookie exceeds the maximum supported size");
-                }
-                result.write(buffer, 0, count);
+            byte[] decompressed = gzip.readNBytes(maxDecompressedValueSize + 1);
+            if (decompressed.length > maxDecompressedValueSize) {
+                throw new CryptoException("OIDC decompressed cookie exceeds the maximum supported size");
             }
-            byte[] decompressed = result.toByteArray();
             return base64Value ? Base64.getEncoder().encode(decompressed) : decompressed;
         } catch (IOException e) {
             throw new CryptoException("OIDC cookie decompression failed", e);
