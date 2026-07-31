@@ -77,21 +77,21 @@ class JdbcClientApiTest {
     }
 
     @Test
-    void limitsExecutionToGeneratedCode() throws IOException {
+    void exposesTheCompleteClientAsPreviewApi() throws IOException {
         ClassModel client = classModel(JdbcClient.class);
 
         assertThat(stabilityAnnotations(client), is(Set.of(API_PREVIEW)));
         assertThat(stabilityAnnotations(classModel(JdbcClient.RowMapper.class)), is(Set.of(API_PREVIEW)));
         assertThat(stabilityAnnotations(classModel(JdbcClient.Row.class)), is(Set.of(API_PREVIEW)));
-        assertThat(stabilityAnnotations(classModel(JdbcClient.Statement.class)), is(Set.of(API_INTERNAL)));
-        assertThat(stabilityAnnotations(classModel(JdbcClient.GeneratedKeys.class)), is(Set.of(API_INTERNAL)));
-        assertThat(stabilityAnnotations(classModel(JdbcClient.Rows.class)), is(Set.of(API_INTERNAL)));
+        assertThat(stabilityAnnotations(classModel(JdbcClient.Statement.class)), is(Set.of(API_PREVIEW)));
+        assertThat(stabilityAnnotations(classModel(JdbcClient.GeneratedKeys.class)), is(Set.of(API_PREVIEW)));
+        assertThat(stabilityAnnotations(classModel(JdbcClient.Rows.class)), is(Set.of(API_PREVIEW)));
         assertThat(stabilityAnnotations(client.methods()
                                                 .stream()
                                                 .filter(method -> method.methodName().equalsString("create"))
                                                 .findFirst()
                                                 .orElseThrow()),
-                   is(Set.of(API_INTERNAL)));
+                   is(Set.of()));
     }
 
     /**
