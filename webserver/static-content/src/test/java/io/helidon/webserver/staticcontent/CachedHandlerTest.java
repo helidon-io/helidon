@@ -66,6 +66,8 @@ import io.helidon.webserver.http.ServerResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
@@ -1595,10 +1597,10 @@ class CachedHandlerTest {
         ServerResponse response = mock(ServerResponse.class);
         when(response.headers()).thenReturn(headers);
         when(response.outputStream()).thenReturn(outputStream);
-        org.mockito.Mockito.doAnswer(invocation -> {
+        Mockito.doAnswer(invocation -> {
             outputStream.writeBytes(invocation.getArgument(0));
             return null;
-        }).when(response).send(org.mockito.ArgumentMatchers.any(byte[].class));
+        }).when(response).send(ArgumentMatchers.any(byte[].class));
         return response;
     }
 
