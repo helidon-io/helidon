@@ -467,11 +467,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.transaction</groupId>
-                <artifactId>helidon-transaction-jdbc</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.transaction</groupId>
                 <artifactId>helidon-transaction-jta</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

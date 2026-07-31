@@ -15,6 +15,6 @@
  */
 
 /**
- * End-to-end fixtures for generated declarative JDBC repositories.
+ * End-to-end fixtures for declarative repositories and imperative JDBC applications.
  */
 package io.helidon.data.jdbc.tests;

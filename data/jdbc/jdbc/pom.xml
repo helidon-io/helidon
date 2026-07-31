@@ -73,11 +73,6 @@
             <artifactId>helidon-transaction</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.transaction</groupId>
-            <artifactId>helidon-transaction-jdbc</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>

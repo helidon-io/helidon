@@ -15,9 +15,9 @@
  */
 
 /**
- * Runs declarative Helidon Data repositories with JDBC.
+ * Runs imperative applications and declarative Helidon Data repositories with
+ * JDBC.
  * <p>
- * Repository results are fully materialized before JDBC resources are
- * released.
+ * Results are fully materialized before JDBC resources are released.
  */
 package io.helidon.data.jdbc;

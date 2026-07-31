@@ -15,7 +15,7 @@
  */
 
 /**
- * End-to-end tests for generated declarative JDBC repositories.
+ * End-to-end tests for declarative repositories and imperative JDBC applications.
  */
 module io.helidon.data.jdbc.tests {
     requires java.sql;
