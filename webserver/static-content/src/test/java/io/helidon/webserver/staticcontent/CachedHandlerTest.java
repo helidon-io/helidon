@@ -447,8 +447,7 @@ class CachedHandlerTest {
                         .classLoader(new MappedJarResourceClassLoader(
                                 Map.of("web/resource.txt", List.of(identityJar),
                                        "web/resource.txt.br", List.of(sidecarJar),
-                                       "web/other.txt", List.of(identityJar)),
-                                true))
+                                       "web/other.txt", List.of(identityJar))))
                         .memoryCache(MemoryCache.create(builder -> builder.enabled(true)
                                 .capacity(Size.create(8))))
                         .recordCacheCapacity(1)
@@ -492,8 +491,9 @@ class CachedHandlerTest {
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
                 ClasspathHandlerConfig.builder()
                         .location("/web")
-                        .classLoader(new MappedJarResourceClassLoader(Map.of("web/resource.txt", identityJar,
-                                                                              "web/resource.txt.br", sidecarJar)))
+                        .classLoader(new MappedJarResourceClassLoader(
+                                Map.of("web/resource.txt", List.of(identityJar),
+                                       "web/resource.txt.br", List.of(sidecarJar))))
                         .build());
 
         ServerResponseHeaders headers = ServerResponseHeaders.create();
@@ -570,8 +570,9 @@ class CachedHandlerTest {
         ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
                 ClasspathHandlerConfig.builder()
                         .location("/web")
-                        .classLoader(new MappedJarResourceClassLoader(Map.of("web/resource.txt", identityJar,
-                                                                              "web/resource.txt.br", sidecarJar)))
+                        .classLoader(new MappedJarResourceClassLoader(
+                                Map.of("web/resource.txt", List.of(identityJar),
+                                       "web/resource.txt.br", List.of(sidecarJar))))
                         .preCompressedCrossOriginSourcingEnabled(true)
                         .build());
 
@@ -599,8 +600,7 @@ class CachedHandlerTest {
                         .location("/web")
                         .classLoader(new MappedJarResourceClassLoader(
                                 Map.of("web/resource.txt", List.of(identityJar),
-                                       "web/resource.txt.br", List.of(crossOriginJar, identityJar)),
-                                true))
+                                       "web/resource.txt.br", List.of(crossOriginJar, identityJar))))
                         .build());
 
         ServerResponseHeaders headers = ServerResponseHeaders.create();
@@ -1691,13 +1691,7 @@ class CachedHandlerTest {
     private static class MappedJarResourceClassLoader extends ClassLoader {
         private final Map<String, List<Path>> jarFiles;
 
-        MappedJarResourceClassLoader(Map<String, Path> jarFiles) {
-            super(Thread.currentThread().getContextClassLoader());
-            this.jarFiles = new HashMap<>();
-            jarFiles.forEach((resource, jarFile) -> this.jarFiles.put(resource, List.of(jarFile)));
-        }
-
-        MappedJarResourceClassLoader(Map<String, List<Path>> jarFiles, boolean multi) {
+        MappedJarResourceClassLoader(Map<String, List<Path>> jarFiles) {
             super(Thread.currentThread().getContextClassLoader());
             this.jarFiles = jarFiles;
         }
