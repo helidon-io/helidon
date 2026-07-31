@@ -20,11 +20,12 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.Api;
+import io.helidon.data.Data;
 import io.helidon.data.DataException;
 import io.helidon.service.registry.Service;
 
 /**
- * Defines JDBC contracts used by generated repositories and application row mappers.
+ * Executes JDBC statements for applications and generated repositories.
  * <p>
  * Creating and binding a statement performs no database work. A terminal
  * operation acquires the JDBC resources, fully materializes any result, and
@@ -32,9 +33,11 @@ import io.helidon.service.registry.Service;
  * Statement and result stages are single use and are not safe for concurrent
  * use.
  * <p>
- * Direct statement execution is internal.
+ * A configured persistence unit publishes a client through the Service
+ * Registry. Applications select it with the {@code jdbc}
+ * {@link Data.ProviderType} and a {@link Service.Named} qualifier using the
+ * persistence unit name.
  */
-@SuppressWarnings("checkstyle:JavadocType") // Checkstyle does not recognize @hidden on nested types.
 @Api.Preview
 @Service.Contract
 public interface JdbcClient {
@@ -46,17 +49,16 @@ public interface JdbcClient {
      * @return statement description
      * @throws NullPointerException if the SQL is {@code null}
      * @throws IllegalArgumentException if the SQL is blank, malformed, or contains named markers
-     * @hidden internal contract used by generated code
      */
-    @Api.Internal
     Statement create(String sql);
 
     /**
-     * Mutable description of one prepared JDBC operation.
-     *
-     * @hidden internal contract used by generated code
+     * Describes one prepared JDBC operation.
+     * <p>
+     * Bind positions are one-based. The stage accepts exactly one terminal
+     * operation and is not safe for concurrent use.
      */
-    @Api.Internal
+    @Api.Preview
     interface Statement {
 
         /**
@@ -77,7 +79,7 @@ public interface JdbcClient {
          * @param index one-based JDBC position
          * @param type SQL type of the null value
          * @return this statement
-         * @throws NullPointerException if the scalar type is {@code null}
+         * @throws NullPointerException if the type is {@code null}
          * @throws IllegalArgumentException if the position or type is invalid
          * @throws IllegalStateException if a terminal operation has started
          */
@@ -132,10 +134,8 @@ public interface JdbcClient {
      * <p>
      * The stage preserves column order. It is single use, is not safe for
      * concurrent use, and performs no JDBC work.
-     *
-     * @hidden internal contract used by generated code
      */
-    @Api.Internal
+    @Api.Preview
     interface GeneratedKeys {
 
         /**
@@ -163,11 +163,14 @@ public interface JdbcClient {
 
     /**
      * Materialized result terminals for a mapped query or generated-key result.
+     * <p>
+     * The stage accepts exactly one terminal invocation and is not safe for
+     * concurrent use. An exception from an application mapper is propagated
+     * unchanged.
      *
      * @param <T> mapped type
-     * @hidden internal contract used by generated code
      */
-    @Api.Internal
+    @Api.Preview
     interface Rows<T> {
 
         /**
@@ -177,6 +180,7 @@ public interface JdbcClient {
          * @throws io.helidon.data.NoResultException if no row is returned
          * @throws io.helidon.data.NonUniqueResultException if more than one row is returned
          * @throws DataException if JDBC execution or provider mapping fails
+         * @throws IllegalStateException if a terminal operation has started
          */
         T one();
 
@@ -186,6 +190,7 @@ public interface JdbcClient {
          * @return optional mapped row
          * @throws io.helidon.data.NonUniqueResultException if more than one row is returned
          * @throws DataException if JDBC execution or provider mapping fails
+         * @throws IllegalStateException if a terminal operation has started
          */
         Optional<T> optional();
 
@@ -194,6 +199,7 @@ public interface JdbcClient {
          *
          * @return materialized rows
          * @throws DataException if JDBC execution or provider mapping fails
+         * @throws IllegalStateException if a terminal operation has started
          */
         List<T> list();
     }
@@ -201,8 +207,9 @@ public interface JdbcClient {
     /**
      * Maps one callback-scoped JDBC row to an application value.
      * <p>
-     * Applications register implementations as services. A generated
-     * repository resolves a mapper selected by
+     * Imperative code passes a mapper to {@link Statement#map(RowMapper)} or
+     * {@link GeneratedKeys#map(RowMapper)}. Applications may also register
+     * implementations as services. A generated repository resolves a mapper selected by
      * {@code @Jdbc.RowMapper(SomeMapper.class)} by its concrete service type.
      * The marker form {@code @Jdbc.RowMapper} resolves this contract with the
      * exact {@code T} type.

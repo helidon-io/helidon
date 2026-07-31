@@ -21,7 +21,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * In-memory description of one JDBC statement assembled by generated code.
+ * In-memory description of one JDBC statement assembled by an application or
+ * generated repository.
  * <p>
  * The stage does not borrow a connection. Its first terminal operation freezes
  * the bindings into an immutable operation and hands ownership to the runner.

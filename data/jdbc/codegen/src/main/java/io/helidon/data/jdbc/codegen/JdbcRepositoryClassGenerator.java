@@ -66,8 +66,7 @@ final class JdbcRepositoryClassGenerator {
                                                                ""))
                 .addAnnotation(Annotation.builder()
                                        .type(SuppressWarnings.class)
-                                       .property("value", List.of("helidon:api:preview",
-                                                                 "helidon:api:internal"))
+                                       .property("value", List.of("helidon:api:preview"))
                                        .build())
                 .classType(ElementKind.CLASS)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)

@@ -15,7 +15,8 @@
  */
 
 /**
- * Runs declarative Helidon Data repositories with JDBC.
+ * Runs imperative applications and declarative Helidon Data repositories with
+ * JDBC.
  */
 module io.helidon.data.jdbc {
 
