@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
@@ -57,6 +58,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -78,6 +80,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class CachedHandlerTest {
@@ -503,6 +506,59 @@ class CachedHandlerTest {
         assertThat(headers, noHeader(HeaderNames.CONTENT_ENCODING));
         assertThat(headers, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
         assertThat(body.toString(StandardCharsets.UTF_8), is("Content"));
+    }
+
+    @Test
+    void testClasspathSidecarSymlinkOutsideOriginIsRejected() throws IOException, URISyntaxException {
+        assertClasspathSidecarSymlinkOutsideOriginIsRejected(false);
+    }
+
+    @Test
+    void testSingleFileClasspathSidecarSymlinkOutsideOriginIsRejected() throws IOException, URISyntaxException {
+        assertClasspathSidecarSymlinkOutsideOriginIsRejected(true);
+    }
+
+    @Test
+    void testClasspathCachedSidecarRetargetedOutsideOriginIsRejected() throws IOException, URISyntaxException {
+        Path classPathRoot = tempDir.resolve("classpath");
+        Path resourceRoot = classPathRoot.resolve("web");
+        Path resource = resourceRoot.resolve("resource.txt");
+        Path gzip = resourceRoot.resolve("resource.txt.gz");
+        Path secret = tempDir.resolve("secret.gz");
+        Files.createDirectories(resourceRoot);
+        Files.writeString(resource, "Content");
+        Files.writeString(gzip, "Gzip content");
+        Files.writeString(secret, "Secret content");
+
+        try (var classLoader = new URLClassLoader(new URL[] {classPathRoot.toUri().toURL()}, null)) {
+            ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
+                    ClasspathHandlerConfig.builder()
+                            .location("/web")
+                            .classLoader(classLoader)
+                            .build());
+
+            ServerResponseHeaders firstHeaders = ServerResponseHeaders.create();
+            ByteArrayOutputStream firstBody = new ByteArrayOutputStream();
+            assertThat(handler.doHandle(Method.GET,
+                                        "resource.txt",
+                                        request("/resource.txt", acceptEncodingHeaders("gzip, identity;q=0")),
+                                        response(firstHeaders, firstBody),
+                                        false), is(true));
+            assertThat(firstHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+            assertThat(firstBody.toString(StandardCharsets.UTF_8), is("Gzip content"));
+
+            createSymbolicLink(gzip, secret);
+
+            ByteArrayOutputStream rejectedBody = new ByteArrayOutputStream();
+            ServerResponse rejectedResponse = response(ServerResponseHeaders.create(), rejectedBody);
+            assertThat(handler.doHandle(Method.GET,
+                                        "resource.txt",
+                                        request("/resource.txt", acceptEncodingHeaders("gzip, identity;q=0")),
+                                        rejectedResponse,
+                                        false), is(true));
+            verify(rejectedResponse).status(Status.NOT_ACCEPTABLE_406);
+            assertThat(rejectedBody.size(), is(0));
+        }
     }
 
     @Test
@@ -1572,6 +1628,41 @@ class CachedHandlerTest {
             } catch (MalformedURLException | URISyntaxException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private void assertClasspathSidecarSymlinkOutsideOriginIsRejected(boolean singleFile)
+            throws IOException, URISyntaxException {
+        Path classPathRoot = tempDir.resolve(singleFile ? "single-classpath" : "classpath");
+        Path resourceRoot = classPathRoot.resolve("web");
+        Path resource = resourceRoot.resolve("resource.txt");
+        Path gzip = resourceRoot.resolve("resource.txt.gz");
+        Path secret = tempDir.resolve(singleFile ? "single-secret.gz" : "secret.gz");
+        Files.createDirectories(resourceRoot);
+        Files.writeString(resource, "Content");
+        Files.writeString(secret, "Secret content");
+        createSymbolicLink(gzip, secret);
+
+        try (var classLoader = new URLClassLoader(new URL[] {classPathRoot.toUri().toURL()}, null)) {
+            ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
+                    ClasspathHandlerConfig.builder()
+                            .location(singleFile ? "/web/resource.txt" : "/web")
+                            .singleFile(singleFile)
+                            .classLoader(classLoader)
+                            .build());
+            if (singleFile) {
+                handler.beforeStart();
+            }
+
+            ByteArrayOutputStream rejectedBody = new ByteArrayOutputStream();
+            ServerResponse rejectedResponse = response(ServerResponseHeaders.create(), rejectedBody);
+            assertThat(handler.doHandle(Method.GET,
+                                        singleFile ? "" : "resource.txt",
+                                        request("/resource.txt", acceptEncodingHeaders("gzip, identity;q=0")),
+                                        rejectedResponse,
+                                        false), is(true));
+            verify(rejectedResponse).status(Status.NOT_ACCEPTABLE_406);
+            assertThat(rejectedBody.size(), is(0));
         }
     }
 

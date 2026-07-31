@@ -24,6 +24,7 @@ import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Enumeration;
@@ -212,7 +213,24 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                           String logicalFileName,
                                           ResponseRepresentation representation) throws IOException, URISyntaxException {
         return switch (url.getProtocol()) {
-        case "file" -> fileHandler(Paths.get(url.toURI()), logicalFileName, representation);
+        case "file" -> {
+            Path path = Paths.get(url.toURI());
+            if (representation.contentEncoding() == null || preCompressedCrossOriginSourcingEnabled()) {
+                yield fileHandler(path, logicalFileName, representation);
+            }
+            Path secureRoot = path.getParent();
+            if (secureRoot == null) {
+                yield Optional.empty();
+            }
+            yield Optional.of(new CachedHandlerPath(path,
+                                                    detectType(logicalFileName),
+                                                    FileBasedContentHandler::lastModified,
+                                                    ServerResponseHeaders::lastModified,
+                                                    ClassPathContentHandler::exactPath,
+                                                    false,
+                                                    it -> Optional.of(secureRoot),
+                                                    representation));
+        }
         case "jar" -> jarHandler(requestedResource, url, logicalFileName, representation);
         default -> urlStreamHandler(url, logicalFileName, representation);
         };
@@ -397,13 +415,21 @@ class ClassPathContentHandler extends FileBasedContentHandler {
             Enumeration<URL> sidecarUrls = classLoader.getResources(sidecarResource);
             while (sidecarUrls.hasMoreElements()) {
                 URL sidecarUrl = sidecarUrls.nextElement();
-                if (sameOrigin(logicalResource, identityUrl, sidecarResource, sidecarUrl, suffix)) {
+                Optional<URL> trustedSidecarUrl = sameOrigin(logicalResource,
+                                                            identityUrl,
+                                                            sidecarResource,
+                                                            sidecarUrl,
+                                                            suffix);
+                if (trustedSidecarUrl.isPresent()) {
                     // Sidecar bytes still use the shared in-memory cache so the memory limit remains global.
                     Optional<CachedHandlerInMemory> cached = cacheInMemory(sidecarCacheKey);
                     if (cached.isPresent()) {
                         return Optional.of(cached.get());
                     }
-                    return cachedHandler(sidecarCacheKey, sidecarUrl, logicalFileName, ResponseRepresentation.encoded(coding));
+                    return cachedHandler(sidecarCacheKey,
+                                         trustedSidecarUrl.get(),
+                                         logicalFileName,
+                                         ResponseRepresentation.encoded(coding));
                 }
             }
             return Optional.empty();
@@ -450,29 +476,45 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return new ClassPathResource(logicalResource, identityUrl);
     }
 
-    private boolean sameOrigin(String logicalResource,
-                               URL identityUrl,
-                               String sidecarResource,
-                               URL sidecarUrl,
-                               String suffix) throws IOException, URISyntaxException {
+    private Optional<URL> sameOrigin(String logicalResource,
+                                     URL identityUrl,
+                                     String sidecarResource,
+                                     URL sidecarUrl,
+                                     String suffix) throws IOException, URISyntaxException {
         if (preCompressedCrossOriginSourcingEnabled()) {
-            return true;
+            return Optional.of(sidecarUrl);
         }
         if (identityUrl == null || !identityUrl.getProtocol().equals(sidecarUrl.getProtocol())) {
-            return false;
+            return Optional.empty();
         }
         return switch (identityUrl.getProtocol()) {
         case "file" -> sameFileOrigin(identityUrl, sidecarUrl, suffix);
-        case "jar" -> sameJarOrigin(logicalResource, identityUrl, sidecarResource, sidecarUrl);
-        default -> false;
+        case "jar" -> sameJarOrigin(logicalResource, identityUrl, sidecarResource, sidecarUrl)
+                ? Optional.of(sidecarUrl)
+                : Optional.empty();
+        default -> Optional.empty();
         };
     }
 
-    private static boolean sameFileOrigin(URL identityUrl, URL sidecarUrl, String suffix) throws URISyntaxException {
-        var identityPath = Paths.get(identityUrl.toURI()).toAbsolutePath().normalize();
+    private static Optional<URL> sameFileOrigin(URL identityUrl,
+                                                URL sidecarUrl,
+                                                String suffix) throws IOException, URISyntaxException {
+        var identityPath = Paths.get(identityUrl.toURI()).toRealPath();
         var expectedSidecar = identityPath.resolveSibling(identityPath.getFileName() + "." + suffix);
-        var sidecarPath = Paths.get(sidecarUrl.toURI()).toAbsolutePath().normalize();
-        return expectedSidecar.equals(sidecarPath);
+        var sidecarPath = Paths.get(sidecarUrl.toURI()).toRealPath();
+        if (expectedSidecar.equals(sidecarPath)) {
+            return Optional.of(expectedSidecar.toUri().toURL());
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<Path> exactPath(Path path) {
+        try {
+            Path realPath = path.toRealPath();
+            return realPath.equals(path) ? Optional.of(realPath) : Optional.empty();
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
     }
 
     private static boolean sameJarOrigin(String logicalResource,
