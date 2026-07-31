@@ -8,17 +8,15 @@ runs:
       with:
         path: .tools/apache-maven-*/**
         enableCrossOsArchive: true
-        key: tools-maven-${{ hashFiles('.tools/apache-maven-*/**') }}
-        restore-keys: |
-          tools-maven-
+        key: tools-maven-${{ env.MVN_VERSION }}
     - name: Install Maven
       shell: bash
       run: |
         if [ -z "${MVN_VERSION}" ]; then echo "MVN_VERSION not set"; exit 1; fi
         if [ ! -d ".tools/apache-maven-${MVN_VERSION}/bin" ]; then
           mkdir -p .tools
-          curl -fL -o "apache-maven-${MVN_VERSION}-bin.zip" \
+          curl -fL -o "${RUNNER_TEMP}/apache-maven-${MVN_VERSION}-bin.zip" \
             "https://archive.apache.org/dist/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.zip"
-          unzip -q "apache-maven-${MVN_VERSION}-bin.zip" -d .tools
+          unzip -q "${RUNNER_TEMP}/apache-maven-${MVN_VERSION}-bin.zip" -d .tools
         fi
         echo "${GITHUB_WORKSPACE}/.tools/apache-maven-${MVN_VERSION}/bin" >> "${GITHUB_PATH}"
