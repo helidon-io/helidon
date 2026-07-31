@@ -2657,8 +2657,13 @@ class SchemaGeneratorTest {
                         import io.helidon.builder.api.Prototype;
 
                         class AcmeConfigMethods {
-                            @Prototype.RuntimeTypeFactoryMethod
+                            @Prototype.RuntimeTypeFactoryMethod("views")
                             static ViewRegistration createViewRegistration(ViewRegistrationConfig config) {
+                                throw new UnsupportedOperationException();
+                            }
+
+                            @Prototype.RuntimeTypeFactoryMethod("viewGroups")
+                            static java.util.List<ViewRegistration> createViewRegistrations(ViewRegistrationConfig config) {
                                 throw new UnsupportedOperationException();
                             }
                         }
@@ -2683,6 +2688,12 @@ class SchemaGeneratorTest {
                              */
                             @Option.Configured
                             List<ViewRegistration> views();
+
+                            /**
+                             * View groups.
+                             */
+                            @Option.Configured
+                            List<ViewRegistration> viewGroups();
                         }
                         """)
                 .build()
@@ -2695,6 +2706,8 @@ class SchemaGeneratorTest {
                                                   + ".map(cfg -> cfg.as(ViewRegistrationConfig::create)"
                                                   + ".as(AcmeConfigMethods::createViewRegistration).get())"
                                                   + ".toList()).ifPresent(this::views);"));
+        assertThat(actual, containsString("config.get(\"view-groups\").as(ViewRegistrationConfig::create)"
+                                                  + ".ifPresent(this::viewGroups);"));
     }
 
     @Test

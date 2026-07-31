@@ -832,9 +832,13 @@ final class FactoryOption {
             return;
         }
 
-        // check if a runtime type without an explicit factory is a configured prototype
+        // check if a runtime type prototype is a configured prototype
+        // Whole-option runtime factories are applied by a generated prototype setter and still need this config factory.
         var runtimeType = option.runtimeType();
-        if (runtimeType.isPresent() && runtimeType.get().factoryMethod().isEmpty()) {
+        if (runtimeType.isPresent()
+                && runtimeType.get().factoryMethod()
+                        .map(it -> resolvedTypesEqual(it.returnType(), optionType))
+                        .orElse(true)) {
             var rt = runtimeType.get();
             var expectedPrototypeType = rt.optionBuilder()
                     .builderMethodType();
