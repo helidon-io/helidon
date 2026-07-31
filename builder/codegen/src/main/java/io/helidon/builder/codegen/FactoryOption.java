@@ -832,9 +832,10 @@ final class FactoryOption {
             return;
         }
 
-        // check if a runtime type prototype is a configured prototype
-        if (option.runtimeType().isPresent()) {
-            var rt = option.runtimeType().get();
+        // check if a runtime type without an explicit factory is a configured prototype
+        var runtimeType = option.runtimeType();
+        if (runtimeType.isPresent() && runtimeType.get().factoryMethod().isEmpty()) {
+            var rt = runtimeType.get();
             var expectedPrototypeType = rt.optionBuilder()
                     .builderMethodType();
             var builderType = TypeName.builder(expectedPrototypeType)

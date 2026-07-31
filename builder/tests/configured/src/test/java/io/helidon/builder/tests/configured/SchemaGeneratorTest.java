@@ -2609,6 +2609,95 @@ class SchemaGeneratorTest {
     }
 
     @Test
+    void testPrecompiledRuntimeTypeCollectionItems() throws IOException {
+        var compiler = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .build();
+
+        var configResult = TestCompiler.builder()
+                .from(compiler)
+                .addSource("ViewRegistrationConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * View registration config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ViewRegistrationConfigBlueprint {
+                            /**
+                             * View name.
+                             */
+                            @Option.Configured
+                            String name();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(configResult.success(), is(true));
+
+        var result = TestCompiler.builder()
+                .from(compiler)
+                .addClasspathEntry(configResult.classOutput())
+                .addSource("ViewRegistration.java", """
+                        package com.acme;
+
+                        interface ViewRegistration {
+                        }
+                        """)
+                .addSource("AcmeConfigMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        class AcmeConfigMethods {
+                            @Prototype.RuntimeTypeFactoryMethod
+                            static ViewRegistration createViewRegistration(ViewRegistrationConfig config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.List;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeConfigMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Views.
+                             */
+                            @Option.Configured
+                            List<ViewRegistration> views();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, containsString("config.get(\"views\").asNodeList()"
+                                                  + ".map(nodeList -> nodeList.stream()"
+                                                  + ".map(cfg -> cfg.as(ViewRegistrationConfig::create)"
+                                                  + ".as(AcmeConfigMethods::createViewRegistration).get())"
+                                                  + ".toList()).ifPresent(this::views);"));
+    }
+
+    @Test
     void testMerge() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
