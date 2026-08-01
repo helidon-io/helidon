@@ -49,7 +49,7 @@ including its parameters and default values.
 <tbody>
 <tr>
 <td>
-<!-- @code java --><pre><code>@Retry(
+<pre lang="java"><code>@Retry(
     maxRetries=3,
     delay=0,
     delayUnit=ChronoUnit.MILLIS,
@@ -68,7 +68,7 @@ Annotation attributes can be used to control the number of retries, delay betwee
 </tr>
 <tr>
 <td>
-<!-- @code java --><pre><code>@Timeout(
+<pre lang="java"><code>@Timeout(
     value=1000,
     unit=ChronoUnit.MILLIS
 )</code></pre>
@@ -79,7 +79,7 @@ Defines an upper bound on a method’s execution time. Default value is 1 second
 </tr>
 <tr>
 <td>
-<!-- @code java --><pre><code>@CircuitBreaker(
+<pre lang="java"><code>@CircuitBreaker(
     failOn={Throwable.class},
     skipOn={},
     delay=5000,
@@ -102,7 +102,7 @@ The other annotation parameters are used to control how these state transitions 
 </td>
 </tr>
 <tr>
-<td><!-- @code java --><pre><code>@Bulkhead(
+<td><pre lang="java"><code>@Bulkhead(
     value=10,
     waitingTaskQueue=10
 )</code></pre></td>
@@ -113,7 +113,7 @@ A queue is only active when invocations are <code>@Asynchronous</code>.</td>
 </tr>
 <tr>
 <td>
-<!-- @code java --><pre><code>@Fallback(
+<pre lang="java"><code>@Fallback(
     value=DEFAULT.class,
     fallbackMethod=&quot;&quot;,
     applyOn={Throwable.class},
@@ -128,7 +128,7 @@ Additional properties are used to control the conditions under which these handl
 </tr>
 <tr>
 <td>
-<!-- @code java --><pre><code>@Asynchronous</code></pre>
+<pre lang="java"><code>@Asynchronous</code></pre>
 </td>
 <td style="vertical-align: middle">
 Executes an invocation asynchronously without blocking the calling thread.

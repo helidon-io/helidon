@@ -69,7 +69,7 @@ See More information in the [`HttpService`](#httpservice) section.
 <tbody>
 <tr>
 <td>
-<!-- @code java --><pre><code>@RoutingName(<wbr>value = &quot;&quot;,<wbr> required = false)</code></pre>
+<pre lang="java"><code>@RoutingName(<wbr>value = &quot;&quot;,<wbr> required = false)</code></pre>
 </td>
 <td style="vertical-align: middle">
 Binds a JAX-RS Application or Helidon Service to a specific (named) routing on <code>WebServer</code>.
@@ -78,7 +78,7 @@ The routing should have a corresponding named socket configured on the WebServer
 </tr>
 <tr>
 <td>
-<!-- @code java --><pre><code>@RoutingPath(<wbr>&quot;/path&quot;)<wbr></code></pre>
+<pre lang="java"><code>@RoutingPath(<wbr>&quot;/path&quot;)<wbr></code></pre>
 </td>
 <td style="vertical-align: middle">
 Path of a Helidon Service to register with routing.

@@ -9,5 +9,4 @@
 - [Dependency Management](dependency-management.md)
 - [Config Reference](config/config_reference.md) <!--@icon i-lucide-cogs -->
 - [Service Reference](service-reference.md)
-- [Javadocs](https://helidon.io/docs/v4/apidocs/) <!--@icon i-lucide-book-open
-  -->
+- [Javadocs](https://helidon.io/docs/v4/apidocs/) <!--@icon i-lucide-book-open -->
