@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,10 @@ public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> 
             Http2Setting<?> http2Setting = Http2Setting.BY_ID.get(identifier);
             if (http2Setting != null) {
                 values.put(identifier, new SettingValue(http2Setting, http2Setting.read(frame)));
+            } else {
+                // RFC 9113 §6.5.2: ignore unknown/unsupported identifiers, but still consume the value
+                // so subsequent settings stay aligned (each setting is 2-byte id + 4-byte value).
+                frame.skip(4);
             }
         }
         return new Http2Settings(values);
