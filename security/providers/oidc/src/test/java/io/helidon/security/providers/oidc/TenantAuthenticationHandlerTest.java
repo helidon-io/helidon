@@ -153,6 +153,32 @@ class TenantAuthenticationHandlerTest {
     }
 
     @Test
+    public void testMalformedCompressedIdTokenCookieFailsAuthentication() {
+        OidcConfig oidcConfig = OidcConfig.builder()
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .oidcMetadataWellKnown(false)
+                .useCookie(true)
+                .useHeader(false)
+                .redirect(false)
+                .cookieEncryptionEnabledIdToken(false)
+                .cookieCompressionEnabledIdToken(true)
+                .build();
+        Tenant tenant = mock(Tenant.class);
+        when(tenant.tenantConfig()).thenReturn(oidcConfig);
+        TenantAuthenticationHandler authenticationHandler = new TenantAuthenticationHandler(oidcConfig, tenant, false, false);
+        String malformedCookie = oidcConfig.idTokenCookieHandler().cookieName() + "=~not-base64";
+
+        AuthenticationResponse response = authenticationHandler.authenticate(DEFAULT_TENANT_ID,
+                                                                             requestWithCookies(malformedCookie));
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElseThrow(), is(401));
+        assertThat(response.description().orElseThrow(), is("Invalid id token"));
+    }
+
+    @Test
     public void testOriginalUri() {
         OidcConfig oidcConfig = OidcConfig.builder()
                 .clientId("test")

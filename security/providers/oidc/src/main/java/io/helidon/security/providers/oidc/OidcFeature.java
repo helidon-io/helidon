@@ -31,11 +31,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.Weight;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.crypto.CryptoException;
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
@@ -51,6 +53,7 @@ import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.EncryptedJwt;
 import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtHeaders;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -349,7 +352,28 @@ public final class OidcFeature implements HttpFeature {
                                   String encryptedIdToken,
                                   String stateQuery) {
         try {
-            String idToken = idTokenCookieHandler.decrypt(encryptedIdToken);
+            String idToken;
+            try {
+                idToken = idTokenCookieHandler.decrypt(encryptedIdToken);
+                JwtHeaders jwtHeaders = JwtHeaders.parseToken(idToken);
+                if (jwtHeaders.encryption().isPresent()) {
+                    EncryptedJwt.parseToken(jwtHeaders, idToken);
+                } else {
+                    SignedJwt.parseToken(jwtHeaders, idToken);
+                }
+            } catch (CryptoException
+                     | IllegalArgumentException
+                     | JwtException
+                     | Errors.ErrorMessagesException e) {
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, "Invalid OIDC logout ID token cookie", e);
+                }
+                clearLocalOidcCookies(res.headers());
+                res.status(Status.BAD_REQUEST_400)
+                        .send();
+                return;
+            }
+
             URI logoutEndpoint = tenant.logoutEndpointUri();
             String logoutQuery = logoutEndpoint.getRawQuery();
             String querySeparator = "?";
@@ -359,7 +383,7 @@ public final class OidcFeature implements HttpFeature {
             StringBuilder sb = new StringBuilder(logoutEndpoint.toString())
                     .append(querySeparator)
                     .append("id_token_hint=")
-                    .append(idToken)
+                    .append(encode(idToken))
                     .append("&post_logout_redirect_uri=")
                     .append(postLogoutUri(req));
 
