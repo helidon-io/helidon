@@ -112,6 +112,10 @@ class ServiceManager<T> {
         if (serviceActivator.phase() != ActivationPhase.ACTIVE) {
             return Optional.empty();
         }
+        if (serviceActivator instanceof Activators.FixedSupplierActivator<?> fixedSupplier
+                && !fixedSupplier.activeInstancesAvailable(lookup)) {
+            return Optional.empty();
+        }
 
         return serviceActivator
                 .instances(lookup)

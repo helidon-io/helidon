@@ -430,7 +430,7 @@ final class Activators {
 
     static class FixedSupplierActivator<T> extends BaseActivator<T> {
         private final Supplier<T> instanceSupplier;
-        private final Supplier<Optional<List<QualifiedInstance<T>>>> instances;
+        private final LazyValue<Optional<List<QualifiedInstance<T>>>> instances;
 
         FixedSupplierActivator(ServiceProvider<T> provider, Supplier<T> instanceSupplier) {
             super(provider, null);
@@ -441,6 +441,10 @@ final class Activators {
                                                                                      provider.descriptor().qualifiers()));
                 return Optional.of(values);
             });
+        }
+
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return requestedProvider(lookup, FactoryType.SUPPLIER) || instances.isLoaded();
         }
 
         @SuppressWarnings("unchecked")

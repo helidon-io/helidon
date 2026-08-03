@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
@@ -241,6 +242,38 @@ public class RegistryTest {
 
             assertThat(serviceRegistry.firstActive(ServiceSupplier.class).orElseThrow(), sameInstance(explicit));
             assertThat(ServiceSupplier.instances(), is(0));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    public void testRegistryFirstActiveDoesNotCreateFixedSingletonSupplierProduct() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                               .discoverServices(false)
+                                                                               .addServiceDescriptor(
+                                                                                       SingletonServiceSupplier__ServiceDescriptor.INSTANCE)
+                                                                               .build());
+        ServiceRegistry serviceRegistry = manager.registry();
+        SingletonServiceSupplier explicit = new SingletonServiceSupplier(serviceRegistry);
+
+        Services.registry(serviceRegistry);
+        try {
+            Services.set(SingletonServiceSupplier.class, explicit);
+
+            assertThat(serviceRegistry.firstActive(SuppliedContract.class).isEmpty(), is(true));
+            assertThat(explicit.instances(), is(0));
+            assertThat(serviceRegistry.firstActive(SingletonServiceSupplier.class).orElseThrow(), sameInstance(explicit));
+            assertThat(explicit.instances(), is(0));
+
+            explicit.reenterOnGet();
+            SuppliedContract activated = serviceRegistry.get(SuppliedContract.class);
+
+            assertThat(activated.message(), is("Supplied:1"));
+            assertThat(explicit.activeDuringGet().isEmpty(), is(true));
+            assertThat(explicit.instances(), is(1));
+            assertThat(serviceRegistry.firstActive(SuppliedContract.class).orElseThrow(), sameInstance(activated));
+            assertThat(explicit.instances(), is(1));
         } finally {
             manager.shutdown();
         }
