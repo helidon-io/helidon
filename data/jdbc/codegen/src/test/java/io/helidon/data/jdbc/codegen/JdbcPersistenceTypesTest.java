@@ -83,7 +83,7 @@ class JdbcPersistenceTypesTest {
         String defaultName = (String) load("io.helidon.service.registry.Service$Named")
                 .getField("DEFAULT_NAME")
                 .get(null);
-        assertThat(JdbcPersistenceTypes.DEFAULT_NAME, is(defaultName));
+        assertThat(JdbcCodegenConstants.DEFAULT_PERSISTENCE_UNIT, is(defaultName));
         assertThat(JdbcPersistenceTypes.TX_ANNOTATIONS,
                    is(List.of(JdbcPersistenceTypes.TX_MANDATORY,
                               JdbcPersistenceTypes.TX_NEW,
