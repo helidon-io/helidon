@@ -1025,11 +1025,43 @@ final class OpenApi30DocumentMapper {
                     break;
                 }
                 Object referenceValue = currentScheme.get("$ref");
-                if (!(referenceValue instanceof String reference)
-                        || !reference.startsWith(SECURITY_SCHEME_REFERENCE_PREFIX)) {
+                if (!(referenceValue instanceof String reference)) {
                     break;
                 }
-                String referencedName = reference.substring(SECURITY_SCHEME_REFERENCE_PREFIX.length());
+                String normalizedReference = reference;
+                int percentIndex = reference.indexOf('%');
+                if (percentIndex >= 0) {
+                    StringBuilder normalized = new StringBuilder(reference.length());
+                    int copyFrom = 0;
+                    for (int i = percentIndex; i < reference.length(); i++) {
+                        if (reference.charAt(i) != '%' || i + 2 >= reference.length()) {
+                            continue;
+                        }
+                        int high = Character.digit(reference.charAt(i + 1), 16);
+                        int low = Character.digit(reference.charAt(i + 2), 16);
+                        if (high < 0 || low < 0) {
+                            continue;
+                        }
+                        char decoded = (char) ((high << 4) + low);
+                        if ((decoded >= 'a' && decoded <= 'z')
+                                || (decoded >= 'A' && decoded <= 'Z')
+                                || (decoded >= '0' && decoded <= '9')
+                                || decoded == '-'
+                                || decoded == '.'
+                                || decoded == '_'
+                                || decoded == '~') {
+                            normalized.append(reference, copyFrom, i).append(decoded);
+                            i += 2;
+                            copyFrom = i + 1;
+                        }
+                    }
+                    normalized.append(reference, copyFrom, reference.length());
+                    normalizedReference = normalized.toString();
+                }
+                if (!normalizedReference.startsWith(SECURITY_SCHEME_REFERENCE_PREFIX)) {
+                    break;
+                }
+                String referencedName = normalizedReference.substring(SECURITY_SCHEME_REFERENCE_PREFIX.length());
                 if (referencedName.isEmpty() || referencedName.indexOf('/') >= 0) {
                     break;
                 }

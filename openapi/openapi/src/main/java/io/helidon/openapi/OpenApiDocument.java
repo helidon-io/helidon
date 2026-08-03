@@ -328,13 +328,14 @@ public final class OpenApiDocument {
             boolean existingKey = target.containsKey(key);
             Object existing = target.get(key);
             if (!existingKey) {
-                target.put(key, value);
-                indexPathItems(templateIndex(childPath, pathTemplates), value);
                 if ("tags".equals(childPath) && tagsByName != null && value instanceof List<?> tags) {
-                    for (Object tag : tags) {
-                        tagName(tag).ifPresent(name -> tagsByName.putIfAbsent(name, tag));
-                    }
+                    List<Object> targetTags = new ArrayList<>();
+                    target.put(key, targetTags);
+                    mergeArray(targetTags, tags, childPath, tagsByName);
+                } else {
+                    target.put(key, value);
                 }
+                indexPathItems(templateIndex(childPath, pathTemplates), target.get(key));
             } else if (("paths".equals(childPath) || "webhooks".equals(childPath))
                     && existing instanceof Map<?, ?> existingMap
                     && value instanceof Map<?, ?> valueMap) {
@@ -4789,8 +4790,7 @@ public final class OpenApiDocument {
          */
         public Builder tag(Tag tag) {
             Map<String, Object> tagNode = mutableMap(Objects.requireNonNull(tag).toNode());
-            array(node, "tags").add(tagNode);
-            tagName(tagNode).ifPresent(name -> tagsByName.putIfAbsent(name, tagNode));
+            mergeTag(array(node, "tags"), tagNode, tagsByName);
             return this;
         }
 

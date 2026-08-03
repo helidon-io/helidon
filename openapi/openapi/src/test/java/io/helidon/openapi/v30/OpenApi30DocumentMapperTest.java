@@ -218,14 +218,14 @@ class OpenApi30DocumentMapperTest {
                 "name", "X-API-Key",
                 "in", "header"));
         securitySchemes.put("ApiKeyAlias", Map.of(
-                "$ref", "#/components/securitySchemes/ApiKey"));
+                "$ref", "#/co%6Dponents/securitySchemes/Api%4Bey"));
         securitySchemes.put("Http", Map.of(
                 "type", "http",
                 "scheme", "bearer"));
         securitySchemes.put("HttpAlias", Map.of(
-                "$ref", "#/components/securitySchemes/Http"));
+                "$ref", "#/co%6dponents/securitySchemes/Http"));
         securitySchemes.put("MultiHopHttpAlias", Map.of(
-                "$ref", "#/components/securitySchemes/HttpAlias"));
+                "$ref", "#/components/securitySchemes/Http%41lias"));
 
         Map<String, Map<String, Object>> invalidDocuments = new LinkedHashMap<>();
         invalidDocuments.put("ApiKeyAlias", documentWithSecurityRequirements(
@@ -287,12 +287,18 @@ class OpenApi30DocumentMapperTest {
     @Test
     void preservesSecurityScopesForUnresolvedAliases() {
         Map<String, Object> securitySchemes = new LinkedHashMap<>();
+        securitySchemes.put("ApiKey", Map.of(
+                "type", "apiKey",
+                "name", "X-API-Key",
+                "in", "header"));
         securitySchemes.put("CycleA", Map.of(
                 "$ref", "#/components/securitySchemes/CycleB"));
         securitySchemes.put("CycleB", Map.of(
                 "$ref", "#/components/securitySchemes/CycleA"));
         securitySchemes.put("Missing", Map.of(
                 "$ref", "#/components/securitySchemes/NotPresent"));
+        securitySchemes.put("Malformed", Map.of(
+                "$ref", "#/compon%6nts/securitySchemes/ApiKey"));
         securitySchemes.put("External", Map.of(
                 "$ref", "security.yaml#/components/securitySchemes/External"));
         securitySchemes.put("Relative", Map.of(
@@ -300,7 +306,8 @@ class OpenApi30DocumentMapperTest {
         Map<String, Object> source = documentWithSecurityRequirements(
                 securitySchemes,
                 List.of(Map.of("CycleA", List.of("cycle")),
-                        Map.of("Missing", List.of("missing"))),
+                        Map.of("Missing", List.of("missing")),
+                        Map.of("Malformed", List.of("malformed"))),
                 List.of(Map.of("External", List.of("external")),
                         Map.of("Relative", List.of("relative"))));
 

@@ -223,6 +223,17 @@ class OpenApi31VersionTest {
         return new TestOpenApiDocumentContext(version);
     }
 
+    private static String static31() {
+        try (InputStream is = OpenApi31VersionTest.class.getResourceAsStream("/static-3.1.yaml")) {
+            if (is == null) {
+                throw new IllegalArgumentException("Resource not found: static-3.1.yaml");
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
     private record TestOpenApiDocumentContext(OpenApiVersion openApiVersion) implements OpenApiDocumentContext {
         @Override
         public String featureName() {
@@ -242,17 +253,6 @@ class OpenApi31VersionTest {
         @Override
         public OpenApiGeneratedMode generatedMode() {
             return OpenApiGeneratedMode.STATIC_ONLY;
-        }
-    }
-
-    private static String static31() {
-        try (InputStream is = OpenApi31VersionTest.class.getResourceAsStream("/static-3.1.yaml")) {
-            if (is == null) {
-                throw new IllegalArgumentException("Resource not found: static-3.1.yaml");
-            }
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
         }
     }
 }

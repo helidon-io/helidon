@@ -177,6 +177,10 @@ Declarative `@OpenApi.MutualTlsSecurityScheme` metadata and `@OpenApi.SecuritySc
 require OpenAPI 3.1 or 3.2 output. Use `helidon-openapi-31`, `helidon-openapi-32`, or another configured document provider
 which renders one of those versions. Generation fails if the selected provider renders OpenAPI 3.0.
 
+Declarative `@OpenApi.OAuthFlows` metadata which configures `deviceAuthorization` requires OpenAPI 3.2 output. Use
+`helidon-openapi-32` or another configured document provider which renders OpenAPI 3.2. Generation fails if the selected
+provider renders OpenAPI 3.0 or 3.1.
+
 The configured `document` provider is used when Helidon renders generated or merged OpenAPI documents. In `MERGE` mode,
 Helidon parses the static document and renders the result with the configured provider, so the served document version
 can differ from the static file's declared `openapi` version.

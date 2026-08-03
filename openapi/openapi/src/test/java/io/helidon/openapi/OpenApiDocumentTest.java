@@ -146,6 +146,59 @@ class OpenApiDocumentTest {
     }
 
     @Test
+    void deduplicatesNamedTagsInstalledByFirstMerge() {
+        Map<String, Object> first = Map.of("name", "first", "description", "First");
+        Map<String, Object> initialDocument = new LinkedHashMap<>();
+        initialDocument.put("tags", List.of(first,
+                                            Map.of("name", "first", "description", "First"),
+                                            Map.of("name", "second")));
+
+        OpenApiDocument document = OpenApiDocument.builder()
+                .mergeNode(initialDocument)
+                .build();
+
+        assertThat(document.tags().stream().map(OpenApiDocument.Tag::name).toList(),
+                   is(List.of("first", "second")));
+        assertThat(document.tags().getFirst().description().orElseThrow(), is("First"));
+    }
+
+    @Test
+    void rejectsConflictingNamedTagsInstalledByFirstMerge() {
+        Map<String, Object> initialDocument = new LinkedHashMap<>();
+        initialDocument.put("tags", List.of(Map.of("name", "first", "description", "First"),
+                                            Map.of("name", "first", "description", "Conflicting")));
+
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                     () -> OpenApiDocument.builder().mergeNode(initialDocument));
+
+        assertThat(thrown.getMessage(), is("Conflicting OpenAPI tag at tags.first"));
+    }
+
+    @Test
+    void deduplicatesDirectNamedTagsAndRejectsConflicts() {
+        OpenApiDocument.Tag first = OpenApiDocument.Tag.builder()
+                .name("first")
+                .description("First")
+                .build();
+        OpenApiDocument.Builder builder = OpenApiDocument.builder()
+                .tag(first)
+                .tag(OpenApiDocument.Tag.builder()
+                             .name("first")
+                             .description("First")
+                             .build());
+
+        assertThat(builder.build().tags().size(), is(1));
+
+        OpenApiDocument.Tag conflicting = OpenApiDocument.Tag.builder()
+                .name("first")
+                .description("Conflicting")
+                .build();
+        IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> builder.tag(conflicting));
+
+        assertThat(thrown.getMessage(), is("Conflicting OpenAPI tag at tags.first"));
+    }
+
+    @Test
     void indexesTagsAddedDirectlyToBuilder() {
         OpenApiDocument.Tag first = OpenApiDocument.Tag.builder()
                 .name("first")

@@ -391,6 +391,24 @@ class OpenApi32VersionTest {
         return new TestOpenApiDocumentContext(version);
     }
 
+    private static String static32() {
+        try (InputStream is = OpenApi32VersionTest.class.getResourceAsStream("/static-3.2.yaml")) {
+            if (is == null) {
+                throw new IllegalArgumentException("Resource not found: static-3.2.yaml");
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private static String static32WithoutDeviceAuthorization() {
+        Map<String, Object> document = parse(static32());
+        Map<String, Object> securityScheme = map(map(map(document, "components"), "securitySchemes"), "oauthDevice");
+        map(securityScheme, "flows").remove("deviceAuthorization");
+        return new Yaml().dump(document);
+    }
+
     private record TestOpenApiDocumentContext(OpenApiVersion openApiVersion) implements OpenApiDocumentContext {
         @Override
         public String featureName() {
@@ -411,23 +429,5 @@ class OpenApi32VersionTest {
         public OpenApiGeneratedMode generatedMode() {
             return OpenApiGeneratedMode.STATIC_ONLY;
         }
-    }
-
-    private static String static32() {
-        try (InputStream is = OpenApi32VersionTest.class.getResourceAsStream("/static-3.2.yaml")) {
-            if (is == null) {
-                throw new IllegalArgumentException("Resource not found: static-3.2.yaml");
-            }
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
-    private static String static32WithoutDeviceAuthorization() {
-        Map<String, Object> document = parse(static32());
-        Map<String, Object> securityScheme = map(map(map(document, "components"), "securitySchemes"), "oauthDevice");
-        map(securityScheme, "flows").remove("deviceAuthorization");
-        return new Yaml().dump(document);
     }
 }

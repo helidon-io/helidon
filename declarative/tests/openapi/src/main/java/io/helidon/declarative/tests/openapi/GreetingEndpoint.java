@@ -243,6 +243,11 @@ class GreetingEndpoint {
         return "internal";
     }
 
+    private static String message(String prefix, String name, Optional<String> language) {
+        return language.map(it -> prefix + " " + name + " in " + it)
+                .orElse(prefix + " " + name);
+    }
+
     record GreetingRequestParams(@Http.PathParam("id") String id,
                                  @Http.QueryParam("search") String search,
                                  @Http.HeaderParam("X-Trace") String trace,
@@ -252,10 +257,5 @@ class GreetingEndpoint {
     record GreetingFormParams(@Http.CookieParam("tracking") Optional<String> tracking,
                               @Http.FormParam("name") String name,
                               @Http.FormParam("tag") Optional<List<String>> tags) {
-    }
-
-    private static String message(String prefix, String name, Optional<String> language) {
-        return language.map(it -> prefix + " " + name + " in " + it)
-                .orElse(prefix + " " + name);
     }
 }

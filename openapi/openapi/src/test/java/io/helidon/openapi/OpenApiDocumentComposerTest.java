@@ -81,6 +81,78 @@ class OpenApiDocumentComposerTest {
             x-null: null
             """;
 
+    private static final String STATIC_DOCUMENT_WITH_ADDITIONAL_OPERATION = """
+            openapi: 3.0.3
+            info:
+              title: Static API
+              version: 1.0.0
+            paths:
+              /static:
+                additionalOperations:
+                  COPY:
+                    operationId: staticCopy
+                    responses:
+                      "200":
+                        description: Static copy response.
+            """;
+
+    private static final String STATIC_MERGE_DOCUMENT = """
+            openapi: 3.0.3
+            info:
+              title: Static API
+              version: 1.0.0
+            tags:
+              - name: static
+                description: Static resources
+            security:
+              - staticAuth: []
+            paths:
+              /static:
+                get:
+                  operationId: staticGet
+                  x-static-operation: preserved
+                  responses:
+                    "200":
+                      description: Static response.
+                      headers:
+                        X-Static:
+                          description: Static response header.
+                          required: true
+                          deprecated: true
+                          allowEmptyValue: true
+                          style: simple
+                          explode: false
+                          allowReserved: true
+                          schema:
+                            type: string
+                          example: static-value
+                          examples:
+                            named:
+                              value: named-static-value
+            components:
+              schemas:
+                StaticItem:
+                  type: object
+              securitySchemes:
+                staticAuth:
+                  type: http
+                  scheme: bearer
+            """;
+
+    private static final String STATIC_TEMPLATE_DOCUMENT = """
+            openapi: 3.0.3
+            info:
+              title: Static API
+              version: 1.0.0
+            paths:
+              /static/{id}:
+                get:
+                  operationId: staticGet
+                  responses:
+                    "200":
+                      description: Static response.
+            """;
+
     @Test
     void generatedFallbackKeepsStaticDocumentWithoutParsingIt() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.STATIC_FIRST);
@@ -1158,75 +1230,4 @@ class OpenApiDocumentComposerTest {
         }
     }
 
-    private static final String STATIC_DOCUMENT_WITH_ADDITIONAL_OPERATION = """
-            openapi: 3.0.3
-            info:
-              title: Static API
-              version: 1.0.0
-            paths:
-              /static:
-                additionalOperations:
-                  COPY:
-                    operationId: staticCopy
-                    responses:
-                      "200":
-                        description: Static copy response.
-            """;
-
-    private static final String STATIC_MERGE_DOCUMENT = """
-            openapi: 3.0.3
-            info:
-              title: Static API
-              version: 1.0.0
-            tags:
-              - name: static
-                description: Static resources
-            security:
-              - staticAuth: []
-            paths:
-              /static:
-                get:
-                  operationId: staticGet
-                  x-static-operation: preserved
-                  responses:
-                    "200":
-                      description: Static response.
-                      headers:
-                        X-Static:
-                          description: Static response header.
-                          required: true
-                          deprecated: true
-                          allowEmptyValue: true
-                          style: simple
-                          explode: false
-                          allowReserved: true
-                          schema:
-                            type: string
-                          example: static-value
-                          examples:
-                            named:
-                              value: named-static-value
-            components:
-              schemas:
-                StaticItem:
-                  type: object
-              securitySchemes:
-                staticAuth:
-                  type: http
-                  scheme: bearer
-            """;
-
-    private static final String STATIC_TEMPLATE_DOCUMENT = """
-            openapi: 3.0.3
-            info:
-              title: Static API
-              version: 1.0.0
-            paths:
-              /static/{id}:
-                get:
-                  operationId: staticGet
-                  responses:
-                    "200":
-                      description: Static response.
-            """;
 }

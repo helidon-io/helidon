@@ -97,6 +97,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @RoutingTest
 @SuppressWarnings("HttpUrlsUsage")
 class OpenApiFeatureTest {
+    private static final String OPENAPI_31_DOCUMENT = """
+            openapi: 3.1.0
+            info:
+              title: Static API
+              version: 1.0.0
+            paths: {}
+            """;
 
     private final WebClient client;
     private final List<ServiceRegistryManager> testRegistryManagers = new ArrayList<>();
@@ -1781,35 +1788,6 @@ class OpenApiFeatureTest {
         };
     }
 
-    private static final class SelectedOpenApi {
-    }
-
-    private static final class OtherOpenApi {
-    }
-
-    private static final class ConfigExpressionOpenApi {
-    }
-
-    private static final class FailingOpenApiVersionProvider implements OpenApiVersionProvider {
-        @Override
-        public String configKey() {
-            return "failing";
-        }
-
-        @Override
-        public OpenApiVersion create(Config config, String name) {
-            throw new AssertionError("Disabled OpenAPI feature must not create version providers.");
-        }
-    }
-
-    private static final String OPENAPI_31_DOCUMENT = """
-            openapi: 3.1.0
-            info:
-              title: Static API
-              version: 1.0.0
-            paths: {}
-            """;
-
     private void mergeStaticDocumentUsesRootVersion(Path staticFile, String content) throws IOException {
         RecordingOpenApiManager manager = new RecordingOpenApiManager();
         OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
@@ -1829,6 +1807,27 @@ class OpenApiFeatureTest {
         feature.initialize();
 
         assertThat(parse(manager.content()).get("openapi"), is("3.0.3"));
+    }
+
+    private static final class SelectedOpenApi {
+    }
+
+    private static final class OtherOpenApi {
+    }
+
+    private static final class ConfigExpressionOpenApi {
+    }
+
+    private static final class FailingOpenApiVersionProvider implements OpenApiVersionProvider {
+        @Override
+        public String configKey() {
+            return "failing";
+        }
+
+        @Override
+        public OpenApiVersion create(Config config, String name) {
+            throw new AssertionError("Disabled OpenAPI feature must not create version providers.");
+        }
     }
 
     private record TestOpenApiVersion(String type, String version, boolean failParse) implements OpenApiVersion {

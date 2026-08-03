@@ -1525,7 +1525,8 @@ public final class OpenApi {
         /**
          * OpenAPI 3.2 OAuth device authorization flow.
          * <p>
-         * Rendered only for OpenAPI 3.2 output.
+         * Configuring this flow requires OpenAPI 3.2 output. Document generation fails if the configured provider
+         * renders OpenAPI 3.0 or 3.1.
          *
          * @return device authorization flow
          */
