@@ -86,17 +86,16 @@ runs:
       with:
         path: .tools/apache-maven-*/**
         enableCrossOsArchive: true
-        key: tools-maven-${{ hashFiles('.tools/apache-maven-*/**') }}
-        restore-keys: |
-          tools-maven-
+        key: tools-maven-${{ env.MVN_VERSION }}
     - if: ${{ inputs.setup-maven == 'true' && runner.os != 'Windows' }}
       name: Set up Maven
       shell: bash
       run: |
         if [ -z "${MVN_VERSION}" ] ; then echo "MVN_VERSION not set"; exit 1 ; fi
         if [ ! -d .tools/apache-maven-${MVN_VERSION}/bin ] ; then
-          curl -O https://archive.apache.org/dist/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.zip
-          unzip apache-maven-${MVN_VERSION}-bin.zip -d .tools
+          curl -o "${RUNNER_TEMP}/apache-maven-${MVN_VERSION}-bin.zip" \
+            https://archive.apache.org/dist/maven/maven-3/${MVN_VERSION}/binaries/apache-maven-${MVN_VERSION}-bin.zip
+          unzip "${RUNNER_TEMP}/apache-maven-${MVN_VERSION}-bin.zip" -d .tools
         fi
         echo ${PWD}/.tools/apache-maven-${MVN_VERSION}/bin >> "${GITHUB_PATH}"
     - name: Set up JDK
