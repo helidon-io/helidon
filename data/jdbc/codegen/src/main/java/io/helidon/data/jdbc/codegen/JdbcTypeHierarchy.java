@@ -62,6 +62,7 @@ final class JdbcTypeHierarchy {
         return methods.values()
                 .stream()
                 .map(MethodCandidate::method)
+                .filter(method -> method.elementModifiers().contains(Modifier.ABSTRACT))
                 .toList();
     }
 
@@ -147,7 +148,8 @@ final class JdbcTypeHierarchy {
         Map<String, TypeName> substitutions = substitutions(typeInfo, inheritedSubstitutions);
         for (TypedElementInfo element : typeInfo.elementInfo()) {
             if (element.kind() == ElementKind.METHOD
-                    && element.elementModifiers().contains(Modifier.ABSTRACT)) {
+                    && isOverrideCandidate(element)) {
+                // Default methods take part in override resolution even though JDBC codegen does not generate them.
                 TypedElementInfo method = resolveMethod(element, substitutions, repositoryType);
                 merge(methods,
                       TypeHierarchy.methodSignature(method),
@@ -166,6 +168,11 @@ final class JdbcTypeHierarchy {
                            methods,
                            context);
         }
+    }
+
+    private static boolean isOverrideCandidate(TypedElementInfo method) {
+        return method.elementModifiers().contains(Modifier.ABSTRACT)
+                || method.elementModifiers().contains(Modifier.DEFAULT);
     }
 
     private static TypedElementInfo resolveMethod(TypedElementInfo method,

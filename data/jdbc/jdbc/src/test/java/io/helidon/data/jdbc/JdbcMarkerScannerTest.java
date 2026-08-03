@@ -24,11 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class JdbcMarkerScannerTest {
 
     @Test
-    void countsTheSameProtectedRegionsAndOperatorsAsDeclarativeCodegen() {
+    void countsTheSameProtectedRegionsAndDriverEscapesAsDeclarativeCodegen() {
         String sql = """
                 select ':literal', "quoted:name", `mysql:name`, [sql:name],
                        value::text, JSON_VALUE ?? 'name',
-                       TAGS ?| ARRAY['a'], TAGS ?& ARRAY['a', 'b']
+                       TAGS ??| ARRAY['a'], TAGS ??& ARRAY['a', 'b'],
+                       PAYLOAD @?? '$.items[*]'
                 from T -- :line and ?
                 where ID = ? /* :block and ? */
                   and BODY = $tag$:dollar and ?$tag$
@@ -36,6 +37,18 @@ class JdbcMarkerScannerTest {
                 """;
 
         assertThat(JdbcOperation.parameterCount(sql), is(1));
+    }
+
+    @Test
+    void treatsEveryUnescapedQuestionMarkAsMarker() {
+        String sql = """
+                select DOCUMENT ? 'name',
+                       TAGS ?| ARRAY['a'],
+                       TAGS ?& ARRAY['a', 'b'],
+                       PAYLOAD @? '$.items[*]'
+                """;
+
+        assertThat(JdbcOperation.parameterCount(sql), is(4));
     }
 
     @Test

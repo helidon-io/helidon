@@ -49,7 +49,7 @@ public abstract class BasePersistenceGenerator
         Objects.requireNonNull(codegenContext, "Codegen context value is null");
         Objects.requireNonNull(repositoryGenerator, "Data repository generator value is null");
 
-        // A missing provider annotation does not select every generator. Existing provider remain default, while
+        // A missing provider annotation does not select every generator. Existing providers remain default, while
         // providers such as JDBC can require explicit selection.
         var configuredProvider = interfaceInfo.findAnnotation(DataCommonCodegenTypes.PROVIDER)
                 .flatMap(Annotation::value);

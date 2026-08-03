@@ -46,13 +46,36 @@ class JdbcSqlMarkerLexerTest {
     }
 
     @Test
-    void protectsEverySupportedQuestionMarkOperator() {
-        String sql = "select JSON_VALUE ?? 'name', TAGS ?| ARRAY['a'], TAGS ?& ARRAY['a', 'b'] from T where ID = ?";
+    void preservesDriverEscapesAndCountsPositionalMarkers() {
+        String sql = "select DOCUMENT ?? 'name', TAGS ??| ARRAY['a'], TAGS ??& ARRAY['a', 'b'], "
+                + "PAYLOAD @?? '$.items[*]' from T where ID = ?";
 
         JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
 
         assertThat(result.sql(), is(sql));
         assertThat(result.markers(), is(List.of("")));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL));
+    }
+
+    @Test
+    void preservesDriverEscapesWithNamedMarkers() {
+        String sql = "select PAYLOAD @?? '$.items[*]' from T where ID = :id";
+
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.sql(), is("select PAYLOAD @?? '$.items[*]' from T where ID = ?"));
+        assertThat(result.markers(), is(List.of("id")));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+    }
+
+    @Test
+    void treatsEveryUnescapedQuestionMarkAsMarker() {
+        String sql = "select DOCUMENT ? 'name', TAGS ?| ARRAY['a'], TAGS ?& ARRAY['a'], "
+                + "PAYLOAD @? '$.items[*]'";
+
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.markers(), is(List.of("", "", "", "")));
         assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL));
     }
 
@@ -69,7 +92,7 @@ class JdbcSqlMarkerLexerTest {
     @Test
     void protectsQuotedCommentedAndVendorSyntax() {
         String sql = """
-                select ':literal', "quoted:name", `mysql:name`, [sql:name], value::text, data ?| array['x']
+                select ':literal', "quoted:name", `mysql:name`, [sql:name], value::text, data ??| array['x']
                 from T -- :line and ?
                 where ID = :id /* :block and ? */
                   and BODY = $tag$:dollar and ?$tag$ and Q = q'[oracle:name and ?]'

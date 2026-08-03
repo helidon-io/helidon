@@ -60,9 +60,10 @@ final class JdbcOperation {
      *
      * <p>The scanner is deliberately lexical rather than a SQL parser. It
      * ignores question marks in quoted values, quoted identifiers, comments,
-     * and common vendor operators. Declarative named markers have already been
-     * rewritten by the annotation processor. A runtime named marker is
-     * rejected because this client stage accepts positional JDBC SQL.</p>
+     * and doubled question marks preserved for the JDBC driver. Declarative
+     * named markers have already been rewritten by the annotation processor.
+     * A runtime named marker is rejected because this client stage accepts
+     * positional JDBC SQL.</p>
      *
      * @param sql SQL text to scan
      * @return number of positional bind markers
@@ -200,10 +201,10 @@ final class JdbcOperation {
     /**
      * Lexically counts positional markers without interpreting SQL grammar.
      *
-     * <p>Quoted text, comments, and common vendor operators are treated as
-     * opaque regions so their question marks are not mistaken for bind
-     * markers. The scanner intentionally leaves SQL validation to the JDBC
-     * driver and database.</p>
+     * <p>Quoted text and comments are treated as opaque regions. A doubled
+     * question mark is preserved for the JDBC driver and does not consume a
+     * bind position. The scanner intentionally leaves SQL validation to the
+     * JDBC driver and database.</p>
      */
     private static final class MarkerScanner {
 
@@ -263,10 +264,10 @@ final class JdbcOperation {
             }
         }
 
-        // Question mark operators must not consume a bind position.
+        // A doubled question mark leaves a literal question mark for drivers that support this escape.
         private void positionalMarker() {
             char next = peek(1);
-            if (next == '?' || next == '|' || next == '&') {
+            if (next == '?') {
                 index += 2;
             } else {
                 count++;
