@@ -37,7 +37,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.http.BadRequestException;
 import io.helidon.http.DateTime;
 import io.helidon.http.ForbiddenException;
 import io.helidon.http.Header;
@@ -327,7 +326,7 @@ abstract class StaticContentHandler implements HttpService {
             if (request.headers().contains(HeaderNames.RANGE)) {
                 AcceptEncoding acceptEncoding = AcceptEncoding.create(request.headers());
                 if (!acceptEncoding.valid()) {
-                    throw new BadRequestException("Invalid Accept-Encoding header");
+                    throw new HttpException("Invalid Accept-Encoding header", Status.BAD_REQUEST_400);
                 }
                 if (acceptEncoding.identity().isEmpty()) {
                     throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true)
@@ -347,7 +346,7 @@ abstract class StaticContentHandler implements HttpService {
             return new CachedHandlerRepresentation(identityHandler, identityRepresentation);
         }
         if (!acceptEncoding.valid()) {
-            throw new BadRequestException("Invalid Accept-Encoding header");
+            throw new HttpException("Invalid Accept-Encoding header", Status.BAD_REQUEST_400);
         }
 
         List<RepresentationCandidate> staticCandidates = new ArrayList<>();

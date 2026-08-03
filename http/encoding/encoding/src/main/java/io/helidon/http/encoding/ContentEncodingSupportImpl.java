@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
@@ -202,7 +201,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers);
         if (!acceptEncoding.valid()) {
-            throw new BadRequestException("Invalid Accept-Encoding header");
+            throw new HttpException("Invalid Accept-Encoding header", Status.BAD_REQUEST_400);
         }
 
         Optional<AcceptEncoding.CodingQuality> selected = acceptEncoding.best(contentEncodingIds);

@@ -47,7 +47,6 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.http.BadRequestException;
 import io.helidon.http.ForbiddenException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -83,6 +82,7 @@ import static io.helidon.http.HeaderNames.IF_NONE_MATCH;
 import static io.helidon.http.HeaderNames.LOCATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -1212,12 +1212,13 @@ class StaticContentHandlerTest {
         CachedHandler identityHandler = inMemoryHandler("Nested content");
         ServerRequest request = mockRequestWithHeaders("g zip, identity;q=0", null, ContentEncodingContext.create());
 
-        BadRequestException actual = assertThrows(BadRequestException.class,
-                                                  () -> handler.selectHandler(
-                                                          identityHandler,
-                                                                              request,
-                                                                              (coding, suffix) -> Optional.empty()));
+        HttpException actual = assertThrows(HttpException.class,
+                                            () -> handler.selectHandler(
+                                                    identityHandler,
+                                                    request,
+                                                    (coding, suffix) -> Optional.empty()));
 
+        assertSame(HttpException.class, actual.getClass());
         assertThat(actual.status(), is(Status.BAD_REQUEST_400));
     }
 

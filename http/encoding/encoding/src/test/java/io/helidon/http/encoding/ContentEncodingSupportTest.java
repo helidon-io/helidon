@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpException;
@@ -34,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ContentEncodingSupportTest {
@@ -309,7 +309,10 @@ class ContentEncodingSupportTest {
     void testRuntimeEncoderRejectsInvalidQuality() {
         ContentEncodingContext context = context();
 
-        assertThrows(BadRequestException.class, () -> context.encoder(headers("gzip;q=NaN")));
+        HttpException actual = assertThrows(HttpException.class, () -> context.encoder(headers("gzip;q=NaN")));
+
+        assertSame(HttpException.class, actual.getClass());
+        assertThat(actual.status(), is(Status.BAD_REQUEST_400));
     }
 
     @Test
