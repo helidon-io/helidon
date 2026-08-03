@@ -511,6 +511,18 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testClasspathJarOriginUsesStructuralUrlComparison() throws IOException, URISyntaxException {
+        URL identityUrl = URI.create("jar:http://localhost/resources.jar!/web/resource.txt").toURL();
+        URL sidecarUrl = URI.create("jar:http://127.0.0.1/resources.jar!/web/resource.txt.br").toURL();
+
+        assertThat(ClassPathContentHandler.sameJarOrigin("web/resource.txt",
+                                                         identityUrl,
+                                                         "web/resource.txt.br",
+                                                         sidecarUrl),
+                   is(false));
+    }
+
+    @Test
     void testClasspathSidecarSymlinkOutsideOriginIsRejected() throws IOException, URISyntaxException {
         assertClasspathSidecarSymlinkOutsideOriginIsRejected(false);
     }

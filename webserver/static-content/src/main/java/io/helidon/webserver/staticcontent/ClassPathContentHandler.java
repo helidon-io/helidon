@@ -29,7 +29,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -517,13 +516,13 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         }
     }
 
-    private static boolean sameJarOrigin(String logicalResource,
-                                         URL identityUrl,
-                                         String sidecarResource,
-                                         URL sidecarUrl) throws IOException {
+    static boolean sameJarOrigin(String logicalResource,
+                                 URL identityUrl,
+                                 String sidecarResource,
+                                 URL sidecarUrl) throws IOException, URISyntaxException {
         JarURLConnection identityConnection = ResourceConnections.openJarConnection(identityUrl);
         JarURLConnection sidecarConnection = ResourceConnections.openJarConnection(sidecarUrl);
-        return Objects.equals(identityConnection.getJarFileURL(), sidecarConnection.getJarFileURL())
+        return identityConnection.getJarFileURL().toURI().equals(sidecarConnection.getJarFileURL().toURI())
                 && logicalResource.equals(identityConnection.getEntryName())
                 && sidecarResource.equals(sidecarConnection.getEntryName());
     }
