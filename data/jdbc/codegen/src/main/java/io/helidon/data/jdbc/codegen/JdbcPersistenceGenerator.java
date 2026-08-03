@@ -37,7 +37,7 @@ final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
     /** {@inheritDoc} */
     @Override
     protected String provider() {
-        return "jdbc";
+        return JdbcCodegenConstants.PROVIDER;
     }
 
     /** {@inheritDoc} */
@@ -51,7 +51,8 @@ final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
     protected TypeName repositoryClassName(TypeName baseName) {
         return TypeName.builder()
                 .packageName(baseName.packageName())
-                .className(baseName.classNameWithEnclosingNames().replace('.', '_') + "__Jdbc")
+                .className(baseName.classNameWithEnclosingNames().replace('.', '_')
+                                   + JdbcCodegenConstants.REPOSITORY_SUFFIX)
                 .build();
     }
 

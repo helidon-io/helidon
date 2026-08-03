@@ -72,7 +72,7 @@ final class JdbcRecordMapperGenerator {
                     field.addContent(", ");
                 }
                 TypedElementInfo component = components.get(index);
-                TypeName optionalType = JdbcMethodPlan.optionalScalarType(component.typeName());
+                TypeName optionalType = JdbcScalarTypes.optionalScalarType(component.typeName());
                 field.addContent("row.")
                         .addContent(optionalType == null ? "required(" : "optional(")
                         .addContentLiteral(component.elementName())
@@ -125,8 +125,8 @@ final class JdbcRecordMapperGenerator {
      */
     private static void validateComponents(JdbcMethodPlan plan, List<TypedElementInfo> components) {
         for (TypedElementInfo component : components) {
-            if (!JdbcMethodPlan.isScalar(component.typeName())
-                    && JdbcMethodPlan.optionalScalarType(component.typeName()) == null) {
+            if (!JdbcScalarTypes.isScalar(component.typeName())
+                    && JdbcScalarTypes.optionalScalarType(component.typeName()) == null) {
                 throw JdbcMethodPlan.failure(plan.method(),
                                              "Unsupported record component type "
                                                      + component.typeName().resolvedName() + " for "

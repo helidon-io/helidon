@@ -18,8 +18,8 @@ package io.helidon.data.jdbc.codegen;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
@@ -39,27 +39,9 @@ import io.helidon.common.types.TypedElementInfo;
  */
 final class JdbcMethodPlan {
 
-    // This table must stay aligned with the scalar types supported by the runtime.
-    private static final Map<String, String> NULL_TYPES = Map.ofEntries(
-            Map.entry(Boolean.class.getName(), "BOOLEAN"),
-            Map.entry(Byte.class.getName(), "TINYINT"),
-            Map.entry(Short.class.getName(), "SMALLINT"),
-            Map.entry(Integer.class.getName(), "INTEGER"),
-            Map.entry(Long.class.getName(), "BIGINT"),
-            Map.entry(Float.class.getName(), "REAL"),
-            Map.entry(Double.class.getName(), "DOUBLE"),
-            Map.entry("java.math.BigDecimal", "DECIMAL"),
-            Map.entry(String.class.getName(), "VARCHAR"),
-            Map.entry("byte[]", "VARBINARY"),
-            Map.entry("java.time.LocalDate", "DATE"),
-            Map.entry("java.time.LocalTime", "TIME"),
-            Map.entry("java.time.LocalDateTime", "TIMESTAMP"),
-            Map.entry("java.time.OffsetTime", "TIME_WITH_TIMEZONE"),
-            Map.entry("java.time.OffsetDateTime", "TIMESTAMP_WITH_TIMEZONE"),
-            Map.entry("java.sql.Date", "DATE"),
-            Map.entry("java.sql.Time", "TIME"),
-            Map.entry("java.sql.Timestamp", "TIMESTAMP"));
-    private static final Set<String> SCALAR_TYPES = NULL_TYPES.keySet();
+    private static final Set<TypeName> UNSUPPORTED_RESULT_TYPES = Set.of(TypeNames.SET,
+                                                                        TypeNames.MAP,
+                                                                        TypeName.create(Stream.class));
 
     private final TypedElementInfo method;
     private final Operation operation;
@@ -167,17 +149,12 @@ final class JdbcMethodPlan {
                                        Return result,
                                        boolean generatedKeys,
                                        boolean rowMapper) {
-        String requested = method.findAnnotation(JdbcPersistenceTypes.JDBC_EXECUTION)
-                .flatMap(Annotation::stringValue)
-                .orElse("AUTO");
-        if ("QUERY".equals(requested)) {
+        ExecutionSelection requested = executionSelection(method);
+        if (requested == ExecutionSelection.QUERY) {
             return Operation.QUERY;
         }
-        if ("UPDATE".equals(requested)) {
+        if (requested == ExecutionSelection.UPDATE) {
             return Operation.UPDATE;
-        }
-        if (!"AUTO".equals(requested)) {
-            throw failure(method, "Unsupported @Jdbc.Execution value: " + requested);
         }
         if (generatedKeys) {
             return Operation.UPDATE;
@@ -195,6 +172,23 @@ final class JdbcMethodPlan {
                     + "@Jdbc.Execution(Jdbc.ExecutionType.UPDATE)");
         }
         return Operation.QUERY;
+    }
+
+    /**
+     * Reads the public execution choice into the internal planning model.
+     *
+     * @param method repository method
+     * @return requested execution
+     */
+    private static ExecutionSelection executionSelection(TypedElementInfo method) {
+        String value = method.findAnnotation(JdbcPersistenceTypes.JDBC_EXECUTION)
+                .flatMap(Annotation::stringValue)
+                .orElse(ExecutionSelection.AUTO.name());
+        try {
+            return ExecutionSelection.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            throw failure(method, "Unsupported @Jdbc.Execution value: " + value);
+        }
     }
 
     /**
@@ -248,11 +242,9 @@ final class JdbcMethodPlan {
         if (method.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
             throw failure(method, "QUERY and generated-key methods require a materialized result");
         }
-        String raw = result.mappedType().genericTypeName().fqName();
-        if ("java.util.Set".equals(raw)
-                || "java.util.Map".equals(raw)
-                || "java.util.stream.Stream".equals(raw)
-                || (result.mappedType().array() && !isScalar(result.mappedType()))) {
+        TypeName rawType = result.mappedType().genericTypeName();
+        if (UNSUPPORTED_RESULT_TYPES.contains(rawType)
+                || (result.mappedType().array() && !JdbcScalarTypes.isScalar(result.mappedType()))) {
             throw failure(method, "Unsupported JDBC repository return type: " + result.mappedType().resolvedName());
         }
     }
@@ -313,7 +305,7 @@ final class JdbcMethodPlan {
             }
             return explicitMapper == null ? MappingKind.SERVICE : MappingKind.EXPLICIT;
         }
-        if (isScalar(mappedType)) {
+        if (JdbcScalarTypes.isScalar(mappedType)) {
             return MappingKind.SCALAR;
         }
         TypeInfo typeInfo = context.typeInfo(mappedType.genericTypeName())
@@ -324,48 +316,6 @@ final class JdbcMethodPlan {
         }
         throw failure(method, "Non-scalar JDBC result must be a record or declare @Jdbc.RowMapper: "
                 + mappedType.resolvedName());
-    }
-
-    /**
-     * Tests whether a type belongs to the provider's fixed scalar table.
-     *
-     * @param type candidate type
-     * @return whether the type is supported
-     */
-    static boolean isScalar(TypeName type) {
-        if (type.array()) {
-            return type.componentType().map(TypeName::fqName).filter("byte"::equals).isPresent();
-        }
-        return SCALAR_TYPES.contains(type.boxed().genericTypeName().fqName());
-    }
-
-    /**
-     * Returns the standard JDBC null type for a supported scalar.
-     *
-     * @param type scalar type
-     * @return JDBCType constant name
-     */
-    static String nullJdbcType(TypeName type) {
-        String key = type.array() ? "byte[]" : type.boxed().genericTypeName().fqName();
-        String jdbcType = NULL_TYPES.get(key);
-        if (jdbcType == null) {
-            throw new IllegalArgumentException("Unsupported JDBC scalar type: " + type.resolvedName());
-        }
-        return jdbcType;
-    }
-
-    /**
-     * Resolves an exact Optional scalar component.
-     *
-     * @param type candidate record component type
-     * @return scalar argument, or {@code null}
-     */
-    static TypeName optionalScalarType(TypeName type) {
-        if (!type.genericTypeName().equals(JdbcPersistenceTypes.OPTIONAL) || type.typeArguments().size() != 1) {
-            return null;
-        }
-        TypeName valueType = type.typeArguments().getFirst();
-        return valueType.wildcard() || !isScalar(valueType) ? null : valueType;
     }
 
     /**
@@ -448,6 +398,15 @@ final class JdbcMethodPlan {
         QUERY,
         UPDATE,
         GENERATED_KEYS
+    }
+
+    /**
+     * Public execution choices used while resolving an operation.
+     */
+    private enum ExecutionSelection {
+        AUTO,
+        QUERY,
+        UPDATE
     }
 
     /**

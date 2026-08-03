@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc.codegen;
 
+import java.sql.JDBCType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,7 +78,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
             if (!names.add(parameter.elementName())) {
                 throw failure(method, "Duplicate repository parameter name: " + parameter.elementName());
             }
-            if (!JdbcMethodPlan.isScalar(parameter.typeName())) {
+            if (!JdbcScalarTypes.isScalar(parameter.typeName())) {
                 throw failure(method, "Unsupported declarative SQL parameter type: "
                         + parameter.typeName().resolvedName());
             }
@@ -164,7 +165,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
         return new Bind(position,
                         parameter,
                         nullable,
-                        nullable ? JdbcMethodPlan.nullJdbcType(parameter.typeName()) : "");
+                        JdbcScalarTypes.nullJdbcType(parameter.typeName()));
     }
 
     /**
@@ -189,6 +190,6 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     record Bind(int position,
                 TypedElementInfo parameter,
                 boolean nullable,
-                String nullJdbcType) {
+                JDBCType nullJdbcType) {
     }
 }

@@ -63,8 +63,8 @@ final class JdbcMethodGenerator {
         for (TypedElementInfo method : methods) {
             JdbcMethodPlan plan = JdbcMethodPlan.create(method, context);
             String suffix = uniqueSuffix(method.elementName(), generatedNames);
-            plan.sqlFieldName("SQL_" + suffix);
-            plan.mapperFieldName("MAPPER_" + suffix);
+            plan.sqlFieldName(JdbcCodegenConstants.SQL_FIELD_PREFIX + suffix);
+            plan.mapperFieldName(JdbcCodegenConstants.MAPPER_FIELD_PREFIX + suffix);
             plans.add(plan);
         }
 
@@ -148,7 +148,7 @@ final class JdbcMethodGenerator {
         }
 
         Map<String, Integer> fieldNames = new HashMap<>();
-        fieldNames.put("jdbcClient", 1);
+        fieldNames.put(JdbcCodegenConstants.JDBC_CLIENT_NAME, 1);
         List<MapperDependency> dependencies = new ArrayList<>(groupedPlans.size());
         for (Map.Entry<MapperDependencyKey, List<JdbcMethodPlan>> entry : groupedPlans.entrySet()) {
             MapperDependencyKey key = entry.getKey();
@@ -157,7 +157,7 @@ final class JdbcMethodGenerator {
                     .addTypeArgument(key.mappedType())
                     .build();
             String baseName = lowerCamel(key.explicit() ? key.serviceType().className() : key.mappedType().className())
-                    + (key.explicit() ? "" : "RowMapper");
+                    + (key.explicit() ? "" : JdbcCodegenConstants.ROW_MAPPER_SUFFIX);
             String fieldName = uniqueVariable(baseName, fieldNames);
             classModel.addField(field -> field.name(fieldName)
                     .description("Row mapper selected for generated repository methods.")
@@ -228,11 +228,13 @@ final class JdbcMethodGenerator {
             plan.method().findAnnotation(txAnnotation).ifPresent(method::addAnnotation);
         }
 
-        String statementName = localName(plan, "jdbcStatement");
+        String statementName = localName(plan, JdbcCodegenConstants.JDBC_STATEMENT_NAME);
         method.addContent(JdbcPersistenceTypes.JDBC_CLIENT_STATEMENT)
                 .addContent(" ")
                 .addContent(statementName)
-                .addContent(" = jdbcClient.create(")
+                .addContent(" = ")
+                .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
+                .addContent(".create(")
                 .addContent(plan.sqlFieldName())
                 .addContentLine(");");
         for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
@@ -271,7 +273,7 @@ final class JdbcMethodGenerator {
                 .addContent(", ")
                 .addContent(JdbcPersistenceTypes.JDBC_TYPE)
                 .addContent(".")
-                .addContent(bind.nullJdbcType())
+                .addContent(bind.nullJdbcType().name())
                 .addContentLine(");")
                 .decreaseContentPadding()
                 .addContentLine("} else {")
