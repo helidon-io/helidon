@@ -314,14 +314,15 @@ public final class OpenApiDocument {
 
     @SuppressWarnings("unchecked")
     static void merge(Map<String, Object> target, Map<String, Object> source, String path) {
-        merge(target, source, path, null);
+        merge(target, source, path, null, null);
     }
 
     @SuppressWarnings("unchecked")
     private static void merge(Map<String, Object> target,
                               Map<String, Object> source,
                               String path,
-                              Map<String, String> pathTemplates) {
+                              Map<String, String> pathTemplates,
+                              Map<String, Object> tagsByName) {
         source.forEach((key, value) -> {
             String childPath = path.isEmpty() ? key : path + "." + key;
             boolean existingKey = target.containsKey(key);
@@ -329,6 +330,11 @@ public final class OpenApiDocument {
             if (!existingKey) {
                 target.put(key, value);
                 indexPathItems(templateIndex(childPath, pathTemplates), value);
+                if ("tags".equals(childPath) && tagsByName != null && value instanceof List<?> tags) {
+                    for (Object tag : tags) {
+                        tagName(tag).ifPresent(name -> tagsByName.putIfAbsent(name, tag));
+                    }
+                }
             } else if (("paths".equals(childPath) || "webhooks".equals(childPath))
                     && existing instanceof Map<?, ?> existingMap
                     && value instanceof Map<?, ?> valueMap) {
@@ -339,12 +345,13 @@ public final class OpenApiDocument {
             } else if (mergeableTopLevelArray(childPath)
                     && existing instanceof List<?> existingList
                     && value instanceof List<?> valueList) {
-                mergeArray((List<Object>) existingList, valueList, childPath);
+                mergeArray((List<Object>) existingList, valueList, childPath, tagsByName);
             } else if (existing instanceof Map<?, ?> existingMap && value instanceof Map<?, ?> valueMap) {
                 merge((Map<String, Object>) existingMap,
                       (Map<String, Object>) valueMap,
                       childPath,
-                      pathTemplates);
+                      pathTemplates,
+                      tagsByName);
             } else if (!Objects.equals(existing, value)) {
                 throw new IllegalStateException("Conflicting OpenAPI document value at " + childPath);
             }
@@ -355,22 +362,38 @@ public final class OpenApiDocument {
         return "tags".equals(path) || "security".equals(path);
     }
 
-    private static void mergeArray(List<Object> target, List<?> source, String path) {
+    private static void mergeArray(List<Object> target,
+                                   List<?> source,
+                                   String path,
+                                   Map<String, Object> tagsByName) {
         for (Object item : source) {
             if ("tags".equals(path)) {
-                mergeTag(target, item);
+                mergeTag(target, item, tagsByName);
             } else if (!target.contains(item)) {
                 target.add(item);
             }
         }
     }
 
-    private static void mergeTag(List<Object> target, Object source) {
+    private static void mergeTag(List<Object> target, Object source, Map<String, Object> tagsByName) {
         Optional<String> sourceName = tagName(source);
         if (sourceName.isEmpty()) {
             if (!target.contains(source)) {
                 target.add(source);
             }
+            return;
+        }
+
+        if (tagsByName != null) {
+            Object existing = tagsByName.get(sourceName.get());
+            if (existing != null) {
+                if (!Objects.equals(existing, source)) {
+                    throw new IllegalStateException("Conflicting OpenAPI tag at tags." + sourceName.get());
+                }
+                return;
+            }
+            target.add(source);
+            tagsByName.putIfAbsent(sourceName.get(), source);
             return;
         }
 
@@ -558,6 +581,27 @@ public final class OpenApiDocument {
         }
         String field = method.toLowerCase(Locale.ROOT);
         return isFixedPathOperationField(field) ? field : null;
+    }
+
+    private static String validateHttpMethod(String method) {
+        String result = Objects.requireNonNull(method);
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("HTTP method must be a non-empty ASCII RFC tchar token");
+        }
+        for (int i = 0; i < result.length(); i++) {
+            char ch = result.charAt(i);
+            boolean valid = ch >= '0' && ch <= '9'
+                    || ch >= 'A' && ch <= 'Z'
+                    || ch >= 'a' && ch <= 'z'
+                    || switch (ch) {
+                        case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~' -> true;
+                        default -> false;
+                    };
+            if (!valid) {
+                throw new IllegalArgumentException("HTTP method must be a non-empty ASCII RFC tchar token");
+            }
+        }
+        return result;
     }
 
     private static void extension(Map<String, Object> node, String name, JsonValue value) {
@@ -1702,9 +1746,10 @@ public final class OpenApiDocument {
          * @param method HTTP method
          * @param operation operation
          * @return updated builder
+         * @throws IllegalArgumentException if the method is not a non-empty ASCII RFC tchar token
          */
         public PathItemBuilder operation(String method, Operation operation) {
-            String methodName = Objects.requireNonNull(method);
+            String methodName = validateHttpMethod(method);
             String fixedField = fixedPathOperationField(methodName);
             if (fixedField == null) {
                 return additionalOperation(methodName, operation);
@@ -1723,8 +1768,10 @@ public final class OpenApiDocument {
          * @param method HTTP method
          * @param operation consumer to update operation builder
          * @return updated builder
+         * @throws IllegalArgumentException if the method is not a non-empty ASCII RFC tchar token
          */
         public PathItemBuilder operation(String method, Consumer<OperationBuilder> operation) {
+            validateHttpMethod(method);
             OperationBuilder builder = Operation.builder();
             operation.accept(builder);
             return operation(method, builder.build());
@@ -1762,11 +1809,12 @@ public final class OpenApiDocument {
          * @param method method name
          * @param operation operation
          * @return updated builder
-         * @throws IllegalArgumentException if the method is an uppercase HTTP method represented by a fixed field
+         * @throws IllegalArgumentException if the method is not a non-empty ASCII RFC tchar token, or if it is an
+         *                                  uppercase HTTP method represented by a fixed field
          * @throws IllegalStateException if the method is already defined
          */
         public PathItemBuilder additionalOperation(String method, Operation operation) {
-            String methodName = Objects.requireNonNull(method);
+            String methodName = validateHttpMethod(method);
             if (fixedPathOperationField(methodName) != null) {
                 throw new IllegalArgumentException("OpenAPI Path Item additionalOperations must not contain fixed-field "
                                                            + "HTTP method: " + methodName);
@@ -1787,10 +1835,12 @@ public final class OpenApiDocument {
          * @param method method name
          * @param operation consumer to update operation builder
          * @return updated builder
-         * @throws IllegalArgumentException if the method is an uppercase HTTP method represented by a fixed field
+         * @throws IllegalArgumentException if the method is not a non-empty ASCII RFC tchar token, or if it is an
+         *                                  uppercase HTTP method represented by a fixed field
          * @throws IllegalStateException if the method is already defined
          */
         public PathItemBuilder additionalOperation(String method, Consumer<OperationBuilder> operation) {
+            validateHttpMethod(method);
             OperationBuilder builder = Operation.builder();
             operation.accept(builder);
             return additionalOperation(method, builder.build());
@@ -4460,6 +4510,7 @@ public final class OpenApiDocument {
     public static final class Builder implements io.helidon.common.Builder<Builder, OpenApiDocument> {
         private final Map<String, Object> node = new LinkedHashMap<>();
         private final Map<String, String> pathTemplates = new LinkedHashMap<>();
+        private final Map<String, Object> tagsByName = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -4737,7 +4788,9 @@ public final class OpenApiDocument {
          * @return updated builder
          */
         public Builder tag(Tag tag) {
-            array(node, "tags").add(mutableMap(Objects.requireNonNull(tag).toNode()));
+            Map<String, Object> tagNode = mutableMap(Objects.requireNonNull(tag).toNode());
+            array(node, "tags").add(tagNode);
+            tagName(tagNode).ifPresent(name -> tagsByName.putIfAbsent(name, tagNode));
             return this;
         }
 
@@ -4799,12 +4852,12 @@ public final class OpenApiDocument {
          */
         public Builder merge(OpenApiDocument document) {
             OpenApiDocument.merge(node, mutableMap(Objects.requireNonNull(document).toNode()), "",
-                                  pathTemplates);
+                                  pathTemplates, tagsByName);
             return this;
         }
 
         Builder mergeNode(Map<String, Object> source) {
-            OpenApiDocument.merge(node, Objects.requireNonNull(source), "", pathTemplates);
+            OpenApiDocument.merge(node, Objects.requireNonNull(source), "", pathTemplates, tagsByName);
             return this;
         }
 

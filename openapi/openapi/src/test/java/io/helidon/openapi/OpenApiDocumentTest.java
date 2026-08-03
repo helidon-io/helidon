@@ -16,7 +16,13 @@
 
 package io.helidon.openapi;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
@@ -84,5 +90,77 @@ class OpenApiDocumentTest {
 
         assertThat(pathItem.operations().isEmpty(), is(true));
         assertThat(pathItem.additionalOperations().keySet(), is(Set.of("post", "PoSt")));
+    }
+
+    @Test
+    void validatesHttpMethodTokens() {
+        OpenApiDocument.Operation operation = OpenApiDocument.Operation.builder().build();
+        List<String> invalidMethods = List.of("", "BAD METHOD", "BAD:METHOD", "BAD\u0007METHOD", "M\u00c9THOD");
+
+        for (String method : invalidMethods) {
+            assertThrows(IllegalArgumentException.class,
+                         () -> OpenApiDocument.PathItem.builder().operation(method, operation),
+                         "operation(Operation) should reject invalid method");
+            assertThrows(IllegalArgumentException.class,
+                         () -> OpenApiDocument.PathItem.builder().operation(method, _ -> { }),
+                         "operation(Consumer) should reject invalid method");
+            assertThrows(IllegalArgumentException.class,
+                         () -> OpenApiDocument.PathItem.builder().additionalOperation(method, operation),
+                         "additionalOperation(Operation) should reject invalid method");
+            assertThrows(IllegalArgumentException.class,
+                         () -> OpenApiDocument.PathItem.builder().additionalOperation(method, _ -> { }),
+                         "additionalOperation(Consumer) should reject invalid method");
+        }
+
+        OpenApiDocument.PathItem pathItem = OpenApiDocument.PathItem.builder()
+                .operation("M-SEARCH", operation)
+                .additionalOperation("!#$%&'*+-.^_`|~", operation)
+                .build();
+
+        assertThat(pathItem.additionalOperations().keySet(), is(Set.of("M-SEARCH", "!#$%&'*+-.^_`|~")));
+    }
+
+    @Test
+    void indexesNamedTagsInstalledByMerge() {
+        AtomicInteger iteratorCalls = new AtomicInteger();
+        List<Object> initialTags = new ArrayList<>() {
+            @Override
+            public Iterator<Object> iterator() {
+                iteratorCalls.incrementAndGet();
+                return super.iterator();
+            }
+        };
+        initialTags.add(Map.of("name", "first"));
+        Map<String, Object> initialDocument = new LinkedHashMap<>();
+        initialDocument.put("tags", initialTags);
+
+        OpenApiDocument.Builder builder = OpenApiDocument.builder().mergeNode(initialDocument);
+        iteratorCalls.set(0);
+        Map<String, Object> nextDocument = new LinkedHashMap<>();
+        nextDocument.put("tags", List.of(Map.of("name", "second")));
+        builder.mergeNode(nextDocument);
+
+        assertThat("Merging a named tag should not scan tags already indexed", iteratorCalls.get(), is(0));
+        assertThat(builder.build().tags().stream().map(OpenApiDocument.Tag::name).toList(),
+                   is(List.of("first", "second")));
+    }
+
+    @Test
+    void indexesTagsAddedDirectlyToBuilder() {
+        OpenApiDocument.Tag first = OpenApiDocument.Tag.builder()
+                .name("first")
+                .description("First")
+                .build();
+        OpenApiDocument.Builder builder = OpenApiDocument.builder()
+                .tag(first)
+                .merge(OpenApiDocument.builder().tag(first).build());
+
+        assertThat(builder.build().tags().size(), is(1));
+
+        OpenApiDocument conflicting = OpenApiDocument.builder()
+                .tag("first", "Conflicting")
+                .build();
+        IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> builder.merge(conflicting));
+        assertThat(thrown.getMessage(), is("Conflicting OpenAPI tag at tags.first"));
     }
 }

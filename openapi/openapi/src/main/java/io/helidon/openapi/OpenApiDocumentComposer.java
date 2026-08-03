@@ -54,14 +54,14 @@ final class OpenApiDocumentComposer {
             }
             if (mode == OpenApiGeneratedMode.MERGE && hasStaticContent) {
                 OpenApiDocument composed = staticDocument.orElseThrow().get();
-                validateComposedDocument(composed);
+                validateComposedDocument(context, composed);
                 return context.openApiVersion().render(context, composed);
             }
             return staticContent;
         }
 
         if (mode == OpenApiGeneratedMode.GENERATED_ONLY || !hasStaticContent) {
-            validateComposedDocument(generated);
+            validateComposedDocument(context, generated);
             return renderGenerated(context, generated);
         }
 
@@ -70,7 +70,7 @@ final class OpenApiDocumentComposer {
                     .merge(staticDocument.orElseThrow().get());
             mergeGeneratedDocument(builder, generated, false, Map.of());
             OpenApiDocument merged = builder.build();
-            validateComposedDocument(merged);
+            validateComposedDocument(context, merged);
             return context.openApiVersion().render(context, merged);
         }
 
@@ -212,50 +212,52 @@ final class OpenApiDocumentComposer {
         return context.openApiVersion().render(context, generated);
     }
 
-    private static void validateComposedDocument(OpenApiDocument document) {
+    private static void validateComposedDocument(OpenApiDocumentContext context, OpenApiDocument document) {
         validateOperationIds(document);
-        Map<String, String> tagParents = new LinkedHashMap<>();
-        Set<String> tagNames = new LinkedHashSet<>();
-        Object tags = document.mutableNode().get("tags");
-        if (tags instanceof List<?> tagList) {
-            for (Object tagNode : tagList) {
-                if (tagNode instanceof Map<?, ?> tag && tag.get("name") instanceof String tagName) {
-                    tagNames.add(tagName);
-                    if (tag.get("parent") instanceof String parentName) {
-                        tagParents.put(tagName, parentName);
+        if ("3.2".equals(context.openApiVersion().type())) {
+            Map<String, String> tagParents = new LinkedHashMap<>();
+            Set<String> tagNames = new LinkedHashSet<>();
+            Object tags = document.mutableNode().get("tags");
+            if (tags instanceof List<?> tagList) {
+                for (Object tagNode : tagList) {
+                    if (tagNode instanceof Map<?, ?> tag && tag.get("name") instanceof String tagName) {
+                        tagNames.add(tagName);
+                        if (tag.get("parent") instanceof String parentName) {
+                            tagParents.put(tagName, parentName);
+                        }
                     }
                 }
             }
-        }
-        tagParents.forEach((tagName, parentName) -> {
-            if (!tagNames.contains(parentName)) {
-                throw new IllegalStateException("OpenAPI tag " + tagName
-                                                        + " references missing parent tag " + parentName);
+            tagParents.forEach((tagName, parentName) -> {
+                if (!tagNames.contains(parentName)) {
+                    throw new IllegalStateException("OpenAPI tag " + tagName
+                                                            + " references missing parent tag " + parentName);
+                }
+                if (tagName.equals(parentName)) {
+                    throw new IllegalStateException("OpenAPI tag " + tagName + " cannot be its own parent");
+                }
+            });
+            Set<String> completedTagNames = new HashSet<>();
+            for (String tagName : tagParents.keySet()) {
+                if (completedTagNames.contains(tagName)) {
+                    continue;
+                }
+                Set<String> path = new LinkedHashSet<>();
+                String currentName = tagName;
+                while (currentName != null
+                        && !completedTagNames.contains(currentName)
+                        && path.add(currentName)) {
+                    currentName = tagParents.get(currentName);
+                }
+                if (currentName != null && !completedTagNames.contains(currentName)) {
+                    List<String> pathNames = List.copyOf(path);
+                    int cycleStart = pathNames.indexOf(currentName);
+                    String cycle = String.join(" -> ", pathNames.subList(cycleStart, pathNames.size()))
+                            + " -> " + currentName;
+                    throw new IllegalStateException("OpenAPI tag parent cycle: " + cycle);
+                }
+                completedTagNames.addAll(path);
             }
-            if (tagName.equals(parentName)) {
-                throw new IllegalStateException("OpenAPI tag " + tagName + " cannot be its own parent");
-            }
-        });
-        Set<String> completedTagNames = new HashSet<>();
-        for (String tagName : tagParents.keySet()) {
-            if (completedTagNames.contains(tagName)) {
-                continue;
-            }
-            Set<String> path = new LinkedHashSet<>();
-            String currentName = tagName;
-            while (currentName != null
-                    && !completedTagNames.contains(currentName)
-                    && path.add(currentName)) {
-                currentName = tagParents.get(currentName);
-            }
-            if (currentName != null && !completedTagNames.contains(currentName)) {
-                List<String> pathNames = List.copyOf(path);
-                int cycleStart = pathNames.indexOf(currentName);
-                String cycle = String.join(" -> ", pathNames.subList(cycleStart, pathNames.size()))
-                        + " -> " + currentName;
-                throw new IllegalStateException("OpenAPI tag parent cycle: " + cycle);
-            }
-            completedTagNames.addAll(path);
         }
         if (document.info().isEmpty()) {
             throw new IllegalStateException("Composed OpenAPI document requires Info metadata. "

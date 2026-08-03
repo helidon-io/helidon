@@ -1162,7 +1162,8 @@ public final class OpenApi {
      * Supported {@link #type()} values are {@code apiKey}, {@code http}, {@code mutualTLS}, {@code oauth2}, and
      * {@code openIdConnect}. The {@code apiKey} type requires {@link #apiKeyName()} and {@link #in()} with
      * {@code query}, {@code header}, or {@code cookie}. The {@code http} type requires {@link #scheme()}. The
-     * {@code mutualTLS} type has no additional required fields. The {@code oauth2} type requires {@link #flows()} with
+     * {@code mutualTLS} type has no additional required fields but requires OpenAPI 3.1 or 3.2 output; generation fails
+     * when the selected document provider produces OpenAPI 3.0. The {@code oauth2} type requires {@link #flows()} with
      * at least one configured flow.
      * The {@code openIdConnect} type requires {@link #openIdConnectUrl()}.
      * <p>
@@ -1361,6 +1362,8 @@ public final class OpenApi {
 
     /**
      * OpenAPI Mutual TLS Security Scheme Object metadata.
+     * <p>
+     * The selected document provider must produce OpenAPI 3.1 or 3.2 output; generation fails for OpenAPI 3.0 output.
      * <p>
      * Use only on {@link Document @OpenApi.Document} metadata types.
      */

@@ -173,6 +173,10 @@ available, generated output uses OpenAPI 3.1.1. If `helidon-openapi-32` is avail
 Configure the `document` provider when your application must pin the generated OpenAPI document version independently of
 which OpenAPI version modules are present.
 
+Declarative `@OpenApi.MutualTlsSecurityScheme` metadata and `@OpenApi.SecurityScheme` metadata with type `mutualTLS`
+require OpenAPI 3.1 or 3.2 output. Use `helidon-openapi-31`, `helidon-openapi-32`, or another configured document provider
+which renders one of those versions. Generation fails if the selected provider renders OpenAPI 3.0.
+
 The configured `document` provider is used when Helidon renders generated or merged OpenAPI documents. In `MERGE` mode,
 Helidon parses the static document and renders the result with the configured provider, so the served document version
 can differ from the static file's declared `openapi` version.

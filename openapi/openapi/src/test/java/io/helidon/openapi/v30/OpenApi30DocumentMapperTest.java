@@ -211,6 +211,109 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void rejectsNonEmptyScopesForAliasesToUnscopedSchemes() {
+        Map<String, Object> securitySchemes = new LinkedHashMap<>();
+        securitySchemes.put("ApiKey", Map.of(
+                "type", "apiKey",
+                "name", "X-API-Key",
+                "in", "header"));
+        securitySchemes.put("ApiKeyAlias", Map.of(
+                "$ref", "#/components/securitySchemes/ApiKey"));
+        securitySchemes.put("Http", Map.of(
+                "type", "http",
+                "scheme", "bearer"));
+        securitySchemes.put("HttpAlias", Map.of(
+                "$ref", "#/components/securitySchemes/Http"));
+        securitySchemes.put("MultiHopHttpAlias", Map.of(
+                "$ref", "#/components/securitySchemes/HttpAlias"));
+
+        Map<String, Map<String, Object>> invalidDocuments = new LinkedHashMap<>();
+        invalidDocuments.put("ApiKeyAlias", documentWithSecurityRequirements(
+                securitySchemes,
+                List.of(Map.of("ApiKeyAlias", List.of("catalog:read"))),
+                List.of()));
+        invalidDocuments.put("MultiHopHttpAlias", documentWithSecurityRequirements(
+                securitySchemes,
+                List.of(),
+                List.of(Map.of("MultiHopHttpAlias", List.of("profile")))));
+
+        invalidDocuments.forEach((alias, source) -> {
+            IllegalStateException parsed = assertThrows(IllegalStateException.class,
+                                                        () -> OpenApi30DocumentMapper.parse(source),
+                                                        alias + " parsing");
+            assertThat(parsed.getMessage(), containsString("empty scope array"));
+            assertThat(parsed.getMessage(), containsString(alias));
+
+            OpenApiDocument document = openApiDocument(source);
+            IllegalStateException rendered = assertThrows(IllegalStateException.class,
+                                                          () -> OpenApi30DocumentMapper.render(document, "3.0.3"),
+                                                          alias + " rendering");
+            assertThat(rendered.getMessage(), containsString("empty scope array"));
+            assertThat(rendered.getMessage(), containsString(alias));
+        });
+    }
+
+    @Test
+    void acceptsSecurityScopesForAliasesToScopedSchemes() {
+        Map<String, Object> securitySchemes = new LinkedHashMap<>();
+        securitySchemes.put("OAuth", Map.of(
+                "type", "oauth2",
+                "flows", Map.of(
+                        "implicit", Map.of(
+                                "authorizationUrl", "https://idp.example.com/authorize",
+                                "scopes", Map.of("catalog:read", "Read the catalog")))));
+        securitySchemes.put("OAuthAlias", Map.of(
+                "$ref", "#/components/securitySchemes/OAuth"));
+        securitySchemes.put("OpenId", Map.of(
+                "type", "openIdConnect",
+                "openIdConnectUrl", "https://idp.example.com/.well-known/openid-configuration"));
+        securitySchemes.put("OpenIdAlias", Map.of(
+                "$ref", "#/components/securitySchemes/OpenId"));
+        securitySchemes.put("MultiHopOpenIdAlias", Map.of(
+                "$ref", "#/components/securitySchemes/OpenIdAlias"));
+        Map<String, Object> source = documentWithSecurityRequirements(
+                securitySchemes,
+                List.of(Map.of("OAuthAlias", List.of("catalog:read"))),
+                List.of(Map.of("MultiHopOpenIdAlias", List.of("profile"))));
+
+        OpenApiDocument document = OpenApi30DocumentMapper.parse(source);
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+
+        assertThat(rendered.get("security"), is(source.get("security")));
+        assertThat(map(map(map(rendered, "paths"), "/items"), "get").get("security"),
+                   is(map(map(map(source, "paths"), "/items"), "get").get("security")));
+    }
+
+    @Test
+    void preservesSecurityScopesForUnresolvedAliases() {
+        Map<String, Object> securitySchemes = new LinkedHashMap<>();
+        securitySchemes.put("CycleA", Map.of(
+                "$ref", "#/components/securitySchemes/CycleB"));
+        securitySchemes.put("CycleB", Map.of(
+                "$ref", "#/components/securitySchemes/CycleA"));
+        securitySchemes.put("Missing", Map.of(
+                "$ref", "#/components/securitySchemes/NotPresent"));
+        securitySchemes.put("External", Map.of(
+                "$ref", "security.yaml#/components/securitySchemes/External"));
+        securitySchemes.put("Relative", Map.of(
+                "$ref", "../security.yaml#/components/securitySchemes/Relative"));
+        Map<String, Object> source = documentWithSecurityRequirements(
+                securitySchemes,
+                List.of(Map.of("CycleA", List.of("cycle")),
+                        Map.of("Missing", List.of("missing"))),
+                List.of(Map.of("External", List.of("external")),
+                        Map.of("Relative", List.of("relative"))));
+
+        OpenApiDocument document = OpenApi30DocumentMapper.parse(source);
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+
+        assertThat(rendered.get("security"), is(source.get("security")));
+        assertThat(map(map(map(rendered, "paths"), "/items"), "get").get("security"),
+                   is(map(map(map(source, "paths"), "/items"), "get").get("security")));
+        assertThat(map(map(rendered, "components"), "securitySchemes"), is(securitySchemes));
+    }
+
+    @Test
     void preservesLargeIntegralNumbers() {
         OpenApiDocument document = OpenApi30DocumentMapper.parse(document("3.0.3"));
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
@@ -1041,31 +1144,40 @@ class OpenApi30DocumentMapperTest {
     private static Map<String, Object> documentWithSecurityRequirements(
             List<Map<String, List<String>>> documentSecurity,
             List<Map<String, List<String>>> operationSecurity) {
+        return documentWithSecurityRequirements(
+                Map.of(
+                        "ApiKey", Map.of(
+                                "type", "apiKey",
+                                "name", "X-API-Key",
+                                "in", "header"),
+                        "Http", Map.of(
+                                "type", "http",
+                                "scheme", "bearer"),
+                        "OAuth", Map.of(
+                                "type", "oauth2",
+                                "flows", Map.of(
+                                        "implicit", Map.of(
+                                                "authorizationUrl", "https://idp.example.com/authorize",
+                                                "scopes", Map.of(
+                                                        "catalog:read", "Read the catalog")))),
+                        "OpenId", Map.of(
+                                "type", "openIdConnect",
+                                "openIdConnectUrl",
+                                "https://idp.example.com/.well-known/openid-configuration")),
+                documentSecurity,
+                operationSecurity);
+    }
+
+    private static Map<String, Object> documentWithSecurityRequirements(
+            Map<String, Object> securitySchemes,
+            List<Map<String, List<String>>> documentSecurity,
+            List<Map<String, List<String>>> operationSecurity) {
         return Map.of(
                 "openapi", "3.0.3",
                 "info", Map.of(
                         "title", "Static API",
                         "version", "1.0.0"),
-                "components", Map.of(
-                        "securitySchemes", Map.of(
-                                "ApiKey", Map.of(
-                                        "type", "apiKey",
-                                        "name", "X-API-Key",
-                                        "in", "header"),
-                                "Http", Map.of(
-                                        "type", "http",
-                                        "scheme", "bearer"),
-                                "OAuth", Map.of(
-                                        "type", "oauth2",
-                                        "flows", Map.of(
-                                                "implicit", Map.of(
-                                                        "authorizationUrl", "https://idp.example.com/authorize",
-                                                        "scopes", Map.of(
-                                                                "catalog:read", "Read the catalog")))),
-                                "OpenId", Map.of(
-                                        "type", "openIdConnect",
-                                        "openIdConnectUrl",
-                                        "https://idp.example.com/.well-known/openid-configuration"))),
+                "components", Map.of("securitySchemes", securitySchemes),
                 "security", documentSecurity,
                 "paths", Map.of(
                         "/items", Map.of(

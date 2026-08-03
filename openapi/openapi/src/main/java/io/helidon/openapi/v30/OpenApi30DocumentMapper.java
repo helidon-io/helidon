@@ -18,6 +18,7 @@ package io.helidon.openapi.v30;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,6 +159,7 @@ final class OpenApi30DocumentMapper {
                                                                     "oauth2",
                                                                     "openIdConnect");
     private static final Set<String> SCOPED_SECURITY_SCHEME_TYPES = Set.of("oauth2", "openIdConnect");
+    private static final String SECURITY_SCHEME_REFERENCE_PREFIX = "#/components/securitySchemes/";
     private static final Set<String> OAUTH_FLOWS_FIELDS = Set.of("implicit",
                                                                  "password",
                                                                  "clientCredentials",
@@ -992,15 +994,56 @@ final class OpenApi30DocumentMapper {
     }
 
     private static void validateSecurityRequirementScopes(Map<String, Object> document) {
+        Map<String, Map<String, Object>> securitySchemes = new LinkedHashMap<>();
+        objectIfPresent(document.get("components"), components ->
+                objectIfPresent(components.get("securitySchemes"), values -> values.forEach((name, value) ->
+                        objectIfPresent(value, securityScheme -> securitySchemes.put(name, securityScheme)))));
+
         Map<String, String> securitySchemeTypes = new LinkedHashMap<>();
+        Set<String> unresolvedSecuritySchemeTypes = new HashSet<>();
+        securitySchemes.keySet().forEach(name -> {
+            List<String> aliases = new ArrayList<>();
+            Set<String> aliasesSeen = new HashSet<>();
+            String currentName = name;
+            String type = null;
+            while (true) {
+                if (securitySchemeTypes.containsKey(currentName)) {
+                    type = securitySchemeTypes.get(currentName);
+                    break;
+                }
+                if (unresolvedSecuritySchemeTypes.contains(currentName) || !aliasesSeen.add(currentName)) {
+                    break;
+                }
+                aliases.add(currentName);
+                Map<String, Object> currentScheme = securitySchemes.get(currentName);
+                if (currentScheme == null) {
+                    break;
+                }
+                Object declaredType = currentScheme.get("type");
+                if (declaredType instanceof String schemeType) {
+                    type = schemeType;
+                    break;
+                }
+                Object referenceValue = currentScheme.get("$ref");
+                if (!(referenceValue instanceof String reference)
+                        || !reference.startsWith(SECURITY_SCHEME_REFERENCE_PREFIX)) {
+                    break;
+                }
+                String referencedName = reference.substring(SECURITY_SCHEME_REFERENCE_PREFIX.length());
+                if (referencedName.isEmpty() || referencedName.indexOf('/') >= 0) {
+                    break;
+                }
+                currentName = referencedName;
+            }
+            if (type == null) {
+                unresolvedSecuritySchemeTypes.addAll(aliases);
+            } else {
+                String resolvedType = type;
+                aliases.forEach(alias -> securitySchemeTypes.put(alias, resolvedType));
+            }
+        });
+
         objectIfPresent(document.get("components"), components -> {
-            objectIfPresent(components.get("securitySchemes"), securitySchemes -> securitySchemes.forEach((name, value) ->
-                    objectIfPresent(value, securityScheme -> {
-                        Object type = securityScheme.get("type");
-                        if (type instanceof String schemeType) {
-                            securitySchemeTypes.put(name, schemeType);
-                        }
-                    })));
             objectIfPresent(components.get("callbacks"), callbacks -> callbacks.values().forEach(callback ->
                     objectIfPresent(callback,
                                     value -> validateCallbackSecurityRequirementScopes(value, securitySchemeTypes))));

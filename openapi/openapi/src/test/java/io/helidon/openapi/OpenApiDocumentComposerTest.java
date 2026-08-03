@@ -252,7 +252,8 @@ class OpenApiDocumentComposerTest {
 
     @Test
     void mergeAcceptsParentLinkAcrossStaticAndGeneratedTags() {
-        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.MERGE);
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.MERGE,
+                                                    RawOpenApiVersion.OPEN_API_32);
         OpenApiDocument staticDocument = OpenApiDocument.builder()
                 .info("Static API", "1.0.0")
                 .tag(tag -> tag.name("static-child").parent("generated-parent"))
@@ -272,7 +273,8 @@ class OpenApiDocumentComposerTest {
 
     @Test
     void generatedOnlyRejectsMissingTagParent() {
-        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                    RawOpenApiVersion.OPEN_API_32);
         OpenApiDocumentSource source = (ignored, document) -> document
                 .info("Generated API", "1.0.0")
                 .tag(tag -> tag.name("child").parent("missing"));
@@ -280,7 +282,7 @@ class OpenApiDocumentComposerTest {
         IllegalStateException thrown = assertThrows(
                 IllegalStateException.class,
                 () -> compose(context,
-                              RawOpenApiVersion.INSTANCE,
+                              RawOpenApiVersion.OPEN_API_32,
                               "",
                               MediaTypes.APPLICATION_OPENAPI_YAML,
                               List.of(source)));
@@ -289,8 +291,52 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void generatedOnlyOmitsMissingTagParentForOpenApi30() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentSource source = (ignored, document) -> document
+                .info("Generated API", "1.0.0")
+                .paths(Map.of())
+                .tag(tag -> tag.name("child").parent("missing"));
+
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 "",
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(source));
+
+        Map<?, ?> childTag = (Map<?, ?>) list(parse(content), "tags").get(0);
+        assertThat(childTag.get("name"), is("child"));
+        assertThat(childTag.containsKey("parent"), is(false));
+    }
+
+    @Test
+    void generatedOnlyOmitsMissingTagParentForOpenApi31Abstraction() {
+        OpenApiVersion version = new TestOpenApiVersion("3.1", "3.1.1", false);
+        OpenApiDocumentContext context = new OpenApiDocumentContextImpl("openapi",
+                                                                        "/openapi",
+                                                                        "default",
+                                                                        OpenApiGeneratedMode.GENERATED_ONLY,
+                                                                        version);
+        OpenApiDocumentSource source = (ignored, document) -> document
+                .info("Generated API", "1.0.0")
+                .paths(Map.of())
+                .tag(tag -> tag.name("child").parent("missing"));
+
+        String content = compose(context,
+                                 version,
+                                 "",
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(source));
+
+        Map<?, ?> childTag = (Map<?, ?>) list(parse(content), "tags").get(0);
+        assertThat(childTag.get("name"), is("child"));
+        assertThat(childTag.containsKey("parent"), is(false));
+    }
+
+    @Test
     void generatedOnlyRejectsSelfParentingTag() {
-        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                    RawOpenApiVersion.OPEN_API_32);
         OpenApiDocumentSource source = (ignored, document) -> document
                 .info("Generated API", "1.0.0")
                 .tag(tag -> tag.name("child").parent("child"));
@@ -298,7 +344,7 @@ class OpenApiDocumentComposerTest {
         IllegalStateException thrown = assertThrows(
                 IllegalStateException.class,
                 () -> compose(context,
-                              RawOpenApiVersion.INSTANCE,
+                              RawOpenApiVersion.OPEN_API_32,
                               "",
                               MediaTypes.APPLICATION_OPENAPI_YAML,
                               List.of(source)));
@@ -309,7 +355,8 @@ class OpenApiDocumentComposerTest {
     @Test
     void generatedOnlyAcceptsLongTagParentChain() {
         int tagCount = 10_000;
-        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                    RawOpenApiVersion.OPEN_API_32);
         OpenApiDocumentSource source = (ignored, document) -> {
             document.info("Generated API", "1.0.0")
                     .tag(tag -> tag.name("tag-0"));
@@ -321,7 +368,7 @@ class OpenApiDocumentComposerTest {
         };
 
         String content = compose(context,
-                                 RawOpenApiVersion.INSTANCE,
+                                 RawOpenApiVersion.OPEN_API_32,
                                  "",
                                  MediaTypes.APPLICATION_OPENAPI_YAML,
                                  List.of(source));
@@ -333,7 +380,8 @@ class OpenApiDocumentComposerTest {
 
     @Test
     void mergeRejectsTagParentCycleAcrossStaticAndGeneratedTags() {
-        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.MERGE);
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.MERGE,
+                                                    RawOpenApiVersion.OPEN_API_32);
         OpenApiDocument staticDocument = OpenApiDocument.builder()
                 .info("Static API", "1.0.0")
                 .tag(tag -> tag.name("static-tag").parent("generated-tag"))
@@ -1015,11 +1063,15 @@ class OpenApiDocumentComposerTest {
     }
 
     private static OpenApiDocumentContext rawContext(OpenApiGeneratedMode mode) {
+        return rawContext(mode, RawOpenApiVersion.INSTANCE);
+    }
+
+    private static OpenApiDocumentContext rawContext(OpenApiGeneratedMode mode, OpenApiVersion version) {
         return new OpenApiDocumentContextImpl("openapi",
                                               "/openapi",
                                               "default",
                                               mode,
-                                              RawOpenApiVersion.INSTANCE);
+                                              version);
     }
 
     @SuppressWarnings("unchecked")
@@ -1060,9 +1112,15 @@ class OpenApiDocumentComposerTest {
     }
 
     private static final class RawOpenApiVersion implements OpenApiVersion {
-        private static final RawOpenApiVersion INSTANCE = new RawOpenApiVersion();
+        private static final RawOpenApiVersion INSTANCE = new RawOpenApiVersion("raw", "raw");
+        private static final RawOpenApiVersion OPEN_API_32 = new RawOpenApiVersion("3.2", "3.2.0");
 
-        private RawOpenApiVersion() {
+        private final String type;
+        private final String version;
+
+        private RawOpenApiVersion(String type, String version) {
+            this.type = type;
+            this.version = version;
         }
 
         @Override
@@ -1086,17 +1144,17 @@ class OpenApiDocumentComposerTest {
 
         @Override
         public String version() {
-            return "raw";
+            return version;
         }
 
         @Override
         public String type() {
-            return "raw";
+            return type;
         }
 
         @Override
         public String name() {
-            return "raw";
+            return type;
         }
     }
 
