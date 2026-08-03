@@ -28,16 +28,17 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.InvalidFlavor(HelidonFlavor.MP)
 module io.helidon.webserver.graphql {
 
-    requires io.helidon.common.configurable;
     requires io.helidon.common.uri;
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.graphql.server;
-    requires jakarta.json.bind;
-    requires org.eclipse.yasson;
+    requires io.helidon.graphql;
+    requires transitive io.helidon.graphql.server;
+    requires io.helidon.json;
+    requires transitive io.helidon.service.registry;
 
     requires static io.helidon.common.features.api;
 
+    requires transitive io.helidon.json.binding;
     requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.graphql;

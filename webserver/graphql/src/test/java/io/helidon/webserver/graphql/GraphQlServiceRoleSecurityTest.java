@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.SecureUserStore;
@@ -44,7 +45,6 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -104,7 +104,11 @@ class GraphQlServiceRoleSecurityTest {
         try (Http1ClientResponse response = callMutation(basicAuth(USERNAME, PASSWORD))) {
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getJsonObject("data").getString("setMarker"), is("allowed"));
+            assertThat(json.objectValue("data")
+                               .orElseThrow()
+                               .stringValue("setMarker")
+                               .orElseThrow(),
+                       is("allowed"));
         }
         assertThat(MARKER.get(), is("allowed"));
     }

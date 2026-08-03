@@ -35,6 +35,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>graphql</module>
         <module>server</module>
     </modules>
 </project>

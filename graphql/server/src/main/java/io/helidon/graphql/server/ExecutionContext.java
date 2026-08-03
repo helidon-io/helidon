@@ -25,6 +25,16 @@ import java.util.Optional;
  */
 public interface ExecutionContext {
     /**
+     * GraphQL Java context key that stores the Helidon GraphQL execution context.
+     */
+    String EXECUTION_CONTEXT_KEY = ExecutionContext.class.getName();
+
+    /**
+     * GraphQL Java context key that stores the Helidon common context active for GraphQL execution.
+     */
+    String HELIDON_CONTEXT_KEY = io.helidon.common.context.Context.class.getName();
+
+    /**
      * Set a context value.
      *
      * @param name name of the context value

@@ -23,9 +23,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +43,10 @@ import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
+import graphql.ParseAndValidate;
+import graphql.execution.preparsed.PreparsedDocumentEntry;
+import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
@@ -51,6 +60,8 @@ import static io.helidon.graphql.server.GraphQlConstants.LINE;
 import static io.helidon.graphql.server.GraphQlConstants.LOCATIONS;
 import static io.helidon.graphql.server.GraphQlConstants.MESSAGE;
 import static io.helidon.graphql.server.GraphQlConstants.PATH;
+import static io.helidon.graphql.server.GraphQlContextKeys.PARSED_DOCUMENT;
+import static io.helidon.graphql.server.GraphQlContextKeys.PARSE_ERROR;
 
 class InvocationHandlerImpl implements InvocationHandler {
     private static final System.Logger LOGGER = System.getLogger(InvocationHandlerImpl.class.getName());
@@ -82,10 +93,68 @@ class InvocationHandlerImpl implements InvocationHandler {
         this.exceptionAllowSet.addAll(builder.allowExceptions());
     }
 
+    static PreparsedDocumentProvider preparsedDocumentProvider(GraphQLSchema schema) {
+        Objects.requireNonNull(schema);
+        return (executionInput, parseAndValidate) -> preparsedDocument(schema, executionInput, parseAndValidate);
+    }
+
+    private static CompletableFuture<PreparsedDocumentEntry> preparsedDocument(
+            GraphQLSchema schema,
+            ExecutionInput executionInput,
+            Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidate) {
+
+        Object parseError = executionInput.getGraphQLContext().get(PARSE_ERROR);
+        if (parseError instanceof PreparsedDocumentEntry entry && entry.getDocument() == null && entry.hasErrors()) {
+            return CompletableFuture.completedFuture(entry);
+        }
+        Object parsedDocument = executionInput.getGraphQLContext().get(PARSED_DOCUMENT);
+        if (parsedDocument instanceof Document document) {
+            return CompletableFuture.completedFuture(new PreparsedDocumentEntry(document,
+                                                                               validate(schema, executionInput, document)));
+        }
+        return CompletableFuture.completedFuture(parseAndValidate.apply(executionInput));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<ValidationError> validate(GraphQLSchema schema,
+                                                  ExecutionInput executionInput,
+                                                  Document document) {
+        Object validationPredicate = executionInput.getGraphQLContext()
+                .getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, (Predicate<Class<?>>) _ -> true);
+        Locale locale = executionInput.getLocale() == null ? Locale.getDefault() : executionInput.getLocale();
+        return ParseAndValidate.validate(schema, document, (Predicate<Class<?>>) validationPredicate, locale);
+    }
+
     @Override
     public Map<String, Object> execute(String query, String operationName, Map<String, Object> variables) {
+        return executeInternal(query, operationName, variables == null ? Map.of() : variables, Map.of());
+    }
+
+    @Override
+    public Map<String, Object> executeWithContext(String query,
+                                                  Map<String, Object> variables,
+                                                  Map<String, Object> contextValues) {
+        return executeInternal(query, null, variables, contextValues);
+    }
+
+    @Override
+    public Map<String, Object> executeWithContext(String query,
+                                                  String operationName,
+                                                  Map<String, Object> variables,
+                                                  Map<String, Object> contextValues) {
+        Objects.requireNonNull(operationName);
+        return executeInternal(query, operationName, variables, contextValues);
+    }
+
+    private Map<String, Object> executeInternal(String query,
+                                                String operationName,
+                                                Map<String, Object> variables,
+                                                Map<String, Object> contextValues) {
+        Objects.requireNonNull(query);
+        Objects.requireNonNull(variables);
+        Objects.requireNonNull(contextValues);
         try {
-            return doExecute(query, operationName, variables);
+            return doExecute(query, operationName, variables, contextValues);
         } catch (RuntimeException e) {
             LOGGER.log(Level.DEBUG, "Failed to execute query " + query, e);
             Map<String, Object> result = new HashMap<>();
@@ -94,25 +163,42 @@ class InvocationHandlerImpl implements InvocationHandler {
         }
     }
 
-    private Map<String, Object> doExecute(String query, String operationName, Map<String, Object> variables) {
-        Context commonContext = Contexts.context().orElseGet(Context::create);
+    private Map<String, Object> doExecute(String query,
+                                          String operationName,
+                                          Map<String, Object> variables,
+                                          Map<String, Object> contextValues) {
+        Context commonContext = commonContext(contextValues);
         ExecutionContext context = new ExecutionContextImpl(commonContext);
+        contextValues.forEach(context::setContextValue);
+        context.setContextValue(ExecutionContext.HELIDON_CONTEXT_KEY, commonContext);
+        context.setContextValue(ExecutionContext.EXECUTION_CONTEXT_KEY, context);
         return Contexts.runInContext(commonContext, () -> doExecuteInContext(query,
                                                                              operationName,
                                                                              variables,
-                                                                             context));
+                                                                             context,
+                                                                             commonContext,
+                                                                             contextValues));
     }
 
     private Map<String, Object> doExecuteInContext(String query,
                                                    String operationName,
                                                    Map<String, Object> variables,
-                                                   ExecutionContext context) {
+                                                   ExecutionContext context,
+                                                   Context commonContext,
+                                                   Map<String, Object> contextValues) {
         contextHandlers.forEach(handler -> handler.update(context));
+        context.setContextValue(ExecutionContext.HELIDON_CONTEXT_KEY, commonContext);
+        context.setContextValue(ExecutionContext.EXECUTION_CONTEXT_KEY, context);
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .operationName(operationName)
                 .context(context)
+                .graphQLContext(builder -> {
+                    builder.of(contextValues);
+                    builder.put(ExecutionContext.HELIDON_CONTEXT_KEY, commonContext);
+                    builder.put(ExecutionContext.EXECUTION_CONTEXT_KEY, context);
+                })
                 .variables(variables)
                 .build();
 
@@ -139,6 +225,9 @@ class InvocationHandlerImpl implements InvocationHandler {
             if (error instanceof ExceptionWhileDataFetching) {
                 ExceptionWhileDataFetching e = (ExceptionWhileDataFetching) error;
                 Throwable cause = e.getException().getCause();
+                if (cause == null) {
+                    cause = e.getException();
+                }
                 if (cause instanceof Error) {
                     // re-throw the error as this should result in 500 from graphQL endpoint
                     throw (Error) cause;
@@ -173,24 +262,27 @@ class InvocationHandlerImpl implements InvocationHandler {
         return resultMap;
     }
 
+    private static List<Object> path(GraphQLError error) {
+        List<Object> path = error.getPath();
+        if (path == null) {
+            return List.of();
+        }
+        return List.copyOf(path);
+    }
+
     private void addError(Map<String, Object> resultMap,
                           GraphQLError error,
                           Throwable cause) {
 
         int line = -1;
         int column = -1;
-        String path = null;
+        List<Object> path = path(error);
 
         List<SourceLocation> locations = error.getLocations();
         if (locations != null && locations.size() > 0) {
             SourceLocation sourceLocation = locations.get(0);
             line = sourceLocation.getLine();
             column = sourceLocation.getColumn();
-        }
-
-        List<Object> listPath = error.getPath();
-        if (listPath != null && listPath.size() > 0) {
-            path = listPath.get(0).toString();
         }
 
         if (cause instanceof GraphQLException) {
@@ -212,18 +304,13 @@ class InvocationHandlerImpl implements InvocationHandler {
 
         int line = -1;
         int column = -1;
-        String path = null;
+        List<Object> path = path(error);
 
         List<SourceLocation> locations = error.getLocations();
         if (locations != null && locations.size() > 0) {
             SourceLocation sourceLocation = locations.get(0);
             line = sourceLocation.getLine();
             column = sourceLocation.getColumn();
-        }
-
-        List<Object> listPath = error.getPath();
-        if (listPath != null && listPath.size() > 0) {
-            path = listPath.get(0).toString();
         }
 
         addErrorPayload(resultMap, fixMessage(error.getMessage()), path, line, column, error.getExtensions());
@@ -293,17 +380,30 @@ class InvocationHandlerImpl implements InvocationHandler {
         }
     }
 
+    private Context commonContext(Map<String, Object> contextValues) {
+        Object value = contextValues.get(ExecutionContext.HELIDON_CONTEXT_KEY);
+        if (value instanceof Context context) {
+            return context;
+        }
+        return Contexts.context().orElseGet(Context::create);
+    }
+
     @SuppressWarnings("unchecked")
     private void addError(Map<String, Object> resultMap,
                           Throwable cause,
                           String originalMessage) {
 
         Object data = resultMap.get(DATA);
-        String path = null;
+        List<Object> path = List.of();
 
         if (data instanceof Map) {
             Map<String, Object> dataMap = (Map<String, Object>) data;
-            path = dataMap.keySet().stream().findFirst().orElse(null);
+            path = dataMap.keySet()
+                    .stream()
+                    .findFirst()
+                    .map(it -> (Object) it)
+                    .map(List::of)
+                    .orElseGet(List::of);
         }
 
         if (cause instanceof GraphQLException) {
@@ -315,14 +415,14 @@ class InvocationHandlerImpl implements InvocationHandler {
         }
     }
 
-    private void addErrorPayload(Map<String, Object> resultMap, String checkedMessage, String path) {
+    private void addErrorPayload(Map<String, Object> resultMap, String checkedMessage, List<Object> path) {
         addErrorPayload(resultMap, checkedMessage, path, -1, -1, Map.of());
     }
 
     @SuppressWarnings("unchecked")
     private void addErrorPayload(Map<String, Object> resultMap,
                                  String message,
-                                 String path,
+                                 List<Object> path,
                                  int line,
                                  int column,
                                  Map<String, Object> extensions) {
@@ -343,8 +443,8 @@ class InvocationHandlerImpl implements InvocationHandler {
             newErrorMap.put(EXTENSIONS, extensions);
         }
 
-        if (path != null) {
-            newErrorMap.put(PATH, List.of(path));
+        if (!path.isEmpty()) {
+            newErrorMap.put(PATH, path);
         }
 
         errorList.add(newErrorMap);

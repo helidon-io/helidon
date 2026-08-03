@@ -76,6 +76,32 @@ class InvocationHandlerContextTest {
         assertThat(((Map<?, ?>) result.get("data")).get("value"), is("Bearer request-context"));
     }
 
+    @Test
+    void legacyExecuteAcceptsNullVariables() {
+        InvocationHandler handler = InvocationHandler.builder()
+                .schema(schema(InvocationHandlerContextTest::authorizationValue))
+                .build();
+
+        Map<String, Object> result = handler.execute("{value}", null, null);
+
+        assertThat(((Map<?, ?>) result.get("data")).get("value"), is("missing"));
+    }
+
+    @Test
+    void requestContextValuesAreAvailableToGraphQlJavaContext() {
+        Context context = Context.create();
+        InvocationHandler handler = InvocationHandler.builder()
+                .schema(schema(InvocationHandlerContextTest::graphQlContextValue))
+                .build();
+
+        Map<String, Object> result = handler.executeWithContext("{value}",
+                                                                Map.of(),
+                                                                Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, context,
+                                                                       "requestId", 92L));
+
+        assertThat(((Map<?, ?>) result.get("data")).get("value"), is(context.id() + ":92:true"));
+    }
+
     @SuppressWarnings("deprecation")
     private static GraphQLSchema schema(DataFetcher<String> dataFetcher) {
         GraphQLObjectType queryType = newObject()
@@ -106,5 +132,14 @@ class InvocationHandlerContextTest {
     private static String authorizationValue(DataFetchingEnvironment env) {
         ExecutionContext context = env.getContext();
         return context.contextValue("authorization", String.class).orElse("missing");
+    }
+
+    @SuppressWarnings("deprecation")
+    private static String graphQlContextValue(DataFetchingEnvironment env) {
+        Context context = env.getGraphQlContext().get(ExecutionContext.HELIDON_CONTEXT_KEY);
+        Long requestId = env.getGraphQlContext().get("requestId");
+        ExecutionContext executionContext = env.getGraphQlContext().get(ExecutionContext.EXECUTION_CONTEXT_KEY);
+
+        return context.id() + ":" + requestId + ":" + (executionContext == env.getContext());
     }
 }

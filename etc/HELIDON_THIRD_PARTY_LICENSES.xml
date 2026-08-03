@@ -357,7 +357,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <licenseName>Multiple Licenses</licenseName>
             <consumers>
                 <consumer>helidon-http-media-jsonb</consumer>
-                <consumer>helidon-webserver-graphql</consumer>
             </consumers>
             <attribution>Eclipse Yasson
 org.eclipse.yasson (org.eclipse:yasson)

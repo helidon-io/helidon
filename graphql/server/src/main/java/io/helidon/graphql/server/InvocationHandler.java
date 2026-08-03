@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 import graphql.GraphQL;
@@ -68,7 +69,39 @@ public interface InvocationHandler {
      * @return GraphQL result
      */
     default Map<String, Object> execute(String query) {
-        return execute(query, null, Map.of());
+        return execute(query, (String) null, Map.of());
+    }
+
+    /**
+     * Execute a GraphQL query with context values available from {@link ExecutionContext#contextValue(String)}
+     * and from {@link graphql.schema.DataFetchingEnvironment#getGraphQlContext()}.
+     *
+     * @param query query string
+     * @param contextValues context values to use for this execution
+     * @return GraphQL result
+     */
+    @Api.Preview
+    default Map<String, Object> executeWithContext(String query, Map<String, Object> contextValues) {
+        return executeWithContext(query, Map.of(), contextValues);
+    }
+
+    /**
+     * Execute a GraphQL query with context values available from {@link ExecutionContext#contextValue(String)}
+     * and from {@link graphql.schema.DataFetchingEnvironment#getGraphQlContext()}.
+     *
+     * @param query query string
+     * @param variables variables to use
+     * @param contextValues context values to use for this execution
+     * @return GraphQL result
+     */
+    @Api.Preview
+    default Map<String, Object> executeWithContext(String query,
+                                                   Map<String, Object> variables,
+                                                   Map<String, Object> contextValues) {
+        Objects.requireNonNull(query);
+        Objects.requireNonNull(variables);
+        Objects.requireNonNull(contextValues);
+        return execute(query, (String) null, variables);
     }
 
     /**
@@ -80,6 +113,28 @@ public interface InvocationHandler {
      * @return GraphQL result
      */
     Map<String, Object> execute(String query, String operationName, Map<String, Object> variables);
+
+    /**
+     * Execute a GraphQL query with context values available from {@link ExecutionContext#contextValue(String)}
+     * and from {@link graphql.schema.DataFetchingEnvironment#getGraphQlContext()}.
+     *
+     * @param query query string
+     * @param operationName operation name
+     * @param variables variables to use
+     * @param contextValues context values to use for this execution
+     * @return GraphQL result
+     */
+    @Api.Preview
+    default Map<String, Object> executeWithContext(String query,
+                                                   String operationName,
+                                                   Map<String, Object> variables,
+                                                   Map<String, Object> contextValues) {
+        Objects.requireNonNull(query);
+        Objects.requireNonNull(operationName);
+        Objects.requireNonNull(variables);
+        Objects.requireNonNull(contextValues);
+        return execute(query, operationName, variables);
+    }
 
     /**
      * The schema of this GraphQL endpoint.
@@ -146,7 +201,8 @@ public interface InvocationHandler {
             }
 
             GraphQL.Builder graphQlBuilder = GraphQL.newGraphQL(schema)
-                    .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy());
+                    .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy())
+                    .preparsedDocumentProvider(InvocationHandlerImpl.preparsedDocumentProvider(schema));
             configureInstrumentation(graphQlBuilder);
             GraphQL graphQl = graphQlBuilder.build();
 

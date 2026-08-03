@@ -35,6 +35,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.graphql</groupId>
+            <artifactId>helidon-graphql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.graphql</groupId>
             <artifactId>helidon-graphql-server</artifactId>
         </dependency>
         <dependency>

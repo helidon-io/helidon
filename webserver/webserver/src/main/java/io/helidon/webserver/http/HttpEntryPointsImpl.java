@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.webserver.http;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
@@ -36,13 +36,25 @@ import io.helidon.service.registry.ServiceInstance;
 @Service.Singleton
 class HttpEntryPointsImpl implements HttpEntryPoint.EntryPoints {
     private final boolean noInterceptors;
+    private final boolean noAuthorizationInterceptors;
     private final List<HttpEntryPoint.Interceptor> interceptors;
+    private final List<HttpEntryPoint.Interceptor> authorizationInterceptors;
 
     @Service.Inject
     HttpEntryPointsImpl(List<ServiceInstance<Interception.EntryPointInterceptor>> entryPointInterceptors,
-                        List<ServiceInstance<HttpEntryPoint.Interceptor>> httpEntryPointInterceptors) {
+                        List<ServiceInstance<HttpEntryPoint.Interceptor>> httpEntryPointInterceptors,
+                        List<ServiceInstance<HttpEntryPoint.AuthorizationInterceptor>> authorizationInterceptors) {
         this.noInterceptors = entryPointInterceptors.isEmpty() && httpEntryPointInterceptors.isEmpty();
-        this.interceptors = merge(entryPointInterceptors, httpEntryPointInterceptors);
+        this.noAuthorizationInterceptors = authorizationInterceptors.isEmpty();
+        this.interceptors = merge(Stream.concat(httpEntryPointInterceptors.stream()
+                                                        .map(it -> new WeightedInterceptor(it.get(), it.weight())),
+                                                entryPointInterceptors.stream()
+                                                        .map(it -> new WeightedInterceptor(toHttpEntryPoint(it.get()),
+                                                                                           it.weight())))
+                                          .toList());
+        this.authorizationInterceptors = merge(authorizationInterceptors.stream()
+                                                       .map(it -> new WeightedInterceptor(it.get()::authorize, it.weight()))
+                                                       .toList());
     }
 
     @Override
@@ -56,32 +68,44 @@ class HttpEntryPointsImpl implements HttpEntryPoint.EntryPoints {
             return actualHandler;
         }
 
-        InterceptionContext ctx = InterceptionContext.builder()
-                .typeAnnotations(typeAnnotations)
-                .elementInfo(methodInfo)
-                .serviceInfo(descriptor)
-                .build();
+        InterceptionContext ctx = interceptionContext(descriptor, typeAnnotations, methodInfo);
 
         return new EntryPointHandler(ctx, interceptors, actualHandler);
     }
 
-    private static List<HttpEntryPoint.Interceptor> merge(List<ServiceInstance<Interception.EntryPointInterceptor>> entryPoints,
-                                                          List<ServiceInstance<HttpEntryPoint.Interceptor>> httpEntryPoints) {
+    @Override
+    public Handler authorizationHandler(ServiceDescriptor<?> descriptor,
+                                        Set<Qualifier> typeQualifiers,
+                                        List<Annotation> typeAnnotations,
+                                        TypedElementInfo methodInfo,
+                                        Handler actualHandler) {
 
-        List<WeightedInterceptor> merged = new ArrayList<>();
-        httpEntryPoints.stream()
-                .map(it -> new WeightedInterceptor(it.get(),
-                                                   it.weight()))
-                .forEach(merged::add);
+        if (noAuthorizationInterceptors) {
+            return actualHandler;
+        }
 
-        entryPoints.stream()
-                .map(it -> new WeightedInterceptor(toHttpEntryPoint(it.get()), it.weight()))
-                .forEach(merged::add);
+        InterceptionContext ctx = interceptionContext(descriptor, typeAnnotations, methodInfo);
+
+        return new EntryPointHandler(ctx, authorizationInterceptors, actualHandler);
+    }
+
+    private static InterceptionContext interceptionContext(ServiceDescriptor<?> descriptor,
+                                                           List<Annotation> typeAnnotations,
+                                                           TypedElementInfo methodInfo) {
+        return InterceptionContext.builder()
+                .typeAnnotations(typeAnnotations)
+                .elementInfo(methodInfo)
+                .serviceInfo(descriptor)
+                .build();
+    }
+
+    private static List<HttpEntryPoint.Interceptor> merge(List<WeightedInterceptor> interceptors) {
+        List<WeightedInterceptor> merged = new ArrayList<>(interceptors);
         Weights.sort(merged);
 
         return merged.stream()
                 .map(WeightedInterceptor::interceptor)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     private static HttpEntryPoint.Interceptor toHttpEntryPoint(Interception.EntryPointInterceptor entryPointInterceptor) {
