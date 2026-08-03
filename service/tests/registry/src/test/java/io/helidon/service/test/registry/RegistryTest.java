@@ -280,6 +280,34 @@ public class RegistryTest {
     }
 
     @Test
+    public void testRegistryFirstActiveDoesNotRetainEmptyFixedFactory() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                               .discoverServices(false)
+                                                                               .addServiceDescriptor(
+                                                                                       SingletonServicesFactory__ServiceDescriptor.INSTANCE)
+                                                                               .build());
+        ServiceRegistry serviceRegistry = manager.registry();
+        SingletonServicesFactory emptyFactory = new SingletonServicesFactory();
+        SuppliedContract product = () -> "replacement";
+        SingletonServicesFactory replacementFactory = new SingletonServicesFactory(product);
+
+        Services.registry(serviceRegistry);
+        try {
+            Services.set(SingletonServicesFactory.class, emptyFactory);
+
+            assertThat(serviceRegistry.firstActive(SuppliedContract.class).isEmpty(), is(true));
+
+            Services.set(SingletonServicesFactory.class, replacementFactory);
+
+            assertThat(serviceRegistry.firstActive(SingletonServicesFactory.class).orElseThrow(),
+                       sameInstance(replacementFactory));
+            assertThat(serviceRegistry.firstActive(SuppliedContract.class).orElseThrow(), sameInstance(product));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
     public void testRegistryAll() {
         List<MyContract> myContracts = registry.all(MyContract.class);
         assertThat(myContracts, hasSize(2));

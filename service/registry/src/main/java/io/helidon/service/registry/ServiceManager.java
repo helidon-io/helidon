@@ -97,7 +97,13 @@ class ServiceManager<T> {
         Activator<T> serviceActivator;
         if (fixedInstance) {
             try {
-                serviceActivator = activator();
+                ScopedRegistry scopedRegistry = scopeSupplier.get().registry();
+                if (scopedRegistry instanceof ScopedRegistryImpl scopedRegistryImpl) {
+                    serviceActivator = scopedRegistryImpl.<T>existingActivator(provider.descriptor())
+                            .orElseGet(activatorSupplier);
+                } else {
+                    serviceActivator = activator();
+                }
             } catch (ScopeNotActiveException e) {
                 return Optional.empty();
             }
@@ -117,11 +123,20 @@ class ServiceManager<T> {
             return Optional.empty();
         }
 
-        return serviceActivator
+        Optional<List<ServiceInstance<T>>> result = serviceActivator
                 .instances(lookup)
                 .map(it -> it.stream()
                         .map(instance -> registryInstance(lookup, instance))
                         .toList());
+        // Only retain a fixed activator when the active lookup actually uses it.
+        if (fixedInstance && result.map(it -> !it.isEmpty()).orElse(false)) {
+            try {
+                activator();
+            } catch (ScopeNotActiveException e) {
+                return Optional.empty();
+            }
+        }
+        return result;
     }
 
     private Optional<Activator<T>> existingActivator() {
