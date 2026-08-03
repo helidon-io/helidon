@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import io.helidon.openapi.OpenApiDocument;
 
@@ -156,6 +157,7 @@ final class OpenApi30DocumentMapper {
                                                                     "http",
                                                                     "oauth2",
                                                                     "openIdConnect");
+    private static final Set<String> SCOPED_SECURITY_SCHEME_TYPES = Set.of("oauth2", "openIdConnect");
     private static final Set<String> OAUTH_FLOWS_FIELDS = Set.of("implicit",
                                                                  "password",
                                                                  "clientCredentials",
@@ -224,11 +226,15 @@ final class OpenApi30DocumentMapper {
 
     static OpenApiDocument parse(Map<String, ?> document) {
         validateOpenApi30(document.get("openapi"));
-        return OpenApiDocumentReader.read(jsonObject(document(document, SchemaMode.CANONICAL)));
+        Map<String, Object> mapped = document(document, SchemaMode.CANONICAL);
+        OpenApiDocument result = OpenApiDocumentReader.read(jsonObject(mapped));
+        validateSecurityRequirementScopes(mapped);
+        return result;
     }
 
     static Map<String, Object> render(OpenApiDocument document, String version) {
         Map<String, Object> rendered = document(objectMap(document.toJsonObject()), SchemaMode.OPENAPI30);
+        validateSecurityRequirementScopes(rendered);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("openapi", version);
         rendered.forEach((key, value) -> {
@@ -982,6 +988,78 @@ final class OpenApi30DocumentMapper {
         if (!(openapi instanceof String version) || !OpenApi30Version.isSupportedVersion(version)) {
             throw new IllegalStateException("OpenAPI 3.0 version implementation cannot parse static OpenAPI document version "
                                                     + openapi + ".");
+        }
+    }
+
+    private static void validateSecurityRequirementScopes(Map<String, Object> document) {
+        Map<String, String> securitySchemeTypes = new LinkedHashMap<>();
+        objectIfPresent(document.get("components"), components -> {
+            objectIfPresent(components.get("securitySchemes"), securitySchemes -> securitySchemes.forEach((name, value) ->
+                    objectIfPresent(value, securityScheme -> {
+                        Object type = securityScheme.get("type");
+                        if (type instanceof String schemeType) {
+                            securitySchemeTypes.put(name, schemeType);
+                        }
+                    })));
+            objectIfPresent(components.get("callbacks"), callbacks -> callbacks.values().forEach(callback ->
+                    objectIfPresent(callback,
+                                    value -> validateCallbackSecurityRequirementScopes(value, securitySchemeTypes))));
+        });
+        validateSecurityRequirementScopes(document.get("security"), securitySchemeTypes);
+        objectIfPresent(document.get("paths"), paths -> paths.forEach((path, value) -> {
+            if (!path.startsWith("x-")) {
+                objectIfPresent(value,
+                                pathItem -> validatePathItemSecurityRequirementScopes(pathItem, securitySchemeTypes));
+            }
+        }));
+    }
+
+    private static void validatePathItemSecurityRequirementScopes(Map<String, Object> pathItem,
+                                                                  Map<String, String> securitySchemeTypes) {
+        pathItem.forEach((field, value) -> {
+            if (isFixedPathOperationField(field)) {
+                objectIfPresent(value, operation -> {
+                    validateSecurityRequirementScopes(operation.get("security"), securitySchemeTypes);
+                    objectIfPresent(operation.get("callbacks"), callbacks -> callbacks.values().forEach(callback ->
+                            objectIfPresent(callback,
+                                            item -> validateCallbackSecurityRequirementScopes(item,
+                                                                                              securitySchemeTypes))));
+                });
+            }
+        });
+    }
+
+    private static void validateCallbackSecurityRequirementScopes(Map<String, Object> callback,
+                                                                  Map<String, String> securitySchemeTypes) {
+        callback.forEach((expression, value) -> {
+            if (!expression.startsWith("x-")) {
+                objectIfPresent(value,
+                                pathItem -> validatePathItemSecurityRequirementScopes(pathItem, securitySchemeTypes));
+            }
+        });
+    }
+
+    private static void validateSecurityRequirementScopes(Object value,
+                                                          Map<String, String> securitySchemeTypes) {
+        if (!(value instanceof List<?> requirements)) {
+            return;
+        }
+        requirements.forEach(requirement -> objectIfPresent(requirement,
+                                                             schemes -> schemes.forEach((name, scopesValue) -> {
+            String type = securitySchemeTypes.get(name);
+            if (type != null
+                    && !SCOPED_SECURITY_SCHEME_TYPES.contains(type)
+                    && scopesValue instanceof List<?> scopes
+                    && !scopes.isEmpty()) {
+                throw new IllegalStateException("OpenAPI 3.0 Security Requirement Object requires an empty "
+                                                        + "scope array for " + type + " security scheme " + name + ".");
+            }
+        })));
+    }
+
+    private static void objectIfPresent(Object value, Consumer<Map<String, Object>> consumer) {
+        if (value != null) {
+            object(value, consumer);
         }
     }
 

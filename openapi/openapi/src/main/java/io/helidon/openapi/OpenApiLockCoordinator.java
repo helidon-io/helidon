@@ -18,6 +18,7 @@ package io.helidon.openapi;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -45,7 +46,7 @@ final class OpenApiLockCoordinator {
     }
 
     static LockHandle lock(Iterable<CoordinationLock> requestedLocks) {
-        Set<CoordinationLock> uniqueLocks = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<CoordinationLock> uniqueLocks = Collections.newSetFromMap(new IdentityHashMap<>());
         requestedLocks.forEach(uniqueLocks::add);
         List<CoordinationLock> locks = new ArrayList<>(uniqueLocks);
         locks.sort(Comparator.comparingLong(lock -> lock.id));

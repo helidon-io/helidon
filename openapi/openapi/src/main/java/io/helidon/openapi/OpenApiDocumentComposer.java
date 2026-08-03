@@ -17,6 +17,7 @@
 package io.helidon.openapi;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -235,19 +236,26 @@ final class OpenApiDocumentComposer {
                 throw new IllegalStateException("OpenAPI tag " + tagName + " cannot be its own parent");
             }
         });
+        Set<String> completedTagNames = new HashSet<>();
         for (String tagName : tagParents.keySet()) {
+            if (completedTagNames.contains(tagName)) {
+                continue;
+            }
             Set<String> path = new LinkedHashSet<>();
             String currentName = tagName;
-            while (currentName != null && path.add(currentName)) {
+            while (currentName != null
+                    && !completedTagNames.contains(currentName)
+                    && path.add(currentName)) {
                 currentName = tagParents.get(currentName);
             }
-            if (currentName != null) {
+            if (currentName != null && !completedTagNames.contains(currentName)) {
                 List<String> pathNames = List.copyOf(path);
                 int cycleStart = pathNames.indexOf(currentName);
                 String cycle = String.join(" -> ", pathNames.subList(cycleStart, pathNames.size()))
                         + " -> " + currentName;
                 throw new IllegalStateException("OpenAPI tag parent cycle: " + cycle);
             }
+            completedTagNames.addAll(path);
         }
         if (document.info().isEmpty()) {
             throw new IllegalStateException("Composed OpenAPI document requires Info metadata. "

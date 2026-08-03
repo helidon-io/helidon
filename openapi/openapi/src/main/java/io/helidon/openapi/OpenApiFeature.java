@@ -28,7 +28,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -37,7 +36,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -116,10 +114,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         this(registry, Config.empty(), config);
     }
 
-    OpenApiFeature(Config config, Supplier<List<OpenApiDocumentSource>> documentSources) {
-        this(config.root(), serviceConfig(config), documentSources, OpenApiFeature::openApiVersionProviders);
-    }
-
     private OpenApiFeature(ServiceRegistry registry,
                            Config sourceConfig,
                            OpenApiFeatureConfig config,
@@ -131,16 +125,10 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         this(registry, sourceConfig, config, () -> registry.all(OpenApiVersionProvider.class));
     }
 
-    OpenApiFeature(OpenApiFeatureConfig config,
-                   Supplier<List<OpenApiDocumentSource>> documentSources,
-                   Supplier<List<OpenApiVersionProvider>> openApiVersionProviders) {
-        this(Config.empty(), config, documentSources, openApiVersionProviders);
-    }
-
-    OpenApiFeature(Config sourceConfig,
-                   OpenApiFeatureConfig config,
-                   Supplier<List<OpenApiDocumentSource>> documentSources,
-                   Supplier<List<OpenApiVersionProvider>> openApiVersionProviders) {
+    private OpenApiFeature(Config sourceConfig,
+                           OpenApiFeatureConfig config,
+                           Supplier<List<OpenApiDocumentSource>> documentSources,
+                           Supplier<List<OpenApiVersionProvider>> openApiVersionProviders) {
         this.config = config;
         this.sourceConfig = sourceConfig;
         this.documentSources = LazyValue.create(documentSources);
@@ -424,10 +412,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         return serviceConfig(() -> OpenApiFeatureConfig.builder().serviceRegistry(registry), config);
     }
 
-    private static OpenApiFeatureConfig serviceConfig(Config config) {
-        return serviceConfig(OpenApiFeatureConfig::builder, config);
-    }
-
     private static OpenApiFeatureConfig serviceConfig(Supplier<OpenApiFeatureConfig.Builder> builderSupplier, Config config) {
         Config featuresConfig = config.get("server.features");
         Config openApiConfig = featuresConfig.get(OPENAPI_ID);
@@ -504,11 +488,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private static MediaType contentTypeOf(String path) {
         return MediaTypes.detectType(path)
                 .orElse(MediaTypes.APPLICATION_OCTET_STREAM);
-    }
-
-    private static List<OpenApiVersionProvider> openApiVersionProviders() {
-        return HelidonServiceLoader.create(ServiceLoader.load(OpenApiVersionProvider.class))
-                .asList();
     }
 
     private static Supplier<List<OpenApiDocumentSource>> documentSources(ServiceRegistry registry,

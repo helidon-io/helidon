@@ -553,6 +553,9 @@ public final class OpenApiDocument {
     }
 
     private static String fixedPathOperationField(String method) {
+        if (!method.equals(method.toUpperCase(Locale.ROOT))) {
+            return null;
+        }
         String field = method.toLowerCase(Locale.ROOT);
         return isFixedPathOperationField(field) ? field : null;
     }
@@ -1692,6 +1695,9 @@ public final class OpenApiDocument {
 
         /**
          * Add an HTTP operation.
+         * <p>
+         * Method names are case-sensitive. Standard uppercase HTTP method tokens use the corresponding lowercase fixed
+         * field; other spellings are preserved in {@code additionalOperations}.
          *
          * @param method HTTP method
          * @param operation operation
@@ -1710,6 +1716,9 @@ public final class OpenApiDocument {
 
         /**
          * Add an HTTP operation.
+         * <p>
+         * Method names are case-sensitive. Standard uppercase HTTP method tokens use the corresponding lowercase fixed
+         * field; other spellings are preserved in {@code additionalOperations}.
          *
          * @param method HTTP method
          * @param operation consumer to update operation builder
@@ -1747,11 +1756,13 @@ public final class OpenApiDocument {
 
         /**
          * Add an OpenAPI 3.2 additional operation.
+         * <p>
+         * Method names are case-sensitive and preserved as supplied.
          *
          * @param method method name
          * @param operation operation
          * @return updated builder
-         * @throws IllegalArgumentException if the method matches a fixed-field HTTP method, ignoring case
+         * @throws IllegalArgumentException if the method is an uppercase HTTP method represented by a fixed field
          * @throws IllegalStateException if the method is already defined
          */
         public PathItemBuilder additionalOperation(String method, Operation operation) {
@@ -1770,11 +1781,13 @@ public final class OpenApiDocument {
 
         /**
          * Add an OpenAPI 3.2 additional operation.
+         * <p>
+         * Method names are case-sensitive and preserved as supplied.
          *
          * @param method method name
          * @param operation consumer to update operation builder
          * @return updated builder
-         * @throws IllegalArgumentException if the method matches a fixed-field HTTP method, ignoring case
+         * @throws IllegalArgumentException if the method is an uppercase HTTP method represented by a fixed field
          * @throws IllegalStateException if the method is already defined
          */
         public PathItemBuilder additionalOperation(String method, Consumer<OperationBuilder> operation) {

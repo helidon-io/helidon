@@ -16,6 +16,8 @@
 
 package io.helidon.openapi;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -49,5 +51,38 @@ class OpenApiDocumentTest {
                                                                                             .build()));
 
         assertThat(thrown.getMessage(), containsString("fixed-field HTTP method: POST"));
+    }
+
+    @Test
+    void normalizesUppercaseFixedOperation() {
+        OpenApiDocument.PathItem pathItem = OpenApiDocument.PathItem.builder()
+                .operation("POST", OpenApiDocument.Operation.builder().build())
+                .build();
+
+        assertThat(pathItem.operations().keySet(), is(Set.of("post")));
+        assertThat(pathItem.additionalOperations().isEmpty(), is(true));
+    }
+
+    @Test
+    void preservesCaseSensitiveCustomAdditionalOperations() {
+        OpenApiDocument.Operation operation = OpenApiDocument.Operation.builder().build();
+        OpenApiDocument.PathItem pathItem = OpenApiDocument.PathItem.builder()
+                .additionalOperation("post", operation)
+                .additionalOperation("PoSt", operation)
+                .build();
+
+        assertThat(pathItem.additionalOperations().keySet(), is(Set.of("post", "PoSt")));
+    }
+
+    @Test
+    void preservesCaseSensitiveCustomOperations() {
+        OpenApiDocument.Operation operation = OpenApiDocument.Operation.builder().build();
+        OpenApiDocument.PathItem pathItem = OpenApiDocument.PathItem.builder()
+                .operation("post", operation)
+                .operation("PoSt", operation)
+                .build();
+
+        assertThat(pathItem.operations().isEmpty(), is(true));
+        assertThat(pathItem.additionalOperations().keySet(), is(Set.of("post", "PoSt")));
     }
 }

@@ -169,6 +169,48 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void acceptsSecurityScopesOnlyForScopedSchemes() {
+        Map<String, Object> source = documentWithSecurityRequirements(
+                List.of(Map.of("ApiKey", List.of()),
+                        Map.of("OAuth", List.of("catalog:read"))),
+                List.of(Map.of("Http", List.of()),
+                        Map.of("OpenId", List.of("profile"))));
+
+        OpenApiDocument document = OpenApi30DocumentMapper.parse(source);
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+
+        assertThat(rendered.get("security"), is(source.get("security")));
+        assertThat(map(map(map(rendered, "paths"), "/items"), "get").get("security"),
+                   is(map(map(map(source, "paths"), "/items"), "get").get("security")));
+    }
+
+    @Test
+    void rejectsNonEmptyScopesForUnscopedSchemes() {
+        Map<String, Map<String, Object>> invalidDocuments = new LinkedHashMap<>();
+        invalidDocuments.put("ApiKey", documentWithSecurityRequirements(
+                List.of(Map.of("ApiKey", List.of("catalog:read"))),
+                List.of(Map.of("OpenId", List.of("profile")))));
+        invalidDocuments.put("Http", documentWithSecurityRequirements(
+                List.of(Map.of("OAuth", List.of("catalog:read"))),
+                List.of(Map.of("Http", List.of("profile")))));
+
+        invalidDocuments.forEach((scheme, source) -> {
+            IllegalStateException parsed = assertThrows(IllegalStateException.class,
+                                                        () -> OpenApi30DocumentMapper.parse(source),
+                                                        scheme + " parsing");
+            assertThat(parsed.getMessage(), containsString("empty scope array"));
+            assertThat(parsed.getMessage(), containsString(scheme));
+
+            OpenApiDocument document = openApiDocument(source);
+            IllegalStateException rendered = assertThrows(IllegalStateException.class,
+                                                          () -> OpenApi30DocumentMapper.render(document, "3.0.3"),
+                                                          scheme + " rendering");
+            assertThat(rendered.getMessage(), containsString("empty scope array"));
+            assertThat(rendered.getMessage(), containsString(scheme));
+        });
+    }
+
+    @Test
     void preservesLargeIntegralNumbers() {
         OpenApiDocument document = OpenApi30DocumentMapper.parse(document("3.0.3"));
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
@@ -994,6 +1036,43 @@ class OpenApi30DocumentMapperTest {
                                   "version", "1.0.0"));
         result.put("components", Map.of("securitySchemes", Map.of("test", securityScheme)));
         return result;
+    }
+
+    private static Map<String, Object> documentWithSecurityRequirements(
+            List<Map<String, List<String>>> documentSecurity,
+            List<Map<String, List<String>>> operationSecurity) {
+        return Map.of(
+                "openapi", "3.0.3",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "components", Map.of(
+                        "securitySchemes", Map.of(
+                                "ApiKey", Map.of(
+                                        "type", "apiKey",
+                                        "name", "X-API-Key",
+                                        "in", "header"),
+                                "Http", Map.of(
+                                        "type", "http",
+                                        "scheme", "bearer"),
+                                "OAuth", Map.of(
+                                        "type", "oauth2",
+                                        "flows", Map.of(
+                                                "implicit", Map.of(
+                                                        "authorizationUrl", "https://idp.example.com/authorize",
+                                                        "scopes", Map.of(
+                                                                "catalog:read", "Read the catalog")))),
+                                "OpenId", Map.of(
+                                        "type", "openIdConnect",
+                                        "openIdConnectUrl",
+                                        "https://idp.example.com/.well-known/openid-configuration"))),
+                "security", documentSecurity,
+                "paths", Map.of(
+                        "/items", Map.of(
+                                "get", Map.of(
+                                        "responses", Map.of(
+                                                "200", Map.of("description", "OK")),
+                                        "security", operationSecurity))));
     }
 
     private static Map<String, Object> mutualTlsSecurityScheme() {

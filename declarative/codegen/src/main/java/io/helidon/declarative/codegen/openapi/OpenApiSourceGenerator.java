@@ -567,7 +567,7 @@ final class OpenApiSourceGenerator {
                 .increaseContentPadding()
                 .increaseContentPadding()
                 .addContent("path -> path.operation(")
-                .addContent(expressions.stringLiteral(restMethod.httpMethod().name().toLowerCase(Locale.ROOT)))
+                .addContent(expressions.stringLiteral(restMethod.httpMethod().name()))
                 .addContentLine(",")
                 .increaseContentPadding()
                 .increaseContentPadding()

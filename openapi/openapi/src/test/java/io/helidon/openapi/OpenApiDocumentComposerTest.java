@@ -307,6 +307,31 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void generatedOnlyAcceptsLongTagParentChain() {
+        int tagCount = 10_000;
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentSource source = (ignored, document) -> {
+            document.info("Generated API", "1.0.0")
+                    .tag(tag -> tag.name("tag-0"));
+            for (int i = 1; i < tagCount; i++) {
+                String tagName = "tag-" + i;
+                String parentName = "tag-" + (i - 1);
+                document.tag(tag -> tag.name(tagName).parent(parentName));
+            }
+        };
+
+        String content = compose(context,
+                                 RawOpenApiVersion.INSTANCE,
+                                 "",
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(source));
+
+        List<Object> tags = list(parse(content), "tags");
+        assertThat(tags.size(), is(tagCount));
+        assertThat(((Map<?, ?>) tags.get(tagCount - 1)).get("parent"), is("tag-" + (tagCount - 2)));
+    }
+
+    @Test
     void mergeRejectsTagParentCycleAcrossStaticAndGeneratedTags() {
         OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.MERGE);
         OpenApiDocument staticDocument = OpenApiDocument.builder()

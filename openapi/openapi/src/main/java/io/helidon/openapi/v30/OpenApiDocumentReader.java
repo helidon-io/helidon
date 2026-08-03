@@ -18,6 +18,7 @@ package io.helidon.openapi.v30;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -172,7 +173,10 @@ public final class OpenApiDocumentReader {
         source.keysAsStrings()
                 .stream()
                 .filter(OpenApiDocumentReader::isFixedPathOperationField)
-                .forEach(method -> object(source, method, operation -> builder.operation(method, operation(operation))));
+                .forEach(method -> object(source,
+                                          method,
+                                          operation -> builder.operation(method.toUpperCase(Locale.ROOT),
+                                                                         operation(operation))));
         object(source, "additionalOperations", operations -> operations.keysAsStrings()
                 .forEach(method -> object(operations, method,
                                           operation -> builder.additionalOperation(method, operation(operation)))));

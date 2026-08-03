@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.openapi.OpenApiDocument;
@@ -275,6 +276,40 @@ class OpenApi32VersionTest {
                                     MediaTypes.APPLICATION_OPENAPI_YAML));
 
         assertThat(thrown.getMessage(), containsString("fixed-field HTTP method: POST"));
+    }
+
+    @Test
+    void preservesCaseSensitiveCustomMethodsInParsedAdditionalOperations() {
+        OpenApi32Version version = OpenApi32Version.create();
+        OpenApiDocument document = version.parse(context(version),
+                                                 """
+                                                 openapi: 3.2.0
+                                                 info:
+                                                   title: Static API
+                                                   version: 1.0.0
+                                                 paths:
+                                                   /static:
+                                                     post:
+                                                       responses:
+                                                         default:
+                                                           description: Fixed POST response
+                                                     additionalOperations:
+                                                       post:
+                                                         responses:
+                                                           default:
+                                                             description: Lowercase post response
+                                                       PoSt:
+                                                         responses:
+                                                           default:
+                                                             description: Mixed-case PoSt response
+                                                 """,
+                                                 MediaTypes.APPLICATION_OPENAPI_YAML);
+
+        Map<String, Object> rendered = parse(version.render(context(version), document));
+        Map<?, ?> path = map(map(rendered, "paths"), "/static");
+        assertThat(path.containsKey("post"), is(true));
+        Map<?, ?> additionalOperations = map(path, "additionalOperations");
+        assertThat(additionalOperations.keySet(), is(Set.of("post", "PoSt")));
     }
 
     @Test
