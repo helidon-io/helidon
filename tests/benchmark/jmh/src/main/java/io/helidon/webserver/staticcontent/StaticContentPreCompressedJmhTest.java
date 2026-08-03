@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.LruCache;
 import io.helidon.common.context.Context;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
@@ -44,6 +46,9 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseTrailers;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncoder;
@@ -64,14 +69,19 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 
 @State(Scope.Benchmark)
 public class StaticContentPreCompressedJmhTest {
     private static final String RESOURCE = "resource.txt";
 
     private StaticContentHandler handler;
+    private StaticContentHandler disabledHandler;
     private SidecarCache.Resolver sidecarResolver;
+    private SidecarCache.Resolver fileSidecarResolver;
     private CachedHandler identityHandler;
+    private CachedHandler fileIdentityHandler;
+    private LruCache<String, CachedHandler> fileHandlerCache;
     private ServerRequest noAcceptEncodingRequest;
     private ServerRequest identityRequest;
     private ServerRequest identityPreferredRequest;
@@ -79,15 +89,42 @@ public class StaticContentPreCompressedJmhTest {
     private ServerRequest brRequest;
     private ServerRequest gzipRequest;
     private ServerRequest runtimeGzipRequest;
+    private Path benchmarkDirectory;
+    private Path identityPath;
+    private Path sidecarPath;
 
     @Setup
     public void setup() throws IOException, URISyntaxException {
-        handler = new BenchmarkStaticContentHandler();
+        benchmarkDirectory = Files.createTempDirectory("static-content-pre-compressed-jmh-");
+        identityPath = benchmarkDirectory.resolve(RESOURCE);
+        sidecarPath = benchmarkDirectory.resolve(RESOURCE + ".br");
+        Files.writeString(identityPath, "Content", StandardCharsets.UTF_8);
+        Files.writeString(sidecarPath, "Brotli content", StandardCharsets.UTF_8);
+
+        handler = new BenchmarkStaticContentHandler(FileSystemHandlerConfig.builder()
+                                                           .location(benchmarkDirectory)
+                                                           .build());
+        disabledHandler = new BenchmarkStaticContentHandler(FileSystemHandlerConfig.builder()
+                                                                   .location(benchmarkDirectory)
+                                                                   .preCompressedEnabled(false)
+                                                                   .build());
         identityHandler = inMemoryHandler("Content");
         CachedHandler brHandler = inMemoryHandler("Brotli content")
                 .withRepresentation(ResponseRepresentation.encoded("br"));
+        fileIdentityHandler = new CachedHandlerPath(identityPath,
+                                                    MediaTypes.TEXT_PLAIN,
+                                                    FileBasedContentHandler::lastModified,
+                                                    ServerResponseHeaders::lastModified);
+        CachedHandler fileBrHandler = new CachedHandlerPath(sidecarPath,
+                                                            MediaTypes.TEXT_PLAIN,
+                                                            FileBasedContentHandler::lastModified,
+                                                            ServerResponseHeaders::lastModified,
+                                                            ResponseRepresentation.encoded("br"));
 
         sidecarResolver = (coding, suffix) -> "br".equals(coding) ? Optional.of(brHandler) : Optional.empty();
+        fileSidecarResolver = (coding, suffix) -> "br".equals(coding) ? Optional.of(fileBrHandler) : Optional.empty();
+        fileHandlerCache = LruCache.create();
+        fileHandlerCache.put(RESOURCE, fileIdentityHandler);
 
         noAcceptEncodingRequest = request(null, ContentEncodingContext.create());
         identityRequest = request("identity", ContentEncodingContext.create());
@@ -99,6 +136,17 @@ public class StaticContentPreCompressedJmhTest {
 
         handler.selectHandler(identityHandler, brRequest, sidecarResolver);
         handler.selectHandler(identityHandler, gzipRequest, sidecarResolver);
+        handler.selectHandler(fileIdentityHandler, brRequest, fileSidecarResolver);
+        fileSidecarResolver = (coding, suffix) -> {
+            throw new IllegalStateException("Cached filesystem sidecar was resolved again");
+        };
+    }
+
+    @TearDown
+    public void tearDown() throws IOException {
+        Files.deleteIfExists(sidecarPath);
+        Files.deleteIfExists(identityPath);
+        Files.deleteIfExists(benchmarkDirectory);
     }
 
     @Benchmark
@@ -136,6 +184,31 @@ public class StaticContentPreCompressedJmhTest {
         return handler.selectHandler(identityHandler, runtimeGzipRequest, sidecarResolver);
     }
 
+    @Benchmark
+    public ServerResponse handleNoAcceptEncodingDefault() throws IOException, URISyntaxException {
+        return selectAndHandle(handler, noAcceptEncodingRequest);
+    }
+
+    @Benchmark
+    public ServerResponse handleNoAcceptEncodingDisabled() throws IOException, URISyntaxException {
+        return selectAndHandle(disabledHandler, noAcceptEncodingRequest);
+    }
+
+    @Benchmark
+    public ServerResponse handleCachedFileSystemSidecar() throws IOException, URISyntaxException {
+        return selectAndHandle(handler, brRequest);
+    }
+
+    private ServerResponse selectAndHandle(StaticContentHandler staticContentHandler, ServerRequest request)
+            throws IOException, URISyntaxException {
+        CachedHandler selected = staticContentHandler.selectHandler(fileIdentityHandler, request, fileSidecarResolver);
+        var response = new ResponseStub();
+        if (!selected.handle(fileHandlerCache, Method.GET, request, response, RESOURCE)) {
+            throw new IllegalStateException("Cached benchmark handler did not handle the resource");
+        }
+        return response;
+    }
+
     private static CachedHandlerInMemory inMemoryHandler(String value) {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         return new CachedHandlerInMemory(MediaTypes.TEXT_PLAIN,
@@ -165,10 +238,8 @@ public class StaticContentPreCompressedJmhTest {
     }
 
     private static final class BenchmarkStaticContentHandler extends StaticContentHandler {
-        private BenchmarkStaticContentHandler() {
-            super(FileSystemHandlerConfig.builder()
-                          .location(Path.of("."))
-                          .build());
+        private BenchmarkStaticContentHandler(BaseHandlerConfig config) {
+            super(config);
         }
 
         @Override
@@ -182,6 +253,114 @@ public class StaticContentPreCompressedJmhTest {
                          ServerRequest request,
                          ServerResponse response,
                          boolean mapped) {
+            throw unsupported();
+        }
+    }
+
+    private static final class ResponseStub implements ServerResponse {
+        private final ServerResponseHeaders headers = ServerResponseHeaders.create();
+        private final OutputStream output = new OutputStream() {
+            @Override
+            public void write(int value) {
+                bytesWritten++;
+            }
+
+            @Override
+            public void write(byte[] bytes, int offset, int length) {
+                bytesWritten += length;
+            }
+        };
+        private Status status = Status.OK_200;
+        private boolean sent;
+        private long bytesWritten;
+
+        @Override
+        public ServerResponse status(Status status) {
+            this.status = status;
+            return this;
+        }
+
+        @Override
+        public Status status() {
+            return status;
+        }
+
+        @Override
+        public ServerResponse header(Header header) {
+            headers.set(header);
+            return this;
+        }
+
+        @Override
+        public void send() {
+            sent = true;
+        }
+
+        @Override
+        public void send(byte[] bytes) {
+            bytesWritten += bytes.length;
+            sent = true;
+        }
+
+        @Override
+        public void send(Object entity) {
+            throw unsupported();
+        }
+
+        @Override
+        public boolean isSent() {
+            return sent;
+        }
+
+        @Override
+        public OutputStream outputStream() {
+            sent = true;
+            return output;
+        }
+
+        @Override
+        public long bytesWritten() {
+            return bytesWritten;
+        }
+
+        @Override
+        public ServerResponse whenSent(Runnable listener) {
+            listener.run();
+            return this;
+        }
+
+        @Override
+        public ServerResponse reroute(String newPath) {
+            throw unsupported();
+        }
+
+        @Override
+        public ServerResponse reroute(String path, UriQuery query) {
+            throw unsupported();
+        }
+
+        @Override
+        public ServerResponse next() {
+            throw unsupported();
+        }
+
+        @Override
+        public ServerResponseHeaders headers() {
+            return headers;
+        }
+
+        @Override
+        public ServerResponseTrailers trailers() {
+            throw unsupported();
+        }
+
+        @Override
+        public void streamResult(String result) {
+            throw unsupported();
+        }
+
+        @Override
+        public void streamFilter(UnaryOperator<OutputStream> filterFunction) {
             throw unsupported();
         }
     }
