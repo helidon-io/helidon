@@ -479,7 +479,7 @@ final class Activators {
     }
 
     static class FixedServicesFactoryActivator<T> extends ServicesFactoryActivator<T> {
-        private final LazyValue<Optional<List<QualifiedInstance<T>>>> instances;
+        private volatile LazyValue<Optional<List<QualifiedInstance<T>>>> instances;
 
         FixedServicesFactoryActivator(ServiceProvider<T> provider,
                                       Service.ServicesFactory<T> factory) {
@@ -503,6 +503,12 @@ final class Activators {
                 return super.targetInstances(lookup);
             }
             return instances.get().flatMap(it -> matchingInstances(lookup, it));
+        }
+
+        @Override
+        void preDestroy(ActivationResult.Builder response) {
+            super.preDestroy(response);
+            instances = LazyValue.create(Optional.empty());
         }
     }
 
