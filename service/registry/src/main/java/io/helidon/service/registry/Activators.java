@@ -734,6 +734,11 @@ final class Activators {
         }
 
         @Override
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return requestedProvider(lookup, FactoryType.QUALIFIED);
+        }
+
+        @Override
         void setTargetInstances() {
             // target instances cannot be created, they are resolved on each lookup
         }
@@ -786,6 +791,11 @@ final class Activators {
     static class IpFactoryActivator<T> extends SingleServiceActivator<T> {
         IpFactoryActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
             super(provider, dependencyContext);
+        }
+
+        @Override
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return requestedProvider(lookup, FactoryType.INJECTION_POINT);
         }
 
         @Override
