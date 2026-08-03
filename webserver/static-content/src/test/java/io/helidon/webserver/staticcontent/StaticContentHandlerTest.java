@@ -382,8 +382,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -509,8 +509,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "empty.txt");
 
@@ -824,8 +824,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -853,8 +853,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -886,8 +886,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -917,8 +917,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -948,8 +948,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -978,8 +978,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -1006,8 +1006,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -1073,8 +1073,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.of(sidecarHandler));
+                request,
+                (coding, suffix) -> Optional.of(sidecarHandler));
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -1124,8 +1124,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -1147,8 +1147,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         boolean handled = selected.handle(cache, Method.GET, request, response, "nested/resource.txt");
 
@@ -1172,8 +1172,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
         available.set(true);
 
         boolean handled = selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
@@ -1196,8 +1196,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -1655,8 +1655,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -1681,8 +1681,8 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> Optional.empty());
+                request,
+                (coding, suffix) -> Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
@@ -1712,12 +1712,12 @@ class StaticContentHandlerTest {
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
-                                                       request,
-                                                       (coding, suffix) -> switch (coding) {
-                                                           case "br" -> Optional.of(brHandler);
-                                                           case "gzip" -> Optional.of(gzipHandler);
-                                                           default -> Optional.empty();
-                                                       });
+                request,
+                (coding, suffix) -> switch (coding) {
+                    case "br" -> Optional.of(brHandler);
+                    case "gzip" -> Optional.of(gzipHandler);
+                    default -> Optional.empty();
+                });
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
