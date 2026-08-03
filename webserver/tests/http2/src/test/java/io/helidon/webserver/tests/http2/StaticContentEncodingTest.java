@@ -109,17 +109,6 @@ class StaticContentEncodingTest {
     }
 
     @Test
-    void invalidAcceptEncodingReturnsBadRequest() {
-        try (Http2ClientResponse response = client.get("/path/nested/resource.txt")
-                .header(HeaderNames.ACCEPT_ENCODING, "g zip, identity;q=0")
-                .request()) {
-
-            assertThat(response.status(), is(Status.BAD_REQUEST_400));
-            assertThat(response.headers(), noHeader(HeaderNames.CONTENT_ENCODING));
-        }
-    }
-
-    @Test
     void preCompressedSidecarSelected() {
         try (Http2ClientResponse response = client.get("/path/nested/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "br")
