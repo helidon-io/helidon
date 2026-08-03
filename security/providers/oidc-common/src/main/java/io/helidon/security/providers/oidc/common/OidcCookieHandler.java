@@ -313,13 +313,6 @@ public class OidcCookieHandler {
         }
     }
 
-    private static final class BestCompressionGzipOutputStream extends GZIPOutputStream {
-        private BestCompressionGzipOutputStream(OutputStream out) throws IOException {
-            super(out, COMPRESSION_BUFFER_SIZE);
-            def.setLevel(Deflater.BEST_COMPRESSION);
-        }
-    }
-
     private SetCookie.Builder createCookieDirectValue(String value) {
         SetCookie.Builder builder = SetCookie.builder(cookieName, value);
         createCookieUpdaters.forEach(it -> it.accept(builder));
@@ -419,6 +412,13 @@ public class OidcCookieHandler {
         Builder legacyCookieFallback(boolean legacyCookieFallback) {
             this.legacyCookieFallback = legacyCookieFallback;
             return this;
+        }
+    }
+
+    private static final class BestCompressionGzipOutputStream extends GZIPOutputStream {
+        private BestCompressionGzipOutputStream(OutputStream out) throws IOException {
+            super(out, COMPRESSION_BUFFER_SIZE);
+            def.setLevel(Deflater.BEST_COMPRESSION);
         }
     }
 }
