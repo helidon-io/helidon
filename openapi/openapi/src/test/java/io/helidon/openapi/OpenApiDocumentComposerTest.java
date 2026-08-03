@@ -20,7 +20,9 @@ import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonNull;
@@ -80,13 +82,13 @@ class OpenApiDocumentComposerTest {
             """;
 
     @Test
-    void generatedFallbackKeepsStaticDocument() {
+    void generatedFallbackKeepsStaticDocumentWithoutParsingIt() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.STATIC_FIRST);
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        STATIC_DOCUMENT,
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(source()));
+        String content = compose(context,
+                                 new TestOpenApiVersion("3.0", "3.0.3", true),
+                                 STATIC_DOCUMENT,
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(source()));
 
         assertThat(content, is(STATIC_DOCUMENT));
     }
@@ -94,11 +96,11 @@ class OpenApiDocumentComposerTest {
     @Test
     void generatedFallbackUsesGeneratedSourcesWithoutStaticDocument() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.STATIC_FIRST);
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        "",
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(source()));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 "",
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(source()));
 
         Map<String, Object> parsed = parse(content);
         assertThat(parsed.get("openapi"), is("3.0.3"));
@@ -109,11 +111,11 @@ class OpenApiDocumentComposerTest {
     @Test
     void ignoreGeneratedReturnsEmptyWithoutStaticDocument() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.STATIC_ONLY);
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        "",
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(source()));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 "",
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(source()));
 
         assertThat(content, is(""));
     }
@@ -121,11 +123,11 @@ class OpenApiDocumentComposerTest {
     @Test
     void ignoreGeneratedKeepsStaticDocument() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.STATIC_ONLY);
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        STATIC_DOCUMENT,
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(source()));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 STATIC_DOCUMENT,
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(source()));
 
         assertThat(content, is(STATIC_DOCUMENT));
     }
@@ -133,11 +135,11 @@ class OpenApiDocumentComposerTest {
     @Test
     void generatedOnlyIgnoresStaticDocument() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        STATIC_DOCUMENT,
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(source()));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 STATIC_DOCUMENT,
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(source()));
 
         Map<String, Object> parsed = parse(content);
         assertThat(((Map<?, ?>) parsed.get("info")).get("title"), is("Generated API"));
@@ -153,11 +155,11 @@ class OpenApiDocumentComposerTest {
             OpenApiDocumentContext context = context(mode);
             IllegalStateException thrown = assertThrows(
                     IllegalStateException.class,
-                    () -> OpenApiDocumentComposer.compose(context,
-                                                          context.openApiVersion(),
-                                                          "",
-                                                          MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                          List.of(operationSource())),
+                    () -> compose(context,
+                                  context.openApiVersion(),
+                                  "",
+                                  MediaTypes.APPLICATION_OPENAPI_YAML,
+                                  List.of(operationSource())),
                     mode.name());
 
             assertThat(thrown.getMessage(), containsString("requires Info metadata"));
@@ -169,11 +171,11 @@ class OpenApiDocumentComposerTest {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
         OpenApiDocumentSource metadata = (ignored, document) -> document.info("Generated API", "1.0.0");
 
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        "",
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(metadata, operationSource()));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 "",
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(metadata, operationSource()));
 
         Map<String, Object> parsed = parse(content);
         assertThat(map(parsed, "info").get("title"), is("Generated API"));
@@ -184,7 +186,7 @@ class OpenApiDocumentComposerTest {
     void generatedOnlyFailsOnDuplicateOperationId() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
-                                                    () -> OpenApiDocumentComposer.compose(
+                                                    () -> compose(
                                                             context,
                                                             context.openApiVersion(),
                                                             "",
@@ -249,6 +251,83 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void mergeAcceptsParentLinkAcrossStaticAndGeneratedTags() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.MERGE);
+        OpenApiDocument staticDocument = OpenApiDocument.builder()
+                .info("Static API", "1.0.0")
+                .tag(tag -> tag.name("static-child").parent("generated-parent"))
+                .build();
+        OpenApiDocumentSource generated = (ignored, document) -> document
+                .tag(tag -> tag.name("generated-parent"));
+
+        String content = OpenApiDocumentComposer.compose(context,
+                                                         Optional.of(() -> staticDocument),
+                                                         "static",
+                                                         List.of(generated));
+
+        List<Object> tags = list(parse(content), "tags");
+        assertThat(((Map<?, ?>) tags.get(0)).get("parent"), is("generated-parent"));
+        assertThat(((Map<?, ?>) tags.get(1)).get("name"), is("generated-parent"));
+    }
+
+    @Test
+    void generatedOnlyRejectsMissingTagParent() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentSource source = (ignored, document) -> document
+                .info("Generated API", "1.0.0")
+                .tag(tag -> tag.name("child").parent("missing"));
+
+        IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> compose(context,
+                              RawOpenApiVersion.INSTANCE,
+                              "",
+                              MediaTypes.APPLICATION_OPENAPI_YAML,
+                              List.of(source)));
+
+        assertThat(thrown.getMessage(), is("OpenAPI tag child references missing parent tag missing"));
+    }
+
+    @Test
+    void generatedOnlyRejectsSelfParentingTag() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentSource source = (ignored, document) -> document
+                .info("Generated API", "1.0.0")
+                .tag(tag -> tag.name("child").parent("child"));
+
+        IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> compose(context,
+                              RawOpenApiVersion.INSTANCE,
+                              "",
+                              MediaTypes.APPLICATION_OPENAPI_YAML,
+                              List.of(source)));
+
+        assertThat(thrown.getMessage(), is("OpenAPI tag child cannot be its own parent"));
+    }
+
+    @Test
+    void mergeRejectsTagParentCycleAcrossStaticAndGeneratedTags() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.MERGE);
+        OpenApiDocument staticDocument = OpenApiDocument.builder()
+                .info("Static API", "1.0.0")
+                .tag(tag -> tag.name("static-tag").parent("generated-tag"))
+                .build();
+        OpenApiDocumentSource generated = (ignored, document) -> document
+                .tag(tag -> tag.name("generated-tag").parent("static-tag"));
+
+        IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApiDocumentComposer.compose(context,
+                                                      Optional.of(() -> staticDocument),
+                                                      "static",
+                                                      List.of(generated)));
+
+        assertThat(thrown.getMessage(),
+                   is("OpenAPI tag parent cycle: static-tag -> generated-tag -> static-tag"));
+    }
+
+    @Test
     void generatedOperationIdOverrideResolvesDuplicate() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY,
                                                  Map.of("com.example.First#get()", "firstGet"));
@@ -262,11 +341,11 @@ class OpenApiDocumentComposerTest {
                                                              "duplicate"))
                                                      .response("200", "OK")));
 
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        "",
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(first, operationSource("/second", "duplicate")));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 "",
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(first, operationSource("/second", "duplicate")));
 
         Map<String, Object> paths = map(parse(content), "paths");
         assertThat(map(map(paths, "/first"), "get").get("operationId"), is("firstGet"));
@@ -277,11 +356,11 @@ class OpenApiDocumentComposerTest {
     void mergeStaticKeepsStaticAndGeneratedDocumentSections() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
 
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        STATIC_MERGE_DOCUMENT,
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(mergeSource()));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 STATIC_MERGE_DOCUMENT,
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(mergeSource()));
 
         Map<String, Object> parsed = parse(content);
         Map<String, Object> paths = map(parsed, "paths");
@@ -340,7 +419,7 @@ class OpenApiDocumentComposerTest {
                                                                                                      "#/components/schemas/Second")
                                                                                                 .build())))));
 
-        Map<String, Object> document = parse(OpenApiDocumentComposer.compose(
+        Map<String, Object> document = parse(compose(
                 context,
                 context.openApiVersion(),
                 "",
@@ -400,7 +479,7 @@ class OpenApiDocumentComposerTest {
                                                                                                      "#/components/schemas/SecondEnvelope")
                                                                                                 .build())))));
 
-        Map<String, Object> document = parse(OpenApiDocumentComposer.compose(
+        Map<String, Object> document = parse(compose(
                 context,
                 context.openApiVersion(),
                 "",
@@ -441,7 +520,7 @@ class OpenApiDocumentComposerTest {
                                                                                                      "#/components/schemas/Item")
                                                                                                 .build())))));
 
-        Map<String, Object> document = parse(OpenApiDocumentComposer.compose(
+        Map<String, Object> document = parse(compose(
                 context,
                 context.openApiVersion(),
                 "",
@@ -461,11 +540,11 @@ class OpenApiDocumentComposerTest {
     void mergeStaticPreservesEmptyOperationSecurityOverride() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
 
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        STATIC_PUBLIC_OPERATION_DOCUMENT,
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(operationSource()));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 STATIC_PUBLIC_OPERATION_DOCUMENT,
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(operationSource()));
 
         Map<String, Object> operation = map(map(map(parse(content), "paths"), "/public"), "get");
         assertThat(list(operation, "security"), is(List.of()));
@@ -475,7 +554,7 @@ class OpenApiDocumentComposerTest {
     void mergeFailsOnDuplicateStaticAndGeneratedOperationId() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
-                                                    () -> OpenApiDocumentComposer.compose(
+                                                    () -> compose(
                                                             context,
                                                             context.openApiVersion(),
                                                             STATIC_DOCUMENT,
@@ -494,7 +573,7 @@ class OpenApiDocumentComposerTest {
                                                                                               JsonString.create("value"));
 
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
-                                                    () -> OpenApiDocumentComposer.compose(
+                                                    () -> compose(
                                                             context,
                                                             context.openApiVersion(),
                                                             STATIC_NULL_EXTENSION_DOCUMENT,
@@ -509,11 +588,11 @@ class OpenApiDocumentComposerTest {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
         OpenApiDocumentSource matching = (documentContext, document) -> document.extension("x-null", JsonNull.instance());
 
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        STATIC_NULL_EXTENSION_DOCUMENT,
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(matching));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 STATIC_NULL_EXTENSION_DOCUMENT,
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(matching));
 
         Map<String, Object> parsed = parse(content);
         assertThat(parsed.containsKey("x-null"), is(true));
@@ -601,11 +680,11 @@ class OpenApiDocumentComposerTest {
                                                                                     responseOperation("generatedPost")));
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
 
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        context.openApiVersion(),
-                                                        "",
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(first, second));
+        String content = compose(context,
+                                 context.openApiVersion(),
+                                 "",
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(first, second));
 
         Map<String, Object> path = map(map(parse(content), "paths"), "/generated");
         assertThat(path.containsKey("get"), is(true));
@@ -624,11 +703,11 @@ class OpenApiDocumentComposerTest {
         assertThrows(IllegalStateException.class,
                      () -> {
                          OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
-                         OpenApiDocumentComposer.compose(context,
-                                                         context.openApiVersion(),
-                                                         STATIC_DOCUMENT,
-                                                         MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                         List.of(conflicting));
+                         compose(context,
+                                 context.openApiVersion(),
+                                 STATIC_DOCUMENT,
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(conflicting));
                      });
     }
 
@@ -644,11 +723,11 @@ class OpenApiDocumentComposerTest {
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
                                                     () -> {
                                                         OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
-                                                        OpenApiDocumentComposer.compose(context,
-                                                                                        context.openApiVersion(),
-                                                                                        STATIC_TEMPLATE_DOCUMENT,
-                                                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                                                        List.of(conflicting));
+                                                        compose(context,
+                                                                context.openApiVersion(),
+                                                                STATIC_TEMPLATE_DOCUMENT,
+                                                                MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                                List.of(conflicting));
                                                     });
 
         assertThat(thrown.getMessage(),
@@ -665,11 +744,11 @@ class OpenApiDocumentComposerTest {
                                                                         OpenApiGeneratedMode.MERGE,
                                                                         renderVersion);
 
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        staticVersion,
-                                                        STATIC_DOCUMENT,
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(operationSource()));
+        String content = compose(context,
+                                 staticVersion,
+                                 STATIC_DOCUMENT,
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(operationSource()));
 
         Map<String, Object> parsed = parse(content);
         assertThat(((Map<?, ?>) parsed.get("paths")).containsKey("/static"), is(true));
@@ -688,11 +767,11 @@ class OpenApiDocumentComposerTest {
                       path -> path.operation("COPY", responseOperation("copyStatic"))
                               .operation("POST", responseOperation("createStatic")));
 
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        RawOpenApiVersion.INSTANCE,
-                                                        STATIC_DOCUMENT,
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(generated));
+        String content = compose(context,
+                                 RawOpenApiVersion.INSTANCE,
+                                 STATIC_DOCUMENT,
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(generated));
 
         Map<String, Object> path = map(map(parse(content), "paths"), "/static");
         assertThat(map(path, "additionalOperations").containsKey("COPY"), is(true));
@@ -712,11 +791,11 @@ class OpenApiDocumentComposerTest {
                                                                                        responseOperation("copyOther")));
 
         assertThrows(IllegalStateException.class,
-                     () -> OpenApiDocumentComposer.compose(context,
-                                                           RawOpenApiVersion.INSTANCE,
-                                                           STATIC_DOCUMENT_WITH_ADDITIONAL_OPERATION,
-                                                           MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                           List.of(generated)));
+                     () -> compose(context,
+                                   RawOpenApiVersion.INSTANCE,
+                                   STATIC_DOCUMENT_WITH_ADDITIONAL_OPERATION,
+                                   MediaTypes.APPLICATION_OPENAPI_YAML,
+                                   List.of(generated)));
     }
 
     @Test
@@ -731,11 +810,11 @@ class OpenApiDocumentComposerTest {
                 .webhook("order.{created}", path -> path.operation("POST", responseOperation("orderCreated")))
                 .webhook("order.{deleted}", path -> path.operation("POST", responseOperation("orderDeleted")));
 
-        String content = OpenApiDocumentComposer.compose(context,
-                                                        RawOpenApiVersion.INSTANCE,
-                                                        "",
-                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
-                                                        List.of(generated));
+        String content = compose(context,
+                                 RawOpenApiVersion.INSTANCE,
+                                 "",
+                                 MediaTypes.APPLICATION_OPENAPI_YAML,
+                                 List.of(generated));
 
         Map<String, Object> webhooks = map(parse(content), "webhooks");
         assertThat(webhooks.containsKey("order.{created}"), is(true));
@@ -842,10 +921,29 @@ class OpenApiDocumentComposerTest {
                 .build();
     }
 
+    private static String compose(OpenApiDocumentContext context,
+                                  OpenApiVersion staticOpenApiVersion,
+                                  String staticContent,
+                                  MediaType staticContentMediaType,
+                                  List<OpenApiDocumentSource> sources) {
+        return OpenApiDocumentComposer.compose(
+                context,
+                Optional.of(() -> {
+                    OpenApiDocumentContext staticContext = new OpenApiDocumentContextImpl(context.featureName(),
+                                                                                          context.webContext(),
+                                                                                          context.listener(),
+                                                                                          context.generatedMode(),
+                                                                                          staticOpenApiVersion);
+                    return staticOpenApiVersion.parse(staticContext, staticContent, staticContentMediaType);
+                }),
+                staticContent,
+                sources);
+    }
+
     private static void assertDuplicateOperationId(OpenApiDocumentSource source, String expectedMessage) {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
-                                                    () -> OpenApiDocumentComposer.compose(
+                                                    () -> compose(
                                                             context,
                                                             context.openApiVersion(),
                                                             "",
@@ -891,6 +989,14 @@ class OpenApiDocumentComposerTest {
                                               operationIds);
     }
 
+    private static OpenApiDocumentContext rawContext(OpenApiGeneratedMode mode) {
+        return new OpenApiDocumentContextImpl("openapi",
+                                              "/openapi",
+                                              "default",
+                                              mode,
+                                              RawOpenApiVersion.INSTANCE);
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> parse(String content) {
         return new Yaml().load(content);
@@ -910,7 +1016,7 @@ class OpenApiDocumentComposerTest {
         @Override
         public OpenApiDocument parse(OpenApiDocumentContext context,
                                      String content,
-                                     io.helidon.common.media.type.MediaType mediaType) {
+                                     MediaType mediaType) {
             if (failParse) {
                 throw new AssertionError("Configured render version must not parse static content.");
             }
@@ -937,7 +1043,7 @@ class OpenApiDocumentComposerTest {
         @Override
         public OpenApiDocument parse(OpenApiDocumentContext context,
                                      String content,
-                                     io.helidon.common.media.type.MediaType mediaType) {
+                                     MediaType mediaType) {
             OpenApiDocument document = OpenApi30Version.create().parse(context, content, mediaType);
             if (content.contains("operationId: staticCopy")) {
                 return OpenApiDocument.builder()

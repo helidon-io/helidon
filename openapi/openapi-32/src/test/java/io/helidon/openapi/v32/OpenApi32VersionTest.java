@@ -112,6 +112,7 @@ class OpenApi32VersionTest {
 
         Map<?, ?> search = map(map(map(rendered, "paths"), "/search"), "get");
         Map<?, ?> queryString = (Map<?, ?>) ((List<?>) search.get("parameters")).getFirst();
+        assertThat(queryString.get("name"), is("query"));
         assertThat(queryString.get("in"), is("querystring"));
         Map<?, ?> formExample = map(map(map(map(queryString, "content"), "application/x-www-form-urlencoded"), "examples"),
                                     "form");
@@ -249,6 +250,31 @@ class OpenApi32VersionTest {
         Map<?, ?> path30 = map(map(rendered30, "paths"), "/static/{id}");
         assertThat(path30.containsKey("copy"), is(false));
         assertThat(path30.containsKey("additionalOperations"), is(false));
+    }
+
+    @Test
+    void rejectsFixedMethodInParsedAdditionalOperations() {
+        OpenApi32Version version = OpenApi32Version.create();
+
+        IllegalArgumentException thrown = assertThrows(
+                IllegalArgumentException.class,
+                () -> version.parse(context(version),
+                                    """
+                                    openapi: 3.2.0
+                                    info:
+                                      title: Static API
+                                      version: 1.0.0
+                                    paths:
+                                      /static:
+                                        additionalOperations:
+                                          POST:
+                                            responses:
+                                              "200":
+                                                description: Static response.
+                                    """,
+                                    MediaTypes.APPLICATION_OPENAPI_YAML));
+
+        assertThat(thrown.getMessage(), containsString("fixed-field HTTP method: POST"));
     }
 
     @Test

@@ -1908,10 +1908,9 @@ final class OpenApiSourceGenerator {
         return result;
     }
 
-    // Package-private for direct testing without reflection.
-    static List<Annotation> repeatableAnnotations(Set<Annotation> annotations,
-                                                  TypeName containerType,
-                                                  TypeName annotationType) {
+    private static List<Annotation> repeatableAnnotations(Set<Annotation> annotations,
+                                                          TypeName containerType,
+                                                          TypeName annotationType) {
         List<Annotation> result = new ArrayList<>();
         Annotations.findFirst(containerType, annotations)
                 .flatMap(Annotation::annotationValues)

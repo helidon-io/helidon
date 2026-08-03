@@ -86,6 +86,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private final MediaType contentMediaType;
     private final OpenApiFormat contentFormat;
     private final ConcurrentMap<String, LazyValue<Optional<StaticOpenApiDocument>>> staticOpenApiDocuments;
+    private final LazyValue<StaticDocumentVersion> staticDocumentVersion;
     private final OpenApiFeatureConfig config;
     private final Config sourceConfig;
     private final OpenApiManager<?> manager;
@@ -177,6 +178,11 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         contentMediaType = defaultContentMediaType;
         contentFormat = defaultContentFormat;
         staticOpenApiDocuments = new ConcurrentHashMap<>();
+        staticDocumentVersion = LazyValue.create(() -> {
+            String declaredVersion = openApiVersion(content, contentFormat).orElseThrow(() ->
+                    new IllegalStateException("Static OpenAPI document does not declare an openapi version."));
+            return new StaticDocumentVersion(declaredVersion, staticOpenApiVersion(declaredVersion));
+        });
         manager = config.manager().orElseGet(SimpleOpenApiManager::new);
         managerLock = OpenApiLockCoordinator.coordinationLock(manager);
         modelsByListener = new ConcurrentHashMap<>();
@@ -303,19 +309,26 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         }
     }
 
-    // Used by tests to verify static document version parsing stays lazy.
-    boolean contentOpenApiVersionLoaded() {
-        return staticOpenApiDocuments.values()
-                .stream()
-                .anyMatch(LazyValue::isLoaded);
-    }
-
     private LazyValue<Object> model(String listener) {
         return LazyValue.create(() -> {
             List<OpenApiDocumentSource> sources = documentSources();
-            List<OpenApiLockCoordinator.CoordinationLock> locks = new ArrayList<>(sources.size() + 1);
+            OpenApiGeneratedMode mode = config.generatedMode();
+            boolean hasStaticContent = !content.isBlank();
+            boolean usesGeneratedDocument = !sources.isEmpty()
+                    && mode != OpenApiGeneratedMode.STATIC_ONLY
+                    && (mode != OpenApiGeneratedMode.STATIC_FIRST || !hasStaticContent);
+            List<OpenApiLockCoordinator.CoordinationLock> locks = new ArrayList<>(sources.size() + 3);
             locks.add(managerLock);
             sources.forEach(source -> locks.add(OpenApiLockCoordinator.coordinationLock(source)));
+            if (usesGeneratedDocument || (mode == OpenApiGeneratedMode.MERGE && hasStaticContent)) {
+                config.openApiVersion()
+                        .map(OpenApiLockCoordinator::coordinationLock)
+                        .ifPresent(locks::add);
+            }
+            if (mode == OpenApiGeneratedMode.MERGE && hasStaticContent) {
+                // Resolve the parser before locking so its identity participates in the global lock order.
+                locks.add(OpenApiLockCoordinator.coordinationLock(staticDocumentVersion.get().openApiVersion()));
+            }
             try (var ignored = OpenApiLockCoordinator.lock(locks)) {
                 return manager.load(documentContent(listener, sources));
             }
@@ -606,16 +619,15 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         if (content.isBlank()) {
             return Optional.empty();
         }
-        String openApiVersion = openApiVersion(content, contentFormat).orElseThrow(() ->
-                new IllegalStateException("Static OpenAPI document does not declare an openapi version."));
-        OpenApiVersion staticOpenApiVersion = staticOpenApiVersion(openApiVersion);
+        StaticDocumentVersion documentVersion = staticDocumentVersion.get();
+        OpenApiVersion staticOpenApiVersion = documentVersion.openApiVersion();
         OpenApiDocumentContext staticContext = new OpenApiDocumentContextImpl(config.name(),
                                                                               config.webContext(),
                                                                               listener,
                                                                               config.generatedMode(),
                                                                               staticOpenApiVersion);
         OpenApiDocument document = staticOpenApiVersion.parse(staticContext, content, contentMediaType);
-        return Optional.of(new StaticOpenApiDocument(openApiVersion, document));
+        return Optional.of(new StaticOpenApiDocument(documentVersion.declaredVersion(), document));
     }
 
     private static Optional<String> openApiVersion(String content, OpenApiFormat format) {
@@ -676,5 +688,8 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     }
 
     private record StaticOpenApiDocument(String openApiVersion, OpenApiDocument document) {
+    }
+
+    private record StaticDocumentVersion(String declaredVersion, OpenApiVersion openApiVersion) {
     }
 }

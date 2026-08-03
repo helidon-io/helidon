@@ -82,9 +82,7 @@ public final class OpenApiDocumentReader {
                                             item -> builder.webhook(name, pathItem(item))));
         });
         object(source, "components", components -> builder.components(components(components)));
-        array(source, "security", security -> security.values()
-                .forEach(requirement -> object(requirement,
-                                               value -> builder.securityRequirement(securityRequirement(value)))));
+        securityRequirements(source).ifPresent(requirements -> requirements.forEach(builder::securityRequirement));
         array(source, "tags", tags -> tags.values()
                 .forEach(tag -> object(tag, value -> builder.tag(tag(value)))));
         object(source, "externalDocs", docs -> builder.externalDocs(externalDocs(docs)));
@@ -211,15 +209,7 @@ public final class OpenApiDocumentReader {
         object(source, "callbacks", callbacks -> callbacks.keysAsStrings()
                 .forEach(name -> object(callbacks, name, callback -> builder.callback(name, callback(callback)))));
         bool(source, "deprecated", builder::deprecated);
-        array(source, "security", security -> {
-            if (security.values().isEmpty()) {
-                builder.security(List.of());
-                return;
-            }
-            security.values()
-                    .forEach(requirement -> object(requirement,
-                                                   value -> builder.securityRequirement(securityRequirement(value))));
-        });
+        securityRequirements(source).ifPresent(builder::security);
         array(source, "servers", servers -> servers.values()
                 .forEach(server -> object(server, value -> builder.server(server(value)))));
         extensions(source, builder::extension);
@@ -450,9 +440,43 @@ public final class OpenApiDocumentReader {
 
     private static OpenApiDocument.SecurityRequirement securityRequirement(JsonObject source) {
         OpenApiDocument.SecurityRequirementBuilder builder = OpenApiDocument.SecurityRequirement.builder();
-        source.keysAsStrings()
-                .forEach(name -> array(source, name, scopes -> builder.scheme(name, stringValues(scopes))));
+        source.keysAsStrings().forEach(name -> {
+            JsonValue scopes = source.value(name).orElseThrow();
+            if (scopes.type() != JsonValueType.ARRAY) {
+                throw new IllegalStateException("OpenAPI security requirement object scheme " + name
+                                                        + " scopes must be an array.");
+            }
+            List<String> scopeNames = new ArrayList<>();
+            scopes.asArray().values().forEach(scope -> {
+                if (scope.type() != JsonValueType.STRING) {
+                    throw new IllegalStateException("OpenAPI security requirement object scheme " + name
+                                                            + " scopes must contain only strings.");
+                }
+                scopeNames.add(scope.asString().value());
+            });
+            builder.scheme(name, scopeNames);
+        });
         return builder.build();
+    }
+
+    private static Optional<List<OpenApiDocument.SecurityRequirement>> securityRequirements(JsonObject source) {
+        Optional<JsonValue> security = source.value("security");
+        if (security.isEmpty()) {
+            return Optional.empty();
+        }
+        JsonValue securityValue = security.orElseThrow();
+        if (securityValue.type() != JsonValueType.ARRAY) {
+            throw new IllegalStateException("OpenAPI security must be an array of Security Requirement Objects.");
+        }
+        List<OpenApiDocument.SecurityRequirement> result = new ArrayList<>();
+        securityValue.asArray().values().forEach(requirement -> {
+            if (requirement.type() != JsonValueType.OBJECT) {
+                throw new IllegalStateException(
+                        "OpenAPI security array must contain only Security Requirement Objects.");
+            }
+            result.add(securityRequirement(requirement.asObject()));
+        });
+        return Optional.of(result);
     }
 
     private static void reference(JsonObject source,

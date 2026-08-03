@@ -147,6 +147,65 @@ class OpenApiResponseCodegenTest {
     }
 
     @Test
+    void directResponseCombinesWithInheritedResponses() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-inherited-and-direct-responses"))
+                .addSource("CombinedResponseOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        interface ResponseContract {
+                            @Http.GET
+                            @OpenApi.Responses(@OpenApi.Response(status = 200, description = "Inherited OK"))
+                            String get();
+                        }
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/responses")
+                        class CombinedResponseOpenApiEndpoint implements ResponseContract {
+                            @Override
+                            @OpenApi.Response(status = 201, description = "Local Created")
+                            public String get() {
+                                return "ok";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".response(\"200\", response -> response.description("
+                                                     + "io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"Inherited OK\"))"));
+        assertThat(generated, containsString(".response(\"201\", response -> response.description("
+                                                     + "io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"Local Created\"))"));
+    }
+
+    @Test
     void responseLinksAreGenerated() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()

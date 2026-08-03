@@ -140,6 +140,35 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void rejectsMalformedSecurityRequirements() {
+        Map<String, Object> invalidSecurityValues = new LinkedHashMap<>();
+        invalidSecurityValues.put("security value is not an array", Map.of("OAuth", List.of()));
+        invalidSecurityValues.put("security requirement is not an object", List.of("OAuth"));
+        invalidSecurityValues.put("scheme scopes are not an array", List.of(Map.of("OAuth", "read")));
+        invalidSecurityValues.put("scheme scope is not a string", List.of(Map.of("OAuth", List.of("read", 42))));
+
+        invalidSecurityValues.forEach((description, invalidSecurity) -> {
+            Map<String, Object> topLevelDocument = new LinkedHashMap<>(document("3.0.3"));
+            topLevelDocument.put("security", invalidSecurity);
+            IllegalStateException topLevel = assertThrows(IllegalStateException.class,
+                                                          () -> OpenApi30DocumentMapper.parse(topLevelDocument),
+                                                          description + " at document level");
+            assertThat(description, topLevel.getMessage(), containsString("security"));
+
+            Map<String, Object> operationDocument = new LinkedHashMap<>(document("3.0.3"));
+            operationDocument.put("paths", Map.of(
+                    "/items", Map.of(
+                            "get", Map.of(
+                                    "responses", Map.of("200", Map.of("description", "OK")),
+                                    "security", invalidSecurity))));
+            IllegalStateException operation = assertThrows(IllegalStateException.class,
+                                                           () -> OpenApi30DocumentMapper.parse(operationDocument),
+                                                           description + " at operation level");
+            assertThat(description, operation.getMessage(), containsString("security"));
+        });
+    }
+
+    @Test
     void preservesLargeIntegralNumbers() {
         OpenApiDocument document = OpenApi30DocumentMapper.parse(document("3.0.3"));
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");

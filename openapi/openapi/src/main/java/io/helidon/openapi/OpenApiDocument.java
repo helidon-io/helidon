@@ -582,6 +582,104 @@ public final class OpenApiDocument {
         return node.containsKey("$ref");
     }
 
+    private static List<Parameter> parameterList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return List.of();
+        }
+        List<Parameter> result = new ArrayList<>();
+        list.forEach(item -> objectValue(item).ifPresent(node -> result.add(new Parameter(node))));
+        return Collections.unmodifiableList(result);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> object(Map<String, Object> parent, String name) {
+        return (Map<String, Object>) parent.computeIfAbsent(name, ignored -> new LinkedHashMap<String, Object>());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Object> array(Map<String, Object> parent, String name) {
+        return (List<Object>) parent.computeIfAbsent(name, ignored -> new ArrayList<>());
+    }
+
+    private static JsonObject jsonObject(Map<String, Object> source) {
+        Map<String, JsonValue> result = new LinkedHashMap<>();
+        source.forEach((key, value) -> result.put(key, jsonValue(value)));
+        return JsonObject.create(result);
+    }
+
+    private static JsonValue jsonValue(Object value) {
+        switch (value) {
+        case null -> {
+            return JsonNull.instance();
+        }
+        case JsonValue jsonValue -> {
+            return jsonValue;
+        }
+        case String string -> {
+            return JsonString.create(string);
+        }
+        case Boolean bool -> {
+            return JsonBoolean.create(bool);
+        }
+        case BigDecimal number -> {
+            return JsonNumber.create(number);
+        }
+        case Number number -> {
+            return jsonNumber(number);
+        }
+        case Map<?, ?> map -> {
+            Map<String, Object> object = new LinkedHashMap<>();
+            map.forEach((key, item) -> object.put(String.valueOf(key), item));
+            return jsonObject(object);
+        }
+        case List<?> list -> {
+            return JsonArray.create(list.stream()
+                                            .map(OpenApiDocument::jsonValue)
+                                            .toList());
+        }
+        default -> {
+        }
+        }
+        throw new IllegalArgumentException("Unsupported OpenAPI document value type: " + value.getClass().getName());
+    }
+
+    private static JsonNumber jsonNumber(Number number) {
+        if (number instanceof Byte
+                || number instanceof Short
+                || number instanceof Integer
+                || number instanceof Long) {
+            return JsonNumber.create(number.longValue());
+        }
+        if (number instanceof BigInteger bigInteger) {
+            return JsonNumber.create(new BigDecimal(bigInteger));
+        }
+        return JsonNumber.create(new BigDecimal(number.toString()));
+    }
+
+    private static Map<String, Object> jsonObject(JsonObject object) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        object.keysAsStrings()
+                .forEach(key -> object.value(key)
+                        .ifPresent(value -> result.put(key, jsonValue(value))));
+        return result;
+    }
+
+    private static Object jsonValue(JsonValue value) {
+        return switch (value.type()) {
+        case OBJECT -> jsonObject(value.asObject());
+        case ARRAY -> value.asArray()
+                .values()
+                .stream()
+                .map(OpenApiDocument::jsonValue)
+                .toList();
+        case STRING -> value.asString().value();
+        case NUMBER -> value.asNumber().bigDecimalValue();
+        case BOOLEAN -> value.asBoolean().value();
+        case NULL -> null;
+        case UNKNOWN -> value.toString();
+        };
+    }
+
     /**
      * OpenAPI Info Object.
      */
@@ -1653,9 +1751,15 @@ public final class OpenApiDocument {
          * @param method method name
          * @param operation operation
          * @return updated builder
+         * @throws IllegalArgumentException if the method matches a fixed-field HTTP method, ignoring case
+         * @throws IllegalStateException if the method is already defined
          */
         public PathItemBuilder additionalOperation(String method, Operation operation) {
             String methodName = Objects.requireNonNull(method);
+            if (fixedPathOperationField(methodName) != null) {
+                throw new IllegalArgumentException("OpenAPI Path Item additionalOperations must not contain fixed-field "
+                                                           + "HTTP method: " + methodName);
+            }
             Map<String, Object> operations = object(node, "additionalOperations");
             if (operations.containsKey(methodName)) {
                 throw new IllegalStateException("Conflicting OpenAPI operation: additionalOperations." + methodName);
@@ -1670,6 +1774,8 @@ public final class OpenApiDocument {
          * @param method method name
          * @param operation consumer to update operation builder
          * @return updated builder
+         * @throws IllegalArgumentException if the method matches a fixed-field HTTP method, ignoring case
+         * @throws IllegalStateException if the method is already defined
          */
         public PathItemBuilder additionalOperation(String method, Consumer<OperationBuilder> operation) {
             OperationBuilder builder = Operation.builder();
@@ -2543,9 +2649,7 @@ public final class OpenApiDocument {
         public Parameter build() {
             if (!isReference(node)) {
                 requireString(node, "in", "OpenAPI Parameter");
-                if (!"querystring".equals(stringValue(node.get("in")).orElse(""))) {
-                    requireString(node, "name", "OpenAPI Parameter");
-                }
+                requireString(node, "name", "OpenAPI Parameter");
             }
             return new Parameter(node);
         }
@@ -4699,103 +4803,5 @@ public final class OpenApiDocument {
         public OpenApiDocument build() {
             return new OpenApiDocument(node);
         }
-    }
-
-    private static List<Parameter> parameterList(Object value) {
-        if (!(value instanceof List<?> list)) {
-            return List.of();
-        }
-        List<Parameter> result = new ArrayList<>();
-        list.forEach(item -> objectValue(item).ifPresent(node -> result.add(new Parameter(node))));
-        return Collections.unmodifiableList(result);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> object(Map<String, Object> parent, String name) {
-        return (Map<String, Object>) parent.computeIfAbsent(name, ignored -> new LinkedHashMap<String, Object>());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<Object> array(Map<String, Object> parent, String name) {
-        return (List<Object>) parent.computeIfAbsent(name, ignored -> new ArrayList<>());
-    }
-
-    private static JsonObject jsonObject(Map<String, Object> source) {
-        Map<String, JsonValue> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> result.put(key, jsonValue(value)));
-        return JsonObject.create(result);
-    }
-
-    private static JsonValue jsonValue(Object value) {
-        switch (value) {
-        case null -> {
-            return JsonNull.instance();
-        }
-        case JsonValue jsonValue -> {
-            return jsonValue;
-        }
-        case String string -> {
-            return JsonString.create(string);
-        }
-        case Boolean bool -> {
-            return JsonBoolean.create(bool);
-        }
-        case BigDecimal number -> {
-            return JsonNumber.create(number);
-        }
-        case Number number -> {
-            return jsonNumber(number);
-        }
-        case Map<?, ?> map -> {
-            Map<String, Object> object = new LinkedHashMap<>();
-            map.forEach((key, item) -> object.put(String.valueOf(key), item));
-            return jsonObject(object);
-        }
-        case List<?> list -> {
-            return JsonArray.create(list.stream()
-                                            .map(OpenApiDocument::jsonValue)
-                                            .toList());
-        }
-        default -> {
-        }
-        }
-        throw new IllegalArgumentException("Unsupported OpenAPI document value type: " + value.getClass().getName());
-    }
-
-    private static JsonNumber jsonNumber(Number number) {
-        if (number instanceof Byte
-                || number instanceof Short
-                || number instanceof Integer
-                || number instanceof Long) {
-            return JsonNumber.create(number.longValue());
-        }
-        if (number instanceof BigInteger bigInteger) {
-            return JsonNumber.create(new BigDecimal(bigInteger));
-        }
-        return JsonNumber.create(new BigDecimal(number.toString()));
-    }
-
-    private static Map<String, Object> jsonObject(JsonObject object) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        object.keysAsStrings()
-                .forEach(key -> object.value(key)
-                        .ifPresent(value -> result.put(key, jsonValue(value))));
-        return result;
-    }
-
-    private static Object jsonValue(JsonValue value) {
-        return switch (value.type()) {
-        case OBJECT -> jsonObject(value.asObject());
-        case ARRAY -> value.asArray()
-                .values()
-                .stream()
-                .map(OpenApiDocument::jsonValue)
-                .toList();
-        case STRING -> value.asString().value();
-        case NUMBER -> value.asNumber().bigDecimalValue();
-        case BOOLEAN -> value.asBoolean().value();
-        case NULL -> null;
-        case UNKNOWN -> value.toString();
-        };
     }
 }

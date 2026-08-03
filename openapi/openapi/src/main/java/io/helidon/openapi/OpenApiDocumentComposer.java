@@ -26,28 +26,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import io.helidon.common.media.type.MediaType;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
-import io.helidon.openapi.spi.OpenApiVersion;
 
 final class OpenApiDocumentComposer {
     private OpenApiDocumentComposer() {
-    }
-
-    static String compose(OpenApiDocumentContext context,
-                          OpenApiVersion staticOpenApiVersion,
-                          String staticContent,
-                          MediaType staticContentMediaType,
-                          List<OpenApiDocumentSource> sources) {
-        Optional<Supplier<OpenApiDocument>> staticDocument = Optional.of(() -> {
-            OpenApiDocumentContext staticContext = new OpenApiDocumentContextImpl(context.featureName(),
-                                                                                  context.webContext(),
-                                                                                  context.listener(),
-                                                                                  context.generatedMode(),
-                                                                                  staticOpenApiVersion);
-            return staticOpenApiVersion.parse(staticContext, staticContent, staticContentMediaType);
-        });
-        return compose(context, staticDocument, staticContent, sources);
     }
 
     static String compose(OpenApiDocumentContext context,
@@ -70,7 +52,9 @@ final class OpenApiDocumentComposer {
                 return "";
             }
             if (mode == OpenApiGeneratedMode.MERGE && hasStaticContent) {
-                return context.openApiVersion().render(context, staticDocument.orElseThrow().get());
+                OpenApiDocument composed = staticDocument.orElseThrow().get();
+                validateComposedDocument(composed);
+                return context.openApiVersion().render(context, composed);
             }
             return staticContent;
         }
@@ -229,6 +213,42 @@ final class OpenApiDocumentComposer {
 
     private static void validateComposedDocument(OpenApiDocument document) {
         validateOperationIds(document);
+        Map<String, String> tagParents = new LinkedHashMap<>();
+        Set<String> tagNames = new LinkedHashSet<>();
+        Object tags = document.mutableNode().get("tags");
+        if (tags instanceof List<?> tagList) {
+            for (Object tagNode : tagList) {
+                if (tagNode instanceof Map<?, ?> tag && tag.get("name") instanceof String tagName) {
+                    tagNames.add(tagName);
+                    if (tag.get("parent") instanceof String parentName) {
+                        tagParents.put(tagName, parentName);
+                    }
+                }
+            }
+        }
+        tagParents.forEach((tagName, parentName) -> {
+            if (!tagNames.contains(parentName)) {
+                throw new IllegalStateException("OpenAPI tag " + tagName
+                                                        + " references missing parent tag " + parentName);
+            }
+            if (tagName.equals(parentName)) {
+                throw new IllegalStateException("OpenAPI tag " + tagName + " cannot be its own parent");
+            }
+        });
+        for (String tagName : tagParents.keySet()) {
+            Set<String> path = new LinkedHashSet<>();
+            String currentName = tagName;
+            while (currentName != null && path.add(currentName)) {
+                currentName = tagParents.get(currentName);
+            }
+            if (currentName != null) {
+                List<String> pathNames = List.copyOf(path);
+                int cycleStart = pathNames.indexOf(currentName);
+                String cycle = String.join(" -> ", pathNames.subList(cycleStart, pathNames.size()))
+                        + " -> " + currentName;
+                throw new IllegalStateException("OpenAPI tag parent cycle: " + cycle);
+            }
+        }
         if (document.info().isEmpty()) {
             throw new IllegalStateException("Composed OpenAPI document requires Info metadata. "
                                                     + "Add an @OpenApi.Document type with @OpenApi.Info, provide Info "

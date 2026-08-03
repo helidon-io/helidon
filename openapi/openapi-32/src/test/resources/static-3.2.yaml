@@ -98,7 +98,8 @@ paths:
         - static
       operationId: searchStatic
       parameters:
-        - in: querystring
+        - name: query
+          in: querystring
           content:
             application/x-www-form-urlencoded:
               schema:

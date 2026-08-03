@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.Builder;
@@ -280,7 +281,6 @@ class OpenApiFeatureTest {
         feature.initialize();
 
         assertThat(feature.prototype().isEnabled(), is(false));
-        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
     }
 
     @Test
@@ -446,7 +446,7 @@ class OpenApiFeatureTest {
     void mergeStaticDocumentUsesParserForDeclaredVersion(@TempDir Path tempDir) throws IOException {
         RecordingOpenApiManager manager = new RecordingOpenApiManager();
         OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
-        OpenApiVersion staticVersion = new TestOpenApiVersion("3.1", "3.1.0", false);
+        CountingOpenApiVersion staticVersion = new CountingOpenApiVersion("3.1", "3.1.0");
         Path staticFile = tempDir.resolve("static-3.1.yaml");
         Files.writeString(staticFile, OPENAPI_31_DOCUMENT);
         OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
@@ -460,10 +460,10 @@ class OpenApiFeatureTest {
                                                     () -> List.of(generatedPathSource()),
                                                     () -> List.of(provider("3.1", staticVersion)));
 
-        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
+        assertThat(staticVersion.parseCount(), is(0));
         feature.initialize();
 
-        assertThat(feature.contentOpenApiVersionLoaded(), is(true));
+        assertThat(staticVersion.parseCount(), is(1));
         assertThat(parse(manager.content()).get("openapi"), is("3.0.3"));
     }
 
@@ -563,11 +563,10 @@ class OpenApiFeatureTest {
                                                     () -> List.of(generatedPathSource()),
                                                     () -> List.of(provider("3.1", staticVersion)));
 
-        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
+        assertThat(staticVersion.parseCount(), is(0));
         feature.setup(new TestFeatureContext("admin"));
         feature.initialize();
 
-        assertThat(feature.contentOpenApiVersionLoaded(), is(true));
         assertThat(staticVersion.parseCount(), is(2));
         assertThat(manager.contents().size(), is(2));
 
@@ -687,12 +686,15 @@ class OpenApiFeatureTest {
                 .openApiVersion(OpenApi30Version.create())
                 .manager(manager)
                 .buildPrototype();
-        OpenApiFeature feature = new OpenApiFeature(config, () -> List.of(generatedSource()), List::of);
+        OpenApiFeature feature = new OpenApiFeature(config,
+                                                    () -> List.of(generatedSource()),
+                                                    () -> {
+                                                        throw new AssertionError("Generated-only OpenAPI must not"
+                                                                                         + " discover static version providers.");
+                                                    });
 
-        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
         feature.initialize();
 
-        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
         Map<String, Object> document = parse(manager.content());
         assertThat(map(document, "info").get("title"), is("Generated API"));
         assertThat(map(document, "paths").containsKey("/generated"), is(true));
@@ -740,13 +742,13 @@ class OpenApiFeatureTest {
                 .buildPrototype();
         OpenApiFeature feature = new OpenApiFeature(config,
                                                     () -> List.of(generatedSource()),
-                                                    () -> List.of(provider("3.1",
-                                                                           new TestOpenApiVersion("3.1", "3.1.0", true))));
+                                                    () -> {
+                                                        throw new AssertionError(mode + " OpenAPI must not discover"
+                                                                                         + " static version providers.");
+                                                    });
 
-        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
         feature.initialize();
 
-        assertThat(feature.contentOpenApiVersionLoaded(), is(false));
         assertThat(manager.content(), is(OPENAPI_31_DOCUMENT));
     }
 
@@ -1248,6 +1250,67 @@ class OpenApiFeatureTest {
     }
 
     @Test
+    void serializesSharedOpenApiVersionAcrossFeatures() throws Exception {
+        CountDownLatch firstVersionCall = new CountDownLatch(1);
+        CountDownLatch concurrentVersionCall = new CountDownLatch(1);
+        CountDownLatch releaseFirstVersionCall = new CountDownLatch(1);
+        CountDownLatch readyToInitialize = new CountDownLatch(2);
+        CountDownLatch startInitialization = new CountDownLatch(1);
+        ConcurrentTrackingOpenApiVersion sharedVersion = new ConcurrentTrackingOpenApiVersion(firstVersionCall,
+                                                                                                concurrentVersionCall,
+                                                                                                releaseFirstVersionCall);
+        OpenApiFeatureConfig firstConfig = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(sharedVersion)
+                .manager(new RecordingOpenApiManager())
+                .buildPrototype();
+        OpenApiFeatureConfig secondConfig = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(sharedVersion)
+                .manager(new RecordingOpenApiManager())
+                .buildPrototype();
+        OpenApiFeature firstFeature = new OpenApiFeature(firstConfig,
+                                                         () -> List.of(generatedSource(WebServer.DEFAULT_SOCKET_NAME,
+                                                                                     "/first")),
+                                                         List::of);
+        OpenApiFeature secondFeature = new OpenApiFeature(secondConfig,
+                                                          () -> List.of(generatedSource(WebServer.DEFAULT_SOCKET_NAME,
+                                                                                      "/second")),
+                                                          List::of);
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var firstInitialization = executor.submit(() -> {
+                readyToInitialize.countDown();
+                startInitialization.await();
+                firstFeature.initialize();
+                return null;
+            });
+            var secondInitialization = executor.submit(() -> {
+                readyToInitialize.countDown();
+                startInitialization.await();
+                secondFeature.initialize();
+                return null;
+            });
+
+            assertThat(readyToInitialize.await(10, TimeUnit.SECONDS), is(true));
+            startInitialization.countDown();
+            assertThat(firstVersionCall.await(10, TimeUnit.SECONDS), is(true));
+            boolean overlapped = concurrentVersionCall.await(2, TimeUnit.SECONDS);
+            releaseFirstVersionCall.countDown();
+
+            firstInitialization.get();
+            secondInitialization.get();
+            assertThat(overlapped, is(false));
+            assertThat(sharedVersion.callCount(), is(2));
+            assertThat(sharedVersion.maxConcurrentCalls(), is(1));
+        } finally {
+            releaseFirstVersionCall.countDown();
+        }
+    }
+
+    @Test
     void initializesIndependentFeaturesConcurrently() throws Exception {
         CountDownLatch firstDescribe = new CountDownLatch(1);
         CountDownLatch secondDescribe = new CountDownLatch(1);
@@ -1272,13 +1335,18 @@ class OpenApiFeatureTest {
             document.info(context.listener(), "1.0.0")
                     .paths(Map.of());
         };
-        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+        OpenApiFeatureConfig firstConfig = OpenApiFeatureConfig.builder()
                 .servicesDiscoverServices(false)
                 .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
                 .openApiVersion(OpenApi30Version.create())
                 .buildPrototype();
-        OpenApiFeature firstFeature = new OpenApiFeature(config, () -> List.of(firstSource), List::of);
-        OpenApiFeature secondFeature = new OpenApiFeature(config, () -> List.of(secondSource), List::of);
+        OpenApiFeatureConfig secondConfig = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(OpenApi30Version.create())
+                .buildPrototype();
+        OpenApiFeature firstFeature = new OpenApiFeature(firstConfig, () -> List.of(firstSource), List::of);
+        OpenApiFeature secondFeature = new OpenApiFeature(secondConfig, () -> List.of(secondSource), List::of);
 
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var firstInitialization = executor.submit(() -> {
@@ -1729,6 +1797,80 @@ class OpenApiFeatureTest {
         @Override
         public String name() {
             return type;
+        }
+    }
+
+    private static final class ConcurrentTrackingOpenApiVersion implements OpenApiVersion {
+        private final CountDownLatch firstCall;
+        private final CountDownLatch concurrentCall;
+        private final CountDownLatch releaseFirstCall;
+        private final AtomicInteger activeCalls = new AtomicInteger();
+        private final AtomicInteger calls = new AtomicInteger();
+        private final AtomicInteger maxConcurrentCalls = new AtomicInteger();
+
+        private ConcurrentTrackingOpenApiVersion(CountDownLatch firstCall,
+                                                 CountDownLatch concurrentCall,
+                                                 CountDownLatch releaseFirstCall) {
+            this.firstCall = firstCall;
+            this.concurrentCall = concurrentCall;
+            this.releaseFirstCall = releaseFirstCall;
+        }
+
+        @Override
+        public String version() {
+            return "3.0.3";
+        }
+
+        @Override
+        public OpenApiDocument parse(OpenApiDocumentContext context, String content, MediaType mediaType) {
+            return invoke(() -> OpenApiDocument.builder()
+                    .openapi(version())
+                    .info("Static API", "1.0.0")
+                    .build());
+        }
+
+        @Override
+        public String render(OpenApiDocumentContext context, OpenApiDocument document) {
+            return invoke(() -> OpenApi30Version.create().render(context, document));
+        }
+
+        @Override
+        public String name() {
+            return "3.0";
+        }
+
+        @Override
+        public String type() {
+            return "3.0";
+        }
+
+        private <T> T invoke(Supplier<T> invocation) {
+            calls.incrementAndGet();
+            int active = activeCalls.incrementAndGet();
+            maxConcurrentCalls.accumulateAndGet(active, Math::max);
+            firstCall.countDown();
+            if (active > 1) {
+                concurrentCall.countDown();
+            }
+            try {
+                if (!releaseFirstCall.await(10, TimeUnit.SECONDS)) {
+                    throw new AssertionError("Timed out waiting to release the first OpenAPI version invocation.");
+                }
+                return invocation.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError(e);
+            } finally {
+                activeCalls.decrementAndGet();
+            }
+        }
+
+        private int maxConcurrentCalls() {
+            return maxConcurrentCalls.get();
+        }
+
+        private int callCount() {
+            return calls.get();
         }
     }
 
