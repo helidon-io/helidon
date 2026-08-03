@@ -93,6 +93,9 @@ class ServiceManager<T> {
                 return Optional.empty();
             }
         }
+        if (!registry.scopeHandlerInitialized(descriptor.scope())) {
+            return Optional.empty();
+        }
 
         Activator<T> serviceActivator;
         if (fixedInstance) {

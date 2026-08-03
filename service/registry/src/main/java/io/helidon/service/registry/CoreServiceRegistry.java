@@ -923,6 +923,19 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         return scope;
     }
 
+    boolean scopeHandlerInitialized(TypeName scope) {
+        if (Service.Singleton.TYPE.equals(scope) || Service.PerLookup.TYPE.equals(scope)) {
+            return true;
+        }
+
+        scopeHandlerInstancesLock.lock();
+        try {
+            return scopeHandlerInstances.containsKey(scope);
+        } finally {
+            scopeHandlerInstancesLock.unlock();
+        }
+    }
+
     private Service.ScopeHandler scopeHandler(TypeName scope) {
         scopeHandlerInstancesLock.lock();
         try {
