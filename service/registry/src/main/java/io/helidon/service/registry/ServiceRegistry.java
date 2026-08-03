@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -260,31 +259,6 @@ public interface ServiceRegistry {
                                    .addContract(contract)
                                    .qualifiers(Set.of(qualifiers))
                                    .build());
-    }
-
-    /**
-     * Whether the current thread is resolving an instance matching the contract.
-     *
-     * @param contract contract to check
-     * @return whether the current thread is resolving an instance matching the contract
-     */
-    @Api.Internal
-    default boolean isResolvingOnCurrentThread(Class<?> contract) {
-        return isResolvingOnCurrentThread(TypeName.create(contract));
-    }
-
-    /**
-     * Whether the current thread is resolving an instance matching the contract.
-     * <p>
-     * The default implementation returns {@code false}.
-     *
-     * @param contract contract to check
-     * @return whether the current thread is resolving an instance matching the contract
-     */
-    @Api.Internal
-    default boolean isResolvingOnCurrentThread(TypeName contract) {
-        Objects.requireNonNull(contract);
-        return false;
     }
 
     /**

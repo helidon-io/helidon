@@ -56,84 +56,8 @@ final class Activators {
     private static final ActivationRequest ACTIVE_REQUEST = ActivationRequest.builder()
             .targetPhase(ActivationPhase.ACTIVE)
             .build();
-    private static final ThreadLocal<Object> RESOLVING_SERVICE = new ThreadLocal<>();
 
     private Activators() {
-    }
-
-    static boolean isResolvingOnCurrentThread(ActivationRequest activationRequest, TypeName contract) {
-        Object resolvingService = RESOLVING_SERVICE.get();
-        if (resolvingService == null) {
-            return false;
-        }
-
-        Lookup lookup = Lookup.create(contract);
-        if (resolvingService instanceof BaseActivator<?> activator) {
-            return matches(activator, activationRequest, lookup);
-        }
-
-        @SuppressWarnings("unchecked")
-        List<BaseActivator<?>> nestedActivators = (List<BaseActivator<?>>) resolvingService;
-        for (BaseActivator<?> activator : nestedActivators) {
-            if (matches(activator, activationRequest, lookup)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean matches(BaseActivator<?> activator,
-                                   ActivationRequest activationRequest,
-                                   Lookup lookup) {
-        ServiceProvider<?> provider = activator.provider;
-        return provider.activationRequest() == activationRequest && lookup.matches(provider.descriptor());
-    }
-
-    private static boolean startResolving(BaseActivator<?> activator) {
-        Object resolvingService = RESOLVING_SERVICE.get();
-        if (resolvingService == null) {
-            RESOLVING_SERVICE.set(activator);
-            return true;
-        }
-
-        if (resolvingService == activator) {
-            return false;
-        }
-
-        if (resolvingService instanceof BaseActivator<?> currentActivator) {
-            List<BaseActivator<?>> nestedActivators = new ArrayList<>();
-            nestedActivators.add(currentActivator);
-            nestedActivators.add(activator);
-            RESOLVING_SERVICE.set(nestedActivators);
-            return true;
-        }
-
-        @SuppressWarnings("unchecked")
-        List<BaseActivator<?>> nestedActivators = (List<BaseActivator<?>>) resolvingService;
-        if (nestedActivators.contains(activator)) {
-            return false;
-        }
-        nestedActivators.add(activator);
-        return true;
-    }
-
-    private static void finishResolving(boolean startedResolving) {
-        if (!startedResolving) {
-            return;
-        }
-
-        Object resolvingService = RESOLVING_SERVICE.get();
-        if (resolvingService instanceof BaseActivator<?>) {
-            RESOLVING_SERVICE.remove();
-            return;
-        }
-
-        @SuppressWarnings("unchecked")
-        List<BaseActivator<?>> nestedActivators = (List<BaseActivator<?>>) resolvingService;
-        nestedActivators.removeLast();
-        if (nestedActivators.size() == 1) {
-            RESOLVING_SERVICE.set(nestedActivators.getFirst());
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -259,31 +183,26 @@ final class Activators {
             As this type represents a value within a scope, and not "instance per call", we can safely
             store the result, unless it is lookup bound
              */
-            boolean startedResolving = startResolving(this);
+            instanceLock.readLock().lock();
             try {
-                instanceLock.readLock().lock();
-                try {
-                    if (currentPhase == ActivationPhase.ACTIVE) {
-                        return targetInstances(lookup);
-                    }
-                } finally {
-                    instanceLock.readLock().unlock();
-                }
-
-                instanceLock.writeLock().lock();
-                try {
-                    if (currentPhase != ActivationPhase.ACTIVE) {
-                        ActivationResult res = activate(provider.activationRequest());
-                        if (res.failure()) {
-                            return Optional.empty();
-                        }
-                    }
+                if (currentPhase == ActivationPhase.ACTIVE) {
                     return targetInstances(lookup);
-                } finally {
-                    instanceLock.writeLock().unlock();
                 }
             } finally {
-                finishResolving(startedResolving);
+                instanceLock.readLock().unlock();
+            }
+
+            instanceLock.writeLock().lock();
+            try {
+                if (currentPhase != ActivationPhase.ACTIVE) {
+                    ActivationResult res = activate(provider.activationRequest());
+                    if (res.failure()) {
+                        return Optional.empty();
+                    }
+                }
+                return targetInstances(lookup);
+            } finally {
+                instanceLock.writeLock().unlock();
             }
         }
 
@@ -300,35 +219,30 @@ final class Activators {
 
         @Override
         public ActivationResult activate(ActivationRequest request) {
-            boolean startedResolving = startResolving(this);
+            // probably re-entering the same lock
+            instanceLock.writeLock().lock();
             try {
-                // probably re-entering the same lock
-                instanceLock.writeLock().lock();
-                try {
-                    if (currentPhase == request.targetPhase()) {
-                        // we are already there, just return success
-                        return ActivationResult.builder()
-                                .startingActivationPhase(currentPhase)
-                                .finishingActivationPhase(currentPhase)
-                                .targetActivationPhase(currentPhase)
-                                .success(true)
-                                .build();
-                    }
-                    if (currentPhase.ordinal() > request.targetPhase().ordinal()) {
-                        // we are already ahead, this is a problem
-                        return ActivationResult.builder()
-                                .startingActivationPhase(currentPhase)
-                                .finishingActivationPhase(currentPhase)
-                                .targetActivationPhase(request.targetPhase())
-                                .success(false)
-                                .build();
-                    }
-                    return doActivate(request);
-                } finally {
-                    instanceLock.writeLock().unlock();
+                if (currentPhase == request.targetPhase()) {
+                    // we are already there, just return success
+                    return ActivationResult.builder()
+                            .startingActivationPhase(currentPhase)
+                            .finishingActivationPhase(currentPhase)
+                            .targetActivationPhase(currentPhase)
+                            .success(true)
+                            .build();
                 }
+                if (currentPhase.ordinal() > request.targetPhase().ordinal()) {
+                    // we are already ahead, this is a problem
+                    return ActivationResult.builder()
+                            .startingActivationPhase(currentPhase)
+                            .finishingActivationPhase(currentPhase)
+                            .targetActivationPhase(request.targetPhase())
+                            .success(false)
+                            .build();
+                }
+                return doActivate(request);
             } finally {
-                finishResolving(startedResolving);
+                instanceLock.writeLock().unlock();
             }
         }
 

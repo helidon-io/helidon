@@ -297,11 +297,6 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     }
 
     @Override
-    public boolean isResolvingOnCurrentThread(TypeName contract) {
-        return Activators.isResolvingOnCurrentThread(activationRequest, contract);
-    }
-
-    @Override
     public <T> Supplier<Optional<T>> supplyFirst(TypeName contract) {
         return supplyFirst(Lookup.create(contract));
     }

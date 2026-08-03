@@ -16,6 +16,7 @@
 package io.helidon.faulttolerance;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -49,13 +50,10 @@ class MetricsUtils {
      * @return value of metrics flag
      */
     static boolean defaultEnabled() {
-        ServiceRegistry registry = GlobalServiceRegistry.registry();
-        if (registry.isResolvingOnCurrentThread(Config.class)) {
-            return false;
-        }
-        return registry.get(Config.class)
-                .get(FT_METRICS_DEFAULT_ENABLED)
-                .asBoolean()
+        return maybeExistingConfig()
+                .map(config -> config.get(FT_METRICS_DEFAULT_ENABLED)
+                        .asBoolean()
+                        .orElse(false))
                 .orElse(false);
     }
 
@@ -95,4 +93,12 @@ class MetricsUtils {
         return METRICS_REGISTRY.get().timer(name, List.of(tags)).orElseThrow();
     }
 
+    private static Optional<Config> maybeExistingConfig() {
+        if (!GlobalServiceRegistry.configured()) {
+            return Optional.empty();
+        }
+
+        ServiceRegistry registry = GlobalServiceRegistry.registry();
+        return registry.firstActive(Config.class);
+    }
 }

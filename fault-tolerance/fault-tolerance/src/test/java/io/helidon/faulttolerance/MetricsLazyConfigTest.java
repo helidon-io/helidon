@@ -16,8 +16,9 @@
 
 package io.helidon.faulttolerance;
 
-import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Tag;
+import io.helidon.config.Config;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
@@ -28,14 +29,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testing.Test
 class MetricsLazyConfigTest {
     @Test
-    void testGlobalMetricsEnabledBeforeConfigActivation() {
+    void testGlobalMetricsDoNotActivateConfig() {
+        ServiceRegistry registry = GlobalServiceRegistry.registry();
+        assertThat(registry.firstActive(Config.class).isEmpty(), is(true));
+
         Retry retry = Retry.builder()
-                .name("lazy-config")
+                .name("inactive-config")
                 .build();
 
         retry.invoke(() -> 0);
 
-        Counter callsCounter = MetricsUtils.counter(Retry.FT_RETRY_CALLS_TOTAL, Tag.create("name", retry.name()));
-        assertThat(callsCounter.count(), is(1L));
+        assertThat(registry.firstActive(Config.class).isEmpty(), is(true));
     }
 }
