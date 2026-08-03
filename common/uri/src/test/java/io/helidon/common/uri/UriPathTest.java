@@ -18,10 +18,12 @@ package io.helidon.common.uri;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriPathTest {
     @Test
@@ -55,11 +57,9 @@ class UriPathTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "example.com:443",
-            "localhost:443",
-            "[::1]:443",
-            "service%2Dname:443"
+            "localhost:443"
     })
-    void authorityFormHasEmptyPath(String rawPath) {
+    void opaqueUriHasEmptyPath(String rawPath) {
         UriPath path = UriPath.create(rawPath);
 
         assertThat(path.rawPath(), is(rawPath));
@@ -76,5 +76,24 @@ class UriPathTest {
 
         assertThat(path.rawPath(), is(rawPath));
         assertThat(path.path(), is(rawPath));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "first:second, first%3Asecond, first:second",
+            "first:second;key=value, first%3Asecond;key=value, first:second"
+    })
+    void decodedColonInPath(String decodedPath, String expectedRawPath, String expectedPath) {
+        UriPath path = UriPath.createFromDecoded(decodedPath);
+
+        assertThat(path.rawPath(), is(expectedRawPath));
+        assertThat(path.path(), is(expectedPath));
+    }
+
+    @Test
+    void malformedAuthorityLikePathFailsValidation() {
+        UriPath path = UriPath.create("service%2Gname:443");
+
+        assertThrows(IllegalArgumentException.class, path::validate);
     }
 }

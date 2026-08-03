@@ -59,11 +59,11 @@ public interface UriPath {
      */
     static UriPath createFromDecoded(String decodedPath) {
         String pathNoParams = UriPathHelper.stripMatrixParams(decodedPath);
+        String encodedPath = encodeDecodedPath(decodedPath);
         if (pathNoParams.length() == decodedPath.length()) {
-            return new UriPathNoParam(UriEncoding.encode(decodedPath, UriEncoding.Type.PATH));
+            return new UriPathNoParam(encodedPath);
         }
-        return new UriPathMatrix(UriEncoding.encode(decodedPath, UriEncoding.Type.PATH),
-                                 UriEncoding.encode(pathNoParams, UriEncoding.Type.PATH));
+        return new UriPathMatrix(encodedPath, encodeDecodedPath(pathNoParams));
     }
 
     /**
@@ -141,4 +141,19 @@ public interface UriPath {
      * Validate if the raw path is valid.
      */
     void validate();
+
+    private static String encodeDecodedPath(String decodedPath) {
+        String encodedPath = UriEncoding.encode(decodedPath, UriEncoding.Type.PATH);
+        int firstSlash = encodedPath.indexOf('/');
+        if (firstSlash == 0) {
+            return encodedPath;
+        }
+
+        int firstSegmentEnd = firstSlash == -1 ? encodedPath.length() : firstSlash;
+        String firstSegment = encodedPath.substring(0, firstSegmentEnd);
+        if (firstSegment.indexOf(':') == -1) {
+            return encodedPath;
+        }
+        return firstSegment.replace(":", "%3A") + encodedPath.substring(firstSegmentEnd);
+    }
 }
