@@ -350,12 +350,46 @@ public class RegistryTest {
             Services.set(SingletonServicesFactory.class, emptyFactory);
 
             assertThat(serviceRegistry.firstActive(SuppliedContract.class).isEmpty(), is(true));
+            assertThat(emptyFactory.servicesCalls(), is(0));
 
             Services.set(SingletonServicesFactory.class, replacementFactory);
 
             assertThat(serviceRegistry.firstActive(SingletonServicesFactory.class).orElseThrow(),
                        sameInstance(replacementFactory));
+            assertThat(serviceRegistry.firstActive(SuppliedContract.class).isEmpty(), is(true));
+            assertThat(replacementFactory.servicesCalls(), is(0));
+
+            assertThat(serviceRegistry.get(SuppliedContract.class), sameInstance(product));
+            assertThat(replacementFactory.servicesCalls(), is(1));
             assertThat(serviceRegistry.firstActive(SuppliedContract.class).orElseThrow(), sameInstance(product));
+            assertThat(replacementFactory.servicesCalls(), is(1));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    public void testRegistryInitialFixedFactoryProductsAreLazy() {
+        SuppliedContract product = () -> "initial";
+        SingletonServicesFactory factory = new SingletonServicesFactory(product);
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                               .discoverServices(false)
+                                                                               .addServiceDescriptor(
+                                                                                       SingletonServicesFactory__ServiceDescriptor.INSTANCE)
+                                                                               .putServiceInstance(
+                                                                                       SingletonServicesFactory__ServiceDescriptor.INSTANCE,
+                                                                                       factory)
+                                                                               .build());
+        ServiceRegistry serviceRegistry = manager.registry();
+
+        try {
+            assertThat(factory.servicesCalls(), is(0));
+            assertThat(serviceRegistry.firstActive(SingletonServicesFactory.class).orElseThrow(), sameInstance(factory));
+            assertThat(serviceRegistry.firstActive(SuppliedContract.class).isEmpty(), is(true));
+            assertThat(factory.servicesCalls(), is(0));
+
+            assertThat(serviceRegistry.get(SuppliedContract.class), sameInstance(product));
+            assertThat(factory.servicesCalls(), is(1));
         } finally {
             manager.shutdown();
         }

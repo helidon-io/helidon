@@ -383,6 +383,10 @@ final class Activators {
             return currentPhase;
         }
 
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return true;
+        }
+
         @Override
         public String toString() {
             return getClass().getSimpleName() + " for " + provider;
@@ -529,6 +533,7 @@ final class Activators {
             });
         }
 
+        @Override
         boolean activeInstancesAvailable(Lookup lookup) {
             return requestedProvider(lookup, FactoryType.SUPPLIER) || instances.isLoaded();
         }
@@ -560,10 +565,30 @@ final class Activators {
     }
 
     static class FixedServicesFactoryActivator<T> extends ServicesFactoryActivator<T> {
+        private final LazyValue<Optional<List<QualifiedInstance<T>>>> instances;
+
         FixedServicesFactoryActivator(ServiceProvider<T> provider,
                                       Service.ServicesFactory<T> factory) {
             super(provider, null);
             serviceInstance = InstanceHolder.create(factory);
+            instances = LazyValue.create(() -> Optional.ofNullable(factory.services()));
+        }
+
+        @Override
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return requestedProvider(lookup, FactoryType.SERVICES) || instances.isLoaded();
+        }
+
+        @Override
+        void setTargetInstances() {
+        }
+
+        @Override
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+            if (requestedProvider(lookup, FactoryType.SERVICES)) {
+                return super.targetInstances(lookup);
+            }
+            return instances.get().flatMap(it -> matchingInstances(lookup, it));
         }
     }
 
@@ -821,12 +846,17 @@ final class Activators {
                 return Optional.of(List.of(QualifiedInstance.create(serviceInstance.get(), descriptor().qualifiers())));
             }
 
-            if (targetInstances == null) {
+            return matchingInstances(lookup, targetInstances);
+        }
+
+        Optional<List<QualifiedInstance<T>>> matchingInstances(Lookup lookup,
+                                                                List<QualifiedInstance<T>> instances) {
+            if (instances == null) {
                 return Optional.empty();
             }
 
             List<QualifiedInstance<T>> response = new ArrayList<>();
-            for (QualifiedInstance<T> instance : targetInstances) {
+            for (QualifiedInstance<T> instance : instances) {
                 if (lookup.matchesQualifiers(instance.qualifiers())) {
                     response.add(instance);
                 }

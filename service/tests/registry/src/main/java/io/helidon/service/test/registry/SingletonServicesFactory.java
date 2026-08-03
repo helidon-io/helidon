@@ -24,6 +24,7 @@ import io.helidon.service.registry.Service;
 @Service.Singleton
 class SingletonServicesFactory implements Service.ServicesFactory<SuppliedContract> {
     private final List<Service.QualifiedInstance<SuppliedContract>> services;
+    private int servicesCalls;
 
     @Service.Inject
     SingletonServicesFactory() {
@@ -36,6 +37,11 @@ class SingletonServicesFactory implements Service.ServicesFactory<SuppliedContra
 
     @Override
     public List<Service.QualifiedInstance<SuppliedContract>> services() {
+        servicesCalls++;
         return services;
+    }
+
+    int servicesCalls() {
+        return servicesCalls;
     }
 }
