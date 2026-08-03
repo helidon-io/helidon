@@ -285,12 +285,14 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * <tr>
  *     <td>{@code cookie-compression-enabled}</td>
  *     <td>{@code true} when the top-level server type is IDCS, {@code false} otherwise</td>
- *     <td>Whether the access token cookie should be GZIP-compressed before encryption when this reduces its size.</td>
+ *     <td>Whether the access token cookie should be GZIP-compressed when this reduces its size.
+ *     Compression is applied before encryption when encryption is enabled.</td>
  * </tr>
  * <tr>
  *     <td>{@code cookie-compression-id-enabled}</td>
  *     <td>{@code true} when the top-level server type is IDCS, {@code false} otherwise</td>
- *     <td>Whether the ID token cookie should be GZIP-compressed before encryption when this reduces its size.</td>
+ *     <td>Whether the ID token cookie should be GZIP-compressed when this reduces its size.
+ *     Compression is applied before encryption when encryption is enabled.</td>
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-password}</td>
