@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 
@@ -29,6 +30,7 @@ class SingletonServiceSupplier implements Supplier<SuppliedContract> {
     private final ServiceRegistry registry;
 
     private boolean reenter;
+    private boolean resolvingDuringGet;
     private Optional<SuppliedContract> activeDuringGet = Optional.empty();
 
     @Service.Inject
@@ -52,11 +54,17 @@ class SingletonServiceSupplier implements Supplier<SuppliedContract> {
         return activeDuringGet;
     }
 
+    boolean resolvingDuringGet() {
+        return resolvingDuringGet;
+    }
+
     @Override
     public SuppliedContract get() {
         int i = counter.incrementAndGet();
+        ServiceRegistry currentRegistry = registry == null ? GlobalServiceRegistry.registry() : registry;
+        resolvingDuringGet = currentRegistry.isResolvingOnCurrentThread(SuppliedContract.class);
         if (reenter) {
-            activeDuringGet = registry.firstActive(SuppliedContract.class);
+            activeDuringGet = currentRegistry.firstActive(SuppliedContract.class);
         }
         return () -> "Supplied:" + i;
     }

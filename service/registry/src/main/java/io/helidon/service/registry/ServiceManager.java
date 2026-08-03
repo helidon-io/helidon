@@ -139,7 +139,7 @@ class ServiceManager<T> {
         return result;
     }
 
-    private Optional<Activator<T>> existingActivator() {
+    Optional<Activator<T>> existingActivator() {
         try {
             ScopedRegistry scopedRegistry = scopeSupplier.get().registry();
             if (scopedRegistry instanceof ScopedRegistryImpl scopedRegistryImpl) {

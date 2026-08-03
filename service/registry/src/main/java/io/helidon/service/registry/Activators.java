@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
@@ -163,7 +162,7 @@ final class Activators {
         final ServiceProvider<T> provider;
         final DependencyContext dependencyContext;
 
-        private final ReadWriteLock instanceLock = new ReentrantReadWriteLock();
+        private final ReentrantReadWriteLock instanceLock = new ReentrantReadWriteLock();
 
         volatile ActivationPhase currentPhase = ActivationPhase.INIT;
 
@@ -295,6 +294,10 @@ final class Activators {
         @Override
         public ActivationPhase phase() {
             return currentPhase;
+        }
+
+        boolean isResolvingOnCurrentThread() {
+            return instanceLock.isWriteLockedByCurrentThread() || instanceLock.getReadHoldCount() > 0;
         }
 
         @Override

@@ -271,9 +271,31 @@ public class RegistryTest {
 
             assertThat(activated.message(), is("Supplied:1"));
             assertThat(explicit.activeDuringGet().isEmpty(), is(true));
+            assertThat(explicit.resolvingDuringGet(), is(true));
             assertThat(explicit.instances(), is(1));
             assertThat(serviceRegistry.firstActive(SuppliedContract.class).orElseThrow(), sameInstance(activated));
+            assertThat(serviceRegistry.isResolvingOnCurrentThread(SuppliedContract.class), is(false));
             assertThat(explicit.instances(), is(1));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    public void testRegistryReportsNormalSingletonSupplierResolution() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                               .discoverServices(false)
+                                                                               .addServiceDescriptor(
+                                                                                       SingletonServiceSupplier__ServiceDescriptor.INSTANCE)
+                                                                               .build());
+        ServiceRegistry serviceRegistry = manager.registry();
+
+        Services.registry(serviceRegistry);
+        try {
+            SingletonServiceSupplier supplier = serviceRegistry.get(SingletonServiceSupplier.class);
+
+            assertThat(supplier.resolvingDuringGet(), is(true));
+            assertThat(serviceRegistry.isResolvingOnCurrentThread(SuppliedContract.class), is(false));
         } finally {
             manager.shutdown();
         }
