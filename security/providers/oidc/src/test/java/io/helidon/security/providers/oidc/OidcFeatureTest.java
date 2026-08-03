@@ -190,8 +190,34 @@ class OidcFeatureTest {
         String response = logoutResponse("ok", DEFAULT_LOGOUT_ENDPOINT, invalidIdToken, false);
 
         assertThat(response, startsWith("HTTP/1.1 400"));
+        assertLocalOidcCookiesRemoved(response);
         assertThat(response, not(containsString("\r\n" + injectedHeader + "\r\n")));
         assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    @Test
+    void testLogoutRejectsCompressedJweWithTooManySegments() throws Exception {
+        String header = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString("{\"alg\":\"RSA-OAEP\",\"enc\":\"A256GCM\"}"
+                                        .getBytes(StandardCharsets.UTF_8));
+        String invalidJwe = header + ".AA".repeat(20_000);
+        String response = logoutResponse("ok", DEFAULT_LOGOUT_ENDPOINT, invalidJwe, true);
+
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertLocalOidcCookiesRemoved(response);
+        assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    private static void assertLocalOidcCookiesRemoved(String response) {
+        for (String cookieName : List.of(OidcConfig.DEFAULT_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_ID_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_TENANT_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_REFRESH_COOKIE_NAME)) {
+            assertThat(response,
+                       containsString("\r\nSet-Cookie: " + cookieName
+                                              + "=; Expires="));
+        }
     }
 
     private static String logoutResponse(String state) throws Exception {

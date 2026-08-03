@@ -368,6 +368,7 @@ public final class OidcFeature implements HttpFeature {
                 if (LOGGER.isLoggable(Level.TRACE)) {
                     LOGGER.log(Level.TRACE, "Invalid OIDC logout ID token cookie", e);
                 }
+                clearLocalOidcCookies(res.headers());
                 res.status(Status.BAD_REQUEST_400)
                         .send();
                 return;
