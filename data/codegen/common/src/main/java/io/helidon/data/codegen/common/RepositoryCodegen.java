@@ -132,6 +132,12 @@ class RepositoryCodegen implements CodegenExtension {
                                            repositoryInterface.originatingElement()
                                                    .orElseGet(repositoryInterface::typeName));
             }
+            if (repositoryInterface.findAnnotation(DataCommonCodegenTypes.PROVIDER).isEmpty()) {
+                throw new CodegenException("Repository must declare @Data.Provider because it does not extend a supported "
+                                                   + "repository interface",
+                                           repositoryInterface.originatingElement()
+                                                   .orElseGet(repositoryInterface::typeName));
+            }
         }
         return assigned.stream()
                 .findFirst()

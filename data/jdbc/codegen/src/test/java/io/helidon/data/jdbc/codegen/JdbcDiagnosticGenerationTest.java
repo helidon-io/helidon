@@ -15,22 +15,15 @@
  */
 package io.helidon.data.jdbc.codegen;
 
-import java.nio.file.Files;
-
-import io.helidon.codegen.testing.TestCompiler;
-
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.data.jdbc.codegen.JdbcCodegenTestSupport.assertCompilationFailure;
-import static io.helidon.data.jdbc.codegen.JdbcCodegenTestSupport.compiler;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 class JdbcDiagnosticGenerationTest {
+
     @Test
     void requiresExplicitJdbcProviderSelection() {
-        TestCompiler.Result result = compiler()
-                .addSource("UnqualifiedRepository.java", """
+        assertCompilationFailure("UnqualifiedRepository.java", """
                         package example;
                         import io.helidon.data.Data;
                         import io.helidon.data.jdbc.Jdbc;
@@ -39,12 +32,9 @@ class JdbcDiagnosticGenerationTest {
                             @Jdbc.Statement("select NAME from POKEMON")
                             String find();
                         }
-                        """)
-                .build()
-                .compile();
-
-        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
-        assertThat(Files.exists(result.sourceOutput().resolve("example/UnqualifiedRepository__Jdbc.java")), is(false));
+                        """,
+                                 "Repository must declare @Data.Provider because it does not extend a supported "
+                                         + "repository interface");
     }
 
     @Test

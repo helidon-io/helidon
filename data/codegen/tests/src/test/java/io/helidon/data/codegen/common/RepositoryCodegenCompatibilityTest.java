@@ -44,13 +44,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class RepositoryCodegenCompatibilityTest {
+
     private static final TypeName REPOSITORY_ANNOTATION = TypeName.create("example.Repository");
     private static final TypeName REPOSITORY_TYPE = TypeName.create("example.TestRepository");
 
     @Test
     void preservesDefaultAndExplicitProviderSelection() {
-        TypeInfo unqualified = repositoryType(false);
-        TypeInfo explicitlySelected = repositoryType(true);
+        TypeInfo unqualified = annotationOnlyRepository(null);
+        TypeInfo explicitlySelected = annotationOnlyRepository("jdbc");
         CodegenContext context = mock(CodegenContext.class);
         RoundContext round = mock(RoundContext.class);
         RepositoryGenerator repositoryGenerator = mock(RepositoryGenerator.class);
@@ -79,8 +80,38 @@ class RepositoryCodegenCompatibilityTest {
     }
 
     @Test
+    void invokesDirectSpiImplementationsThroughGeneratorFanOut() {
+        TypeInfo repository = annotationOnlyRepository("jdbc");
+        RepositoryGenerator owner = generator(Set.of(REPOSITORY_ANNOTATION), Set.of());
+        DirectPersistenceGenerator first = new DirectPersistenceGenerator();
+        DirectPersistenceGenerator second = new DirectPersistenceGenerator();
+        RoundContext round = round(repository);
+        CodegenContext context = mock(CodegenContext.class);
+
+        new RepositoryCodegen(context, List.of(owner), List.of(first, second)).process(round);
+
+        assertThat(first.generated(), is(1));
+        assertThat(second.generated(), is(1));
+    }
+
+    @Test
+    void requiresProviderForRepositoryWithoutSupportedBaseInterface() {
+        TypeInfo repository = annotationOnlyRepository(null);
+        RepositoryGenerator owner = generator(Set.of(REPOSITORY_ANNOTATION), Set.of());
+        DirectPersistenceGenerator persistence = new DirectPersistenceGenerator();
+
+        CodegenException failure = assertThrows(
+                CodegenException.class,
+                () -> new RepositoryCodegen(mock(CodegenContext.class), List.of(owner), List.of(persistence))
+                        .process(round(repository)));
+
+        assertThat(failure.getMessage(), containsString("must declare @Data.Provider"));
+        assertThat(persistence.generated(), is(0));
+    }
+
+    @Test
     void selectsTheSoleAnnotationOwner() {
-        TypeInfo repository = repositoryType(false);
+        TypeInfo repository = annotationOnlyRepository("jdbc");
         RepositoryGenerator owner = generator(Set.of(REPOSITORY_ANNOTATION), Set.of());
         PersistenceGenerator persistence = mock(PersistenceGenerator.class);
         RoundContext round = round(repository);
@@ -93,7 +124,7 @@ class RepositoryCodegenCompatibilityTest {
 
     @Test
     void rejectsAbsentAndAmbiguousAnnotationOwnership() {
-        TypeInfo repository = repositoryType(false);
+        TypeInfo repository = annotationOnlyRepository("jdbc");
         PersistenceGenerator persistence = mock(PersistenceGenerator.class);
         CodegenContext context = mock(CodegenContext.class);
 
@@ -153,21 +184,49 @@ class RepositoryCodegenCompatibilityTest {
         return round;
     }
 
-    private static TypeInfo repositoryType(boolean explicitJdbcProvider) {
+    private static TypeInfo annotationOnlyRepository(String provider) {
         TypeInfo.Builder builder = TypeInfo.builder()
                 .typeName(REPOSITORY_TYPE)
                 .kind(ElementKind.INTERFACE)
                 .addAnnotation(Annotation.create(REPOSITORY_ANNOTATION));
-        if (explicitJdbcProvider) {
+        if (provider != null) {
             builder.addAnnotation(Annotation.builder()
                                           .typeName(DataCommonCodegenTypes.PROVIDER)
-                                          .value("jdbc")
+                                          .value(provider)
                                           .build());
         }
         return builder.build();
     }
 
+    private static final class DirectPersistenceGenerator implements PersistenceGenerator {
+
+        private int generated;
+
+        @Override
+        public void generate(CodegenContext codegenContext,
+                             RoundContext roundContext,
+                             TypeInfo repository,
+                             RepositoryGenerator repositoryGenerator) {
+            generated++;
+        }
+
+        @Override
+        public QueryBuilder queryBuilder(RepositoryInfo repositoryInfo) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public StatementGenerator statementGenerator() {
+            throw new UnsupportedOperationException();
+        }
+
+        private int generated() {
+            return generated;
+        }
+    }
+
     private static final class RecordingPersistenceGenerator extends BasePersistenceGenerator {
+
         private final String provider;
         private final boolean generateByDefault;
         private int generated;
