@@ -189,7 +189,7 @@ class OidcFeatureTest {
         String invalidIdToken = ID_TOKEN + "\r\n" + injectedHeader + "\r\n";
         String response = logoutResponse("ok", DEFAULT_LOGOUT_ENDPOINT, invalidIdToken, false);
 
-        assertThat(response, startsWith("HTTP/1.1 500"));
+        assertThat(response, startsWith("HTTP/1.1 400"));
         assertThat(response, not(containsString("\r\n" + injectedHeader + "\r\n")));
         assertThat(response, not(containsString("\r\nLocation:")));
     }
