@@ -1,6 +1,12 @@
-# Helidon Documentation
+<!--@frontmatter
+site:
+  title: Helidon
+  version: "4.5.0"
+pages:
+  - config/manifest.md
+-->
 
-<!--@pages config/manifest.md -->
+# Helidon Documentation
 
 - [Get Started](get-started.md)
 - [Helidon SE](se/README.md)
