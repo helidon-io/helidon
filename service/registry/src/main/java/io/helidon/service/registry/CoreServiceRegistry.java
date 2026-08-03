@@ -298,16 +298,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
     @Override
     public boolean isResolvingOnCurrentThread(TypeName contract) {
-        List<ServiceManager<Object>> managers = lookupManagers(Lookup.create(contract), false, false);
-        for (ServiceManager<Object> manager : managers) {
-            Optional<Activator<Object>> activator = manager.existingActivator();
-            if (activator.isPresent()
-                    && activator.get() instanceof Activators.BaseActivator<?> baseActivator
-                    && baseActivator.isResolvingOnCurrentThread()) {
-                return true;
-            }
-        }
-        return false;
+        return Activators.isResolvingOnCurrentThread(activationRequest, contract);
     }
 
     @Override

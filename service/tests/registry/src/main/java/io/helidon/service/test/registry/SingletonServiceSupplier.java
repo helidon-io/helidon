@@ -30,8 +30,11 @@ class SingletonServiceSupplier implements Supplier<SuppliedContract> {
     private final ServiceRegistry registry;
 
     private boolean reenter;
+    private boolean fail;
     private boolean resolvingDuringGet;
+    private boolean otherRegistryResolvingDuringGet;
     private Optional<SuppliedContract> activeDuringGet = Optional.empty();
+    private ServiceRegistry otherRegistry;
 
     @Service.Inject
     SingletonServiceSupplier() {
@@ -50,6 +53,14 @@ class SingletonServiceSupplier implements Supplier<SuppliedContract> {
         reenter = true;
     }
 
+    void failOnGet() {
+        fail = true;
+    }
+
+    void checkOtherRegistry(ServiceRegistry otherRegistry) {
+        this.otherRegistry = otherRegistry;
+    }
+
     Optional<SuppliedContract> activeDuringGet() {
         return activeDuringGet;
     }
@@ -58,13 +69,23 @@ class SingletonServiceSupplier implements Supplier<SuppliedContract> {
         return resolvingDuringGet;
     }
 
+    boolean otherRegistryResolvingDuringGet() {
+        return otherRegistryResolvingDuringGet;
+    }
+
     @Override
     public SuppliedContract get() {
         int i = counter.incrementAndGet();
         ServiceRegistry currentRegistry = registry == null ? GlobalServiceRegistry.registry() : registry;
         resolvingDuringGet = currentRegistry.isResolvingOnCurrentThread(SuppliedContract.class);
+        if (otherRegistry != null) {
+            otherRegistryResolvingDuringGet = otherRegistry.isResolvingOnCurrentThread(SuppliedContract.class);
+        }
         if (reenter) {
             activeDuringGet = currentRegistry.firstActive(SuppliedContract.class);
+        }
+        if (fail) {
+            throw new IllegalStateException("Supplier failure");
         }
         return () -> "Supplied:" + i;
     }

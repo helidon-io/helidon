@@ -36,6 +36,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RegistryTest {
     private static ServiceRegistryManager registryManager;
@@ -297,6 +298,37 @@ public class RegistryTest {
             assertThat(supplier.resolvingDuringGet(), is(true));
             assertThat(serviceRegistry.isResolvingOnCurrentThread(SuppliedContract.class), is(false));
         } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    public void testRegistryClearsFixedSupplierResolutionAfterFailure() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                               .discoverServices(false)
+                                                                               .addServiceDescriptor(
+                                                                                       SingletonServiceSupplier__ServiceDescriptor.INSTANCE)
+                                                                               .build());
+        ServiceRegistryManager otherManager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                    .discoverServices(false)
+                                                                                    .addServiceDescriptor(
+                                                                                            SingletonServiceSupplier__ServiceDescriptor.INSTANCE)
+                                                                                    .build());
+        ServiceRegistry serviceRegistry = manager.registry();
+        SingletonServiceSupplier explicit = new SingletonServiceSupplier(serviceRegistry);
+        explicit.failOnGet();
+        explicit.checkOtherRegistry(otherManager.registry());
+
+        Services.registry(serviceRegistry);
+        try {
+            Services.set(SingletonServiceSupplier.class, explicit);
+
+            assertThrows(IllegalStateException.class, () -> serviceRegistry.get(SuppliedContract.class));
+            assertThat(explicit.resolvingDuringGet(), is(true));
+            assertThat(explicit.otherRegistryResolvingDuringGet(), is(false));
+            assertThat(serviceRegistry.isResolvingOnCurrentThread(SuppliedContract.class), is(false));
+        } finally {
+            otherManager.shutdown();
             manager.shutdown();
         }
     }
