@@ -179,6 +179,41 @@ class OidcEncryptionTest {
 
     @Test
     void namedEncryptionDoesNotAddOidcVersionEnvelope() {
+        Context context = namedEncryptionContext();
+
+        Contexts.runInContext(context, () -> {
+            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null));
+            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null, true, false));
+            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null, false, true));
+            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null, true, true));
+        });
+    }
+
+    @Test
+    void legacyPasswordEncryptionFlagDoesNotDisableNamedEncryptionCompression() {
+        String expectedValue =
+                "eyJhY2Nlc3NUb2tlbiI6ImV5SnliMnhsY3lJNld5SmhaRzFwYmlJc0luVnpaWElpWFgwPSJ9".repeat(45);
+        Context context = namedEncryptionContext();
+
+        Contexts.runInContext(context, () -> {
+            OidcCookieHandler handler = OidcCookieHandler.builder()
+                    .encryptionEnabled(true)
+                    .encryptionName("test-name")
+                    .compressionEnabled(true)
+                    .legacyCookieEncryption(true)
+                    .cookieName("COOKIE")
+                    .build();
+            String encrypted = handler.createCookie(expectedValue).build().value();
+            byte[] compressed = Base64.getDecoder().decode(encrypted);
+
+            assertThat(compressed[0], is((byte) 0));
+            assertThat(compressed[1], is((byte) 0x1f));
+            assertThat(compressed[2], is((byte) 0x8b));
+            assertThat(handler.decrypt(encrypted), is(expectedValue));
+        });
+    }
+
+    private static Context namedEncryptionContext() {
         EncryptionProvider<ProviderConfig> provider = new EncryptionProvider<>() {
             @Override
             public EncryptionSupport encryption(Config config) {
@@ -196,13 +231,7 @@ class OidcEncryptionTest {
                 .build();
         Context context = Context.create();
         context.register(security);
-
-        Contexts.runInContext(context, () -> {
-            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null));
-            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null, true, false));
-            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null, false, true));
-            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null, true, true));
-        });
+        return context;
     }
 
     private static boolean posixSupported(Path path) {

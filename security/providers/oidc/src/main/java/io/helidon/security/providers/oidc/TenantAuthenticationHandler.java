@@ -218,23 +218,23 @@ class TenantAuthenticationHandler {
                 }
             }
             if (oidcConfig.useCookie() && idToken.isEmpty()) {
-                // only do this for cookies
-                Optional<String> cookie = oidcConfig.idTokenCookieHandler()
-                        .findCookie(providerRequest.env().headers());
-                if (cookie.isPresent()) {
-                    try {
+                try {
+                    // only do this for cookies
+                    Optional<String> cookie = oidcConfig.idTokenCookieHandler()
+                            .findCookie(providerRequest.env().headers());
+                    if (cookie.isPresent()) {
                         String idTokenValue = cookie.get();
                         return validateIdToken(tenantId, providerRequest, idTokenValue);
-                    } catch (Exception e) {
-                        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                            LOGGER.log(System.Logger.Level.DEBUG, "Invalid id token in cookie", e);
-                        }
-                        return errorResponse(providerRequest,
-                                             Status.UNAUTHORIZED_401,
-                                             null,
-                                             "Invalid id token",
-                                             tenantId);
                     }
+                } catch (Exception e) {
+                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                        LOGGER.log(System.Logger.Level.DEBUG, "Invalid id token in cookie", e);
+                    }
+                    return errorResponse(providerRequest,
+                                         Status.UNAUTHORIZED_401,
+                                         null,
+                                         "Invalid id token",
+                                         tenantId);
                 }
             }
         } catch (SecurityException e) {

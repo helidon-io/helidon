@@ -304,6 +304,150 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
     }
 
     @Test
+    void testTokenCookieCompressionDefaultsAndOverrides() {
+        String largeCookieValue =
+                "eyJhY2Nlc3NUb2tlbiI6ImV5SnliMnhsY3lJNld5SmhaRzFwYmlJc0luVnpaWElpWFgwPSJ9".repeat(45);
+        OidcConfig idcsDefault = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("server-type", "idcs")))
+                                .build())
+                .build();
+        OidcConfig defaultServerDefault = cookieCompressionConfigBuilder()
+                .build();
+        OidcConfig idcsDisabled = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("server-type", "idcs",
+                                                                     "cookie-compression-enabled", "false")))
+                                .build())
+                .build();
+        OidcConfig defaultServerEnabled = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("cookie-compression-enabled", "true")))
+                                .build())
+                .build();
+        String idcsDefaultCookie = idcsDefault.tokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String defaultServerDefaultCookie = defaultServerDefault.tokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String idcsDisabledCookie = idcsDisabled.tokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String defaultServerEnabledCookie = defaultServerEnabled.tokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+
+        assertAll("token cookie compression defaults and overrides",
+                  () -> assertThat("IDCS should enable compression by default",
+                                   idcsDefaultCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("The default server type should disable compression by default",
+                                   defaultServerDefaultCookie.length() > 4096,
+                                   is(true)),
+                  () -> assertThat("IDCS should honor an explicit compression opt-out",
+                                   idcsDisabledCookie.length() > 4096,
+                                   is(true)),
+                  () -> assertThat("The default server type should honor explicit compression",
+                                   defaultServerEnabledCookie.length() < 4096,
+                                   is(true)));
+    }
+
+    @Test
+    void testIdTokenCookieCompressionDefaultsAndOverrides() {
+        String largeCookieValue = largeIdTokenValue();
+        String largeAccessCookieValue =
+                "eyJhY2Nlc3NUb2tlbiI6ImV5SnliMnhsY3lJNld5SmhaRzFwYmlJc0luVnpaWElpWFgwPSJ9".repeat(45);
+        OidcConfig idcsDefault = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("server-type", "idcs")))
+                                .build())
+                .build();
+        OidcConfig defaultServerDefault = cookieCompressionConfigBuilder()
+                .build();
+        OidcConfig idcsDisabled = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("server-type", "idcs",
+                                                                     "cookie-compression-id-enabled", "false")))
+                                .build())
+                .build();
+        OidcConfig defaultServerEnabled = cookieCompressionConfigBuilder()
+                .config(Config.builder()
+                                .sources(ConfigSources.create(Map.of("cookie-compression-id-enabled", "true")))
+                                .build())
+                .build();
+        OidcConfig idcsAccessCompressionDisabled = cookieCompressionConfigBuilder()
+                .cookieCompressionEnabled(false)
+                .serverType("idcs")
+                .build();
+        OidcConfig idcsIdEncryptionDisabled = cookieCompressionConfigBuilder()
+                .cookieEncryptionEnabledIdToken(false)
+                .serverType("idcs")
+                .build();
+        String idcsDefaultCookie = idcsDefault.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String defaultServerDefaultCookie = defaultServerDefault.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String idcsDisabledCookie = idcsDisabled.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String defaultServerEnabledCookie = defaultServerEnabled.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String idcsAccessCompressionDisabledCookie = idcsAccessCompressionDisabled.idTokenCookieHandler()
+                .createCookie(largeCookieValue)
+                .build()
+                .toString();
+        String idcsIdCompressionDisabledAccessCookie = idcsDisabled.tokenCookieHandler()
+                .createCookie(largeAccessCookieValue)
+                .build()
+                .toString();
+        OidcCookieHandler idcsIdEncryptionDisabledHandler = idcsIdEncryptionDisabled.idTokenCookieHandler();
+        String idcsIdEncryptionDisabledCookie = idcsIdEncryptionDisabledHandler
+                .createCookie(largeCookieValue)
+                .build()
+                .value();
+
+        assertAll("ID token cookie compression defaults and overrides",
+                  () -> assertThat("IDCS should enable ID token compression by default",
+                                   idcsDefaultCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("The default server type should disable ID token compression by default",
+                                   defaultServerDefaultCookie.length() > 4096,
+                                   is(true)),
+                  () -> assertThat("IDCS should honor an explicit ID token compression opt-out",
+                                   idcsDisabledCookie.length() > 4096,
+                                   is(true)),
+                  () -> assertThat("The default server type should honor explicit ID token compression",
+                                   defaultServerEnabledCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("Access token compression should not control ID token compression",
+                                   idcsAccessCompressionDisabledCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("ID token compression should not control access token compression",
+                                   idcsIdCompressionDisabledAccessCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat("ID token compression should work when ID token encryption is disabled",
+                                   idcsIdEncryptionDisabledCookie.length() < 4096,
+                                   is(true)),
+                  () -> assertThat(idcsIdEncryptionDisabledHandler
+                                           .findCookie(Map.of("Cookie",
+                                                              List.of(idcsIdEncryptionDisabledHandler.cookieName()
+                                                                              + "=" + idcsIdEncryptionDisabledCookie))),
+                                   is(Optional.of(largeCookieValue))));
+    }
+
+    @Test
     void testTokenCookieEncryptionCanBeDisabled() {
         OidcConfig config = OidcConfig.builder()
                 .identityUri(URI.create("https://identity.oracle.com"))
@@ -604,6 +748,23 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                        config.tenantCookieHandler(),
                        config.refreshTokenCookieHandler(),
                        config.stateCookieHandler());
+    }
+
+    private static OidcConfig.Builder cookieCompressionConfigBuilder() {
+        return OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray());
+    }
+
+    private static String largeIdTokenValue() {
+        return "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
+                + "eyJhdWQiOiJjbGllbnQtaWQiLCJpc3MiOiJodHRwczovL2lkZW50aXR5Lm9yYWNsZS5jb20iLCJzdWIiOiJ1c2VyIn0"
+                .repeat(40)
+                + "."
+                + "c2lnbmF0dXJlLWJ5dGVz".repeat(20);
     }
 
     private static SymmetricCipher currentCipher() {

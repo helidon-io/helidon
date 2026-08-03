@@ -264,6 +264,18 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>Whether the access token cookie should be encrypted.</td>
  * </tr>
  * <tr>
+ *     <td>{@code cookie-compression-enabled}</td>
+ *     <td>{@code true} when the top-level server type is IDCS, {@code false} otherwise</td>
+ *     <td>Whether the access token cookie should be GZIP-compressed when this reduces its size.
+ *     Compression is applied before encryption when encryption is enabled.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code cookie-compression-id-enabled}</td>
+ *     <td>{@code true} when the top-level server type is IDCS, {@code false} otherwise</td>
+ *     <td>Whether the ID token cookie should be GZIP-compressed when this reduces its size.
+ *     Compression is applied before encryption when encryption is enabled.</td>
+ * </tr>
+ * <tr>
  *     <td>{@code cookie-encryption-password}</td>
  *     <td>Generated for this service (as a file)</td>
  *     <td>Encryption password to be used for symmetric cipher. Must be the same for all services that are intended
@@ -1004,6 +1016,8 @@ public final class OidcConfig extends TenantConfigImpl {
                 .build();
         private boolean useCookie = DEFAULT_COOKIE_USE;
         private boolean cookieSameSiteDefault = true;
+        private boolean cookieCompressionConfigured;
+        private boolean cookieCompressionIdConfigured;
         private boolean tokenSignatureValidation = true;
         private boolean idTokenSignatureValidation = true;
         private boolean accessTokenIpCheck = true;
@@ -1025,6 +1039,12 @@ public final class OidcConfig extends TenantConfigImpl {
         @Override
         public OidcConfig build() {
             buildConfiguration();
+            if (!cookieCompressionConfigured) {
+                tokenCookieBuilder.compressionEnabled("idcs".equals(serverType()));
+            }
+            if (!cookieCompressionIdConfigured) {
+                idTokenCookieBuilder.compressionEnabled("idcs".equals(serverType()));
+            }
 
             Errors.Collector collector = Errors.collector();
             if (useCookie && logoutEnabled) {
@@ -1120,7 +1140,9 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("cookie-same-site").asString().ifPresent(this::cookieSameSite);
             // encryption of cookies
             config.get("cookie-encryption-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabled);
+            config.get("cookie-compression-enabled").asBoolean().ifPresent(this::cookieCompressionEnabled);
             config.get("cookie-encryption-id-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledIdToken);
+            config.get("cookie-compression-id-enabled").asBoolean().ifPresent(this::cookieCompressionEnabledIdToken);
             config.get("cookie-encryption-tenant-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledTenantName);
             config.get("cookie-encryption-refresh-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledRefreshToken);
             config.get("cookie-encryption-state-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledState);
@@ -1509,6 +1531,24 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
+         * Whether to GZIP-compress the access token cookie when this reduces its size.
+         * When encryption is enabled, compression is applied before encryption.
+         * Defaults to {@code true} when the top-level {@code server-type} is {@code idcs}, and to {@code false}
+         * otherwise. Disabling compression affects newly written cookies only; compressed cookies remain readable.
+         *
+         * @param cookieCompressionEnabled whether the access token cookie should be compressed
+         * @return updated builder instance
+         */
+        @ConfiguredOption(value = "true if server-type is idcs; false otherwise",
+                          description = "Whether to GZIP-compress the access token cookie when this "
+                                  + "reduces its size.")
+        public Builder cookieCompressionEnabled(boolean cookieCompressionEnabled) {
+            this.tokenCookieBuilder.compressionEnabled(cookieCompressionEnabled);
+            this.cookieCompressionConfigured = true;
+            return this;
+        }
+
+        /**
          * Whether to encrypt id token cookie created by this microservice.
          * Defaults to {@code true}.
          *
@@ -1519,6 +1559,25 @@ public final class OidcConfig extends TenantConfigImpl {
         @ConfiguredOption(key = "cookie-encryption-id-enabled", value = "true")
         public Builder cookieEncryptionEnabledIdToken(boolean cookieEncryptionEnabled) {
             this.idTokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
+            return this;
+        }
+
+        /**
+         * Whether to GZIP-compress the ID token cookie when this reduces its size.
+         * When encryption is enabled, compression is applied before encryption.
+         * Defaults to {@code true} when the top-level {@code server-type} is {@code idcs}, and to {@code false}
+         * otherwise. Disabling compression affects newly written cookies only; compressed cookies remain readable.
+         *
+         * @param cookieCompressionEnabled whether the ID token cookie should be compressed
+         * @return updated builder instance
+         */
+        @ConfiguredOption(key = "cookie-compression-id-enabled",
+                          value = "true if server-type is idcs; false otherwise",
+                          description = "Whether to GZIP-compress the ID token cookie when this "
+                                  + "reduces its size.")
+        public Builder cookieCompressionEnabledIdToken(boolean cookieCompressionEnabled) {
+            this.idTokenCookieBuilder.compressionEnabled(cookieCompressionEnabled);
+            this.cookieCompressionIdConfigured = true;
             return this;
         }
 
