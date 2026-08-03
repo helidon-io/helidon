@@ -395,6 +395,17 @@ class OidcCookieHandlerTest {
     }
 
     @Test
+    void testOversizedEncodedCompressedCookieRejectedBeforeDecoding() {
+        int maxEncodedLength = ((64 * 1024 + 2) / 3) * 4;
+
+        CryptoException exception = assertThrows(CryptoException.class,
+                                                  () -> unencryptedHandler(false)
+                                                          .decrypt("~" + "A".repeat(maxEncodedLength + 1)));
+
+        assertThat(exception.getMessage(), is("OIDC encoded compressed cookie exceeds the maximum supported size"));
+    }
+
+    @Test
     void testMalformedCompressedCookieRejected() {
         String compressedBase64 = encryptCurrent(new byte[] {0, 1, 2, 3});
         String compressedRaw = encryptCurrent(new byte[] {1, 1, 2, 3});

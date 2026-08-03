@@ -51,6 +51,8 @@ public class OidcCookieHandler {
     private static final int COMPRESSION_BUFFER_SIZE = 1024;
     private static final int MAX_COOKIE_VALUE_SIZE = 64 * 1024;
     private static final int MAX_DECOMPRESSED_BASE64_VALUE_SIZE = MAX_COOKIE_VALUE_SIZE / 4 * 3;
+    private static final int MAX_ENCODED_COMPRESSED_VALUE_SIZE = COMPRESSED_VALUE_PREFIX.length()
+            + ((MAX_COOKIE_VALUE_SIZE + 2) / 3) * 4;
 
     private final String createCookieOptions;
     private final List<Consumer<SetCookie.Builder>> removeCookieUpdaters = new LinkedList<>();
@@ -138,6 +140,9 @@ public class OidcCookieHandler {
                 this.decryptFunction = it -> {
                     if (!it.startsWith(COMPRESSED_VALUE_PREFIX)) {
                         return it;
+                    }
+                    if (it.length() > MAX_ENCODED_COMPRESSED_VALUE_SIZE) {
+                        throw new CryptoException("OIDC encoded compressed cookie exceeds the maximum supported size");
                     }
                     try {
                         byte[] compressed = Base64.getDecoder().decode(it.substring(COMPRESSED_VALUE_PREFIX.length()));

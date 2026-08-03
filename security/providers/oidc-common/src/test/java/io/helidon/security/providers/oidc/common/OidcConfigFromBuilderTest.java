@@ -359,7 +359,11 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
 
     @Test
     void testIdTokenCookieCompressionDefaultsAndOverrides() {
-        String largeCookieValue = largeIdTokenValue();
+        String largeCookieValue = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
+                + "eyJhdWQiOiJjbGllbnQtaWQiLCJpc3MiOiJodHRwczovL2lkZW50aXR5Lm9yYWNsZS5jb20iLCJzdWIiOiJ1c2VyIn0"
+                .repeat(40)
+                + "."
+                + "c2lnbmF0dXJlLWJ5dGVz".repeat(20);
         String largeAccessCookieValue =
                 "eyJhY2Nlc3NUb2tlbiI6ImV5SnliMnhsY3lJNld5SmhaRzFwYmlJc0luVnpaWElpWFgwPSJ9".repeat(45);
         OidcConfig idcsDefault = cookieCompressionConfigBuilder()
@@ -757,14 +761,6 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .clientSecret("client-secret-value")
                 .oidcMetadataWellKnown(false)
                 .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray());
-    }
-
-    private static String largeIdTokenValue() {
-        return "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
-                + "eyJhdWQiOiJjbGllbnQtaWQiLCJpc3MiOiJodHRwczovL2lkZW50aXR5Lm9yYWNsZS5jb20iLCJzdWIiOiJ1c2VyIn0"
-                .repeat(40)
-                + "."
-                + "c2lnbmF0dXJlLWJ5dGVz".repeat(20);
     }
 
     private static SymmetricCipher currentCipher() {
