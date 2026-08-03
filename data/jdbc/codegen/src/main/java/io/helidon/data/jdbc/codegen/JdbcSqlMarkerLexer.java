@@ -146,12 +146,11 @@ final class JdbcSqlMarkerLexer {
     }
 
     /**
-     * Records a positional marker while preserving known question-mark
-     * operators.
+     * Records an unescaped positional marker or preserves a doubled question mark for the JDBC driver.
      */
     private void positionalMarker() {
         char next = peek(1);
-        if (next == '?' || next == '|' || next == '&') {
+        if (next == '?') {
             jdbcSql.append('?').append(next);
             index += 2;
             return;

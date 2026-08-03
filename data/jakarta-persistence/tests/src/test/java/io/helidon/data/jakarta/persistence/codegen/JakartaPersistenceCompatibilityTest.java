@@ -25,48 +25,124 @@ import io.helidon.data.codegen.common.RepositoryCodegenProvider;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class JakartaPersistenceCompatibilityTest {
 
     @Test
-    void remainsTheDefaultAndSupportsExplicitSelection() {
+    void remainsTheDefaultForEntityRepositories() {
         TestCompiler.Result result = compiler()
-                .addSource("Repositories.java", """
+                .addSource("DefaultRepository.java", entityRepository("DefaultRepository", ""))
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        assertThat(Files.exists(result.sourceOutput().resolve("example/DefaultRepository__Jpa.java")), is(true));
+    }
+
+    @Test
+    void supportsExplicitSelectionForEntityRepositories() {
+        TestCompiler.Result result = compiler()
+                .addSource("ExplicitRepository.java",
+                           entityRepository("ExplicitRepository", "@Data.Provider(\"jakarta\")"))
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        assertThat(Files.exists(result.sourceOutput().resolve("example/ExplicitRepository__Jpa.java")), is(true));
+    }
+
+    @Test
+    void rejectsAnnotationOnlyRepositoryWithoutProvider() {
+        TestCompiler.Result result = compiler()
+                .addSource("MissingProviderRepository.java", """
                         package example;
 
-                        import jakarta.persistence.Entity;
-                        import jakarta.persistence.Id;
                         import io.helidon.data.Data;
 
-                        @Entity
-                        class Pokemon {
-                            @Id
-                            Long id;
+                        @Data.Repository
+                        interface MissingProviderRepository {
                         }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(false));
+        assertThat(result.diagnostics(), hasItem(containsString("must declare @Data.Provider")));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("example/MissingProviderRepository__Jpa.java")), is(false));
+    }
+
+    @Test
+    void doesNotRouteJdbcRepositoryWithoutProviderToJpa() {
+        TestCompiler.Result result = compiler()
+                .addSource("MissingJdbcProviderRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
 
                         @Data.Repository
-                        interface DefaultRepository extends Data.GenericRepository<Pokemon, Long> {
+                        interface MissingJdbcProviderRepository {
+                            @Jdbc.Statement("select VALUE from TEST_VALUE")
+                            String find();
                         }
+                        """)
+                .build()
+                .compile();
 
-                        @Data.Repository
-                        @Data.Provider("jakarta")
-                        interface ExplicitRepository extends Data.GenericRepository<Pokemon, Long> {
-                        }
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(false));
+        assertThat(result.diagnostics(), hasItem(containsString("must declare @Data.Provider")));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("example/MissingJdbcProviderRepository__Jpa.java")), is(false));
+    }
+
+    @Test
+    void doesNotRouteExplicitJdbcRepositoryToJpaWhenJdbcGeneratorIsUnavailable() {
+        TestCompiler.Result result = compiler()
+                .addSource("UnavailableProviderRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
 
                         @Data.Repository
                         @Data.Provider("jdbc")
-                        interface OtherProviderRepository extends Data.GenericRepository<Pokemon, Long> {
+                        interface UnavailableProviderRepository {
+                            @Jdbc.Statement("select VALUE from TEST_VALUE")
+                            String find();
                         }
                         """)
                 .build()
                 .compile();
 
         assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
-        assertThat(Files.exists(result.sourceOutput().resolve("example/DefaultRepository__Jpa.java")), is(true));
-        assertThat(Files.exists(result.sourceOutput().resolve("example/ExplicitRepository__Jpa.java")), is(true));
-        assertThat(Files.exists(result.sourceOutput().resolve("example/OtherProviderRepository__Jpa.java")), is(false));
+        assertThat(Files.exists(result.sourceOutput()
+                                        .resolve("example/UnavailableProviderRepository__Jpa.java")), is(false));
+    }
+
+    private static String entityRepository(String repositoryName, String providerAnnotation) {
+        return """
+                package example;
+
+                import jakarta.persistence.Entity;
+                import jakarta.persistence.Id;
+                import io.helidon.data.Data;
+
+                @Entity
+                class Pokemon {
+                    @Id
+                    Long id;
+                }
+
+                @Data.Repository
+                %s
+                interface %s extends Data.GenericRepository<Pokemon, Long> {
+                }
+                """.formatted(providerAnnotation, repositoryName);
     }
 
     private static TestCompiler.Builder compiler() {
@@ -76,6 +152,7 @@ class JakartaPersistenceCompatibilityTest {
                 .addProcessor(AptProcessor::new)
                 .addClasspath(List.of(load("jakarta.persistence.Entity"),
                                       load("io.helidon.data.Data"),
+                                      load("io.helidon.data.jdbc.Jdbc"),
                                       load("io.helidon.data.jakarta.persistence.JpaRepositoryExecutor"),
                                       load("io.helidon.service.registry.Service"),
                                       load("io.helidon.transaction.Tx"),

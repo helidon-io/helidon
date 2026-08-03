@@ -93,6 +93,71 @@ class JdbcInheritedRepositoryTest {
     }
 
     @Test
+    void keepsAChildDefaultOverride() throws IOException {
+        TestCompiler.Result result = compiler()
+                .addSource("DefaultOverrideRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+
+                        interface ParentRepository {
+                            @Jdbc.Statement("select VALUE from ITEM")
+                            String find();
+                        }
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface DefaultOverrideRepository extends ParentRepository {
+                            @Override
+                            default String find() {
+                                return "local";
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        String source = Files.readString(result.sourceOutput().resolve("example/DefaultOverrideRepository__Jdbc.java"));
+        assertThat(source, not(containsString("select VALUE from ITEM")));
+        assertThat(source, not(containsString("String find()")));
+    }
+
+    @Test
+    void generatesAChildThatMakesADefaultMethodAbstract() throws IOException {
+        TestCompiler.Result result = compiler()
+                .addSource("AbstractOverrideRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+
+                        interface ParentRepository {
+                            default String find() {
+                                return "local";
+                            }
+                        }
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface AbstractOverrideRepository extends ParentRepository {
+                            @Override
+                            @Jdbc.Statement("select VALUE from ITEM")
+                            String find();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        String source = Files.readString(result.sourceOutput()
+                                                 .resolve("example/AbstractOverrideRepository__Jdbc.java"));
+        assertThat(source, containsString("select VALUE from ITEM"));
+        assertThat(source, containsString("String find()"));
+    }
+
+    @Test
     void reportsInvalidInheritedMethodsAtTheirDeclaration() {
         assertCompilationFailure("InvalidInheritedRepository.java", """
                         package example;
