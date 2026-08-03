@@ -11,6 +11,26 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## 4.5.2
+
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### NOTABLE CHANGES
+
+The OIDC security provider has been updated to support compression of token cookies. This is enabled
+by default for `server-type=idcs` and disabled by default for other server types. For more information
+see [PR 12218](https://github.com/helidon-io/helidon/pull/12218).
+
+### CHANGES
+
+- Metrics: Support OpenTelemetry HTTP server metrics semantic conventions from MP [12070](https://github.com/helidon-io/helidon/pull/12070)
+- Security: OIDC cookie compression [12218](https://github.com/helidon-io/helidon/pull/12218)
+- Security: Preserve OIDC authorization and logout endpoint query parameters [12207](https://github.com/helidon-io/helidon/pull/12207)
+- Security: Use request scheme for WebClient security transport [12203](https://github.com/helidon-io/helidon/pull/12203)
+- Tests: Use stable Eclipse URLs for Jakarta EE TCK downloads [12191](https://github.com/helidon-io/helidon/pull/12191)
+
 ## 4.5.1
 
 This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 4.
@@ -2756,6 +2776,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.5.2]: https://github.com/oracle/helidon/compare/4.5.1...4.5.2
 [4.5.1]: https://github.com/oracle/helidon/compare/4.5.0...4.5.1
 [4.5.0]: https://github.com/oracle/helidon/compare/4.4.1...4.5.0
 [4.4.1]: https://github.com/oracle/helidon/compare/4.4.0...4.4.1
