@@ -22,6 +22,7 @@ import java.net.URI;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -40,7 +41,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -89,6 +90,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     private SocketAddress socketAddress;
     private String uriTemplate;
+    private Set<String> uriTemplateQueryParamNames;
     private boolean crossOriginRedirect;
     private boolean skipUriEncoding;
     private boolean followRedirects;
@@ -192,6 +194,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T uri(URI uri) {
         this.uriTemplate = null;
+        this.uriTemplateQueryParamNames = null;
         this.clientUri.resolve(uri);
         return identity();
     }
@@ -215,6 +218,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T uri(ClientUri uri) {
         this.uriTemplate = null;
+        this.uriTemplateQueryParamNames = null;
         this.clientUri.resolve(uri);
         return identity();
     }
@@ -229,6 +233,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     public T uri(String uri) {
         if (uri.indexOf('{') > -1) {
             this.uriTemplate = uri;
+            this.uriTemplateQueryParamNames = null;
         } else {
             uri(URI.create(UriEncoding.encodeUri(uri)));
         }
@@ -283,6 +288,14 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T queryParam(String name, String... values) {
         clientUri.writeableQuery().set(name, values);
+        if (uriTemplate != null) {
+            if (uriTemplateQueryParamNames == null) {
+                uriTemplateQueryParamNames = new HashSet<>();
+            } else {
+                uriTemplateQueryParamNames.retainAll(clientUri.query().names());
+            }
+            uriTemplateQueryParamNames.add(name);
+        }
         return identity();
     }
 
@@ -574,6 +587,15 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      */
     protected ClientUri resolveUri(ClientUri toResolve) {
         if (uriTemplate != null) {
+            Map<String, String[]> requestQueryParams = null;
+            if (uriTemplateQueryParamNames != null) {
+                requestQueryParams = new HashMap<>();
+                Set<String> queryNames = clientUri.query().names();
+                uriTemplateQueryParamNames.retainAll(queryNames);
+                for (String name : uriTemplateQueryParamNames) {
+                    requestQueryParams.put(name, clientUri.query().all(name).toArray(String[]::new));
+                }
+            }
             String resolved = resolvePathParams(uriTemplate);
             URI uri;
             if (skipUriEncoding) {
@@ -583,11 +605,9 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             }
             toResolve.resolve(uri);
 
-            if (uri.isAbsolute()) { // query parameters are cleared when resolving against absolute URIs
-                UriQuery query = clientUri.query();
-                if (!query.isEmpty()) {
-                    toResolve.writeableQuery().from(query);
-                }
+            if (requestQueryParams != null) {
+                UriQueryWriteable query = toResolve.writeableQuery();
+                requestQueryParams.forEach(query::set);
             }
         }
         return toResolve;
