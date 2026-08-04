@@ -1,5 +1,5 @@
 <!--@frontmatter
-description: "Helidon Examplar Support"
+description: "Helidon Exemplar Support"
 -->
 # OpenMetrics Exemplar
 

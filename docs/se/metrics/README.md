@@ -8,5 +8,5 @@ index:
 # Metrics
 
 - [Metrics](metrics.md)
-- [Exemplars](examplar.md)
+- [Exemplars](exemplar.md)
 - [Micrometer](micrometer.md)
