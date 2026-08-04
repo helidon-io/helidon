@@ -137,7 +137,7 @@ HTTP/2 server configuration
 <td>
 <code>50</code>
 </td>
-<td>Maximum number of rapid client resets within the check period and server-side resets over the connection lifetime before GOAWAY is sent, or <code>&#8288;-&#8288;1</code> to disable both checks</td>
+<td>Maximum number of rapid client resets within the check period and server-side resets over the connection lifetime before GOAWAY is sent, or <code>-1</code> to disable both checks</td>
 </tr>
 <tr>
 <td>

@@ -29,7 +29,6 @@ final class CodeBreaks {
     static final int MIN_CHARS_BETWEEN_BREAKS = 4;
 
     private static final String WBR = "<wbr>";
-    private static final String WORD_JOINER = "&#8288;";
     private static final Pattern CODE = Pattern.compile("(?is)<code\\b([^>]*)>(.*?)</code>");
 
     private CodeBreaks() {
@@ -80,14 +79,7 @@ final class CodeBreaks {
             if (breaks[index]) {
                 result.append(WBR);
             }
-            String str = code.get(index);
-            if (leadingSeparator(code, index, str)) {
-                result.append(WORD_JOINER);
-                appendCodeChar(result, str);
-                result.append(WORD_JOINER);
-            } else {
-                appendCodeChar(result, str);
-            }
+            appendCodeChar(result, code.get(index));
         }
     }
 
@@ -212,14 +204,6 @@ final class CodeBreaks {
                     default -> false;
                 };
             }
-        }
-        return false;
-    }
-
-    private static boolean leadingSeparator(List<String> code, int index, String str) {
-        if (index == 0 && code.size() > 1 && str.length() == 1) {
-            char ch = str.charAt(0);
-            return ch == '-' || ch == '/';
         }
         return false;
     }

@@ -79,7 +79,7 @@ Configuration of a server listener (server socket)
 <code>Long</code>
 </td>
 <td>
-<code>&#8288;-&#8288;1</code>
+<code>-1</code>
 </td>
 <td>Maximal number of bytes an entity may have</td>
 </tr>
@@ -165,7 +165,7 @@ Configuration of a server listener (server socket)
 <code>Integer</code>
 </td>
 <td>
-<code>&#8288;-&#8288;1</code>
+<code>-1</code>
 </td>
 <td>Limits the number of connection permits that this listener may reserve before accepting sockets</td>
 </tr>
@@ -212,7 +212,7 @@ Configuration of a server listener (server socket)
 <code>Integer</code>
 </td>
 <td>
-<code>&#8288;-&#8288;1</code>
+<code>-1</code>
 </td>
 <td>Limits the number of requests that can be executed at the same time (the number of active virtual threads of requests)</td>
 </tr>

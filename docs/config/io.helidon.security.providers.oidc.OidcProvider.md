@@ -500,7 +500,7 @@ Open ID Connect security provider
 <code>String</code>
 </td>
 <td>
-<code>&#8288;/&#8288;oidc/<wbr>redirect</code>
+<code>/oidc/<wbr>redirect</code>
 </td>
 <td>URI to register web server component on, used by the OIDC server to redirect authorization requests to after a user logs in or approves scopes</td>
 </tr>

@@ -25,7 +25,7 @@
 <code>String</code>
 </td>
 <td>
-<code>&#8288;/&#8288;openapi</code>
+<code>/openapi</code>
 </td>
 <td>Web context path for the OpenAPI endpoint</td>
 </tr>
