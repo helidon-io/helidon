@@ -15,9 +15,6 @@
  */
 package io.helidon.microprofile.telemetry;
 
-import java.util.function.Supplier;
-
-import io.helidon.microprofile.telemetry.spi.HelidonTelemetryClientFilterHelper;
 import io.helidon.tracing.Tracer;
 
 import jakarta.enterprise.inject.Instance;
@@ -34,17 +31,10 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 public class TelemetryAutoDiscoverable implements AutoDiscoverable {
     private static final System.Logger LOGGER = System.getLogger(TelemetryAutoDiscoverable.class.getName());
 
-    private final Supplier<CDI<Object>> cdiSupplier;
-
     /**
      * For service loading.
      */
     public TelemetryAutoDiscoverable() {
-        this(CDI::current);
-    }
-
-    TelemetryAutoDiscoverable(Supplier<CDI<Object>> cdiSupplier) {
-        this.cdiSupplier = cdiSupplier;
     }
 
     /**
@@ -57,23 +47,17 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
         ctx.register(HelidonTelemetryContainerFilter.class);
 
         try {
-            CDI<Object> cdi = cdiSupplier.get();
-            Instance<Tracer> tracers = cdi.select(Tracer.class);
+            Instance<Tracer> tracers = CDI.current().select(Tracer.class);
             if (!tracers.isResolvable()) {
                 LOGGER.log(System.Logger.Level.TRACE,
                            "Skipping Jersey client telemetry because CDI cannot resolve a Helidon tracer");
                 return;
             }
 
-            Instance<HelidonTelemetryClientFilterHelper> helpers = cdi.select(HelidonTelemetryClientFilterHelper.class);
-            ctx.register(new HelidonTelemetryClientFilter(tracers.get(), helpers));
+            ctx.register(HelidonTelemetryClientFilter.class);
         } catch (IllegalStateException e) {
             LOGGER.log(System.Logger.Level.TRACE,
                        "Skipping Jersey client telemetry because no active CDI container is available");
-        } catch (RuntimeException e) {
-            LOGGER.log(System.Logger.Level.TRACE,
-                       "Skipping Jersey client telemetry because CDI dependencies could not be obtained: "
-                               + e.getMessage());
         }
     }
 }

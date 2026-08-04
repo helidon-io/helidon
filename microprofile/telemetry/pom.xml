@@ -130,11 +130,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.testing</groupId>
             <artifactId>helidon-microprofile-testing-junit5</artifactId>
             <scope>test</scope>
@@ -203,7 +198,6 @@
                                 <exclude>**/TestSpanListenersWithInjection.java</exclude>
                                 <exclude>**/TestFilterSpanNesting.java</exclude>
                                 <exclude>**/PlainJerseyClientTest.java</exclude>
-                                <exclude>**/TelemetryAutoDiscoverableTest.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -252,17 +246,6 @@
                         <configuration>
                             <includes>
                                 <include>**/PlainJerseyClientTest.java</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>auto-discoverable-test</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>**/TelemetryAutoDiscoverableTest.java</include>
                             </includes>
                         </configuration>
                     </execution>
