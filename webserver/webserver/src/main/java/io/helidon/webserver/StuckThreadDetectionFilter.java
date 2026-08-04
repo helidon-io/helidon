@@ -59,6 +59,14 @@ final class StuckThreadDetectionFilter implements Filter {
     }
 
     @Override
+    public void beforeStart() {
+        activeRequests.clear();
+        completedRequests.clear();
+        omittedRecoveries.set(0);
+        running.set(true);
+    }
+
+    @Override
     public void afterStart(WebServer webServer) {
         Thread thread = Thread.ofVirtual()
                 .name("stuck-thread-detection-" + socketName)
@@ -67,10 +75,6 @@ final class StuckThreadDetectionFilter implements Filter {
         if (!monitorThread.compareAndSet(null, thread)) {
             return;
         }
-        activeRequests.clear();
-        completedRequests.clear();
-        omittedRecoveries.set(0);
-        running.set(true);
         try {
             thread.start();
         } catch (RuntimeException | Error e) {
