@@ -69,8 +69,9 @@ public final class EncryptedJwt {
 
     private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
 
+    // Delimiter-exclusive possessive groups keep rejection of malformed input linear.
     private static final Pattern JWE_PATTERN = Pattern
-            .compile("(^[\\S]+)\\.([\\S]+)\\.([\\S]+)\\.([\\S]+)\\.([\\S]+$)");
+            .compile("([^\\s.]++)\\.([^\\s.]++)\\.([^\\s.]++)\\.([^\\s.]++)\\.([^\\s.]++)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
 

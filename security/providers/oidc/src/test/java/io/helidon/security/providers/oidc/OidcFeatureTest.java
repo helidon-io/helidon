@@ -41,6 +41,9 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.Subject;
+import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
@@ -50,6 +53,8 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -72,6 +77,14 @@ import static org.mockito.Mockito.when;
  */
 class OidcFeatureTest {
     private static final String PARAM_NAME = "my-param-attempts";
+    private static final URI DEFAULT_LOGOUT_ENDPOINT = URI.create("http://idp.example.test/logout");
+    private static final String ID_TOKEN = SignedJwt.sign(
+            Jwt.builder()
+                    .algorithm("none")
+                    .addPayloadClaim("padding", "a".repeat(512))
+                    .build(),
+            Jwk.NONE_JWK)
+            .tokenContent();
 
     private final OidcConfig oidcConfig = OidcConfig.builder()
             .clientId("id")
@@ -157,14 +170,59 @@ class OidcFeatureTest {
 
         assertThat(response,
                    containsString("Location: " + logoutEndpoint
-                                          + "&id_token_hint=dummy-id-token&post_logout_redirect_uri=http://127.0.0.1:"));
+                                          + "&id_token_hint=" + ID_TOKEN
+                                          + "&post_logout_redirect_uri=http://127.0.0.1:"));
+    }
+
+    @Test
+    void testLogoutRejectsInvalidCompressedIdToken() throws Exception {
+        String injectedHeader = "X-Reproducer: injected";
+        String invalidIdToken = ID_TOKEN + "\r\n" + injectedHeader + "\r\n";
+        String response = logoutResponse("ok", DEFAULT_LOGOUT_ENDPOINT, invalidIdToken, false);
+
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertLocalOidcCookiesRemoved(response);
+        assertThat(response, not(containsString("\r\n" + injectedHeader + "\r\n")));
+        assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    @Test
+    void testLogoutRejectsCompressedJweWithTooManySegments() throws Exception {
+        String header = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString("{\"alg\":\"RSA-OAEP\",\"enc\":\"A256GCM\"}"
+                                        .getBytes(StandardCharsets.UTF_8));
+        String invalidJwe = header + ".AA".repeat(20_000);
+        String response = logoutResponse("ok", DEFAULT_LOGOUT_ENDPOINT, invalidJwe, true);
+
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertLocalOidcCookiesRemoved(response);
+        assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    private static void assertLocalOidcCookiesRemoved(String response) {
+        for (String cookieName : List.of(OidcConfig.DEFAULT_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_ID_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_TENANT_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_REFRESH_COOKIE_NAME)) {
+            assertThat(response,
+                       containsString("\r\nSet-Cookie: " + cookieName
+                                              + "=; Expires="));
+        }
     }
 
     private static String logoutResponse(String state) throws Exception {
-        return logoutResponse(state, URI.create("http://idp.example.test/logout"));
+        return logoutResponse(state, DEFAULT_LOGOUT_ENDPOINT);
     }
 
     private static String logoutResponse(String state, URI logoutEndpoint) throws Exception {
+        return logoutResponse(state, logoutEndpoint, ID_TOKEN, true);
+    }
+
+    private static String logoutResponse(String state,
+                                         URI logoutEndpoint,
+                                         String idToken,
+                                         boolean validateResponseHeaders) throws Exception {
         OidcConfig oidcConfig = OidcConfig.builder()
                 .clientId("id")
                 .clientSecret("secret")
@@ -179,13 +237,24 @@ class OidcFeatureTest {
                 .postLogoutUri(URI.create("/logged-out"))
                 .cookieEncryptionEnabled(false)
                 .cookieEncryptionEnabledIdToken(false)
+                .cookieCompressionEnabledIdToken(true)
                 .cookieEncryptionEnabledTenantName(false)
                 .cookieEncryptionEnabledRefreshToken(false)
                 .cookieEncryptionEnabledState(false)
                 .build();
+        String idTokenCookie = oidcConfig.idTokenCookieHandler()
+                .createCookie(idToken)
+                .build()
+                .value();
+        assertThat("ID token test cookie should be compressed", idTokenCookie, startsWith("~"));
 
         WebServer server = WebServer.builder()
                 .port(0)
+                .addConnectionSelector(Http1ConnectionSelector.builder()
+                                               .config(Http1Config.builder()
+                                                               .validateResponseHeaders(validateResponseHeaders)
+                                                               .build())
+                                               .build())
                 .addRouting(HttpRouting.builder()
                                     .addFeature(OidcFeature.create(oidcConfig)))
                 .build()
@@ -196,7 +265,7 @@ class OidcFeatureTest {
             OutputStream output = socket.getOutputStream();
             output.write(("GET /oidc/logout?state=" + state + " HTTP/1.1\r\n"
                     + "Host: 127.0.0.1:" + server.port() + "\r\n"
-                    + "Cookie: " + oidcConfig.idTokenCookieHandler().cookieName() + "=dummy-id-token\r\n"
+                    + "Cookie: " + oidcConfig.idTokenCookieHandler().cookieName() + "=" + idTokenCookie + "\r\n"
                     + "Connection: close\r\n"
                     + "\r\n").getBytes(StandardCharsets.US_ASCII));
             output.flush();

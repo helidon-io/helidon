@@ -16,10 +16,16 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +33,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.zip.Deflater;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
+import io.helidon.common.crypto.CryptoException;
 import io.helidon.http.SetCookie;
 
 /**
@@ -35,6 +45,14 @@ import io.helidon.http.SetCookie;
  */
 public class OidcCookieHandler {
     private static final System.Logger LOGGER = System.getLogger(OidcCookieHandler.class.getName());
+    private static final byte COMPRESSED_BASE64_VALUE = 0;
+    private static final byte COMPRESSED_RAW_VALUE = 1;
+    private static final String COMPRESSED_VALUE_PREFIX = "~";
+    private static final int COMPRESSION_BUFFER_SIZE = 1024;
+    private static final int MAX_COOKIE_VALUE_SIZE = 64 * 1024;
+    private static final int MAX_DECOMPRESSED_BASE64_VALUE_SIZE = MAX_COOKIE_VALUE_SIZE / 4 * 3;
+    private static final int MAX_ENCODED_COMPRESSED_VALUE_SIZE = COMPRESSED_VALUE_PREFIX.length()
+            + ((MAX_COOKIE_VALUE_SIZE + 2) / 3) * 4;
 
     private final String createCookieOptions;
     private final List<Consumer<SetCookie.Builder>> removeCookieUpdaters = new LinkedList<>();
@@ -92,11 +110,54 @@ public class OidcCookieHandler {
                                                          builder.encryptionPassword,
                                                          builder.legacyCookieEncryption,
                                                          builder.legacyCookieFallback);
-            this.encryptFunction = it -> cookieEncryption.encrypt(it.getBytes(StandardCharsets.UTF_8));
-            this.decryptFunction = it -> new String(cookieEncryption.decrypt(it), StandardCharsets.UTF_8);
+            // Older instances can decrypt legacy password-encrypted cookies, but cannot decompress their payload.
+            // Named encryption ignores the legacy flag; rolling upgrades using it must control compression explicitly.
+            boolean legacyPasswordEncryption = builder.legacyCookieEncryption && builder.encryptionName == null;
+            boolean compressionEnabled = builder.compressionEnabled && !legacyPasswordEncryption;
+            this.encryptFunction = it -> {
+                byte[] valueBytes = it.getBytes(StandardCharsets.UTF_8);
+                return cookieEncryption.encrypt(compressionEnabled ? compress(valueBytes) : valueBytes);
+            };
+            // Marker-aware decompression also accepts uncompressed cookies created by older instances.
+            this.decryptFunction = it -> new String(decompress(cookieEncryption.decrypt(it)),
+                                                    StandardCharsets.UTF_8);
         } else {
-            this.encryptFunction = Function.identity();
-            this.decryptFunction = Function.identity();
+            if (builder.compressionEnabled) {
+                this.encryptFunction = it -> {
+                    byte[] valueBytes = it.getBytes(StandardCharsets.UTF_8);
+                    byte[] compressed = compress(valueBytes);
+                    if (compressed == valueBytes) {
+                        return it;
+                    }
+                    String encoded = COMPRESSED_VALUE_PREFIX + Base64.getEncoder().encodeToString(compressed);
+                    return encoded.length() < valueBytes.length ? encoded : it;
+                };
+            } else {
+                this.encryptFunction = Function.identity();
+            }
+            if (builder.compressionConfigured) {
+                // OIDC token values use Base64 or Base64URL, neither of which contains the compression prefix.
+                this.decryptFunction = it -> {
+                    if (!it.startsWith(COMPRESSED_VALUE_PREFIX)) {
+                        return it;
+                    }
+                    if (it.length() > MAX_ENCODED_COMPRESSED_VALUE_SIZE) {
+                        throw new CryptoException("OIDC encoded compressed cookie exceeds the maximum supported size");
+                    }
+                    try {
+                        byte[] compressed = Base64.getDecoder().decode(it.substring(COMPRESSED_VALUE_PREFIX.length()));
+                        byte[] decompressed = decompress(compressed);
+                        if (decompressed == compressed) {
+                            throw new CryptoException("OIDC compressed cookie has an unsupported format");
+                        }
+                        return new String(decompressed, StandardCharsets.UTF_8);
+                    } catch (IllegalArgumentException e) {
+                        throw new CryptoException("OIDC cookie decompression failed", e);
+                    }
+                };
+            } else {
+                this.decryptFunction = Function.identity();
+            }
         }
 
         if (LOGGER.isLoggable(Level.TRACE)) {
@@ -143,7 +204,7 @@ public class OidcCookieHandler {
 
     /**
      * Locate cookie in a map of headers and return its value.
-     * If the cookie is encrypted, decrypts the cookie value.
+     * If the cookie is encrypted or compressed, restores the original cookie value.
      *
      * @param headers headers to process
      * @return cookie value, or empty if the cookie could not be found
@@ -171,13 +232,13 @@ public class OidcCookieHandler {
     }
 
     /**
-     * Decrypt a cipher text into clear text (if encryption is enabled).
+     * Restore an encrypted or compressed cookie value.
      *
-     * @param cipherText cipher text to decrypt
-     * @return secret
+     * @param value stored cookie value
+     * @return original cookie value
      */
-    public String decrypt(String cipherText) {
-        return decryptFunction.apply(cipherText);
+    public String decrypt(String value) {
+        return decryptFunction.apply(value);
     }
 
     String createCookieOptions() {
@@ -186,6 +247,75 @@ public class OidcCookieHandler {
 
     String cookieValuePrefix() {
         return valuePrefix;
+    }
+
+    private static byte[] compress(byte[] value) {
+        if (value.length <= 1 || value.length > MAX_COOKIE_VALUE_SIZE) {
+            return value;
+        }
+
+        byte compressionMarker = COMPRESSED_RAW_VALUE;
+        byte[] uncompressed = value;
+        try {
+            byte[] decoded = Base64.getDecoder().decode(value);
+            // Access-token cookies contain Base64-encoded JSON. Decoding canonical Base64 before compression removes
+            // its roughly one-third expansion, which can be necessary to fit the encrypted value within browser cookie
+            // limits and leaves fewer bytes for GZIP and encryption to process. The exact decode/encode round trip
+            // ensures that the marker can be used to restore the original representation byte for byte.
+            if (Arrays.equals(value, Base64.getEncoder().encode(decoded))) {
+                compressionMarker = COMPRESSED_BASE64_VALUE;
+                uncompressed = decoded;
+            }
+        } catch (IllegalArgumentException e) {
+            // Compress the raw value.
+        }
+
+        ByteArrayOutputStream result = new ByteArrayOutputStream(value.length);
+        // Compressed values use [format marker][GZIP stream]. The marker is a control byte that cannot begin the
+        // textual token and URL values handled here. GZIPOutputStream writes the fixed RFC 1952 magic bytes
+        // 0x1f, 0x8b immediately after it.
+        result.write(compressionMarker);
+        try (GZIPOutputStream gzip = new BestCompressionGzipOutputStream(result)) {
+            gzip.write(uncompressed);
+        } catch (IOException e) {
+            throw new CryptoException("OIDC cookie compression failed", e);
+        }
+        byte[] compressed = result.toByteArray();
+        return compressed.length < value.length ? compressed : value;
+    }
+
+    private static byte[] decompress(byte[] value) {
+        if (value.length == 0) {
+            return value;
+        }
+
+        boolean base64Value;
+        int maxDecompressedValueSize;
+        // The leading marker identifies both compression and the original representation. GZIPInputStream below
+        // validates the following 0x1f, 0x8b magic bytes; no marker means this is an uncompressed value.
+        if (value[0] == COMPRESSED_BASE64_VALUE) {
+            base64Value = true;
+            maxDecompressedValueSize = MAX_DECOMPRESSED_BASE64_VALUE_SIZE;
+        } else if (value[0] == COMPRESSED_RAW_VALUE) {
+            base64Value = false;
+            maxDecompressedValueSize = MAX_COOKIE_VALUE_SIZE;
+        } else {
+            return value;
+        }
+        if (value.length > MAX_COOKIE_VALUE_SIZE) {
+            throw new CryptoException("OIDC compressed cookie exceeds the maximum supported size");
+        }
+
+        try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(value, 1, value.length - 1),
+                                                        COMPRESSION_BUFFER_SIZE)) {
+            byte[] decompressed = gzip.readNBytes(maxDecompressedValueSize + 1);
+            if (decompressed.length > maxDecompressedValueSize) {
+                throw new CryptoException("OIDC decompressed cookie exceeds the maximum supported size");
+            }
+            return base64Value ? Base64.getEncoder().encode(decompressed) : decompressed;
+        } catch (IOException e) {
+            throw new CryptoException("OIDC cookie decompression failed", e);
+        }
     }
 
     private SetCookie.Builder createCookieDirectValue(String value) {
@@ -210,6 +340,8 @@ public class OidcCookieHandler {
         private String encryptionName;
         private char[] encryptionPassword;
         private boolean encryptionEnabled;
+        private boolean compressionEnabled;
+        private boolean compressionConfigured;
         private boolean legacyCookieEncryption;
         private boolean legacyCookieFallback;
 
@@ -271,6 +403,12 @@ public class OidcCookieHandler {
             return this;
         }
 
+        Builder compressionEnabled(boolean compressionEnabled) {
+            this.compressionEnabled = compressionEnabled;
+            this.compressionConfigured = true;
+            return this;
+        }
+
         Builder legacyCookieEncryption(boolean legacyCookieEncryption) {
             this.legacyCookieEncryption = legacyCookieEncryption;
             return this;
@@ -279,6 +417,13 @@ public class OidcCookieHandler {
         Builder legacyCookieFallback(boolean legacyCookieFallback) {
             this.legacyCookieFallback = legacyCookieFallback;
             return this;
+        }
+    }
+
+    private static final class BestCompressionGzipOutputStream extends GZIPOutputStream {
+        private BestCompressionGzipOutputStream(OutputStream out) throws IOException {
+            super(out, COMPRESSION_BUFFER_SIZE);
+            def.setLevel(Deflater.BEST_COMPRESSION);
         }
     }
 }

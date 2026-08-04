@@ -99,6 +99,18 @@ These flags are temporary compatibility controls for upgrades, not steady-state 
 These flags only affect password-based OIDC cookie encryption; named Security encryption configured with
 `cookie-encryption-name` uses its own encryption configuration.
 
+For a top-level `server-type=idcs`, the access-token and ID-token cookies are GZIP-compressed by default when
+compression reduces their size. Compression is disabled by default for other server types and can be enabled explicitly
+with `cookie-compression-enabled` for the access token and `cookie-compression-id-enabled` for the ID token. Compression
+is applied before encryption when encryption is enabled, and uses a cookie-safe encoded form otherwise. Password-based
+legacy cookie encryption disables compression while `legacy-cookie-encryption` is `true`, even if the compression
+options are enabled; named Security encryption does not have this override. During a rolling upgrade from a version
+that does not understand compressed token cookies, set both options to `false` on all nodes before upgrading. New nodes
+still read compressed cookies while these settings are disabled, but write the older uncompressed format. Re-enable
+compression after all nodes have been upgraded and the rollback window has closed.
+Older nodes cannot read compressed cookies. Rolling back after compression has been re-enabled therefore requires
+invalidating affected sessions or waiting for the compressed cookies to expire and users to authenticate again.
+
 Helidon obtains a token from request (from cookie, header, or query parameter):
 
 1. Token is parsed as a singed JWT
