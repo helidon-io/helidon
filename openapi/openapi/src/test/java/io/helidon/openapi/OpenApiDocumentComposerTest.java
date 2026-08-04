@@ -849,6 +849,53 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void generatedDocumentRewritesDiscriminatorUnderComponentNamedExample() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                    RawOpenApiVersion.OPEN_API_32);
+        JsonObject itemSchema = JsonObject.builder()
+                .setValues("oneOf",
+                           List.of(JsonObject.builder()
+                                           .set("$ref", "#/components/schemas/Item")
+                                           .build()))
+                .set("discriminator",
+                     JsonObject.builder()
+                             .set("propertyName", "kind")
+                             .set("mapping", JsonObject.builder().set("second", "Item").build())
+                             .set("defaultMapping", "#/components/schemas/Item")
+                             .build())
+                .build();
+        OpenApiDocumentSource first = (documentContext, document) -> document
+                .info("Generated API", "1.0.0")
+                .components(components -> components.schema(
+                        "Item",
+                        JsonObject.builder().set("type", "string").build()));
+        OpenApiDocumentSource second = (documentContext, document) -> document
+                .components(components -> components
+                        .schema("Item", JsonObject.builder().set("type", "integer").build())
+                        .requestBody("example",
+                                     requestBody -> requestBody.content(MediaTypes.APPLICATION_JSON_VALUE,
+                                                                        media -> media.itemSchema(itemSchema))));
+
+        Map<String, Object> document = parse(compose(
+                context,
+                context.openApiVersion(),
+                "",
+                MediaTypes.APPLICATION_OPENAPI_YAML,
+                List.of(first, second)));
+        Map<String, Object> components = map(document, "components");
+        Map<String, Object> requestBody = map(map(components, "requestBodies"), "example");
+        Map<String, Object> content = map(requestBody, "content");
+        Map<String, Object> rewrittenSchema = map(map(content, MediaTypes.APPLICATION_JSON_VALUE), "itemSchema");
+        Map<String, Object> discriminator = map(rewrittenSchema, "discriminator");
+
+        assertThat(map(map(components, "schemas"), "Item2").get("type"), is("integer"));
+        assertThat(((Map<?, ?>) list(rewrittenSchema, "oneOf").getFirst()).get("$ref"),
+                   is("#/components/schemas/Item2"));
+        assertThat(map(discriminator, "mapping").get("second"), is("Item2"));
+        assertThat(discriminator.get("defaultMapping"), is("#/components/schemas/Item2"));
+    }
+
+    @Test
     void mergeStaticPreservesEmptyOperationSecurityOverride() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
 

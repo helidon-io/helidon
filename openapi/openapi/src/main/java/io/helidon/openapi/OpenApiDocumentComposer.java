@@ -53,6 +53,16 @@ final class OpenApiDocumentComposer {
                                                                 "patternProperties",
                                                                 "properties");
 
+    private enum InlineSchemaContext {
+        OPEN_API_OBJECT,
+        COMPONENTS,
+        NAMED_OPEN_API_OBJECTS,
+        EXTENSIBLE_NAMED_OPEN_API_OBJECTS,
+        CALLBACKS,
+        LINKS,
+        LINK_OBJECT
+    }
+
     private OpenApiDocumentComposer() {
     }
 
@@ -220,7 +230,7 @@ final class OpenApiDocumentComposer {
             schemas((Map<String, Object>) map).values()
                     .forEach(schema -> rewriteSchemaDiscriminatorRefs(schema, schemaNames));
         }
-        rewriteInlineSchemaDiscriminatorRefs(value, schemaNames, false);
+        rewriteInlineSchemaDiscriminatorRefs(value, schemaNames, InlineSchemaContext.OPEN_API_OBJECT);
     }
 
     @SuppressWarnings("unchecked")
@@ -238,28 +248,83 @@ final class OpenApiDocumentComposer {
 
     private static void rewriteInlineSchemaDiscriminatorRefs(Object value,
                                                              Map<String, String> schemaNames,
-                                                             boolean linkObject) {
+                                                             InlineSchemaContext context) {
         if (value instanceof Map<?, ?> map) {
+            switch (context) {
+            case NAMED_OPEN_API_OBJECTS:
+                map.values().forEach(item -> rewriteInlineSchemaDiscriminatorRefs(
+                        item,
+                        schemaNames,
+                        InlineSchemaContext.OPEN_API_OBJECT));
+                return;
+            case EXTENSIBLE_NAMED_OPEN_API_OBJECTS:
+                map.forEach((key, item) -> {
+                    if (key instanceof String field && !field.startsWith("x-")) {
+                        rewriteInlineSchemaDiscriminatorRefs(item,
+                                                             schemaNames,
+                                                             InlineSchemaContext.OPEN_API_OBJECT);
+                    }
+                });
+                return;
+            case CALLBACKS:
+                map.values().forEach(item -> rewriteInlineSchemaDiscriminatorRefs(
+                        item,
+                        schemaNames,
+                        InlineSchemaContext.EXTENSIBLE_NAMED_OPEN_API_OBJECTS));
+                return;
+            case LINKS:
+                map.values().forEach(item -> rewriteInlineSchemaDiscriminatorRefs(
+                        item,
+                        schemaNames,
+                        InlineSchemaContext.LINK_OBJECT));
+                return;
+            case COMPONENTS:
+                map.forEach((key, item) -> {
+                    if (!(key instanceof String field) || "schemas".equals(field) || field.startsWith("x-")) {
+                        return;
+                    }
+                    InlineSchemaContext childContext = switch (field) {
+                    case "callbacks" -> InlineSchemaContext.CALLBACKS;
+                    case "links" -> InlineSchemaContext.LINKS;
+                    default -> InlineSchemaContext.NAMED_OPEN_API_OBJECTS;
+                    };
+                    rewriteInlineSchemaDiscriminatorRefs(item, schemaNames, childContext);
+                });
+                return;
+            case OPEN_API_OBJECT, LINK_OBJECT:
+                break;
+            default:
+                throw new IllegalStateException("Unsupported inline schema context " + context);
+            }
             map.forEach((key, item) -> {
                 if (!(key instanceof String field)
-                        || "schemas".equals(field)
                         || "example".equals(field)
-                        || "examples".equals(field)
                         || "value".equals(field)
-                        || (linkObject && ("parameters".equals(field) || "requestBody".equals(field)))
+                        || (context == InlineSchemaContext.LINK_OBJECT
+                                && ("parameters".equals(field) || "requestBody".equals(field)))
                         || field.startsWith("x-")) {
                     return;
                 }
                 if ("schema".equals(field) || "itemSchema".equals(field)) {
                     rewriteSchemaDiscriminatorRefs(item, schemaNames);
-                } else if ("links".equals(field) && item instanceof Map<?, ?> links) {
-                    links.values().forEach(link -> rewriteInlineSchemaDiscriminatorRefs(link, schemaNames, true));
                 } else {
-                    rewriteInlineSchemaDiscriminatorRefs(item, schemaNames, false);
+                    InlineSchemaContext childContext = switch (field) {
+                    case "components" -> InlineSchemaContext.COMPONENTS;
+                    case "paths", "responses" -> InlineSchemaContext.EXTENSIBLE_NAMED_OPEN_API_OBJECTS;
+                    case "callbacks" -> InlineSchemaContext.CALLBACKS;
+                    case "links" -> InlineSchemaContext.LINKS;
+                    case "additionalOperations", "content", "encoding", "examples", "headers", "webhooks" ->
+                            InlineSchemaContext.NAMED_OPEN_API_OBJECTS;
+                    default -> InlineSchemaContext.OPEN_API_OBJECT;
+                    };
+                    rewriteInlineSchemaDiscriminatorRefs(item, schemaNames, childContext);
                 }
             });
         } else if (value instanceof List<?> list) {
-            list.forEach(it -> rewriteInlineSchemaDiscriminatorRefs(it, schemaNames, linkObject));
+            list.forEach(it -> rewriteInlineSchemaDiscriminatorRefs(
+                    it,
+                    schemaNames,
+                    InlineSchemaContext.OPEN_API_OBJECT));
         }
     }
 
