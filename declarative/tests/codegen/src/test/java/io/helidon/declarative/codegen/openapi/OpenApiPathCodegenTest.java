@@ -208,6 +208,37 @@ class OpenApiPathCodegenTest {
     }
 
     @Test
+    void endpointSecurityRequirementOverridesInheritedRequirements() throws IOException {
+        var result = compile("endpoint-security-overrides-inherited-requirements", """
+                @RestServer.Endpoint
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("contractOne"))
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("contractTwo"))
+                interface SecuredOpenApiEndpointContract {
+                    @Http.GET
+                    String get();
+                }
+
+                @Service.Singleton
+                @Http.Path("/endpoint-security-override")
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                class ContractSecurityOpenApiEndpoint implements SecuredOpenApiEndpointContract {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString("document.path(\"/endpoint-security-override\""));
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated, not(containsString(".scheme(\"contractOne\", java.util.List.of())")));
+        assertThat(generated, not(containsString(".scheme(\"contractTwo\", java.util.List.of())")));
+    }
+
+    @Test
     void hiddenAnnotationOnEndpointContractHidesImplementation() throws IOException {
         var result = compile("contract-hidden-openapi-endpoint", """
                 @OpenApi.Endpoint

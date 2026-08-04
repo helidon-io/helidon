@@ -270,7 +270,10 @@ final class OpenApiSourceGenerator {
                                     Method.Builder method) {
         String endpointTag = endpointName(endpoint.type().typeName());
         Map<TypeName, String> componentNames = schemas.componentNames(schemaBindings);
-        Set<Annotation> endpointAnnotations = endpoint.annotations();
+        Set<Annotation> endpointAnnotations = new HashSet<>(endpoint.type().annotations());
+        if (!hasSecurityRequirementAnnotations(endpointAnnotations)) {
+            endpointAnnotations = endpoint.annotations();
+        }
         boolean endpointClearsSecurity = hasEmptySecurityRequirements(endpointAnnotations);
         List<OpenApiSecurityRequirement> endpointSecurityRequirements = securityRequirements(endpoint.type().typeName()
                                                                                                      .fqName(),
