@@ -53,16 +53,6 @@ final class OpenApiDocumentComposer {
                                                                 "patternProperties",
                                                                 "properties");
 
-    private enum InlineSchemaContext {
-        OPEN_API_OBJECT,
-        COMPONENTS,
-        NAMED_OPEN_API_OBJECTS,
-        EXTENSIBLE_NAMED_OPEN_API_OBJECTS,
-        CALLBACKS,
-        LINKS,
-        LINK_OBJECT
-    }
-
     private OpenApiDocumentComposer() {
     }
 
@@ -475,5 +465,15 @@ final class OpenApiDocumentComposer {
                                                                                    + expression,
                                                                            pathItem,
                                                                            operationIds)));
+    }
+
+    private enum InlineSchemaContext {
+        OPEN_API_OBJECT,
+        COMPONENTS,
+        NAMED_OPEN_API_OBJECTS,
+        EXTENSIBLE_NAMED_OPEN_API_OBJECTS,
+        CALLBACKS,
+        LINKS,
+        LINK_OBJECT
     }
 }
