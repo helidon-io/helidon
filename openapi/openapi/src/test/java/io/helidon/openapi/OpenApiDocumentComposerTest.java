@@ -650,9 +650,32 @@ class OpenApiDocumentComposerTest {
                         "Item",
                         JsonObject.builder().set("type", "string").build()));
         OpenApiDocumentSource second = (documentContext, document) -> document
-                .components(components -> components.schema(
-                        "Item",
-                        JsonObject.builder().set("type", "integer").build()))
+                .components(components -> components
+                        .schema("Item", JsonObject.builder().set("type", "integer").build())
+                        .schema("Envelope",
+                                JsonObject.builder()
+                                        .set("type", "object")
+                                        .setValues("oneOf",
+                                                   List.of(JsonObject.builder()
+                                                                   .set("$ref", "#/components/schemas/Item")
+                                                                   .build()))
+                                        .set("properties",
+                                             JsonObject.builder()
+                                                     .set("item",
+                                                          JsonObject.builder()
+                                                                  .set("$ref", "#/components/schemas/Item")
+                                                                  .build())
+                                                     .build())
+                                        .set("discriminator",
+                                             JsonObject.builder()
+                                                     .set("propertyName", "kind")
+                                                     .set("mapping",
+                                                          JsonObject.builder()
+                                                                  .set("second", "#/components/schemas/Item")
+                                                                  .set("secondByName", "Item")
+                                                                  .build())
+                                                     .build())
+                                        .build()))
                 .path("/second",
                       path -> path.operation(
                               "GET",
@@ -662,7 +685,7 @@ class OpenApiDocumentComposerTest {
                                                         .content(MediaTypes.APPLICATION_JSON_VALUE,
                                                                  media -> media.schema(JsonObject.builder()
                                                                                                 .set("$ref",
-                                                                                                     "#/components/schemas/Item")
+                                                                                                     "#/components/schemas/Envelope")
                                                                                                 .build())))));
 
         Map<String, Object> document = parse(compose(
@@ -675,10 +698,15 @@ class OpenApiDocumentComposerTest {
         Map<String, Object> operation = map(map(map(document, "paths"), "/second"), "get");
         Map<String, Object> response = map(map(operation, "responses"), "200");
         Map<String, Object> content = map(map(response, "content"), MediaTypes.APPLICATION_JSON_VALUE);
+        Map<String, Object> envelope = map(schemas, "Envelope");
+        Map<String, Object> mapping = map(map(envelope, "discriminator"), "mapping");
 
         assertThat(map(schemas, "Item").get("type"), is("string"));
         assertThat(map(schemas, "Item2").get("type"), is("integer"));
-        assertThat(map(content, "schema").get("$ref"), is("#/components/schemas/Item2"));
+        assertThat(map(map(envelope, "properties"), "item").get("$ref"), is("#/components/schemas/Item2"));
+        assertThat(mapping.get("second"), is("#/components/schemas/Item2"));
+        assertThat(mapping.get("secondByName"), is("Item2"));
+        assertThat(map(content, "schema").get("$ref"), is("#/components/schemas/Envelope"));
     }
 
     @Test

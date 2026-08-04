@@ -196,16 +196,33 @@ final class OpenApiDocumentComposer {
         if (value instanceof Map<?, ?> map) {
             Object ref = map.get("$ref");
             if (ref instanceof String refValue && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
-                String sourceName = refValue.substring(OpenApiSourceBase.SCHEMA_REF_PREFIX.length());
-                String targetName = schemaNames.get(sourceName);
-                if (targetName != null) {
-                    ((Map<String, Object>) map).put("$ref", OpenApiSourceBase.SCHEMA_REF_PREFIX + targetName);
-                }
+                ((Map<String, Object>) map).put("$ref", rewriteSchemaRef(refValue, schemaNames));
+            }
+            Object discriminator = map.get("discriminator");
+            if (discriminator instanceof Map<?, ?> discriminatorMap
+                    && discriminatorMap.get("mapping") instanceof Map<?, ?> mappingMap) {
+                ((Map<String, Object>) mappingMap).replaceAll((_, mappingValue) -> {
+                    if (mappingValue instanceof String mappingRef) {
+                        return rewriteSchemaRef(mappingRef, schemaNames);
+                    }
+                    return mappingValue;
+                });
             }
             map.values().forEach(it -> rewriteSchemaRefs(it, schemaNames));
         } else if (value instanceof List<?> list) {
             list.forEach(it -> rewriteSchemaRefs(it, schemaNames));
         }
+    }
+
+    private static String rewriteSchemaRef(String refValue, Map<String, String> schemaNames) {
+        String prefix = "";
+        String sourceName = refValue;
+        if (refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
+            prefix = OpenApiSourceBase.SCHEMA_REF_PREFIX;
+            sourceName = refValue.substring(prefix.length());
+        }
+        String targetName = schemaNames.get(sourceName);
+        return targetName == null ? refValue : prefix + targetName;
     }
 
     private static String renderGenerated(OpenApiDocumentContext context, OpenApiDocument generated) {
