@@ -864,6 +864,17 @@ class OpenApiDocumentComposerTest {
                              .set("defaultMapping", "#/components/schemas/Item")
                              .build())
                 .build();
+        JsonObject literalDataValue = JsonObject.builder()
+                .set("schema",
+                     JsonObject.builder()
+                             .set("discriminator",
+                                  JsonObject.builder()
+                                          .set("propertyName", "kind")
+                                          .set("mapping", JsonObject.builder().set("literal", "Item").build())
+                                          .set("defaultMapping", "Item")
+                                          .build())
+                             .build())
+                .build();
         OpenApiDocumentSource first = (documentContext, document) -> document
                 .info("Generated API", "1.0.0")
                 .components(components -> components.schema(
@@ -874,7 +885,13 @@ class OpenApiDocumentComposerTest {
                         .schema("Item", JsonObject.builder().set("type", "integer").build())
                         .requestBody("example",
                                      requestBody -> requestBody.content(MediaTypes.APPLICATION_JSON_VALUE,
-                                                                        media -> media.itemSchema(itemSchema))));
+                                                                        media -> media
+                                                                                .itemSchema(itemSchema)
+                                                                                .example(
+                                                                                        "literal",
+                                                                                        OpenApiDocument.Example.builder()
+                                                                                                .dataValue(literalDataValue)
+                                                                                                .build()))));
 
         Map<String, Object> document = parse(compose(
                 context,
@@ -885,14 +902,19 @@ class OpenApiDocumentComposerTest {
         Map<String, Object> components = map(document, "components");
         Map<String, Object> requestBody = map(map(components, "requestBodies"), "example");
         Map<String, Object> content = map(requestBody, "content");
-        Map<String, Object> rewrittenSchema = map(map(content, MediaTypes.APPLICATION_JSON_VALUE), "itemSchema");
+        Map<String, Object> mediaType = map(content, MediaTypes.APPLICATION_JSON_VALUE);
+        Map<String, Object> rewrittenSchema = map(mediaType, "itemSchema");
         Map<String, Object> discriminator = map(rewrittenSchema, "discriminator");
+        Map<String, Object> dataValue = map(map(map(mediaType, "examples"), "literal"), "dataValue");
+        Map<String, Object> literalDiscriminator = map(map(dataValue, "schema"), "discriminator");
 
         assertThat(map(map(components, "schemas"), "Item2").get("type"), is("integer"));
         assertThat(((Map<?, ?>) list(rewrittenSchema, "oneOf").getFirst()).get("$ref"),
                    is("#/components/schemas/Item2"));
         assertThat(map(discriminator, "mapping").get("second"), is("Item2"));
         assertThat(discriminator.get("defaultMapping"), is("#/components/schemas/Item2"));
+        assertThat(map(literalDiscriminator, "mapping").get("literal"), is("Item"));
+        assertThat(literalDiscriminator.get("defaultMapping"), is("Item"));
     }
 
     @Test

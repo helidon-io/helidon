@@ -289,6 +289,7 @@ final class OpenApiDocumentComposer {
             map.forEach((key, item) -> {
                 if (!(key instanceof String field)
                         || "example".equals(field)
+                        || "dataValue".equals(field)
                         || "value".equals(field)
                         || (context == InlineSchemaContext.LINK_OBJECT
                                 && ("parameters".equals(field) || "requestBody".equals(field)))
