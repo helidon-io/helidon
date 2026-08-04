@@ -57,6 +57,7 @@ final class JdbcMethodGenerator {
     static void generate(RepositoryInfo repositoryInfo,
                          ClassModel.Builder classModel,
                          CodegenContext context) {
+        // Validate and name every method first so constructor dependencies and fields are complete before emission.
         List<TypedElementInfo> methods = JdbcTypeHierarchy.abstractMethods(repositoryInfo.interfaceInfo(), context);
         Map<String, Integer> generatedNames = new HashMap<>();
         List<JdbcMethodPlan> plans = new ArrayList<>(methods.size());
@@ -135,6 +136,8 @@ final class JdbcMethodGenerator {
     private static List<MapperDependency> mapperDependencies(List<JdbcMethodPlan> plans,
                                                              ClassModel.Builder classModel,
                                                              CodegenContext context) {
+        // Share one injected dependency between methods with the same mapper selection.
+        // LinkedHashMap preserves first-use order for stable generated source.
         Map<MapperDependencyKey, List<JdbcMethodPlan>> groupedPlans = new LinkedHashMap<>();
         for (JdbcMethodPlan plan : plans) {
             if (plan.mappingKind() == JdbcMethodPlan.MappingKind.EXPLICIT) {
@@ -148,6 +151,7 @@ final class JdbcMethodGenerator {
         }
 
         Map<String, Integer> fieldNames = new HashMap<>();
+        // Reserve the client name so an application type named JdbcClient cannot create a field collision.
         fieldNames.put(JdbcCodegenConstants.JDBC_CLIENT_NAME, 1);
         List<MapperDependency> dependencies = new ArrayList<>(groupedPlans.size());
         for (Map.Entry<MapperDependencyKey, List<JdbcMethodPlan>> entry : groupedPlans.entrySet()) {
@@ -165,6 +169,7 @@ final class JdbcMethodGenerator {
                     .isFinal(true));
             mappedPlans.forEach(plan -> plan.mapperFieldName(fieldName));
 
+            // Inject an explicit mapper by its concrete service type, then retain it through RowMapper<T>.
             TypeName parameterType = key.explicit() ? key.serviceType() : mapperContract;
             dependencies.add(new MapperDependency(parameterType, fieldName, fieldName));
         }
@@ -188,6 +193,7 @@ final class JdbcMethodGenerator {
             if (resolvedType.genericTypeName().equals(contract)) {
                 return resolvedType;
             }
+            // Carry the actual type into the next level so recursive substitutions do not revert to type variables.
             TypeInfo resolvedInfo = TypeInfo.builder(interfaceInfo)
                     .typeName(resolvedType)
                     .build();
@@ -266,7 +272,6 @@ final class JdbcMethodGenerator {
         method.addContent("if (")
                 .addContent(parameterName)
                 .addContentLine(" == null) {")
-                .increaseContentPadding()
                 .addContent(statementName)
                 .addContent(".bindNull(")
                 .addContent(String.valueOf(bind.position()))
@@ -277,14 +282,12 @@ final class JdbcMethodGenerator {
                 .addContentLine(");")
                 .decreaseContentPadding()
                 .addContentLine("} else {")
-                .increaseContentPadding()
                 .addContent(statementName)
                 .addContent(".bind(")
                 .addContent(String.valueOf(bind.position()))
                 .addContent(", ")
                 .addContent(parameterName)
                 .addContentLine(");")
-                .decreaseContentPadding()
                 .addContentLine("}");
     }
 
@@ -298,6 +301,7 @@ final class JdbcMethodGenerator {
     private static void addTerminal(JdbcMethodPlan plan,
                                     Method.Builder method,
                                     String statementName) {
+        // Use only terminals that finish JDBC work and materialize results before the repository method returns.
         if (plan.operation() == JdbcMethodPlan.Operation.UPDATE) {
             if (plan.method().typeName().equals(TypeNames.PRIMITIVE_VOID)) {
                 method.addContent(statementName).addContentLine(".execute();");

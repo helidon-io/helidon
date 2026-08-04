@@ -50,6 +50,7 @@ final class JdbcTypeAccessibility {
         declarationNames.add(typeName.className());
 
         for (int index = 0; index < declarationNames.size() - 1; index++) {
+            // CodegenContext looks up nested declarations by binary name.
             String binaryName = String.join("$", declarationNames.subList(0, index + 1));
             TypeName enclosingType = TypeName.create(qualifiedName(typeName.packageName(), binaryName));
             boolean enclosingAccessible = context.typeInfo(enclosingType)

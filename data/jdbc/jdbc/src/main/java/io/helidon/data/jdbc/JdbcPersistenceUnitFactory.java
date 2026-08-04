@@ -51,10 +51,14 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     // All JDBC persistence units are read from this configuration branch.
     static final String CONFIG_KEY = "data.persistence-units.jdbc";
 
-    private static final String PROVIDER = "jdbc";
+    private static final String NAME_CONFIG_KEY = "name";
+    private static final String DATA_SOURCE_CONFIG_KEY = "data-source";
+    private static final String CONNECTION_CONFIG_KEY = "connection";
+    private static final String USER_PROPERTY = "user";
+    private static final String PASSWORD_PROPERTY = "password";
     private static final Qualifier PROVIDER_QUALIFIER = Qualifier.builder()
             .typeName(Data.ProviderType.TYPE)
-            .value(PROVIDER)
+            .value(Jdbc.PROVIDER)
             .build();
 
     private final Supplier<List<ServiceInstance<DataSource>>> dataSources;
@@ -113,10 +117,10 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
      * @param unitConfig persistence-unit configuration node
      */
     private static void validateConnectionSource(Config unitConfig) {
-        String unitName = unitConfig.get("name").asString().orElse(Service.Named.DEFAULT_NAME);
-        Config dataSource = unitConfig.get("data-source");
+        String unitName = unitConfig.get(NAME_CONFIG_KEY).asString().orElse(Service.Named.DEFAULT_NAME);
+        Config dataSource = unitConfig.get(DATA_SOURCE_CONFIG_KEY);
         boolean hasDataSource = dataSource.exists();
-        boolean hasConnection = unitConfig.get("connection").exists();
+        boolean hasConnection = unitConfig.get(CONNECTION_CONFIG_KEY).exists();
         if (hasDataSource == hasConnection) {
             throw new DataException("JDBC persistence unit '" + unitName
                                             + "' must configure exactly one connection source: "
@@ -232,12 +236,14 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             this.defaults = new Properties();
             String username = config.username().orElse(null);
             char[] passwordChars = config.password().map(value -> value.clone()).orElse(null);
+            // JDBC driver properties require string credentials. Keep the cloned
+            // character array for the immutable datasource identity.
             String password = passwordChars == null ? null : new String(passwordChars);
             if (username != null) {
-                defaults.setProperty("user", username);
+                defaults.setProperty(USER_PROPERTY, username);
             }
             if (password != null) {
-                defaults.setProperty("password", password);
+                defaults.setProperty(PASSWORD_PROPERTY, password);
             }
             this.transactionIdentity = new DirectIdentity(url,
                                                           driver.getClass().getName(),
@@ -255,15 +261,17 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         @Override
         public Connection getConnection(String username, String password) throws SQLException {
             Properties properties = copy(defaults);
+            // Per-call credentials replace configured defaults. A null argument
+            // removes the corresponding default.
             if (username == null) {
-                properties.remove("user");
+                properties.remove(USER_PROPERTY);
             } else {
-                properties.setProperty("user", username);
+                properties.setProperty(USER_PROPERTY, username);
             }
             if (password == null) {
-                properties.remove("password");
+                properties.remove(PASSWORD_PROPERTY);
             } else {
-                properties.setProperty("password", password);
+                properties.setProperty(PASSWORD_PROPERTY, password);
             }
             return connect(properties);
         }

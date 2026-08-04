@@ -32,6 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class JakartaPersistenceCompatibilityTest {
 
+    // Confirms that entity repositories use the Jakarta Persistence generator by default.
     @Test
     void remainsTheDefaultForEntityRepositories() {
         TestCompiler.Result result = compiler()
@@ -43,6 +44,7 @@ class JakartaPersistenceCompatibilityTest {
         assertThat(Files.exists(result.sourceOutput().resolve("example/DefaultRepository__Jpa.java")), is(true));
     }
 
+    // Confirms that an explicit jakarta provider still selects the Jakarta Persistence generator.
     @Test
     void supportsExplicitSelectionForEntityRepositories() {
         TestCompiler.Result result = compiler()
@@ -55,6 +57,7 @@ class JakartaPersistenceCompatibilityTest {
         assertThat(Files.exists(result.sourceOutput().resolve("example/ExplicitRepository__Jpa.java")), is(true));
     }
 
+    // Rejects an annotation-only repository because no provider is available to generate it.
     @Test
     void rejectsAnnotationOnlyRepositoryWithoutProvider() {
         TestCompiler.Result result = compiler()
@@ -76,6 +79,7 @@ class JakartaPersistenceCompatibilityTest {
                                         .resolve("example/MissingProviderRepository__Jpa.java")), is(false));
     }
 
+    // Rejects a JDBC repository with no provider instead of treating it as a Jakarta Persistence repository.
     @Test
     void doesNotRouteJdbcRepositoryWithoutProviderToJpa() {
         TestCompiler.Result result = compiler()
@@ -100,6 +104,7 @@ class JakartaPersistenceCompatibilityTest {
                                         .resolve("example/MissingJdbcProviderRepository__Jpa.java")), is(false));
     }
 
+    // Confirms that Jakarta Persistence ignores an explicitly selected JDBC repository when JDBC codegen is absent.
     @Test
     void doesNotRouteExplicitJdbcRepositoryToJpaWhenJdbcGeneratorIsUnavailable() {
         TestCompiler.Result result = compiler()

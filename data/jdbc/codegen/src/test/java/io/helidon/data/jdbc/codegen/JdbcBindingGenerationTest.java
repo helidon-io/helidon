@@ -95,6 +95,23 @@ class JdbcBindingGenerationTest {
         assertThat(occurrences(source, "jdbcStatement.bindNull(2, JDBCType.VARCHAR);"), is(2));
         assertThat(occurrences(source, "jdbcStatement.bind(1, email);"), is(2));
         assertThat(occurrences(source, "jdbcStatement.bind(2, email);"), is(2));
+        assertThat(source, containsString("""
+                @Override
+                public List<ContactEmail> optionalFilter(String email) {
+                    JdbcClient.Statement jdbcStatement = jdbcClient.create(SQL_OPTIONAL_FILTER);
+                    if (email == null) {
+                        jdbcStatement.bindNull(1, JDBCType.VARCHAR);
+                    } else {
+                        jdbcStatement.bind(1, email);
+                    }
+                    if (email == null) {
+                        jdbcStatement.bindNull(2, JDBCType.VARCHAR);
+                    } else {
+                        jdbcStatement.bind(2, email);
+                    }
+                    return jdbcStatement.map(MAPPER_OPTIONAL_FILTER).list();
+                }
+                """.indent(4)));
     }
 
     @Test

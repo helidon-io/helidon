@@ -32,6 +32,8 @@ import io.helidon.common.Api;
 @Api.Preview
 public final class Jdbc {
 
+    static final String PROVIDER = "jdbc";
+
     /**
      * Prevents construction.
      */
@@ -77,7 +79,7 @@ public final class Jdbc {
      */
     public enum ExecutionType {
         /**
-         * Lets code generation infer query or update behavior from the method
+         * Allows code generation infer query or update behavior from the method
          * signature and its JDBC annotations.
          */
         AUTO,

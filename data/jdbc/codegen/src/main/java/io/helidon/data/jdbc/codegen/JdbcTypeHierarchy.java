@@ -80,6 +80,7 @@ final class JdbcTypeHierarchy {
         }
         List<String> parameters = typeInfo.declaredType().typeParameters();
         if (parameters.isEmpty()) {
+            // Some type metadata exposes declaration variables as generic arguments instead of named parameters.
             parameters = typeInfo.declaredType()
                     .typeArguments()
                     .stream()
@@ -140,6 +141,7 @@ final class JdbcTypeHierarchy {
                                        Map<ElementSignature, MethodCandidate> methods,
                                        CodegenContext context) {
         Integer previousDepth = visited.get(typeInfo.typeName());
+        // Revisit a declaration only when a shorter path can supply a closer override candidate.
         if (previousDepth != null && previousDepth <= depth) {
             return;
         }
@@ -179,6 +181,7 @@ final class JdbcTypeHierarchy {
                                                   Map<String, TypeName> substitutions,
                                                   TypeName repositoryType) {
         Map<String, TypeName> methodSubstitutions = substitutions;
+        // Method type variables shadow interface variables with the same name.
         if (!method.typeParameters().isEmpty() && !substitutions.isEmpty()) {
             methodSubstitutions = new LinkedHashMap<>(substitutions);
             method.typeParameters()
@@ -222,6 +225,8 @@ final class JdbcTypeHierarchy {
             methods.put(signature, candidate);
             return;
         }
+        // Apply Java override precedence first. Unrelated declarations at the same depth must agree on JDBC and
+        // transaction annotations before a covariant return type can select the winner.
         if (isSubtype(candidate.owner(), existing.owner())) {
             methods.put(signature, candidate);
             return;

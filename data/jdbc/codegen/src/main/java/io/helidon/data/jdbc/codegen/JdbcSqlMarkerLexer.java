@@ -126,6 +126,7 @@ final class JdbcSqlMarkerLexer {
             index += 2;
             return;
         }
+        // Marker names use Java identifier rules because they resolve directly to repository parameters.
         if (!Character.isJavaIdentifierStart(next)) {
             jdbcSql.append(':');
             index++;

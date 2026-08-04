@@ -114,6 +114,7 @@ final class JdbcMethodPlan {
             if (operation == Operation.QUERY) {
                 throw failure(method, "@Jdbc.GeneratedKeys requires UPDATE execution");
             }
+            // Generated keys use UPDATE semantics but need a separate plan for preparation and result mapping.
             operation = Operation.GENERATED_KEYS;
         }
 
@@ -264,6 +265,7 @@ final class JdbcMethodPlan {
                 .stringValues()
                 .orElse(List.of());
         Set<String> unique = new HashSet<>();
+        // Reject names that differ only by case, but retain their spelling and order for generated builder calls.
         for (String column : columns) {
             if (column.isBlank()) {
                 throw failure(method, "@Jdbc.GeneratedKeys column names must not be blank");
