@@ -67,6 +67,7 @@ final class JdbcRecordMapperGenerator {
                     .addContent("row -> new ")
                     .addContent(plan.mappedType())
                     .addContent("(");
+            // Components are in canonical constructor order. Labels let the SQL columns use a different order.
             for (int index = 0; index < components.size(); index++) {
                 if (index > 0) {
                     field.addContent(", ");

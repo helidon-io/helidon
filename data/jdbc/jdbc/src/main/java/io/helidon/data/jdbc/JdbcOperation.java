@@ -278,6 +278,7 @@ final class JdbcOperation {
         // Generated code rewrites named markers before reaching the client.
         private void namedMarker() {
             char next = peek(1);
+            // PostgreSQL casts and SQL assignment operators are not named parameters.
             if (next == ':' || next == '=') {
                 index += 2;
                 return;
@@ -357,6 +358,8 @@ final class JdbcOperation {
 
         private void oracleQuoted() {
             char opening = sql.charAt(index + 2);
+            // Oracle pairs bracket delimiters. The same character closes other
+            // quoted values.
             char closing = switch (opening) {
                 case '[' -> ']';
                 case '(' -> ')';

@@ -34,9 +34,6 @@ final class JdbcCodegenConstants {
     static final String MAPPER_FIELD_PREFIX = "MAPPER_";
     static final String ROW_MAPPER_SUFFIX = "RowMapper";
 
-    /**
-     * Prevents construction of the constants holder.
-     */
     private JdbcCodegenConstants() {
     }
 }

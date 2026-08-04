@@ -56,8 +56,6 @@ import io.helidon.transaction.spi.TxLifeCycle;
 @Service.Singleton
 final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnectionLease.Provider {
 
-    private static final String JDBC = "jdbc";
-
     // Connection.abort requires an executor even though transaction completion is synchronous.
     private static final Executor ABORT_EXECUTOR = Runnable::run;
 
@@ -82,6 +80,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             throw new DataException("A local JDBC connection cannot join active transaction type '"
                                             + state.foreignTransactions.get(state.activeForeign) + "'");
         }
+        // Lifecycle state may exist without an active transaction, such as during
+        // supported work or while an outer transaction is suspended.
         if (state.activeJdbc == null) {
             return new JdbcConnectionLease.Owned(dataSource.getConnection());
         }
@@ -156,10 +156,12 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             throw new IllegalStateException("Duplicate transaction identity: " + txIdentity);
         }
         String type = currentType(state);
-        if (JDBC.equals(type)) {
+        if (Jdbc.PROVIDER.equals(type)) {
             state.jdbcTransactions.put(txIdentity, new Association(txIdentity));
             state.activeJdbc = txIdentity;
         } else {
+            // Record foreign transactions so JDBC acquisition fails instead of claiming
+            // that a local connection joined another provider's transaction.
             state.foreignTransactions.put(txIdentity, type);
             state.foreignStates.put(txIdentity, AssociationState.ACTIVE);
             state.activeForeign = txIdentity;
@@ -186,14 +188,20 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         if (txIdentity.equals(state.activeJdbc)) {
             Association association = requireAssociation(state, txIdentity);
             try {
-                association.transition(AssociationState.ACTIVE, AssociationState.SUSPENDED, "suspend");
+                association.transition(AssociationState.ACTIVE,
+                                       AssociationState.SUSPENDED,
+                                       JdbcTransactionAction.SUSPEND.text());
             } catch (RuntimeException | Error failure) {
                 failJdbcAssociation(state, txIdentity, association);
                 throw failure;
             }
             state.activeJdbc = null;
         } else if (txIdentity.equals(state.activeForeign)) {
-            transitionForeign(state, txIdentity, AssociationState.ACTIVE, AssociationState.SUSPENDED, "suspend");
+            transitionForeign(state,
+                              txIdentity,
+                              AssociationState.ACTIVE,
+                              AssociationState.SUSPENDED,
+                              JdbcTransactionAction.SUSPEND.text());
             state.activeForeign = null;
         } else {
             Association association = state.jdbcTransactions.get(txIdentity);
@@ -215,14 +223,20 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         Association association = state.jdbcTransactions.get(txIdentity);
         if (association != null) {
             try {
-                association.transition(AssociationState.SUSPENDED, AssociationState.ACTIVE, "resume");
+                association.transition(AssociationState.SUSPENDED,
+                                       AssociationState.ACTIVE,
+                                       JdbcTransactionAction.RESUME.text());
             } catch (RuntimeException | Error failure) {
                 failJdbcAssociation(state, txIdentity, association);
                 throw failure;
             }
             state.activeJdbc = txIdentity;
         } else if (state.foreignTransactions.containsKey(txIdentity)) {
-            transitionForeign(state, txIdentity, AssociationState.SUSPENDED, AssociationState.ACTIVE, "resume");
+            transitionForeign(state,
+                              txIdentity,
+                              AssociationState.SUSPENDED,
+                              AssociationState.ACTIVE,
+                              JdbcTransactionAction.RESUME.text());
             state.activeForeign = txIdentity;
         } else {
             failKnownContext(state);
@@ -494,6 +508,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      * @param state thread state
      */
     private static void failKnownContext(State state) {
+        // An unmatched lifecycle identity makes the only known context unsafe
+        // because its actual state can no longer be proven.
         if (state.jdbcTransactions.size() == 1) {
             Map.Entry<String, Association> entry = state.jdbcTransactions.entrySet().iterator().next();
             failJdbcAssociation(state, entry.getKey(), entry.getValue());
@@ -543,6 +559,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             throw new IllegalStateException("Cannot complete foreign transaction " + txIdentity
                                                     + " while it is " + associationState);
         }
+        // Apply the same terminal state sequence used for local associations before
+        // discarding the foreign association.
         state.foreignStates.put(txIdentity, AssociationState.COMPLETING);
         state.foreignStates.put(txIdentity, AssociationState.COMPLETED);
         state.foreignStates.remove(txIdentity);
@@ -696,7 +714,9 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
          * @param completionOutcome confirmed outcome
          */
         private void completed(CompletionOutcome completionOutcome) {
-            transition(AssociationState.COMPLETING, AssociationState.COMPLETED, "complete");
+            transition(AssociationState.COMPLETING,
+                       AssociationState.COMPLETED,
+                       JdbcTransactionAction.COMPLETE.text());
             outcome = completionOutcome;
         }
 

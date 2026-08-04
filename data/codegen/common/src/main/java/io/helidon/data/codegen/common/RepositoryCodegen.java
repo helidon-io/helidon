@@ -90,7 +90,7 @@ class RepositoryCodegen implements CodegenExtension {
     }
 
     /**
-     * Selects the one repository generator that owns an interface.
+     * Selects a repository generator that owns an interface.
      * <p>
      * Inherited repository APIs establish ownership first. Marker annotations
      * establish ownership when no recognized base interface is present.
@@ -115,8 +115,7 @@ class RepositoryCodegen implements CodegenExtension {
                                                .orElseGet(repositoryInterface::typeName));
         }
         if (assigned.isEmpty()) {
-            // Repositories selected only by annotation have no owned base interface. Reject ambiguity instead of
-            // depending on service loading order.
+            // Repositories selected only by annotation have no owned base interface
             repositoryGenerators.stream()
                     .filter(generator -> generator.annotations()
                             .stream()
@@ -139,6 +138,7 @@ class RepositoryCodegen implements CodegenExtension {
                                                    .orElseGet(repositoryInterface::typeName));
             }
         }
+        // There is exactly one element in the set
         return assigned.stream()
                 .findFirst()
                 .get();

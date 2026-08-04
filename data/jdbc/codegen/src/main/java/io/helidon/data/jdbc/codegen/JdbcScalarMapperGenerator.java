@@ -70,6 +70,7 @@ final class JdbcScalarMapperGenerator {
      * @param columnNames requested generated columns
      */
     static void addGeneratedKeyColumns(Method.Builder method, List<String> columnNames) {
+        // Use one builder call per column to avoid arrays, collections, and varargs in generated source.
         for (String columnName : columnNames) {
             method.addContent(".addColumn(")
                     .addContentLiteral(columnName)
