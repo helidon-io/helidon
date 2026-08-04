@@ -642,8 +642,103 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
-    void generatedDocumentRenamesCollidingSchemasAndReferences() {
+    void generatedDocumentDoesNotRewriteRenamedSchemasTwice() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentSource first = (documentContext, document) -> document
+                .info("Generated API", "1.0.0")
+                .components(components -> components
+                        .schema("B", JsonObject.builder().set("type", "string").build())
+                        .schema("Wrapper",
+                                JsonObject.builder()
+                                        .set("type", "object")
+                                        .set("properties",
+                                             JsonObject.builder()
+                                                     .set("value",
+                                                          JsonObject.builder()
+                                                                  .set("$ref", "#/components/schemas/B")
+                                                                  .build())
+                                                     .build())
+                                        .build()));
+        OpenApiDocumentSource second = (documentContext, document) -> document
+                .components(components -> components
+                        .schema("A", JsonObject.builder().set("type", "string").build())
+                        .schema("B", JsonObject.builder().set("type", "integer").build())
+                        .schema("Wrapper2",
+                                JsonObject.builder()
+                                        .set("type", "object")
+                                        .set("properties",
+                                             JsonObject.builder()
+                                                     .set("value",
+                                                          JsonObject.builder()
+                                                                  .set("$ref", "#/components/schemas/A")
+                                                                  .build())
+                                                     .build())
+                                        .build())
+                        .schema("Choice",
+                                JsonObject.builder()
+                                        .setValues("oneOf",
+                                                   List.of(JsonObject.builder()
+                                                                   .set("$ref", "#/components/schemas/A")
+                                                                   .build()))
+                                        .set("discriminator",
+                                             JsonObject.builder()
+                                                     .set("propertyName", "kind")
+                                                     .set("mapping",
+                                                          JsonObject.builder()
+                                                                  .set("selected", "A")
+                                                                  .build())
+                                                     .build())
+                                        .build()))
+                .path("/second",
+                      path -> path.operation(
+                              "GET",
+                              operation -> operation.operationId("secondGet")
+                                      .response("200",
+                                                response -> response.description("OK")
+                                                        .content(MediaTypes.APPLICATION_JSON_VALUE,
+                                                                 media -> media.schema(JsonObject.builder()
+                                                                                                .set("$ref",
+                                                                                                     "#/components/schemas/Wrapper2")
+                                                                                                .build())))));
+
+        Map<String, Object> document = parse(compose(
+                context,
+                context.openApiVersion(),
+                "",
+                MediaTypes.APPLICATION_OPENAPI_YAML,
+                List.of(first, second)));
+        Map<String, Object> schemas = map(map(document, "components"), "schemas");
+        Map<String, Object> operation = map(map(map(document, "paths"), "/second"), "get");
+        Map<String, Object> response = map(map(operation, "responses"), "200");
+        Map<String, Object> content = map(map(response, "content"), MediaTypes.APPLICATION_JSON_VALUE);
+        Map<String, Object> choice = map(schemas, "Choice");
+        Map<String, Object> mapping = map(map(choice, "discriminator"), "mapping");
+
+        assertThat(schemas.size(), is(4));
+        assertThat(map(schemas, "B").get("type"), is("string"));
+        assertThat(map(schemas, "B2").get("type"), is("integer"));
+        assertThat(schemas.containsKey("Wrapper2"), is(false));
+        assertThat(((Map<?, ?>) list(choice, "oneOf").getFirst()).get("$ref"), is("#/components/schemas/B"));
+        assertThat(mapping.get("selected"), is("B"));
+        assertThat(map(content, "schema").get("$ref"), is("#/components/schemas/Wrapper"));
+    }
+
+    @Test
+    void generatedDocumentRenamesCollidingSchemasAndReferences() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                    RawOpenApiVersion.OPEN_API_32);
+        JsonObject literalDiscriminator = JsonObject.builder()
+                .setValues("oneOf",
+                           List.of(JsonObject.builder()
+                                           .set("$ref", "#/components/schemas/Item")
+                                           .build()))
+                .set("discriminator",
+                     JsonObject.builder()
+                             .set("propertyName", "kind")
+                             .set("mapping", JsonObject.builder().set("literal", "Item").build())
+                             .set("defaultMapping", "Item")
+                             .build())
+                .build();
         OpenApiDocumentSource first = (documentContext, document) -> document
                 .info("Generated API", "1.0.0")
                 .components(components -> components.schema(
@@ -665,6 +760,33 @@ class OpenApiDocumentComposerTest {
                                                           JsonObject.builder()
                                                                   .set("$ref", "#/components/schemas/Item")
                                                                   .build())
+                                                     .set("example",
+                                                          JsonObject.builder()
+                                                                  .setValues("oneOf",
+                                                                             List.of(JsonObject.builder()
+                                                                                             .set("$ref",
+                                                                                                  "#/components/schemas/Item")
+                                                                                             .build()))
+                                                                  .set("discriminator",
+                                                                       JsonObject.builder()
+                                                                               .set("propertyName", "kind")
+                                                                               .set("defaultMapping", "Item")
+                                                                               .build())
+                                                                  .build())
+                                                     .set("external",
+                                                          JsonObject.builder()
+                                                                  .setValues("oneOf",
+                                                                             List.of(JsonObject.builder()
+                                                                                             .set("$ref",
+                                                                                                  "#/components/schemas/Item")
+                                                                                             .build()))
+                                                                  .set("discriminator",
+                                                                       JsonObject.builder()
+                                                                               .set("propertyName", "kind")
+                                                                               .set("defaultMapping",
+                                                                                    "https://example.com/schemas/Item")
+                                                                               .build())
+                                                                  .build())
                                                      .build())
                                         .set("discriminator",
                                              JsonObject.builder()
@@ -673,8 +795,13 @@ class OpenApiDocumentComposerTest {
                                                           JsonObject.builder()
                                                                   .set("second", "#/components/schemas/Item")
                                                                   .set("secondByName", "Item")
+                                                                  .set("external",
+                                                                       "https://example.com/schemas/Item")
                                                                   .build())
+                                                     .set("defaultMapping", "#/components/schemas/Item")
                                                      .build())
+                                        .set("example", literalDiscriminator)
+                                        .set("x-payload", literalDiscriminator)
                                         .build()))
                 .path("/second",
                       path -> path.operation(
@@ -700,12 +827,24 @@ class OpenApiDocumentComposerTest {
         Map<String, Object> content = map(map(response, "content"), MediaTypes.APPLICATION_JSON_VALUE);
         Map<String, Object> envelope = map(schemas, "Envelope");
         Map<String, Object> mapping = map(map(envelope, "discriminator"), "mapping");
+        Map<String, Object> properties = map(envelope, "properties");
+        Map<String, Object> example = map(envelope, "example");
+        Map<String, Object> extension = map(envelope, "x-payload");
 
         assertThat(map(schemas, "Item").get("type"), is("string"));
         assertThat(map(schemas, "Item2").get("type"), is("integer"));
-        assertThat(map(map(envelope, "properties"), "item").get("$ref"), is("#/components/schemas/Item2"));
+        assertThat(map(properties, "item").get("$ref"), is("#/components/schemas/Item2"));
         assertThat(mapping.get("second"), is("#/components/schemas/Item2"));
         assertThat(mapping.get("secondByName"), is("Item2"));
+        assertThat(mapping.get("external"), is("https://example.com/schemas/Item"));
+        assertThat(map(envelope, "discriminator").get("defaultMapping"), is("#/components/schemas/Item2"));
+        assertThat(map(map(properties, "example"), "discriminator").get("defaultMapping"), is("Item2"));
+        assertThat(map(map(properties, "external"), "discriminator").get("defaultMapping"),
+                   is("https://example.com/schemas/Item"));
+        assertThat(map(map(example, "discriminator"), "mapping").get("literal"), is("Item"));
+        assertThat(map(example, "discriminator").get("defaultMapping"), is("Item"));
+        assertThat(map(map(extension, "discriminator"), "mapping").get("literal"), is("Item"));
+        assertThat(map(extension, "discriminator").get("defaultMapping"), is("Item"));
         assertThat(map(content, "schema").get("$ref"), is("#/components/schemas/Envelope"));
     }
 

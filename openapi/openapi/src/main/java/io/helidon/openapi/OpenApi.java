@@ -1708,6 +1708,8 @@ public final class OpenApi {
      * with {@link SecurityRequirement @OpenApi.SecurityRequirement} or
      * {@link SecurityRequirements @OpenApi.SecurityRequirements} on the same type or method.
      * Type-level usage on a declarative REST endpoint contract also applies to its implementations.
+     * A security requirement declared directly on an endpoint implementation replaces requirements inherited from its
+     * contract.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
@@ -1743,6 +1745,8 @@ public final class OpenApi {
      * An empty individual requirement emits an empty OpenAPI security requirement object. To clear inherited endpoint
      * security for an operation, use an empty {@link SecurityRequirements} container instead.
      * Type-level usage on a declarative REST endpoint contract also applies to its implementations.
+     * A security requirement declared directly on an endpoint implementation replaces requirements inherited from its
+     * contract.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
@@ -1768,6 +1772,8 @@ public final class OpenApi {
      * generated operation. An empty container on an endpoint clears endpoint-level security for operations which do not
      * declare method-level security requirements.
      * Type-level usage on a declarative REST endpoint contract also applies to its implementations.
+     * A security requirements container declared directly on an endpoint implementation replaces requirements inherited
+     * from its contract.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)

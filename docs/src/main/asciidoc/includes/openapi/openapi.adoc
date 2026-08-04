@@ -83,6 +83,8 @@ opt an endpoint into generation by themselves.
 `OpenApi.Endpoint` and endpoint-level `Hidden` and security requirement annotations declared on a declarative REST
 endpoint contract also apply to its implementations. `OpenApi.Document` describes only its declaring document metadata
 type and is not inherited by endpoint implementations.
+An endpoint-level security requirement declared directly on an implementation replaces the security requirements
+inherited from its endpoint contract.
 
 The final composed OpenAPI document must contain Info metadata. Supply it using `@OpenApi.Document` and `@OpenApi.Info`
 on an application type, from a custom

@@ -30,6 +30,29 @@ import java.util.function.Supplier;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
 
 final class OpenApiDocumentComposer {
+    private static final Set<String> SCHEMA_VALUE_FIELDS = Set.of("additionalItems",
+                                                                  "additionalProperties",
+                                                                  "allOf",
+                                                                  "anyOf",
+                                                                  "contains",
+                                                                  "contentSchema",
+                                                                  "else",
+                                                                  "if",
+                                                                  "items",
+                                                                  "not",
+                                                                  "oneOf",
+                                                                  "prefixItems",
+                                                                  "propertyNames",
+                                                                  "then",
+                                                                  "unevaluatedItems",
+                                                                  "unevaluatedProperties");
+    private static final Set<String> SCHEMA_MAP_FIELDS = Set.of("$defs",
+                                                                "definitions",
+                                                                "dependencies",
+                                                                "dependentSchemas",
+                                                                "patternProperties",
+                                                                "properties");
+
     private OpenApiDocumentComposer() {
     }
 
@@ -95,10 +118,10 @@ final class OpenApiDocumentComposer {
                                                boolean reuseEquivalentSchemas,
                                                Map<Object, String> schemaNamesByValue) {
         Map<String, Object> sourceNode = source.mutableNode();
-        Map<String, String> schemaNames = new LinkedHashMap<>(rewriteSchemaNames(targetBuilder.node(),
-                                                                                 sourceNode,
-                                                                                 reuseEquivalentSchemas,
-                                                                                 schemaNamesByValue));
+        Map<String, String> schemaNames = rewriteSchemaNames(targetBuilder.node(),
+                                                             sourceNode,
+                                                             reuseEquivalentSchemas,
+                                                             schemaNamesByValue);
         rewriteSchemaRefs(sourceNode, schemaNames);
         if (reuseEquivalentSchemas) {
             while (true) {
@@ -114,8 +137,7 @@ final class OpenApiDocumentComposer {
                     break;
                 }
                 equivalentSchemaNames.keySet().forEach(sourceSchemas::remove);
-                schemaNames.putAll(equivalentSchemaNames);
-                rewriteSchemaRefs(sourceNode, schemaNames);
+                rewriteSchemaRefs(sourceNode, equivalentSchemaNames);
             }
         }
         targetBuilder.mergeNode(sourceNode);
@@ -193,24 +215,86 @@ final class OpenApiDocumentComposer {
         if (schemaNames.isEmpty()) {
             return;
         }
+        rewriteLocalSchemaRefs(value, schemaNames);
+        if (value instanceof Map<?, ?> map) {
+            schemas((Map<String, Object>) map).values()
+                    .forEach(schema -> rewriteSchemaDiscriminatorRefs(schema, schemaNames));
+        }
+        rewriteInlineSchemaDiscriminatorRefs(value, schemaNames, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void rewriteLocalSchemaRefs(Object value, Map<String, String> schemaNames) {
         if (value instanceof Map<?, ?> map) {
             Object ref = map.get("$ref");
             if (ref instanceof String refValue && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
                 ((Map<String, Object>) map).put("$ref", rewriteSchemaRef(refValue, schemaNames));
             }
-            Object discriminator = map.get("discriminator");
-            if (discriminator instanceof Map<?, ?> discriminatorMap
-                    && discriminatorMap.get("mapping") instanceof Map<?, ?> mappingMap) {
-                ((Map<String, Object>) mappingMap).replaceAll((_, mappingValue) -> {
-                    if (mappingValue instanceof String mappingRef) {
-                        return rewriteSchemaRef(mappingRef, schemaNames);
-                    }
-                    return mappingValue;
-                });
-            }
-            map.values().forEach(it -> rewriteSchemaRefs(it, schemaNames));
+            map.values().forEach(it -> rewriteLocalSchemaRefs(it, schemaNames));
         } else if (value instanceof List<?> list) {
-            list.forEach(it -> rewriteSchemaRefs(it, schemaNames));
+            list.forEach(it -> rewriteLocalSchemaRefs(it, schemaNames));
+        }
+    }
+
+    private static void rewriteInlineSchemaDiscriminatorRefs(Object value,
+                                                             Map<String, String> schemaNames,
+                                                             boolean linkObject) {
+        if (value instanceof Map<?, ?> map) {
+            map.forEach((key, item) -> {
+                if (!(key instanceof String field)
+                        || "schemas".equals(field)
+                        || "example".equals(field)
+                        || "examples".equals(field)
+                        || "value".equals(field)
+                        || (linkObject && ("parameters".equals(field) || "requestBody".equals(field)))
+                        || field.startsWith("x-")) {
+                    return;
+                }
+                if ("schema".equals(field) || "itemSchema".equals(field)) {
+                    rewriteSchemaDiscriminatorRefs(item, schemaNames);
+                } else if ("links".equals(field) && item instanceof Map<?, ?> links) {
+                    links.values().forEach(link -> rewriteInlineSchemaDiscriminatorRefs(link, schemaNames, true));
+                } else {
+                    rewriteInlineSchemaDiscriminatorRefs(item, schemaNames, false);
+                }
+            });
+        } else if (value instanceof List<?> list) {
+            list.forEach(it -> rewriteInlineSchemaDiscriminatorRefs(it, schemaNames, linkObject));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void rewriteSchemaDiscriminatorRefs(Object value, Map<String, String> schemaNames) {
+        if (value instanceof Map<?, ?> map) {
+            Object discriminator = map.get("discriminator");
+            if (discriminator instanceof Map<?, ?> discriminatorMap) {
+                Object mapping = discriminatorMap.get("mapping");
+                if (mapping instanceof Map<?, ?> mappingMap) {
+                    ((Map<String, Object>) mappingMap).replaceAll((_, mappingValue) -> {
+                        if (mappingValue instanceof String mappingRef) {
+                            return rewriteSchemaRef(mappingRef, schemaNames);
+                        }
+                        return mappingValue;
+                    });
+                }
+                Object defaultMapping = discriminatorMap.get("defaultMapping");
+                if (defaultMapping instanceof String mappingRef) {
+                    ((Map<String, Object>) discriminatorMap).put("defaultMapping",
+                                                                 rewriteSchemaRef(mappingRef, schemaNames));
+                }
+            }
+            map.forEach((key, item) -> {
+                if (!(key instanceof String field)) {
+                    return;
+                }
+                if (SCHEMA_VALUE_FIELDS.contains(field)) {
+                    rewriteSchemaDiscriminatorRefs(item, schemaNames);
+                } else if (SCHEMA_MAP_FIELDS.contains(field) && item instanceof Map<?, ?> schemaMap) {
+                    schemaMap.values().forEach(schema -> rewriteSchemaDiscriminatorRefs(schema, schemaNames));
+                }
+            });
+        } else if (value instanceof List<?> list) {
+            list.forEach(it -> rewriteSchemaDiscriminatorRefs(it, schemaNames));
         }
     }
 

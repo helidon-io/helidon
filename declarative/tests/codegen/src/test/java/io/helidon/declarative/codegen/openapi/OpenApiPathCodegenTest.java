@@ -208,7 +208,7 @@ class OpenApiPathCodegenTest {
     }
 
     @Test
-    void endpointSecurityRequirementOverridesInheritedRequirements() throws IOException {
+    void composedEndpointSecurityRequirementOverridesInheritedRequirements() throws IOException {
         var result = compile("endpoint-security-overrides-inherited-requirements", """
                 @RestServer.Endpoint
                 @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("contractOne"))
@@ -218,9 +218,13 @@ class OpenApiPathCodegenTest {
                     String get();
                 }
 
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @interface BearerAuth {
+                }
+
                 @Service.Singleton
                 @Http.Path("/endpoint-security-override")
-                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @BearerAuth
                 class ContractSecurityOpenApiEndpoint implements SecuredOpenApiEndpointContract {
                     @Override
                     public String get() {
