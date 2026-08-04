@@ -20,7 +20,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 
 // tag::intro[]
 
-This guide describes how to create a sample Helidon {intro-project-name} project
+This guide describes how to create a sample Helidon {h1-prefix} project
 that can be used to run some basic examples using both built-in and custom {metrics} with Helidon.
 
 == What You Need
