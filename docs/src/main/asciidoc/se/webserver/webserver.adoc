@@ -141,7 +141,7 @@ The equivalent programmatic configuration uses the typed binding configuration A
 
 [source,java]
 ----
-include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_43, indent=0]
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_44, indent=0]
 ----
 
 Port-capable bindings inherit the listener host and port. Configure another listener when another host,
