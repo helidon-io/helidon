@@ -62,8 +62,11 @@ final class CmResolverImpl implements CmResolver {
             "Float",
             "Double",
             "Character",
+            "io.helidon.common.Size",
+            "java.io.File",
             "java.lang.Boolean",
             "java.lang.Byte",
+            "java.lang.Class",
             "java.lang.Short",
             "java.lang.Integer",
             "java.lang.Long",
@@ -73,12 +76,23 @@ final class CmResolverImpl implements CmResolver {
             "java.math.BigDecimal",
             "java.math.BigInteger",
             "java.net.URI",
+            "java.net.URL",
+            "java.nio.charset.Charset",
+            "java.nio.file.Path",
             "java.time.Duration",
             "java.time.Instant",
             "java.time.LocalDate",
             "java.time.LocalDateTime",
+            "java.time.LocalTime",
             "java.time.OffsetDateTime",
-            "java.time.ZonedDateTime");
+            "java.time.OffsetTime",
+            "java.time.Period",
+            "java.time.YearMonth",
+            "java.time.ZoneId",
+            "java.time.ZoneOffset",
+            "java.time.ZonedDateTime",
+            "java.util.UUID",
+            "java.util.regex.Pattern");
 
     private final CmModel metadata;
     private final Map<String, List<CmType>> prefixes = new TreeMap<>();

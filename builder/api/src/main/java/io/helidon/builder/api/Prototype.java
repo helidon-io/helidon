@@ -353,7 +353,9 @@ public final class Prototype {
      * receives the raw config node. Otherwise the config node is first mapped to the parameter type and then passed to
      * the factory method.
      * <p>
-     * The return type of the method must match the type of the option.
+     * The return type of the method must match the type of the option. For list and set options, including when wrapped
+     * in {@link java.util.Optional}, the return type may instead match the element type. For map options, including when
+     * wrapped in {@link java.util.Optional}, the return type may instead match the value type.
      * <p>
      * This annotation MUST be on a static method that is part of a type referenced from blueprint through
      * {@link io.helidon.builder.api.Prototype.CustomMethods}.
@@ -575,4 +577,3 @@ public final class Prototype {
         Extension[] value();
     }
 }
-

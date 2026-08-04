@@ -749,9 +749,11 @@ final class FactoryOption {
                                             OptionConfigured.Builder configured) {
 
         TypeName actualType = Utils.realType(optionType);
+        TypeName valueType = realType(optionType);
         // first check config factories
         for (FactoryMethod configFactory : prototypeInfo.configFactories()) {
-            if (typesEqual(configFactory.returnType(), actualType)) {
+            if (typesEqual(configFactory.returnType(), actualType)
+                    || typesEqual(configFactory.returnType(), valueType)) {
                 if (configFactory.optionName().orElse(optionName).equals(optionName)) {
                     configured.factoryMethod(configFactory);
                     return;

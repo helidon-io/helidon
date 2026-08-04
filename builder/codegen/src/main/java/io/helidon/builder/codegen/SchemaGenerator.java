@@ -382,15 +382,6 @@ class SchemaGenerator {
         var configuredFactory = optionInfo.configured()
                 .flatMap(OptionConfigured::factoryMethod)
                 .orElse(null);
-        // check runtime factory method
-        var runtimeParamTypeName = optionInfo.runtimeType()
-                .flatMap(RuntimeTypeInfo::factoryMethod)
-                .flatMap(FactoryMethod::parameterType)
-                .orElse(null);
-        if (runtimeParamTypeName != null) {
-            return runtimeParamTypeName;
-        }
-
         // check configured factory method
         var configuredParamTypeName = optionInfo.configured()
                 .flatMap(OptionConfigured::factoryMethod)
@@ -399,6 +390,15 @@ class SchemaGenerator {
         if (configuredParamTypeName != null
                 && !(configuredParamTypeName.equals(Types.CONFIG) || configuredParamTypeName.equals(Types.COMMON_CONFIG))) {
             return configuredParamTypeName;
+        }
+
+        // check runtime factory method
+        var runtimeParamTypeName = optionInfo.runtimeType()
+                .flatMap(RuntimeTypeInfo::factoryMethod)
+                .flatMap(FactoryMethod::parameterType)
+                .orElse(null);
+        if (runtimeParamTypeName != null) {
+            return runtimeParamTypeName;
         }
 
         // check configured factory method return type for raw Config factories
