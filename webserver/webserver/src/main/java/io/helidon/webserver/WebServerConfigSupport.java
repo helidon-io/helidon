@@ -86,7 +86,7 @@ class WebServerConfigSupport {
         }
     }
 
-    public static class ServerConfigDecorator implements Prototype.BuilderDecorator<WebServerConfig.BuilderBase<?, ?>> {
+    static class ServerConfigDecorator implements Prototype.BuilderDecorator<WebServerConfig.BuilderBase<?, ?>> {
         private static final System.Logger LOGGER = System.getLogger(ServerConfigDecorator.class.getName());
 
         @Override

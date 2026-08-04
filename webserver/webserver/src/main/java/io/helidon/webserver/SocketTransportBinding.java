@@ -159,10 +159,6 @@ abstract class SocketTransportBinding implements TransportBinding {
 
     @Override
     public void start() {
-        if (configuredAddress instanceof UnixDomainSocketAddress && !listenerConfig.useNio()) {
-            throw new IllegalArgumentException("UDS transport binding on listener " + socketName
-                                                       + " requires use-nio=true");
-        }
         if (readerExecutor == null) {
             readerExecutor = ExecutorsFactory.newServerListenerReaderExecutor();
         }

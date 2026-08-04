@@ -321,7 +321,6 @@ interface ListenerConfigBlueprint {
      */
     @Option.Configured
     @Option.DefaultInt(-1)
-    @Api.Internal
     int maxConnections();
 
     /**

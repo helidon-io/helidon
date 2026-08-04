@@ -959,16 +959,22 @@ class ServerListenerLifecycleTest {
 
     @Test
     @EnabledOnOs(OS.LINUX)
-    void udsTransportBindingRequiresNio(@TempDir Path tempDir) {
-        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+    void udsTransportBindingIgnoresUseNio(@TempDir Path tempDir) {
+        Path socketPath = tempDir.resolve("server.sock");
+        WebServer server = WebServer.builder()
                 .shutdownHook(false)
                 .useNio(false)
                 .addBinding(disabledTcpBinding())
-                .addBinding(udsBinding(tempDir.resolve("server.sock")))
+                .addBinding(udsBinding(socketPath))
                 .build()
-                .start());
+                .start();
 
-        assertThat(failureMessages(failure), containsString("requires use-nio=true"));
+        try {
+            assertThat(server.port(), is(-1));
+            assertThat(Files.exists(socketPath), is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
     }
 
     @Test
