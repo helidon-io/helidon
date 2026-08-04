@@ -39,8 +39,6 @@ import io.helidon.transaction.spi.TxSupport;
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
 final class JdbcTxSupport implements TxSupport {
-    /** Transaction provider name used for lifecycle association. */
-    private static final String TYPE = "jdbc";
     /** Monotonic source of compact transaction identities. */
     private static final AtomicLong IDS = new AtomicLong();
 
@@ -62,7 +60,7 @@ final class JdbcTxSupport implements TxSupport {
     /** {@inheritDoc} */
     @Override
     public String type() {
-        return TYPE;
+        return Jdbc.PROVIDER;
     }
 
     /** {@inheritDoc} */
@@ -70,10 +68,12 @@ final class JdbcTxSupport implements TxSupport {
     public <T> T transaction(Tx.Type type, Callable<T> task) {
         Objects.requireNonNull(type, "Missing transaction type");
         Objects.requireNonNull(task, "Missing task to run in transaction");
+        // Bracket every propagation call so listeners can associate later lifecycle
+        // events with this transaction provider.
         try {
-            notifyListeners(listener -> listener.start(TYPE), "start");
+            notifyListeners(listener -> listener.start(Jdbc.PROVIDER), JdbcTransactionAction.START.text());
         } catch (RuntimeException | Error startFailure) {
-            notifyAfterFailure(TxLifeCycle::end, "start cleanup", startFailure);
+            notifyAfterFailure(TxLifeCycle::end, JdbcTransactionAction.START.cleanupText(), startFailure);
             throw startFailure;
         }
         T result;
@@ -87,10 +87,10 @@ final class JdbcTxSupport implements TxSupport {
                 case UNSUPPORTED -> unsupported(task);
             };
         } catch (RuntimeException | Error failure) {
-            notifyAfterFailure(TxLifeCycle::end, "end", failure);
+            notifyAfterFailure(TxLifeCycle::end, JdbcTransactionAction.END.text(), failure);
             throw failure;
         }
-        notifyListeners(TxLifeCycle::end, "end");
+        notifyListeners(TxLifeCycle::end, JdbcTransactionAction.END.text());
         return result;
     }
 
@@ -286,7 +286,7 @@ final class JdbcTxSupport implements TxSupport {
         Transaction transaction = new Transaction(Long.toUnsignedString(IDS.incrementAndGet(), 36));
         transactionStack().push(transaction);
         try {
-            notifyListeners(listener -> listener.begin(transaction.identity), "begin");
+            notifyListeners(listener -> listener.begin(transaction.identity), JdbcTransactionAction.BEGIN.text());
             return transaction;
         } catch (RuntimeException | Error failure) {
             transaction.markRollbackOnly();
@@ -302,10 +302,12 @@ final class JdbcTxSupport implements TxSupport {
      */
     private void commit(Transaction transaction) {
         transaction.beginCompletion();
+        // Delay a completion failure until thread state is removed, while keeping
+        // an Error distinct from an ordinary runtime failure.
         RuntimeException runtimeFailure = null;
         Error errorFailure = null;
         try {
-            notifyListeners(listener -> listener.commit(transaction.identity), "commit");
+            notifyListeners(listener -> listener.commit(transaction.identity), JdbcTransactionAction.COMMIT.text());
             transaction.committed();
         } catch (RuntimeException failure) {
             transaction.failed();
@@ -337,7 +339,7 @@ final class JdbcTxSupport implements TxSupport {
         transaction.beginCompletion();
         Throwable rollbackFailure = null;
         try {
-            notifyListeners(listener -> listener.rollback(transaction.identity), "rollback");
+            notifyListeners(listener -> listener.rollback(transaction.identity), JdbcTransactionAction.ROLLBACK.text());
             transaction.rolledBack();
         } catch (RuntimeException | Error failure) {
             transaction.failed();
@@ -368,10 +370,12 @@ final class JdbcTxSupport implements TxSupport {
         }
         transaction.suspend();
         try {
-            notifyListeners(listener -> listener.suspend(transaction.identity), "suspend");
+            notifyListeners(listener -> listener.suspend(transaction.identity), JdbcTransactionAction.SUSPEND.text());
         } catch (RuntimeException | Error failure) {
             transaction.restoreAfterSuspendFailure();
-            notifyAfterFailure(listener -> listener.resume(transaction.identity), "suspend cleanup", failure);
+            notifyAfterFailure(listener -> listener.resume(transaction.identity),
+                               JdbcTransactionAction.SUSPEND.cleanupText(),
+                               failure);
             throw failure;
         }
         return transaction;
@@ -388,7 +392,7 @@ final class JdbcTxSupport implements TxSupport {
         }
         transaction.resume();
         try {
-            notifyListeners(listener -> listener.resume(transaction.identity), "resume");
+            notifyListeners(listener -> listener.resume(transaction.identity), JdbcTransactionAction.RESUME.text());
         } catch (RuntimeException | Error failure) {
             // Keep listeners that already resumed attached so the outer transaction can still roll back.
             transaction.markRollbackOnly();
@@ -619,13 +623,15 @@ final class JdbcTxSupport implements TxSupport {
         /** Moves a usable transaction to its suspended state. */
         private void suspend() {
             requireUsable();
+            // Preserve rollback-only state so suspension cannot make the transaction
+            // eligible for commit again.
             resumeState = state;
             state = TransactionState.SUSPENDED;
         }
 
         /** Restores the pre-suspension state. */
         private void resume() {
-            require(TransactionState.SUSPENDED, "resume");
+            require(TransactionState.SUSPENDED, JdbcTransactionAction.RESUME.text());
             state = resumeState;
             resumeState = null;
         }
@@ -654,12 +660,14 @@ final class JdbcTxSupport implements TxSupport {
 
         /** Records a confirmed commit. */
         private void committed() {
-            transition(TransactionState.COMPLETING, TransactionState.COMMITTED, "commit");
+            transition(TransactionState.COMPLETING, TransactionState.COMMITTED, JdbcTransactionAction.COMMIT.text());
         }
 
         /** Records a confirmed rollback. */
         private void rolledBack() {
-            transition(TransactionState.COMPLETING, TransactionState.ROLLED_BACK, "rollback");
+            transition(TransactionState.COMPLETING,
+                       TransactionState.ROLLED_BACK,
+                       JdbcTransactionAction.ROLLBACK.text());
         }
 
         /** Records a failed terminal lifecycle notification. */

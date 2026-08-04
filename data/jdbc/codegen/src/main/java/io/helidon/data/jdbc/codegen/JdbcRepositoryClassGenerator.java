@@ -64,6 +64,7 @@ final class JdbcRepositoryClassGenerator {
                                                                className,
                                                                JdbcCodegenConstants.GENERATED_VERSION,
                                                                ""))
+                // Generated repositories must call preview JdbcClient APIs. Application calls remain unsuppressed.
                 .addAnnotation(Annotation.builder()
                                        .type(SuppressWarnings.class)
                                        .property(JdbcCodegenConstants.ANNOTATION_VALUE_PROPERTY,
@@ -130,6 +131,7 @@ final class JdbcRepositoryClassGenerator {
                         .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
                         .addContentLine(";");
             } else {
+                // Resolve the default lazily so it is activated only when the optional named client is absent.
                 TypeName optionalClient = TypeName.builder(JdbcPersistenceTypes.OPTIONAL)
                         .addTypeArgument(JdbcPersistenceTypes.JDBC_CLIENT)
                         .build();

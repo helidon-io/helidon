@@ -43,6 +43,7 @@ final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
     /** {@inheritDoc} */
     @Override
     protected boolean generateByDefault() {
+        // JDBC is opt-in so it does not compete with Jakarta Persistence when no provider is declared.
         return false;
     }
 
@@ -76,6 +77,8 @@ final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
                                            RepositoryInfo repositoryInfo,
                                            TypeName className,
                                            ClassModel.Builder classModel) {
+        // Entity repository parents request derived persistence operations.
+        // JDBC repositories support explicit SQL only.
         if (!repositoryInfo.interfacesInfo().isEmpty()) {
             throw new CodegenException("JDBC repositories must use explicit annotated SQL methods and "
                                                + "must not extend entity-oriented repository interfaces",
