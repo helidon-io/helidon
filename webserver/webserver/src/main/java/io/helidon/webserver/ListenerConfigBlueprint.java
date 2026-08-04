@@ -528,6 +528,8 @@ interface ListenerConfigBlueprint {
 
     /**
      * If set to {@code true}, use NIO socket channel, instead of a socket. Listener will always be a channel.
+     * Unix domain socket bindings always use NIO and ignore this setting.
+     * This setting must be {@code true} when listener TLS virtual hosts are configured.
      *
      * @return whether to use NIO socket channel, defaults to {@code true}
      */

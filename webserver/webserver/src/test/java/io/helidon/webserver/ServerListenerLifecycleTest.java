@@ -959,20 +959,31 @@ class ServerListenerLifecycleTest {
 
     @Test
     @EnabledOnOs(OS.LINUX)
-    void udsTransportBindingIgnoresUseNio(@TempDir Path tempDir) {
+    void udsTransportBindingIgnoresUseNio(@TempDir Path tempDir) throws Exception {
         Path socketPath = tempDir.resolve("server.sock");
+        BlockingConnection connection = new BlockingConnection();
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(connection);
         WebServer server = WebServer.builder()
                 .shutdownHook(false)
+                .bindingsDiscoverServices(false)
                 .useNio(false)
                 .addBinding(disabledTcpBinding())
                 .addBinding(udsBinding(socketPath))
+                .addConnectionSelector(selector)
                 .build()
                 .start();
 
         try {
             assertThat(server.port(), is(-1));
             assertThat(Files.exists(socketPath), is(true));
+
+            try (SocketChannel socket = SocketChannel.open(StandardProtocolFamily.UNIX)) {
+                socket.connect(UnixDomainSocketAddress.of(socketPath));
+                socket.write(ByteBuffer.wrap(new byte[] {'x'}));
+                assertThat(connection.awaitHandling(Duration.ofSeconds(5)), is(true));
+            }
         } finally {
+            connection.release();
             stopUntilStopped(server);
         }
     }

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
@@ -387,7 +388,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     }
 
     private HelidonSocket createSocket(Tls tls, SocketChannel socket, String channelId) throws IOException {
-        if (listenerConfig.useNio()) {
+        if (listenerConfig.useNio() || socket.getLocalAddress() instanceof UnixDomainSocketAddress) {
             return createNioSocket(tls, socket, channelId);
         }
         return createByteSocket(tls, socket, channelId);

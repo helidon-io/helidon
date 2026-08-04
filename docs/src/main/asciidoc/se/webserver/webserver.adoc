@@ -339,7 +339,8 @@ server:
 TLS can be combined with a Unix domain socket listener by configuring the explicit `uds` transport binding
 with a socket path and configuring `tls` as usual. Disable the default `tcp` binding
 when the listener should only bind the Unix domain socket. Unix domain socket listeners use the NIO
-socket-channel transport, so keep `use-nio` set to `true`, which is the default.
+socket-channel transport regardless of the `use-nio` setting. The setting must remain `true`, which is the default,
+when listener TLS virtual hosts are configured.
 
 Server-side UDS is no longer selected using `bind-address: "unix:..."`; that form is rejected.
 Migrate the path to `bindings.uds.socket`. Because TCP is an overlay default, disable it explicitly for a
