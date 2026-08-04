@@ -527,9 +527,8 @@ interface ListenerConfigBlueprint {
     boolean ignoreInvalidNamedRouting();
 
     /**
-     * If set to {@code true}, use NIO socket channel, instead of a socket. Listener will always be a channel.
-     * Unix domain socket bindings always use NIO and ignore this setting.
-     * This setting must be {@code true} when listener TLS virtual hosts are configured.
+     * Whether to use an NIO socket channel instead of a socket; Unix domain socket bindings always use NIO and ignore
+     * this setting, while listener TLS virtual hosts require it to be {@code true}.
      *
      * @return whether to use NIO socket channel, defaults to {@code true}
      */
