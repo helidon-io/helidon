@@ -1450,6 +1450,9 @@
         </profile>
         <profile>
             <id>javadoc</id>
+            <modules>
+                <module>javadocs</module>
+            </modules>
             <build>
                 <plugins>
                     <plugin>
