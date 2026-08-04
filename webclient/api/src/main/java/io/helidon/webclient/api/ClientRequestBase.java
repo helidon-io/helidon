@@ -291,10 +291,11 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         if (uriTemplate != null) {
             if (uriTemplateQueryParamNames == null) {
                 uriTemplateQueryParamNames = new HashSet<>();
-            } else {
-                uriTemplateQueryParamNames.retainAll(clientUri.query().names());
             }
             uriTemplateQueryParamNames.add(name);
+            if (uriTemplateQueryParamNames.size() > clientUri.query().size()) {
+                uriTemplateQueryParamNames.retainAll(clientUri.query().names());
+            }
         }
         return identity();
     }

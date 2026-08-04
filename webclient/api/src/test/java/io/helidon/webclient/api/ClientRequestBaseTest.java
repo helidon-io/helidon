@@ -202,6 +202,22 @@ class ClientRequestBaseTest {
         assertThat(request.resolvedUri().query().all("access_token"), is(List.of("template")));
     }
 
+    @Test
+    void subsequentQueryParamPrunesRemovedRequestQueryParam() {
+        FakeClientRequest request = new FakeClientRequest()
+                .uri("https://www.example.com/{path}?access_token=template")
+                .pathParam("path", "p")
+                .skipUriEncoding(true)
+                .queryParam("access_token", "secret");
+        request.uri().writeableQuery().remove("access_token");
+        request.queryParam("request", "value");
+        request.uri().writeableQuery().set("access_token", "replacement");
+
+        ClientUri resolved = request.resolvedUri();
+        assertThat(resolved.query().all("access_token"), is(List.of("template")));
+        assertThat(resolved.query().all("request"), is(List.of("value")));
+    }
+
     private static final class FakeClientRequest extends ClientRequestBase<FakeClientRequest, HttpClientResponse> {
         private FakeClientRequest() {
             this(ClientUri.create());
