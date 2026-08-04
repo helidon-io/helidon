@@ -83,6 +83,7 @@ public class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
     private static final int MAX_QUEUED_HEADER_FRAMES = 8192;
+    private static final long ERROR_GO_AWAY_WRITE_TIMEOUT_MILLIS = 500;
     private static final long MIN_HEADER_BLOCK_SIZE = 64 * 1024;
     private static final long NO_PING_ACK = Long.MIN_VALUE;
     private static final Http2Headers EMPTY_INBOUND_HEADERS = Http2Headers.create(WritableHeaders.create());
@@ -324,6 +325,7 @@ public class Http2ClientConnection {
      *
      * @param streamId the stream ID
      * @param stream the stream
+     * @throws IllegalStateException if the connection is closing or closed
      */
     public void addStream(int streamId, Http2ClientStream stream) {
         RuntimeException failure = null;
@@ -573,13 +575,19 @@ public class Http2ClientConnection {
             closeConnection(failure);
             return;
         }
+        closeFailure.compareAndSet(null, failure);
+        RuntimeException actualFailure = closeFailure.get();
         if (!closeOrderingLock.tryLock()) {
-            closeConnection(failure);
+            if (actualFailure instanceof Http2Exception http2Exception
+                    && http2Exception.code() != Http2ErrorCode.NO_ERROR
+                    && errorGoAwayWriteComplete.getCount() != 0) {
+                await(errorGoAwayWriteComplete);
+            }
+            closeConnection(actualFailure);
             return;
         }
         try {
-            closeFailure.compareAndSet(null, failure);
-            Http2ErrorCode errorCode = failure instanceof Http2Exception http2Exception
+            Http2ErrorCode errorCode = actualFailure instanceof Http2Exception http2Exception
                     ? http2Exception.code()
                     : Http2ErrorCode.NO_ERROR;
             // Closing must reach the transport to break an in-flight retirement GOAWAY write.
@@ -588,12 +596,12 @@ public class Http2ClientConnection {
                 return;
             }
             // A protocol error must put GOAWAY on the wire before a failed request can make its caller exit.
-            this.goAway(0, errorCode, failure.getMessage());
+            this.goAway(0, errorCode, actualFailure.getMessage());
         } catch (Throwable e) {
             ctx.log(LOGGER, TRACE, "Failed to send HTTP/2 GOAWAY before closing connection.", e);
         } finally {
             try {
-                closeConnection(failure);
+                closeConnection(actualFailure);
             } finally {
                 closeOrderingLock.unlock();
             }
@@ -638,19 +646,29 @@ public class Http2ClientConnection {
             try {
                 closeTransport();
             } finally {
-                failedStreams.forEach(stream ->
-                        Thread.startVirtualThread(() -> stream.completeTrailersFailure(actualFailure)));
+                try {
+                    failActiveStreams(failedStreams, actualFailure);
+                } finally {
+                    failedStreams.forEach(stream ->
+                            Thread.startVirtualThread(() -> stream.completeTrailersFailure(actualFailure)));
+                }
             }
         }
     }
 
     private List<Http2ClientStream> beginClose(RuntimeException failure) {
         initialSettingsLatch.countDown();
-        closeFailure.compareAndSet(null, failure);
-        if (state.getAndSet(State.CLOSED) == State.CLOSED) {
-            return null;
+        Lock lock = streamsLock.writeLock();
+        lock.lock();
+        try {
+            closeFailure.compareAndSet(null, failure);
+            if (state.getAndSet(State.CLOSED) == State.CLOSED) {
+                return null;
+            }
+            return List.copyOf(streams.values());
+        } finally {
+            lock.unlock();
         }
-        return failActiveStreams(closeFailure.get());
     }
 
     private void closeTransport() {
@@ -659,6 +677,8 @@ public class Http2ClientConnection {
                 handleTask.cancel(true);
             }
             ctx.log(LOGGER, TRACE, "Closing connection");
+            goAwayWriteComplete.countDown();
+            errorGoAwayWriteComplete.countDown();
             connection.closeResource();
         } catch (Throwable e) {
             ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
@@ -667,18 +687,9 @@ public class Http2ClientConnection {
         }
     }
 
-    private List<Http2ClientStream> failActiveStreams(RuntimeException failure) {
-        List<Http2ClientStream> activeStreams;
-        Lock lock = streamsLock.readLock();
-        lock.lock();
-        try {
-            activeStreams = List.copyOf(streams.values());
-        } finally {
-            lock.unlock();
-        }
+    private void failActiveStreams(List<Http2ClientStream> activeStreams, RuntimeException failure) {
         activeStreams.forEach(stream -> stream.recordConnectionFailure(failure));
         activeStreams.forEach(stream -> stream.connectionClosed(failure));
-        return activeStreams;
     }
 
     private void finishRetirement() {
@@ -1050,8 +1061,7 @@ public class Http2ClientConnection {
 
     private void updateInitialWindowSize(long initWinSizeLong) {
         if (initWinSizeLong > WindowSize.MAX_WIN_SIZE) {
-            goAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+            throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL,
                                      "Received too big INITIAL_WINDOW_SIZE " + initWinSizeLong);
         }
         int initWinSize = (int) initWinSizeLong;
@@ -1199,10 +1209,6 @@ public class Http2ClientConnection {
             recvListener.headers(ctx, streamId, headers);
             return true;
         } catch (Http2Exception e) {
-            Http2ClientStream failedStream = headerStream == null ? stream(streamId) : headerStream;
-            if (failedStream != null) {
-                failedStream.reset(e.code());
-            }
             throw e;
         }
     }
@@ -1268,7 +1274,43 @@ public class Http2ClientConnection {
     private void writeGoAway(int streamId, Http2ErrorCode errorCode, String msg) {
         Http2Settings http2Settings = Http2Settings.create();
         Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
-        writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
+        Http2FrameData frameData = frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create());
+        if (errorCode == Http2ErrorCode.NO_ERROR) {
+            writer.write(frameData);
+            return;
+        }
+
+        RuntimeException failure = closeFailure.get();
+        if (failure == null) {
+            failure = new Http2Exception(errorCode, msg);
+        }
+        RuntimeException closeCause = failure;
+        AtomicReference<Thread> closeWatchdog = new AtomicReference<>();
+        try {
+            boolean written = writer.tryWrite(frameData, () -> {
+                Thread watchdog = Thread.ofVirtual()
+                        .name("helidon-http2-go-away-close-" + ctx.socketId())
+                        .inheritInheritableThreadLocals(false)
+                        .unstarted(() -> {
+                            try {
+                                TimeUnit.MILLISECONDS.sleep(ERROR_GO_AWAY_WRITE_TIMEOUT_MILLIS);
+                                closeConnection(closeCause);
+                            } catch (InterruptedException _) {
+                                // GOAWAY completed before the deadline.
+                            }
+                        });
+                closeWatchdog.set(watchdog);
+                watchdog.start();
+            });
+            if (!written) {
+                closeConnection(closeCause);
+            }
+        } finally {
+            Thread watchdog = closeWatchdog.get();
+            if (watchdog != null) {
+                watchdog.interrupt();
+            }
+        }
     }
 
     private enum State {

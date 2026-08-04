@@ -88,7 +88,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -655,7 +654,6 @@ class Http2ClientConnectionTest {
             try {
                 test.offerInbound(response);
                 verify(test.clientConnection, timeout(1_000)).closeResource();
-                assertFalse(activeWrite.isDone());
 
                 Http2Exception failingException = assertThrows(Http2Exception.class,
                                                                 () -> failingStream.readHeaders(Duration.ofMillis(100)));
@@ -668,9 +666,57 @@ class Http2ClientConnectionTest {
             } finally {
                 blockedWrite.release();
             }
-            activeWrite.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            ExecutionException writeFailure = assertThrows(ExecutionException.class,
+                                                            () -> activeWrite.get(TEST_WAIT_TIMEOUT.toMillis(),
+                                                                                  TimeUnit.MILLISECONDS));
+            assertThat(writeFailure.getCause(), instanceOf(UncheckedIOException.class));
             failingStream.close();
             siblingStream.close();
+        }
+    }
+
+    @Test
+    void connectionFatalHeaderFailureClosesBeforeFailingStreamFuture() throws Exception {
+        int maxHeadersSize = 29;
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(maxHeadersSize)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), false);
+
+            CountDownLatch callbackEntered = new CountDownLatch(1);
+            CountDownLatch releaseCallback = new CountDownLatch(1);
+            stream.trailers().whenComplete((ignoredTrailers, ignoredFailure) -> {
+                callbackEntered.countDown();
+                boolean interrupted = false;
+                while (true) {
+                    try {
+                        releaseCallback.await();
+                        break;
+                    } catch (InterruptedException e) {
+                        interrupted = true;
+                    }
+                }
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+
+            Http2FrameData[] response = encodedSplitHeaderFrames(stream.streamId(),
+                                                                 encodedResponseHeaders(false),
+                                                                 Http2Headers.DynamicTable.create(
+                                                                         Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                                                                 Http2HuffmanEncoder.create());
+            test.offerInbound(response);
+
+            assertTrue(callbackEntered.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            try {
+                verify(test.clientConnection, timeout(1_000)).closeResource();
+            } finally {
+                releaseCallback.countDown();
+            }
+            stream.close();
         }
     }
 
@@ -1426,6 +1472,59 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void concurrentCloseDoesNotWaitForUnsentErrorGoAwayAfterRetirementFailure() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), false);
+            verify(test.dataWriter, timeout(TEST_WAIT_TIMEOUT.toMillis()).times(3)).writeNow(any(BufferData.class));
+            clearInvocations(test.dataWriter, test.clientConnection);
+
+            connection.retire();
+            MockedConnectionTestContext.BlockedWrite blockedRetirement = test.blockNextWriteNow();
+            CountDownLatch firstCloseEntered = new CountDownLatch(1);
+            CountDownLatch releaseFirstClose = new CountDownLatch(1);
+            CompletableFuture<Void> drained;
+            try {
+                drained = CompletableFuture.runAsync(stream::close);
+                assertThat(blockedRetirement.awaitEntered(), is(true));
+
+                doAnswer(_ -> {
+                    test.transportClosed.set(true);
+                    test.failBlockedWrite();
+                    firstCloseEntered.countDown();
+                    boolean interrupted = false;
+                    while (true) {
+                        try {
+                            releaseFirstClose.await();
+                            break;
+                        } catch (InterruptedException _) {
+                            interrupted = true;
+                        }
+                    }
+                    if (interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return null;
+                }).when(test.clientConnection).closeResource();
+
+                test.offerInbound(dataFrame(stream.streamId() + 2,
+                                            "invalid".getBytes(StandardCharsets.UTF_8),
+                                            false));
+                assertThat(firstCloseEntered.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+
+                CompletableFuture<Void> concurrentClose = CompletableFuture.runAsync(connection::close);
+                concurrentClose.get(1, TimeUnit.SECONDS);
+            } finally {
+                releaseFirstClose.countDown();
+                blockedRetirement.release();
+            }
+            drained.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        }
+    }
+
+    @Test
     void lateHeadersWriteStreamClosedGoAwayBeforeClosing() {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));
@@ -1686,6 +1785,198 @@ class Http2ClientConnectionTest {
                                                                         TEST_WAIT_TIMEOUT.toMillis(),
                                                                         TimeUnit.MILLISECONDS));
             assertNotNull(connectionFailure.getCause());
+        }
+    }
+
+    @Test
+    void connectionErrorSendsGoAwayWithErrorCode() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            assertTrue(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            clearInvocations(test.dataWriter);
+            clearInvocations(test.clientConnection);
+
+            BufferData pingData = BufferData.create(Long.BYTES)
+                    .writeInt64(0);
+            test.offerInbound(new Http2FrameData(Http2FrameHeader.create(pingData.available(),
+                                                                         Http2FrameTypes.PING,
+                                                                         Http2Flag.PingFlags.create(0),
+                                                                         1),
+                                                 pingData));
+
+            ArgumentCaptor<BufferData> frameCaptor = ArgumentCaptor.forClass(BufferData.class);
+            InOrder inOrder = inOrder(test.dataWriter, test.clientConnection);
+            inOrder.verify(test.dataWriter, timeout(TEST_WAIT_TIMEOUT.toMillis())).writeNow(frameCaptor.capture());
+            inOrder.verify(test.clientConnection, timeout(TEST_WAIT_TIMEOUT.toMillis())).closeResource();
+            BufferData goAwayData = frameCaptor.getValue().copy();
+            Http2FrameHeader frameHeader = Http2FrameHeader.create(goAwayData);
+            assertThat(frameHeader.type(), is(Http2FrameType.GO_AWAY));
+            assertThat(frameHeader.streamId(), is(0));
+            assertThat(Http2GoAway.create(goAwayData).errorCode(), is(Http2ErrorCode.PROTOCOL));
+            connection.closeNow();
+        }
+    }
+
+    @Test
+    void connectionErrorDoesNotWaitForBlockedGoAwayWrite() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            assertTrue(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), false);
+
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            BufferData pingData = BufferData.create(Long.BYTES)
+                    .writeInt64(0);
+            test.offerInbound(new Http2FrameData(Http2FrameHeader.create(pingData.available(),
+                                                                         Http2FrameTypes.PING,
+                                                                         Http2Flag.PingFlags.create(0),
+                                                                         1),
+                                                 pingData));
+
+            assertTrue(blockedWrite.awaitEntered());
+            try {
+                verify(test.clientConnection, timeout(1_000)).closeResource();
+                Http2Exception exception = assertThrows(Http2Exception.class,
+                                                        () -> stream.readHeaders(Duration.ofMillis(100)));
+                assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+            } finally {
+                blockedWrite.release();
+            }
+            stream.close();
+        }
+    }
+
+    @Test
+    void invalidInitialWindowSizeDoesNotWaitForBlockedGoAwayWrite() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            assertTrue(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), false);
+
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            Http2Settings invalidSettings = Http2Settings.builder()
+                    .add(Http2Setting.INITIAL_WINDOW_SIZE, Integer.MAX_VALUE + 1L)
+                    .build();
+            test.offerInbound(invalidSettings.toFrameData(null, 0, Http2Flag.SettingsFlags.create(0)));
+
+            assertTrue(blockedWrite.awaitEntered());
+            try {
+                verify(test.clientConnection, timeout(1_000)).closeResource();
+                Http2Exception exception = assertThrows(Http2Exception.class,
+                                                        () -> stream.readHeaders(Duration.ofMillis(100)));
+                assertThat(exception.code(), is(Http2ErrorCode.FLOW_CONTROL));
+            } finally {
+                blockedWrite.release();
+            }
+            stream.close();
+        }
+    }
+
+    @Test
+    void connectionErrorClosesBeforeFailingStreamFuture() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), false);
+
+            CountDownLatch callbackEntered = new CountDownLatch(1);
+            CountDownLatch releaseCallback = new CountDownLatch(1);
+            stream.trailers().whenComplete((ignoredTrailers, ignoredFailure) -> {
+                callbackEntered.countDown();
+                try {
+                    releaseCallback.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+
+            BufferData pingData = BufferData.create(Long.BYTES)
+                    .writeInt64(0);
+            test.offerInbound(new Http2FrameData(Http2FrameHeader.create(pingData.available(),
+                                                                         Http2FrameTypes.PING,
+                                                                         Http2Flag.PingFlags.create(0),
+                                                                         1),
+                                                 pingData));
+
+            assertTrue(callbackEntered.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            try {
+                verify(test.clientConnection, timeout(1_000)).closeResource();
+            } finally {
+                releaseCallback.countDown();
+            }
+            stream.close();
+        }
+    }
+
+    @Test
+    void connectionErrorRejectsReservedStreamRegistration() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            BufferData pingData = BufferData.create(Long.BYTES)
+                    .writeInt64(0);
+            test.offerInbound(new Http2FrameData(Http2FrameHeader.create(pingData.available(),
+                                                                         Http2FrameTypes.PING,
+                                                                         Http2Flag.PingFlags.create(0),
+                                                                         1),
+                                                 pingData));
+            test.assertConnectionClosed();
+
+            Http2Exception exception = assertThrows(Http2Exception.class,
+                                                     () -> stream.writeHeaders(requestHeaders(), false));
+            assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+            stream.close();
+        }
+    }
+
+    @Test
+    void connectionErrorClosesWhileStreamWindowUpdateIsBlocked() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman),
+                              dataFrame(stream.streamId(), new byte[16_384], false),
+                              dataFrame(stream.streamId(), new byte[16_384], false));
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+            stream.readOne(Duration.ofSeconds(1));
+
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            CompletableFuture<Http2FrameData> secondRead = CompletableFuture.supplyAsync(
+                    () -> stream.readOne(Duration.ofSeconds(1)));
+            assertTrue(blockedWrite.awaitEntered());
+            try {
+                BufferData pingData = BufferData.create(Long.BYTES)
+                        .writeInt64(0);
+                test.offerInbound(new Http2FrameData(Http2FrameHeader.create(pingData.available(),
+                                                                             Http2FrameTypes.PING,
+                                                                             Http2Flag.PingFlags.create(0),
+                                                                             1),
+                                                     pingData));
+                verify(test.clientConnection, timeout(1_000)).closeResource();
+            } finally {
+                blockedWrite.release();
+            }
+            ExecutionException windowUpdateFailure = assertThrows(ExecutionException.class,
+                                                                   () -> secondRead.get(TEST_WAIT_TIMEOUT.toMillis(),
+                                                                                        TimeUnit.MILLISECONDS));
+            assertThat(windowUpdateFailure.getCause(), instanceOf(UncheckedIOException.class));
+            stream.close();
         }
     }
 
@@ -2786,6 +3077,7 @@ class Http2ClientConnectionTest {
             test.offerInbound(settingsFrame(1));
 
             Http2ClientConnection connection = connectionFuture.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            assertTrue(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
             Http2ClientStream failingStream = connection.createStream(STREAM_CONFIG);
             assertTrue(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
 
