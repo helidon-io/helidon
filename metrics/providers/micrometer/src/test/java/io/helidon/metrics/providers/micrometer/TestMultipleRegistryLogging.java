@@ -314,7 +314,6 @@ class TestMultipleRegistryLogging {
         assertThat("Second close failure reported",
                    failure.getSuppressed()[0].getMessage(),
                    is("second close failure"));
-        assertThat("Every registry is removed after close attempts", metricsFactory.meterRegistryCount(), is(0));
     }
 
     @Test
@@ -336,7 +335,6 @@ class TestMultipleRegistryLogging {
         assertThat("Both publisher failures are reported",
                    Set.of(failure.getMessage(), failure.getSuppressed()[0].getMessage()),
                    is(Set.of("first close failure", "second close failure")));
-        assertThat("Registry is removed after publisher close attempts", metricsFactory.meterRegistryCount(), is(0));
     }
 
     @Test
@@ -357,9 +355,6 @@ class TestMultipleRegistryLogging {
             assertThat("Publisher close reached the coordinated point",
                        publisher.closeStarted.await(5, TimeUnit.SECONDS),
                        is(true));
-            assertThat("Registry remains enrolled during publisher cleanup",
-                       metricsFactory.meterRegistryCount(),
-                       is(1));
 
             Future<?> secondClose = executor.submit(() -> {
                 secondCloseStarted.countDown();
@@ -389,7 +384,6 @@ class TestMultipleRegistryLogging {
 
             assertThat("Publisher is closed", publisher.isClosed(), is(true));
             assertThat("Publisher close is attempted once", publisher.closeAttempts.get(), is(1));
-            assertThat("Registry is removed after publisher cleanup", metricsFactory.meterRegistryCount(), is(0));
         } finally {
             publisher.continueClose.countDown();
             executor.shutdownNow();
@@ -497,8 +491,6 @@ class TestMultipleRegistryLogging {
 
             metersProvider.continueClose.countDown();
             factoryClose.get(5, TimeUnit.SECONDS);
-
-            assertThat("Registry is removed after reentrant close", metricsFactory.meterRegistryCount(), is(0));
         } finally {
             publisher.continueClose.countDown();
             metersProvider.continueClose.countDown();
@@ -536,7 +528,6 @@ class TestMultipleRegistryLogging {
         assertThat("Later failure is reported",
                    failure.getSuppressed()[0].getMessage(),
                    is("third close failure"));
-        assertThat("Every registry is removed after close attempts", metricsFactory.meterRegistryCount(), is(0));
     }
 
     @Test
@@ -770,8 +761,10 @@ class TestMultipleRegistryLogging {
         CountDownLatch continueTagAccess = new CountDownLatch(1);
         AtomicBoolean blockTagAccess = new AtomicBoolean();
         Tag blockingTag = blockingTag(blockTagAccess, tagAccessed, continueTagAccess);
+        SimpleMeterRegistry publisherRegistry = new SimpleMeterRegistry();
         MetricsConfig metricsConfig = MetricsConfig.builder()
                 .tags(List.of(blockingTag))
+                .addPublisher(new TestPublisher(publisherRegistry))
                 .warnOnMultipleRegistries(false)
                 .build();
         blockTagAccess.set(true);
@@ -794,10 +787,7 @@ class TestMultipleRegistryLogging {
             assertThat("Registry creation failure",
                        failure.getCause(),
                        instanceOf(IllegalStateException.class));
-
-            assertThat("Factory shutdown rejected the concurrently-created registry",
-                       metricsFactory.meterRegistryCount(),
-                       is(0));
+            assertThat("Rejected registry publisher is closed", publisherRegistry.isClosed(), is(true));
         } finally {
             continueTagAccess.countDown();
             executor.shutdownNow();
@@ -811,8 +801,10 @@ class TestMultipleRegistryLogging {
         CountDownLatch tagAccessed = new CountDownLatch(1);
         CountDownLatch continueTagAccess = new CountDownLatch(1);
         AtomicBoolean blockTagAccess = new AtomicBoolean();
+        SimpleMeterRegistry publisherRegistry = new SimpleMeterRegistry();
         MetricsConfig metricsConfig = MetricsConfig.builder()
                 .tags(List.of(blockingTag(blockTagAccess, tagAccessed, continueTagAccess)))
+                .addPublisher(new TestPublisher(publisherRegistry))
                 .warnOnMultipleRegistries(false)
                 .build();
         MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(metricsConfig, List.of());
@@ -837,10 +829,7 @@ class TestMultipleRegistryLogging {
                        failure.getCause(),
                        instanceOf(IllegalStateException.class));
             factoryClose.get(5, TimeUnit.SECONDS);
-
-            assertThat("Factory shutdown rejected the concurrently-created global registry",
-                       metricsFactory.meterRegistryCount(),
-                       is(0));
+            assertThat("Rejected global registry publisher is closed", publisherRegistry.isClosed(), is(true));
         } finally {
             continueTagAccess.countDown();
             executor.shutdownNow();

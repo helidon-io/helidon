@@ -105,11 +105,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                             spanContextSupplierProvider);
     }
 
-    // Intended for testing lifecycle cleanup.
-    int meterRegistryCount() {
-        return meterRegistries.size();
-    }
-
     @Override
     public MMeterRegistry.Builder meterRegistryBuilder() {
         ensureOpen();
