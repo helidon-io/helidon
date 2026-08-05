@@ -125,6 +125,30 @@ Open ID Connect configuration
 </tr>
 <tr>
 <td>
+<code>cookie-<wbr>compression-<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true if server-<wbr>type is idcs; false otherwise</code>
+</td>
+<td>Whether to GZIP-compress the access token cookie when this reduces its size</td>
+</tr>
+<tr>
+<td>
+<code>cookie-<wbr>compression-<wbr>id-enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true if server-<wbr>type is idcs; false otherwise</code>
+</td>
+<td>Whether to GZIP-compress the ID token cookie when this reduces its size</td>
+</tr>
+<tr>
+<td>
 <code>cookie-<wbr>domain</code>
 </td>
 <td>

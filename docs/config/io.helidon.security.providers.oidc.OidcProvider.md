@@ -119,6 +119,18 @@ Open ID Connect security provider
 </tr>
 <tr>
 <td>
+<code>cookie-<wbr>compression-<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true if server-<wbr>type is idcs; false otherwise</code>
+</td>
+<td>Whether to GZIP-compress the access token cookie when this reduces its size</td>
+</tr>
+<tr>
+<td>
 <a id="outbound"></a>
 <a href="io.helidon.security.providers.common.OutboundTarget.md">
 <code>outbound</code>
@@ -404,6 +416,18 @@ Open ID Connect security provider
 <code>true</code>
 </td>
 <td>Claim <code>groups</code> from JWT will be used to automatically add  groups to current subject (may be used with <code>jakarta.<wbr>annotation.<wbr>security.<wbr>Roles<wbr>Allowed</code> annotation)</td>
+</tr>
+<tr>
+<td>
+<code>cookie-<wbr>compression-<wbr>id-enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true if server-<wbr>type is idcs; false otherwise</code>
+</td>
+<td>Whether to GZIP-compress the ID token cookie when this reduces its size</td>
 </tr>
 <tr>
 <td>
