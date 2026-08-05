@@ -18,6 +18,7 @@ package io.helidon.common.uri;
 
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.List;
 
 import io.helidon.common.mapper.OptionalValue;
 
@@ -137,6 +138,16 @@ class UriQueryTest {
         assertThat(query.getRaw("p3"), is("%2F%2Fv3%2F%2F"));
         assertThat(query.get("p4"), is("a b c"));
         assertThat(query.getRaw("p4"), is("a%20b%20c"));
+    }
+
+    @Test
+    void setReplacesEquivalentEncodedName() {
+        UriQueryWriteable query = writeableQuery("%61=template");
+
+        query.set("a", "request");
+
+        assertThat(query.all("a"), is(List.of("request")));
+        assertThat(query.rawValue(), is("a=request"));
     }
 
     private static UriQueryWriteable writeableQuery(String queryString) {

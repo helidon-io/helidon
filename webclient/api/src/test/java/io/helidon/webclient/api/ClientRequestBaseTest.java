@@ -110,6 +110,20 @@ class ClientRequestBaseTest {
     }
 
     @Test
+    void requestQueryOverridesEquivalentEncodedTemplateQueryName() {
+        ClientUri uri = new FakeClientRequest()
+                .uri("https://www.example.com/{path}?%61=template")
+                .pathParam("path", "p")
+                .skipUriEncoding(true)
+                .queryParam("a", "request")
+                .resolvedUri();
+
+        assertThat(uri.query().all("a"), is(List.of("request")));
+        assertThat(uri.query().rawValue(), is("a=request"));
+        assertThat(uri.pathWithQueryAndFragment(), is("/p?a=request"));
+    }
+
+    @Test
     void replacingTemplateDoesNotCarryEarlierQueryParam() {
         ClientUri uri = new FakeClientRequest()
                 .uri("https://www.example.com/{path}")

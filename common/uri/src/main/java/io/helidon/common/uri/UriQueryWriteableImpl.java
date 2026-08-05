@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,6 +223,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             encodedValues.add(UriEncoding.encode(value, UriEncoding.Type.QUERY_PARAM_SPACE_ENCODED));
         }
 
+        rawQueryParams.keySet().removeIf(rawName -> name.equals(UriEncoding.decodeUri(rawName)));
         rawQueryParams.put(encodedName, encodedValues);
         decodedQueryParams.put(name, decodedValues);
 
