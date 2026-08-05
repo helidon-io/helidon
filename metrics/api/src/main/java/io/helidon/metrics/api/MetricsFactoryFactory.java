@@ -40,13 +40,9 @@ class MetricsFactoryFactory implements Supplier<MetricsFactory> {
 
     @Override
     public MetricsFactory get() {
-        MetricsFactory metricsFactory = createMetricsFactory(config);
+        MetricsFactory metricsFactory = MetricsFactoryManager.create(config, serviceRegistry);
         metricsFactories.add(metricsFactory);
         return metricsFactory;
-    }
-
-    MetricsFactory createMetricsFactory(Config rootConfig) {
-        return MetricsFactoryManager.create(rootConfig, serviceRegistry);
     }
 
     @Service.PreDestroy

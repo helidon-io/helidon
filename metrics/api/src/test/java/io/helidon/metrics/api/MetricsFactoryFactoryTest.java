@@ -24,6 +24,8 @@ import io.helidon.config.ConfigSources;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
@@ -79,17 +81,18 @@ class MetricsFactoryFactoryTest {
 
     @Test
     void factoryReceivesRootConfig() {
-        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG, Services.get(ServiceRegistry.class)) {
-            @Override
-            MetricsFactory createMetricsFactory(Config rootConfig) {
-                assertThat(rootConfig.get("metrics.app-name").asString().get(), is("metrics-app"));
-                assertThat(rootConfig.get("server.features.observe.observers.metrics.app-name").asString().get(),
-                           is("observe-app"));
-                return new CloseTrackingMetricsFactory();
-            }
+        MetricsFactoryProvider provider = (rootConfig, _, _) -> {
+            assertThat(rootConfig.get("metrics.app-name").asString().get(), is("metrics-app"));
+            assertThat(rootConfig.get("server.features.observe.observers.metrics.app-name").asString().get(),
+                       is("observe-app"));
+            return new NoOpMetricsFactory();
         };
-
-        serviceFactory.get();
+        ServiceRegistryManager manager = testRegistryManager(provider);
+        try {
+            new MetricsFactoryFactory(ROOT_CONFIG, manager.registry()).get();
+        } finally {
+            manager.shutdown();
+        }
     }
 
     @Test
@@ -120,25 +123,26 @@ class MetricsFactoryFactoryTest {
         CloseTrackingMetricsFactory firstFactory = new CloseTrackingMetricsFactory();
         CloseTrackingMetricsFactory secondFactory = new CloseTrackingMetricsFactory();
         CloseTrackingMetricsFactory[] factories = {firstFactory, secondFactory};
-        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG, Services.get(ServiceRegistry.class)) {
-            @Override
-            MetricsFactory createMetricsFactory(Config rootConfig) {
-                return factories[nextFactory.getAndIncrement()];
-            }
-        };
+        MetricsFactoryProvider provider = (_, _, _) -> factories[nextFactory.getAndIncrement()];
+        ServiceRegistryManager manager = testRegistryManager(provider);
+        try {
+            MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG, manager.registry());
 
-        serviceFactory.get();
-        serviceFactory.get();
+            serviceFactory.get();
+            serviceFactory.get();
 
-        serviceFactory.preDestroy();
+            serviceFactory.preDestroy();
 
-        assertThat(firstFactory.closeCount(), is(1));
-        assertThat(secondFactory.closeCount(), is(1));
+            assertThat(firstFactory.closeCount(), is(1));
+            assertThat(secondFactory.closeCount(), is(1));
 
-        serviceFactory.preDestroy();
+            serviceFactory.preDestroy();
 
-        assertThat(firstFactory.closeCount(), is(1));
-        assertThat(secondFactory.closeCount(), is(1));
+            assertThat(firstFactory.closeCount(), is(1));
+            assertThat(secondFactory.closeCount(), is(1));
+        } finally {
+            manager.shutdown();
+        }
     }
 
     @Test
@@ -150,6 +154,14 @@ class MetricsFactoryFactoryTest {
         MetricsFactory secondFactory = Services.get(MetricsFactory.class);
 
         assertThat(secondFactory, sameInstance(firstFactory));
+    }
+
+    private static ServiceRegistryManager testRegistryManager(MetricsFactoryProvider provider) {
+        return ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                     .discoverServices(false)
+                                                     .discoverServicesFromServiceLoader(false)
+                                                     .putContractInstance(MetricsFactoryProvider.class, provider)
+                                                     .build());
     }
 
     private static class CloseTrackingMetricsFactory extends NoOpMetricsFactory {
