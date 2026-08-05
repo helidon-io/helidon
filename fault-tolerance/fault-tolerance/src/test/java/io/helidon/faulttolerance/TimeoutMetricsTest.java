@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.testing.junit5.Testing;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -30,6 +31,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Testing.Test
 class TimeoutMetricsTest {
+    @BeforeAll
+    static void activateConfig() {
+        MetricsTestSupport.activateConfig();
+    }
+
     @Test
     void testTimeout() {
         Timeout timeout;

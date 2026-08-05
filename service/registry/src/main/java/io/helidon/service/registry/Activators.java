@@ -53,6 +53,10 @@ import static java.util.function.Predicate.not;
  */
 @SuppressWarnings("checkstyle:VisibilityModifier") // as long as all are inner classes, this is OK
 final class Activators {
+    private static final ActivationRequest ACTIVE_REQUEST = ActivationRequest.builder()
+            .targetPhase(ActivationPhase.ACTIVE)
+            .build();
+
     private Activators() {
     }
 
@@ -70,6 +74,12 @@ final class Activators {
             case INJECTION_POINT -> new Activators.FixedIpFactoryActivator<>(provider, (InjectionPointFactory<T>) instance);
             case QUALIFIED -> new Activators.FixedQualifiedFactoryActivator<>(provider, (QualifiedFactory<T, ?>) instance);
         };
+    }
+
+    static <T> Activator<T> createActive(ServiceProvider<T> provider, T instance) {
+        Activator<T> activator = create(provider, instance);
+        activator.activate(ACTIVE_REQUEST);
+        return activator;
     }
 
     static <T> Supplier<Activator<T>> create(CoreServiceRegistry registry, ServiceProvider<T> provider) {
@@ -287,6 +297,10 @@ final class Activators {
             return currentPhase;
         }
 
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return true;
+        }
+
         @Override
         public String toString() {
             return getClass().getSimpleName() + " for " + provider;
@@ -419,16 +433,33 @@ final class Activators {
     }
 
     static class FixedSupplierActivator<T> extends BaseActivator<T> {
-        private final Supplier<Optional<List<QualifiedInstance<T>>>> instances;
+        private final Supplier<T> instanceSupplier;
+        private final LazyValue<Optional<List<QualifiedInstance<T>>>> instances;
 
         FixedSupplierActivator(ServiceProvider<T> provider, Supplier<T> instanceSupplier) {
             super(provider, null);
 
+            this.instanceSupplier = instanceSupplier;
             instances = LazyValue.create(() -> {
                 List<QualifiedInstance<T>> values = List.of(QualifiedInstance.create(instanceSupplier.get(),
                                                                                      provider.descriptor().qualifiers()));
                 return Optional.of(values);
             });
+        }
+
+        @Override
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return requestedProvider(lookup, FactoryType.SUPPLIER) || instances.isLoaded();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+            if (requestedProvider(lookup, FactoryType.SUPPLIER)) {
+                return Optional.of(List.of(QualifiedInstance.create((T) instanceSupplier,
+                                                                    provider.descriptor().qualifiers())));
+            }
+            return targetInstances();
         }
 
         @Override
@@ -448,10 +479,36 @@ final class Activators {
     }
 
     static class FixedServicesFactoryActivator<T> extends ServicesFactoryActivator<T> {
+        private volatile LazyValue<Optional<List<QualifiedInstance<T>>>> instances;
+
         FixedServicesFactoryActivator(ServiceProvider<T> provider,
                                       Service.ServicesFactory<T> factory) {
             super(provider, null);
             serviceInstance = InstanceHolder.create(factory);
+            instances = LazyValue.create(() -> Optional.ofNullable(factory.services()));
+        }
+
+        @Override
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return requestedProvider(lookup, FactoryType.SERVICES) || instances.isLoaded();
+        }
+
+        @Override
+        void setTargetInstances() {
+        }
+
+        @Override
+        Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
+            if (requestedProvider(lookup, FactoryType.SERVICES)) {
+                return super.targetInstances(lookup);
+            }
+            return instances.get().flatMap(it -> matchingInstances(lookup, it));
+        }
+
+        @Override
+        void preDestroy(ActivationResult.Builder response) {
+            super.preDestroy(response);
+            instances = LazyValue.create(Optional.empty());
         }
     }
 
@@ -597,6 +654,11 @@ final class Activators {
         }
 
         @Override
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return requestedProvider(lookup, FactoryType.QUALIFIED);
+        }
+
+        @Override
         void setTargetInstances() {
             // target instances cannot be created, they are resolved on each lookup
         }
@@ -649,6 +711,11 @@ final class Activators {
     static class IpFactoryActivator<T> extends SingleServiceActivator<T> {
         IpFactoryActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
             super(provider, dependencyContext);
+        }
+
+        @Override
+        boolean activeInstancesAvailable(Lookup lookup) {
+            return requestedProvider(lookup, FactoryType.INJECTION_POINT);
         }
 
         @Override
@@ -709,12 +776,17 @@ final class Activators {
                 return Optional.of(List.of(QualifiedInstance.create(serviceInstance.get(), descriptor().qualifiers())));
             }
 
-            if (targetInstances == null) {
+            return matchingInstances(lookup, targetInstances);
+        }
+
+        Optional<List<QualifiedInstance<T>>> matchingInstances(Lookup lookup,
+                                                                List<QualifiedInstance<T>> instances) {
+            if (instances == null) {
                 return Optional.empty();
             }
 
             List<QualifiedInstance<T>> response = new ArrayList<>();
-            for (QualifiedInstance<T> instance : targetInstances) {
+            for (QualifiedInstance<T> instance : instances) {
                 if (lookup.matchesQualifiers(instance.qualifiers())) {
                     response.add(instance);
                 }

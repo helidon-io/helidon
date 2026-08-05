@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,13 @@
 
 package io.helidon.service.test.registry;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-
 import io.helidon.service.registry.Service;
 
-@Service.PerLookup
-class ServiceSupplier implements Supplier<SuppliedContract> {
-    private static final AtomicInteger COUNTER = new AtomicInteger();
+@Service.Singleton
+class FirstActiveService implements FirstActiveContract {
+    static int instances;
 
-    static void reset() {
-        COUNTER.set(0);
-    }
-
-    static int instances() {
-        return COUNTER.get();
-    }
-
-    @Override
-    public SuppliedContract get() {
-        int i = COUNTER.incrementAndGet();
-        return () -> "Supplied:" + i;
+    FirstActiveService() {
+        instances++;
     }
 }
