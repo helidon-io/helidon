@@ -295,14 +295,17 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T queryParam(String name, String... values) {
-        if (uriTemplate != null) {
-            if (uriTemplateQueryParamNames == null) {
-                uriTemplateQueryParamNames = new HashSet<>();
-                uriTemplateQuerySnapshot = UriQueryWriteable.create().from(clientUri.query());
-            }
+        UriQueryWriteable querySnapshot = uriTemplate != null && uriTemplateQueryParamNames == null
+                ? UriQueryWriteable.create().from(clientUri.query())
+                : null;
+        clientUri.writeableQuery().set(name, values);
+        if (querySnapshot != null) {
+            uriTemplateQueryParamNames = new HashSet<>();
+            uriTemplateQuerySnapshot = querySnapshot;
+        }
+        if (uriTemplateQueryParamNames != null) {
             uriTemplateQueryParamNames.add(name);
         }
-        clientUri.writeableQuery().set(name, values);
         return identity();
     }
 

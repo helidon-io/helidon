@@ -186,6 +186,20 @@ class ClientRequestBaseTest {
     }
 
     @Test
+    void rejectedQueryParamDoesNotArmInheritedQuery() {
+        ClientUri baseUri = ClientUri.create(URI.create("https://trusted.example/base?access_token=secret"));
+        FakeClientRequest request = new FakeClientRequest(baseUri)
+                .uri("https://{host}/path")
+                .pathParam("host", "other.example");
+
+        assertThrows(NullPointerException.class, () -> request.queryParam("access_token", (String) null));
+
+        ClientUri uri = request.resolvedUri();
+        assertThat(uri.authority(), is("other.example:443"));
+        assertThat(uri.query().contains("access_token"), is(false));
+    }
+
+    @Test
     void templateQueryResolutionIsRepeatableAndAliasSafe() {
         FakeClientRequest request = new FakeClientRequest()
                 .uri("https://www.example.com/{path}")
