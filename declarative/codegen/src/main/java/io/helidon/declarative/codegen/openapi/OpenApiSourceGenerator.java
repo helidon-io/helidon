@@ -16,8 +16,10 @@
 
 package io.helidon.declarative.codegen.openapi;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -270,11 +272,7 @@ final class OpenApiSourceGenerator {
                                     Method.Builder method) {
         String endpointTag = endpointName(endpoint.type().typeName());
         Map<TypeName, String> componentNames = schemas.componentNames(schemaBindings);
-        Set<Annotation> endpointAnnotations = new HashSet<>();
-        for (Annotation annotation : endpoint.type().annotations()) {
-            endpointAnnotations.add(annotation);
-            endpointAnnotations.addAll(annotation.metaAnnotations());
-        }
+        Set<Annotation> endpointAnnotations = annotationsWithMetaAnnotations(endpoint.type().annotations());
         if (!hasSecurityRequirementAnnotations(endpointAnnotations)) {
             endpointAnnotations = endpoint.annotations();
         }
@@ -676,11 +674,23 @@ final class OpenApiSourceGenerator {
     }
 
     private Set<Annotation> operationSecurityAnnotations(RestMethod restMethod) {
-        Set<Annotation> directAnnotations = new HashSet<>(restMethod.method().annotations());
+        Set<Annotation> directAnnotations = annotationsWithMetaAnnotations(restMethod.method().annotations());
         if (hasSecurityRequirementAnnotations(directAnnotations)) {
             return directAnnotations;
         }
         return restMethod.annotations();
+    }
+
+    private Set<Annotation> annotationsWithMetaAnnotations(Collection<Annotation> annotations) {
+        Set<Annotation> result = new HashSet<>();
+        Deque<Annotation> remaining = new ArrayDeque<>(annotations);
+        while (!remaining.isEmpty()) {
+            Annotation annotation = remaining.removeFirst();
+            if (result.add(annotation)) {
+                remaining.addAll(annotation.metaAnnotations());
+            }
+        }
+        return result;
     }
 
     private boolean hasSecurityRequirementAnnotations(Set<Annotation> annotations) {

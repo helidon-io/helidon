@@ -54,6 +54,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class OpenApiDuplicateValuesCodegenTest {
@@ -1113,6 +1114,84 @@ class OpenApiDuplicateValuesCodegenTest {
         String generated = generatedSource(result);
         assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
         assertThat(generated.contains(".scheme(\"oauth2\", java.util.List.of())"), is(false));
+    }
+
+    @Test
+    void composedMethodSecurityRequirementOverridesInheritedRequirements() throws IOException {
+        var result = compile("openapi-composed-method-security-requirement-overrides-inherited-requirements", """
+                interface SecuredApi {
+                    @Http.GET
+                    @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("contractOne"))
+                    @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("contractTwo"))
+                    String get();
+                }
+
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @interface BearerAuth {
+                }
+
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint implements SecuredApi {
+                    @Override
+                    @BearerAuth
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated, not(containsString(".scheme(\"contractOne\", java.util.List.of())")));
+        assertThat(generated, not(containsString(".scheme(\"contractTwo\", java.util.List.of())")));
+    }
+
+    @Test
+    void recursivelyComposedMethodSecurityRequirementOverridesInheritedRequirements() throws IOException {
+        var result = compile("openapi-recursively-composed-method-security-requirement-overrides-inherited-requirements", """
+                interface SecuredApi {
+                    @Http.GET
+                    @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("contractOne"))
+                    @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("contractTwo"))
+                    String get();
+                }
+
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @interface BearerAuth {
+                }
+
+                @BearerAuth
+                @interface CorporateAuth {
+                }
+
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint implements SecuredApi {
+                    @Override
+                    @CorporateAuth
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated, not(containsString(".scheme(\"contractOne\", java.util.List.of())")));
+        assertThat(generated, not(containsString(".scheme(\"contractTwo\", java.util.List.of())")));
     }
 
     @Test
