@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.http;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import java.util.regex.Pattern;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriPathSegment;
 
 /**
  * Utility methods to create path matchers.
@@ -571,6 +573,11 @@ public final class PathMatchers {
         @Override
         public String path() {
             return path.path();
+        }
+
+        @Override
+        public List<UriPathSegment> segments() {
+            return path.segments();
         }
 
         @Override

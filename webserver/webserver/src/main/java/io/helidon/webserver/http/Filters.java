@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriPathSegment;
 import io.helidon.http.HttpException;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.Status;
@@ -186,6 +187,11 @@ public final class Filters implements ServerLifecycle {
         @Override
         public Parameters matrixParameters() {
             return uriPath.matrixParameters();
+        }
+
+        @Override
+        public List<UriPathSegment> segments() {
+            return uriPath.segments();
         }
 
         @Override

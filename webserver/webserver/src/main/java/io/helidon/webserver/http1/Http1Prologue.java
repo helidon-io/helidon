@@ -17,9 +17,16 @@
 package io.helidon.webserver.http1;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.parameters.Parameters;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriPathSegment;
+import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -231,6 +238,50 @@ public final class Http1Prologue {
         }
 
         try {
+            if (Method.CONNECT.equals(method)) {
+                int portSeparator;
+                if (path.charAt(0) == '[') {
+                    int closingBracket = path.indexOf(']');
+                    if (closingBracket == -1) {
+                        throw new IllegalArgumentException("CONNECT authority is missing a closing bracket");
+                    }
+                    UriValidator.validateIpLiteral(path.substring(0, closingBracket + 1));
+                    portSeparator = closingBracket + 1;
+                    if (portSeparator == path.length() || path.charAt(portSeparator) != ':') {
+                        throw new IllegalArgumentException("CONNECT authority must include a port");
+                    }
+                } else {
+                    portSeparator = path.lastIndexOf(':');
+                    if (portSeparator <= 0 || path.indexOf(':') != portSeparator) {
+                        throw new IllegalArgumentException("CONNECT authority must contain a host and port");
+                    }
+
+                    String host = path.substring(0, portSeparator);
+                    UriValidator.validateNonIpLiteral(host);
+                }
+
+                if (portSeparator == path.length() - 1) {
+                    throw new IllegalArgumentException("CONNECT authority port cannot be blank");
+                }
+                int port = 0;
+                for (int i = portSeparator + 1; i < path.length(); i++) {
+                    char c = path.charAt(i);
+                    if (c < '0' || c > '9') {
+                        throw new IllegalArgumentException("CONNECT authority port must contain only digits");
+                    }
+                    port = port * 10 + c - '0';
+                    if (port > 65535) {
+                        throw new IllegalArgumentException("CONNECT authority port must be between 0 and 65535");
+                    }
+                }
+                return HttpPrologue.create(protocol,
+                                           "HTTP",
+                                           "1.1",
+                                           method,
+                                           new AuthorityFormPath(path),
+                                           UriQuery.empty(),
+                                           UriFragment.empty());
+            }
             return HttpPrologue.create(protocol,
                                        "HTTP",
                                        "1.1",
@@ -259,5 +310,43 @@ public final class Http1Prologue {
         }
 
         return new String(bytes, StandardCharsets.US_ASCII);
+    }
+
+    private record AuthorityFormPath(String rawPath) implements UriPath {
+        private static final Parameters EMPTY_PARAMETERS = Parameters.empty("uri/authority");
+
+        @Override
+        public String rawPathNoParams() {
+            return rawPath;
+        }
+
+        @Override
+        public String path() {
+            return "";
+        }
+
+        @Override
+        public Parameters matrixParameters() {
+            return EMPTY_PARAMETERS;
+        }
+
+        @Override
+        public UriPath absolute() {
+            return this;
+        }
+
+        @Override
+        public List<UriPathSegment> segments() {
+            return List.of();
+        }
+
+        @Override
+        public void validate() {
+        }
+
+        @Override
+        public String toString() {
+            return rawPath;
+        }
     }
 }
