@@ -17,7 +17,9 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon</groupId>
@@ -27,15 +29,7 @@
     <artifactId>helidon-javadocs</artifactId>
     <name>Helidon Javadocs</name>
 
-    <properties>
-        <helidon.services.skip>true</helidon.services.skip>
-        <maven.source.skip>true</maven.source.skip>
-        <version.lib.jbatch-api>2.1.0</version.lib.jbatch-api>
-        <version.lib.jbatch.container>2.1.0</version.lib.jbatch.container>
-    </properties>
-
     <dependencies>
-        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>io.helidon</groupId>
             <artifactId>helidon-all</artifactId>
@@ -43,71 +37,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config.metadata</groupId>
-            <artifactId>helidon-config-metadata-docs</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-        </dependency>
-        <!-- snippets dependencies -->
-        <!--suppress VulnerableLibrariesLocal -->
-        <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-client</artifactId>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-objectstorage</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.batch</groupId>
-            <artifactId>jakarta.batch-api</artifactId>
-            <version>${version.lib.jbatch-api}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.ibm.jbatch</groupId>
-            <artifactId>com.ibm.jbatch.spi</artifactId>
-            <version>${version.lib.jbatch.container}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.lra</groupId>
-            <artifactId>helidon-microprofile-lra-testing</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing-junit5</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing-testng</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
             <optional>true</optional>
         </dependency>
     </dependencies>
@@ -115,26 +46,10 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>helidon-javadoc-maven-plugin</artifactId>
                 <configuration>
-                    <outputDirectory>${project.build.directory}/site/apidocs</outputDirectory>
+                    <outputDirectory>${project.build.directory}/classes</outputDirectory>
                     <source>${version.java}</source>
                     <doclint>all</doclint>
                     <quiet>true</quiet>
@@ -162,6 +77,11 @@
                         <exclude>*__*.java</exclude>
                         <exclude>*_.java</exclude>
                     </fileExcludes>
+                    <pomScanningExcludes>
+                        <exclude>.*/**</exclude>
+                        <exclude>**/target/**</exclude>
+                        <exclude>**/src/**</exclude>
+                    </pomScanningExcludes>
                     <moduleIncludes>
                         <include>io.helidon*</include>
                         <!-- See https://github.com/helidon-io/helidon/issues/8163 -->
@@ -317,43 +237,121 @@
                         </offlineLink>
                     </offlineLinks>
                 </configuration>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- lifecycle cleanups -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-resources</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>default-testResources</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-services-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-meta-inf-services</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
 
     <profiles>
         <profile>
-            <id>javadoc</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>io.helidon.build-tools</groupId>
-                        <artifactId>helidon-javadoc-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>javadoc</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>release</id>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>io.helidon.build-tools</groupId>
-                        <artifactId>helidon-javadoc-maven-plugin</artifactId>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
                         <executions>
                             <execution>
-                                <phase>generate-resources</phase>
+                                <id>empty-sources-jar</id>
+                                <phase>package</phase>
                                 <goals>
-                                    <goal>javadoc</goal>
+                                    <goal>jar</goal>
                                 </goals>
+                                <configuration>
+                                    <classifier>sources</classifier>
+                                    <includes>
+                                        <include>META-INF/**</include>
+                                    </includes>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>empty-javadoc-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>javadoc</classifier>
+                                    <includes>
+                                        <include>META-INF/**</include>
+                                    </includes>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
