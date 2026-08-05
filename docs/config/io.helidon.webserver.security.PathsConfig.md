@@ -66,7 +66,7 @@ Configuration of a single path security setup
 <code>methods</code>
 </td>
 <td>
-<code>List&lt;<wbr>Path<wbr>Config<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>HTTP methods to match when applying this configured path</td>
 </tr>

@@ -39,6 +39,10 @@ Settings for log limits
 
 
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md#log-limits"><code>telemetry.<wbr>signals.<wbr>logging.<wbr>log-<wbr>limits</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

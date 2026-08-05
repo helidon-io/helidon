@@ -75,6 +75,10 @@ Tracing span limits settings
 
 
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md#span-limits"><code>telemetry.<wbr>signals.<wbr>tracing.<wbr>span-<wbr>limits</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

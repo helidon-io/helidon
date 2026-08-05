@@ -78,6 +78,10 @@ Settings for OpenTelemetry instrument selectors
 
 
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.ViewRegistrationConfig.md#instrument-selector"><code>telemetry.<wbr>signals.<wbr>metrics.<wbr>views.<wbr>instrument-<wbr>selector</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

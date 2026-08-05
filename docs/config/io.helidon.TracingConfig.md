@@ -222,7 +222,7 @@ Merged configuration for tracing
 <code>propagators</code>
 </td>
 <td>
-<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>Text<wbr>MapPropagator&gt;</code>
 </td>
 <td>
 </td>

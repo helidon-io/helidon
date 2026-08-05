@@ -33,7 +33,7 @@ Configuration of a JSON-RPC client
 <code>base-<wbr>uri</code>
 </td>
 <td>
-<code>Http<wbr>Custom<wbr>Methods</code>
+<code>Client<wbr>Uri</code>
 </td>
 <td>
 </td>
@@ -85,7 +85,7 @@ Configuration of a JSON-RPC client
 <code>base-<wbr>address</code>
 </td>
 <td>
-<code>Http<wbr>Custom<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 </td>
@@ -264,7 +264,7 @@ Configuration of a JSON-RPC client
 <code>redirect-<wbr>sensitive-<wbr>headers</code>
 </td>
 <td>
-<code>List&lt;<wbr>Http<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>Header<wbr>Name&gt;</code>
 </td>
 <td>
 </td>

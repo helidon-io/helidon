@@ -57,6 +57,12 @@ Abstraction of typed attributes settable on OpenTelemetry elements
 
 
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md#attributes"><code>telemetry.<wbr>signals.<wbr>logging.<wbr>attributes</code></a>
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md#attributes"><code>telemetry.<wbr>signals.<wbr>metrics.<wbr>attributes</code></a>
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md#attributes"><code>telemetry.<wbr>signals.<wbr>tracing.<wbr>attributes</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

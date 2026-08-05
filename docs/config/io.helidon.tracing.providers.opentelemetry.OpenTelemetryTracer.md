@@ -83,10 +83,13 @@ Settings for OpenTelemetry tracer configuration under the <code>Open<wbr>Telemet
 </tr>
 <tr>
 <td>
+<a id="sampler-type"></a>
+<a href="io.helidon.tracing.SamplerType.md">
 <code>sampler-<wbr>type</code>
+</a>
 </td>
 <td>
-<code>Extended<wbr>Tracer<wbr>Config<wbr>Blueprint<wbr>Support</code>
+<code>Sampler<wbr>Type</code>
 </td>
 <td>
 <code>CONSTANT</code>
@@ -125,7 +128,7 @@ Settings for OpenTelemetry tracer configuration under the <code>Open<wbr>Telemet
 <code>propagators</code>
 </td>
 <td>
-<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>Text<wbr>MapPropagator&gt;</code>
 </td>
 <td>
 </td>

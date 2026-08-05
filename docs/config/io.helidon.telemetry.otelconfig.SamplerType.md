@@ -41,6 +41,10 @@ This type is an enumeration.
 </tbody>
 </table>
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.SamplerConfig.md#type"><code>telemetry.<wbr>signals.<wbr>tracing.<wbr>sampler.<wbr>type</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

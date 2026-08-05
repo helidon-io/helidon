@@ -83,10 +83,13 @@ Common settings for tracers including settings for span processors and secure cl
 </tr>
 <tr>
 <td>
+<a id="sampler-type"></a>
+<a href="io.helidon.tracing.SamplerType.md">
 <code>sampler-<wbr>type</code>
+</a>
 </td>
 <td>
-<code>Extended<wbr>Tracer<wbr>Config<wbr>Blueprint<wbr>Support</code>
+<code>Sampler<wbr>Type</code>
 </td>
 <td>
 <code>CONSTANT</code>

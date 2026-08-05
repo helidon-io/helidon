@@ -158,7 +158,7 @@ Configuration for LangChain4j model OciGenAiStreamingChatModel
 <code>serving-<wbr>type</code>
 </td>
 <td>
-<code>Oci<wbr>Factory<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 </td>
@@ -281,7 +281,7 @@ Configuration for LangChain4j model OciGenAiStreamingChatModel
 <code>region</code>
 </td>
 <td>
-<code>Oci<wbr>Factory<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 </td>

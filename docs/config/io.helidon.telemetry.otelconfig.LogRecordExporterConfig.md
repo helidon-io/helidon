@@ -123,7 +123,7 @@ Settings for a log record exporter
 <code>protocol</code>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 <code>DEFAULT</code>
@@ -174,10 +174,13 @@ Settings for a log record exporter
 </tr>
 <tr>
 <td>
+<a id="retry-policy"></a>
+<a href="io.helidon.telemetry.otelconfig.RetryPolicyConfig.md">
 <code>retry-<wbr>policy</code>
+</a>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>Retry<wbr>Policy<wbr>Config</code>
 </td>
 <td>
 </td>

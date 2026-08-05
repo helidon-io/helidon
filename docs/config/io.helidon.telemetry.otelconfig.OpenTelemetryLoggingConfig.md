@@ -27,10 +27,13 @@ Configuration settings for OpenTelemetry logging
 </tr>
 <tr>
 <td>
+<a id="attributes"></a>
+<a href="io.helidon.telemetry.otelconfig.TypedAttributes.md">
 <code>attributes</code>
+</a>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>Typed<wbr>Attributes</code>
 </td>
 <td>Name/value pairs passed to OpenTelemetry</td>
 </tr>
@@ -48,10 +51,13 @@ Configuration settings for OpenTelemetry logging
 </tr>
 <tr>
 <td>
+<a id="processors"></a>
+<a href="io.helidon.telemetry.otelconfig.ProcessorConfig.md">
 <code>processors</code>
+</a>
 </td>
 <td>
-<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>Processor<wbr>Config&gt;</code>
 </td>
 <td>Settings for logging processors</td>
 </tr>
@@ -66,10 +72,13 @@ Configuration settings for OpenTelemetry logging
 </tr>
 <tr>
 <td>
+<a id="log-limits"></a>
+<a href="io.helidon.telemetry.otelconfig.LogLimitsConfig.md">
 <code>log-<wbr>limits</code>
+</a>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>Log<wbr>Limits<wbr>Config</code>
 </td>
 <td>Log limits to apply to log transmission</td>
 </tr>
@@ -78,7 +87,7 @@ Configuration settings for OpenTelemetry logging
 <code>exporters</code>
 </td>
 <td>
-<code>Map&lt;<wbr>String,<wbr> Custom<wbr>Methods&gt;</code>
+<code>Map&lt;<wbr>String,<wbr> Log<wbr>Record<wbr>Exporter&gt;</code>
 </td>
 <td>Log record exporters</td>
 </tr>

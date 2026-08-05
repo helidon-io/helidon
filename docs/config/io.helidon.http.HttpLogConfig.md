@@ -45,7 +45,7 @@ Configuration of logging of the HTTP layer
 <code>log-<wbr>safe-<wbr>headers</code>
 </td>
 <td>
-<code>List&lt;<wbr>Http<wbr>Config<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>Header<wbr>Name&gt;</code>
 </td>
 <td>
 </td>

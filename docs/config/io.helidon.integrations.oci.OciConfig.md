@@ -115,7 +115,7 @@ Meta configuration of OCI integration for Helidon
 <code>region</code>
 </td>
 <td>
-<code>Oci<wbr>Config<wbr>Support</code>
+<code>String</code>
 </td>
 <td>
 </td>

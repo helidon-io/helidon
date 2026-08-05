@@ -21,7 +21,7 @@ Configuration for Helidon JSON Binding media support
 <code>accepted-<wbr>media-<wbr>types</code>
 </td>
 <td>
-<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Types accepted by this media support</td>
 </tr>
@@ -39,7 +39,7 @@ Configuration for Helidon JSON Binding media support
 <code>content-<wbr>type</code>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>Content type to use if not configured (in response headers for server, and in request headers for client)</td>
 </tr>

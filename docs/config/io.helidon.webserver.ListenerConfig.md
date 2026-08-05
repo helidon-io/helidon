@@ -174,7 +174,7 @@ Configuration of a server listener (server socket)
 <code>bind-<wbr>address</code>
 </td>
 <td>
-<code>Listener<wbr>Custom<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 </td>
