@@ -23,7 +23,7 @@ module io.helidon.metrics.api {
     requires transitive io.helidon.config;
 
     requires io.helidon.builder.api;
-    requires io.helidon.service.registry;
+    requires transitive io.helidon.service.registry;
     requires static io.helidon.config.metadata;
     requires io.helidon.common;
 
