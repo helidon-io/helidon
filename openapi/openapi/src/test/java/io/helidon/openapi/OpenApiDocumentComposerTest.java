@@ -728,6 +728,7 @@ class OpenApiDocumentComposerTest {
         OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
                                                     RawOpenApiVersion.OPEN_API_32);
         JsonObject literalDiscriminator = JsonObject.builder()
+                .set("$ref", "#/components/schemas/Item")
                 .setValues("oneOf",
                            List.of(JsonObject.builder()
                                            .set("$ref", "#/components/schemas/Item")
@@ -801,6 +802,7 @@ class OpenApiDocumentComposerTest {
                                                      .set("defaultMapping", "#/components/schemas/Item")
                                                      .build())
                                         .set("example", literalDiscriminator)
+                                        .set("default", literalDiscriminator)
                                         .set("x-payload", literalDiscriminator)
                                         .build()))
                 .path("/second",
@@ -829,6 +831,7 @@ class OpenApiDocumentComposerTest {
         Map<String, Object> mapping = map(map(envelope, "discriminator"), "mapping");
         Map<String, Object> properties = map(envelope, "properties");
         Map<String, Object> example = map(envelope, "example");
+        Map<String, Object> defaultValue = map(envelope, "default");
         Map<String, Object> extension = map(envelope, "x-payload");
 
         assertThat(map(schemas, "Item").get("type"), is("string"));
@@ -843,8 +846,11 @@ class OpenApiDocumentComposerTest {
                    is("https://example.com/schemas/Item"));
         assertThat(map(map(example, "discriminator"), "mapping").get("literal"), is("Item"));
         assertThat(map(example, "discriminator").get("defaultMapping"), is("Item"));
+        assertThat(example.get("$ref"), is("#/components/schemas/Item"));
+        assertThat(defaultValue.get("$ref"), is("#/components/schemas/Item"));
         assertThat(map(map(extension, "discriminator"), "mapping").get("literal"), is("Item"));
         assertThat(map(extension, "discriminator").get("defaultMapping"), is("Item"));
+        assertThat(extension.get("$ref"), is("#/components/schemas/Item"));
         assertThat(map(content, "schema").get("$ref"), is("#/components/schemas/Envelope"));
     }
 
@@ -865,6 +871,7 @@ class OpenApiDocumentComposerTest {
                              .build())
                 .build();
         JsonObject literalDataValue = JsonObject.builder()
+                .set("$ref", "#/components/schemas/Item")
                 .set("schema",
                      JsonObject.builder()
                              .set("discriminator",
@@ -913,6 +920,7 @@ class OpenApiDocumentComposerTest {
                    is("#/components/schemas/Item2"));
         assertThat(map(discriminator, "mapping").get("second"), is("Item2"));
         assertThat(discriminator.get("defaultMapping"), is("#/components/schemas/Item2"));
+        assertThat(dataValue.get("$ref"), is("#/components/schemas/Item"));
         assertThat(map(literalDiscriminator, "mapping").get("literal"), is("Item"));
         assertThat(literalDiscriminator.get("defaultMapping"), is("Item"));
     }

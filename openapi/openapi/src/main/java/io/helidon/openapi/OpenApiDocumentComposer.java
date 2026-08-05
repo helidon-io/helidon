@@ -215,34 +215,20 @@ final class OpenApiDocumentComposer {
         if (schemaNames.isEmpty()) {
             return;
         }
-        rewriteLocalSchemaRefs(value, schemaNames);
         if (value instanceof Map<?, ?> map) {
             schemas((Map<String, Object>) map).values()
-                    .forEach(schema -> rewriteSchemaDiscriminatorRefs(schema, schemaNames));
+                    .forEach(schema -> rewriteSchemaValueRefs(schema, schemaNames));
         }
-        rewriteInlineSchemaDiscriminatorRefs(value, schemaNames, InlineSchemaContext.OPEN_API_OBJECT);
+        rewriteOpenApiSchemaRefs(value, schemaNames, InlineSchemaContext.OPEN_API_OBJECT);
     }
 
-    @SuppressWarnings("unchecked")
-    private static void rewriteLocalSchemaRefs(Object value, Map<String, String> schemaNames) {
-        if (value instanceof Map<?, ?> map) {
-            Object ref = map.get("$ref");
-            if (ref instanceof String refValue && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
-                ((Map<String, Object>) map).put("$ref", rewriteSchemaRef(refValue, schemaNames));
-            }
-            map.values().forEach(it -> rewriteLocalSchemaRefs(it, schemaNames));
-        } else if (value instanceof List<?> list) {
-            list.forEach(it -> rewriteLocalSchemaRefs(it, schemaNames));
-        }
-    }
-
-    private static void rewriteInlineSchemaDiscriminatorRefs(Object value,
-                                                             Map<String, String> schemaNames,
-                                                             InlineSchemaContext context) {
+    private static void rewriteOpenApiSchemaRefs(Object value,
+                                                 Map<String, String> schemaNames,
+                                                 InlineSchemaContext context) {
         if (value instanceof Map<?, ?> map) {
             switch (context) {
             case NAMED_OPEN_API_OBJECTS:
-                map.values().forEach(item -> rewriteInlineSchemaDiscriminatorRefs(
+                map.values().forEach(item -> rewriteOpenApiSchemaRefs(
                         item,
                         schemaNames,
                         InlineSchemaContext.OPEN_API_OBJECT));
@@ -250,20 +236,20 @@ final class OpenApiDocumentComposer {
             case EXTENSIBLE_NAMED_OPEN_API_OBJECTS:
                 map.forEach((key, item) -> {
                     if (key instanceof String field && !field.startsWith("x-")) {
-                        rewriteInlineSchemaDiscriminatorRefs(item,
-                                                             schemaNames,
-                                                             InlineSchemaContext.OPEN_API_OBJECT);
+                        rewriteOpenApiSchemaRefs(item,
+                                                 schemaNames,
+                                                 InlineSchemaContext.OPEN_API_OBJECT);
                     }
                 });
                 return;
             case CALLBACKS:
-                map.values().forEach(item -> rewriteInlineSchemaDiscriminatorRefs(
+                map.values().forEach(item -> rewriteOpenApiSchemaRefs(
                         item,
                         schemaNames,
                         InlineSchemaContext.EXTENSIBLE_NAMED_OPEN_API_OBJECTS));
                 return;
             case LINKS:
-                map.values().forEach(item -> rewriteInlineSchemaDiscriminatorRefs(
+                map.values().forEach(item -> rewriteOpenApiSchemaRefs(
                         item,
                         schemaNames,
                         InlineSchemaContext.LINK_OBJECT));
@@ -278,7 +264,7 @@ final class OpenApiDocumentComposer {
                     case "links" -> InlineSchemaContext.LINKS;
                     default -> InlineSchemaContext.NAMED_OPEN_API_OBJECTS;
                     };
-                    rewriteInlineSchemaDiscriminatorRefs(item, schemaNames, childContext);
+                    rewriteOpenApiSchemaRefs(item, schemaNames, childContext);
                 });
                 return;
             case OPEN_API_OBJECT, LINK_OBJECT:
@@ -297,7 +283,7 @@ final class OpenApiDocumentComposer {
                     return;
                 }
                 if ("schema".equals(field) || "itemSchema".equals(field)) {
-                    rewriteSchemaDiscriminatorRefs(item, schemaNames);
+                    rewriteSchemaValueRefs(item, schemaNames);
                 } else {
                     InlineSchemaContext childContext = switch (field) {
                     case "components" -> InlineSchemaContext.COMPONENTS;
@@ -308,11 +294,11 @@ final class OpenApiDocumentComposer {
                             InlineSchemaContext.NAMED_OPEN_API_OBJECTS;
                     default -> InlineSchemaContext.OPEN_API_OBJECT;
                     };
-                    rewriteInlineSchemaDiscriminatorRefs(item, schemaNames, childContext);
+                    rewriteOpenApiSchemaRefs(item, schemaNames, childContext);
                 }
             });
         } else if (value instanceof List<?> list) {
-            list.forEach(it -> rewriteInlineSchemaDiscriminatorRefs(
+            list.forEach(it -> rewriteOpenApiSchemaRefs(
                     it,
                     schemaNames,
                     InlineSchemaContext.OPEN_API_OBJECT));
@@ -320,8 +306,12 @@ final class OpenApiDocumentComposer {
     }
 
     @SuppressWarnings("unchecked")
-    private static void rewriteSchemaDiscriminatorRefs(Object value, Map<String, String> schemaNames) {
+    private static void rewriteSchemaValueRefs(Object value, Map<String, String> schemaNames) {
         if (value instanceof Map<?, ?> map) {
+            Object ref = map.get("$ref");
+            if (ref instanceof String refValue && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
+                ((Map<String, Object>) map).put("$ref", rewriteSchemaRef(refValue, schemaNames));
+            }
             Object discriminator = map.get("discriminator");
             if (discriminator instanceof Map<?, ?> discriminatorMap) {
                 Object mapping = discriminatorMap.get("mapping");
@@ -344,13 +334,13 @@ final class OpenApiDocumentComposer {
                     return;
                 }
                 if (SCHEMA_VALUE_FIELDS.contains(field)) {
-                    rewriteSchemaDiscriminatorRefs(item, schemaNames);
+                    rewriteSchemaValueRefs(item, schemaNames);
                 } else if (SCHEMA_MAP_FIELDS.contains(field) && item instanceof Map<?, ?> schemaMap) {
-                    schemaMap.values().forEach(schema -> rewriteSchemaDiscriminatorRefs(schema, schemaNames));
+                    schemaMap.values().forEach(schema -> rewriteSchemaValueRefs(schema, schemaNames));
                 }
             });
         } else if (value instanceof List<?> list) {
-            list.forEach(it -> rewriteSchemaDiscriminatorRefs(it, schemaNames));
+            list.forEach(it -> rewriteSchemaValueRefs(it, schemaNames));
         }
     }
 
