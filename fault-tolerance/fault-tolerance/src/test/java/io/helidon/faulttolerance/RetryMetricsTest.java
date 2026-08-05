@@ -33,6 +33,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Testing.Test
 class RetryMetricsTest {
+    @BeforeAll
+    static void activateConfig() {
+        MetricsTestSupport.activateConfig();
+    }
 
     @BeforeAll
     static void setupTest() {

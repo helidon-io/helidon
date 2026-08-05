@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -112,5 +113,22 @@ class TestScopes {
             int nextId = supply.get().id();
             assertThat("We should get a different custom scope than last time", nextId, not(id));
         }
+    }
+
+    @Test
+    void firstActiveDoesNotActivateCustomScopeHandler() {
+        assertThat(registry.firstActive(CustomScopedContract.class).isEmpty(), is(true));
+        assertThat(registry.firstActive(CustomScopeHandler.class).isEmpty(), is(true));
+
+        Scopes scopes = registry.get(Scopes.class);
+        try (Scope ignored = scopes.createScope(CustomScope.TYPE, "active-lookup", CUSTOM_BINDINGS)) {
+            assertThat(registry.firstActive(CustomScopedContract.class).isEmpty(), is(true));
+            assertThat(registry.firstActive(CustomScopeHandler.class).isPresent(), is(true));
+
+            CustomScopedContract service = registry.get(CustomScopedContract.class);
+            assertThat(registry.firstActive(CustomScopedContract.class).orElseThrow(), sameInstance(service));
+        }
+
+        assertThat(registry.firstActive(CustomScopedContract.class).isEmpty(), is(true));
     }
 }

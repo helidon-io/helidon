@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
@@ -61,7 +62,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
             Object value = entry.getValue();
             Activator<?> fixedService;
 
-            fixedService = Activators.create(provider, value);
+            fixedService = Activators.createActive(provider, value);
 
             activators.put(key, fixedService);
         }
@@ -150,6 +151,17 @@ class ScopedRegistryImpl implements ScopedRegistry {
                                                              desc -> activatorSupplier.get());
         } finally {
             serviceProvidersLock.writeLock().unlock();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> Optional<Activator<T>> existingActivator(ServiceInfo descriptor) {
+        try {
+            serviceProvidersLock.readLock().lock();
+            checkActive();
+            return Optional.ofNullable((Activator<T>) activators.get(descriptor));
+        } finally {
+            serviceProvidersLock.readLock().unlock();
         }
     }
 

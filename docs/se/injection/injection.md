@@ -1124,6 +1124,8 @@ registry to trigger its initialization.
 
 Registry methods:
 
+- `Optional<T> firstActive(...)` - get an already active instance of a contract from the registry, if one is available
+
 - `T get(...)` - immediately get an instance of a contract from the registry;
   throws if implementation not available
 - `Optional<T> first(...)` - immediately get an instance of a contract from the

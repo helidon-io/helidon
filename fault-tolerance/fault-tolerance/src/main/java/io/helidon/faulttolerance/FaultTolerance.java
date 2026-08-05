@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
-import io.helidon.service.registry.Services;
+import io.helidon.service.registry.GlobalServiceRegistry;
 
 import static java.lang.System.Logger.Level.ERROR;
 
@@ -173,7 +173,12 @@ public final class FaultTolerance {
     static Config config() {
         var config = CONFIG.get();
         if (config == null) {
-            return Services.get(Config.class);
+            if (!GlobalServiceRegistry.configured()) {
+                return Config.empty();
+            }
+            return GlobalServiceRegistry.registry()
+                    .firstActive(Config.class)
+                    .orElseGet(Config::empty);
         }
         return config;
     }
