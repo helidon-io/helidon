@@ -51,7 +51,7 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     private NoOpMetricsFactory(MetricsConfig metricsConfig) {
         this.metricsConfig = metricsConfig;
-         this.meterRegistry = new NoOpMeterRegistry(this);
+        this.meterRegistry = new NoOpMeterRegistry(this);
     }
 
     static NoOpMetricsFactory create(MetricsConfig metricsConfig) {
