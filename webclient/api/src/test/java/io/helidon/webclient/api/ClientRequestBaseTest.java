@@ -138,6 +138,40 @@ class ClientRequestBaseTest {
     }
 
     @Test
+    void replacingRelativeTemplateRestoresBaseQuery() {
+        ClientUri baseUri = ClientUri.create(URI.create("https://www.example.com/base?k=base&unrelated=value"));
+        ClientUri uri = new FakeClientRequest(baseUri)
+                .uri("first/{path}")
+                .pathParam("path", "p")
+                .queryParam("k", "old")
+                .queryParam("old", "value")
+                .uri("second/{replacement}")
+                .pathParam("replacement", "p")
+                .queryParam("new", "value")
+                .resolvedUri();
+
+        assertThat(uri.query().all("k"), is(List.of("base")));
+        assertThat(uri.query().all("unrelated"), is(List.of("value")));
+        assertThat(uri.query().contains("old"), is(false));
+        assertThat(uri.query().all("new"), is(List.of("value")));
+    }
+
+    @Test
+    void replacingRelativeTemplateRestoresEncodedBaseQueryName() {
+        ClientUri baseUri = ClientUri.create(URI.create("https://www.example.com/base?%61=base"));
+        ClientUri uri = new FakeClientRequest(baseUri)
+                .uri("first/{path}")
+                .pathParam("path", "p")
+                .queryParam("a", "old")
+                .uri("second/{replacement}")
+                .pathParam("replacement", "p")
+                .resolvedUri();
+
+        assertThat(uri.query().all("a"), is(List.of("base")));
+        assertThat(uri.query().rawValue(), is("%61=base"));
+    }
+
+    @Test
     void inheritedQueryIsNotCopiedToAnotherAuthority() {
         ClientUri baseUri = ClientUri.create(URI.create("https://trusted.example/base?access_token=secret"));
         ClientUri uri = new FakeClientRequest(baseUri)

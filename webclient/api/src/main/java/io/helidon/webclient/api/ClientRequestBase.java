@@ -91,6 +91,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private SocketAddress socketAddress;
     private String uriTemplate;
     private Set<String> uriTemplateQueryParamNames;
+    private UriQueryWriteable uriTemplateQuerySnapshot;
     private boolean crossOriginRedirect;
     private boolean skipUriEncoding;
     private boolean followRedirects;
@@ -195,6 +196,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     public T uri(URI uri) {
         this.uriTemplate = null;
         this.uriTemplateQueryParamNames = null;
+        this.uriTemplateQuerySnapshot = null;
         this.clientUri.resolve(uri);
         return identity();
     }
@@ -219,6 +221,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     public T uri(ClientUri uri) {
         this.uriTemplate = null;
         this.uriTemplateQueryParamNames = null;
+        this.uriTemplateQuerySnapshot = null;
         this.clientUri.resolve(uri);
         return identity();
     }
@@ -232,8 +235,13 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T uri(String uri) {
         if (uri.indexOf('{') > -1) {
+            if (this.uriTemplate != null && uriTemplateQuerySnapshot != null) {
+                this.clientUri.writeableQuery().clear();
+                this.clientUri.writeableQuery().from(uriTemplateQuerySnapshot);
+            }
             this.uriTemplate = uri;
             this.uriTemplateQueryParamNames = null;
+            this.uriTemplateQuerySnapshot = null;
         } else {
             uri(URI.create(UriEncoding.encodeUri(uri)));
         }
@@ -287,13 +295,14 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T queryParam(String name, String... values) {
-        clientUri.writeableQuery().set(name, values);
         if (uriTemplate != null) {
             if (uriTemplateQueryParamNames == null) {
                 uriTemplateQueryParamNames = new HashSet<>();
+                uriTemplateQuerySnapshot = UriQueryWriteable.create().from(clientUri.query());
             }
             uriTemplateQueryParamNames.add(name);
         }
+        clientUri.writeableQuery().set(name, values);
         return identity();
     }
 
