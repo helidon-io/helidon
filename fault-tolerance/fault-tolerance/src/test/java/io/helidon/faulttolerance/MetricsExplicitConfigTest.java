@@ -21,7 +21,8 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
@@ -34,6 +35,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Testing.Test
 class MetricsExplicitConfigTest {
+    private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
+
+    MetricsExplicitConfigTest(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+        this.metricsFactory = metricsFactory;
+        this.meterRegistry = meterRegistry;
+    }
+
     @BeforeAll
     static void setupTest() {
         Services.set(Config.class,
@@ -48,7 +57,9 @@ class MetricsExplicitConfigTest {
 
         retry.invoke(() -> 0);
 
-        Counter callsCounter = MetricsUtils.counter(Retry.FT_RETRY_CALLS_TOTAL, Tag.create("name", retry.name()));
+        Counter callsCounter = MetricsUtils.counter(meterRegistry,
+                                                    Retry.FT_RETRY_CALLS_TOTAL,
+                                                    MetricsUtils.tag(metricsFactory, "name", retry.name()));
         assertThat(callsCounter.count(), is(1L));
     }
 }

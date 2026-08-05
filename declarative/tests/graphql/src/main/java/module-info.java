@@ -24,6 +24,8 @@ module io.helidon.declarative.tests.graphql {
     requires io.helidon.graphql.server;
     requires io.helidon.logging.common;
     requires io.helidon.metrics.api;
+    requires io.helidon.metrics.providers.micrometer;
+    requires io.helidon.metrics.systemmeters;
     requires io.helidon.security;
     requires io.helidon.security.abac.role;
     requires io.helidon.security.annotations;
@@ -38,6 +40,7 @@ module io.helidon.declarative.tests.graphql {
     requires io.helidon.webserver.context;
     requires io.helidon.webserver.graphql;
     requires io.helidon.webserver.observe;
+    requires io.helidon.webserver.observe.metrics;
     requires io.helidon.webserver.observe.tracing;
     requires io.helidon.webserver.security;
 
