@@ -439,14 +439,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     io.helidon.metrics.api.Meter getOrCreateUntyped(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
-
-        lock.readLock().lock();
-        try {
-            checkOpen();
-        } finally {
-            lock.readLock().unlock();
-        }
-
         // The Micrometer builders do not have a shared inherited declaration of the register method.
         // Each type of builder declares its own so we need to decide here which specific one to invoke.
         // That's so we can invoke the Micrometer builder's register method, which acts as
@@ -586,6 +578,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
         if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
+            lock.readLock().lock();
+            try {
+                checkOpen();
+            } finally {
+                lock.readLock().unlock();
+            }
             systemTagsManager.effectiveScope(builder.scope()).ifPresent(builder::scope);
             io.helidon.metrics.api.Meter result = metricsFactory.noOpMeter(builder);
             onAddListeners.forEach(listener -> listener.accept(result));
@@ -633,7 +631,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 .assignScope(realScope, builderTagSetter));
 
         io.helidon.metrics.api.Meter.Id id = mBuilder.id();
-        displayTagPairs().forEach(mBuilder::delegateTag);
 
         lock.readLock().lock();
 
@@ -662,6 +659,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 return previouslyRegisteredMeter;
             }
 
+            displayTagPairs().forEach(mBuilder::delegateTag);
             Map<io.helidon.metrics.api.Meter.Id, MMeter.Builder<?, ?, ?, ?>> pendingBuildersInScope =
                     buildersByPromMeterId.computeIfAbsent(effectiveScope.orElse(""),
                                                           k -> new HashMap<>());

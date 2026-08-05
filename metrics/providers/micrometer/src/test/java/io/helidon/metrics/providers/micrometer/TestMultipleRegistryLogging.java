@@ -446,6 +446,23 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
+    void testDisabledRegistryRejectsMetersAfterClose() {
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(), List.of());
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                                         .enabled(false)
+                                                                         .warnOnMultipleRegistries(false)
+                                                                         .build());
+        try {
+            meterRegistry.close();
+            assertThrows(IllegalStateException.class,
+                         () -> meterRegistry.getOrCreate(metricsFactory.counterBuilder("disabledAfterClose")),
+                         "Creating a disabled meter after registry close");
+        } finally {
+            metricsFactory.close();
+        }
+    }
+
+    @Test
     @Timeout(10)
     void testPublisherCloseCanReenterConcurrentFactoryClose() throws Exception {
         BlockingCloseMetersProvider metersProvider = new BlockingCloseMetersProvider();
