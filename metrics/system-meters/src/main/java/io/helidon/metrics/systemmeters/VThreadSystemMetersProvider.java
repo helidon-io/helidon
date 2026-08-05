@@ -278,16 +278,6 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     }
 
     // Visible for testing.
-    void registerShutdownHandler() {
-        Main.addShutdownHandler(this);
-    }
-
-    // Visible for testing.
-    void unregisterShutdownHandler() {
-        Main.removeShutdownHandler(this);
-    }
-
-    // Visible for testing.
     void startRecordingStream() {
 
         if (recordingStream != null) {
@@ -392,9 +382,9 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
 
                     try {
                         if (registrationRequired) {
-                            registerShutdownHandler();
+                            Main.addShutdownHandler(this);
                         } else {
-                            unregisterShutdownHandler();
+                            Main.removeShutdownHandler(this);
                         }
                     } catch (RuntimeException | Error e) {
                         boolean retry;
