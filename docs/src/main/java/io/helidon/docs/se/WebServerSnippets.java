@@ -476,8 +476,8 @@ class WebServerSnippets {
         // end::snippet_42[]
     }
 
-    void snippet_44() {
-        // tag::snippet_44[]
+    void snippet_45() {
+        // tag::snippet_45[]
         WebServer.builder()
                 .addBinding(TcpTransportConfig.builder()
                                     .enabled(false)
@@ -486,7 +486,7 @@ class WebServerSnippets {
                                     .socket(UnixDomainSocketAddress.of("/var/run/helidon.sock"))
                                     .required(true)
                                     .build());
-        // end::snippet_44[]
+        // end::snippet_45[]
     }
 
     void snippet_32() {
