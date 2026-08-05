@@ -218,7 +218,7 @@ class ClientRequestBaseTest {
     }
 
     @Test
-    void removedRequestQueryParamIsNoLongerTracked() {
+    void removedRequestQueryParamCanBeAddedAgain() {
         FakeClientRequest request = new FakeClientRequest()
                 .uri("https://www.example.com/{path}?access_token=template")
                 .pathParam("path", "p")
@@ -230,11 +230,11 @@ class ClientRequestBaseTest {
 
         request.uri().writeableQuery().set("access_token", "replacement");
 
-        assertThat(request.resolvedUri().query().all("access_token"), is(List.of("template")));
+        assertThat(request.resolvedUri().query().all("access_token"), is(List.of("replacement")));
     }
 
     @Test
-    void failedTemplateResolutionPrunesRemovedRequestQueryParam() {
+    void failedTemplateResolutionDoesNotChangeTrackedQueryParams() {
         FakeClientRequest request = new FakeClientRequest()
                 .uri("https://www.example.com/{path}?access_token=template")
                 .pathParam("path", "{invalid")
@@ -247,7 +247,7 @@ class ClientRequestBaseTest {
         request.uri().writeableQuery().set("access_token", "replacement");
         request.pathParam("path", "p");
 
-        assertThat(request.resolvedUri().query().all("access_token"), is(List.of("template")));
+        assertThat(request.resolvedUri().query().all("access_token"), is(List.of("replacement")));
     }
 
     private static final class FakeClientRequest extends ClientRequestBase<FakeClientRequest, HttpClientResponse> {

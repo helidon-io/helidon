@@ -598,9 +598,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             if (uriTemplateQueryParamNames != null) {
                 requestQueryParams = new HashMap<>();
                 Set<String> queryNames = clientUri.query().names();
-                uriTemplateQueryParamNames.retainAll(queryNames);
                 for (String name : uriTemplateQueryParamNames) {
-                    requestQueryParams.put(name, clientUri.query().all(name).toArray(String[]::new));
+                    if (queryNames.contains(name)) {
+                        requestQueryParams.put(name, clientUri.query().all(name).toArray(String[]::new));
+                    }
                 }
             }
             String resolved = resolvePathParams(uriTemplate);
