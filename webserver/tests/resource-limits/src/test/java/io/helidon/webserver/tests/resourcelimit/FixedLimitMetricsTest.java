@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.concurrency.limits.FixedLimit;
-import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
@@ -119,7 +118,7 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        Optional<Timer> rtt = timer(meterRegistry, Collections.emptyList());
+        Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", Collections.emptyList());
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));
     }
@@ -130,7 +129,7 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        Optional<Timer> rtt = timer(meterRegistry, List.of(adminSocketTag));
+        Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", List.of(adminSocketTag));
         assertThat(rtt.isPresent(), is(true));
 
         try (HttpClientResponse res = webClient.get("/observe/metrics").request()) {
@@ -139,23 +138,7 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        Optional<Timer> defaultTaggedRtt = timer(meterRegistry, Collections.emptyList());
+        Optional<Timer> defaultTaggedRtt = meterRegistry.timer("fixed_rtt", Collections.emptyList());
         assertThat(defaultTaggedRtt.isPresent(), is(true));
-    }
-
-    private static Optional<Timer> timer(MeterRegistry meterRegistry, List<Tag> tags) {
-        for (Meter meter : meterRegistry.meters(List.of(Meter.Scope.VENDOR))) {
-            if (meter instanceof Timer timer
-                    && meter.id().name().equals("fixed_rtt")
-                    && containsTags(meter, tags)) {
-                return Optional.of(timer);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private static boolean containsTags(Meter meter, List<Tag> tags) {
-        return tags.stream()
-                .allMatch(tag -> tag.value().equals(meter.id().tagsMap().get(tag.key())));
     }
 }

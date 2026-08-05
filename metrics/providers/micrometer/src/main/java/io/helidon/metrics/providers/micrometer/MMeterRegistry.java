@@ -322,9 +322,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         lock.readLock().lock();
         try {
-            Iterable<Tag> tagsToUse = systemTagsManager.withScopeTag(tags, Optional.empty());
             Search search = delegate().find(name)
-                    .tags(MTag.tags(tagsToUse));
+                    .tags(MTag.tags(tags));
             Meter match = search.meter();
 
             if (match == null) {

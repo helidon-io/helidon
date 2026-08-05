@@ -23,7 +23,6 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
-import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
@@ -62,61 +61,24 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
         Tag grpcTarget = metricsFactory.tagCreate("grpc.target", grpcClient.prototype().baseUri().orElseThrow().toString());
 
         for (Tag grpcMethod : grpcMethodTags(metricsFactory)) {
-            Optional<Counter> counter = meter(meterRegistry,
-                                              Counter.class,
-                                              Meter.Type.COUNTER,
-                                              ATTEMPT_STARTED,
-                                              List.of(grpcMethod, grpcTarget));
+            Optional<Counter> counter = meterRegistry.counter(ATTEMPT_STARTED, List.of(grpcMethod, grpcTarget));
             assertThat(counter.isPresent(), is(true));
             assertThat(counter.get().count(), is(20L));
 
-            Optional<Timer> timer = meter(meterRegistry,
-                                          Timer.class,
-                                          Meter.Type.TIMER,
-                                          ATTEMPT_DURATION,
-                                          List.of(grpcMethod, grpcTarget, okTag));
+            Optional<Timer> timer = meterRegistry.timer(ATTEMPT_DURATION, List.of(grpcMethod, grpcTarget, okTag));
             assertThat(timer.isPresent(), is(true));
             assertThat(timer.get().count(), is(20L));
 
             Optional<DistributionSummary> summary;
-            summary = meter(meterRegistry,
-                            DistributionSummary.class,
-                            Meter.Type.DISTRIBUTION_SUMMARY,
-                            SENT_MESSAGE_SIZE,
-                            List.of(grpcMethod, grpcTarget, okTag));
+            summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(grpcMethod, grpcTarget, okTag));
             assertThat(summary.isPresent(), is(true));
             assertThat(summary.get().count(), is(20L));
             assertThat(summary.get().max(), greaterThan(0.0));
 
-            summary = meter(meterRegistry,
-                            DistributionSummary.class,
-                            Meter.Type.DISTRIBUTION_SUMMARY,
-                            RCVD_MESSAGE_SIZE,
-                            List.of(grpcMethod, grpcTarget, okTag));
+            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(grpcMethod, grpcTarget, okTag));
             assertThat(summary.isPresent(), is(true));
             assertThat(summary.get().count(), is(20L));
             assertThat(summary.get().max(), greaterThan(0.0));
         }
-    }
-
-    private static <M extends Meter> Optional<M> meter(MeterRegistry meterRegistry,
-                                                       Class<M> meterClass,
-                                                       Meter.Type meterType,
-                                                       String name,
-                                                       List<Tag> tags) {
-        for (Meter meter : meterRegistry.meters(List.of(Meter.Scope.VENDOR))) {
-            if (meterClass.isInstance(meter)
-                    && meter.type() == meterType
-                    && meter.id().name().equals(name)
-                    && containsTags(meter, tags)) {
-                return Optional.of(meterClass.cast(meter));
-            }
-        }
-        return Optional.empty();
-    }
-
-    private static boolean containsTags(Meter meter, List<Tag> tags) {
-        return tags.stream()
-                .allMatch(tag -> tag.value().equals(meter.id().tagsMap().get(tag.key())));
     }
 }
