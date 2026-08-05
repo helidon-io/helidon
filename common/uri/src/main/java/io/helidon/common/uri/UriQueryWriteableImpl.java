@@ -223,7 +223,12 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             encodedValues.add(UriEncoding.encode(value, UriEncoding.Type.QUERY_PARAM_SPACE_ENCODED));
         }
 
-        rawQueryParams.keySet().removeIf(rawName -> name.equals(UriEncoding.decodeUri(rawName)));
+        List<String> existingDecodedValues = decodedQueryParams.get(name);
+        List<String> existingRawValues = rawQueryParams.get(encodedName);
+        if (existingDecodedValues != null
+                && (existingRawValues == null || existingRawValues.size() != existingDecodedValues.size())) {
+            rawQueryParams.keySet().removeIf(rawName -> name.equals(UriEncoding.decodeUri(rawName)));
+        }
         rawQueryParams.put(encodedName, encodedValues);
         decodedQueryParams.put(name, decodedValues);
 
