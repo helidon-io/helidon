@@ -23,8 +23,6 @@ With minimal coding changes, components can be converted to become metrics-capab
 
 ## Step-by-step Conversion
 
-See `docs/se/guides/_metrics-capable-components.adoc` (the public documentation).
-
 ### Change `pom.xml`
 Change the `pom.xml` of the component to depend on `helidon-metrics-api` instead of `helidon-metrics`.
     
