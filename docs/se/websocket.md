@@ -83,6 +83,15 @@ server.routing(it -> it
 This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and
 associates.
 
+## Security
+
+When a WebSocket upgrade request includes an `Origin` header, Helidon validates
+it. By default, Helidon requires the `Origin` authority to match the request
+`Host` header and rejects cross-host requests. If you configure
+`server.protocols.websocket.origins`, the configured values act as an explicit
+allowlist instead. Requests without an `Origin` header are allowed so
+non-browser clients continue to work.
+
 ## Reference
 
 - [Helidon WebSocket Javadoc][helidon-websocke]
