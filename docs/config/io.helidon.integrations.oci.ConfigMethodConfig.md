@@ -1,0 +1,87 @@
+# io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>Config<wbr>Method<wbr>Config
+
+## Description
+
+Configuration of the <code>config</code> authentication method
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="private-key"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>private-<wbr>key</code>
+</a>
+</td>
+<td>
+<code>Resource</code>
+</td>
+<td>The OCI authentication private key resource</td>
+</tr>
+<tr>
+<td>
+<code>user-<wbr>id</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>The OCI user id</td>
+</tr>
+<tr>
+<td>
+<code>fingerprint</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>The OCI authentication fingerprint</td>
+</tr>
+<tr>
+<td>
+<code>passphrase</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>The OCI authentication passphrase</td>
+</tr>
+<tr>
+<td>
+<code>region</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>The OCI region</td>
+</tr>
+<tr>
+<td>
+<code>tenant-<wbr>id</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>The OCI tenant id</td>
+</tr>
+</tbody>
+</table>
+
+
+
+## Usages
+
+- <a href="io.helidon.helidon.oci.AuthenticationConfig.md#config"><code>helidon.<wbr>oci.<wbr>authentication.<wbr>config</code></a>
+
+---
+
+See the [manifest](manifest.md) for all available types.

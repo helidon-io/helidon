@@ -1,0 +1,166 @@
+<!--@frontmatter
+description: "Built-in Helidon LangChain4j providers lc4j-content-retriever and lc4j-in-memory"
+-->
+# Built-in LangChain4j Providers
+
+## Maven Coordinates
+
+No additional dependencies are required beyond the [LangChain4j integration core
+dependencies][langchain4j-inte].
+
+## Content Retriever
+
+Provider key: `lc4j-content-retriever`.
+
+In LangChain4j [RAG][rag], `ContentRetriever` is the component that takes a user
+query, retrieves relevant content from an underlying data source, and returns
+ranked content used to augment the prompt.
+
+In Helidon, this provider creates LangChain4j content retrievers from
+configuration. If `type` is not set, Helidon uses the default
+`embedding-store-content-retriever`
+(`ContentRetrieverType.EMBEDDING_STORE_CONTENT_RETRIEVER`) and wires it using
+the configured embedding model and embedding store.
+
+In a typical RAG setup (see [RAG](rag.md)), a named retriever references:
+
+- an `EmbeddingModel` (`embedding-model`)
+- an `EmbeddingStore<TextSegment>` (`embedding-store`)
+
+Each entry under `langchain4j.content-retrievers` becomes a named singleton
+declarative service bean in the Helidon service registry. You can attach it to
+AI services or agents using `@Ai.ContentRetriever("name")`, or inject it
+directly by name.
+
+<!--@mdc ::code-callout -->
+```yaml [application.yaml]
+langchain4j:
+  content-retrievers:
+    foo-bar-content-retriever:
+      provider: lc4j-content-retriever # <1>
+      type: embedding-store-content-retriever # <2>
+      embedding-store: foo-bar-inmemory-embedding-store # <3>
+      embedding-model: foo-bar-embedding-model # <4>
+      max-results: 10
+      min-score: 0.6
+```
+1. Selects the built-in content retriever provider.
+2. Explicitly selects the default LangChain4j embedding-store-backed retriever
+   type.
+3. Names the embedding store bean used for similarity search.
+4. Sets the embedding model used to convert incoming query text to vectors.
+<!--@mdc :: -->
+
+<!--@mdc ::code-callout -->
+```java
+@Ai.Service
+@Ai.ChatModel("foo-bar-chat-model")
+@Ai.ContentRetriever("foo-bar-content-retriever") //<1>
+public interface FooBarExpert {
+    String askFoo(String foo);
+}
+```
+1. Binds this AI service to the named content retriever bean from configuration.
+<!--@mdc :: -->
+
+<!--@mdc ::code-callout -->
+```java
+@Service.Singleton
+public class RetrieverConsumer {
+    RetrieverConsumer(@Service.Named("foo-bar-content-retriever") ContentRetriever retriever) { //<1>
+    }
+}
+```
+1. Injects the same named content retriever bean directly into another Helidon
+   declarative service.
+<!--@mdc :: -->
+
+Configuration properties:
+
+### Configuration options
+
+<!--@include ../../../config/io.helidon.integrations.langchain4j.ContentRetrieverConfig.md#configuration-options delim=--- offset=1 collapseTables=10 -->
+See [Configuration options][io-helidon-integ].
+<!--/include-->
+
+
+## In-Memory Embedding Store
+
+Provider key: `lc4j-in-memory`.
+
+In LangChain4j [in-memory embedding store integration][in-memory-embedd],
+`InMemoryEmbeddingStore` is an in-process vector store implementation suitable
+for local or lightweight use cases.
+
+In Helidon, this provider creates `InMemoryEmbeddingStore<TextSegment>`
+instances from `langchain4j.embedding-stores.<name>` configuration entries.
+
+Each entry becomes a named singleton declarative service bean in the Helidon
+service registry. That named embedding store can be referenced by configured
+content retrievers and can also be injected by name into other service beans.
+
+If `from-file` is configured, Helidon initializes the store by loading
+previously persisted embeddings and segments using LangChain4j
+`InMemoryEmbeddingStore.fromFile(...)`. If `from-file` is not configured, the
+store starts empty.
+
+<!--@mdc ::code-callout -->
+```yaml [application.yaml]
+langchain4j:
+  embedding-stores:
+    foo-bar-inmemory-embedding-store:
+      provider: lc4j-in-memory # <1>
+      # optional: preload persisted store content
+      from-file: "target/foo-bar-inmemory-embedding-store.json" # <2>
+
+  content-retrievers:
+    foo-bar-content-retriever:
+      provider: lc4j-content-retriever
+      embedding-model: foo-bar-embedding-model
+      embedding-store: foo-bar-inmemory-embedding-store # <3>
+```
+1. Selects the built-in LangChain4j in-memory embedding store provider.
+2. Loads previously persisted embeddings and text segments during startup.
+3. Connects the retriever to the named in-memory embedding store bean.
+<!--@mdc :: -->
+
+<!--@mdc ::code-callout -->
+```java
+@Service.Singleton
+public class EmbeddingStoreLifecycle {
+    private final InMemoryEmbeddingStore<TextSegment> store;
+
+    EmbeddingStoreLifecycle(@Service.Named("foo-bar-inmemory-embedding-store")
+                            InMemoryEmbeddingStore<TextSegment> store) {
+        this.store = store;
+    }
+
+    @Service.PreDestroy //<1>
+    void persistEmbeddingStore() {
+        store.serializeToFile(Path.of("target/foo-bar-inmemory-embedding-store.json")); //<2>
+    }
+}
+```
+1. Invoked by Helidon when the singleton service bean is being shut down.
+2. Persists current in-memory embeddings and segments to JSON file; the same
+   file can be loaded on next startup using `from-file`.
+<!--@mdc :: -->
+
+Configuration properties:
+
+### Configuration options
+
+<!--@include ../../../config/io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig.md#configuration-options delim=--- offset=1 collapseTables=10 -->
+See [Configuration options][io-helidon-integ-2].
+<!--/include-->
+
+
+## Additional Information
+
+- [LangChain4j Integration](langchain4j.md)
+
+[rag]: https://docs.langchain4j.dev/tutorials/rag
+[in-memory-embedd]: https://docs.langchain4j.dev/integrations/embedding-stores/in-memory
+[langchain4j-inte]: langchain4j.md#maven-coordinates
+[io-helidon-integ]: ../../../config/io.helidon.integrations.langchain4j.ContentRetrieverConfig.md#configuration-options
+[io-helidon-integ-2]: ../../../config/io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig.md#configuration-options

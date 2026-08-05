@@ -19,5 +19,4 @@ living document with a fair amount of detail.
 
 # Use Markdown
 
-Write your specs in Markdown. AsciiDoc is also OK if you need it.
-
+Write your specs in Markdown.

@@ -707,6 +707,10 @@
             <artifactId>helidon-microprofile-lra</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.lra</groupId>
+            <artifactId>helidon-microprofile-lra-testing</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.lra</groupId>
             <artifactId>helidon-lra-coordinator-client-spi</artifactId>
         </dependency>

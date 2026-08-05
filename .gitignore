@@ -53,9 +53,6 @@ nb-configuration.xml
 .classpath
 .factorypath
 
-# Asciidoctor
-.asciidoctor/
-
 # Vim
 *.swp
 

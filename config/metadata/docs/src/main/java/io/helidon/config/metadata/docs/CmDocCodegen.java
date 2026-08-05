@@ -42,7 +42,7 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
  */
 class CmDocCodegen {
     private static final System.Logger LOGGER = System.getLogger(CmDocCodegen.class.getName());
-    private static final String PAGE_EXT = ".adoc";
+    private static final String PAGE_EXT = ".md";
     private static final String CONFIG_REFERENCE = "config_reference" + PAGE_EXT;
     private static final String MANIFEST = "manifest" + PAGE_EXT;
 
@@ -63,6 +63,8 @@ class CmDocCodegen {
     CmDocCodegen(Path outputDir, CmModel metadata) {
         var loader = new ClassPathTemplateLoader("/io/helidon/config/metadata/docs");
         var handlebars = new Handlebars(loader);
+        handlebars.registerHelper("codeBreaks", (context, options) -> CodeBreaks.code(stringValue(context)));
+        handlebars.registerHelper("codeBreaksHtml", (context, options) -> CodeBreaks.html(stringValue(context)));
         this.rootTemplate = template(handlebars, CONFIG_REFERENCE);
         this.manifestTemplate = template(handlebars, MANIFEST);
         this.configTemplate = template(handlebars, "config" + PAGE_EXT);
@@ -116,7 +118,9 @@ class CmDocCodegen {
                 var context = Context.newBuilder(model)
                         .push(ValueResolverImpl.INSTANCE)
                         .build();
-                var rendered = template.apply(context).replaceAll("\\n+\\z", "\n");
+                var rendered = template.apply(context)
+                        .replaceAll("\\A\\n+", "")
+                        .replaceAll("\\n+\\z", "\n");
                 writer.write(rendered);
             }
             return fileName;
@@ -131,6 +135,10 @@ class CmDocCodegen {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load template: " + template, e);
         }
+    }
+
+    private static String stringValue(Object value) {
+        return value == null ? "" : value.toString();
     }
 
     private static class ValueResolverImpl extends MethodValueResolver {

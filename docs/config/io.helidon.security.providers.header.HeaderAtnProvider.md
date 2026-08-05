@@ -1,0 +1,125 @@
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>header.<wbr>Header<wbr>AtnProvider
+
+## Description
+
+Security provider that extracts a username (or service name) from a header
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="atn-token"></a>
+<a href="io.helidon.security.util.TokenHandler.md">
+<code>atn-<wbr>token</code>
+</a>
+</td>
+<td>
+<code>Token<wbr>Handler</code>
+</td>
+<td>
+</td>
+<td>Token handler to extract username from request</td>
+</tr>
+<tr>
+<td>
+<code>authenticate</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to authenticate requests</td>
+</tr>
+<tr>
+<td>
+<a id="outbound"></a>
+<a href="io.helidon.security.providers.common.OutboundTarget.md">
+<code>outbound</code>
+</a>
+</td>
+<td>
+<code>List&lt;<wbr>Outbound<wbr>Target&gt;</code>
+</td>
+<td>
+</td>
+<td>Configure outbound target for identity propagation</td>
+</tr>
+<tr>
+<td>
+<code>propagate</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Whether to propagate identity</td>
+</tr>
+<tr>
+<td>
+<code>optional</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Whether authentication is required</td>
+</tr>
+<tr>
+<td>
+<a id="outbound-token"></a>
+<a href="io.helidon.security.util.TokenHandler.md">
+<code>outbound-<wbr>token</code>
+</a>
+</td>
+<td>
+<code>Token<wbr>Handler</code>
+</td>
+<td>
+</td>
+<td>Token handler to create outbound headers to propagate identity</td>
+</tr>
+<tr>
+<td>
+<a id="principal-type"></a>
+<a href="io.helidon.security.SubjectType.md">
+<code>principal-<wbr>type</code>
+</a>
+</td>
+<td>
+<code>Subject<wbr>Type</code>
+</td>
+<td>
+<code>USER</code>
+</td>
+<td>Principal type this provider extracts (and also propagates)</td>
+</tr>
+</tbody>
+</table>
+
+
+
+## Usages
+
+- <a href="io.helidon.security.spi.SecurityProvider.md#header-atn"><code>security.<wbr>providers.<wbr>header-<wbr>atn</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#header-atn"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>header-<wbr>atn</code></a>
+
+---
+
+See the [manifest](manifest.md) for all available types.
