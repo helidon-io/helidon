@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 = Helidon SE Metrics Guide
 :description: Helidon metrics
 :keywords: helidon, metrics, guide
-:intro-project-name: {h1-prefix}
+:intro-project-name: SE
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
@@ -328,4 +328,3 @@ This guide demonstrated how to use metrics in a Helidon SE application using var
 Refer to the following references for additional information:
 
 * link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
-
