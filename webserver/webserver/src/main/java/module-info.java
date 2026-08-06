@@ -62,6 +62,7 @@ module io.helidon.webserver {
     uses io.helidon.webserver.spi.ServerConnectionSelectorProvider;
     uses io.helidon.webserver.spi.ProtocolConfigProvider;
     uses io.helidon.webserver.spi.ServerFeatureProvider;
+    uses io.helidon.webserver.spi.TransportBindingFactoryProvider;
     uses io.helidon.webserver.http.spi.SinkProvider;
     uses io.helidon.webserver.http1.spi.Http1UpgradeProvider;
     uses io.helidon.common.concurrency.limits.spi.LimitProvider;
@@ -71,5 +72,8 @@ module io.helidon.webserver {
     provides io.helidon.webserver.spi.ServerConnectionSelectorProvider with io.helidon.webserver.http1.Http1ConnectionProvider;
     provides io.helidon.webserver.spi.ServerFeatureProvider
             with io.helidon.webserver.StuckThreadDetectionFeatureProvider;
+    provides io.helidon.webserver.spi.TransportBindingFactoryProvider
+            with io.helidon.webserver.TcpTransportBindingFactoryProvider,
+                    io.helidon.webserver.UdsTransportBindingFactoryProvider;
 
 }

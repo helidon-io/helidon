@@ -47,6 +47,8 @@ import io.helidon.webclient.grpc.ClientUriSuppliers;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ProxyProtocolV2Data;
+import io.helidon.webserver.TcpTransportConfig;
+import io.helidon.webserver.UdsTransportConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.grpc.ServerContextKeys;
@@ -161,7 +163,8 @@ public class GrpcProxyProtocolTest {
         var server = WebServer.builder()
             .enableProxyProtocol(true)
             .tls(t -> t.enabled(false))
-            .bindAddress(bindAddress)
+            .addBinding(disabledTcpBinding())
+            .addBinding(udsBinding(bindAddress))
             .addRouting(GrpcRouting.builder().unary(Proxy.getDescriptor(),
                 "ProxyProtocolService",
                 "GetData",
@@ -201,7 +204,8 @@ public class GrpcProxyProtocolTest {
         var server = WebServer.builder()
             .enableProxyProtocol(true)
             .tls(t -> t.enabled(false))
-            .bindAddress(bindAddress)
+            .addBinding(disabledTcpBinding())
+            .addBinding(udsBinding(bindAddress))
             .addRouting(GrpcRouting.builder().unary(Proxy.getDescriptor(),
                 "ProxyProtocolService",
                 "GetData",
@@ -265,7 +269,8 @@ public class GrpcProxyProtocolTest {
 
         var server = WebServer.builder()
             .tls(serverTls())
-            .bindAddress(bindAddress)
+            .addBinding(disabledTcpBinding())
+            .addBinding(udsBinding(bindAddress))
             .addRouting(GrpcRouting.builder()
                 .unary(Strings.getDescriptor(), "StringService", "Upper", GrpcProxyProtocolTest::upper))
             .build();
@@ -358,6 +363,18 @@ public class GrpcProxyProtocolTest {
             proxyHeaderBytes[i] = (byte) proxyHeader[i];
         }
         return ConnectionListener.createWriteOnConnect(proxyHeaderBytes);
+    }
+
+    private static TcpTransportConfig disabledTcpBinding() {
+        return TcpTransportConfig.builder()
+                .enabled(false)
+                .build();
+    }
+
+    private static UdsTransportConfig udsBinding(UnixDomainSocketAddress socketAddress) {
+        return UdsTransportConfig.builder()
+                .socket(socketAddress)
+                .build();
     }
 
     static void getProxyData(Empty req, StreamObserver<Proxy.ProxyProtocolDataMessage> streamObserver) {

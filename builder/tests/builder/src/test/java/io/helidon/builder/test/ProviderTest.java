@@ -19,6 +19,7 @@ package io.helidon.builder.test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import io.helidon.builder.test.testsubjects.SomeProvider;
@@ -39,6 +40,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -247,6 +249,19 @@ class ProviderTest {
 
         assertServicePropsInOrder(value.optionalListNotDiscover().orElseThrow(), "some-1", "some-2");
         assertServiceProps(value.optionalSetNotDiscover().orElseThrow(), "some-1", "some-2");
+    }
+
+    @Test
+    void testExplicitSingleProviderIgnoresInvalidConfig() {
+        SomeProvider.SomeService someService = new DummyService();
+        Config invalidConfig = Config.just(ConfigSources.create(Map.of("one-not-discover", "invalid")));
+
+        WithProvider value = WithProvider.builder()
+                .config(invalidConfig)
+                .oneNotDiscover(someService)
+                .build();
+
+        assertThat(value.oneNotDiscover(), sameInstance(someService));
     }
 
     @Test

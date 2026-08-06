@@ -16,10 +16,27 @@
 
 package io.helidon.webserver.spi;
 
+import java.util.Set;
+
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
+import io.helidon.webserver.TransportBindingTypes;
 
 /**
  * Protocol configuration abstraction, used to setup a protocol.
  */
 public interface ProtocolConfig extends NamedService {
+    /**
+     * Transport binding provider keys compatible with this protocol.
+     * <p>
+     * An empty set means this protocol has no transport preference and can use the listener default binding.
+     * Otherwise, at least one returned transport binding type must be active on the listener.
+     * Built-in keys are available from {@link TransportBindingTypes}.
+     *
+     * @return compatible transport binding types for this protocol
+     */
+    @Api.Internal
+    default Set<String> transportBindingTypes() {
+        return Set.of();
+    }
 }

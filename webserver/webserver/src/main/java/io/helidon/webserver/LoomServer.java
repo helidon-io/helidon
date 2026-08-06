@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,6 +63,7 @@ class LoomServer implements WebServer, Resumable {
 
     private final Map<String, ServerListener> listeners;
     private final AtomicBoolean running = new AtomicBoolean();
+    private final AtomicBoolean fatalListenerFailureReported = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
     private final Context context;
@@ -114,7 +116,8 @@ class LoomServer implements WebServer, Resumable {
                                                idleConnectionTimer,
                                                serverConfig.mediaContext().orElseGet(MediaContext::create),
                                                serverConfig.contentEncoding().orElseGet(ContentEncodingContext::create),
-                                               serverConfig.directHandlers().orElseGet(DirectHandlers::create)));
+                                               serverConfig.directHandlers().orElseGet(DirectHandlers::create),
+                                               this::fatalListenerFailure));
         });
 
         validateRoutingsHaveNamedListener(serverConfig, listenerMap.keySet());
@@ -195,7 +198,8 @@ class LoomServer implements WebServer, Resumable {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    @SuppressWarnings("removal")
     public void reloadTls(String socketName, Tls tls) {
         ServerListener listener = listener(socketName);
         listener.reloadTls(tls);
@@ -203,12 +207,15 @@ class LoomServer implements WebServer, Resumable {
 
     @Override
     public void reloadTls(TlsMaterial material, String socketName) {
+        Objects.requireNonNull(material, "material");
         ServerListener listener = listener(socketName);
         listener.reloadTls(material);
     }
 
     @Override
     public void reloadVirtualHostTls(TlsMaterial material, String socketName, String host) {
+        Objects.requireNonNull(material, "material");
+        Objects.requireNonNull(host, "host");
         ServerListener listener = listener(socketName);
         listener.reloadVirtualHostTls(material, host);
     }
@@ -282,12 +289,6 @@ class LoomServer implements WebServer, Resumable {
                 + "Java " + Runtime.version());
     }
 
-    // Intended for tests that need listener state without stack walking.
-    Thread.State listenerThreadState(String socketName) {
-        ServerListener listener = listeners.get(socketName);
-        return listener == null ? null : listener.serverThreadState();
-    }
-
     private static void validateRoutingsHaveNamedListener(WebServerConfig serverConfig, Set<String> namedListeners) {
         var routingNames = serverConfig.namedRoutings()
                 .keySet();
@@ -336,6 +337,51 @@ class LoomServer implements WebServer, Resumable {
             result = LifecycleFailures.add(result, e);
         }
         return result;
+    }
+
+    private void fatalListenerFailure(ServerListener listener, Throwable cause) {
+        Objects.requireNonNull(listener, "listener");
+        Objects.requireNonNull(cause, "cause");
+        if (!fatalListenerFailureReported.compareAndSet(false, true)) {
+            return;
+        }
+        LOGGER.log(System.Logger.Level.ERROR,
+                   "Fatal failure in listener " + listener,
+                   cause);
+        try {
+            executorService.execute(() -> stopAfterFatalListenerFailure(cause));
+        } catch (RejectedExecutionException e) {
+            cause.addSuppressed(e);
+            stopAfterFatalListenerFailure(cause);
+        }
+    }
+
+    private void stopAfterFatalListenerFailure(Throwable cause) {
+        Throwable failure = LifecycleFailures.add(null, cause);
+        try {
+            lifecycleLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            failure = LifecycleFailures.add(failure,
+                                            new IllegalStateException("Interrupted while stopping after fatal listener failure",
+                                                                      e));
+            LOGGER.log(System.Logger.Level.ERROR, "Failed to stop after fatal listener failure", failure);
+            return;
+        }
+        try {
+            if (running.get()) {
+                try {
+                    stopIt();
+                } catch (RuntimeException | Error e) {
+                    failure = LifecycleFailures.add(failure, e);
+                }
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+        if (failure != null) {
+            LOGGER.log(System.Logger.Level.ERROR, "Stopped after fatal listener failure", failure);
+        }
     }
 
     private void startIt() {
