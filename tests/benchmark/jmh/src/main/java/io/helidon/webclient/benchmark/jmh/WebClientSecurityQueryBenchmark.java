@@ -101,8 +101,8 @@ public class WebClientSecurityQueryBenchmark {
             uri.writeableQuery().set("four", "valueFour");
         } else {
             uri.writeableQuery().set("one", "value%2Fone");
-            uri.writeableQuery().set("two", "value#two");
-            uri.writeableQuery().set("three", "value three");
+            uri.writeableQuery().set("two", "value%23two");
+            uri.writeableQuery().set("three", "value%20three");
             uri.writeableQuery().set("four", "value+four");
         }
         environment = null;

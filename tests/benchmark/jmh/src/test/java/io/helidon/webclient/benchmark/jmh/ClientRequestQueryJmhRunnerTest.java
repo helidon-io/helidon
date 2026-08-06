@@ -28,6 +28,15 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 class ClientRequestQueryJmhRunnerTest {
     @Test
+    void securityBenchmarksAreExecutable() {
+        WebClientSecurityQueryBenchmark benchmark = new WebClientSecurityQueryBenchmark();
+        benchmark.setup();
+        benchmark.defaultEncoding();
+        benchmark.skipEncoding();
+        benchmark.skipEncodingPlain();
+    }
+
+    @Test
     void runExactBenchmark() throws RunnerException {
         Options options = new OptionsBuilder()
                 .include("^" + Pattern.quote(ClientRequestQueryBenchmark.class.getName())
