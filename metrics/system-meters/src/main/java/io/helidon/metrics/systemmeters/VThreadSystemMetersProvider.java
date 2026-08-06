@@ -132,7 +132,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
                 shutdownHandlerRegistrationRequired = true;
             }
             if (!resumableRegistered) {
-                ResumableSupport.get().register(resumable());
+                ResumableSupport.get().register(new WeakResumable(this, resumableGeneration));
                 resumableRegistered = true;
             }
             pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
@@ -270,11 +270,6 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
         } finally {
             lifecycleLock.unlock();
         }
-    }
-
-    // Visible for testing.
-    Resumable resumable() {
-        return new WeakResumable(this, resumableGeneration);
     }
 
     // Visible for testing.

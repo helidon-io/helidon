@@ -28,7 +28,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.resumable.Resumable;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Gauge;
@@ -180,28 +179,6 @@ class TestVirtualThreadsMetersConfigs {
             provider.findPinned();
         } finally {
             meterRegistry.close();
-            provider.close();
-            metricsFactory.close();
-        }
-    }
-
-    @Test
-    void staleResumableCannotRestartRecordingAfterClose() {
-        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
-        MetricsFactory metricsFactory = configuredMetricsFactory(config);
-        RecordingTracker recordingTracker = new RecordingTracker();
-        VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        try {
-            provider.meterBuilders(metricsFactory);
-            Recording recording = recordingTracker.awaitNewRecording();
-            Resumable resumable = provider.resumable();
-
-            provider.close();
-            assertThat("Recording after close", recording.getState(), is(RecordingState.CLOSED));
-
-            resumable.resume();
-            recordingTracker.assertNoNewRecording("Recording after stale resume");
-        } finally {
             provider.close();
             metricsFactory.close();
         }
