@@ -197,6 +197,7 @@
                                 <exclude>**/AgentDetectorTest.java</exclude>
                                 <exclude>**/TestSpanListenersWithInjection.java</exclude>
                                 <exclude>**/TestFilterSpanNesting.java</exclude>
+                                <exclude>**/PlainJerseyClientTest.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -234,6 +235,17 @@
                         <configuration>
                             <includes>
                                 <include>**/TestFilterSpanNesting.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>plain-jersey-client-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/PlainJerseyClientTest.java</include>
                             </includes>
                         </configuration>
                     </execution>
