@@ -121,6 +121,21 @@ class WebClientSecurityTest {
         assertThat(environment.queryParams().get("q"), is("a%2Fb"));
 
         assertThrows(TestException.class, () -> client.get()
+                .uri("https://example.test/{path}")
+                .pathParam("path", "p")
+                .skipUriEncoding(true)
+                .queryParam("q", "a#b")
+                .request());
+
+        environment = outboundEnvironment.get();
+        assertThat(outboundTarget.get(), is("/p?q=a#b"));
+        assertThat(environment.targetUri().getRawQuery(), is("q=a"));
+        assertThat(environment.targetUri().getRawFragment(), is("b"));
+        assertThat(environment.requestedQuery().orElseThrow().rawValue(), is("q=a#b"));
+        assertThat(environment.queryParams().rawValue(), is("q=a%23b"));
+        assertThat(environment.queryParams().get("q"), is("a#b"));
+
+        assertThrows(TestException.class, () -> client.get()
                 .uri(URI.create("https://example.test/p?"))
                 .request());
 

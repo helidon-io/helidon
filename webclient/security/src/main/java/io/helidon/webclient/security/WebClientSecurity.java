@@ -135,6 +135,7 @@ public class WebClientSecurity implements WebClientService {
         OutboundSecurityClientBuilder clientBuilder;
 
         try {
+            UriQuery query = request.uri().query();
             URI targetUri = request.uri().toUri();
             SecurityEnvironment.Builder outboundEnv = context.env()
                     .derive()
@@ -145,11 +146,13 @@ public class WebClientSecurity implements WebClientService {
                     .method(request.method().text())
                     .path(request.uri().path().path())
                     .targetUri(targetUri)
-                    .queryParams(request.uri().query())
+                    .queryParams(query)
                     .requestedMethod(request.method().text())
                     .requestedPath(request.uri().path())
                     .requestedQuery(request.uri().hasQuery()
-                                            ? Optional.of(UriQuery.create(targetUri))
+                                            ? Optional.of(query.rawValue().equals(targetUri.getRawQuery())
+                                                                  ? query
+                                                                  : UriQuery.create(query.value()))
                                             : Optional.empty());
 
             request.headers()
