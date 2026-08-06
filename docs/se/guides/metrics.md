@@ -5,9 +5,8 @@ navigation:
 -->
 # Metrics
 
-This guide describes how to create a sample Helidon {h1-prefix} project that can
-be used to run some basic examples using both built-in and custom meters with
-Helidon.
+This guide describes how to create a sample Helidon SE project that can be used
+to run some basic examples using both built-in and custom meters with Helidon.
 
 ## What You Need
 
