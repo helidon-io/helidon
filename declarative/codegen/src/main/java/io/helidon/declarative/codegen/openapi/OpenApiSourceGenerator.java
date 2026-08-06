@@ -1900,10 +1900,14 @@ final class OpenApiSourceGenerator {
     }
 
     private boolean hasEmptySecurityRequirements(Collection<Annotation> annotations) {
-        return Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION, annotations)
-                .flatMap(Annotation::annotationValues)
-                .filter(List::isEmpty)
-                .isPresent()
+        List<Annotation> containers = annotations.stream()
+                .filter(it -> it.typeName().name().equals(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION.name()))
+                .toList();
+        return !containers.isEmpty()
+                && containers.stream()
+                        .allMatch(it -> it.annotationValues()
+                                .filter(List::isEmpty)
+                                .isPresent())
                 && Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENT_ANNOTATION, annotations).isEmpty()
                 && Annotations.findFirst(OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION, annotations).isEmpty();
     }
@@ -1911,13 +1915,15 @@ final class OpenApiSourceGenerator {
     private List<OpenApiSecurityRequirement> securityRequirements(String owner, Collection<Annotation> annotations) {
         Optional<Annotation> direct = Annotations.findFirst(OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION,
                                                             annotations);
-        Optional<Annotation> container = Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION, annotations);
+        List<Annotation> containers = annotations.stream()
+                .filter(it -> it.typeName().name().equals(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION.name()))
+                .toList();
         List<Annotation> requirements = annotations.stream()
                 .filter(it -> it.typeName().name().equals(OPENAPI_SECURITY_REQUIREMENT_ANNOTATION.name()))
                 .toList();
 
         if (direct.isPresent()) {
-            if (container.isPresent() || !requirements.isEmpty()) {
+            if (!containers.isEmpty() || !requirements.isEmpty()) {
                 throw new CodegenException("@OpenApi.SecuritySchemeRequirement on " + owner
                                                    + " cannot be combined with @OpenApi.SecurityRequirement or "
                                                    + "@OpenApi.SecurityRequirements");
@@ -1926,16 +1932,13 @@ final class OpenApiSourceGenerator {
         }
 
         List<OpenApiSecurityRequirement> result = new ArrayList<>();
-        if (container.isPresent()) {
-            container.get()
+        containers.forEach(container -> container
                     .annotationValues()
                     .orElseGet(List::of)
                     .forEach(it -> result.add(new OpenApiSecurityRequirement(it.annotationValues()
-                            .orElseGet(List::of))));
-        } else {
-            requirements.forEach(it -> result.add(new OpenApiSecurityRequirement(it.annotationValues()
-                    .orElseGet(List::of))));
-        }
+                            .orElseGet(List::of)))));
+        requirements.forEach(it -> result.add(new OpenApiSecurityRequirement(it.annotationValues()
+                .orElseGet(List::of))));
         return result;
     }
 

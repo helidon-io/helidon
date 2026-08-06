@@ -1217,6 +1217,80 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void composedSecurityRequirementsContainerAndStandaloneRequirementArePreserved() throws IOException {
+        var result = compile("openapi-composed-security-requirements-container-and-standalone-requirement", """
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("oauth2"))
+                @interface MultiAuth {
+                }
+
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("apiKey"))
+                @interface ApiKeyAuth {
+                }
+
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    @MultiAuth
+                    @ApiKeyAuth
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated, containsString(".scheme(\"oauth2\", java.util.List.of())"));
+        assertThat(generated, containsString(".scheme(\"apiKey\", java.util.List.of())"));
+    }
+
+    @Test
+    void multipleComposedSecurityRequirementsContainersArePreserved() throws IOException {
+        var result = compile("openapi-multiple-composed-security-requirements-containers", """
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("oauth2"))
+                @interface UserAuth {
+                }
+
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("apiKey"))
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("admin"))
+                @interface ServiceAuth {
+                }
+
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    @UserAuth
+                    @ServiceAuth
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated, containsString(".scheme(\"oauth2\", java.util.List.of())"));
+        assertThat(generated, containsString(".scheme(\"apiKey\", java.util.List.of())"));
+        assertThat(generated, containsString(".scheme(\"admin\", java.util.List.of())"));
+    }
+
+    @Test
     void composedMethodSecurityRequirementCannotRepeatSameRequirement() {
         var result = compile("openapi-duplicate-composed-method-security-requirement", """
                 @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
