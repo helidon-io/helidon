@@ -26,8 +26,10 @@ import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -148,6 +150,44 @@ class UriQueryTest {
 
         assertThat(query.all("a"), is(List.of("request")));
         assertThat(query.rawValue(), is("a=request"));
+    }
+
+    @Test
+    void setReplacesMultipleEquivalentEncodedNames() {
+        StringBuilder queryString = new StringBuilder();
+        for (int i = 0; i < 32; i++) {
+            if (!queryString.isEmpty()) {
+                queryString.append('&');
+            }
+            queryString.append("%61").append(i).append("=template");
+        }
+        UriQueryWriteable query = writeableQuery(queryString.toString());
+
+        for (int i = 0; i < 32; i++) {
+            query.set("a" + i, "request" + i);
+        }
+
+        assertThat(query.size(), is(32));
+        for (int i = 0; i < 32; i++) {
+            assertThat(query.getAllRaw("a" + i), is(List.of("request" + i)));
+        }
+        assertThat(query.rawValue(), not(containsString("%61")));
+    }
+
+    @Test
+    void aliasIndexTracksLaterRawUpdates() {
+        UriQueryWriteable query = writeableQuery("%61=template");
+        query.set("a", "request");
+
+        query.fromQueryString("%62=template");
+        query.set("b", "request");
+        query.from(writeableQuery("%63=template"));
+        query.set("c", "request");
+
+        assertThat(query.getAllRaw("a"), is(List.of("request")));
+        assertThat(query.getAllRaw("b"), is(List.of("request")));
+        assertThat(query.getAllRaw("c"), is(List.of("request")));
+        assertThat(query.rawValue(), not(containsString("%")));
     }
 
     private static UriQueryWriteable writeableQuery(String queryString) {

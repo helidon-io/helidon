@@ -22,7 +22,6 @@ import java.net.URI;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -41,7 +40,6 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -89,9 +87,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final boolean filterRedirectHeaders;
 
     private SocketAddress socketAddress;
-    private String uriTemplate;
-    private Set<String> uriTemplateQueryParamNames;
-    private UriQueryWriteable uriTemplateQuerySnapshot;
+    private UriTemplateQuery uriTemplate;
     private boolean crossOriginRedirect;
     private boolean skipUriEncoding;
     private boolean followRedirects;
@@ -195,8 +191,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T uri(URI uri) {
         this.uriTemplate = null;
-        this.uriTemplateQueryParamNames = null;
-        this.uriTemplateQuerySnapshot = null;
         this.clientUri.resolve(uri);
         return identity();
     }
@@ -220,8 +214,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T uri(ClientUri uri) {
         this.uriTemplate = null;
-        this.uriTemplateQueryParamNames = null;
-        this.uriTemplateQuerySnapshot = null;
         this.clientUri.resolve(uri);
         return identity();
     }
@@ -235,13 +227,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T uri(String uri) {
         if (uri.indexOf('{') > -1) {
-            if (this.uriTemplate != null && uriTemplateQuerySnapshot != null) {
-                this.clientUri.writeableQuery().clear();
-                this.clientUri.writeableQuery().from(uriTemplateQuerySnapshot);
-            }
-            this.uriTemplate = uri;
-            this.uriTemplateQueryParamNames = null;
-            this.uriTemplateQuerySnapshot = null;
+            this.uriTemplate = new UriTemplateQuery(uri);
         } else {
             uri(URI.create(UriEncoding.encodeUri(uri)));
         }
@@ -295,16 +281,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T queryParam(String name, String... values) {
-        UriQueryWriteable querySnapshot = uriTemplate != null && uriTemplateQueryParamNames == null
-                ? UriQueryWriteable.create().from(clientUri.query())
-                : null;
         clientUri.writeableQuery().set(name, values);
-        if (querySnapshot != null) {
-            uriTemplateQueryParamNames = new HashSet<>();
-            uriTemplateQuerySnapshot = querySnapshot;
-        }
-        if (uriTemplateQueryParamNames != null) {
-            uriTemplateQueryParamNames.add(name);
+        UriTemplateQuery templateQuery = uriTemplate;
+        if (templateQuery != null) {
+            templateQuery.trackQueryParam(name);
         }
         return identity();
     }
@@ -596,29 +576,21 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @return updated client uri
      */
     protected ClientUri resolveUri(ClientUri toResolve) {
-        if (uriTemplate != null) {
-            Map<String, String[]> requestQueryParams = null;
-            if (uriTemplateQueryParamNames != null) {
-                requestQueryParams = new HashMap<>();
-                Set<String> queryNames = clientUri.query().names();
-                for (String name : uriTemplateQueryParamNames) {
-                    if (queryNames.contains(name)) {
-                        requestQueryParams.put(name, clientUri.query().all(name).toArray(String[]::new));
-                    }
-                }
-            }
-            String resolved = resolvePathParams(uriTemplate);
+        UriTemplateQuery templateQuery = uriTemplate;
+        if (templateQuery != null) {
+            String resolved = resolvePathParams(templateQuery.template());
             URI uri;
             if (skipUriEncoding) {
                 uri = URI.create(resolved);
             } else {
                 uri = URI.create(UriEncoding.encodeUri(resolved));
             }
+            boolean replayQuery = skipUriEncoding || uri.isAbsolute();
+            ClientUri querySource = replayQuery && toResolve == clientUri ? ClientUri.create(clientUri) : clientUri;
             toResolve.resolve(uri);
 
-            if (requestQueryParams != null) {
-                UriQueryWriteable query = toResolve.writeableQuery();
-                requestQueryParams.forEach(query::set);
+            if (replayQuery) {
+                templateQuery.replay(querySource.query(), toResolve.writeableQuery(), uri.isAbsolute());
             }
         }
         return toResolve;
@@ -675,4 +647,5 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private T identity() {
         return (T) this;
     }
+
 }

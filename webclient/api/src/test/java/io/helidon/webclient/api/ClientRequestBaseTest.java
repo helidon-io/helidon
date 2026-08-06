@@ -97,6 +97,53 @@ class ClientRequestBaseTest {
     }
 
     @Test
+    void requestQueryOverridesRelativeTemplateQueryWhenEncodingIsConfiguredLater() {
+        ClientUri uri = new FakeClientRequest()
+                .uri("example/{path}?k=template")
+                .pathParam("path", "p")
+                .queryParam("k", "request")
+                .skipUriEncoding(true)
+                .resolvedUri();
+
+        assertThat(uri.path(), is(UriPath.create("/example/p")));
+        assertThat(uri.query().all("k"), is(List.of("request")));
+    }
+
+    @Test
+    void multipleRequestQueryParamsArePreserved() {
+        ClientUri uri = new FakeClientRequest()
+                .uri("https://www.example.com/{path}")
+                .pathParam("path", "p")
+                .queryParam("one", "1")
+                .queryParam("two", "2")
+                .queryParam("three", "3")
+                .queryParam("four", "4")
+                .queryParam("five", "5")
+                .queryParam("one", "replacement")
+                .resolvedUri();
+
+        assertThat(uri.query().all("one"), is(List.of("replacement")));
+        assertThat(uri.query().all("two"), is(List.of("2")));
+        assertThat(uri.query().all("three"), is(List.of("3")));
+        assertThat(uri.query().all("four"), is(List.of("4")));
+        assertThat(uri.query().all("five"), is(List.of("5")));
+    }
+
+    @Test
+    void requestQueryCoexistsWithRelativeTemplateQuery() {
+        ClientUri uri = new FakeClientRequest()
+                .uri("example/{path}?template=value")
+                .pathParam("path", "p")
+                .skipUriEncoding(true)
+                .queryParam("request", "value")
+                .resolvedUri();
+
+        assertThat(uri.path(), is(UriPath.create("/example/p")));
+        assertThat(uri.query().all("template"), is(List.of("value")));
+        assertThat(uri.query().all("request"), is(List.of("value")));
+    }
+
+    @Test
     void requestQueryOverridesEncodedTemplateQueryName() {
         ClientUri uri = new FakeClientRequest()
                 .uri("https://www.example.com/{path}?a%20b=template")
@@ -138,7 +185,7 @@ class ClientRequestBaseTest {
     }
 
     @Test
-    void replacingRelativeTemplateRestoresBaseQuery() {
+    void replacingRelativeTemplateRetainsEarlierQueryParams() {
         ClientUri baseUri = ClientUri.create(URI.create("https://www.example.com/base?k=base&unrelated=value"));
         ClientUri uri = new FakeClientRequest(baseUri)
                 .uri("first/{path}")
@@ -150,14 +197,14 @@ class ClientRequestBaseTest {
                 .queryParam("new", "value")
                 .resolvedUri();
 
-        assertThat(uri.query().all("k"), is(List.of("base")));
+        assertThat(uri.query().all("k"), is(List.of("old")));
         assertThat(uri.query().all("unrelated"), is(List.of("value")));
-        assertThat(uri.query().contains("old"), is(false));
+        assertThat(uri.query().all("old"), is(List.of("value")));
         assertThat(uri.query().all("new"), is(List.of("value")));
     }
 
     @Test
-    void replacingRelativeTemplateRestoresEncodedBaseQueryName() {
+    void replacingRelativeTemplateRetainsReplacementForEncodedBaseQueryName() {
         ClientUri baseUri = ClientUri.create(URI.create("https://www.example.com/base?%61=base"));
         ClientUri uri = new FakeClientRequest(baseUri)
                 .uri("first/{path}")
@@ -167,8 +214,8 @@ class ClientRequestBaseTest {
                 .pathParam("replacement", "p")
                 .resolvedUri();
 
-        assertThat(uri.query().all("a"), is(List.of("base")));
-        assertThat(uri.query().rawValue(), is("%61=base"));
+        assertThat(uri.query().all("a"), is(List.of("old")));
+        assertThat(uri.query().rawValue(), is("a=old"));
     }
 
     @Test
@@ -186,6 +233,80 @@ class ClientRequestBaseTest {
     }
 
     @Test
+    void directQueryMutationIsNotPromotedToTemplateRequestParam() {
+        FakeClientRequest request = new FakeClientRequest()
+                .uri("https://www.example.com/{path}")
+                .pathParam("path", "p");
+        request.uri().writeableQuery().set("direct", "value");
+
+        assertThat(request.resolvedUri().query().contains("direct"), is(false));
+    }
+
+    @Test
+    void queryParamConfiguredBeforeTemplateIsNotPromoted() {
+        ClientUri uri = new FakeClientRequest()
+                .queryParam("before", "value")
+                .uri("https://www.example.com/{path}")
+                .pathParam("path", "p")
+                .resolvedUri();
+
+        assertThat(uri.query().contains("before"), is(false));
+    }
+
+    @Test
+    void queryParamConfiguredBeforeRelativeTemplateIsRetained() {
+        ClientUri uri = new FakeClientRequest()
+                .queryParam("before", "value")
+                .uri("example/{path}")
+                .pathParam("path", "p")
+                .resolvedUri();
+
+        assertThat(uri.query().all("before"), is(List.of("value")));
+    }
+
+    @Test
+    void directQueryMutationRetainsRelativeTemplateBehavior() {
+        FakeClientRequest request = new FakeClientRequest()
+                .uri("example/{path}")
+                .pathParam("path", "p");
+        request.uri().writeableQuery().set("direct", "value");
+
+        assertThat(request.resolvedUri().query().all("direct"), is(List.of("value")));
+    }
+
+    @Test
+    void defaultEncodingKeepsTemplateQueryInPath() {
+        ClientUri uri = new FakeClientRequest()
+                .uri("https://www.example.com/{path}?template=value")
+                .pathParam("path", "p")
+                .queryParam("request", "value")
+                .resolvedUri();
+
+        assertThat(uri.pathWithQueryAndFragment(), is("/p%3Ftemplate=value?request=value"));
+    }
+
+    @Test
+    void requestQueryCoexistsWithAbsoluteTemplateQueryForEitherEncodingOrder() {
+        ClientUri encodingFirst = new FakeClientRequest()
+                .uri("https://www.example.com/{path}?template=value")
+                .pathParam("path", "p")
+                .skipUriEncoding(true)
+                .queryParam("request", "value")
+                .resolvedUri();
+        ClientUri encodingLast = new FakeClientRequest()
+                .uri("https://www.example.com/{path}?template=value")
+                .pathParam("path", "p")
+                .queryParam("request", "value")
+                .skipUriEncoding(true)
+                .resolvedUri();
+
+        assertThat(encodingFirst.query().all("template"), is(List.of("value")));
+        assertThat(encodingFirst.query().all("request"), is(List.of("value")));
+        assertThat(encodingLast.query().all("template"), is(List.of("value")));
+        assertThat(encodingLast.query().all("request"), is(List.of("value")));
+    }
+
+    @Test
     void rejectedQueryParamDoesNotArmInheritedQuery() {
         ClientUri baseUri = ClientUri.create(URI.create("https://trusted.example/base?access_token=secret"));
         FakeClientRequest request = new FakeClientRequest(baseUri)
@@ -197,6 +318,20 @@ class ClientRequestBaseTest {
         ClientUri uri = request.resolvedUri();
         assertThat(uri.authority(), is("other.example:443"));
         assertThat(uri.query().contains("access_token"), is(false));
+    }
+
+    @Test
+    void rejectedQueryParamDoesNotDiscardEarlierTrackedName() {
+        FakeClientRequest request = new FakeClientRequest()
+                .uri("https://www.example.com/{path}")
+                .pathParam("path", "p")
+                .queryParam("accepted", "value");
+
+        assertThrows(NullPointerException.class, () -> request.queryParam("rejected", (String) null));
+
+        ClientUri uri = request.resolvedUri();
+        assertThat(uri.query().all("accepted"), is(List.of("value")));
+        assertThat(uri.query().contains("rejected"), is(false));
     }
 
     @Test
@@ -232,7 +367,19 @@ class ClientRequestBaseTest {
     }
 
     @Test
-    void removedRequestQueryParamCanBeAddedAgain() {
+    void rawAliasDoesNotMasqueradeAsTrackedDecodedName() {
+        FakeClientRequest request = new FakeClientRequest()
+                .uri("https://www.example.com/{path}")
+                .pathParam("path", "p")
+                .queryParam("%61", "request");
+        request.uri().writeableQuery().clear();
+        request.uri().writeableQuery().fromQueryString("%61=raw");
+
+        assertThat(request.resolvedUri().query().isEmpty(), is(true));
+    }
+
+    @Test
+    void resolvedUriDoesNotChangeTemplateQueryTracking() {
         FakeClientRequest request = new FakeClientRequest()
                 .uri("https://www.example.com/{path}?access_token=template")
                 .pathParam("path", "p")
@@ -262,6 +409,21 @@ class ClientRequestBaseTest {
         request.pathParam("path", "p");
 
         assertThat(request.resolvedUri().query().all("access_token"), is(List.of("replacement")));
+    }
+
+    @Test
+    void relativeTemplateQueryResolutionIsRepeatable() {
+        FakeClientRequest request = new FakeClientRequest()
+                .uri("example/{path}?template=value")
+                .pathParam("path", "p")
+                .skipUriEncoding(true)
+                .queryParam("request", "value");
+
+        ClientUri first = request.resolvedUri();
+        ClientUri second = request.resolvedUri();
+        assertThat(second.query().rawValue(), is(first.query().rawValue()));
+        assertThat(second.query().all("template"), is(List.of("value")));
+        assertThat(second.query().all("request"), is(List.of("value")));
     }
 
     private static final class FakeClientRequest extends ClientRequestBase<FakeClientRequest, HttpClientResponse> {
