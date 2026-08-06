@@ -272,7 +272,7 @@ final class OpenApiSourceGenerator {
                                     Method.Builder method) {
         String endpointTag = endpointName(endpoint.type().typeName());
         Map<TypeName, String> componentNames = schemas.componentNames(schemaBindings);
-        Set<Annotation> endpointAnnotations = annotationsWithMetaAnnotations(endpoint.type().annotations());
+        Collection<Annotation> endpointAnnotations = annotationsWithMetaAnnotations(endpoint.type().annotations());
         if (!hasSecurityRequirementAnnotations(endpointAnnotations)) {
             endpointAnnotations = endpoint.annotations();
         }
@@ -648,7 +648,7 @@ final class OpenApiSourceGenerator {
                                                             OPENAPI_EXTENSION_ANNOTATION);
         validator.validateExtensions(restMethodDescription(restMethod), extensions);
         extensions.forEach(extension -> writeExtension(method, ".extension", false, extension));
-        Set<Annotation> securityAnnotations = operationSecurityAnnotations(restMethod);
+        Collection<Annotation> securityAnnotations = operationSecurityAnnotations(restMethod);
         if (hasEmptySecurityRequirements(securityAnnotations)) {
             method.addContentLine(".security(java.util.List.of())");
             return;
@@ -673,27 +673,32 @@ final class OpenApiSourceGenerator {
                                                                                     requirement));
     }
 
-    private Set<Annotation> operationSecurityAnnotations(RestMethod restMethod) {
-        Set<Annotation> directAnnotations = annotationsWithMetaAnnotations(restMethod.method().annotations());
+    private Collection<Annotation> operationSecurityAnnotations(RestMethod restMethod) {
+        Collection<Annotation> directAnnotations = annotationsWithMetaAnnotations(restMethod.method().annotations());
         if (hasSecurityRequirementAnnotations(directAnnotations)) {
             return directAnnotations;
         }
         return restMethod.annotations();
     }
 
-    private Set<Annotation> annotationsWithMetaAnnotations(Collection<Annotation> annotations) {
-        Set<Annotation> result = new HashSet<>();
-        Deque<Annotation> remaining = new ArrayDeque<>(annotations);
-        while (!remaining.isEmpty()) {
-            Annotation annotation = remaining.removeFirst();
-            if (result.add(annotation)) {
-                remaining.addAll(annotation.metaAnnotations());
+    private List<Annotation> annotationsWithMetaAnnotations(Collection<Annotation> annotations) {
+        List<Annotation> result = new ArrayList<>();
+        for (Annotation rootAnnotation : annotations) {
+            Set<Annotation> visited = new HashSet<>();
+            Deque<Annotation> remaining = new ArrayDeque<>();
+            remaining.add(rootAnnotation);
+            while (!remaining.isEmpty()) {
+                Annotation annotation = remaining.removeFirst();
+                if (visited.add(annotation)) {
+                    result.add(annotation);
+                    remaining.addAll(annotation.metaAnnotations());
+                }
             }
         }
         return result;
     }
 
-    private boolean hasSecurityRequirementAnnotations(Set<Annotation> annotations) {
+    private boolean hasSecurityRequirementAnnotations(Collection<Annotation> annotations) {
         return hasAnnotation(annotations, OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION)
                 || hasAnnotation(annotations, OPENAPI_SECURITY_REQUIREMENT_ANNOTATION)
                 || hasAnnotation(annotations, OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION);
@@ -1883,11 +1888,11 @@ final class OpenApiSourceGenerator {
         return result.append(".build()").toString();
     }
 
-    private static boolean hasAnnotation(Set<Annotation> annotations, TypeName annotationType) {
+    private static boolean hasAnnotation(Collection<Annotation> annotations, TypeName annotationType) {
         return Annotations.findFirst(annotationType, annotations).isPresent();
     }
 
-    private boolean hasEmptySecurityRequirements(Set<Annotation> annotations) {
+    private boolean hasEmptySecurityRequirements(Collection<Annotation> annotations) {
         return Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION, annotations)
                 .flatMap(Annotation::annotationValues)
                 .filter(List::isEmpty)
@@ -1896,14 +1901,16 @@ final class OpenApiSourceGenerator {
                 && Annotations.findFirst(OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION, annotations).isEmpty();
     }
 
-    private List<OpenApiSecurityRequirement> securityRequirements(String owner, Set<Annotation> annotations) {
+    private List<OpenApiSecurityRequirement> securityRequirements(String owner, Collection<Annotation> annotations) {
         Optional<Annotation> direct = Annotations.findFirst(OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION,
                                                             annotations);
         Optional<Annotation> container = Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION, annotations);
-        Optional<Annotation> requirement = Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENT_ANNOTATION, annotations);
+        List<Annotation> requirements = annotations.stream()
+                .filter(it -> it.typeName().name().equals(OPENAPI_SECURITY_REQUIREMENT_ANNOTATION.name()))
+                .toList();
 
         if (direct.isPresent()) {
-            if (container.isPresent() || requirement.isPresent()) {
+            if (container.isPresent() || !requirements.isEmpty()) {
                 throw new CodegenException("@OpenApi.SecuritySchemeRequirement on " + owner
                                                    + " cannot be combined with @OpenApi.SecurityRequirement or "
                                                    + "@OpenApi.SecurityRequirements");
@@ -1919,7 +1926,7 @@ final class OpenApiSourceGenerator {
                     .forEach(it -> result.add(new OpenApiSecurityRequirement(it.annotationValues()
                             .orElseGet(List::of))));
         } else {
-            requirement.ifPresent(it -> result.add(new OpenApiSecurityRequirement(it.annotationValues()
+            requirements.forEach(it -> result.add(new OpenApiSecurityRequirement(it.annotationValues()
                     .orElseGet(List::of))));
         }
         return result;

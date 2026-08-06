@@ -1154,6 +1154,71 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void multipleComposedMethodSecurityRequirementsArePreserved() throws IOException {
+        var result = compile("openapi-multiple-composed-method-security-requirements", """
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @interface BearerAuth {
+                }
+
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("oauth2"))
+                @interface OAuth2 {
+                }
+
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    @BearerAuth
+                    @OAuth2
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated, containsString(".scheme(\"oauth2\", java.util.List.of())"));
+    }
+
+    @Test
+    void composedMethodSecurityRequirementCannotRepeatSameRequirement() {
+        var result = compile("openapi-duplicate-composed-method-security-requirement", """
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @interface BearerAuth {
+                }
+
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @interface AlternateBearerAuth {
+                }
+
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    @BearerAuth
+                    @AlternateBearerAuth
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityRequirement on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot define security requirement [bearerAuth] more than once");
+    }
+
+    @Test
     void recursivelyComposedMethodSecurityRequirementOverridesInheritedRequirements() throws IOException {
         var result = compile("openapi-recursively-composed-method-security-requirement-overrides-inherited-requirements", """
                 interface SecuredApi {
