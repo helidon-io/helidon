@@ -691,14 +691,16 @@ final class OpenApiSourceGenerator {
     private List<Annotation> annotationsWithMetaAnnotations(Collection<Annotation> annotations) {
         List<Annotation> result = new ArrayList<>();
         for (Annotation rootAnnotation : annotations) {
-            Set<Annotation> visited = new HashSet<>();
-            Deque<Annotation> remaining = new ArrayDeque<>();
-            remaining.add(rootAnnotation);
+            Deque<Map.Entry<Annotation, Set<TypeName>>> remaining = new ArrayDeque<>();
+            remaining.add(Map.entry(rootAnnotation, new HashSet<>()));
             while (!remaining.isEmpty()) {
-                Annotation annotation = remaining.removeFirst();
-                if (visited.add(annotation)) {
+                Map.Entry<Annotation, Set<TypeName>> current = remaining.removeFirst();
+                Annotation annotation = current.getKey();
+                Set<TypeName> path = current.getValue();
+                if (path.add(annotation.typeName())) {
                     result.add(annotation);
-                    remaining.addAll(annotation.metaAnnotations());
+                    annotation.metaAnnotations()
+                            .forEach(it -> remaining.add(Map.entry(it, new HashSet<>(path))));
                 }
             }
         }
