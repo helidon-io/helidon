@@ -70,39 +70,45 @@ class SharedHttp2CacheTest {
             int port = webServer.port();
 
             Http2Client webClient = Http2Client.builder()
+                    // Keep each parameterized case independent of the process-wide cache and recycled local ports.
+                    .shareConnectionCache(false)
                     .protocolConfig(Http2ClientProtocolConfig.builder()
                                             .priorKnowledge(param.priorKnowledge())
                                             .ping(param.usePing())
                                             .build())
                     .baseUri("http://localhost:" + port + "/versionspecific")
                     .build();
+            try {
 
-            Integer firstReqClientPort;
-            try (var res = webClient.post().submit("WHATEVER")) {
-                firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Status.OK_200));
-            }
+                Integer firstReqClientPort;
+                try (var res = webClient.post().submit("WHATEVER")) {
+                    firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
+                    assertThat(res.status(), is(Status.OK_200));
+                }
 
-            if (param.restart()) {
-                // Test severing cached connections
-                webServer.stop();
-                webServer = WebServer.builder()
-                        .port(port)
-                        .routing(routing)
-                        .build()
-                        .start();
-            }
+                if (param.restart()) {
+                    // Test severing cached connections
+                    webServer.stop();
+                    webServer = WebServer.builder()
+                            .port(port)
+                            .routing(routing)
+                            .build()
+                            .start();
+                }
 
-            Integer secondReqClientPort;
-            try (var res = webClient.post().submit("WHATEVER")) {
-                secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Status.OK_200));
-            }
+                Integer secondReqClientPort;
+                try (var res = webClient.post().submit("WHATEVER")) {
+                    secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
+                    assertThat(res.status(), is(Status.OK_200));
+                }
 
-            if (!param.restart()) {
-                assertThat("In case of cached connection client port must be the same.",
-                           secondReqClientPort,
-                           is(firstReqClientPort));
+                if (!param.restart()) {
+                    assertThat("In case of cached connection client port must be the same.",
+                               secondReqClientPort,
+                               is(firstReqClientPort));
+                }
+            } finally {
+                webClient.closeResource();
             }
 
         } finally {
