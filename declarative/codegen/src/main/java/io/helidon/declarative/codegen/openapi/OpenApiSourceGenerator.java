@@ -272,7 +272,10 @@ final class OpenApiSourceGenerator {
                                     Method.Builder method) {
         String endpointTag = endpointName(endpoint.type().typeName());
         Map<TypeName, String> componentNames = schemas.componentNames(schemaBindings);
-        Collection<Annotation> endpointAnnotations = annotationsWithMetaAnnotations(endpoint.type().annotations());
+        Collection<Annotation> endpointAnnotations = endpoint.type().annotations();
+        if (!hasSecurityRequirementAnnotations(endpointAnnotations)) {
+            endpointAnnotations = annotationsWithMetaAnnotations(endpointAnnotations);
+        }
         if (!hasSecurityRequirementAnnotations(endpointAnnotations)) {
             endpointAnnotations = endpoint.annotations();
         }
@@ -674,9 +677,13 @@ final class OpenApiSourceGenerator {
     }
 
     private Collection<Annotation> operationSecurityAnnotations(RestMethod restMethod) {
-        Collection<Annotation> directAnnotations = annotationsWithMetaAnnotations(restMethod.method().annotations());
+        Collection<Annotation> directAnnotations = restMethod.method().annotations();
         if (hasSecurityRequirementAnnotations(directAnnotations)) {
             return directAnnotations;
+        }
+        Collection<Annotation> composedAnnotations = annotationsWithMetaAnnotations(directAnnotations);
+        if (hasSecurityRequirementAnnotations(composedAnnotations)) {
+            return composedAnnotations;
         }
         return restMethod.annotations();
     }

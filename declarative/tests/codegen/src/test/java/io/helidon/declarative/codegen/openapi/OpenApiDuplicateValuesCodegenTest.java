@@ -1117,6 +1117,35 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void directMethodSecurityRequirementOverridesComposedSecurityClear() throws IOException {
+        var result = compile("openapi-direct-method-security-requirement-overrides-composed-security-clear", """
+                @OpenApi.SecurityRequirements({})
+                @interface PublicEndpoint {
+                }
+
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("admin"))
+                    @PublicEndpoint
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"admin\", java.util.List.of())"));
+    }
+
+    @Test
     void composedMethodSecurityRequirementOverridesInheritedRequirements() throws IOException {
         var result = compile("openapi-composed-method-security-requirement-overrides-inherited-requirements", """
                 interface SecuredApi {
