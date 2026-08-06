@@ -1237,7 +1237,7 @@ class SchemaGeneratorTest {
     }
 
     @Test
-    void testProviderList() throws IOException {
+    void testObjectOrListProviderMetadata() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -1277,7 +1277,8 @@ class SchemaGeneratorTest {
                              * @return option1
                              */
                             @Option.Configured
-                            @Option.Provider(AcmeServiceProvider.class)
+                            @Option.Provider(value = AcmeServiceProvider.class,
+                                             configForm = Option.Provider.ConfigForm.OBJECT_OR_LIST)
                             List<AcmeService> option1();
                         }
                         """)
@@ -1299,7 +1300,7 @@ class SchemaGeneratorTest {
                             key = "option1",
                             description = "Option1",
                             type = AcmeService.class,
-                            kind = ConfiguredOption.Kind.LIST,
+                            kind = ConfiguredOption.Kind.MAP_OR_LIST,
                             provider = true),
                         @ConfiguredOption(
                             key = "option1-discover-services",
@@ -1474,7 +1475,12 @@ class SchemaGeneratorTest {
                 @Configured(
                     description = "ACME config",
                     options = {
-                        @ConfiguredOption(key = "option1", description = "Option1", type = AcmeService.class, provider = true),
+                        @ConfiguredOption(
+                            key = "option1",
+                            description = "Option1",
+                            type = AcmeService.class,
+                            kind = ConfiguredOption.Kind.MAP_OR_LIST,
+                            provider = true),
                         @ConfiguredOption(
                             key = "option1-discover-services",
                             description = "Whether to enable automatic service discovery for <code>option1</code>",

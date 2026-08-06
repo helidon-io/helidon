@@ -111,6 +111,7 @@ public class ListenerConfigTest {
     }
 
     @Test
+    @SuppressWarnings("removal")
     void testDeprecatedMaxTcpConnectionsConfiguresMaxConnections() {
         Config config = Config.just("""
                 server:
@@ -122,6 +123,7 @@ public class ListenerConfigTest {
                 .buildPrototype();
 
         assertThat(listenerConfig.maxConnections(), is(23));
+        assertThat(listenerConfig.maxTcpConnections(), is(23));
     }
 
     @Test
@@ -162,6 +164,31 @@ public class ListenerConfigTest {
                 .buildPrototype();
 
         assertThat(listenerConfig.maxConnections(), is(23));
+        assertThat(listenerConfig.maxTcpConnections(), is(23));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testMaxConnectionsBuilderConfiguresDeprecatedMaxTcpConnections() {
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .maxConnections(23)
+                .buildPrototype();
+
+        assertThat(listenerConfig.maxTcpConnections(), is(23));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testConnectionLimitAliasesProduceEqualConfigs() {
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .maxConnections(23)
+                .buildPrototype();
+        ListenerConfig legacyListenerConfig = ListenerConfig.builder(listenerConfig)
+                .maxTcpConnections(23)
+                .buildPrototype();
+
+        assertThat(listenerConfig, is(legacyListenerConfig));
+        assertThat(listenerConfig.hashCode(), is(legacyListenerConfig.hashCode()));
     }
 
     @Test
@@ -184,6 +211,7 @@ public class ListenerConfigTest {
                 .buildPrototype();
 
         assertThat(listenerConfig.maxConnections(), is(-1));
+        assertThat(listenerConfig.maxTcpConnections(), is(-1));
     }
 
     @Test

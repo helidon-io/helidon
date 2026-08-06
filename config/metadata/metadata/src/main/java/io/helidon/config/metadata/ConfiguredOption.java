@@ -194,6 +194,10 @@ public @interface ConfiguredOption {
         /**
          * Option is a map keyed by strings.
          */
-        MAP
+        MAP,
+        /**
+         * Option accepts either a map keyed by strings or a list of values.
+         */
+        MAP_OR_LIST
     }
 }

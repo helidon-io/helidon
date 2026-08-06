@@ -423,6 +423,9 @@ class SchemaGenerator {
             if (configForm == Option.Provider.ConfigForm.LIST) {
                 return "LIST";
             }
+            if (configForm == Option.Provider.ConfigForm.OBJECT_OR_LIST) {
+                return "MAP_OR_LIST";
+            }
         }
 
         var typeName = optionInfo.declaredType();
