@@ -16,12 +16,17 @@
 
 package io.helidon.webserver.observe.telemetry.metrics;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.config.Config;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.service.registry.Service;
 import io.helidon.telemetry.otelconfig.HelidonOpenTelemetry;
@@ -55,6 +60,8 @@ import static java.lang.System.Logger.Level.WARNING;
  */
 @Service.Singleton
 class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProvider {
+    private static final System.Logger LOGGER = System.getLogger(OpenTelemetryMetricsHttpSemanticConventions.class.getName());
+    private static final int MAX_NONSTANDARD_METHODS = 16;
 
     // OpenTelemetry
     static final String HTTP_METHOD = HttpAttributes.HTTP_REQUEST_METHOD.getKey();
@@ -67,6 +74,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     // Helidon
     static final String SOCKET_NAME = "socket.name";
     static final String TIMER_NAME = "http.server.request.duration";
+    private static final String UNKNOWN_METHOD = "UNKNOWN";
     /*
     Bucket boundaries as recommended by the OpenTelemetry spec.
     https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpserverrequestduration
@@ -75,6 +83,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             List.of(0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0);
 
     private final DoubleHistogram httpRequestDuration;
+    private final NonstandardHttpMethods nonstandardHttpMethods = new NonstandardHttpMethods();
 
     @Service.Inject
     OpenTelemetryMetricsHttpSemanticConventions(OpenTelemetry openTelemetry, Config config) {
@@ -99,7 +108,8 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
         return (config.autoHttpMetrics().isPresent() && !config.autoHttpMetrics().get().enabled())
                 ? Optional.empty()
                 : Optional.of(MetricsRecordingFilter.create(httpRequestDuration,
-                                                            config.autoHttpMetrics().orElse(AutoHttpMetricsConfig.create())));
+                                                            config.autoHttpMetrics().orElse(AutoHttpMetricsConfig.create()),
+                                                            nonstandardHttpMethods));
     }
 
     private static DoubleHistogram httpRequestDuration(Meter meter) {
@@ -116,10 +126,14 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
 
         private final DoubleHistogram httpRequestDuration;
         private final AutoHttpMetricsConfig config;
+        private final NonstandardHttpMethods nonstandardHttpMethods;
 
-        private MetricsRecordingFilter(DoubleHistogram httpRequestDuration, AutoHttpMetricsConfig config) {
+        private MetricsRecordingFilter(DoubleHistogram httpRequestDuration,
+                                       AutoHttpMetricsConfig config,
+                                       NonstandardHttpMethods nonstandardHttpMethods) {
             this.httpRequestDuration = httpRequestDuration;
             this.config = config;
+            this.nonstandardHttpMethods = nonstandardHttpMethods;
         }
 
         @Override
@@ -190,8 +204,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             }
         }
 
-        private static MetricsRecordingFilter create(DoubleHistogram httpRequestDuration, AutoHttpMetricsConfig config) {
-            return new MetricsRecordingFilter(httpRequestDuration, config);
+        private static MetricsRecordingFilter create(DoubleHistogram httpRequestDuration,
+                                                     AutoHttpMetricsConfig config,
+                                                     NonstandardHttpMethods nonstandardHttpMethods) {
+            return new MetricsRecordingFilter(httpRequestDuration, config, nonstandardHttpMethods);
         }
 
         private static boolean isOptedIn(AutoHttpMetricsConfig config, String attributeName) {
@@ -210,7 +226,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             }
             AttributesBuilder attrBuilder = Attributes.builder();
 
-            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
+            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), nonstandardHttpMethods.normalize(req.prologue().method()))
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
@@ -221,10 +237,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     .ifPresent(route -> attrBuilder.put(AttributeKey.stringKey(HTTP_ROUTE), route));
 
             if (isOptedIn(config, SERVER_ADDRESS)) {
-                attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.requestedUri().host());
+                attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.localPeer().host());
             }
             if (isOptedIn(config, SERVER_PORT)) {
-                attrBuilder.put(AttributeKey.longKey(SERVER_PORT), (long) req.requestedUri().port());
+                attrBuilder.put(AttributeKey.longKey(SERVER_PORT), (long) req.localPeer().port());
             }
 
             /*
@@ -246,7 +262,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             }
             AttributesBuilder attrBuilder = Attributes.builder();
 
-            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
+            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), nonstandardHttpMethods.normalize(req.prologue().method()))
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), legacyStatusCode(resp, exception))
@@ -254,10 +270,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
 
             if (isOptedIn(config, SERVER_ADDRESS)) {
-                attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.requestedUri().host());
+                attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.localPeer().host());
             }
             if (isOptedIn(config, SERVER_PORT)) {
-                attrBuilder.put(AttributeKey.longKey(SERVER_PORT), (long) req.requestedUri().port());
+                attrBuilder.put(AttributeKey.longKey(SERVER_PORT), (long) req.localPeer().port());
             }
 
             httpRequestDuration.record((endTime - startTime) / 1_000_000.0, attrBuilder.build());
@@ -277,5 +293,48 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     : resp.status().code();
         }
 
+    }
+
+    private static final class NonstandardHttpMethods {
+        private final Set<String> methods = new HashSet<>();
+        private final Lock lock = new ReentrantLock();
+        private final AtomicBoolean limitWarningLogged = new AtomicBoolean();
+
+        private String normalize(Method method) {
+            if (method == Method.GET
+                    || method == Method.HEAD
+                    || method == Method.POST
+                    || method == Method.PUT
+                    || method == Method.DELETE
+                    || method == Method.CONNECT
+                    || method == Method.OPTIONS
+                    || method == Method.TRACE
+                    || method == Method.PATCH) {
+                return method.text();
+            }
+
+            String methodName = method.text();
+            lock.lock();
+            try {
+                if (methods.contains(methodName)) {
+                    return methodName;
+                }
+                if (methods.size() < MAX_NONSTANDARD_METHODS) {
+                    methods.add(methodName);
+                    return methodName;
+                }
+            } finally {
+                lock.unlock();
+            }
+
+            if (limitWarningLogged.compareAndSet(false, true)) {
+                LOGGER.log(WARNING,
+                           "Maximum of {0} non-standard HTTP methods has been reached; {1} and subsequent "
+                                   + "previously unseen non-standard methods will be recorded as UNKNOWN",
+                           MAX_NONSTANDARD_METHODS,
+                           methodName);
+            }
+            return UNKNOWN_METHOD;
+        }
     }
 }
