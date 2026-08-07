@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.common.Api;
@@ -32,6 +33,7 @@ import io.helidon.http.HeaderValues;
 
 /**
  * Configuration of a single advertised alternative service.
+ * An instance that uses the listener port is intended for a single listener.
  */
 @Api.Incubating
 public final class AltSvc {
@@ -42,6 +44,10 @@ public final class AltSvc {
     private final Optional<Integer> port;
     private final Optional<Duration> maxAge;
     private final boolean persist;
+    private final String headerPrefix;
+    private final String headerSuffix;
+    private final Optional<Header> explicitPortHeader;
+    private final AtomicReference<ListenerHeader> listenerHeader = new AtomicReference<>();
 
     private AltSvc(Builder builder) {
         this.enabled = builder.enabled;
@@ -49,6 +55,47 @@ public final class AltSvc {
         this.port = Objects.requireNonNull(builder.port, "port");
         this.maxAge = Objects.requireNonNull(builder.maxAge, "maxAge");
         this.persist = builder.persist;
+
+        StringBuilder prefix = new StringBuilder();
+        byte[] protocolBytes = protocol.getBytes(StandardCharsets.ISO_8859_1);
+        for (byte current : protocolBytes) {
+            int candidate = current & 0xFF;
+            boolean tokenChar = (candidate >= '0' && candidate <= '9')
+                    || (candidate >= 'A' && candidate <= 'Z')
+                    || (candidate >= 'a' && candidate <= 'z')
+                    || candidate == '!'
+                    || candidate == '#'
+                    || candidate == '$'
+                    || candidate == '&'
+                    || candidate == '\''
+                    || candidate == '*'
+                    || candidate == '+'
+                    || candidate == '-'
+                    || candidate == '.'
+                    || candidate == '^'
+                    || candidate == '_'
+                    || candidate == '`'
+                    || candidate == '|'
+                    || candidate == '~';
+            if (tokenChar) {
+                prefix.append((char) candidate);
+            } else {
+                prefix.append('%')
+                        .append(HEX[candidate >>> 4])
+                        .append(HEX[candidate & 0x0F]);
+            }
+        }
+        this.headerPrefix = prefix.append("=\"").append(':').toString();
+
+        StringBuilder suffix = new StringBuilder().append('"');
+        if (maxAge.isPresent()) {
+            suffix.append("; ma=").append(maxAge.get().toSeconds());
+        }
+        if (persist) {
+            suffix.append("; persist=1");
+        }
+        this.headerSuffix = suffix.toString();
+        this.explicitPortHeader = port.filter(AltSvc::validPort).map(this::createHeader);
     }
 
     /**
@@ -132,9 +179,31 @@ public final class AltSvc {
      *
      * @param listenerPort current listener port
      * @return header
+     * @throws IllegalArgumentException if there is no valid effective port
+     * @throws IllegalStateException if this instance is reused for a different listener port
      */
     public Header header(int listenerPort) {
-        return HeaderValues.create(HeaderNames.ALT_SVC, headerValue(listenerPort));
+        int effectivePort = port.isPresent() ? port.get() : listenerPort;
+        if (!validPort(effectivePort)) {
+            throw new IllegalArgumentException("Alt-Svc port must be between 1 and 65535.");
+        }
+        if (explicitPortHeader.isPresent()) {
+            return explicitPortHeader.get();
+        }
+
+        ListenerHeader current = listenerHeader.get();
+        if (current == null) {
+            ListenerHeader created = new ListenerHeader(effectivePort, createHeader(effectivePort));
+            if (listenerHeader.compareAndSet(null, created)) {
+                return created.header();
+            }
+            current = listenerHeader.get();
+        }
+        if (current.port() != effectivePort) {
+            throw new IllegalStateException("Alt-Svc instance is already bound to listener port "
+                                                    + current.port() + ", cannot use listener port " + effectivePort + '.');
+        }
+        return current.header();
     }
 
     /**
@@ -142,54 +211,11 @@ public final class AltSvc {
      *
      * @param listenerPort current listener port
      * @return header value
+     * @throws IllegalArgumentException if there is no valid effective port
+     * @throws IllegalStateException if this instance is reused for a different listener port
      */
     public String headerValue(int listenerPort) {
-        int effectivePort = port.orElse(listenerPort);
-        if (effectivePort < 1 || effectivePort > 65_535) {
-            throw new IllegalArgumentException("Alt-Svc port must be between 1 and 65535.");
-        }
-
-        StringBuilder value = new StringBuilder();
-        byte[] protocolBytes = protocol.getBytes(StandardCharsets.ISO_8859_1);
-        for (byte current : protocolBytes) {
-            int candidate = current & 0xFF;
-            boolean tokenChar = (candidate >= '0' && candidate <= '9')
-                    || (candidate >= 'A' && candidate <= 'Z')
-                    || (candidate >= 'a' && candidate <= 'z')
-                    || candidate == '!'
-                    || candidate == '#'
-                    || candidate == '$'
-                    || candidate == '&'
-                    || candidate == '\''
-                    || candidate == '*'
-                    || candidate == '+'
-                    || candidate == '-'
-                    || candidate == '.'
-                    || candidate == '^'
-                    || candidate == '_'
-                    || candidate == '`'
-                    || candidate == '|'
-                    || candidate == '~';
-            if (tokenChar) {
-                value.append((char) candidate);
-            } else {
-                value.append('%')
-                        .append(HEX[candidate >>> 4])
-                        .append(HEX[candidate & 0x0F]);
-            }
-        }
-        value.append("=\"")
-                .append(':')
-                .append(effectivePort)
-                .append('"');
-
-        if (maxAge.isPresent()) {
-            value.append("; ma=").append(maxAge.get().toSeconds());
-        }
-        if (persist) {
-            value.append("; persist=1");
-        }
-        return value.toString();
+        return header(listenerPort).get();
     }
 
     @Override
@@ -221,6 +247,17 @@ public final class AltSvc {
                 && Objects.equals(protocol, other.protocol)
                 && Objects.equals(port, other.port)
                 && Objects.equals(maxAge, other.maxAge);
+    }
+
+    private static boolean validPort(int port) {
+        return port > 0 && port <= 65_535;
+    }
+
+    private Header createHeader(int port) {
+        return HeaderValues.createCached(HeaderNames.ALT_SVC, headerPrefix + port + headerSuffix);
+    }
+
+    private record ListenerHeader(int port, Header header) {
     }
 
     /**

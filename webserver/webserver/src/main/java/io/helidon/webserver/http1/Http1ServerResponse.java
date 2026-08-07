@@ -69,6 +69,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private static final byte[] DATE = "Date: ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] TERMINATING_CHUNK_TRAILERS = "0\r\n".getBytes(StandardCharsets.UTF_8);
+    private static final Runnable NO_OP = () -> { };
 
     @SuppressWarnings("rawtypes")
     private static final List<SinkProvider> SINK_PROVIDERS
@@ -525,7 +526,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                                                 afterSend();
                                                                 request.reset();
                                                             },
-                                                            this::configureAltSvc,
+                                                            configuredAltSvc.isEmpty() ? NO_OP : this::configureAltSvc,
                                                             ctx,
                                                             sendListener,
                                                             request,

@@ -43,6 +43,7 @@ import io.helidon.webserver.http.ServerResponseBase;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
+    private static final Runnable NO_OP = () -> { };
 
     private final ConnectionContext ctx;
     private final ServerResponseHeaders headers;
@@ -197,7 +198,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         outputStream = new BlockingOutputStream(request, this, () -> {
             this.isSent = true;
             afterSend();
-        }, beforeTrailers(), this::configureAltSvc);
+        }, beforeTrailers(), configuredAltSvc.isEmpty() ? NO_OP : this::configureAltSvc);
         if (outputStreamFilter == null) {
             return contentEncode(outputStream);
         } else {

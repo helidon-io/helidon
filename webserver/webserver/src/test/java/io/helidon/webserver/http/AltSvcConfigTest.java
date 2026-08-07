@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AltSvcConfigTest {
@@ -101,6 +102,16 @@ class AltSvcConfigTest {
                 .build();
 
         assertThat(altSvc.headerValue(-1), is("h3=\":9443\""));
+    }
+
+    @Test
+    void shouldCacheHeaderForOneListener() {
+        AltSvc altSvc = AltSvc.builder().build();
+
+        assertSame(altSvc.header(8443), altSvc.header(8443));
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> altSvc.header(9443));
+        assertThat(exception.getMessage(),
+                   is("Alt-Svc instance is already bound to listener port 8443, cannot use listener port 9443."));
     }
 
     @Test
