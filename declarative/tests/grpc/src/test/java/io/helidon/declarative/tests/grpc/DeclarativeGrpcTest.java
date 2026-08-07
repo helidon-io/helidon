@@ -59,6 +59,7 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -220,7 +221,9 @@ class DeclarativeGrpcTest {
         assertThat(counterCount(meterRegistry, "GreetingEndpoint.greet", methodTags), is(methodCounterBefore + 1));
         assertThat(timerCount(meterRegistry, "grpc-greet", methodTimerTags), is(methodTimerBefore + 1));
         assertThat(counterCount(meterRegistry, "grpc.server.call.started", grpcMethodTags), is(grpcStartedBefore + 1));
-        assertThat(timerCount(meterRegistry, "grpc.server.call.duration", grpcDurationTags), is(grpcDurationBefore + 1));
+        assertThatWithRetry("gRPC call duration metric",
+                            () -> timerCount(meterRegistry, "grpc.server.call.duration", grpcDurationTags),
+                            is(grpcDurationBefore + 1));
     }
 
     @Test
