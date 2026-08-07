@@ -92,58 +92,6 @@ class ClientRequestBaseTest {
         assertThat(request.endpointCount(), is(0));
     }
 
-    private static final class TestRequest extends ClientRequestBase<TestRequest, HttpClientResponse> {
-        private final AtomicInteger endpointCount = new AtomicInteger();
-
-        private TestRequest(Method method, String uri) {
-            this(HttpClientConfig.builder().build(), method, uri);
-        }
-
-        private TestRequest(HttpClientConfig clientConfig, Method method, String uri) {
-            super(clientConfig,
-                  WebClientCookieManager.builder().build(),
-                  "test",
-                  method,
-                  ClientUri.create(URI.create(uri)),
-                  Map.of());
-        }
-
-        @Override
-        protected HttpClientResponse doSubmit(Object entity) {
-            invokeEndpoint();
-            return null;
-        }
-
-        @Override
-        protected HttpClientResponse doOutputStream(OutputStreamHandler outputStreamHandler) {
-            invokeEndpoint();
-            return null;
-        }
-
-        private void invokeEndpoint() {
-            CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
-            CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-            invokeServices(endpoint(), whenSent, whenComplete, resolvedUri());
-        }
-
-        private WebClientService.Chain endpoint() {
-            return serviceRequest -> {
-                endpointCount.incrementAndGet();
-                return WebClientServiceResponse.builder()
-                        .serviceRequest(serviceRequest)
-                        .whenComplete(new CompletableFuture<>())
-                        .connection(() -> { })
-                        .status(Status.OK_200)
-                        .headers(ClientResponseHeaders.create(WritableHeaders.create()))
-                        .build();
-            };
-        }
-
-        private int endpointCount() {
-            return endpointCount.get();
-        }
-    }
-
     /**
      * Verify that query parameters are preserved when resolving URI templates (cf. issue #8566).
      * Make sure to test both absolute and relative URIs as they are handled differently when resolving.
@@ -537,6 +485,58 @@ class ClientRequestBaseTest {
         assertThat(second.query().rawValue(), is(first.query().rawValue()));
         assertThat(second.query().all("template"), is(List.of("value")));
         assertThat(second.query().all("request"), is(List.of("value")));
+    }
+
+    private static final class TestRequest extends ClientRequestBase<TestRequest, HttpClientResponse> {
+        private final AtomicInteger endpointCount = new AtomicInteger();
+
+        private TestRequest(Method method, String uri) {
+            this(HttpClientConfig.builder().build(), method, uri);
+        }
+
+        private TestRequest(HttpClientConfig clientConfig, Method method, String uri) {
+            super(clientConfig,
+                  WebClientCookieManager.builder().build(),
+                  "test",
+                  method,
+                  ClientUri.create(URI.create(uri)),
+                  Map.of());
+        }
+
+        @Override
+        protected HttpClientResponse doSubmit(Object entity) {
+            invokeEndpoint();
+            return null;
+        }
+
+        @Override
+        protected HttpClientResponse doOutputStream(OutputStreamHandler outputStreamHandler) {
+            invokeEndpoint();
+            return null;
+        }
+
+        private void invokeEndpoint() {
+            CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+            CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+            invokeServices(endpoint(), whenSent, whenComplete, resolvedUri());
+        }
+
+        private WebClientService.Chain endpoint() {
+            return serviceRequest -> {
+                endpointCount.incrementAndGet();
+                return WebClientServiceResponse.builder()
+                        .serviceRequest(serviceRequest)
+                        .whenComplete(new CompletableFuture<>())
+                        .connection(() -> { })
+                        .status(Status.OK_200)
+                        .headers(ClientResponseHeaders.create(WritableHeaders.create()))
+                        .build();
+            };
+        }
+
+        private int endpointCount() {
+            return endpointCount.get();
+        }
     }
 
     private static final class FakeClientRequest extends ClientRequestBase<FakeClientRequest, HttpClientResponse> {
