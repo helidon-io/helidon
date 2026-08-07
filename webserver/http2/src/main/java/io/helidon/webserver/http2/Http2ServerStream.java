@@ -1226,8 +1226,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                    outcome,
                                                                    ctx.listenerContext().config().maxPayloadSize(),
                                                                    http2Config.maxBufferedEntitySize().toBytes());
-            Http2ServerResponse response = new Http2ServerResponse(this, request,
-                                                                   http2Config.validateResponseHeaders());
+            Http2ServerResponse response = new Http2ServerResponse(this,
+                                                                   request,
+                                                                   http2Config.validateResponseHeaders(),
+                                                                   http2Config.altSvc());
             try {
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;

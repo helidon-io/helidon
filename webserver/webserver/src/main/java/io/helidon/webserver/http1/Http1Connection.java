@@ -703,7 +703,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                        writer,
                                        request,
                                        keepAlive,
-                                       http1Config.validateResponseHeaders());
+                                       http1Config.validateResponseHeaders(),
+                                       http1Config.altSvc());
     }
 
     private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response, CountDownLatch entityReadLatch) {

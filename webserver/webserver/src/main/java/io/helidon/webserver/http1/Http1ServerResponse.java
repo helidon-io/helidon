@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -49,6 +50,7 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
@@ -79,6 +81,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private final Http1ServerRequest request;
     private final ServerResponseHeaders headers;
     private final ServerResponseTrailers trailers;
+    private final Optional<AltSvc> configuredAltSvc;
     private final boolean keepAlive;
 
     private boolean streamingEntity;
@@ -96,7 +99,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                         DataWriter dataWriter,
                         Http1ServerRequest request,
                         boolean keepAlive,
-                        boolean validateHeaders) {
+                        boolean validateHeaders,
+                        Optional<AltSvc> configuredAltSvc) {
         super(ctx, request);
 
         this.ctx = ctx;
@@ -105,6 +109,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         this.request = request;
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
+        this.configuredAltSvc = configuredAltSvc.filter(AltSvc::enabled);
         this.keepAlive = keepAlive;
         this.validateHeaders = validateHeaders;
     }
@@ -473,6 +478,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         Status usedStatus = status();
+        configureAltSvc(usedStatus);
         sendListener.status(ctx, usedStatus);
         sendListener.headers(ctx, headers);
 
@@ -518,6 +524,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                                                 afterSend();
                                                                 request.reset();
                                                             },
+                                                            this::configureAltSvc,
                                                             ctx,
                                                             sendListener,
                                                             request,
@@ -538,6 +545,25 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
     boolean keepConnectionOpen() {
         return keepAlive && !headers.containsToken(HeaderValues.CONNECTION_CLOSE);
+    }
+
+    private void configureAltSvc() {
+        configureAltSvc(status());
+    }
+
+    private void configureAltSvc(Status status) {
+        if (configuredAltSvc.isEmpty() || headers.contains(HeaderNames.ALT_SVC)) {
+            return;
+        }
+
+        switch (status.family()) {
+        case SUCCESSFUL:
+        case REDIRECTION:
+            headers.setIfAbsent(configuredAltSvc.get().header(ctx.localPeer().port()));
+            break;
+        default:
+            break;
+        }
     }
 
     private static Status noEntityInternalError(Status status) {
@@ -566,6 +592,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private final boolean keepAlive;
         private final Supplier<String> streamResult;
         private boolean forcedChunked;
+        private final Runnable beforeHeaders;
 
         private BufferData firstBuffer;
         private boolean closed;
@@ -586,6 +613,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                      Supplier<String> streamResult,
                                      DataWriter dataWriter,
                                      Runnable responseCloseRunnable,
+                                     Runnable beforeHeaders,
                                      ConnectionContext ctx,
                                      Http1ConnectionListener sendListener,
                                      Http1ServerRequest request,
@@ -599,6 +627,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             this.streamResult = streamResult;
             this.dataWriter = dataWriter;
             this.responseCloseRunnable = responseCloseRunnable;
+            this.beforeHeaders = beforeHeaders;
             this.ctx = ctx;
             this.sendListener = sendListener;
             this.contentLength = headers.contentLength().orElse(-1);
@@ -751,6 +780,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 if (firstByte) {
                     firstByte = false;
                     Status usedStatus = status.get();
+                    beforeHeaders.run();
                     sendListener.status(ctx, usedStatus);
                     sendListener.headers(ctx, headers);
                     // write headers and payload part in one buffer to avoid TCP/ACK delay problems
@@ -814,6 +844,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
             // at this moment, we must send headers
             Status usedStatus = status.get();
+            beforeHeaders.run();
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(contentLength + 256);
@@ -847,6 +878,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
             // at this moment, we must send headers
             Status usedStatus = status.get();
+            beforeHeaders.run();
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(256);

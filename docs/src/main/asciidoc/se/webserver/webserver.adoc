@@ -45,6 +45,7 @@ include::{rootdir}/includes/se.adoc[]
 ** <<HSTS, HSTS>>
 - <<Supported Technologies, Supported Technologies>>
 ** <<HTTP/2 Support, HTTP/2 Support>>
+** <<Alternative Service Advertisement, Alternative Service Advertisement>>
 ** <<Static Content Support, Static Content Support>>
 ** <<Media types support, Media Types Support>>
 ** <<HTTP Content Encoding, HTTP Content Encoding>>
@@ -1002,6 +1003,47 @@ To enable HTTP/2 support add the following dependency to your project's `pom.xml
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-http2</artifactId>
 </dependency>
+----
+
+== Alternative Service Advertisement
+
+WebServer can add an `Alt-Svc` response header to advertise an alternative service from HTTP/1.1 or HTTP/2.
+Advertisement is opt-in and is added only to successful and redirection responses. An `Alt-Svc` header set by the
+application takes precedence over the configured value.
+
+Configure advertisement programmatically on `io.helidon.webserver.http1.Http1Config` or
+`io.helidon.webserver.http2.Http2Config` using `io.helidon.webserver.http.AltSvc`:
+
+[source,java]
+----
+AltSvc altSvc = AltSvc.builder()
+        .protocol("h3")
+        .port(8443)
+        .maxAge(Duration.ofHours(1))
+        .persist(true)
+        .build();
+
+Http1Config http1Config = Http1Config.builder()
+        .altSvc(altSvc)
+        .build();
+----
+
+When the port is omitted, WebServer advertises the local listener port. The default protocol is `h3`; maximum age and
+the `persist` parameter are omitted by default.
+
+The same advertisement can be configured for either server protocol:
+
+[source,yaml]
+.application.yaml
+----
+server:
+  protocols:
+    http_1_1:
+      alt-svc:
+        protocol: "h3"
+        port: 8443
+        max-age: PT1H
+        persist: true
 ----
 
 == Static Content Support
