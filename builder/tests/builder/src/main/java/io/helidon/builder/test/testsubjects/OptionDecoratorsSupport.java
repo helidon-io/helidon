@@ -92,4 +92,11 @@ final class OptionDecoratorsSupport {
         }
     }
 
+    static final class IntDecorator implements Prototype.OptionDecorator<OptionDecorators.BuilderBase<?, ?>, Integer> {
+        @Override
+        public void decorate(OptionDecorators.BuilderBase<?, ?> builder, Integer optionValue) {
+            builder.replacementValue(optionValue);
+        }
+    }
+
 }

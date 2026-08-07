@@ -200,6 +200,11 @@ class TypeHandlerBasic implements TypeHandler {
 
     @Override
     public void fromBuilderAssignment(ContentBuilder<?> contentBuilder) {
+        // Reapplying a deprecated alias decorator could replace an explicitly configured canonical option with the
+        // alias backing value. The canonical option is copied separately, so preserve only the alias backing value.
+        boolean copyDeprecatedDecoratorFieldDirectly = option().declaredType().primitive()
+                && option().decorator().isPresent()
+                && option().deprecation().flatMap(OptionDeprecation::alternative).isPresent();
         if (type().equals(CONFIG) || type().equals(COMMON_CONFIG)) {
             // special handling, must assign to field, to avoid re-configuring
             if (type().equals(COMMON_CONFIG)) {
@@ -233,6 +238,12 @@ class TypeHandlerBasic implements TypeHandler {
             contentBuilder.addContent("builder.")
                     .addContent(option().getterName())
                     .addContentLine("().ifPresent(this::" + option().setterName() + ");");
+        } else if (copyDeprecatedDecoratorFieldDirectly) {
+            contentBuilder.addContent("this.")
+                    .addContent(option().name())
+                    .addContent(" = builder.")
+                    .addContent(option().name())
+                    .addContentLine(";");
         } else {
             contentBuilder.addContent(option().setterName())
                     .addContent("(builder.")

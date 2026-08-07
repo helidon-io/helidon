@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
+import java.util.function.LongConsumer;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -99,6 +100,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private static final System.Logger LOGGER = System.getLogger(Http2Connection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
+    private static final long MIN_HEADER_BLOCK_SIZE = 64 * 1024;
+    // Independent fragmentation guards; retained bytes are bounded separately from the number of frame objects.
+    private static final int MAX_QUEUED_HEADER_FRAMES = 8192;
     private static final Set<Http2StreamState> REMOVABLE_STREAMS =
             Set.of(Http2StreamState.CLOSED, Http2StreamState.HALF_CLOSED_LOCAL);
     private static final Set<HeaderName> SERVER_CONTROLLED_REQUEST_HEADERS = Set.of(X_HELIDON_CN);
@@ -157,6 +161,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final WritableHeaders<?> connectionHeaders;
     private final int maxEmptyFrames;
     private final long maxClientConcurrentStreams;
+    private final long maxDroppedHeaderBlockSize;
     private final Http2ConnectionChecks connectionChecks;
     private int emptyFrames = 0;
     // initial client settings, until we receive real ones
@@ -172,7 +177,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private int continuationExpectedStreamId;
     private int locallyResetContinuationExpectedStreamId;
     private boolean locallyResetContinuationEndOfStream;
-    private long locallyResetContinuationHeaderListSize;
+    private long locallyResetContinuationHeaderBlockSize;
     private int lastStreamId;
     private boolean initConnectionHeaders;
     private volatile ZonedDateTime lastRequestTimestamp;
@@ -205,6 +210,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.reader = ctx.dataReader();
         this.sendErrorDetails = http2Config.sendErrorDetails();
         this.maxClientConcurrentStreams = http2Config.maxConcurrentStreams();
+        this.maxDroppedHeaderBlockSize = Math.max(http2Config.maxFrameSize(), MIN_HEADER_BLOCK_SIZE);
 
         // Flow control is initialized by RFC 9113 default values
         this.flowControl = ConnectionFlowControl.serverBuilder(this::writeWindowUpdateFrame)
@@ -573,16 +579,22 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void discardContinuationForLocallyResetStream(Http2Flag.ContinuationFlags flags) {
-        locallyResetContinuationData.add(new Http2FrameData(frameHeader, inProgressFrame()));
-        locallyResetContinuationHeaderListSize += frameHeader.length();
-        if (locallyResetContinuationHeaderListSize > http2Config.maxHeaderListSize()) {
-            throw new Http2Exception(Http2ErrorCode.REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                     "Request Header Fields Too Large");
+        BufferData continuationData = inProgressFrame();
+        if (frameHeader.length() > 0) {
+            if (locallyResetContinuationData.size() >= MAX_QUEUED_HEADER_FRAMES) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Too many header block fragments.");
+            }
+            locallyResetContinuationHeaderBlockSize += frameHeader.length();
+            if (locallyResetContinuationHeaderBlockSize > maxDroppedHeaderBlockSize) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                         "Too many headers after stream reset.");
+            }
+            locallyResetContinuationData.add(new Http2FrameData(frameHeader, continuationData));
         }
         if (flags.endOfHeaders()) {
             decodeLocallyResetHeaders(locallyResetContinuationData.toArray(new Http2FrameData[0]));
             locallyResetContinuationData.clear();
-            locallyResetContinuationHeaderListSize = 0;
+            locallyResetContinuationHeaderBlockSize = 0;
             if (locallyResetContinuationEndOfStream) {
                 locallyResetStreams.remove(frameHeader.streamId());
             }
@@ -785,6 +797,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
+    @SuppressWarnings("checkstyle:MethodLength")
     private void doHeaders(Limit limit) {
         int streamId = frameHeader.streamId();
         if (streamId != 0 && locallyResetStreams.contains(streamId)) {
@@ -809,6 +822,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // we are sure this is the last frame of headers
         boolean endOfStream;
         Http2Headers headers;
+        LongConsumer decodedHeaderSizeConsumer = decodedHeaderSizeConsumer();
         Http2ServerStream stream = streamContext.stream();
         if (initConnectionHeaders) {
             ctx.remotePeer().tlsCertificates()
@@ -824,18 +838,24 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                  requestHuffman,
                                                  Http2Headers.create(connectionHeaders),
                                                  SERVER_CONTROLLED_REQUEST_HEADERS,
+                                                 decodedHeaderSizeConsumer,
                                                  streamContext.contData());
             endOfStream = streamContext.contHeader().flags(Http2FrameTypes.HEADERS).endOfStream();
             streamContext.clearContinuations();
             continuationExpectedStreamId = 0;
         } else {
             endOfStream = frameHeader.flags(Http2FrameTypes.HEADERS).endOfStream();
-            headers = Http2Headers.createRequest(stream,
-                                                 requestDynamicTable,
-                                                 requestHuffman,
-                                                 Http2Headers.create(connectionHeaders),
-                                                 SERVER_CONTROLLED_REQUEST_HEADERS,
-                                                 new Http2FrameData(frameHeader, inProgressFrame()));
+            try {
+                headers = Http2Headers.createRequest(stream,
+                                                     requestDynamicTable,
+                                                     requestHuffman,
+                                                     Http2Headers.create(connectionHeaders),
+                                                     SERVER_CONTROLLED_REQUEST_HEADERS,
+                                                     decodedHeaderSizeConsumer,
+                                                     new Http2FrameData(frameHeader, inProgressFrame()));
+            } finally {
+                streamContext.clearContinuations();
+            }
         }
 
         receiveFrameListener.headers(ctx, streamId, headers);
@@ -976,10 +996,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         } else {
             locallyResetContinuationData.clear();
             locallyResetContinuationData.add(headersFrame);
-            locallyResetContinuationHeaderListSize = frameHeader.length();
-            if (locallyResetContinuationHeaderListSize > http2Config.maxHeaderListSize()) {
-                throw new Http2Exception(Http2ErrorCode.REQUEST_HEADER_FIELDS_TOO_LARGE,
-                                         "Request Header Fields Too Large");
+            locallyResetContinuationHeaderBlockSize = frameHeader.length();
+            if (locallyResetContinuationHeaderBlockSize > maxDroppedHeaderBlockSize) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                         "Too many headers after stream reset.");
             }
             continuationExpectedStreamId = streamId;
             locallyResetContinuationExpectedStreamId = streamId;
@@ -994,7 +1014,20 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                    requestHuffman,
                                    Http2Headers.create(connectionHeaders),
                                    SERVER_CONTROLLED_REQUEST_HEADERS,
+                                   decodedHeaderSizeConsumer(),
                                    frames);
+    }
+
+    private LongConsumer decodedHeaderSizeConsumer() {
+        long[] decodedHeadersSize = new long[1];
+        int maxHeadersSize = http2Config.maxHeadersSize();
+        return decodedSize -> {
+            decodedHeadersSize[0] += decodedSize;
+            if (maxHeadersSize > 0 && decodedHeadersSize[0] > maxHeadersSize) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                         "Request Header Fields Too Large");
+            }
+        };
     }
 
     private void pingFrame() {
@@ -1127,8 +1160,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
             }
+            // Bound retained field-block fragments independently of the decoded header-size policy.
+            long maxHeaderBlockSize = Math.max(http2Config.maxFrameSize(),
+                                               Math.max(MIN_HEADER_BLOCK_SIZE,
+                                                        4L * Math.max(0, http2Config.maxHeadersSize())));
             streamContext = new StreamContext(streamId,
-                                              http2Config.maxHeaderListSize(),
+                                              maxHeaderBlockSize,
                                               new Http2ServerStream(ctx,
                                                                     streams,
                                                                     this::locallyResetStream,
@@ -1226,16 +1263,16 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     static class StreamContext {
         private final List<Http2FrameData> continuationData = new ArrayList<>();
-        private final long maxHeaderListSize;
+        private final long maxHeaderBlockSize;
         private final int streamId;
         private final Http2ServerStream stream;
-        private long headerListSize = 0;
+        private long headerBlockSize = 0;
 
         private Http2FrameHeader continuationHeader;
 
-        StreamContext(int streamId, long maxHeaderListSize, Http2ServerStream stream) {
+        StreamContext(int streamId, long maxHeaderBlockSize, Http2ServerStream stream) {
             this.streamId = streamId;
-            this.maxHeaderListSize = maxHeaderListSize;
+            this.maxHeaderBlockSize = maxHeaderBlockSize;
             this.stream = stream;
         }
 
@@ -1255,29 +1292,34 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             if (continuationData.isEmpty()) {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received continuation without headers.");
             }
+            if (frameData.header().length() == 0) {
+                return;
+            }
+            if (continuationData.size() >= MAX_QUEUED_HEADER_FRAMES) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM, "Too many header block fragments.");
+            }
+            addAndValidateHeaderBlockSize(frameData.header().length());
             this.continuationData.add(frameData);
-            addAndValidateHeaderListSize(frameData.header().length());
         }
 
-        void addHeadersToBeContinued(Http2FrameHeader frameHeader,  BufferData bufferData) {
+        void addHeadersToBeContinued(Http2FrameHeader frameHeader, BufferData bufferData) {
             clearContinuations();
+            addAndValidateHeaderBlockSize(frameHeader.length());
             continuationHeader = frameHeader;
             this.continuationData.add(new Http2FrameData(frameHeader, bufferData));
-            addAndValidateHeaderListSize(frameHeader.length());
         }
 
-        private void addAndValidateHeaderListSize(int headerSizeIncrement){
-            // Check MAX_HEADER_LIST_SIZE
-            headerListSize += headerSizeIncrement;
-            if (headerListSize > maxHeaderListSize){
-                throw new Http2Exception(Http2ErrorCode.REQUEST_HEADER_FIELDS_TOO_LARGE,
+        private void addAndValidateHeaderBlockSize(int headerSizeIncrement) {
+            headerBlockSize += headerSizeIncrement;
+            if (maxHeaderBlockSize > 0 && headerBlockSize > maxHeaderBlockSize) {
+                throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
                         "Request Header Fields Too Large");
             }
         }
 
         private void clearContinuations() {
             continuationData.clear();
-            headerListSize = 0;
+            headerBlockSize = 0;
         }
     }
 }

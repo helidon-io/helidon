@@ -78,10 +78,15 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig 
 
     /**
      * Configure initial MAX_HEADER_LIST_SIZE setting for new HTTP/2 connections.
-     * Sends to the server the maximum header field section size client is prepared to accept.
+     * Sends to the server the maximum header field section size the client advertises using the HTTP/2
+     * {@code SETTINGS_MAX_HEADER_LIST_SIZE} setting.
+     * <p>
+     * This setting is sent to the peer as an HTTP/2 protocol hint. Helidon's local response header size
+     * enforcement is configured by {@link #maxHeadersSize()}.
+     * <p>
      * Defaults to {@code -1}, which means "unconfigured".
      *
-     * @return units of octets
+     * @return units of octets advertised in the HTTP/2 settings
      */
     @Option.Configured
     @Option.DefaultLong(-1L)

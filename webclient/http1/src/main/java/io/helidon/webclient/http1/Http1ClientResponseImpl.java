@@ -109,7 +109,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.whenComplete = whenComplete;
         this.trailers = LazyValue.create(() -> Http1HeadersParser.readHeaders(
                 connection.reader(),
-                protocolConfig.maxHeaderSize(),
+                Http1ClientConfigSupport.maxHeadersSize(protocolConfig),
                 protocolConfig.validateResponseHeaders()
         ));
 

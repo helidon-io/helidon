@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.Api;
@@ -85,6 +86,8 @@ public class Http2Headers {
     static final DynamicHeader EMPTY_HEADER_RECORD = new DynamicHeader(null, null, 0);
     private static final System.Logger LOGGER = System.getLogger(Http2Headers.class.getName());
     private static final Set<HeaderName> NO_IGNORED_HEADERS = Set.of();
+    private static final LongConsumer NO_HEADER_SIZE_CONSUMER = it -> {
+    };
     private static final String TRAILERS = "trailers";
     private static final String HTTP = "http";
     private static final String HTTPS = "https";
@@ -141,7 +144,37 @@ public class Http2Headers {
                                              Http2Headers headers,
                                              Set<HeaderName> ignoredHeaders,
                                              Http2FrameData... frames) {
-        Objects.requireNonNull(ignoredHeaders, "ignoredHeaders must not be null");
+        return createRequest(stream, table, huffman, headers, ignoredHeaders, NO_HEADER_SIZE_CONSUMER, frames);
+    }
+
+    /**
+     * Create headers from HTTP request.
+     *
+     * @param stream                    stream that owns these headers
+     * @param table                     dynamic table for this connection
+     * @param huffman                   huffman decoder
+     * @param headers                   http2 headers
+     * @param ignoredHeaders            decoded header names that must not be added to the result
+     * @param decodedHeaderSizeConsumer consumer of each decoded header field size before ignored-header filtering
+     * @param frames                    frames of the headers
+     * @return new headers parsed from the frames
+     * @throws Http2Exception in case of protocol errors
+     */
+    @Api.Internal
+    public static Http2Headers createRequest(Http2Stream stream,
+                                             DynamicTable table,
+                                             Http2HuffmanDecoder huffman,
+                                             Http2Headers headers,
+                                             Set<HeaderName> ignoredHeaders,
+                                             LongConsumer decodedHeaderSizeConsumer,
+                                             Http2FrameData... frames) {
+
+        Objects.requireNonNull(table, "table");
+        Objects.requireNonNull(huffman, "huffman");
+        Objects.requireNonNull(headers, "headers");
+        Objects.requireNonNull(ignoredHeaders, "ignoredHeaders");
+        Objects.requireNonNull(decodedHeaderSizeConsumer, "decodedHeaderSizeConsumer");
+        Objects.requireNonNull(frames, "frames");
 
         if (frames.length == 0) {
             return create(ServerRequestHeaders.create(WritableHeaders.create()),
@@ -192,7 +225,8 @@ public class Http2Headers {
                                             huffman,
                                             data,
                                             lastIsPseudoHeader,
-                                            ignoredHeaders);
+                                            ignoredHeaders,
+                                            decodedHeaderSizeConsumer);
         }
     }
 
@@ -593,13 +627,15 @@ public class Http2Headers {
         };
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber") // keep the decoder hot path allocation-free
     private static boolean readHeader(WritableHeaders<?> headers,
                                       PseudoHeaders pseudoHeaders,
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
                                       BufferData data,
                                       boolean lastIsPseudoHeader,
-                                      Set<HeaderName> ignoredHeaders) {
+                                      Set<HeaderName> ignoredHeaders,
+                                      LongConsumer decodedHeaderSizeConsumer) {
         // find out what kind of header we have
         HeaderApproach approach = HeaderApproach.resolve(data);
 
@@ -696,10 +732,12 @@ public class Http2Headers {
                 }
             }
 
+            if (decodedHeaderSizeConsumer != NO_HEADER_SIZE_CONSUMER) {
+                decodedHeaderSizeConsumer.accept(Http2Util.headerSize(headerName, value));
+            }
             if (approach.addToIndex) {
                 table.add(headerName, value);
             }
-
             if (!isPseudoHeader && !ignoredHeaders.contains(headerName)) {
                 headers.add(HeaderValues.create(headerName,
                                                 !approach.addToIndex,
@@ -1332,6 +1370,14 @@ public class Http2Headers {
             if (currentTableSize + size <= maxTableSize) {
                 // fast path
                 return add(headerName, headerValue, size);
+            }
+
+            // RFC 7541, Section 4.4: an entry larger than the maximum empties the table
+            // and is not inserted.
+            if (size > maxTableSize) {
+                headers.clear();
+                currentTableSize = 0;
+                return -1;
             }
 
             while ((currentTableSize + size) > maxTableSize) {

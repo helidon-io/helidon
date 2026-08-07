@@ -325,7 +325,7 @@ client:
     tracing:
   protocol-configs: # <5>
     http_1_1:
-      max-header-size: 20000
+      max-headers-size: 20000
       validate-request-headers: true
     h2:
       prior-knowledge: true
@@ -629,7 +629,7 @@ Setting up HTTP/1.1 and HTTP/2 protocol using `application.yaml` file:
 webclient:
   protocol-configs:
     http_1_1:
-      max-header-size: 20000
+      max-headers-size: 20000
       validate-request-headers: true
     h2:
       prior-knowledge: true

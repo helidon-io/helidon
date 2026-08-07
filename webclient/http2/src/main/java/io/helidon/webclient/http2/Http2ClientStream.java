@@ -686,7 +686,8 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                         validateRegularHeaders(headers.httpHeaders());
                     }
                 } catch (Http2Exception e) {
-                    inboundFailure = e;
+                    failInboundLocked(e);
+                    reset(e.code());
                     inboundStateChanged.signalAll();
                     return;
                 }
@@ -724,6 +725,21 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     /**
+     * Fails inbound reads waiting on this stream.
+     *
+     * @param failure failure that should be observed by inbound readers
+     */
+    void failInbound(Http2Exception failure) {
+        inboundStateLock.lock();
+        try {
+            failInboundLocked(failure);
+            inboundStateChanged.signalAll();
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
+    /**
      * Determines whether the caller should keep polling for inbound {@code DATA}
      * frames. Once final headers or trailers mark the response complete, reads
      * stop even if no explicit empty data frame is received.
@@ -733,6 +749,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private boolean expectsEntityData() {
         inboundStateLock.lock();
         try {
+            throwIfInboundFailed();
             return (state == Http2StreamState.OPEN || state == Http2StreamState.HALF_CLOSED_LOCAL)
                     && readState != ReadState.END
                     && hasEntity;
@@ -776,13 +793,17 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             return;
         }
         if (headers.status() == Status.SWITCHING_PROTOCOLS_101) {
-            inboundFailure = new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                                "HTTP/2 response must not use 101 Switching Protocols");
+            Http2Exception failure = new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                                        "HTTP/2 response must not use 101 Switching Protocols");
+            failInboundLocked(failure);
+            reset(failure.code());
             return;
         }
         if (endOfStream) {
-            inboundFailure = new Http2Exception(Http2ErrorCode.PROTOCOL,
-                                                "Informational response must not end the stream");
+            Http2Exception failure = new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                                        "Informational response must not end the stream");
+            failInboundLocked(failure);
+            reset(failure.code());
             return;
         }
 
@@ -804,6 +825,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @param endOfStream trailers must always close the remote side
      */
     private void trailersLocked(Http2Headers headers, boolean endOfStream) {
+        if (inboundFailure != null) {
+            return;
+        }
         if (currentHeaders.status() == Status.NOT_MODIFIED_304) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received trailers on a 304 response");
         }
@@ -822,6 +846,21 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         RuntimeException failure = inboundFailure;
         if (failure != null) {
             throw failure;
+        }
+    }
+
+    private void failInboundLocked(Http2Exception failure) {
+        inboundFailure = failure;
+        StreamBuffer buffer = this.buffer;
+        if (buffer != null) {
+            buffer.fail(failure);
+        }
+        close();
+        if (!trailers.isDone()) {
+            Thread.ofVirtual()
+                    .name("helidon-http2-inbound-failure-" + ctx.socketId() + "-" + streamId)
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> trailers.completeExceptionally(failure));
         }
     }
 
