@@ -28,6 +28,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Blueprint(decorator = AutoHttpMetricsConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(AutoHttpMetricsConfigSupport.CustomMethods.class)
+@Prototype.IncludeDefaultMethods
 interface AutoHttpMetricsConfigBlueprint {
 
     /**
@@ -70,5 +71,18 @@ interface AutoHttpMetricsConfigBlueprint {
      */
     @Option.Configured
     List<String> optIn();
+
+    /**
+     * Whether to use the updated automatic HTTP metrics behavior.
+     *
+     * @return whether to use updated automatic HTTP metrics behavior
+     * @deprecated Set this only to {@code false} as a temporary compatibility workaround for legacy metric output.
+     */
+    @Deprecated
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    default boolean useUpdatedHttpMetrics() {
+        return true;
+    }
 
 }

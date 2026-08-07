@@ -78,6 +78,7 @@ class Http2ServerRequest implements RoutingRequest {
     private boolean continueSent;
     private UnaryOperator<InputStream> streamFilter = UnaryOperator.identity();
     private String matchingPattern;
+    private Supplier<Optional<String>> matchingPatternSupplier;
 
     Http2ServerRequest(ConnectionContext ctx,
                        HttpSecurity security,
@@ -234,11 +235,25 @@ class Http2ServerRequest implements RoutingRequest {
     @Override
     public RoutingRequest matchingPattern(String matchingPattern) {
         this.matchingPattern = matchingPattern;
+        this.matchingPatternSupplier = null;
+        return this;
+    }
+
+    @Override
+    public RoutingRequest matchingPattern(Supplier<Optional<String>> matchingPattern) {
+        Objects.requireNonNull(matchingPattern, "Parameter 'matchingPattern' is null!");
+        this.matchingPatternSupplier = LazyValue.create(() -> Objects.requireNonNull(matchingPattern.get(),
+                                                                                     "Matching pattern supplier returned null"));
+        this.matchingPattern = null;
         return this;
     }
 
     @Override
     public Optional<String> matchingPattern() {
+        Supplier<Optional<String>> matchingPatternSupplier = this.matchingPatternSupplier;
+        if (matchingPatternSupplier != null) {
+            return matchingPatternSupplier.get();
+        }
         return Optional.ofNullable(matchingPattern);
     }
 

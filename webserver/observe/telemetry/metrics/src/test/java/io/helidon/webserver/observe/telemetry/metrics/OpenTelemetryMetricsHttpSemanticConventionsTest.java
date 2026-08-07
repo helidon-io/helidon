@@ -100,7 +100,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         }
     }
 
-    private static Filter filter(Throwable failure) {
+    static Filter filter(Throwable failure) {
         OpenTelemetry openTelemetry = mock(OpenTelemetry.class);
         MeterBuilder meterBuilder = mock(MeterBuilder.class);
         Meter meter = mock(Meter.class);
