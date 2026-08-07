@@ -363,6 +363,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
         for (SinkProvider<?> p : SINK_PROVIDERS) {
             if (p.supports(sinkType, request)) {
+                configureAltSvc();
                 return (X) p.create(new SinkProviderContext() {
                     @Override
                     public ServerResponse serverResponse() {

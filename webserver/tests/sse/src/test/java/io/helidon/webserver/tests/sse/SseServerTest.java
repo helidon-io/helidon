@@ -19,12 +19,16 @@ package io.helidon.webserver.tests.sse;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
@@ -61,6 +65,11 @@ class SseServerTest extends SseBaseTest {
     static void server(WebServerConfig.Builder server) {
         server.writeQueueLength(2);
         server.smartAsyncWrites(true);
+        server.addConnectionSelector(Http1ConnectionSelector.builder()
+                                             .config(Http1Config.builder()
+                                                             .altSvc(AltSvc.builder().build())
+                                                             .build())
+                                             .build());
     }
 
     @Test
@@ -88,6 +97,20 @@ class SseServerTest extends SseBaseTest {
         } finally {
             delayedLatch.countDown();
             SseBaseTest.delayedLatch(new CountDownLatch(0));
+        }
+    }
+
+    @Test
+    void testSseAdvertisesAltSvc() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer().port())
+                .build();
+        try (Http1ClientResponse response = client.get("/sseString1").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null),
+                       is("h3=\":" + webServer().port() + "\""));
+        } finally {
+            client.closeResource();
         }
     }
 
