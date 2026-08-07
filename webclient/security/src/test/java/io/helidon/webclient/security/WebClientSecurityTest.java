@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.security;
 
+import java.net.URI;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.security.OutboundSecurityResponse;
@@ -66,7 +67,82 @@ class WebClientSecurityTest {
         SecurityEnvironment environment = outboundEnvironment.get();
         assertThat(environment.targetUri().getScheme(), is("https"));
         assertThat(environment.transport(), is("https"));
+        assertThat(environment.requestedQuery().isEmpty(), is(true));
         assertThat(outboundConfig.findTarget(environment).isPresent(), is(true));
+    }
+
+    @Test
+    void requestedQueryMatchesSerializedQueryWithoutChangingDefaultEncoding() {
+        AtomicReference<SecurityEnvironment> outboundEnvironment = new AtomicReference<>();
+        AtomicReference<String> outboundTarget = new AtomicReference<>();
+        Security security = Security.builder()
+                .addOutboundSecurityProvider((request, environment, config) -> {
+                    outboundEnvironment.set(environment);
+                    return OutboundSecurityResponse.abstain();
+                })
+                .build();
+        WebClientService stopBeforeNetwork = (chain, request) -> {
+            outboundTarget.set(request.uri().pathWithQueryAndFragment());
+            throw new TestException();
+        };
+        Http1Client client = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(WebClientSecurity.create(security))
+                .addService(stopBeforeNetwork)
+                .build();
+
+        assertThrows(TestException.class, () -> client.get()
+                .uri("https://example.test/{path}")
+                .pathParam("path", "p")
+                .queryParam("q", "a%2Fb")
+                .request());
+
+        SecurityEnvironment environment = outboundEnvironment.get();
+        assertThat(outboundTarget.get(), is("/p?q=a%252Fb"));
+        assertThat(environment.targetUri().getRawQuery(), is("q=a%252Fb"));
+        assertThat(environment.requestedPath().rawPath(), is("/p"));
+        assertThat(environment.requestedQuery().orElseThrow().rawValue(), is("q=a%252Fb"));
+        assertThat(environment.queryParams().rawValue(), is("q=a%252Fb"));
+        assertThat(environment.queryParams().get("q"), is("a%2Fb"));
+
+        assertThrows(TestException.class, () -> client.get()
+                .uri("https://example.test/{path}")
+                .pathParam("path", "p")
+                .skipUriEncoding(true)
+                .queryParam("q", "a%2Fb")
+                .request());
+
+        environment = outboundEnvironment.get();
+        assertThat(outboundTarget.get(), is("/p?q=a%2Fb"));
+        assertThat(environment.targetUri().getRawQuery(), is("q=a%2Fb"));
+        assertThat(environment.requestedPath().rawPath(), is("/p"));
+        assertThat(environment.requestedQuery().orElseThrow().rawValue(), is("q=a%2Fb"));
+        assertThat(environment.queryParams().rawValue(), is("q=a%252Fb"));
+        assertThat(environment.queryParams().get("q"), is("a%2Fb"));
+
+        assertThrows(TestException.class, () -> client.get()
+                .uri("https://example.test/{path}")
+                .pathParam("path", "p")
+                .skipUriEncoding(true)
+                .queryParam("q", "a#b")
+                .request());
+
+        environment = outboundEnvironment.get();
+        assertThat(outboundTarget.get(), is("/p?q=a#b"));
+        assertThat(environment.targetUri().getRawQuery(), is("q=a"));
+        assertThat(environment.targetUri().getRawFragment(), is("b"));
+        assertThat(environment.requestedQuery().orElseThrow().rawValue(), is("q=a#b"));
+        assertThat(environment.queryParams().rawValue(), is("q=a%23b"));
+        assertThat(environment.queryParams().get("q"), is("a#b"));
+
+        assertThrows(TestException.class, () -> client.get()
+                .uri(URI.create("https://example.test/p?"))
+                .request());
+
+        environment = outboundEnvironment.get();
+        assertThat(outboundTarget.get(), is("/p?"));
+        assertThat(environment.targetUri().getRawQuery(), is(""));
+        assertThat(environment.requestedQuery().orElseThrow().rawValue(), is(""));
     }
 
     private static final class TestException extends RuntimeException {
