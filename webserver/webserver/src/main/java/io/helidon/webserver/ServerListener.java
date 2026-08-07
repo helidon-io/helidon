@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
@@ -75,6 +76,7 @@ class ServerListener implements ListenerContext {
             HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class)).asList());
 
     private final ConnectionProviders connectionProviders;
+    private final Optional<TrustedProxyMatcher> trustedProxyMatcher;
     private final String socketName;
     private final ListenerConfig listenerConfig;
     private final Router router;
@@ -140,6 +142,10 @@ class ServerListener implements ListenerContext {
         this.connectionProviders = ConnectionProviders.create(selectors);
         this.socketName = socketName;
         this.listenerConfig = listenerConfig;
+        this.trustedProxyMatcher = listenerConfig.proxyProtocol()
+                .filter(ProxyProtocolConfig::enabled)
+                .map(config -> new TrustedProxyMatcher(config.trustedProxies()
+                        .orElseThrow(() -> new IllegalStateException("PROXY protocol is enabled without trusted proxies"))));
         this.tls = listenerConfig.tls().orElseGet(() -> Tls.builder().enabled(false).build());
         this.connectionOptions = listenerConfig.connectionOptions();
         this.directHandlers = listenerConfig.directHandlers().orElse(defaultDirectHandlers);
@@ -400,6 +406,7 @@ class ServerListener implements ListenerContext {
                 try {
                     connectionOptions.configureSocket(socket);
                     ConnectionHandler handler = new ConnectionHandler(this,
+                                                                      trustedProxyMatcher,
                                                                       connectionSemaphore,
                                                                       requestLimit,
                                                                       connectionProviders,

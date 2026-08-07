@@ -21,6 +21,7 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 
 - Non-JAX-RS LRA participant callbacks are now authenticated. Applications using them must configure `mp.lra.participant.url` and `lra.participant.non-jax-rs.callback-auth.secret`; use `lra.participant.non-jax-rs.callback-auth.compatibility-mode` only temporarily during a rolling upgrade as described in the LRA documentation.
 - Helidon JSON parsers now reject documents containing more than 1,000 nested object and array structures.
+- WebServer PROXY protocol support now requires explicit trusted proxy configuration. Existing users of `enable-proxy-protocol: true` or programmatic `enableProxyProtocol(true)` must configure `proxy-protocol.trusted-proxies`; use `proxy-protocol.trusted-proxies.allow.all: true` only when every peer that can connect to the listener is trusted to send proxy protocol headers. The `enable-proxy-protocol` option is deprecated. When PROXY protocol data is accepted, Helidon replaces client-supplied `X-Forwarded-For` and `X-Forwarded-Port` request headers with the PROXY source address and destination port, when available.
 
 ### CHANGES
 
@@ -39,6 +40,7 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - Metrics: Restrict non-standard HTTP method usage [12245](https://github.com/helidon-io/helidon/pull/12245)
 - Tracing: Register the Jersey client filter only when CDI can resolve the Helidon tracer [12212](https://github.com/helidon-io/helidon/pull/12212)
 - WebClient: Fix resolved URI query parameters [12228](https://github.com/helidon-io/helidon/pull/12228)
+- WebServer: Require trusted proxies for PROXY protocol support
 
 ## 4.5.2
 

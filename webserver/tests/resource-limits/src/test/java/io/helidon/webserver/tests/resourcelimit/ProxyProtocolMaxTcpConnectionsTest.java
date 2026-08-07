@@ -21,6 +21,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.configurable.AllowList;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,9 @@ class ProxyProtocolMaxTcpConnectionsTest {
     void failedProxyProtocolSetupReleasesConnectionLimit() throws Exception {
         WebServer server = WebServer.builder()
                 .port(0)
-                .enableProxyProtocol(true)
+                .proxyProtocol(it -> it.trustedProxies(AllowList.builder()
+                                                            .allowAll(true)
+                                                            .build()))
                 .maxTcpConnections(1)
                 .routing(routing -> routing.get("/", (req, res) -> res.send("ok")))
                 .build()

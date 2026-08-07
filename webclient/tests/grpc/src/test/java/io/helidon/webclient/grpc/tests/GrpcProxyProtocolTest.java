@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
+import io.helidon.common.configurable.AllowList;
 import io.helidon.config.Config;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionListener;
@@ -51,7 +52,7 @@ public class GrpcProxyProtocolTest {
     @Test
     public void testProxyProtocolV1OverTcp() {
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .tls(t -> t.enabled(false))
             .bindAddress(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0))
             .addRouting(GrpcRouting.builder().unary(Proxy.getDescriptor(),
@@ -83,7 +84,7 @@ public class GrpcProxyProtocolTest {
     @Test
     public void testProxyProtocolV2OverTcp() throws IOException {
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .tls(t -> t.enabled(false))
             .bindAddress(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0))
             .addRouting(GrpcRouting.builder().unary(Proxy.getDescriptor(),
@@ -142,7 +143,7 @@ public class GrpcProxyProtocolTest {
         var bindAddress = UnixDomainSocketAddress.of(tempDir.resolve("uds.socket"));
 
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .tls(t -> t.enabled(false))
             .bindAddress(bindAddress)
             .addRouting(GrpcRouting.builder().unary(Proxy.getDescriptor(),
@@ -182,7 +183,7 @@ public class GrpcProxyProtocolTest {
         var bindAddress = UnixDomainSocketAddress.of(tempDir.resolve("uds.socket"));
 
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .tls(t -> t.enabled(false))
             .bindAddress(bindAddress)
             .addRouting(GrpcRouting.builder().unary(Proxy.getDescriptor(),

@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
@@ -82,6 +83,7 @@ class ConnectionHandlerTest {
         ConnectionProviders connectionProviders =
                 ConnectionProviders.create(List.of(new TestConnectionSelector(failure)));
         ConnectionHandler handler = new ConnectionHandler(listenerContext,
+                                                          Optional.empty(),
                                                           new Semaphore(1),
                                                           FixedLimit.create(),
                                                           connectionProviders,

@@ -19,7 +19,6 @@ import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PushbackInputStream;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.InetAddress;
@@ -47,6 +46,8 @@ class ProxyProtocolHandler {
     private static final System.Logger LOGGER = System.getLogger(ProxyProtocolHandler.class.getName());
 
     private static final int MAX_V1_FIELD_LENGTH = 40;
+    private static final int MAX_V1_HEADER_LENGTH = 107;
+    private static final int MIN_SSL_TLV_LENGTH = 5;
 
     private static final InetSocketAddress UNSPECIFIED_ADDRESS;
     private static final byte[] CHECKSUM_REPLACEMENT_BYTES = {0, 0, 0, 0};
@@ -128,49 +129,115 @@ class ProxyProtocolHandler {
     }
 
     static ProxyProtocolData handleV1Protocol(InputStream socketInputStream) throws IOException {
-        final var inputStream = new PushbackInputStream(socketInputStream);
         try {
-            int n;
-            byte[] buffer = new byte[MAX_V1_FIELD_LENGTH];
-
-            match(inputStream, (byte) ' ');
-
-            // protocol and family
-            n = readUntil(inputStream, buffer, (byte) ' ', (byte) '\r');
-            String familyProtocol = new String(buffer, 0, n, StandardCharsets.US_ASCII);
-            var family = Family.fromString(familyProtocol);
-            var protocol = Protocol.fromString(familyProtocol);
-            byte b = readNext(inputStream);
-            if (b == (byte) '\r') {
-                // special case for just UNKNOWN family
-                if (family == Family.UNKNOWN) {
-                    return new ProxyProtocolDataImpl(Family.UNKNOWN, Protocol.UNKNOWN,
-                            "", "", -1, -1);
+            byte[] buffer = new byte[MAX_V1_HEADER_LENGTH - V1_PREFIX.length];
+            int length = 0;
+            boolean previousWasCarriageReturn = false;
+            while (true) {
+                if (length == buffer.length) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                int c = socketInputStream.read();
+                if (c < 0) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                byte b = (byte) c;
+                buffer[length++] = b;
+                if (b == (byte) '\n') {
+                    if (!previousWasCarriageReturn) {
+                        throw BAD_PROTOCOL_EXCEPTION;
+                    }
+                    break;
+                } else if (previousWasCarriageReturn) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                } else if (b == (byte) '\r') {
+                    previousWasCarriageReturn = true;
+                } else if (c < 0x20 || c > 0x7E) {
+                    throw BAD_PROTOCOL_EXCEPTION;
                 }
             }
 
-            match(b, (byte) ' ');
+            int lineEnd = length - 2;
+            if (lineEnd == 0 || buffer[0] != (byte) ' ') {
+                throw BAD_PROTOCOL_EXCEPTION;
+            }
 
-            // source address
-            n = readUntil(inputStream, buffer, (byte) ' ');
-            var sourceAddress = new String(buffer, 0, n, StandardCharsets.US_ASCII);
-            match(inputStream, (byte) ' ');
+            int firstFieldEnd = 1;
+            while (firstFieldEnd < lineEnd && buffer[firstFieldEnd] != (byte) ' ') {
+                firstFieldEnd++;
+            }
+            String familyProtocol = new String(buffer, 1, firstFieldEnd - 1, StandardCharsets.US_ASCII);
+            validateV1Field(familyProtocol.length());
+            var family = Family.fromString(familyProtocol);
+            var protocol = Protocol.fromString(familyProtocol);
+            if (family == Family.UNKNOWN) {
+                return new ProxyProtocolDataImpl(Family.UNKNOWN, Protocol.UNKNOWN,
+                        "", "", -1, -1);
+            }
 
-            // destination address
-            n = readUntil(inputStream, buffer, (byte) ' ');
-            var destAddress = new String(buffer, 0, n, StandardCharsets.US_ASCII);
-            match(inputStream, (byte) ' ');
+            int fieldStart = firstFieldEnd + 1;
+            int sourceAddressStart = -1;
+            int sourceAddressLength = -1;
+            int destAddressStart = -1;
+            int destAddressLength = -1;
+            int sourcePortStart = -1;
+            int sourcePortLength = -1;
+            int destPortStart = -1;
+            int destPortLength = -1;
+            for (int fieldIndex = 1; fieldIndex < 5; fieldIndex++) {
+                int fieldEnd = fieldStart;
+                while (fieldEnd < lineEnd && buffer[fieldEnd] != (byte) ' ') {
+                    fieldEnd++;
+                }
+                if (fieldIndex == 4) {
+                    if (fieldEnd != lineEnd) {
+                        throw BAD_PROTOCOL_EXCEPTION;
+                    }
+                } else if (fieldEnd == lineEnd) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
 
-            // source port
-            n = readUntil(inputStream, buffer, (byte) ' ');
-            int sourcePort = Integer.parseInt(new String(buffer, 0, n, StandardCharsets.US_ASCII));
-            match(inputStream, (byte) ' ');
+                int fieldLength = fieldEnd - fieldStart;
+                validateV1Field(fieldLength);
+                switch (fieldIndex) {
+                case 1 -> {
+                    sourceAddressStart = fieldStart;
+                    sourceAddressLength = fieldLength;
+                }
+                case 2 -> {
+                    destAddressStart = fieldStart;
+                    destAddressLength = fieldLength;
+                }
+                case 3 -> {
+                    sourcePortStart = fieldStart;
+                    sourcePortLength = fieldLength;
+                }
+                case 4 -> {
+                    destPortStart = fieldStart;
+                    destPortLength = fieldLength;
+                }
+                default -> throw BAD_PROTOCOL_EXCEPTION;
+                }
+                fieldStart = fieldEnd + 1;
+            }
 
-            // destination port
-            n = readUntil(inputStream, buffer, (byte) '\r');
-            int destPort = Integer.parseInt(new String(buffer, 0, n, StandardCharsets.US_ASCII));
-            match(inputStream, (byte) '\r');
-            match(inputStream, (byte) '\n');
+            switch (family) {
+            case IPv4 -> {
+                validateIpv4Address(buffer, sourceAddressStart, sourceAddressLength);
+                validateIpv4Address(buffer, destAddressStart, destAddressLength);
+            }
+            case IPv6 -> {
+                validateIpv6Address(buffer, sourceAddressStart, sourceAddressLength);
+                validateIpv6Address(buffer, destAddressStart, destAddressLength);
+            }
+            case UNKNOWN, UNIX -> throw BAD_PROTOCOL_EXCEPTION;
+            default -> throw BAD_PROTOCOL_EXCEPTION;
+            }
+
+            int sourcePort = parseV1Port(buffer, sourcePortStart, sourcePortLength);
+            int destPort = parseV1Port(buffer, destPortStart, destPortLength);
+            var sourceAddress = new String(buffer, sourceAddressStart, sourceAddressLength, StandardCharsets.US_ASCII);
+            var destAddress = new String(buffer, destAddressStart, destAddressLength, StandardCharsets.US_ASCII);
 
             return new ProxyProtocolDataImpl(family, protocol, sourceAddress, destAddress, sourcePort, destPort);
         } catch (IllegalArgumentException e) {
@@ -197,8 +264,19 @@ class ProxyProtocolHandler {
             default -> throw badProtocolException(String.format("unexpected V2 command bits %#04x", (versionAndCommand & 0x0F)));
         };
 
-        // protocol and family
+        // LOCAL ignores the protocol block, so read its family and transport byte without interpreting it.
         final int protoAndFamily = readNext(inputStream);
+        final int headerLength = ((readNext(inputStream) << 8) & 0xFF00) | (readNext(inputStream) & 0xFF);
+        if (command == ProxyProtocolV2Data.Command.LOCAL) {
+            try {
+                inputStream.skipNBytes(headerLength);
+            } catch (EOFException e) {
+                throw badProtocolException("end of data stream reached before proxy protocol header was complete");
+            }
+            return new ProxyProtocolV2DataImpl(
+                Family.UNKNOWN, Protocol.UNKNOWN, command, null, null, List.of());
+        }
+
         final var family = switch (protoAndFamily >>> 4) {
             case 0x0 -> Family.UNKNOWN;
             case 0x1 -> Family.IPv4;
@@ -214,8 +292,17 @@ class ProxyProtocolHandler {
                 String.format("invalid V2 transport protocol bits %#04x", protoAndFamily & 0x0F));
         };
 
-        // length
-        final int headerLength = ((readNext(inputStream) << 8) & 0xFF00) | (readNext(inputStream) & 0xFF);
+        // An UNSPEC family or transport does not define how address bytes and TLVs are separated.
+        // Skip the complete declared block so opaque bytes cannot become trusted endpoint data.
+        if (family == Family.UNKNOWN || protocol == Protocol.UNKNOWN) {
+            try {
+                inputStream.skipNBytes(headerLength);
+            } catch (EOFException e) {
+                throw badProtocolException("end of data stream reached before proxy protocol header was complete");
+            }
+            return new ProxyProtocolV2DataImpl(
+                family, protocol, command, null, null, List.of());
+        }
 
         // Read address bytes.
         final int addressBytesLength = switch (family) {
@@ -273,18 +360,6 @@ class ProxyProtocolHandler {
         // Account for the consumed address bytes.
         int remainingHeaderLength = headerLength - addressBytesLength;
 
-        // If the family was unspecified, then we have no way of distinguishing address bytes from TLV bytes,
-        // so we cannot parse any TLVs that may be present. All we can do is skip over the rest of the proxy header.
-        if (family == Family.UNKNOWN) {
-            try {
-                inputStream.skipNBytes(remainingHeaderLength);
-            } catch (EOFException e) {
-                throw badProtocolException("end of data stream reached before proxy protocol header was complete");
-            }
-            return new ProxyProtocolV2DataImpl(
-                family, protocol, command, null, null, List.of());
-        }
-
         // Read the TLV records.
         final List<ProxyProtocolV2Data.Tlv> tlvs;
         ProxyProtocolV2Data.Tlv.Crc32c checksumTlv = null;
@@ -293,7 +368,7 @@ class ProxyProtocolHandler {
         } else {
             final var tlvsBuilder = new ArrayList<ProxyProtocolV2Data.Tlv>();
             while (remainingHeaderLength > 0) {
-                final var parsedTlv = readTlv(socketInputStream, inputStream, checksum, remainingHeaderLength);
+                final var parsedTlv = readTlv(socketInputStream, inputStream, checksum, remainingHeaderLength, false);
 
                 if (parsedTlv.tlv instanceof ProxyProtocolV2Data.Tlv.Crc32c crc) {
                     if (checksumTlv == null) {
@@ -328,13 +403,12 @@ class ProxyProtocolHandler {
         return maxLength;
     }
 
-    record ParsedTLV(int length, ProxyProtocolV2Data.Tlv tlv) {}
-
     private static ParsedTLV readTlv(
         InputStream socketInputStream,
         InputStream checksumStream,
         Checksum checksum,
-        int allowedBytesToRead
+        int allowedBytesToRead,
+        boolean nestedSsl
     ) throws IOException {
         if (allowedBytesToRead < 3) {
             throw badProtocolException("insufficient remaining TLV bytes to read TLV type and length");
@@ -348,6 +422,18 @@ class ProxyProtocolHandler {
         int length = ((readNext(checksumStream) & 0xFF) << 8) | (readNext(checksumStream) & 0xFF);
         if (length > allowedBytesToRead - 3) {
             throw badProtocolException("TLV length exceeds remaining available header bytes");
+        }
+        if (nestedSsl && type == ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C) {
+            throw badProtocolException("CRC32c TLV is not valid inside SSL TLV");
+        }
+        if (type == ProxyProtocolV2Data.Tlv.PP2_TYPE_CRC32C && length != Integer.BYTES) {
+            throw badProtocolException("CRC32c TLV length is invalid");
+        }
+        if (nestedSsl && type == ProxyProtocolV2Data.Tlv.PP2_TYPE_SSL) {
+            throw badProtocolException("nested SSL TLV is not supported");
+        }
+        if (type == ProxyProtocolV2Data.Tlv.PP2_TYPE_SSL && length < MIN_SSL_TLV_LENGTH) {
+            throw badProtocolException("SSL TLV length is too short");
         }
 
         byte[] value = new byte[length];
@@ -377,7 +463,7 @@ class ProxyProtocolHandler {
                 var remainingStream = new ByteArrayInputStream(value, 5, remainingBytes);
                 var subTlvs = new ArrayList<ProxyProtocolV2Data.Tlv>();
                 while (remainingBytes > 0) {
-                    var parsedTlv = readTlv(remainingStream, remainingStream, checksum, remainingBytes);
+                    var parsedTlv = readTlv(remainingStream, remainingStream, checksum, remainingBytes, true);
                     remainingBytes -= parsedTlv.length;
                     subTlvs.add(parsedTlv.tlv);
                 }
@@ -431,14 +517,38 @@ class ProxyProtocolHandler {
         }
     }
 
-    private static void match(byte a, byte b) {
-        if (a != b) {
+    private static void validateV1Field(int length) {
+        if (length == 0 || length > MAX_V1_FIELD_LENGTH) {
             throw BAD_PROTOCOL_EXCEPTION;
         }
     }
 
-    private static void match(PushbackInputStream inputStream, byte b) throws IOException {
-        if (inputStream.read() != b) {
+    private static void validateIpv4Address(byte[] buffer, int start, int length) {
+        int octets = 0;
+        int value = 0;
+        int digits = 0;
+        int end = start + length;
+        for (int i = start; i <= end; i++) {
+            byte c = i == end ? (byte) '.' : buffer[i];
+            if (c == '.') {
+                // Canonical PROXY v1 numbers forbid leading zeroes to avoid decimal/octal ambiguity.
+                if (digits == 0 || value > 255 || (digits > 1 && buffer[i - digits] == '0')) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                octets++;
+                value = 0;
+                digits = 0;
+            } else if (c >= '0' && c <= '9') {
+                value = value * 10 + c - '0';
+                digits++;
+                if (digits > 3) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+            } else {
+                throw BAD_PROTOCOL_EXCEPTION;
+            }
+        }
+        if (octets != 4) {
             throw BAD_PROTOCOL_EXCEPTION;
         }
     }
@@ -452,33 +562,125 @@ class ProxyProtocolHandler {
         }
     }
 
-    private static int readUntil(PushbackInputStream inputStream, byte[] buffer, byte... delims) throws IOException {
-        int n = 0;
-        do {
-            byte b = readNext(inputStream);
-            if (arrayContains(delims, b)) {
-                inputStream.unread(b);
-                return n;
-            }
-            buffer[n++] = b;
-            if (n >= buffer.length) {
+    private static void validateIpv6Address(byte[] buffer, int start, int length) {
+        if (length == 0) {
+            throw BAD_PROTOCOL_EXCEPTION;
+        }
+
+        int end = start + length;
+        boolean hasColon = false;
+        int doubleColon = -1;
+        int lastDoubleColon = -1;
+        for (int i = start; i < end; i++) {
+            byte c = buffer[i];
+            if (c == (byte) ':') {
+                hasColon = true;
+                if (i + 1 < end && buffer[i + 1] == (byte) ':') {
+                    if (doubleColon == -1) {
+                        doubleColon = i;
+                    }
+                    lastDoubleColon = i;
+                }
+            } else if (c == (byte) '%' || c == (byte) '[' || c == (byte) ']') {
                 throw BAD_PROTOCOL_EXCEPTION;
             }
-        } while (true);
+        }
+        if (!hasColon || doubleColon != lastDoubleColon) {
+            throw BAD_PROTOCOL_EXCEPTION;
+        }
+
+        int segments;
+        if (doubleColon == -1) {
+            segments = countIpv6Segments(buffer, start, end, true);
+            if (segments != 8) {
+                throw BAD_PROTOCOL_EXCEPTION;
+            }
+        } else {
+            segments = countIpv6Segments(buffer, start, doubleColon, false)
+                    + countIpv6Segments(buffer, doubleColon + 2, end, true);
+            if (segments >= 8) {
+                throw BAD_PROTOCOL_EXCEPTION;
+            }
+        }
     }
 
     private static boolean arrayEquals(byte[] array1, byte[] array2, int prefix) {
         return Arrays.equals(array1, 0, prefix, array2, 0, prefix);
     }
 
-    private static boolean arrayContains(byte[] array, byte b) {
-        for (byte a : array) {
-            if (a == b) {
-                return true;
-            }
+    private static int countIpv6Segments(byte[] buffer, int start, int end, boolean allowIpv4Tail) {
+        if (start == end) {
+            return 0;
         }
-        return false;
+
+        int segments = 0;
+        int segmentStart = start;
+        while (segmentStart <= end) {
+            int segmentEnd = segmentStart;
+            while (segmentEnd < end && buffer[segmentEnd] != (byte) ':') {
+                segmentEnd++;
+            }
+            if (segmentEnd == segmentStart) {
+                throw BAD_PROTOCOL_EXCEPTION;
+            }
+
+            boolean ipv4Tail = false;
+            for (int i = segmentStart; i < segmentEnd; i++) {
+                if (buffer[i] == (byte) '.') {
+                    ipv4Tail = true;
+                    break;
+                }
+            }
+            if (ipv4Tail) {
+                if (!allowIpv4Tail || segmentEnd != end) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                validateIpv4Address(buffer, segmentStart, segmentEnd - segmentStart);
+                segments += 2;
+            } else {
+                if (segmentEnd - segmentStart > 4) {
+                    throw BAD_PROTOCOL_EXCEPTION;
+                }
+                for (int i = segmentStart; i < segmentEnd; i++) {
+                    byte c = buffer[i];
+                    if (!((c >= (byte) '0' && c <= (byte) '9')
+                            || (c >= (byte) 'a' && c <= (byte) 'f')
+                            || (c >= (byte) 'A' && c <= (byte) 'F'))) {
+                        throw BAD_PROTOCOL_EXCEPTION;
+                    }
+                }
+                segments++;
+            }
+
+            if (segmentEnd == end) {
+                break;
+            }
+            segmentStart = segmentEnd + 1;
+        }
+
+        return segments;
     }
+
+    private static int parseV1Port(byte[] buffer, int start, int length) {
+        // Canonical PROXY v1 numbers forbid leading zeroes to avoid decimal/octal ambiguity.
+        if (length > 5 || (length > 1 && buffer[start] == '0')) {
+            throw BAD_PROTOCOL_EXCEPTION;
+        }
+        int value = 0;
+        for (int i = start; i < start + length; i++) {
+            byte c = buffer[i];
+            if (c < '0' || c > '9') {
+                throw BAD_PROTOCOL_EXCEPTION;
+            }
+            if (value > 6553 || (value == 6553 && c > '5')) {
+                throw BAD_PROTOCOL_EXCEPTION;
+            }
+            value = value * 10 + c - '0';
+        }
+        return value;
+    }
+
+    record ParsedTLV(int length, ProxyProtocolV2Data.Tlv tlv) {}
 
     record ProxyProtocolDataImpl(Family family,
                                  Protocol protocol,
