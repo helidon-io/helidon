@@ -20,9 +20,11 @@ import java.net.URI;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
+import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ResourceInfo;
@@ -45,7 +47,11 @@ class LeaveAnnotationHandler implements AnnotationHandler {
                 .ifPresent(lraId -> {
                     URI baseUri = reqCtx.getUriInfo().getBaseUri();
                     Participant p = participantService.participant(baseUri, resourceInfo.getResourceClass(), lraId);
-                    coordinatorClient.leave(lraId, PropagatedHeaders.noop(), p);
+                    try {
+                        coordinatorClient.leave(lraId, PropagatedHeaders.noop(), p);
+                    } catch (CoordinatorConnectionException e) {
+                        throw new WebApplicationException(e.getMessage(), e.getCause(), e.status());
+                    }
                     reqCtx.getHeaders().add(LRA_HTTP_CONTEXT_HEADER, lraId.toASCIIString());
                     reqCtx.setProperty(LRA_HTTP_CONTEXT_HEADER, lraId);
                 });

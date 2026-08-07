@@ -95,6 +95,7 @@ public class LraCdiExtension implements Extension {
             Complete.class,
             Compensate.class,
             Forget.class,
+            Leave.class,
             Status.class
     );
 
@@ -121,6 +122,7 @@ public class LraCdiExtension implements Extension {
                 Compensate.class,
                 Complete.class,
                 Forget.class,
+                Leave.class,
                 Status.class,
                 Application.class,
                 NonJaxRsResource.class).forEach(c -> runtimeIndex(DotName.createSimple(c.getName())));
@@ -137,7 +139,7 @@ public class LraCdiExtension implements Extension {
                     Path.class,
                     GET.class, POST.class, PUT.class, OPTIONS.class, PATCH.class, DELETE.class,
                     LRA.class,
-                    AfterLRA.class, Compensate.class, Complete.class, Forget.class, Status.class
+                    AfterLRA.class, Compensate.class, Complete.class, Forget.class, Leave.class, Status.class
             }) ProcessAnnotatedType<?> pat) {
         // compile time built index
         if (index != null) return;
@@ -167,6 +169,7 @@ public class LraCdiExtension implements Extension {
                                                           Compensate.class,
                                                           Forget.class,
                                                           AfterLRA.class,
+                                                          Leave.class,
                                                           Status.class
                                                   })
                                                   ProcessAnnotatedType<?> pat) {

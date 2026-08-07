@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,10 @@
  * <ul>
  * <li>{@link io.helidon.lra.coordinator.client.CoordinatorClient#CONF_KEY_COORDINATOR_URL mp.lra.coordinator.url}
  * URL of coordinator</li>
+ * <li>{@link io.helidon.lra.coordinator.client.CoordinatorClient#CONF_KEY_COORDINATOR_TRUSTED_URLS
+ * mp.lra.coordinator.trusted-urls} Additional trusted coordinator base URLs for propagated LRA identifiers. Trusted
+ * coordinator and LRA identifier paths must not contain matrix parameters, encoded dot, slash, backslash, or matrix
+ * delimiter characters, or dot segments that change the normalized path.</li>
  * <li>{@link io.helidon.lra.coordinator.client.CoordinatorClient#CONF_KEY_COORDINATOR_TIMEOUT mp.lra.coordinator.timeout}
  * Timeout for coordinator calls</li>
  * <li>{@link io.helidon.lra.coordinator.client.CoordinatorClient#CONF_KEY_COORDINATOR_TIMEOUT_UNIT mp.lra.coordinator.timeout-unit}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,16 @@ public interface CoordinatorClient {
      * URL of the coordinator to be used for orchestrating Long Running Actions.
      */
     String CONF_KEY_COORDINATOR_URL = "mp.lra.coordinator.url";
+
+    /**
+     * Additional trusted coordinator base URLs for propagated LRA identifiers.
+     * An identifier is trusted when its scheme, host, effective port, and immediate parent path match a configured base.
+     * This configuration is required when an identifier uses a base that is not the current primary coordinator and can
+     * reach a client instance that did not learn that exact LRA, reinitialized since learning it, or evicted it from the
+     * learned-identifier cache.
+     */
+    String CONF_KEY_COORDINATOR_TRUSTED_URLS = "mp.lra.coordinator.trusted-urls";
+
     /**
      * Timeout for synchronous communication with coordinator.
      */

@@ -154,12 +154,12 @@ class LraAnnotationHandler implements AnnotationHandler {
                 || annotation.cancelOn().contains(resStatus);
 
         lraId.ifPresent(id -> {
+            resCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, id);
             if (cancel) {
                 cancel(id, propagatedHeaders);
             } else if (end) {
                 close(id, propagatedHeaders);
             }
-            resCtx.getHeaders().putSingle(LRA_HTTP_CONTEXT_HEADER, id);
         });
 
         Optional.ofNullable(reqCtx.getProperty(LRA_HTTP_PARENT_CONTEXT_HEADER))
@@ -227,6 +227,8 @@ class LraAnnotationHandler implements AnnotationHandler {
         try {
             // Connection timeout should be handled by client impl separately
             return supplier.get();
+        } catch (CoordinatorConnectionException e) {
+            throw new WebApplicationException(e.getMessage(), e.getCause(), e.status());
         } catch (CompletionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof CoordinatorConnectionException) {

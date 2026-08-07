@@ -355,6 +355,7 @@ Configuration options:
 | Key                                                    | Type    | Default value                           | Description                                                                                                                                                                                                                                                                                                                         |
 |--------------------------------------------------------|---------|-----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `mp.lra.coordinator.url`                               | string  | `http://localhost:8070/lra-coordinator` | Url of coordinator.                                                                                                                                                                                                                                                                                                                 |
+| `mp.lra.coordinator.trusted-urls`                      | string list |                                  | Additional trusted coordinator base URLs accepted from propagated LRA identifiers. An identifier must have the same scheme, host, effective port, and immediate parent path as a configured base. Exact LRA identifiers returned by successful start requests are trusted automatically for the client instance until reinitialization or eviction from the 10,000-entry learned-identifier cache. |
 | `mp.lra.coordinator.propagation.active`                | boolean |                                         | Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints.                                                                                                                                                                                                                     |
 | `mp.lra.participant.url`                               | string  |                                         | Canonical, externally reachable URL of the LRA-enabled service. This property is required when the application declares a non-JAX-RS participant callback or uses `@Leave`. The value must be an absolute HTTP or HTTPS URI with a host and may include a path and port, but not user info, query, or fragment. An explicit port `0` uses the bound default server listener port and is intended for direct-listener tests; configure the actual public port when callbacks pass through a proxy or load balancer. |
 | `mp.lra.coordinator.timeout`                           | string  |                                         | Timeout for synchronous communication with coordinator.                                                                                                                                                                                                                                                                             |
@@ -369,14 +370,30 @@ Example of LRA configuration:
 ```yaml
 mp.lra:
   coordinator.url: http://localhost:8070/lra-coordinator <1>
-  propagation.active: true <2>
-  participant.url: https://coordinator.visible.host:443/awesomeapp <3>
+  coordinator.trusted-urls: https://secondary.example/lra-coordinator <2>
+  propagation.active: true <3>
+  participant.url: https://coordinator.visible.host:443/awesomeapp <4>
 ```
 1. Url of coordinator
-2. Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and
+2. Additional trusted coordinator base URL for propagated LRA identifiers
+3. Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and
    `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints
-3. Canonical, externally reachable URL of the LRA-enabled service
+4. Canonical, externally reachable URL of the LRA-enabled service
 <!--@mdc :: -->
+
+Up to 10,000 recently used learned LRA identifiers are held in memory; older
+entries are evicted. Configure every coordinator base that may appear in a
+propagated identifier when more identifiers must remain trusted, an LRA can
+reach another service instance, survive an application restart, or use a direct
+coordinator node URL returned through a load balancer. URI scheme and DNS host
+comparisons are case-insensitive, omitted HTTP and HTTPS ports are treated as
+80 and 443, and the LRA identifier must be an immediate child of the configured
+base path. Coordinator and LRA identifier paths used for this trust check must
+not contain user info, fragments, backslashes, matrix parameters (`;`), encoded
+matrix delimiters (`%3b`), encoded dot, slash, or backslash characters, or dot
+segments that would change the normalized path. Configured trusted coordinator
+base URLs must not contain a query. Coordinator redirects are not followed;
+configured and trusted URLs must identify the final coordinator endpoints.
 
 ### Non-JAX-RS Callback Authentication
 
@@ -507,6 +524,10 @@ public Response compensateExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraI
    particular LRA is sent to coordinator
 4. When method execution finishes successfully, complete signal for this
    particular LRA is sent to coordinator
+   If the after-resource cancel or complete coordinator call fails, Helidon
+   replaces the resource response with the coordinator failure status.
+   Coordinator redirects are not followed in this phase; a coordinator redirect
+   is reported to the caller as `502 Bad Gateway` without a `Location` header.
 5. Method which will be called by coordinator when LRA is completed
 6. Method which will be called by coordinator when LRA is canceled
 <!--@mdc :: -->
