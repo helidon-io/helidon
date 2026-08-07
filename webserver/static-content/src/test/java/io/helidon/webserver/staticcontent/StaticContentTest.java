@@ -296,6 +296,20 @@ class StaticContentTest {
     }
 
     @Test
+    void testFileSystemPreCompressedUsesOversizedSuffixRange() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .header(HeaderNames.RANGE, "bytes=-500")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 0-13/14"));
+            assertThat(response.as(String.class), is("Brotli content"));
+        }
+    }
+
+    @Test
     void testConditionalSidecarMergesVaryFromException() {
         String etag;
         try (Http1ClientResponse response = testClient.get("/vary-path/resource.txt")

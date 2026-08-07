@@ -74,7 +74,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             if (secondGroup != null) {
                 long second = Long.parseLong(secondGroup);
                 if (firstGroup == null) {
-                    from = fileLength - second;
+                    from = Math.max(0, fileLength - second);
                     last = fileLength - 1;
                 } else {
                     last = second;

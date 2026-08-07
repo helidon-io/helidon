@@ -1642,6 +1642,34 @@ class StaticContentHandlerTest {
         verify(response).status(Status.PARTIAL_CONTENT_206);
     }
 
+    @Test
+    void preCompressedInMemoryOversizedSuffixRangeSendsAllSelectedBytes() throws IOException {
+        byte[] bytes = "Brotli content".getBytes(StandardCharsets.UTF_8);
+        CachedHandler handler = new CachedHandlerInMemory(MediaTypes.TEXT_PLAIN,
+                                                          Instant.EPOCH,
+                                                          ServerResponseHeaders::lastModified,
+                                                          bytes,
+                                                          bytes.length,
+                                                          HeaderValues.create(HeaderNames.CONTENT_LENGTH, bytes.length))
+                .withRepresentation(ResponseRepresentation.encoded("br"));
+        ServerRequest request = mockRequestWithHeaders("br", "bytes=-500", ContentEncodingContext.create());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        AtomicReference<byte[]> sent = new AtomicReference<>();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        Mockito.doAnswer(inv -> {
+            sent.set(inv.getArgument(0));
+            return null;
+        }).when(response).send(any(byte[].class));
+
+        handler.handle(LruCache.create(), Method.GET, request, response, "resource.txt");
+
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Brotli content"));
+        verify(response).status(Status.PARTIAL_CONTENT_206);
+    }
+
     private void assertRuntimeEncodingSelected(String acceptEncoding) throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");

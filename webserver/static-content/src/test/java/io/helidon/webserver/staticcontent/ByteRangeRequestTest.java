@@ -86,6 +86,21 @@ class ByteRangeRequestTest {
     }
 
     @Test
+    void testSuffixRangeLongerThanRepresentation() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=-500");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        List<ByteRangeRequest> requests = ByteRangeRequest.parse(req, res, header.values(), 50);
+        assertThat(requests, IsCollectionWithSize.hasSize(1));
+        ByteRangeRequest byteRange = requests.getFirst();
+
+        assertThat(byteRange.fileLength(), is(50L));
+        assertThat(byteRange.offset(), is(0L));
+        assertThat(byteRange.length(), is(50L));
+    }
+
+    @Test
     void testMultiRangeMultiValue() {
         Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=-1", "bytes=47-48", "bytes=0-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
