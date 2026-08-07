@@ -316,6 +316,7 @@ public final class AcceptEncoding {
                                            bestCandidate.order(), bestCandidate.wildcard()));
         }
         if (q < 0
+                || (identity == null && bestCandidate.wildcard())
                 || (identityOrder != IMPLICIT_IDENTITY_ORDER && identityOrder < bestCandidate.order())) {
             return Optional.of(identityQuality(identity));
         }

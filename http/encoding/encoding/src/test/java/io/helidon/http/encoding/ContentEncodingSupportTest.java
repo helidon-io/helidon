@@ -184,6 +184,13 @@ class ContentEncodingSupportTest {
     }
 
     @Test
+    void testRuntimeEncoderImplicitIdentityWinsEqualQualityWildcard() {
+        ContentEncodingContext context = context(gzipEncoder());
+
+        assertThat(context.encoder(headers("*")), sameInstance(ContentEncoder.NO_OP));
+    }
+
+    @Test
     void testBestUsesHeaderOrderWhenIdentityIsBetweenConcreteCodings() {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("gzip, identity, br"));
 
@@ -216,6 +223,13 @@ class ContentEncodingSupportTest {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("*;q=0.5, identity;q=0"));
 
         assertQuality(acceptEncoding.best(List.of("br", "gzip")).orElseThrow(), "br", 0.5D, true);
+    }
+
+    @Test
+    void testBestImplicitIdentityWinsEqualQualityWildcard() {
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("*"));
+
+        assertQuality(acceptEncoding.best(List.of("gzip")).orElseThrow(), "identity", 1D, false);
     }
 
     @Test
@@ -335,7 +349,7 @@ class ContentEncodingSupportTest {
         ContentEncoder gzipEncoder = gzipEncoder();
         ContentEncodingContext context = context(gzipEncoder);
 
-        assertThat(context.encoder(headers("*")), sameInstance(gzipEncoder));
+        assertThat(context.encoder(headers("*, identity;q=0")), sameInstance(gzipEncoder));
     }
 
     @Test
@@ -381,7 +395,7 @@ class ContentEncodingSupportTest {
                 .addContentEncoding(new TestEncoding(gzipHeaderEncoder(), Set.of("gzip", "x-gzip"), true, false, "gzip"))
                 .build();
 
-        assertContentEncoding(context.encoder(headers("gzip;q=0, *")), "x-gzip");
+        assertContentEncoding(context.encoder(headers("gzip;q=0, *, identity;q=0")), "x-gzip");
     }
 
     @Test
