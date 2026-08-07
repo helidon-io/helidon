@@ -975,6 +975,13 @@ refreshes it when the logical resource is not retained by `MemoryCache`; memory-
 for the lifetime of the handler. Classpath sidecar bytes cached in memory still count against the configured memory
 cache capacity.
 
+A selected sidecar is a distinct response representation. Its bytes determine `Content-Length`, its file metadata
+determines `Last-Modified`, and its ETag differs from the identity representation. Conditional requests are evaluated
+against the selected representation, and `304 Not Modified` or `412 Precondition Failed` responses retain its
+`Content-Encoding`, `Vary`, and ETag metadata. Byte ranges and `Content-Range` apply to the encoded sidecar bytes. A
+matching strong sidecar ETag in `If-Range` permits a partial response; otherwise Helidon ignores the range and sends the
+complete selected sidecar.
+
 When listener content encoding is configured, static content can dynamically encode the logical resource when that
 runtime candidate is the best acceptable representation. Wildcard values can select runtime encoders when `identity` is
 rejected or has a lower quality. If `identity` is omitted, the implicit `identity` representation is preferred over a
