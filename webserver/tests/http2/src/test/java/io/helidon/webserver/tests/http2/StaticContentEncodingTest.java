@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 
+import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
@@ -34,6 +35,7 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.staticcontent.FileSystemHandlerConfig;
@@ -52,6 +54,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class StaticContentEncodingTest {
+    private static final String CUSTOM_BAD_REQUEST = "custom-bad";
+
     @TempDir
     static Path tempDir;
 
@@ -65,6 +69,23 @@ class StaticContentEncodingTest {
     static void setupServer(WebServerConfig.Builder builder) {
         builder.contentEncoding(ContentEncodingContext.builder()
                                         .addContentEncoding(new TestEncoding())
+                                        .build())
+                .directHandlers(DirectHandlers.builder()
+                                        .addHandler(DirectHandler.EventType.BAD_REQUEST,
+                                                    (request, eventType, defaultStatus, responseHeaders, message) -> {
+                                                        if (request.path().equals("/custom-bad-request")) {
+                                                            return DirectHandler.TransportResponse.builder()
+                                                                    .status(Status.I_AM_A_TEAPOT_418)
+                                                                    .entity(CUSTOM_BAD_REQUEST)
+                                                                    .build();
+                                                        }
+                                                        return DirectHandler.defaultHandler()
+                                                                .handle(request,
+                                                                        eventType,
+                                                                        defaultStatus,
+                                                                        responseHeaders,
+                                                                        message);
+                                                    })
                                         .build());
     }
 
@@ -76,6 +97,7 @@ class StaticContentEncodingTest {
         Files.writeString(nested.resolve("resource.txt.br"), "Pre-compressed content");
 
         builder.register("/path", StaticContentFeature.createService(FileSystemHandlerConfig.create(tempDir)));
+        builder.get("/custom-bad-request", (req, res) -> res.send("OK"));
         builder.get("/reset", (req, res) -> {
             RoutingResponse routingResponse = (RoutingResponse) res;
             routingResponse.automaticContentEncoding(false);
@@ -116,6 +138,17 @@ class StaticContentEncodingTest {
 
             assertThat(response.status(), is(Status.BAD_REQUEST_400));
             assertThat(response.headers(), noHeader(HeaderNames.CONTENT_ENCODING));
+        }
+    }
+
+    @Test
+    void invalidAcceptEncodingUsesBadRequestHandler() {
+        try (Http2ClientResponse response = client.get("/custom-bad-request")
+                .header(HeaderNames.ACCEPT_ENCODING, "g zip")
+                .request()) {
+
+            assertThat(response.status(), is(Status.I_AM_A_TEAPOT_418));
+            assertThat(response.as(String.class), is(CUSTOM_BAD_REQUEST));
         }
     }
 

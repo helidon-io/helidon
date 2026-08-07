@@ -121,6 +121,17 @@ class BadRequestTest {
     }
 
     @Test
+    void testMalformedAcceptEncodingUsesBadRequestHandler() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .header(HeaderNames.ACCEPT_ENCODING, "g zip")
+                .request()) {
+
+            assertThat(response.status(), is(Status.create(Status.BAD_REQUEST_400.code(), CUSTOM_REASON_PHRASE)));
+            assertThat(response.entity().as(String.class), is(CUSTOM_ENTITY));
+        }
+    }
+
+    @Test
     void testRoutingErrorHandlerPreservesValidContentEncoding() {
         String response = socketClient.sendAndReceive(Method.GET,
                                                       "/bad-request",

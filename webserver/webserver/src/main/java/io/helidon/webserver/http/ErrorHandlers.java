@@ -30,6 +30,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.LogFormatter;
 import io.helidon.http.RequestException;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
@@ -195,7 +196,9 @@ public final class ErrorHandlers {
         if (e instanceof HttpException httpException) {
             handleRequestException(ctx, request, response, RequestException.builder()
                     .cause(e)
-                    .type(DirectHandler.EventType.OTHER)
+                    .type(httpException.status().code() == Status.BAD_REQUEST_400.code()
+                                  ? DirectHandler.EventType.BAD_REQUEST
+                                  : DirectHandler.EventType.OTHER)
                     .message(e.getMessage())
                     .status(httpException.status())
                     .setKeepAlive(httpException.keepAlive())
