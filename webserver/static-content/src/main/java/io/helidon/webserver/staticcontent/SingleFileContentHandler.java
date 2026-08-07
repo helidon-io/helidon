@@ -172,7 +172,7 @@ class SingleFileContentHandler extends FileBasedContentHandler {
 
         try {
             Path resolvedSidecar = sidecar.toRealPath();
-            if (resolvedSidecar.startsWith(pinnedPath.getParent())) {
+            if (resolvedSidecar.equals(sidecar.toAbsolutePath().normalize())) {
                 return Optional.of(resolvedSidecar);
             }
             return Optional.empty();

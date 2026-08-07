@@ -911,6 +911,32 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testSingleFileSystemSidecarSymlinkToSiblingIsRejected() throws IOException {
+        Path root = tempDir.resolve("root");
+        Path resource = root.resolve("single.txt");
+        Path gzip = root.resolve("single.txt.gz");
+        Path secret = root.resolve("secret.gz");
+        Files.createDirectories(root);
+        Files.writeString(resource, "Content");
+        Files.writeString(secret, "Secret content");
+        createSymbolicLink(gzip, secret);
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(resource)
+                        .build());
+
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        ServerResponse response = response(ServerResponseHeaders.create(), body);
+        assertThat(handler.doHandle(Method.GET,
+                                    "",
+                                    request("/single", acceptEncodingHeaders("gzip, identity;q=0")),
+                                    response,
+                                    false), is(true));
+        verify(response).status(Status.NOT_ACCEPTABLE_406);
+        assertThat(body.size(), is(0));
+    }
+
+    @Test
     void testSingleFileSystemCachedSidecarRetargetedOutsideParentFallsBackToIdentity() throws IOException {
         Path root = tempDir.resolve("root");
         Path resource = root.resolve("single.txt");
