@@ -144,6 +144,11 @@ public final class AltSvc {
      * @return header value
      */
     public String headerValue(int listenerPort) {
+        int effectivePort = port.orElse(listenerPort);
+        if (effectivePort < 1 || effectivePort > 65_535) {
+            throw new IllegalArgumentException("Alt-Svc port must be between 1 and 65535.");
+        }
+
         StringBuilder value = new StringBuilder();
         byte[] protocolBytes = protocol.getBytes(StandardCharsets.ISO_8859_1);
         for (byte current : protocolBytes) {
@@ -175,7 +180,7 @@ public final class AltSvc {
         }
         value.append("=\"")
                 .append(':')
-                .append(port.orElse(listenerPort))
+                .append(effectivePort)
                 .append('"');
 
         if (maxAge.isPresent()) {

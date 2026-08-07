@@ -56,7 +56,10 @@ import io.helidon.webserver.TcpTransportConfig;
 import io.helidon.webserver.UdsTransportConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
@@ -123,6 +126,50 @@ public class UnixDomainSocketTest {
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("Hello World!"));
+    }
+
+    @Test
+    public void shouldOmitAltSvcWithoutExplicitPort() {
+        UnixDomainSocketAddress address = UnixDomainSocketAddress.of(newSocketPath("helidon-alt-svc-default"));
+        WebServer server = startAltSvcServer(address, AltSvc.builder().build());
+        WebClient client = WebClient.builder().shareConnectionCache(false).build();
+        try {
+            ClientResponseTyped<String> response = client.get()
+                    .address(address)
+                    .path("/test")
+                    .request(String.class);
+            try {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
+            } finally {
+                response.close();
+            }
+        } finally {
+            client.closeResource();
+            server.stop();
+        }
+    }
+
+    @Test
+    public void shouldAdvertiseExplicitAltSvcPort() {
+        UnixDomainSocketAddress address = UnixDomainSocketAddress.of(newSocketPath("helidon-alt-svc-explicit"));
+        WebServer server = startAltSvcServer(address, AltSvc.builder().port(8443).build());
+        WebClient client = WebClient.builder().shareConnectionCache(false).build();
+        try {
+            ClientResponseTyped<String> response = client.get()
+                    .address(address)
+                    .path("/test")
+                    .request(String.class);
+            try {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is("h3=\":8443\""));
+            } finally {
+                response.close();
+            }
+        } finally {
+            client.closeResource();
+            server.stop();
+        }
     }
 
     @Test
@@ -639,6 +686,21 @@ public class UnixDomainSocketTest {
                     rules.get("/test", (req, res) -> res.send(http1Response));
                     rules.route(Http2Route.route(Method.GET, "/h2", (req, res) -> res.send(http2Response)));
                 })
+                .build()
+                .start();
+    }
+
+    private static WebServer startAltSvcServer(UnixDomainSocketAddress address, AltSvc altSvc) {
+        WebServerConfig.Builder builder = WebServer.builder();
+        configureUdsBinding(builder, address);
+        return builder
+                .protocolsDiscoverServices(false)
+                .addConnectionSelector(Http1ConnectionSelector.builder()
+                                               .config(Http1Config.builder()
+                                                               .altSvc(altSvc)
+                                                               .build())
+                                               .build())
+                .routing(rules -> rules.get("/test", (req, res) -> res.send("Hello World!")))
                 .build()
                 .start();
     }

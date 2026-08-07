@@ -559,7 +559,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         switch (status.family()) {
         case SUCCESSFUL:
         case REDIRECTION:
-            headers.setIfAbsent(configuredAltSvc.get().header(ctx.localPeer().port()));
+            AltSvc altSvc = configuredAltSvc.get();
+            int listenerPort = ctx.localPeer().port();
+            if (altSvc.port().isPresent() || listenerPort > 0 && listenerPort <= 65_535) {
+                headers.setIfAbsent(altSvc.header(listenerPort));
+            }
             break;
         default:
             break;

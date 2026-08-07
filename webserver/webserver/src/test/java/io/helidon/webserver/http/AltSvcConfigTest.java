@@ -82,6 +82,28 @@ class AltSvcConfigTest {
     }
 
     @Test
+    void shouldRejectInvalidListenerPort() {
+        AltSvc altSvc = AltSvc.builder().build();
+
+        IllegalArgumentException belowRange = assertThrows(IllegalArgumentException.class,
+                                                           () -> altSvc.headerValue(-1));
+        IllegalArgumentException aboveRange = assertThrows(IllegalArgumentException.class,
+                                                           () -> altSvc.header(65_536));
+
+        assertThat(belowRange.getMessage(), is("Alt-Svc port must be between 1 and 65535."));
+        assertThat(aboveRange.getMessage(), is("Alt-Svc port must be between 1 and 65535."));
+    }
+
+    @Test
+    void shouldUseExplicitPortWhenListenerHasNoPort() {
+        AltSvc altSvc = AltSvc.builder()
+                .port(9443)
+                .build();
+
+        assertThat(altSvc.headerValue(-1), is("h3=\":9443\""));
+    }
+
+    @Test
     void shouldClearOptionalParametersExplicitly() {
         AltSvc altSvc = AltSvc.builder()
                 .port(9443)
