@@ -84,6 +84,19 @@ class ClientUriTest {
     }
 
     @Test
+    void testRequestTargetQueryUsesConfiguredEncoding() {
+        ClientUri helper = ClientUri.create(URI.create("http://localhost/path"));
+        helper.writeableQuery().set("q", "a#b");
+
+        assertThat(helper.requestTargetQuery().rawValue(), is("q=a%23b"));
+
+        helper.skipUriEncoding(true);
+
+        assertThat(helper.requestTargetQuery().rawValue(), is("q=a#b"));
+        assertThat(helper.query().rawValue(), is("q=a%23b"));
+    }
+
+    @Test
     void testEmptyQueryDelimiter() {
         ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick?"));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.common.uri;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -34,6 +35,8 @@ import io.helidon.common.mapper.Value;
 final class UriQueryWriteableImpl implements UriQueryWriteable {
     private final Map<String, List<String>> rawQueryParams = new HashMap<>();
     private final Map<String, List<String>> decodedQueryParams = new HashMap<>();
+
+    private Map<String, Set<String>> rawNamesByDecodedName;
 
     UriQueryWriteableImpl() {
     }
@@ -84,6 +87,13 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                         .addAll(decoded);
             }
         }
+        Map<String, Set<String>> rawNames = rawNamesByDecodedName;
+        if (rawNames != null) {
+            rawNames.clear();
+            rawQueryParams.keySet().forEach(rawName -> rawNames
+                    .computeIfAbsent(UriEncoding.decodeUri(rawName), it -> new HashSet<>())
+                    .add(rawName));
+        }
 
         return this;
     }
@@ -92,6 +102,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     public void clear() {
         this.rawQueryParams.clear();
         this.decodedQueryParams.clear();
+        this.rawNamesByDecodedName = null;
     }
 
     @Override
@@ -223,8 +234,15 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             encodedValues.add(UriEncoding.encode(value, UriEncoding.Type.QUERY_PARAM_SPACE_ENCODED));
         }
 
+        List<String> existingDecodedValues = decodedQueryParams.get(name);
+        List<String> existingRawValues = rawQueryParams.get(encodedName);
+        if (existingDecodedValues != null
+                && (existingRawValues == null || existingRawValues.size() != existingDecodedValues.size())) {
+            removeRawAliases(name);
+        }
         rawQueryParams.put(encodedName, encodedValues);
         decodedQueryParams.put(name, decodedValues);
+        indexRawName(name, encodedName);
 
         return this;
     }
@@ -238,6 +256,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                 .add(encodedValue);
         decodedQueryParams.computeIfAbsent(name, it -> new ArrayList<>(1))
                 .add(value);
+        indexRawName(name, encodedName);
 
         return this;
     }
@@ -254,6 +273,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     public UriQueryWriteable remove(String name) {
         rawQueryParams.remove(name);
         decodedQueryParams.remove(name);
+        unindexRawName(name);
         return this;
     }
 
@@ -261,6 +281,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     public UriQueryWriteable remove(String name, Consumer<List<String>> removedConsumer) {
         rawQueryParams.remove(name);
         List<String> removed = decodedQueryParams.remove(name);
+        unindexRawName(name);
         if (removed != null) {
             removedConsumer.accept(removed);
         }
@@ -308,5 +329,45 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                 .add(encodedValue);
         decodedQueryParams.computeIfAbsent(decodedName, it -> new ArrayList<>(1))
                 .add(decodedValue);
+        indexRawName(decodedName, encodedName);
+    }
+
+    private void removeRawAliases(String name) {
+        Map<String, Set<String>> rawNames = rawNamesByDecodedName;
+        if (rawNames == null) {
+            rawNames = new HashMap<>();
+            for (String rawName : rawQueryParams.keySet()) {
+                rawNames.computeIfAbsent(UriEncoding.decodeUri(rawName), it -> new HashSet<>())
+                        .add(rawName);
+            }
+            rawNamesByDecodedName = rawNames;
+        }
+        Set<String> aliases = rawNames.remove(name);
+        if (aliases != null) {
+            aliases.forEach(rawQueryParams::remove);
+        }
+    }
+
+    private void indexRawName(String decodedName, String rawName) {
+        Map<String, Set<String>> rawNames = rawNamesByDecodedName;
+        if (rawNames != null) {
+            rawNames.computeIfAbsent(decodedName, it -> new HashSet<>())
+                    .add(rawName);
+        }
+    }
+
+    private void unindexRawName(String rawName) {
+        Map<String, Set<String>> rawNames = rawNamesByDecodedName;
+        if (rawNames == null) {
+            return;
+        }
+        String decodedName = UriEncoding.decodeUri(rawName);
+        Set<String> aliases = rawNames.get(decodedName);
+        if (aliases != null) {
+            aliases.remove(rawName);
+            if (aliases.isEmpty()) {
+                rawNames.remove(decodedName);
+            }
+        }
     }
 }

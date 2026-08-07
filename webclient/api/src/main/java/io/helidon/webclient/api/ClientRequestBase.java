@@ -87,7 +87,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final boolean filterRedirectHeaders;
 
     private SocketAddress socketAddress;
-    private String uriTemplate;
+    private UriTemplateQuery uriTemplate;
     private boolean crossOriginRedirect;
     private boolean skipUriEncoding;
     private boolean followRedirects;
@@ -227,7 +227,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T uri(String uri) {
         if (uri.indexOf('{') > -1) {
-            this.uriTemplate = uri;
+            this.uriTemplate = new UriTemplateQuery(uri);
         } else {
             uri(URI.create(UriEncoding.encodeUri(uri)));
         }
@@ -282,6 +282,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T queryParam(String name, String... values) {
         clientUri.writeableQuery().set(name, values);
+        UriTemplateQuery templateQuery = uriTemplate;
+        if (templateQuery != null) {
+            templateQuery.trackQueryParam(name);
+        }
         return identity();
     }
 
@@ -572,12 +576,21 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @return updated client uri
      */
     protected ClientUri resolveUri(ClientUri toResolve) {
-        if (uriTemplate != null) {
-            String resolved = resolvePathParams(uriTemplate);
+        UriTemplateQuery templateQuery = uriTemplate;
+        if (templateQuery != null) {
+            String resolved = resolvePathParams(templateQuery.template());
+            URI uri;
             if (skipUriEncoding) {
-                toResolve.resolve(URI.create(resolved));
+                uri = URI.create(resolved);
             } else {
-                toResolve.resolve(URI.create(UriEncoding.encodeUri(resolved)));
+                uri = URI.create(UriEncoding.encodeUri(resolved));
+            }
+            boolean replayQuery = skipUriEncoding || uri.isAbsolute();
+            ClientUri querySource = replayQuery && toResolve == clientUri ? ClientUri.create(clientUri) : clientUri;
+            toResolve.resolve(uri);
+
+            if (replayQuery) {
+                templateQuery.replay(querySource.query(), toResolve.writeableQuery(), uri.isAbsolute());
             }
         }
         return toResolve;
@@ -634,4 +647,5 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private T identity() {
         return (T) this;
     }
+
 }
