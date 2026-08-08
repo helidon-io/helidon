@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 class ReadOnlyArrayData extends ReadOnlyBufferData {
     private final byte[] bytes;
@@ -84,6 +85,7 @@ class ReadOnlyArrayData extends ReadOnlyBufferData {
 
     @Override
     public String readString(int length, Charset charset) {
+        Objects.checkFromIndexSize(position, length, this.length);
         String result = new String(bytes, offset + position, length, charset);
         position += length;
         return result;
@@ -129,7 +131,9 @@ class ReadOnlyArrayData extends ReadOnlyBufferData {
 
     @Override
     public void skip(int length) {
-        position = Math.min(this.length, position + length);
+        int actualLength = Math.min(length, available());
+        Objects.checkFromIndexSize(position, actualLength, this.length);
+        position += actualLength;
     }
 
     @Override
@@ -165,6 +169,7 @@ class ReadOnlyArrayData extends ReadOnlyBufferData {
 
     @Override
     public int get(int index) {
+        Objects.checkIndex(index, available());
         return bytes[offset + position + index] & 0xFF;
     }
 }

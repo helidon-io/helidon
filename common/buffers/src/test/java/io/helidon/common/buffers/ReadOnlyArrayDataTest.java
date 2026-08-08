@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ReadOnlyArrayDataTest {
     @Test
@@ -71,6 +72,49 @@ class ReadOnlyArrayDataTest {
         ReadOnlyArrayData buf = new ReadOnlyArrayData(data, 0, data.length);
 
         assertThat(buf.lastIndexOf((byte) 'a', Integer.MIN_VALUE), is(-1));
+    }
+
+    @Test
+    void getHonorsLogicalRangeAndReadPosition() {
+        byte[] data = "prefixABsuffix".getBytes(StandardCharsets.UTF_8);
+        ReadOnlyArrayData buf = new ReadOnlyArrayData(data, 6, 2);
+
+        assertThat(buf.get(0), is((int) 'A'));
+        assertThat(buf.get(1), is((int) 'B'));
+        assertThrows(IndexOutOfBoundsException.class, () -> buf.get(-1));
+        assertThrows(IndexOutOfBoundsException.class, () -> buf.get(2));
+
+        buf.skip(1);
+
+        assertThat(buf.get(0), is((int) 'B'));
+        assertThrows(IndexOutOfBoundsException.class, () -> buf.get(1));
+    }
+
+    @Test
+    void readStringHonorsLogicalRangeAndPreservesPositionOnFailure() {
+        byte[] data = "prefixABsuffix".getBytes(StandardCharsets.UTF_8);
+        ReadOnlyArrayData buf = new ReadOnlyArrayData(data, 6, 2);
+
+        assertThrows(IndexOutOfBoundsException.class, () -> buf.readString(3, StandardCharsets.UTF_8));
+        assertThat(buf.available(), is(2));
+        assertThat(buf.readString(2, StandardCharsets.UTF_8), is("AB"));
+        assertThat(buf.available(), is(0));
+        assertThrows(IndexOutOfBoundsException.class, () -> buf.readString(1, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void skipHonorsLogicalRange() {
+        byte[] data = "prefixABsuffix".getBytes(StandardCharsets.UTF_8);
+        ReadOnlyArrayData buf = new ReadOnlyArrayData(data, 6, 2);
+
+        assertThrows(IndexOutOfBoundsException.class, () -> buf.skip(-1));
+        assertThat(buf.available(), is(2));
+        assertThat(buf.get(0), is((int) 'A'));
+
+        buf.skip(Integer.MAX_VALUE);
+
+        assertThat(buf.available(), is(0));
+        assertThrows(IndexOutOfBoundsException.class, () -> buf.get(0));
     }
 
     @Test
