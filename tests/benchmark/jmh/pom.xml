@@ -33,6 +33,10 @@
             <artifactId>helidon-common-uri</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-security</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
         </dependency>

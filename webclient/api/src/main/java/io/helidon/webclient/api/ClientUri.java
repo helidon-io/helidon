@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.net.URI;
 
+import io.helidon.common.Api;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
@@ -251,6 +252,16 @@ public class ClientUri implements UriInfo {
     @Override
     public UriQuery query() {
         return query;
+    }
+
+    /**
+     * Query as serialized into the HTTP request target.
+     *
+     * @return request target query
+     */
+    @Api.Internal
+    public UriQuery requestTargetQuery() {
+        return skipUriEncoding ? UriQuery.create(query.value()) : query;
     }
 
     /**
