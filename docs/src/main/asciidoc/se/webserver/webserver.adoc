@@ -1246,13 +1246,14 @@ if data is transferred over low-bandwidth network links.
 When automatic response encoding is enabled, a client advertises the compression encodings it supports at request time,
 and the WebServer responds by selecting an encoding it supports and setting it in a header, effectively _negotiating_
 the content encoding of the response. Equal-quality concrete encodings follow the client `Accept-Encoding` header order,
-while wildcard matches use the configured provider order. When `identity` is omitted, its implicit quality is `1.0`, and
-it is selected ahead of an equal-quality encoding matched only by the wildcard. For non-empty buffered responses and
-streaming responses that reach automatic response encoding, WebServer merges `Vary: Accept-Encoding` even when the
-request omits `Accept-Encoding` or negotiation selects `identity`. If none of the advertised encodings is supported by
-the WebServer, the response is returned uncompressed unless the client rejects `identity`, in which case WebServer
-responds with `406 Not Acceptable` and includes `Vary: Accept-Encoding`. When automatic response encoding is disabled,
-this negotiation is skipped and the response-encoding layer leaves the representation unchanged.
+while wildcard matches use the configured provider order. When `identity` is omitted and is not excluded by `*;q=0`,
+its implicit quality is `1.0`, and it is selected ahead of an equal-quality encoding matched only by the wildcard. For
+non-empty buffered responses and streaming responses that reach automatic response encoding, WebServer merges
+`Vary: Accept-Encoding` even when the request omits `Accept-Encoding` or negotiation selects `identity`. If none of the
+advertised encodings is supported by the WebServer, the response is returned uncompressed unless the client rejects
+`identity`, in which case WebServer responds with `406 Not Acceptable` and includes `Vary: Accept-Encoding`. When
+automatic response encoding is disabled, this negotiation is skipped and the response-encoding layer leaves the
+representation unchanged.
 
 Handlers can encode the response and set the appropriate header to preempt encoding by the
 WebServer. For instance, if a Handler sets the `Content-Encoding: gzip` header then the
