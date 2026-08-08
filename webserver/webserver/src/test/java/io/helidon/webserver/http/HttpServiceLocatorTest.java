@@ -38,6 +38,7 @@ import io.helidon.http.PathMatchers;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
@@ -866,6 +867,7 @@ class HttpServiceLocatorTest {
         private RoutingInvocation(String path) {
             this.prologue = new AtomicReference<>(prologue(path));
             when(ctx.listenerContext()).thenReturn(listenerContext);
+            when(listenerContext.contentEncodingContext()).thenReturn(ContentEncodingContext.create());
             when(listenerContext.directHandlers()).thenReturn(DirectHandlers.create());
             when(request.prologue()).thenAnswer(inv -> prologue.get());
             when(request.prologue(any(HttpPrologue.class))).thenAnswer(inv -> {

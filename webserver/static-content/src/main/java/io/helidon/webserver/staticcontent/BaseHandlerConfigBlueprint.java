@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,13 +125,35 @@ interface BaseHandlerConfigBlueprint {
     Function<String, String> pathMapper();
 
     /**
-     * Configure capacity of cache used for resources. This cache will make sure the media type and location is discovered
-     * faster.
+     * Configure capacity of cache used for static content records.
+     * This cache will make sure resource metadata, such as media type and location, is discovered faster. The capacity
+     * applies to all cached static content records, including normal resources and redirects. Pre-compressed sidecar
+     * lookup state is attached to the corresponding normal resource record.
      * <p>
      * To cache content (bytes) in memory, use {@link io.helidon.webserver.staticcontent.BaseHandlerConfig#memoryCache()}
      *
-     * @return maximal number of cached records, only caches media type and Path, not the content
+     * @return maximal number of cached records, does not cache the content
      */
     @Option.Configured
     Optional<Integer> recordCacheCapacity();
+
+    /**
+     * Whether pre-compressed sidecar resources should be selected for this handler; feature-registered handlers inherit
+     * the feature value when absent, and direct service creation defaults to enabled.
+     *
+     * @return whether pre-compressed sidecar resources should be used
+     */
+    @Option.Configured
+    Optional<Boolean> preCompressedEnabled();
+
+    /**
+     * Maps response content codings to pre-compressed file suffixes; handler maps replace inherited feature-level maps
+     * rather than merging with them, an explicit empty map disables sidecar lookups for this handler, keys must be
+     * concrete valid HTTP-token content codings other than {@code identity} and {@code *}, and values are suffixes whose
+     * leading dots are ignored and whose path separators are rejected.
+     *
+     * @return content coding to file suffix map
+     */
+    @Option.Configured
+    Optional<Map<String, String>> preCompressedEncodings();
 }

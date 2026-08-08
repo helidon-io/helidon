@@ -17,6 +17,8 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -81,9 +83,12 @@ class SingleFileContentHandler extends FileBasedContentHandler {
             String resource = ".";
             Optional<CachedHandler> cachedHandler = cacheHandler(resource);
             if (cachedHandler.isPresent()) {
-                return cachedHandler.get().handle(handlerCache(), method, req, res, resource);
+                CachedHandler identityHandler = cachedHandler.get();
+                CachedHandler handler = selectSingleFileHandler(identityHandler, req);
+                return handler.handle(handlerCache(), method, req, res, ".");
             }
-            return cacheFileHandler().handle(handlerCache(), method, req, res, ".");
+            CachedHandler handler = cacheFileHandler();
+            return selectSingleFileHandler(handler, req).handle(handlerCache(), method, req, res, ".");
         }
 
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -105,6 +110,37 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         return handler;
     }
 
+    private CachedHandler selectSingleFileHandler(CachedHandler identityHandler, ServerRequest request)
+            throws IOException {
+        String logicalFileName = fileName(path);
+        try {
+            return selectHandler(identityHandler, request, (coding, suffix) -> {
+                Path pinnedPath = realPath.get();
+                if (pinnedPath == null) {
+                    Optional<Path> maybePinnedPath = contentPath(path);
+                    if (maybePinnedPath.isEmpty()) {
+                        return Optional.empty();
+                    }
+                    pinnedPath = maybePinnedPath.get();
+                }
+                Path sidecar = pinnedPath.resolveSibling(fileName(pinnedPath) + "." + suffix);
+                if (sidecarPath(sidecar).isEmpty()) {
+                    return Optional.empty();
+                }
+                return Optional.of(new CachedHandlerPath(sidecar,
+                                                         detectType(logicalFileName),
+                                                         FileBasedContentHandler::lastModified,
+                                                         ServerResponseHeaders::lastModified,
+                                                         this::sidecarPath,
+                                                         false,
+                                                         it -> Optional.ofNullable(realPath.get()).map(Path::getParent),
+                                                         ResponseRepresentation.encoded(coding)));
+            });
+        } catch (URISyntaxException e) {
+            throw new IOException(e);
+        }
+    }
+
     private Optional<Path> contentPath(Path path) {
         try {
             Path currentRealPath = path.toRealPath();
@@ -121,6 +157,23 @@ class SingleFileContentHandler extends FileBasedContentHandler {
             }
             if (currentRealPath.equals(pinnedRealPath)) {
                 return Optional.of(currentRealPath);
+            }
+            return Optional.empty();
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Path> sidecarPath(Path sidecar) {
+        Path pinnedPath = realPath.get();
+        if (pinnedPath == null || !Files.exists(sidecar)) {
+            return Optional.empty();
+        }
+
+        try {
+            Path resolvedSidecar = sidecar.toRealPath();
+            if (resolvedSidecar.startsWith(pinnedPath.getParent())) {
+                return Optional.of(resolvedSidecar);
             }
             return Optional.empty();
         } catch (IOException | SecurityException e) {

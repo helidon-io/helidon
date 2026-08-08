@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,12 +50,16 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
 class DeflateEncodingTest {
     private static final String ENTITY = "Some arbitrary text we want to try to compress";
+    private static final String IMPLICIT_IDENTITY_BEATS_WILDCARD = "br;q=0.9, gzip, *;q=0.1";
+    private static final String DEFLATE_WILDCARD_WITH_REJECTED_IDENTITY = IMPLICIT_IDENTITY_BEATS_WILDCARD
+            + ", identity;q=0";
     private static final byte[] DEFLATED_ENTITY;
     private static final Header CONTENT_ENCODING_DEFLATE = HeaderValues.create(HeaderNames.CONTENT_ENCODING, "deflate");
 
@@ -128,17 +132,47 @@ class DeflateEncodingTest {
 
     @Test
     void testDeflateMultipleAcceptedEncodingsJdkClient() throws IOException, InterruptedException {
-        testIt("br;q=0.9, gzip, *;q=0.1");
+        testIt(DEFLATE_WILDCARD_WITH_REJECTED_IDENTITY);
     }
 
     @Test
     void testDeflateMultipleAcceptedEncodingsHttp1Client() {
-        testIt(http1Client, "/http1", "br;q=0.9, gzip, *;q=0.1");
+        testIt(http1Client, "/http1", DEFLATE_WILDCARD_WITH_REJECTED_IDENTITY);
     }
 
     @Test
     void testDeflateMultipleAcceptedEncodingsHttp2Client() {
-        testIt(http2Client, "/http2", "br;q=0.9, gzip, *;q=0.1");
+        testIt(http2Client, "/http2", DEFLATE_WILDCARD_WITH_REJECTED_IDENTITY);
+    }
+
+    @Test
+    void testImplicitIdentityBeatsLowerQualityWildcardJdkClient() throws IOException, InterruptedException {
+        testUnencoded(IMPLICIT_IDENTITY_BEATS_WILDCARD);
+    }
+
+    @Test
+    void testImplicitIdentityBeatsLowerQualityWildcardHttp1Client() {
+        testUnencoded(http1Client, "/http1", IMPLICIT_IDENTITY_BEATS_WILDCARD);
+    }
+
+    @Test
+    void testImplicitIdentityBeatsLowerQualityWildcardHttp2Client() {
+        testUnencoded(http2Client, "/http2", IMPLICIT_IDENTITY_BEATS_WILDCARD);
+    }
+
+    @Test
+    void testNoAcceptableResponseEncodingJdkClient() throws IOException, InterruptedException {
+        testNotAcceptable("identity;q=0");
+    }
+
+    @Test
+    void testNoAcceptableResponseEncodingHttp1Client() {
+        testNotAcceptable(http1Client, "/http1", "identity;q=0");
+    }
+
+    @Test
+    void testNoAcceptableResponseEncodingHttp2Client() {
+        testNotAcceptable(http2Client, "/http2", "identity;q=0");
     }
 
     void testIt(io.helidon.webclient.api.HttpClient<?> client, String path, String acceptEncodingValue) {
@@ -151,6 +185,31 @@ class DeflateEncodingTest {
                 () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat(response.entity(), is(ENTITY)),
                 () -> assertThat(response.headers(), hasHeader(CONTENT_ENCODING_DEFLATE))
+        );
+    }
+
+    void testUnencoded(io.helidon.webclient.api.HttpClient<?> client, String path, String acceptEncodingValue) {
+        ClientResponseTyped<String> response = client.put(path)
+                .header(HeaderNames.ACCEPT_ENCODING, acceptEncodingValue)
+                .header(CONTENT_ENCODING_DEFLATE)
+                .submit(DEFLATED_ENTITY, String.class);
+
+        Assertions.assertAll(
+                () -> assertThat(response.status(), is(Status.OK_200)),
+                () -> assertThat(response.entity(), is(ENTITY)),
+                () -> assertThat(response.headers(), not(hasHeader(CONTENT_ENCODING_DEFLATE)))
+        );
+    }
+
+    void testNotAcceptable(io.helidon.webclient.api.HttpClient<?> client, String path, String acceptEncodingValue) {
+        ClientResponseTyped<String> response = client.put(path)
+                .header(HeaderNames.ACCEPT_ENCODING, acceptEncodingValue)
+                .header(CONTENT_ENCODING_DEFLATE)
+                .submit(DEFLATED_ENTITY, String.class);
+
+        Assertions.assertAll(
+                () -> assertThat(response.status(), is(Status.NOT_ACCEPTABLE_406)),
+                () -> assertThat(response.headers(), not(hasHeader(CONTENT_ENCODING_DEFLATE)))
         );
     }
 
@@ -177,6 +236,37 @@ class DeflateEncodingTest {
                 () -> assertThat(response.statusCode(), is(200)),
                 () -> assertThat(responseEntity, is(ENTITY)),
                 () -> assertThat(response.headers().firstValue("Content-Encoding"), is(Optional.of("deflate")))
+        );
+    }
+
+    void testUnencoded(String acceptEncodingValue) throws IOException, InterruptedException {
+        HttpResponse<byte[]> response = client.send(HttpRequest.newBuilder()
+                                                            .PUT(HttpRequest.BodyPublishers.ofByteArray(DEFLATED_ENTITY))
+                                                            .header("Accept-Encoding", acceptEncodingValue)
+                                                            .headers("Content-Encoding", "deflate")
+                                                            .uri(uri.resolve("/http1"))
+                                                            .build(),
+                                                    HttpResponse.BodyHandlers.ofByteArray());
+
+        Assertions.assertAll(
+                () -> assertThat(response.statusCode(), is(200)),
+                () -> assertThat(new String(response.body(), StandardCharsets.UTF_8), is(ENTITY)),
+                () -> assertThat(response.headers().firstValue("Content-Encoding"), is(Optional.empty()))
+        );
+    }
+
+    void testNotAcceptable(String acceptEncodingValue) throws IOException, InterruptedException {
+        HttpResponse<byte[]> response = client.send(HttpRequest.newBuilder()
+                                                            .PUT(HttpRequest.BodyPublishers.ofByteArray(DEFLATED_ENTITY))
+                                                            .header("Accept-Encoding", acceptEncodingValue)
+                                                            .headers("Content-Encoding", "deflate")
+                                                            .uri(uri.resolve("/http1"))
+                                                            .build(),
+                                                    HttpResponse.BodyHandlers.ofByteArray());
+
+        Assertions.assertAll(
+                () -> assertThat(response.statusCode(), is(Status.NOT_ACCEPTABLE_406.code())),
+                () -> assertThat(response.headers().firstValue("Content-Encoding"), is(Optional.empty()))
         );
     }
 }

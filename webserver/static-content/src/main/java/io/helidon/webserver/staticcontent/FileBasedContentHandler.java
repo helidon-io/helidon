@@ -45,6 +45,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
@@ -64,6 +65,12 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         this.customMediaTypes = config.contentTypes();
     }
 
+    FileBasedContentHandler(BaseHandlerConfig config, boolean preCompressedCrossOriginSourcingEnabled) {
+        super(config, preCompressedCrossOriginSourcingEnabled);
+
+        this.customMediaTypes = config.contentTypes();
+    }
+
     static String fileName(Path path) {
         Path fileName = path.getFileName();
 
@@ -74,6 +81,10 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return fileName.toString();
     }
 
+    static void processContentLength(long contentLength, ServerResponseHeaders headers) {
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
+    }
+
     static byte[] readAllBytes(Path path, boolean followLinks, Path secureRoot) throws IOException {
         try (SeekableByteChannel channel = newByteChannel(path, followLinks, secureRoot);
                 InputStream in = Channels.newInputStream(channel)) {
@@ -81,20 +92,38 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         }
     }
 
-    static void send(ServerRequest request, ServerResponse response, SeekableByteChannel channel) throws IOException {
+    static void send(ServerRequest request,
+                     ServerResponse response,
+                     SeekableByteChannel channel,
+                     ResponseRepresentation representation,
+                     String etag) throws IOException {
+        if (representation.runtimeEncoded()) {
+            sendRuntimeEncoded(response, channel, representation);
+            return;
+        }
+
         ServerRequestHeaders headers = request.headers();
         long contentLength = channel.size();
         if (headers.contains(HeaderNames.RANGE)) {
-            List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
-                                                                   response,
-                                                                   headers.get(HeaderNames.RANGE).values(),
-                                                                   contentLength);
+            List<ByteRangeRequest> ranges;
+            try {
+                ranges = ByteRangeRequest.parse(request,
+                                                response,
+                                                headers.get(HeaderNames.RANGE).values(),
+                                                contentLength,
+                                                etag,
+                                                representation.weakEtag());
+            } catch (HttpException e) {
+                representation.apply(e);
+                throw e;
+            }
             if (ranges.size() == 1) {
                 // single response
                 ByteRangeRequest range = ranges.getFirst();
-                range.setContentRange(response);
 
                 // only send a part of the file
+                representation.apply(response);
+                range.setContentRange(response);
                 try (OutputStream out = response.outputStream()) {
                     WritableByteChannel outChannel = Channels.newChannel(out);
                     channel.position(range.offset());
@@ -112,18 +141,32 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 }
             } else {
                 // multipart response not yet supported, send all
-                response.headers().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
-                // send the full file
+                representation.apply(response);
+                processContentLength(contentLength, response.headers());
                 channel.position(0);
-                try (InputStream in = Channels.newInputStream(channel); OutputStream out = response.outputStream()) {
+                try (InputStream in = Channels.newInputStream(channel);
+                        OutputStream out = response.outputStream()) {
                     in.transferTo(out);
                 }
             }
         } else {
-            response.headers().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
-            // send the full file
+            representation.apply(response);
+            processContentLength(contentLength, response.headers());
             channel.position(0);
-            try (InputStream in = Channels.newInputStream(channel); OutputStream out = response.outputStream()) {
+            try (InputStream in = Channels.newInputStream(channel);
+                    OutputStream out = response.outputStream()) {
+                in.transferTo(out);
+            }
+        }
+    }
+
+    private static void sendRuntimeEncoded(ServerResponse response,
+                                           SeekableByteChannel channel,
+                                           ResponseRepresentation representation) throws IOException {
+        channel.position(0);
+        try (InputStream in = Channels.newInputStream(channel)) {
+            representation.apply(response);
+            try (OutputStream out = representation.outputStream(response.outputStream())) {
                 in.transferTo(out);
             }
         }
@@ -249,15 +292,16 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return Optional.ofNullable(customMediaTypes.get(fileSuffix));
     }
 
-    Optional<CachedHandler> fileHandler(Path path) {
+    Optional<CachedHandler> fileHandler(Path path, String logicalFileName, ResponseRepresentation representation) {
         // we know the file exists and is a file
         return Optional.of(new CachedHandlerPath(path,
-                                                 detectType(fileName(path)),
+                                                 detectType(logicalFileName),
                                                  FileBasedContentHandler::lastModified,
                                                  ServerResponseHeaders::lastModified,
                                                  Optional::of,
                                                  true,
-                                                 it -> Optional.empty()));
+                                                 it -> Optional.empty(),
+                                                 representation));
     }
 
     MediaType detectType(String fileName) {

@@ -100,8 +100,7 @@ class Http1ServerResponseTest {
         Http1ServerRequest request = mock(Http1ServerRequest.class);
         when(request.headers()).thenReturn(ServerRequestHeaders.create(WritableHeaders.create()));
 
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         ListenerContext listenerContext = mock(ListenerContext.class);
         when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);

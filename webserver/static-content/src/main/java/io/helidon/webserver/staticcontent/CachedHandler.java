@@ -29,4 +29,26 @@ interface CachedHandler {
                    ServerRequest request,
                    ServerResponse response,
                    String requestedResource) throws IOException;
+
+    default boolean handleSidecar(SidecarCache sidecarCache,
+                                  String coding,
+                                  LruCache<String, CachedHandler> cache,
+                                  Method method,
+                                  ServerRequest request,
+                                  ServerResponse response,
+                                  String requestedResource) throws IOException {
+        return handle(cache, method, request, response, requestedResource);
+    }
+
+    default CachedHandler withRepresentation(ResponseRepresentation representation) {
+        return new CachedHandlerRepresentation(this, representation);
+    }
+
+    default boolean available() throws IOException {
+        return true;
+    }
+
+    default SidecarCache sidecarCache() {
+        return SidecarCache.disabled();
+    }
 }
