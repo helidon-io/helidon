@@ -16,11 +16,9 @@
 
 package io.helidon.webserver.observe.telemetry.metrics;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,6 +31,7 @@ import java.util.logging.Logger;
 import io.helidon.common.context.Context;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -156,20 +155,33 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     @Test
-    void nonstandardHttpMethodUsesMethodMetricAttribute() throws Exception {
+    void knownStandardHttpMethodUsesMethodMetricAttribute() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
 
         filter(recordedAttributes::set, true)
-                .filter(mock(FilterChain.class), request(Method.create("UNIQUE_METHOD")), response(whenSent));
+                .filter(mock(FilterChain.class), request(Method.GET), response(whenSent));
         whenSent.get().run();
 
         assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
-                   is("UNIQUE_METHOD"));
+                   is("GET"));
     }
 
     @Test
-    void nonstandardHttpMethodUsesMethodLegacyMetricAttribute() throws Exception {
+    void knownExtensionHttpMethodUsesMethodMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set, true)
+                .filter(mock(FilterChain.class), request(Method.create("LIST")), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("LIST"));
+    }
+
+    @Test
+    void unknownHttpMethodUsesOtherLegacyMetricAttribute() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
         CountDownLatch recorded = new CountDownLatch(1);
 
@@ -180,94 +192,42 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
 
         assertThat(recorded.await(5, TimeUnit.SECONDS), is(true));
         assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
-                   is("UNIQUE_METHOD"));
+                   is("_OTHER"));
     }
 
     @Test
-    void nonstandardHttpMethodLimitIsSharedAcrossFilters() throws Exception {
+    void unknownHttpMethodUsesOtherMetricAttribute() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
-        OpenTelemetryMetricsHttpSemanticConventions provider = provider(histogram(recordedAttributes::set));
-        MetricsObserverConfig config = metricsConfig(true, List.of());
-        Filter firstFilter = filter(provider, config);
-        Filter secondFilter = filter(provider, config);
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
 
-        for (int i = 0; i < 16; i++) {
-            AtomicReference<Runnable> whenSent = new AtomicReference<>();
-            String methodName = "CUSTOM" + i;
-            firstFilter.filter(mock(FilterChain.class), request(Method.create(methodName)), response(whenSent));
-            whenSent.get().run();
-            assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
-                       is(methodName));
-        }
+        filter(recordedAttributes::set, true)
+                .filter(mock(FilterChain.class), request(Method.create("UNIQUE_METHOD")), response(whenSent));
+        whenSent.get().run();
 
-        try (TestLogHandler handler = TestLogHandler.install(OpenTelemetryMetricsHttpSemanticConventions.class)) {
-            AtomicReference<Runnable> whenSent = new AtomicReference<>();
-            secondFilter.filter(mock(FilterChain.class), request(Method.create("OVERFLOW")), response(whenSent));
-            whenSent.get().run();
-
-            assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
-                       is("UNKNOWN"));
-            LogRecord warning = handler.await();
-            assertThat(warning.getMessage(), containsString("previously unseen non-standard methods will be recorded as UNKNOWN"));
-            assertThat(warning.getParameters()[1], is("OVERFLOW"));
-
-            whenSent.set(null);
-            secondFilter.filter(mock(FilterChain.class), request(Method.create("CUSTOM0")), response(whenSent));
-            whenSent.get().run();
-            assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
-                       is("CUSTOM0"));
-
-            whenSent.set(null);
-            secondFilter.filter(mock(FilterChain.class), request(Method.create("OVERFLOW2")), response(whenSent));
-            whenSent.get().run();
-            assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
-                       is("UNKNOWN"));
-            assertThat(handler.recordCount(), is(1));
-        }
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("_OTHER"));
     }
 
     @Test
-    void concurrentNonstandardHttpMethodsRespectLimitAndLogOnce() throws Exception {
-        ConcurrentLinkedQueue<String> recordedMethods = new ConcurrentLinkedQueue<>();
-        OpenTelemetryMetricsHttpSemanticConventions provider = provider(histogram(attributes ->
-                recordedMethods.add(attributes.get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)))));
-        Filter filter = filter(provider, metricsConfig(true, List.of()));
-        CountDownLatch ready = new CountDownLatch(32);
-        CountDownLatch start = new CountDownLatch(1);
-        AtomicReference<Throwable> failure = new AtomicReference<>();
-        List<Thread> threads = new ArrayList<>();
+    void knownMethodsConfigFullyOverridesDefaults() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        Filter filter = filter(recordedAttributes::set, true, List.of(), List.of("list"));
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
 
-        try (TestLogHandler handler = TestLogHandler.install(OpenTelemetryMetricsHttpSemanticConventions.class)) {
-            for (int i = 0; i < 32; i++) {
-                String methodName = "CONCURRENT" + i;
-                threads.add(Thread.ofVirtual().start(() -> {
-                    try {
-                        ready.countDown();
-                        start.await();
-                        AtomicReference<Runnable> whenSent = new AtomicReference<>();
-                        filter.filter(mock(FilterChain.class), request(Method.create(methodName)), response(whenSent));
-                        whenSent.get().run();
-                    } catch (Throwable t) {
-                        failure.compareAndSet(null, t);
-                    }
-                }));
-            }
-            assertThat(ready.await(5, TimeUnit.SECONDS), is(true));
-            start.countDown();
-            for (Thread thread : threads) {
-                thread.join();
-            }
+        filter.filter(mock(FilterChain.class), request(Method.GET), response(whenSent));
+        whenSent.get().run();
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("_OTHER"));
 
-            assertThat(failure.get(), nullValue());
-            assertThat(recordedMethods.stream().filter(method -> !method.equals("UNKNOWN")).count(), is(16L));
-            assertThat(recordedMethods.stream().filter("UNKNOWN"::equals).count(), is(16L));
-            handler.await();
-            assertThat(handler.recordCount(), is(1));
-        }
+        whenSent.set(null);
+        filter.filter(mock(FilterChain.class), request(Method.create("LIST")), response(whenSent));
+        whenSent.get().run();
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("LIST"));
     }
 
     @Test
-    void optedInServerAttributesUseLocalListener() throws Exception {
+    void optedInServerAttributesUseRequestedUri() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
 
@@ -281,9 +241,30 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         whenSent.get().run();
 
         assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS)),
-                   is("127.0.0.1"));
+                   is("logical.example"));
         assertThat(recordedAttributes.get().get(AttributeKey.longKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT)),
-                   is(8080L));
+                   is(9443L));
+    }
+
+    @Test
+    void optedInLegacyServerAttributesUseRequestedUri() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        CountDownLatch recorded = new CountDownLatch(1);
+
+        filter(attributes -> {
+            recordedAttributes.set(attributes);
+            recorded.countDown();
+        }, false, List.of(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME + ":"
+                                   + OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS,
+                          OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME + ":"
+                                   + OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT))
+                .filter(mock(FilterChain.class), request(), response(new AtomicReference<>()));
+
+        assertThat(recorded.await(5, TimeUnit.SECONDS), is(true));
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS)),
+                   is("logical.example"));
+        assertThat(recordedAttributes.get().get(AttributeKey.longKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT)),
+                   is(9443L));
     }
 
     @Test
@@ -437,20 +418,26 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     private static Filter filter(Consumer<Attributes> recorder, boolean useUpdatedHttpMetrics) {
-        return filter(recorder, useUpdatedHttpMetrics, List.of());
+        return filter(recorder, useUpdatedHttpMetrics, List.of(), null);
     }
 
     private static Filter filter(Consumer<Attributes> recorder, boolean useUpdatedHttpMetrics, List<String> optIn) {
-        return filter(provider(histogram(recorder)), metricsConfig(useUpdatedHttpMetrics, optIn));
+        return filter(recorder, useUpdatedHttpMetrics, optIn, null);
     }
 
-    private static MetricsObserverConfig metricsConfig(boolean useUpdatedHttpMetrics, List<String> optIn) {
-        return MetricsObserverConfig.builder()
-                .autoHttpMetrics(AutoHttpMetricsConfig.builder()
-                                         .optIn(optIn)
-                                         .useUpdatedHttpMetrics(useUpdatedHttpMetrics)
-                                         .build())
-                .buildPrototype();
+    private static Filter filter(Consumer<Attributes> recorder,
+                                 boolean useUpdatedHttpMetrics,
+                                 List<String> optIn,
+                                 List<String> knownMethods) {
+        AutoHttpMetricsConfig.Builder configBuilder = AutoHttpMetricsConfig.builder()
+                .optIn(optIn)
+                .useUpdatedHttpMetrics(useUpdatedHttpMetrics);
+        if (knownMethods != null) {
+            configBuilder.knownMethods(knownMethods);
+        }
+        return filter(provider(histogram(recorder)), MetricsObserverConfig.builder()
+                .autoHttpMetrics(configBuilder.build())
+                .buildPrototype());
     }
 
     static Filter filter(DoubleHistogram histogram, MetricsObserverConfig metricsConfig) {
@@ -498,6 +485,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
         ListenerContext listenerContext = mock(ListenerContext.class);
         PeerInfo localPeer = mock(PeerInfo.class);
+        UriInfo requestedUri = mock(UriInfo.class);
 
         when(request.prologue()).thenReturn(HttpPrologue.create("HTTP/1.1",
                                                                 "HTTP",
@@ -509,10 +497,13 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         when(request.context()).thenReturn(Context.create());
         when(request.listenerContext()).thenReturn(listenerContext);
         when(request.localPeer()).thenReturn(localPeer);
+        when(request.requestedUri()).thenReturn(requestedUri);
         when(listenerContext.config()).thenReturn(listenerConfig);
         when(listenerConfig.name()).thenReturn("@default");
         when(localPeer.host()).thenReturn("127.0.0.1");
         when(localPeer.port()).thenReturn(8080);
+        when(requestedUri.host()).thenReturn("logical.example");
+        when(requestedUri.port()).thenReturn(9443);
 
         return request;
     }
@@ -532,7 +523,6 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         private final Level previousLevel;
         private final CountDownLatch latch = new CountDownLatch(1);
         private final AtomicReference<LogRecord> record = new AtomicReference<>();
-        private final AtomicInteger recordCount = new AtomicInteger();
 
         private TestLogHandler(Logger logger) {
             this.logger = logger;
@@ -541,11 +531,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         }
 
         static TestLogHandler install() {
-            return install(OpenTelemetryMetricsHttpSemanticConventions.MetricsRecordingFilter.class);
-        }
-
-        static TestLogHandler install(Class<?> loggerClass) {
-            Logger logger = Logger.getLogger(loggerClass.getName());
+            Logger logger = Logger.getLogger(OpenTelemetryMetricsHttpSemanticConventions.MetricsRecordingFilter.class.getName());
             TestLogHandler handler = new TestLogHandler(logger);
             logger.setLevel(Level.ALL);
             logger.addHandler(handler);
@@ -554,7 +540,6 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
 
         @Override
         public void publish(LogRecord record) {
-            recordCount.incrementAndGet();
             if (this.record.compareAndSet(null, record)) {
                 latch.countDown();
             }
@@ -573,10 +558,6 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         private LogRecord await() throws InterruptedException {
             assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
             return record.get();
-        }
-
-        private int recordCount() {
-            return recordCount.get();
         }
     }
 }

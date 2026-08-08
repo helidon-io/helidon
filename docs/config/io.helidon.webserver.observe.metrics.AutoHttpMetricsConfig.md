@@ -77,6 +77,17 @@ Automatic metrics collection settings
 </td>
 <td>Whether automatic metrics collection as a whole is enabled</td>
 </tr>
+<tr>
+<td>
+<code>known-<wbr>methods</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>Full replacement for the default HTTP methods reported with their actual automatic metrics method attribute; methods not in this list are reported as <code>_OTHER</code></td>
+</tr>
 </tbody>
 </table>
 

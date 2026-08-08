@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.observe.metrics;
 
+import java.util.List;
+
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriPath;
 import io.helidon.config.Config;
@@ -37,6 +39,7 @@ class TestAutoMetricsConfig {
                       observers:
                         metrics:
                           auto-http-metrics:
+                            known-methods: ["LIST"]
                             paths:
                               - path: "/greet/{name}"
                                 methods: ["GET","OPTIONS"]
@@ -57,6 +60,7 @@ class TestAutoMetricsConfig {
         var config = AutoHttpMetricsConfig.create(configFromText);
 
         assertThat("Updated HTTP metrics", config.useUpdatedHttpMetrics(), is(false));
+        assertThat("Configured known methods", config.knownMethods(), is(List.of("LIST")));
 
         assertThat("GET /greet", config.isMeasured(Method.GET, UriPath.create("/greet")), is(true));
         assertThat("PUT /greet", config.isMeasured(Method.PUT, UriPath.create("/greet")), is(true));
@@ -124,6 +128,7 @@ class TestAutoMetricsConfig {
         assertThat("GET /metrics", config.isMeasured(Method.GET, UriPath.create("/metrics")), is(false));
 
         assertThat("Updated HTTP metrics", config.useUpdatedHttpMetrics(), is(false));
+        assertThat("Default known methods", config.knownMethods(), is(AutoHttpMetricsConfigSupport.DEFAULT_KNOWN_METHODS));
 
     }
 

@@ -73,6 +73,19 @@ interface AutoHttpMetricsConfigBlueprint {
     List<String> optIn();
 
     /**
+     * HTTP methods reported with their actual automatic metrics method attribute;
+     * methods not in this list are reported as {@code _OTHER}, conforming to the OpenTelemetry semantic conventions.
+     * <p>
+     * Method names are canonicalized using Helidon's HTTP method model.
+     *
+     * @return known HTTP methods
+     */
+    @Option.Configured
+    @Option.DefaultCode("new java.util.ArrayList<>(AutoHttpMetricsConfigSupport.DEFAULT_KNOWN_METHODS)")
+    @Option.Singular
+    List<String> knownMethods();
+
+    /**
      * Whether to use the updated automatic HTTP metrics behavior.
      * <p>
      * When enabled, OpenTelemetry automatic HTTP metrics are recorded when the response is sent, use seconds for the
