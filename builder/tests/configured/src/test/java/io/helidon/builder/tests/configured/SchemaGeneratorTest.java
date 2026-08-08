@@ -1689,14 +1689,14 @@ class SchemaGeneratorTest {
     }
 
     @Test
-    void testPrototypeForwardReference() throws IOException {
+    void testPrototypeCrossPackageForwardReference() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
                 .options(OPTS)
                 .addSource("AcmeObjectBlueprint.java", """
-                        package com.acme;
+                        package com.acme.object;
                         
                         import io.helidon.builder.api.Prototype;
                         
@@ -1712,6 +1712,8 @@ class SchemaGeneratorTest {
                         package com.acme;
                         
                         import java.util.Optional;
+
+                        import com.acme.object.AcmeObject;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
                         
@@ -1728,7 +1730,8 @@ class SchemaGeneratorTest {
                              * @return option1
                              */
                             @Option.Configured
-                            AcmeObject option1();
+                            @Option.Type("java.util.Optional<com.acme.object.AcmeObject>")
+                            Optional<AcmeObject> option1();
                         }
                         """)
                 .build()
@@ -1745,7 +1748,7 @@ class SchemaGeneratorTest {
                 @Configured(
                     description = "ACME config",
                     options = {
-                        @ConfiguredOption(key = "option1", description = "Option1", type = AcmeObject.class, required = true)
+                        @ConfiguredOption(key = "option1", description = "Option1", type = AcmeObject.class)
                     })
                 //...
                 public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
