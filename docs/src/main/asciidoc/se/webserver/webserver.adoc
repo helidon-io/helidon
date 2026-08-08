@@ -965,6 +965,9 @@ available. An explicitly empty `pre-compressed-encodings` map disables sidecar l
 Map keys must be concrete content codings, not `identity` or `*`, and must be valid HTTP tokens. Map values are file
 suffixes; Helidon ignores leading dots and rejects values that contain path separators.
 
+For a static-content handler configured with a single filesystem file, a sidecar must resolve to the derived sibling
+path itself. Helidon ignores sidecars reached through symbolic links or other filesystem redirection.
+
 When pre-compressed negotiation runs, Helidon merges `Vary: Accept-Encoding`. When a sidecar is selected, Helidon sends
 the logical resource media type and sets `Content-Encoding`. Direct requests for literal sidecar filenames, such as
 `/big-file.html.gz`, are handled as ordinary static-file requests. A sidecar is selected when the request accepts its
@@ -977,10 +980,10 @@ cache capacity.
 
 A selected sidecar is a distinct response representation. Its bytes determine `Content-Length`, its file metadata
 determines `Last-Modified`, and its ETag differs from the identity representation. Conditional requests are evaluated
-against the selected representation, and `304 Not Modified` or `412 Precondition Failed` responses retain its
-`Content-Encoding`, `Vary`, and ETag metadata. Byte ranges and `Content-Range` apply to the encoded sidecar bytes. A
-matching strong sidecar ETag in `If-Range` permits a partial response; otherwise Helidon ignores the range and sends the
-complete selected sidecar.
+against the selected representation. `304 Not Modified` responses retain its `Content-Encoding`, `Vary`, and ETag
+metadata. `412 Precondition Failed` responses retain `Vary` and the selected representation's ETag but omit
+`Content-Encoding`. Byte ranges and `Content-Range` apply to the encoded sidecar bytes. A matching strong sidecar ETag
+in `If-Range` permits a partial response; otherwise Helidon ignores the range and sends the complete selected sidecar.
 
 When listener content encoding is configured, static content can dynamically encode the logical resource when that
 runtime candidate is the best acceptable representation. Wildcard values can select runtime encoders when `identity` is
@@ -1243,12 +1246,13 @@ if data is transferred over low-bandwidth network links.
 When automatic response encoding is enabled, a client advertises the compression encodings it supports at request time,
 and the WebServer responds by selecting an encoding it supports and setting it in a header, effectively _negotiating_
 the content encoding of the response. Equal-quality concrete encodings follow the client `Accept-Encoding` header order,
-while wildcard matches use the configured provider order. For non-empty buffered responses and streaming responses that
-reach automatic response encoding, WebServer merges `Vary: Accept-Encoding` even when the request omits
-`Accept-Encoding` or negotiation selects `identity`. If none of the advertised encodings is supported by the WebServer,
-the response is returned uncompressed unless the client rejects `identity`, in which case WebServer responds with
-`406 Not Acceptable` and includes `Vary: Accept-Encoding`. When automatic response encoding is disabled, this negotiation
-is skipped and the response-encoding layer leaves the representation unchanged.
+while wildcard matches use the configured provider order. When `identity` is omitted, its implicit quality is `1.0`, and
+it is selected ahead of an equal-quality encoding matched only by the wildcard. For non-empty buffered responses and
+streaming responses that reach automatic response encoding, WebServer merges `Vary: Accept-Encoding` even when the
+request omits `Accept-Encoding` or negotiation selects `identity`. If none of the advertised encodings is supported by
+the WebServer, the response is returned uncompressed unless the client rejects `identity`, in which case WebServer
+responds with `406 Not Acceptable` and includes `Vary: Accept-Encoding`. When automatic response encoding is disabled,
+this negotiation is skipped and the response-encoding layer leaves the representation unchanged.
 
 Handlers can encode the response and set the appropriate header to preempt encoding by the
 WebServer. For instance, if a Handler sets the `Content-Encoding: gzip` header then the
