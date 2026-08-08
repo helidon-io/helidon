@@ -22,6 +22,7 @@ import java.util.HexFormat;
 import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -184,6 +185,74 @@ class BufferDataTest {
         buffer.write(0x80);
 
         assertThrows(IllegalArgumentException.class, () -> buffer.readHpackInt(0xff, 7));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void testLongPrefixedIntegerRoundTrip(TestContext context) {
+        long expected = (1L << 33) + 42;
+        BufferData buffer = context.bufferData();
+
+        PrefixedIntegerCodec.writeLong(buffer, expected, 0b1010_0000, 5);
+
+        int first = buffer.read();
+        assertThat(first & 0b1110_0000, is(0b1010_0000));
+        assertThat(PrefixedIntegerCodec.readLong(buffer, first, 5), is(expected));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void testRejectsOverflowingLongPrefixedInteger(TestContext context) {
+        BufferData buffer = context.bufferData();
+        for (int i = 0; i < 9; i++) {
+            buffer.write(0x80);
+        }
+        buffer.write(0x02);
+
+        assertThrows(IllegalArgumentException.class, () -> PrefixedIntegerCodec.readLong(buffer, 0x1f, 5));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void testRejectsInvalidPrefixWidthsWithoutBufferMutation(TestContext context) {
+        BufferData buffer = context.bufferData();
+        buffer.write(0x80);
+        int available = buffer.available();
+
+        for (int prefixBits : new int[] {0, 9}) {
+            assertThrows(IllegalArgumentException.class,
+                         () -> PrefixedIntegerCodec.readInt(buffer, 0xff, prefixBits));
+            assertThat(buffer.available(), is(available));
+            assertThrows(IllegalArgumentException.class,
+                         () -> PrefixedIntegerCodec.readLong(buffer, 0xff, prefixBits));
+            assertThat(buffer.available(), is(available));
+            assertThrows(IllegalArgumentException.class,
+                         () -> PrefixedIntegerCodec.writeInt(buffer, 0, 0, prefixBits));
+            assertThat(buffer.available(), is(available));
+            assertThrows(IllegalArgumentException.class,
+                         () -> PrefixedIntegerCodec.writeLong(buffer, 0, 0, prefixBits));
+            assertThat(buffer.available(), is(available));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void testRejectsNegativePrefixedIntegerWithoutBufferMutation(TestContext context) {
+        BufferData buffer = context.bufferData();
+        int available = buffer.available();
+
+        assertThrows(IllegalArgumentException.class, () -> PrefixedIntegerCodec.writeInt(buffer, -1, 0, 5));
+        assertThat(buffer.available(), is(available));
+        assertThrows(IllegalArgumentException.class, () -> PrefixedIntegerCodec.writeLong(buffer, -1, 0, 5));
+        assertThat(buffer.available(), is(available));
+    }
+
+    @Test
+    void testRejectsNullPrefixedIntegerBuffers() {
+        assertThrows(NullPointerException.class, () -> PrefixedIntegerCodec.readInt(null, 0, 5));
+        assertThrows(NullPointerException.class, () -> PrefixedIntegerCodec.readLong(null, 0, 5));
+        assertThrows(NullPointerException.class, () -> PrefixedIntegerCodec.writeInt(null, 0, 0, 5));
+        assertThrows(NullPointerException.class, () -> PrefixedIntegerCodec.writeLong(null, 0, 0, 5));
     }
 
     @ParameterizedTest
