@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,6 +124,31 @@ class Http2ErrorHandlingWithOutputStreamTest {
                     os.flush();
                     throw new CustomException();
                 }))
+                .route(Http2Route.route(GET, "get-outputStream-changeStatus", (req, res) -> {
+                    try (OutputStream os = res.outputStream()) {
+                        String statusResult;
+                        try {
+                            res.status(Status.INTERNAL_SERVER_ERROR_500);
+                            statusResult = "status accepted";
+                        } catch (IllegalStateException e) {
+                            statusResult = e.getMessage();
+                        }
+                        String statusCodeResult;
+                        try {
+                            res.status(500);
+                            statusCodeResult = "status code accepted";
+                        } catch (IllegalStateException e) {
+                            statusCodeResult = e.getMessage();
+                        }
+                        os.write((statusResult + '|' + statusCodeResult).getBytes(StandardCharsets.UTF_8));
+                    }
+                }))
+                .route(Http2Route.route(GET, "get-outputStream-beforeSend-changeStatus", (req, res) -> {
+                    res.beforeSend(() -> res.status(Status.ACCEPTED_202));
+                    try (OutputStream os = res.outputStream()) {
+                        os.write("before send status accepted".getBytes(StandardCharsets.UTF_8));
+                    }
+                }))
                 .get("get-outputStream-tryWithResources", (req, res) -> {
                     res.header(MAIN_HEADER_NAME, "x");
                     try (OutputStream os = res.outputStream()) {
@@ -178,6 +203,23 @@ class Http2ErrorHandlingWithOutputStreamTest {
         assertThat(r.getCause(), instanceOf(IOException.class));
         // stream should have been reset during processing
         assertThat(r.getMessage(), containsString("RST_STREAM"));
+    }
+
+    @Test
+    void testGetOutputStreamThenChangeStatusExpectFailure() {
+        var response = request("/get-outputStream-changeStatus");
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), is("Cannot set response status after requesting output stream."
+                                               + "|Cannot set response status after requesting output stream."));
+    }
+
+    @Test
+    void testGetOutputStreamBeforeSendChangeStatus() {
+        var response = request("/get-outputStream-beforeSend-changeStatus");
+
+        assertThat(response.statusCode(), is(202));
+        assertThat(response.body(), is("before send status accepted"));
     }
 
     @Test
