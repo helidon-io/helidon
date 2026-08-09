@@ -355,7 +355,11 @@ class SchemaGenerator {
                 .or(() -> {
                     var className = lookup.classNameWithEnclosingNames();
                     var blueprintName = className.replace(".Builder", "") + "Blueprint";
-                    return ctx.typeInfo(TypeName.builder(typeInfo.typeName())
+                    var packageName = lookup.packageName().isBlank()
+                            ? typeInfo.typeName().packageName()
+                            : lookup.packageName();
+                    return ctx.typeInfo(TypeName.builder()
+                            .packageName(packageName)
                             .className(blueprintName)
                             .build());
                 })
