@@ -77,17 +77,6 @@ Automatic metrics collection settings
 </td>
 <td>Whether automatic metrics collection as a whole is enabled</td>
 </tr>
-<tr>
-<td>
-<code>known-<wbr>methods</code>
-</td>
-<td>
-<code>List&lt;<wbr>String&gt;</code>
-</td>
-<td>
-</td>
-<td>Full replacement for the default known HTTP methods (<code>CONNECT</code>, <code>DELETE</code>, <code>GET</code>, <code>HEAD</code>, <code>LIST</code>, <code>OPTIONS</code>, <code>PATCH</code>, <code>POST</code>, <code>PUT</code>, and <code>TRACE</code>) reported with their actual automatic metrics method attribute; unlisted methods are reported as <code>_OTHER</code>, so configurations that add extension methods must also include standard methods they intend to retain</td>
-</tr>
 </tbody>
 </table>
 
