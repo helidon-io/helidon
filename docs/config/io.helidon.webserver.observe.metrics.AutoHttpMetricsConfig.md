@@ -77,6 +77,17 @@ Automatic metrics collection settings
 </td>
 <td>Whether automatic metrics collection as a whole is enabled</td>
 </tr>
+<tr>
+<td>
+<code>known-<wbr>methods</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>HTTP methods to be used in the HTTP method tag for automatic metrics</td>
+</tr>
 </tbody>
 </table>
 
