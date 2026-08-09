@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.util.Optional;
 
 import io.helidon.common.Api;
+import io.helidon.common.uri.UriAuthority;
 
 /**
  * Listener SNI decision attached to a connection after TLS virtual-host selection.
@@ -50,12 +51,13 @@ public interface SniContext {
     SniMatchType matchType();
 
     /**
-     * Check whether an HTTP authority is allowed by the listener SNI policy.
+     * Check whether an already parsed {@link io.helidon.common.uri.UriAuthority HTTP authority} is allowed by the listener
+     * SNI policy.
      *
-     * @param authority HTTP authority
+     * @param authority parsed HTTP authority
      * @return authority check result
      */
-    AuthorityCheck checkAuthority(String authority);
+    AuthorityCheck checkAuthority(UriAuthority authority);
 
     /**
      * Authority check result.
