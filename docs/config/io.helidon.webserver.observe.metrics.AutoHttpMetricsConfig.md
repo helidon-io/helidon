@@ -86,7 +86,7 @@ Automatic metrics collection settings
 </td>
 <td>
 </td>
-<td>Full replacement for the default HTTP methods reported with their actual automatic metrics method attribute; methods not in this list are reported as <code>_OTHER</code></td>
+<td>HTTP methods reported with their actual automatic metrics method attribute; methods not in this list are reported as <code>_OTHER</code>, conforming to the OpenTelemetry semantic conventions</td>
 </tr>
 </tbody>
 </table>
