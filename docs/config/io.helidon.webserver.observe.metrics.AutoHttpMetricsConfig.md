@@ -86,7 +86,7 @@ Automatic metrics collection settings
 </td>
 <td>
 </td>
-<td>HTTP methods reported with their actual automatic metrics method attribute; methods not in this list are reported as <code>_OTHER</code>, conforming to the OpenTelemetry semantic conventions</td>
+<td>Full replacement for the default known HTTP methods (<code>CONNECT</code>, <code>DELETE</code>, <code>GET</code>, <code>HEAD</code>, <code>LIST</code>, <code>OPTIONS</code>, <code>PATCH</code>, <code>POST</code>, <code>PUT</code>, and <code>TRACE</code>) reported with their actual automatic metrics method attribute; unlisted methods are reported as <code>_OTHER</code>, so configurations that add extension methods must also include standard methods they intend to retain</td>
 </tr>
 </tbody>
 </table>

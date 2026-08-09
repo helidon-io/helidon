@@ -73,8 +73,12 @@ interface AutoHttpMetricsConfigBlueprint {
     List<String> optIn();
 
     /**
-     * HTTP methods reported with their actual automatic metrics method attribute;
-     * methods not in this list are reported as {@code _OTHER}, conforming to the OpenTelemetry semantic conventions.
+     * HTTP methods to be used in the HTTP method tag for automatic metrics.
+     * <p>
+     * If assigned explicitly, this setting replaces the default known HTTP methods ({@code CONNECT}, {@code DELETE},
+     * {@code GET}, {@code HEAD},{@code LIST}, {@code OPTIONS}, {@code PATCH}, {@code POST}, {@code PUT}, and {@code TRACE})
+     * used in the HTTP method tag. Unlisted methods are reported as {@code _OTHER}, so configurations that add additional
+     * method names must also include default methods they intend to retain.
      * <p>
      * Method names are canonicalized using Helidon's HTTP method model.
      *
@@ -90,7 +94,8 @@ interface AutoHttpMetricsConfigBlueprint {
      * <p>
      * When enabled, OpenTelemetry automatic HTTP metrics are recorded when the response is sent, use seconds for the
      * duration value, retain the response status when request processing throws an exception, and use the framework-
-     * provided route when one is available. The default retains the prior Helidon 4.x metric output.
+     * provided route when one is available. HTTP method normalization using {@code known-methods} applies in both
+     * updated and legacy metric modes.
      *
      * @return whether to use the updated automatic HTTP metrics behavior
      */
