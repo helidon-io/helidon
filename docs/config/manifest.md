@@ -182,6 +182,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Static<wbr>Content<wbr>Feature](io.helidon.webserver.staticcontent.StaticContentFeature.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Temporary<wbr>Storage](io.helidon.webserver.staticcontent.TemporaryStorage.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>websocket.<wbr>WsConfig](io.helidon.webserver.websocket.WsConfig.md)
+- [io.<wbr>helidon.<wbr>websocket.<wbr>WsProtocol<wbr>Config](io.helidon.websocket.WsProtocolConfig.md)
 
 ## Provider Types
 

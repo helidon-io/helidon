@@ -21,8 +21,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -62,11 +60,14 @@ public abstract class WsListenerBase implements WsListener {
     private final AtomicReference<Future<?>> binaryFuture = new AtomicReference<>();
     private final AtomicReference<Future<?>> textFuture = new AtomicReference<>();
 
+    private long bufferedTextSize;
+    private long bufferedBinarySize;
+
     // this also does not need to be guarded, as the field is only accessed from the connection thread
     private SynchronousQueue<BinaryPayload> currentStreamQueue;
     private SynchronousQueue<TextPayload> currentReaderQueue;
 
-    private List<BufferData> buffers;
+    private BufferData bufferedBinary;
 
     /**
      * Create a new listener base for subclasses.
@@ -76,16 +77,29 @@ public abstract class WsListenerBase implements WsListener {
 
     /**
      * Process a text message chunk as a string.
+     * <p>
+     * This method buffers text fragments until the complete text message is available. The buffered message size is limited by
+     * {@link WsProtocolConfig#maxBufferedMessageSize()}. If the limit is exceeded, this method throws a
+     * {@link WsCloseException} with close code {@link WsCloseCodes#TOO_BIG}.
      *
      * @param session WebSocket session
      * @param text text chunk
      * @param last whether this is the last chunk
      * @param stringConsumer consumer of the complete text message
+     * @throws WsCloseException when the buffered message size exceeds the configured limit
      */
     protected void textString(WsSession session,
                               String text,
                               boolean last,
                               Functions.CheckedConsumer<String, ?> stringConsumer) {
+        long fragmentSize = text.length();
+        long maxBufferedMessageSize = session.protocolConfig().maxBufferedMessageSize().toBytes();
+        if (fragmentSize > maxBufferedMessageSize - bufferedTextSize) {
+            stringBuilder.setLength(0);
+            bufferedTextSize = 0;
+            throw new WsCloseException("Message too large", WsCloseCodes.TOO_BIG);
+        }
+        bufferedTextSize += fragmentSize;
         stringBuilder.append(text);
 
         if (last) {
@@ -93,14 +107,19 @@ public abstract class WsListenerBase implements WsListener {
                 stringConsumer.accept(stringBuilder.toString());
             } catch (Throwable e) {
                 onError(session, e);
+            } finally {
+                stringBuilder.setLength(0);
+                bufferedTextSize = 0;
             }
-            stringBuilder.setLength(0);
         }
     }
 
     // runs on current connection thread
     /**
      * Process a text message chunk as a reader.
+     * <p>
+     * This method delivers fragments through a {@link Reader} without whole-message buffering and is not limited by
+     * {@link WsProtocolConfig#maxBufferedMessageSize()}.
      *
      * @param session WebSocket session
      * @param text text chunk
@@ -165,94 +184,129 @@ public abstract class WsListenerBase implements WsListener {
 
     /**
      * Process a binary message chunk as buffer data.
+     * <p>
+     * This method buffers binary fragments until the complete binary message is available. The buffered message size is limited
+     * by {@link WsProtocolConfig#maxBufferedMessageSize()}. If the limit is exceeded, this method throws a
+     * {@link WsCloseException} with close code {@link WsCloseCodes#TOO_BIG}.
      *
      * @param session WebSocket session
      * @param buffer binary chunk
      * @param last whether this is the last chunk
      * @param bufferDataConsumer consumer of the complete binary message
+     * @throws WsCloseException when the buffered message size exceeds the configured limit
      */
     protected void binaryBufferData(WsSession session,
                                     BufferData buffer,
                                     boolean last,
                                     Functions.CheckedConsumer<BufferData, ?> bufferDataConsumer) {
-
-        if (buffers == null) {
-            buffers = new ArrayList<>();
+        BufferData message = bufferBinary(session, buffer, last);
+        if (message == null) {
+            return;
         }
-        buffers.add(buffer);
-        if (last) {
-            try {
-                bufferDataConsumer.accept(BufferData.create(buffers));
-            } catch (Throwable e) {
-                onError(session, e);
-            }
-            buffers = null;
+        try {
+            bufferDataConsumer.accept(message);
+        } catch (Throwable e) {
+            onError(session, e);
         }
     }
 
     /**
      * Process a binary message chunk as a byte buffer.
+     * <p>
+     * This method buffers binary fragments until the complete binary message is available. The buffered message size is limited
+     * by {@link WsProtocolConfig#maxBufferedMessageSize()}. If the limit is exceeded, this method throws a
+     * {@link WsCloseException} with close code {@link WsCloseCodes#TOO_BIG}.
      *
      * @param session WebSocket session
      * @param buffer binary chunk
      * @param last whether this is the last chunk
      * @param streamConsumer consumer of the complete binary message
+     * @throws WsCloseException when the buffered message size exceeds the configured limit
      */
     protected void binaryByteBuffer(WsSession session,
                                     BufferData buffer,
                                     boolean last,
                                     Functions.CheckedConsumer<ByteBuffer, ?> streamConsumer) {
-
-        if (buffers == null) {
-            buffers = new ArrayList<>();
+        BufferData message = bufferBinary(session, buffer, last);
+        if (message == null) {
+            return;
         }
-        buffers.add(buffer);
-        if (last) {
-            try {
-                BufferData combined = BufferData.create(buffers);
-                ByteBuffer byteBuffer = ByteBuffer.allocate(combined.available());
-                combined.writeTo(byteBuffer, combined.available());
-                byteBuffer.flip();
-                streamConsumer.accept(byteBuffer);
-            } catch (Throwable e) {
-                onError(session, e);
-            }
-            buffers = null;
+        try {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(message.available());
+            message.writeTo(byteBuffer, message.available());
+            byteBuffer.flip();
+            streamConsumer.accept(byteBuffer);
+        } catch (Throwable e) {
+            onError(session, e);
         }
     }
 
     /**
      * Process a binary message chunk as a byte array.
+     * <p>
+     * This method buffers binary fragments until the complete binary message is available. The buffered message size is limited
+     * by {@link WsProtocolConfig#maxBufferedMessageSize()}. If the limit is exceeded, this method throws a
+     * {@link WsCloseException} with close code {@link WsCloseCodes#TOO_BIG}.
      *
      * @param session WebSocket session
      * @param buffer binary chunk
      * @param last whether this is the last chunk
      * @param byteArrayConsumer consumer of the complete binary message
+     * @throws WsCloseException when the buffered message size exceeds the configured limit
      */
     protected void binaryByteArray(WsSession session,
                                    BufferData buffer,
                                    boolean last,
                                    Functions.CheckedConsumer<byte[], ?> byteArrayConsumer) {
+        BufferData message = bufferBinary(session, buffer, last);
+        if (message == null) {
+            return;
+        }
+        try {
+            byte[] byteArray = message.available() == 0 ? BufferData.EMPTY_BYTES : new byte[message.available()];
+            message.read(byteArray);
+            byteArrayConsumer.accept(byteArray);
+        } catch (Throwable e) {
+            onError(session, e);
+        }
+    }
 
-        if (buffers == null) {
-            buffers = new ArrayList<>();
+    private BufferData bufferBinary(WsSession session, BufferData buffer, boolean last) {
+        int fragmentSize = buffer.available();
+        long maxBufferedMessageSize = session.protocolConfig().maxBufferedMessageSize().toBytes();
+        if (fragmentSize > maxBufferedMessageSize - bufferedBinarySize) {
+            bufferedBinary = null;
+            bufferedBinarySize = 0;
+            throw new WsCloseException("Message too large", WsCloseCodes.TOO_BIG);
         }
-        buffers.add(buffer);
-        if (last) {
-            try {
-                BufferData combined = BufferData.create(buffers);
-                byte[] byteArray = new byte[combined.available()];
-                combined.read(byteArray);
-                byteArrayConsumer.accept(byteArray);
-            } catch (Throwable e) {
-                onError(session, e);
+
+        if (last && bufferedBinary == null) {
+            return buffer;
+        }
+
+        if (fragmentSize != 0) {
+            if (bufferedBinary == null) {
+                bufferedBinary = BufferData.growing(fragmentSize);
             }
-            buffers = null;
+            bufferedBinary.write(buffer);
+            bufferedBinarySize += fragmentSize;
         }
+
+        if (!last) {
+            return null;
+        }
+
+        BufferData message = bufferedBinary;
+        bufferedBinary = null;
+        bufferedBinarySize = 0;
+        return message == null ? BufferData.empty() : message;
     }
 
     /**
      * Process a binary message chunk as an input stream.
+     * <p>
+     * This method delivers fragments through an {@link InputStream} without whole-message buffering and is not limited by
+     * {@link WsProtocolConfig#maxBufferedMessageSize()}.
      *
      * @param session WebSocket session
      * @param buffer binary chunk

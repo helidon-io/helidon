@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@ package io.helidon.webserver.tests.websocket;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.Size;
 import io.helidon.webclient.websocket.WsClient;
+import io.helidon.webclient.websocket.WsClientProtocolConfig;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -38,6 +41,7 @@ import static io.helidon.webserver.tests.websocket.WebSocketTest.randomString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @ServerTest
 public class WebSocketClientTest {
@@ -119,5 +123,52 @@ public class WebSocketClientTest {
 
         boolean await = messageLatch.await(10, TimeUnit.SECONDS);
         assertThat(await, is(true));
+    }
+
+    @Test
+    void connectionUsesConfiguredBufferedMessageSizeWithoutSubProtocol() throws Exception {
+        verifyConnectionProtocolConfig(false);
+    }
+
+    @Test
+    void connectionUsesConfiguredBufferedMessageSizeWithSubProtocol() throws Exception {
+        verifyConnectionProtocolConfig(true);
+    }
+
+    private void verifyConnectionProtocolConfig(boolean withSubProtocol) throws Exception {
+        WsClientProtocolConfig.Builder protocolConfig = WsClientProtocolConfig.builder()
+                .maxBufferedMessageSize(Size.create(17, Size.Unit.BYTE));
+        if (withSubProtocol) {
+            protocolConfig.addSubProtocol("chat");
+        }
+        WsClient client = WsClient.builder()
+                .from(wsClient.prototype())
+                .protocolConfig(protocolConfig.build())
+                .build();
+        CompletableFuture<WsSession> opened = new CompletableFuture<>();
+        client.connect("/echo", new WsListener() {
+            @Override
+            public void onOpen(WsSession session) {
+                opened.complete(session);
+            }
+
+            @Override
+            public void onError(WsSession session, Throwable throwable) {
+                opened.completeExceptionally(throwable);
+            }
+        });
+
+        WsSession session = opened.get(10, TimeUnit.SECONDS);
+        try {
+            assertAll(
+                    () -> assertThat(session.protocolConfig().maxBufferedMessageSize().toBytes(), is(17L)),
+                    () -> assertThat(session.subProtocol().isPresent(), is(withSubProtocol))
+            );
+            if (withSubProtocol) {
+                assertThat(session.subProtocol().orElseThrow(), is("chat"));
+            }
+        } finally {
+            session.close(WsCloseCodes.NORMAL_CLOSE, "Bye!");
+        }
     }
 }

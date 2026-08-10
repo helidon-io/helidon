@@ -26,12 +26,15 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path("WebSocket")
 module io.helidon.websocket {
 
-    requires io.helidon.common;
+    requires io.helidon.builder.api;
+    requires transitive io.helidon.common;
 
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.socket;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.http;
     requires io.helidon.service.registry;
 

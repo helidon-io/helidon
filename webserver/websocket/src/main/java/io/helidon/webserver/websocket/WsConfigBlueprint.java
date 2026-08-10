@@ -22,6 +22,7 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
+import io.helidon.websocket.WsProtocolConfig;
 
 /**
  * WebSocket protocol configuration.
@@ -29,7 +30,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = WsUpgradeProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
-interface WsConfigBlueprint extends ProtocolConfig {
+interface WsConfigBlueprint extends ProtocolConfig, WsProtocolConfig {
     /**
      * WebSocket origins.
      * If this set is empty, requests with an {@code Origin} header
@@ -64,7 +65,7 @@ interface WsConfigBlueprint extends ProtocolConfig {
 
     /**
      * Max WebSocket frame size supported by the server on a read operation.
-     * Default is 1 MB.
+     * Default is 1 MiB.
      *
      * @return max frame size to read
      */

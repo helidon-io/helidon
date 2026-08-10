@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.nullValue;
 
 @ServerTest
@@ -112,8 +113,8 @@ public class DeclarativeWebSocketTest {
                 .get(5, TimeUnit.SECONDS);
         ws.request(10);
 
-        ws.sendBinary(ByteBuffer.wrap("Hello".getBytes()), false).get(5, TimeUnit.SECONDS);
-        ws.sendBinary(ByteBuffer.wrap(" World".getBytes()), true).get(5, TimeUnit.SECONDS);
+        ws.sendBinary(ByteBuffer.wrap("123456789".getBytes()), false).get(5, TimeUnit.SECONDS);
+        ws.sendBinary(ByteBuffer.wrap("12345678".getBytes()), true).get(5, TimeUnit.SECONDS);
         ws.sendClose(WsCloseCodes.NORMAL_CLOSE, "normal").get(5, TimeUnit.SECONDS);
 
         List<byte[]> binaryResults = listener.binaryResults().data();
@@ -126,7 +127,27 @@ public class DeclarativeWebSocketTest {
             System.arraycopy(binaryResult, 0, result, position, binaryResult.length);
             position += binaryResult.length;
         }
-        assertThat(new String(result), is("Hello World"));
+        assertThat(new String(result), is("12345678912345678"));
+    }
+
+    @Test
+    public void testBufferedMessageLimit() throws InterruptedException, ExecutionException, TimeoutException {
+        TestListener listener = new TestListener();
+
+        WebSocket ws = client.newWebSocketBuilder()
+                .buildAsync(URI.create("ws://localhost:" + port + "/websocket/echo/test/1"), listener)
+                .get(5, TimeUnit.SECONDS);
+        ws.request(10);
+
+        ws.sendText("123456789", false).get(5, TimeUnit.SECONDS);
+        ws.sendText("12345678", true).get(5, TimeUnit.SECONDS);
+
+        TestListener.TextResults results = listener.textResults();
+        assertThat(results.statusCode(), is(WsCloseCodes.TOO_BIG));
+        assertThat(results.received(), empty());
+        assertThat(endpoint.lastClose(), is(new EchoEndpoint.Close("Message too large", WsCloseCodes.TOO_BIG)));
+        assertThat(endpoint.lastError(), nullValue());
+        endpoint.reset();
     }
 
     private static class TestListener implements java.net.http.WebSocket.Listener {

@@ -95,6 +95,24 @@ server.routing(it -> it
 This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and
 associates.
 
+## Buffered Message Size
+
+When Helidon combines WebSocket fragments before delivering a whole message to
+an endpoint, the server and client each use a default buffering threshold of 1
+MiB. Configure the server limit with
+`server.protocols.websocket.max-buffered-message-size`, and the client limit
+with `protocol-config.max-buffered-message-size` in `WsClient` configuration.
+If a combined message exceeds the applicable limit, that side closes the
+connection with WebSocket close code `1009`.
+
+The server limit is independent of `max-frame-length`, which applies to each
+individual frame. Binary messages are measured exactly in bytes. Text message
+size is approximated using the number of UTF-16 code units in each decoded
+string fragment and may be smaller than the UTF-8 payload size. Listener
+methods that accept the trailing `boolean` fragment indicator, `Reader`, or
+`InputStream` consume fragments without whole-message buffering and are not
+limited by `max-buffered-message-size`.
+
 ## Security
 
 When a WebSocket upgrade request includes an `Origin` header, Helidon validates

@@ -18,21 +18,32 @@ package io.helidon.webserver.websocket;
 
 import java.io.UncheckedIOException;
 import java.net.SocketException;
+import java.util.List;
 
+import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
+import io.helidon.webserver.http1.spi.Http1RoutedUpgrader;
+import io.helidon.webserver.http1.spi.Http1UpgradeResponse;
+import io.helidon.webserver.http1.spi.Http1UpgradeResult;
 import io.helidon.websocket.WsListener;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,6 +53,46 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class WsUpgraderTest {
+
+    @Test
+    void routedUpgradeUsesProgrammaticProtocolConfig() {
+        WsConfig listenerWsConfig = WsConfig.builder().build();
+        ListenerConfig listenerConfig = mock(ListenerConfig.class);
+        when(listenerConfig.protocols()).thenReturn(List.of(listenerWsConfig));
+
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        when(listenerContext.config()).thenReturn(listenerConfig);
+
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+        when(ctx.router()).thenReturn(Router.builder()
+                                           .addRouting(WsRouting.builder()
+                                                               .endpoint("/chat", new WsListener() {
+                                                               }))
+                                           .build());
+
+        WritableHeaders<?> headers = WritableHeaders.create()
+                .add(HeaderValues.create(HeaderNames.CONNECTION, "Upgrade"))
+                .add(HeaderValues.create(HeaderNames.UPGRADE, "websocket"))
+                .add(HeaderValues.create(WsUpgrader.WS_KEY, "dGhlIHNhbXBsZSBub25jZQ=="))
+                .add(HeaderValues.create(WsUpgrader.WS_VERSION, WsUpgrader.SUPPORTED_VERSION));
+        HttpPrologue prologue = HttpPrologue.create("http/1.1",
+                                                    "http",
+                                                    "1.1",
+                                                    Method.GET,
+                                                    "/chat",
+                                                    false);
+        WsConfig upgraderWsConfig = WsConfig.builder()
+                .maxBufferedMessageSize(Size.create(16, Size.Unit.BYTE))
+                .build();
+        Http1RoutedUpgrader upgrader = (Http1RoutedUpgrader) WsUpgrader.create(upgraderWsConfig);
+        Http1RoutedUpgrade routedUpgrade = upgrader.routedUpgrade(ctx, prologue, headers).orElseThrow();
+        Http1UpgradeResult result = routedUpgrade.upgrade(mock(Http1UpgradeResponse.class));
+        WsConnection connection = (WsConnection) result.connection().orElseThrow();
+
+        assertThat(connection.protocolConfig(), sameInstance(upgraderWsConfig));
+    }
 
     @Test
     void upgradeWriteWrapsUncheckedIOException() {

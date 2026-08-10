@@ -111,6 +111,7 @@ public class WsUpgrader implements Http1Upgrader {
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
     private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
     private static final byte[] HEADERS_SEPARATOR = "\r\n".getBytes(US_ASCII);
+    private final WsConfig wsConfig;
     private final Set<String> origins;
     private final boolean anyOrigin;
 
@@ -120,6 +121,7 @@ public class WsUpgrader implements Http1Upgrader {
      * @param wsConfig WebSocket configuration
      */
     protected WsUpgrader(WsConfig wsConfig) {
+        this.wsConfig = wsConfig;
         this.origins = wsConfig.origins();
         this.anyOrigin = this.origins.isEmpty();
     }
@@ -168,7 +170,12 @@ public class WsUpgrader implements Http1Upgrader {
             LOGGER.log(Level.TRACE, "Upgraded to websocket version " + SUPPORTED_VERSION);
         }
 
-        return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), prepared.wsKey, wsListener);
+        return WsConnection.create(ctx,
+                                   prologue,
+                                   upgradeHeaders.orElse(EMPTY_HEADERS),
+                                   prepared.wsKey,
+                                   wsListener,
+                                   wsConfig);
     }
 
     private Optional<PreparedUpgrade> prepareUpgrade(ConnectionContext ctx,
@@ -434,7 +441,12 @@ public class WsUpgrader implements Http1Upgrader {
             }
 
             return Http1UpgradeResult.upgraded(
-                    WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), wsKey, wsListener));
+                    WsConnection.create(ctx,
+                                        prologue,
+                                        upgradeHeaders.orElse(EMPTY_HEADERS),
+                                        wsKey,
+                                        wsListener,
+                                        wsConfig));
         }
     }
 
