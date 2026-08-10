@@ -62,7 +62,7 @@ class Http1AltSvcTest {
                                 .altSvc(AltSvc.builder()
                                                 .maxAge(Duration.ofSeconds(120))
                                                 .persist(true)
-                                                .build())
+                                                .buildPrototype())
                                 .build())
                 .build();
 

@@ -58,9 +58,12 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
+import io.helidon.webserver.ListenerRuntimeContext;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.SniRequestSupport;
+import io.helidon.webserver.http.AltSvc;
+import io.helidon.webserver.http.AltSvcConfig;
 import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
@@ -101,6 +104,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private final long maxPayloadSize;
     private final Http1ConnectionListener recvListener;
     private final Http1ConnectionListener sendListener;
+    private final Optional<AltSvc> altSvc;
 
     // overall connection
     private int requestId;
@@ -137,6 +141,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
+        this.altSvc = http1Config.altSvc()
+                .filter(AltSvcConfig::enabled)
+                .map(config -> ListenerRuntimeContext.get(ctx.listenerContext()).altSvcRuntimeRegistry().resolve(config));
         this.lastRequestTimestamp = DateTime.timestamp();
     }
 
@@ -704,7 +711,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                        request,
                                        keepAlive,
                                        http1Config.validateResponseHeaders(),
-                                       http1Config.altSvc());
+                                       altSvc);
     }
 
     private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response, CountDownLatch entityReadLatch) {

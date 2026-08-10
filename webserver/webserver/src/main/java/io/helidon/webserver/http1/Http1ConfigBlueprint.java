@@ -23,7 +23,6 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.http.HttpConfig;
 import io.helidon.http.RequestedUriDiscoveryContext;
-import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 
@@ -33,7 +32,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Blueprint(decorator = Http1BuilderDecorator.class)
 @Prototype.Configured(root = false, value = Http1ConnectionProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
-@Prototype.IncludeDefaultMethods({"maxBufferedEntitySize", "log", "altSvc"})
+@Prototype.IncludeDefaultMethods({"maxBufferedEntitySize", "log"})
 interface Http1ConfigBlueprint extends HttpConfig, ProtocolConfig {
     /**
      * Name of this configuration, in most cases the same as {@link #type()}.
@@ -121,9 +120,7 @@ interface Http1ConfigBlueprint extends HttpConfig, ProtocolConfig {
      * @return alternative service advertisement
      */
     @Option.Configured
-    default Optional<AltSvc> altSvc() {
-        return Optional.empty();
-    }
+    Optional<io.helidon.webserver.http.AltSvcConfig> altSvc();
 
     /**
      * A single send listener, this value is computed.

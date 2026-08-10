@@ -25,7 +25,7 @@ import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.http.AltSvc;
+import io.helidon.webserver.http.AltSvcConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +49,7 @@ class ConnectionConfigTest {
         assertThat(http2Configs, hasKey("@default"));
 
         Http2Config http2Config = http2Configs.get("@default");
-        AltSvc altSvc = http2Config.altSvc().orElseThrow();
+        AltSvcConfig altSvc = http2Config.altSvc().orElseThrow();
 
         assertAll(
                 () -> assertThat("maxFrameSize", http2Config.maxFrameSize(), is(8192)),

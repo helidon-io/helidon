@@ -56,7 +56,7 @@ import io.helidon.webserver.TcpTransportConfig;
 import io.helidon.webserver.UdsTransportConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http.AltSvc;
+import io.helidon.webserver.http.AltSvcConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
@@ -131,7 +131,7 @@ public class UnixDomainSocketTest {
     @Test
     public void shouldOmitAltSvcWithoutExplicitPort() {
         UnixDomainSocketAddress address = UnixDomainSocketAddress.of(newSocketPath("helidon-alt-svc-default"));
-        WebServer server = startAltSvcServer(address, AltSvc.builder().build());
+        WebServer server = startAltSvcServer(address, AltSvcConfig.builder().buildPrototype());
         WebClient client = WebClient.builder().shareConnectionCache(false).build();
         try {
             ClientResponseTyped<String> response = client.get()
@@ -153,7 +153,7 @@ public class UnixDomainSocketTest {
     @Test
     public void shouldAdvertiseExplicitAltSvcPort() {
         UnixDomainSocketAddress address = UnixDomainSocketAddress.of(newSocketPath("helidon-alt-svc-explicit"));
-        WebServer server = startAltSvcServer(address, AltSvc.builder().port(8443).build());
+        WebServer server = startAltSvcServer(address, AltSvcConfig.builder().port(8443).buildPrototype());
         WebClient client = WebClient.builder().shareConnectionCache(false).build();
         try {
             ClientResponseTyped<String> response = client.get()
@@ -690,7 +690,7 @@ public class UnixDomainSocketTest {
                 .start();
     }
 
-    private static WebServer startAltSvcServer(UnixDomainSocketAddress address, AltSvc altSvc) {
+    private static WebServer startAltSvcServer(UnixDomainSocketAddress address, AltSvcConfig altSvc) {
         WebServerConfig.Builder builder = WebServer.builder();
         configureUdsBinding(builder, address);
         return builder

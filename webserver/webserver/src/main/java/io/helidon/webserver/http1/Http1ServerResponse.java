@@ -110,7 +110,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         this.request = request;
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
-        this.configuredAltSvc = configuredAltSvc.filter(AltSvc::enabled);
+        this.configuredAltSvc = configuredAltSvc;
         this.keepAlive = keepAlive;
         this.validateHeaders = validateHeaders;
     }
@@ -563,7 +563,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         case REDIRECTION:
             AltSvc altSvc = configuredAltSvc.get();
             int listenerPort = ctx.localPeer().port();
-            if (altSvc.port().isPresent() || listenerPort > 0 && listenerPort <= 65_535) {
+            if (altSvc.prototype().port().isPresent() || listenerPort > 0 && listenerPort <= 65_535) {
                 headers.setIfAbsent(altSvc.header(listenerPort));
             }
             break;

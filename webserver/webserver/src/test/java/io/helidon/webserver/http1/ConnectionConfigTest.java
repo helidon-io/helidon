@@ -21,7 +21,7 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.http.AltSvc;
+import io.helidon.webserver.http.AltSvcConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,7 +53,7 @@ public class ConnectionConfigTest {
         assertThat(http1Config.validateRequestHeaders(), is(true));
         assertThat(http1Config.validateResponseHeaders(), is(true));
         assertThat(http1Config.log().unsafeRawData(), is(false));
-        AltSvc altSvc = http1Config.altSvc().orElseThrow();
+        AltSvcConfig altSvc = http1Config.altSvc().orElseThrow();
         assertThat(altSvc.protocol(), is("h3"));
         assertThat(altSvc.port().orElseThrow(), is(8443));
         assertThat(altSvc.maxAge().orElseThrow(), is(Duration.ofHours(1)));

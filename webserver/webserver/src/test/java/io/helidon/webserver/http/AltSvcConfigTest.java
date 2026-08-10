@@ -58,7 +58,7 @@ class AltSvcConfigTest {
     void shouldAcceptWhitespaceOnlyProtocolFromConfig() {
         AltSvc altSvc = AltSvc.create(Config.just(ConfigSources.create(Map.of("protocol", " \t"))));
 
-        assertThat(altSvc.protocol(), is(" \t"));
+        assertThat(altSvc.prototype().protocol(), is(" \t"));
         assertThat(altSvc.headerValue(8443), is("%20%09=\":8443\""));
     }
 
@@ -123,18 +123,18 @@ class AltSvcConfigTest {
                 .clearMaxAge()
                 .build();
 
-        assertThat(altSvc.port().isEmpty(), is(true));
-        assertThat(altSvc.maxAge().isEmpty(), is(true));
+        assertThat(altSvc.prototype().port().isEmpty(), is(true));
+        assertThat(altSvc.prototype().maxAge().isEmpty(), is(true));
         assertThat(altSvc.headerValue(8443), is("h3=\":8443\""));
     }
 
     @Test
     void shouldRejectNullApiArguments() {
-        AltSvc.Builder builder = AltSvc.builder();
+        AltSvcConfig.Builder builder = AltSvc.builder();
 
         assertThrows(NullPointerException.class, () -> AltSvc.create((Config) null));
         assertThrows(NullPointerException.class,
-                     () -> AltSvc.create((Consumer<AltSvc.Builder>) null));
+                     () -> AltSvc.create((Consumer<AltSvcConfig.Builder>) null));
         assertThrows(NullPointerException.class, () -> builder.config(null));
         assertThrows(NullPointerException.class, () -> builder.update(null));
         assertThrows(NullPointerException.class, () -> builder.protocol(null));
@@ -145,7 +145,7 @@ class AltSvcConfigTest {
     void shouldRetainNonNullProtocolWhenDisabled() {
         AltSvc altSvc = AltSvc.builder().enabled(false).build();
 
-        assertThat(altSvc.protocol(), is("h3"));
+        assertThat(altSvc.prototype().protocol(), is("h3"));
     }
 
     @Test

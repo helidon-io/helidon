@@ -1012,16 +1012,16 @@ Advertisement is opt-in and is added only to successful and redirection response
 application takes precedence over the configured value.
 
 Configure advertisement programmatically on `io.helidon.webserver.http1.Http1Config` or
-`io.helidon.webserver.http2.Http2Config` using `io.helidon.webserver.http.AltSvc`:
+`io.helidon.webserver.http2.Http2Config` using `io.helidon.webserver.http.AltSvcConfig`:
 
 [source,java]
 ----
-AltSvc altSvc = AltSvc.builder()
+AltSvcConfig altSvc = AltSvcConfig.builder()
         .protocol("h3")
         .port(8443)
         .maxAge(Duration.ofHours(1))
         .persist(true)
-        .build();
+        .buildPrototype();
 
 Http1Config http1Config = Http1Config.builder()
         .altSvc(altSvc)
