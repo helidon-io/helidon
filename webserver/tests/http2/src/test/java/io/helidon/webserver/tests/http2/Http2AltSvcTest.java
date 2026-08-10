@@ -105,6 +105,19 @@ class Http2AltSvcTest {
                         throw new UncheckedIOException(e);
                     }
                 }))
+                .route(Http2Route.route(GET, "/stream-error", (req, res) -> {
+                    res.outputStream();
+                    throw new IllegalStateException("test");
+                }))
+                .route(Http2Route.route(GET, "/stream-error-redirect", (req, res) -> {
+                    res.outputStream();
+                    throw new RedirectException();
+                }))
+                .route(Http2Route.route(GET, "/custom-stream-error", (req, res) -> {
+                    res.header(CUSTOM_ALT_SVC);
+                    res.outputStream();
+                    throw new IllegalStateException("test");
+                }))
                 .route(Http2Route.route(GET, "/before-send-custom-stream", (req, res) -> {
                     res.beforeSend(() -> res.header(CUSTOM_ALT_SVC));
                     try (var output = res.outputStream()) {
@@ -157,6 +170,15 @@ class Http2AltSvcTest {
     }
 
     @Test
+    void shouldReadvertiseAltSvcOnRedirectAfterUnusedOutputStreamError() {
+        try (Http2ClientResponse response = client.get("/stream-error-redirect").followRedirects(false).request()) {
+            assertThat(response.status(), is(Status.MOVED_PERMANENTLY_301));
+            assertThat(response.headers().first(HeaderNames.LOCATION).orElse(null), is("/ok"));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(expectedAltSvc(server.port())));
+        }
+    }
+
+    @Test
     void shouldPreserveApplicationAltSvcHeader() {
         try (Http2ClientResponse response = client.get("/custom").request()) {
             assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is("h2=\":443\""));
@@ -176,6 +198,22 @@ class Http2AltSvcTest {
         try (Http2ClientResponse response = client.get("/stream").request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(expectedAltSvc(server.port())));
+        }
+    }
+
+    @Test
+    void shouldNotAdvertiseAltSvcAfterUnusedOutputStreamError() {
+        try (Http2ClientResponse response = client.get("/stream-error").request()) {
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
+        }
+    }
+
+    @Test
+    void shouldPreserveApplicationAltSvcAfterUnusedOutputStreamError() {
+        try (Http2ClientResponse response = client.get("/custom-stream-error").request()) {
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(CUSTOM_ALT_SVC.get()));
         }
     }
 

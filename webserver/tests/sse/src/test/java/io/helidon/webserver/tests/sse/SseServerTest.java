@@ -18,6 +18,7 @@ package io.helidon.webserver.tests.sse;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
@@ -35,7 +36,9 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
 import static io.helidon.http.HeaderValues.ACCEPT_JSON;
+import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -53,6 +56,27 @@ class SseServerTest extends SseBaseTest {
         rules.get("/sseCustomAltSvc", (req, res) -> {
             res.beforeSend(() -> res.header(HeaderNames.ALT_SVC, CUSTOM_ALT_SVC));
             sseString1(req, res);
+        });
+        rules.get("/sseRejected", (req, res) -> {
+            AtomicBoolean beforeSendCalled = new AtomicBoolean();
+            res.beforeSend(() -> beforeSendCalled.set(true));
+            try {
+                sseString1(req, res);
+            } catch (RuntimeException e) {
+                res.header("Before-Send-Called-During-Sink-Lookup", Boolean.toString(beforeSendCalled.get()));
+                throw e;
+            }
+        });
+        rules.get("/sseProviderCreationFailure", (req, res) -> {
+            res.header(CONTENT_TYPE_JSON);
+            try {
+                sseString1(req, res);
+            } catch (IllegalStateException _) {
+                res.header("Alt-Svc-Present-After-Failed-Sink-Creation",
+                           Boolean.toString(res.headers().contains(HeaderNames.ALT_SVC)));
+                res.headers().remove(HeaderNames.CONTENT_TYPE);
+                res.send("ok");
+            }
         });
         rules.get("/sseString2", SseServerTest::sseString2);
         rules.get("/sseDelayed", SseServerTest::sseDelayed);
@@ -127,6 +151,44 @@ class SseServerTest extends SseBaseTest {
         try (Http1ClientResponse response = client.get("/sseCustomAltSvc").request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(CUSTOM_ALT_SVC));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testRejectedSseDoesNotAdvertiseAltSvcOrRunBeforeSendDuringSinkLookup() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer().port())
+                .build();
+        try (Http1ClientResponse response = client.get("/sseRejected").header(ACCEPT_JSON).request()) {
+            assertThat(response.status(), is(Status.NOT_ACCEPTABLE_406));
+            assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
+            assertThat(response.headers()
+                               .first(HeaderNames.create("Before-Send-Called-During-Sink-Lookup"))
+                               .orElse(null),
+                       is("false"));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testFailedSseProviderCreationRollsBackAndReadvertisesAltSvc() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer().port())
+                .build();
+        try (Http1ClientResponse response = client.get("/sseProviderCreationFailure")
+                .header(ACCEPT_EVENT_STREAM)
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers()
+                               .first(HeaderNames.create("Alt-Svc-Present-After-Failed-Sink-Creation"))
+                               .orElse(null),
+                       is("false"));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null),
+                       is("h3=\":" + webServer().port() + "\""));
+            assertThat(response.entity().as(String.class), is("ok"));
         } finally {
             client.closeResource();
         }

@@ -21,13 +21,18 @@ import java.util.Objects;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
+import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.http.spi.Sink;
+import io.helidon.webserver.http.spi.SinkProvider;
 
 final class Http1AltSvcServerResponse extends Http1ServerResponse {
     private final Header altSvcHeader;
     private boolean switchingProtocols;
+    private boolean responsePrepared;
+    private boolean generatedAltSvcHeader;
 
     Http1AltSvcServerResponse(ConnectionContext ctx,
                              Http1ConnectionListener sendListener,
@@ -42,8 +47,42 @@ final class Http1AltSvcServerResponse extends Http1ServerResponse {
 
     @Override
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
+        SinkProvider<?> provider = findSinkProvider(sinkType);
         beforeSend();
-        return super.sink(sinkType);
+        try {
+            return createSink(provider);
+        } catch (RuntimeException | Error e) {
+            resetAltSvcPreparation();
+            throw e;
+        }
+    }
+
+    @Override
+    public Http1AltSvcServerResponse status(Status status) {
+        super.status(status);
+        if (responsePrepared) {
+            reconcileAltSvcHeader();
+        }
+        return this;
+    }
+
+    @Override
+    public boolean reset() {
+        boolean reset = super.reset();
+        if (reset) {
+            responsePrepared = false;
+            generatedAltSvcHeader = false;
+        }
+        return reset;
+    }
+
+    @Override
+    public boolean resetStream() {
+        boolean reset = super.resetStream();
+        if (reset) {
+            resetAltSvcPreparation();
+        }
+        return reset;
     }
 
     @Override
@@ -59,15 +98,48 @@ final class Http1AltSvcServerResponse extends Http1ServerResponse {
     @Override
     protected void beforeSend() {
         super.beforeSend();
-        if (!switchingProtocols) {
-            switch (status().family()) {
-            case SUCCESSFUL:
-            case REDIRECTION:
-                headers().setIfAbsent(altSvcHeader);
-                break;
-            default:
-                break;
-            }
+        responsePrepared = true;
+        reconcileAltSvcHeader();
+    }
+
+    private void reconcileAltSvcHeader() {
+        if (switchingProtocols) {
+            removeGeneratedAltSvcHeader();
+            return;
         }
+
+        switch (status().family()) {
+        case SUCCESSFUL:
+        case REDIRECTION:
+            if (!ownsCurrentAltSvcHeader()) {
+                generatedAltSvcHeader = false;
+            }
+            if (!headers().contains(HeaderNames.ALT_SVC)) {
+                headers().set(altSvcHeader);
+                generatedAltSvcHeader = true;
+            }
+            break;
+        default:
+            removeGeneratedAltSvcHeader();
+            break;
+        }
+    }
+
+    private void resetAltSvcPreparation() {
+        removeGeneratedAltSvcHeader();
+        responsePrepared = false;
+    }
+
+    private void removeGeneratedAltSvcHeader() {
+        if (ownsCurrentAltSvcHeader()) {
+            headers().remove(HeaderNames.ALT_SVC);
+        }
+        generatedAltSvcHeader = false;
+    }
+
+    private boolean ownsCurrentAltSvcHeader() {
+        return generatedAltSvcHeader
+                && headers().contains(HeaderNames.ALT_SVC)
+                && headers().get(HeaderNames.ALT_SVC) == altSvcHeader;
     }
 }

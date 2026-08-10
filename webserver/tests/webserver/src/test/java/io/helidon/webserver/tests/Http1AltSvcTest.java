@@ -93,6 +93,26 @@ class Http1AltSvcTest {
                         throw new UncheckedIOException(e);
                     }
                 })
+                .get("/stream-error", (req, res) -> {
+                    res.outputStream();
+                    throw new IllegalStateException("test");
+                })
+                .get("/stream-error-redirect", (req, res) -> {
+                    res.outputStream();
+                    throw new RedirectException();
+                })
+                .get("/custom-stream-error", (req, res) -> {
+                    res.header(CUSTOM_ALT_SVC);
+                    res.outputStream();
+                    throw new IllegalStateException("test");
+                })
+                .get("/stream-late-status", (req, res) -> {
+                    try (var output = res.outputStream()) {
+                        res.status(Status.BAD_REQUEST_400);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
                 .get("/error-redirect", (req, res) -> {
                     throw new RedirectException();
                 });
@@ -109,6 +129,15 @@ class Http1AltSvcTest {
     @Test
     void shouldAdvertiseAltSvcOnRedirectFromErrorHandler() {
         try (Http1ClientResponse response = client.get("/error-redirect").followRedirects(false).request()) {
+            assertThat(response.status(), is(Status.MOVED_PERMANENTLY_301));
+            assertThat(response.headers(), hasHeader(LOCATION));
+            assertThat(response.headers(), hasHeader(expectedAltSvc(server.port())));
+        }
+    }
+
+    @Test
+    void shouldReadvertiseAltSvcOnRedirectAfterUnusedOutputStreamError() {
+        try (Http1ClientResponse response = client.get("/stream-error-redirect").followRedirects(false).request()) {
             assertThat(response.status(), is(Status.MOVED_PERMANENTLY_301));
             assertThat(response.headers(), hasHeader(LOCATION));
             assertThat(response.headers(), hasHeader(expectedAltSvc(server.port())));
@@ -142,6 +171,30 @@ class Http1AltSvcTest {
         try (Http1ClientResponse response = client.get("/stream").request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), hasHeader(expectedAltSvc(server.port())));
+        }
+    }
+
+    @Test
+    void shouldNotAdvertiseAltSvcAfterUnusedOutputStreamError() {
+        try (Http1ClientResponse response = client.get("/stream-error").request()) {
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
+        }
+    }
+
+    @Test
+    void shouldPreserveApplicationAltSvcAfterUnusedOutputStreamError() {
+        try (Http1ClientResponse response = client.get("/custom-stream-error").request()) {
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers(), hasHeader(CUSTOM_ALT_SVC));
+        }
+    }
+
+    @Test
+    void shouldNotAdvertiseAltSvcAfterLateStreamingErrorStatus() {
+        try (Http1ClientResponse response = client.get("/stream-late-status").request()) {
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+            assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
         }
     }
 
