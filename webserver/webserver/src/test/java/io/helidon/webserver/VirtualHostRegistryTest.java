@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
+import io.helidon.common.uri.UriAuthority;
 
 import org.junit.jupiter.api.Test;
 
@@ -97,8 +98,9 @@ class VirtualHostRegistryTest {
         assertThat(selection.tls(), is(TLS));
         assertThat(selection.sniContext().matchType(), is(SniMatchType.EXACT));
         assertThat(selection.sniContext().matchedHost(), is(Optional.of("api.example.com")));
-        assertThat(selection.sniContext().checkAuthority("api.example.com"), is(SniContext.AuthorityCheck.ALLOWED));
-        assertThat(selection.sniContext().checkAuthority("admin.example.com"),
+        assertThat(selection.sniContext().checkAuthority(UriAuthority.create("api.example.com")),
+                   is(SniContext.AuthorityCheck.ALLOWED));
+        assertThat(selection.sniContext().checkAuthority(UriAuthority.create("admin.example.com")),
                    is(SniContext.AuthorityCheck.AUTHORITY_MISMATCH));
     }
 
@@ -111,7 +113,8 @@ class VirtualHostRegistryTest {
         assertThat(context.presentedHost(), is(Optional.of("api.example.com")));
         assertThat(context.matchedHost(), is(Optional.of("api.example.com")));
         assertThat(context.matchType(), is(SniMatchType.EXACT));
-        assertThat(context.checkAuthority("API.EXAMPLE.COM"), is(SniContext.AuthorityCheck.ALLOWED));
+        assertThat(context.checkAuthority(UriAuthority.create("API.EXAMPLE.COM")),
+                   is(SniContext.AuthorityCheck.ALLOWED));
     }
 
     @Test
@@ -148,9 +151,12 @@ class VirtualHostRegistryTest {
         SniContext context = registry.selectWithoutSni().sniContext();
 
         assertThat(context.matchType(), is(SniMatchType.FALLBACK_MISSING));
-        assertThat(context.checkAuthority("api.example.com"), is(SniContext.AuthorityCheck.FALLBACK_AUTHORITY));
-        assertThat(context.checkAuthority("admin.example.org"), is(SniContext.AuthorityCheck.FALLBACK_AUTHORITY));
-        assertThat(context.checkAuthority("other.example.net"), is(SniContext.AuthorityCheck.ALLOWED));
+        assertThat(context.checkAuthority(UriAuthority.create("api.example.com")),
+                   is(SniContext.AuthorityCheck.FALLBACK_AUTHORITY));
+        assertThat(context.checkAuthority(UriAuthority.create("admin.example.org")),
+                   is(SniContext.AuthorityCheck.FALLBACK_AUTHORITY));
+        assertThat(context.checkAuthority(UriAuthority.create("other.example.net")),
+                   is(SniContext.AuthorityCheck.ALLOWED));
     }
 
     @Test
@@ -158,8 +164,10 @@ class VirtualHostRegistryTest {
         VirtualHostRegistry registry = registry("api.example.com");
         SniContext context = registry.select("unmatched.example.com").sniContext();
 
-        assertThat(context.checkAuthority("unmatched.example.com"), is(SniContext.AuthorityCheck.ALLOWED));
-        assertThat(context.checkAuthority("other.example.com"), is(SniContext.AuthorityCheck.AUTHORITY_MISMATCH));
+        assertThat(context.checkAuthority(UriAuthority.create("unmatched.example.com")),
+                   is(SniContext.AuthorityCheck.ALLOWED));
+        assertThat(context.checkAuthority(UriAuthority.create("other.example.com")),
+                   is(SniContext.AuthorityCheck.AUTHORITY_MISMATCH));
     }
 
     @Test

@@ -264,8 +264,8 @@ final class VirtualHostRegistry implements ListenerTlsContext {
         }
 
         @Override
-        public AuthorityCheck checkAuthority(String authority) {
-            UriHost authorityHost = UriAuthority.create(authority).host();
+        public AuthorityCheck checkAuthority(UriAuthority authority) {
+            UriHost authorityHost = Objects.requireNonNull(authority, "authority").host();
             String normalizedAuthority = authorityHost.value();
 
             if (sniConfig.authorityMismatch() == SniAuthorityPolicy.REJECT

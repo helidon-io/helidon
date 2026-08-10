@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.Api;
+import io.helidon.common.uri.UriAuthority;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
@@ -51,6 +52,28 @@ public final class SniRequestSupport {
                                          HttpPrologue prologue,
                                          Headers headers,
                                          String authority) {
+        Objects.requireNonNull(prologue);
+        Objects.requireNonNull(headers);
+        try {
+            validateAuthorityCheck(checkAuthority(sniContext, authority), prologue, headers);
+        } catch (IllegalArgumentException e) {
+            throw invalidAuthority(prologue, headers, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Validate an already parsed {@link io.helidon.common.uri.UriAuthority HTTP authority} against the connection SNI
+     * context.
+     *
+     * @param sniContext SNI context
+     * @param prologue   HTTP prologue
+     * @param headers    request headers
+     * @param authority  parsed request authority
+     */
+    public static void validateAuthority(SniContext sniContext,
+                                         HttpPrologue prologue,
+                                         Headers headers,
+                                         UriAuthority authority) {
         Objects.requireNonNull(prologue);
         Objects.requireNonNull(headers);
         try {
@@ -97,6 +120,24 @@ public final class SniRequestSupport {
         if (authority.isBlank()) {
             throw new IllegalArgumentException("HTTP authority is required by SNI policy");
         }
+        try {
+            return sniContext.checkAuthority(UriAuthority.create(authority));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid HTTP authority: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Check an already parsed {@link io.helidon.common.uri.UriAuthority HTTP authority} against the connection SNI context.
+     *
+     * @param sniContext SNI context
+     * @param authority  parsed request authority
+     * @return authority check result
+     */
+    public static SniContext.AuthorityCheck checkAuthority(SniContext sniContext,
+                                                           UriAuthority authority) {
+        Objects.requireNonNull(sniContext);
+        Objects.requireNonNull(authority);
         try {
             return sniContext.checkAuthority(authority);
         } catch (IllegalArgumentException e) {
