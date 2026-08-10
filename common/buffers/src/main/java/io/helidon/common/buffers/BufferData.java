@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
+
 /**
  * Wrapper around a byte array.
  */
@@ -74,6 +76,43 @@ public interface BufferData {
      */
     static BufferData createReadOnly(byte[] bytes, int offset, int length) {
         return new ReadOnlyArrayData(bytes, offset, length);
+    }
+
+    /**
+     * Consume a range from the source and return an independently positioned read-only view of exactly that range.
+     *
+     * <p>Sources created with
+     * {@link io.helidon.common.buffers.BufferData#createReadOnly(byte[], int, int)} share their backing array with the
+     * returned view. The caller must not modify that array while either buffer is in use. Other sources use an exact
+     * defensive copy. The returned logical range never includes bytes before or after the consumed source range,
+     * including after {@link io.helidon.common.buffers.BufferData#rewind()}.
+     *
+     * @param source source buffer
+     * @param length number of bytes to consume
+     * @return independently positioned read-only range
+     * @throws IndexOutOfBoundsException if length is negative or exceeds the available source bytes
+     */
+    @Api.Internal
+    static BufferData readOnlySlice(BufferData source, int length) {
+        Objects.requireNonNull(source, "source");
+        Objects.checkFromIndexSize(0, length, source.available());
+        if (length == 0) {
+            return ReadOnlyArrayData.EMPTY;
+        }
+        if (source instanceof ReadOnlyArrayData arrayData) {
+            return arrayData.readOnlySlice(length);
+        }
+
+        byte[] copy = new byte[length];
+        int offset = 0;
+        while (offset < length) {
+            int read = source.read(copy, offset, length - offset);
+            if (read <= 0) {
+                throw new IllegalStateException("Buffer reported available data but did not provide it");
+            }
+            offset += read;
+        }
+        return BufferData.createReadOnly(copy, 0, copy.length);
     }
 
     /**

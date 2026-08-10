@@ -25,6 +25,8 @@ import java.nio.charset.Charset;
 import java.util.Objects;
 
 class ReadOnlyArrayData extends ReadOnlyBufferData {
+    static final BufferData EMPTY = new ReadOnlyArrayData(BufferData.EMPTY_BYTES, 0, 0);
+
     private final byte[] bytes;
     private final int offset;
     private final int length;
@@ -35,6 +37,13 @@ class ReadOnlyArrayData extends ReadOnlyBufferData {
         this.offset = offset;
         this.length = length;
         this.position = 0;
+    }
+
+    BufferData readOnlySlice(int sliceLength) {
+        Objects.checkFromIndexSize(position, sliceLength, length);
+        BufferData result = new ReadOnlyArrayData(bytes, offset + position, sliceLength);
+        position += sliceLength;
+        return result;
     }
 
     @Override
