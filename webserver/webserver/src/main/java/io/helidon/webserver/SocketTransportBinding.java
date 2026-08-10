@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.Timer;
@@ -71,6 +72,7 @@ abstract class SocketTransportBinding implements TransportBinding {
     private final SocketAddress configuredAddress;
     private final SocketOptions connectionOptions;
     private final ConnectionProviders connectionProviders;
+    private final Optional<TrustedProxyMatcher> trustedProxyMatcher;
     private final ListenerTlsContext listenerTls;
     private final Tls tls;
     private final Limit connectionLimit;
@@ -104,6 +106,10 @@ abstract class SocketTransportBinding implements TransportBinding {
                                                                    .filter(config -> supportsTransportBinding(type, config))
                                                                    .toList());
         this.connectionProviders = ConnectionProviders.create(connectionSelectors(socketName, listenerConfig, protocols));
+        this.trustedProxyMatcher = listenerConfig.proxyProtocol()
+                .filter(ProxyProtocolConfig::enabled)
+                .map(config -> new TrustedProxyMatcher(config.trustedProxies()
+                        .orElseThrow(() -> new IllegalStateException("PROXY protocol is enabled without trusted proxies"))));
         this.listenerTls = transportContext.listenerTls();
         this.tls = listenerTls.tls();
         this.requestLimit = transportContext.requestLimit();
@@ -601,6 +607,7 @@ abstract class SocketTransportBinding implements TransportBinding {
                     }
                     SocketChannel socket = localServerSocket.accept();
                     ConnectionHandler handler = new ConnectionHandler(transportContext.listenerContext(),
+                                                                      trustedProxyMatcher,
                                                                       acceptToken,
                                                                       requestLimit,
                                                                       connectionProviders,

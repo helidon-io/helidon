@@ -119,7 +119,7 @@ public interface ServerRequest extends HttpRequest {
      * Access proxy protocol data for the connection on which this request was sent.
      *
      * @return proxy protocol data, if available
-     * @see io.helidon.webserver.ListenerConfig#enableProxyProtocol()
+     * @see io.helidon.webserver.ListenerConfig#proxyProtocol()
      */
     Optional<ProxyProtocolData> proxyProtocolData();
 

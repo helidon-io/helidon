@@ -36,6 +36,7 @@ import io.helidon.common.concurrency.limits.spi.LimitProvider;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
+import io.helidon.config.ConfigException;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -54,7 +55,7 @@ import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
-@Prototype.IncludeDefaultMethods("bindings")
+@Prototype.IncludeDefaultMethods({"bindings", "proxyProtocol"})
 interface ListenerConfigBlueprint {
     /**
      * Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
@@ -440,18 +441,43 @@ interface ListenerConfigBlueprint {
     Optional<Context> listenerContext();
 
     /**
-     * Enable proxy protocol support for this socket. This protocol is supported by
+     * Deprecated PROXY protocol enablement flag for this socket. This protocol is supported by
      * some load balancers/reverse proxies as a means to convey client information that
      * would otherwise be lost. If enabled, the proxy protocol header must be present
      * on every new connection established with your server. For more information,
      * see <a href="https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt">
      * the specification</a>. Default is {@code false}.
+     * <p>
+     * This deprecated option cannot enable PROXY protocol support by itself. Configure
+     * {@link #proxyProtocol()} with {@link ProxyProtocolConfig#trustedProxies()} instead.
      *
      * @return proxy support status
+     * @deprecated use {@link #proxyProtocol()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.5.2")
     @Option.Configured
     @Option.Default("false")
     boolean enableProxyProtocol();
+
+    /**
+     * PROXY protocol configuration.
+     * <p>
+     * If configured and {@link ProxyProtocolConfig#enabled()} is {@code true}, PROXY protocol support is enabled for this
+     * listener. The {@link ProxyProtocolConfig#trustedProxies()} allow list must be configured explicitly when support is
+     * enabled.
+     *
+     * @return PROXY protocol configuration
+     */
+    @Option.Configured("proxy-protocol")
+    @SuppressWarnings("removal")
+    default Optional<ProxyProtocolConfig> proxyProtocol() {
+        if (enableProxyProtocol()) {
+            throw new ConfigException("The deprecated \"enable-proxy-protocol\" option cannot enable PROXY protocol"
+                                              + " support by itself. Configure \"proxy-protocol.trusted-proxies\""
+                                              + " for the listener.");
+        }
+        return Optional.empty();
+    }
 
     /**
      * Requested URI discovery context.

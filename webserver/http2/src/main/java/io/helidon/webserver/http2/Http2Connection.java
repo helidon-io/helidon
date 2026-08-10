@@ -78,6 +78,7 @@ import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
@@ -87,6 +88,8 @@ import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
 import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static io.helidon.http.http2.Http2Util.PREFACE_LENGTH;
+import static io.helidon.webserver.ProxyProtocolData.Family.IPv4;
+import static io.helidon.webserver.ProxyProtocolData.Family.IPv6;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.TRACE;
@@ -911,19 +914,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             ctx.remotePeer().tlsCertificates()
                     .flatMap(TlsUtils::parseCn)
                     .ifPresent(cn -> connectionHeaders.add(X_HELIDON_CN, cn));
-
-            // proxy protocol related headers X-Forwarded-For and X-Forwarded-Port
-            ctx.proxyProtocolData().ifPresent(proxyProtocolData -> {
-                String sourceAddress = proxyProtocolData.sourceAddress();
-                if (!sourceAddress.isEmpty()) {
-                    connectionHeaders.add(X_FORWARDED_FOR, sourceAddress);
-                }
-                int sourcePort = proxyProtocolData.sourcePort();
-                if (sourcePort != -1) {
-                    connectionHeaders.set(X_FORWARDED_PORT, sourcePort);
-                }
-            });
-
             initConnectionHeaders = false;
         }
 
@@ -955,7 +945,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
         receiveFrameListener.headers(ctx, streamId, headers);
 
-
         if (trailers) {
             if (!validateRequestTrailers(headers, stream, streamId, endOfStream)) {
                 return;
@@ -978,6 +967,34 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                         throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
                     }
                 }
+            }
+        }
+        ProxyProtocolData proxyProtocolData = ctx.proxyProtocolData().orElse(null);
+        if (proxyProtocolData != null) {
+            Http2Headers originalHeaders = headers;
+            WritableHeaders<?> requestHeaders = WritableHeaders.create();
+            headers = Http2Headers.create(requestHeaders)
+                    .method(originalHeaders.method())
+                    .path(originalHeaders.path())
+                    .scheme(originalHeaders.scheme());
+            String authority = originalHeaders.authority();
+            if (authority != null) {
+                headers.authority(authority);
+            }
+            for (var header : originalHeaders.httpHeaders()) {
+                requestHeaders.add(header);
+            }
+            requestHeaders.remove(X_FORWARDED_FOR);
+            requestHeaders.remove(X_FORWARDED_PORT);
+
+            ProxyProtocolData.Family family = proxyProtocolData.family();
+            String sourceAddress = proxyProtocolData.sourceAddress();
+            if ((family == IPv4 || family == IPv6) && !sourceAddress.isEmpty()) {
+                requestHeaders.set(X_FORWARDED_FOR, sourceAddress);
+            }
+            int destPort = proxyProtocolData.destPort();
+            if (destPort != -1) {
+                requestHeaders.set(X_FORWARDED_PORT, destPort);
             }
         }
         if (newStream) {

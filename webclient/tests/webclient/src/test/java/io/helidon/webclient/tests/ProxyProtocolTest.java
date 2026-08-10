@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.tests;
 
+import io.helidon.common.configurable.AllowList;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ConnectionListener;
 import io.helidon.webclient.api.WebClient;
@@ -35,7 +36,7 @@ public class ProxyProtocolTest {
     @Test
     public void v1Tcp4() {
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {
                 var data = req.proxyProtocolData().get();
@@ -73,7 +74,7 @@ public class ProxyProtocolTest {
     @Test
     public void v1Tcp6() {
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {
                 var data = req.proxyProtocolData().get();
@@ -111,7 +112,7 @@ public class ProxyProtocolTest {
     @Test
     public void v2Ipv4() {
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .idleConnectionTimeout(Duration.ofSeconds(1))
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {
@@ -168,7 +169,7 @@ public class ProxyProtocolTest {
     @Test
     public void v2Ipv6() {
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .idleConnectionTimeout(Duration.ofSeconds(1))
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {
@@ -225,7 +226,7 @@ public class ProxyProtocolTest {
     @Test
     public void v2Ipv4WithTlvs() {
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .idleConnectionTimeout(Duration.ofSeconds(1))
             .port(0)
             .routing(r -> r.get("/test", (req, res) -> {

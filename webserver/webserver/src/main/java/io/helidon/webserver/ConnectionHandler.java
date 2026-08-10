@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
@@ -75,6 +76,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private static final byte TLS_ALERT_UNRECOGNIZED_NAME = 112;
 
     private final ListenerContext listenerContext;
+    private final Optional<TrustedProxyMatcher> trustedProxyMatcher;
     // we must safely release the token whenever this connection is finished, so other connections can be created!
     private final LimitAlgorithm.Token limitToken;
     private final Limit requestLimit;
@@ -105,6 +107,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private volatile HelidonSocket helidonSocket;
 
     ConnectionHandler(ListenerContext listenerContext,
+                      Optional<TrustedProxyMatcher> trustedProxyMatcher,
                       LimitAlgorithm.Token limitToken,
                       Limit requestLimit,
                       ConnectionProviders connectionProviders,
@@ -115,6 +118,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       ListenerTlsContext listenerTls,
                       Consumer<ConnectionHandler> connectionHandlerRemoveListener) {
         this.listenerContext = listenerContext;
+        this.trustedProxyMatcher = trustedProxyMatcher;
         this.limitToken = limitToken;
         this.requestLimit = requestLimit;
         this.connectionProviders = connectionProviders;
@@ -276,7 +280,25 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     // extracted run method to make the run method clean (a single try/finally block)
     private void run(String channelId) {
         // proxy protocol before SSL handshake
-        if (listenerConfig.enableProxyProtocol()) {
+        if (trustedProxyMatcher.isPresent()) {
+            SocketAddress remoteAddress;
+            try {
+                remoteAddress = socket.getRemoteAddress();
+            } catch (IOException e) {
+                if (LOGGER.isLoggable(TRACE)) {
+                    LOGGER.log(TRACE, "[" + channelId + "] Failed to resolve remote address", e);
+                }
+                return;
+            }
+
+            if (!trustedProxyMatcher.get().test(remoteAddress)) {
+                if (LOGGER.isLoggable(DEBUG)) {
+                    LOGGER.log(DEBUG, "[" + channelId + "] Rejecting PROXY protocol data from untrusted peer "
+                            + remoteAddress);
+                }
+                return;
+            }
+
             ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
             try {
                 proxyProtocolData = handler.get();

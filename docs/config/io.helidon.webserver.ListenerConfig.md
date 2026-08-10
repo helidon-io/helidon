@@ -147,18 +147,6 @@ Configuration of a server listener (server socket)
 </tr>
 <tr>
 <td>
-<code>enable-<wbr>proxy-<wbr>protocol</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>false</code>
-</td>
-<td>Enable proxy protocol support for this socket</td>
-</tr>
-<tr>
-<td>
 <code>host</code>
 </td>
 <td>
@@ -322,6 +310,20 @@ Configuration of a server listener (server socket)
 </tr>
 <tr>
 <td>
+<a id="proxy-protocol"></a>
+<a href="io.helidon.webserver.ProxyProtocolConfig.md">
+<code>proxy-<wbr>protocol</code>
+</a>
+</td>
+<td>
+<code>Proxy<wbr>Protocol<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>PROXY protocol configuration</td>
+</tr>
+<tr>
+<td>
 <code>ignore-<wbr>invalid-<wbr>named-<wbr>routing</code>
 </td>
 <td>
@@ -450,6 +452,18 @@ Configuration of a server listener (server socket)
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>enable-<wbr>proxy-<wbr>protocol</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Deprecated PROXY protocol enablement flag for this socket</td>
+</tr>
 <tr>
 <td>
 <code>max-<wbr>tcp-<wbr>connections</code>

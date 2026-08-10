@@ -68,7 +68,7 @@ public interface ConnectionContext extends SocketContext {
      * Proxy protocol header data.
      *
      * @return protocol header data if proxy protocol is enabled on socket
-     * @see ListenerConfig#enableProxyProtocol()
+     * @see ListenerConfig#proxyProtocol()
      */
     default Optional<ProxyProtocolData> proxyProtocolData() {
         return Optional.empty();

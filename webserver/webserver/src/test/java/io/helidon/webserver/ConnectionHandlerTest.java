@@ -20,6 +20,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +34,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.tls.Tls;
 import io.helidon.webserver.spi.ServerConnection;
@@ -60,7 +62,6 @@ class ConnectionHandlerTest {
     void logsUnexpectedThrowableFromConnectionHandling() throws Exception {
         AssertionError failure = new AssertionError("unexpected failure");
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
-        when(listenerConfig.enableProxyProtocol()).thenThrow(failure);
         ListenerContext listenerContext = mock(ListenerContext.class);
         when(listenerContext.config()).thenReturn(listenerConfig);
         ListenerConfig virtualHostConfig = mock(ListenerConfig.class);
@@ -68,11 +69,16 @@ class ConnectionHandlerTest {
         when(virtualHostConfig.virtualHosts()).thenReturn(List.of());
         VirtualHostRegistry virtualHosts = VirtualHostRegistry.create("server", virtualHostConfig, mock(Tls.class));
         LimitAlgorithm.Token token = mock(LimitAlgorithm.Token.class);
+        SocketChannel socket = mock(SocketChannel.class);
+        when(socket.getRemoteAddress()).thenThrow(failure);
         ConnectionHandler handler = new ConnectionHandler(listenerContext,
+                                                          Optional.of(new TrustedProxyMatcher(AllowList.builder()
+                                                                                                       .allowAll(true)
+                                                                                                       .build())),
                                                           token,
                                                           mock(Limit.class),
                                                           ConnectionProviders.create(List.of()),
-                                                          mock(SocketChannel.class),
+                                                          socket,
                                                           "server",
                                                           Router.empty(),
                                                           mock(Tls.class),
@@ -120,6 +126,7 @@ class ConnectionHandlerTest {
         ConnectionProviders connectionProviders =
                 ConnectionProviders.create(List.of(new TestConnectionSelector(failure)));
         ConnectionHandler handler = new ConnectionHandler(listenerContext,
+                                                          Optional.empty(),
                                                           mock(LimitAlgorithm.Token.class),
                                                           mock(Limit.class),
                                                           connectionProviders,

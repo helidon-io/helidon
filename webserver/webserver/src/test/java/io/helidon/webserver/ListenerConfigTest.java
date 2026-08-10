@@ -16,12 +16,16 @@
 
 package io.helidon.webserver;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.net.UnixDomainSocketAddress;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.config.ConfigSources;
 import io.helidon.webserver.spi.TransportBindingFactory;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
@@ -37,6 +41,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class ListenerConfigTest {
     private static final String DISCOVERED_TEST_BINDING = TestTransportBindingConfig.TYPE
             + "/" + TestTransportBindingConfig.TYPE + "/false";
+
+    @Test
+    void testProxyProtocolIsDefaultMethod() throws NoSuchMethodException {
+        assertThat(ListenerConfig.class.getMethod("proxyProtocol").isDefault(), is(true));
+    }
 
     @Test
     void testUnixBindAddressFailsWithUdsBindingGuidance() {
@@ -398,24 +407,75 @@ public class ListenerConfigTest {
     }
 
     @Test
+    @SuppressWarnings("removal")
     void testEnableProxyProtocolConfig() {
         Config config = Config.create();
 
         // default is false in default socket
         var webServerConfig = WebServer.builder().config(config.get("server")).buildPrototype();
         assertThat(webServerConfig.enableProxyProtocol(), is(false));
+        assertThat(webServerConfig.proxyProtocol().isEmpty(), is(true));
         ListenerConfig otherConfig = webServerConfig.sockets().get("other");
         assertThat(otherConfig.enableProxyProtocol(), is(false));
+        assertThat(otherConfig.proxyProtocol().isEmpty(), is(true));
 
         // set to true in default socket
         var webServerConfig2 = WebServer.builder().config(config.get("server2")).buildPrototype();
         assertThat(webServerConfig2.enableProxyProtocol(), is(true));
+        assertThat(webServerConfig2.proxyProtocol().orElseThrow().trustedProxies().orElseThrow().test("anything"), is(true));
 
         // set to true in non-default socket
         var webServerConfig3 = WebServer.builder().config(config.get("server3")).buildPrototype();
         assertThat(webServerConfig3.enableProxyProtocol(), is(false));
         ListenerConfig graceConfig = webServerConfig3.sockets().get("grace");
         assertThat(graceConfig.enableProxyProtocol(), is(true));
+        assertThat(graceConfig.proxyProtocol().orElseThrow().trustedProxies().orElseThrow().test("anything"), is(true));
+    }
+
+    @Test
+    void testEnableProxyProtocolRequiresNewConfig() {
+        Config config = Config.just(ConfigSources.create(Map.of("enable-proxy-protocol", "true")));
+
+        ConfigException exception = assertThrows(ConfigException.class, () -> ListenerConfig.create(config));
+
+        assertThat(exception.getMessage(), containsString("proxy-protocol.trusted-proxies"));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testLegacyProxyProtocolEnablementRequiresNewConfig() {
+        ListenerConfig legacyConfig = (ListenerConfig) Proxy.newProxyInstance(
+                ListenerConfig.class.getClassLoader(),
+                new Class<?>[] {ListenerConfig.class},
+                (proxy, method, args) -> {
+                    if (method.getName().equals("enableProxyProtocol")) {
+                        return true;
+                    }
+                    return InvocationHandler.invokeDefault(proxy, method, args);
+                });
+
+        ConfigException exception = assertThrows(ConfigException.class, legacyConfig::proxyProtocol);
+
+        assertThat(exception.getMessage(), containsString("proxy-protocol.trusted-proxies"));
+    }
+
+    @Test
+    void testProxyProtocolRequiresTrustedProxies() {
+        Config config = Config.just(ConfigSources.create(Map.of("proxy-protocol.enabled", "true")));
+
+        ConfigException exception = assertThrows(ConfigException.class, () -> ListenerConfig.create(config));
+
+        assertThat(exception.getMessage(), containsString("proxy-protocol.trusted-proxies"));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testDisabledProxyProtocolDoesNotRequireTrustedProxies() {
+        Config config = Config.just(ConfigSources.create(Map.of("proxy-protocol.enabled", "false")));
+        ListenerConfig listenerConfig = ListenerConfig.create(config);
+
+        assertThat(listenerConfig.enableProxyProtocol(), is(false));
+        assertThat(listenerConfig.proxyProtocol().orElseThrow().enabled(), is(false));
     }
 
     @Test

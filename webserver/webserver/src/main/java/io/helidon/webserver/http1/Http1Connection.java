@@ -75,6 +75,8 @@ import io.helidon.webserver.spi.ServerConnection;
 import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
 import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.webserver.ProxyProtocolData.Family.IPv4;
+import static io.helidon.webserver.ProxyProtocolData.Family.IPv6;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
@@ -197,19 +199,21 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 ctx.remotePeer().tlsCertificates()
                         .flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));
-                recvListener.headers(ctx, headers);
-
+                // X-Forwarded-For is an IP list, so do not expose UNIX paths that may contain invalid header characters.
                 if (proxyProtocolData != null) {
+                    headers.remove(X_FORWARDED_FOR);
+                    headers.remove(X_FORWARDED_PORT);
+                    ProxyProtocolData.Family family = proxyProtocolData.family();
                     String sourceAddress = proxyProtocolData.sourceAddress();
-                    if (!sourceAddress.isEmpty()) {
-                        headers.add(X_FORWARDED_FOR, sourceAddress);
+                    if ((family == IPv4 || family == IPv6) && !sourceAddress.isEmpty()) {
+                        headers.set(X_FORWARDED_FOR, sourceAddress);
                     }
-                    int sourcePort = proxyProtocolData.sourcePort();
-                    if (sourcePort != -1) {
-                        headers.add(X_FORWARDED_PORT, sourcePort);
+                    int destPort = proxyProtocolData.destPort();
+                    if (destPort != -1) {
+                        headers.set(X_FORWARDED_PORT, destPort);
                     }
                 }
-
+                recvListener.headers(ctx, headers);
                 if (canUpgrade && headers.contains(HeaderNames.UPGRADE)) {
                     if (upgradeHasEntity(headers)) {
                         ctx.log(LOGGER, DEBUG, "Protocol upgrade for a request with a payload ignored");

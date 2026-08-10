@@ -37,6 +37,7 @@ import io.grpc.CallOptions;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
 
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
@@ -70,7 +71,7 @@ public class GrpcProxyProtocolTest {
     @Test
     public void testProxyProtocolV1OverTcp() {
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .tls(t -> t.enabled(false))
             .bindAddress(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0))
             .addRouting(GrpcRouting.builder().unary(Proxy.getDescriptor(),
@@ -102,7 +103,7 @@ public class GrpcProxyProtocolTest {
     @Test
     public void testProxyProtocolV2OverTcp() throws IOException {
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .tls(t -> t.enabled(false))
             .bindAddress(new InetSocketAddress(Inet4Address.getLoopbackAddress(), 0))
             .addRouting(GrpcRouting.builder().unary(Proxy.getDescriptor(),
@@ -161,7 +162,7 @@ public class GrpcProxyProtocolTest {
         var bindAddress = UnixDomainSocketAddress.of(tempDir.resolve("uds.socket"));
 
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .tls(t -> t.enabled(false))
             .addBinding(disabledTcpBinding())
             .addBinding(udsBinding(bindAddress))
@@ -202,7 +203,7 @@ public class GrpcProxyProtocolTest {
         var bindAddress = UnixDomainSocketAddress.of(tempDir.resolve("uds.socket"));
 
         var server = WebServer.builder()
-            .enableProxyProtocol(true)
+            .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
             .tls(t -> t.enabled(false))
             .addBinding(disabledTcpBinding())
             .addBinding(udsBinding(bindAddress))

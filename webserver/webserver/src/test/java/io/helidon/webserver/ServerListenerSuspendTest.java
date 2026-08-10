@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 
+import io.helidon.common.configurable.AllowList;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -43,7 +45,7 @@ class ServerListenerSuspendTest {
     void failedProxyProtocolSetupReleasesConnectionLimit() throws Exception {
         WebServer server = WebServer.builder()
                 .port(0)
-                .enableProxyProtocol(true)
+                .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
                 .maxTcpConnections(1)
                 .routing(routing -> routing.get("/", (req, res) -> res.send("ok")))
                 .build()
@@ -94,7 +96,7 @@ class ServerListenerSuspendTest {
     void suspendStopsListenerWaitingOnConnectionLimitDuringCheckpoint() throws Exception {
         LoomServer server = (LoomServer) WebServer.builder()
                 .port(0)
-                .enableProxyProtocol(true)
+                .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
                 .maxConnections(1)
                 .build()
                 .start();
