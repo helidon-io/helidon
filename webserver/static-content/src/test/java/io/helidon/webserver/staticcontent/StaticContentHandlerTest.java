@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,6 +49,7 @@ import org.mockito.Mockito;
 import static io.helidon.http.HeaderNames.ETAG;
 import static io.helidon.http.HeaderNames.IF_MATCH;
 import static io.helidon.http.HeaderNames.IF_NONE_MATCH;
+import static io.helidon.http.HeaderNames.IF_RANGE;
 import static io.helidon.http.HeaderNames.LOCATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -150,6 +152,38 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void ifRangeRequiresStrongExactEntityTag() {
+        Instant modified = Instant.parse("2026-08-10T12:34:56Z");
+        String entityTag = String.valueOf(modified.toEpochMilli());
+
+        assertThat("Exact strong ETag should match",
+                   StaticContentHandler.ifRangeMatches(entityTag, mockIfRange('"' + entityTag + '"')),
+                   is(true));
+        assertThat("Weak ETag should not match",
+                   StaticContentHandler.ifRangeMatches(entityTag, mockIfRange("W/\"" + entityTag + '"')),
+                   is(false));
+        assertThat("Bare ETag value should not match",
+                   StaticContentHandler.ifRangeMatches(entityTag, mockIfRange(entityTag)),
+                   is(false));
+    }
+
+    @Test
+    void ifRangeRejectsDateValidators() {
+        Instant modified = Instant.parse("2026-08-10T12:34:56.789Z");
+        String entityTag = String.valueOf(modified.toEpochMilli());
+
+        assertThat("Date validators should not match",
+                   StaticContentHandler.ifRangeMatches(entityTag,
+                                                       mockIfRange(StaticContentHandler.formatLastModified(modified))),
+                   is(false));
+        assertThat("Different date should not match",
+                   StaticContentHandler.ifRangeMatches(entityTag,
+                                                       mockIfRange(StaticContentHandler.formatLastModified(
+                                                               modified.plusSeconds(1)))),
+                   is(false));
+    }
+
+    @Test
     void redirect() throws IOException {
         ServerResponseHeaders resh = mock(ServerResponseHeaders.class);
         ServerResponse res = mock(ServerResponse.class);
@@ -241,6 +275,13 @@ class StaticContentHandlerTest {
                                                  + "(Expected: " + status.code() + ", Actual: " + status.code() + ")");
             }
         }
+    }
+
+    private static ServerRequestHeaders mockIfRange(String ifRange) {
+        ServerRequestHeaders headers = mock(ServerRequestHeaders.class);
+        when(headers.contains(IF_RANGE)).thenReturn(true);
+        when(headers.get(IF_RANGE)).thenReturn(HeaderValues.create(IF_RANGE, ifRange));
+        return headers;
     }
 
     private ServerRequest mockRequestWithPath(Method method, String path) {

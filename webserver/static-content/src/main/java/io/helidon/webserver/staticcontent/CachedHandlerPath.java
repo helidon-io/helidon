@@ -114,7 +114,12 @@ record CachedHandlerPath(Path path,
                 throw new ForbiddenException("File is not accessible", e);
             }
             try (SeekableByteChannel openChannel = channel) {
-                FileBasedContentHandler.send(request, response, openChannel);
+                FileBasedContentHandler.send(request,
+                                             response,
+                                             openChannel,
+                                             lastModified == null
+                                                     ? null
+                                                     : String.valueOf(lastModified.toEpochMilli()));
             }
         } else {
             try {

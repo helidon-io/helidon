@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package io.helidon.webserver.staticcontent;
 
 import java.util.List;
 
+import io.helidon.http.BadRequestException;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -30,6 +33,8 @@ import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
 
 class ByteRangeRequestTest {
     @Test
@@ -78,6 +83,141 @@ class ByteRangeRequestTest {
     }
 
     @Test
+    void testWhitespaceAfterRangeUnit() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes= 0-0");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        List<ByteRangeRequest> requests = ByteRangeRequest.parse(req, res, header.values(), 50);
+        assertThat(requests, IsCollectionWithSize.hasSize(1));
+        ByteRangeRequest byteRange = requests.get(0);
+
+        assertThat(byteRange.fileLength(), is(50L));
+        assertThat(byteRange.offset(), is(0L));
+        assertThat(byteRange.length(), is(1L));
+    }
+
+    @Test
+    void testRangeIgnoredForEmptyRepresentation() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=-1");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        List<ByteRangeRequest> requests = ByteRangeRequest.parse(req, res, header.values(), 0);
+
+        assertThat(requests, IsCollectionWithSize.hasSize(0));
+    }
+
+    @Test
+    void testExplicitEndPastFileLength() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=0-9223372036854775807");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        List<ByteRangeRequest> requests = ByteRangeRequest.parse(req, res, header.values(), 1);
+        assertThat(requests, IsCollectionWithSize.hasSize(1));
+        ByteRangeRequest byteRange = requests.get(0);
+
+        assertThat(byteRange.fileLength(), is(1L));
+        assertThat(byteRange.offset(), is(0L));
+        assertThat(byteRange.length(), is(1L));
+    }
+
+    @Test
+    void testExplicitEndNumberTooLarge() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=0-9223372036854775808");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        List<ByteRangeRequest> requests = ByteRangeRequest.parse(req, res, header.values(), 50);
+        assertThat(requests, IsCollectionWithSize.hasSize(1));
+        ByteRangeRequest byteRange = requests.get(0);
+
+        assertThat(byteRange.fileLength(), is(50L));
+        assertThat(byteRange.offset(), is(0L));
+        assertThat(byteRange.length(), is(50L));
+    }
+
+    @Test
+    void testExplicitEndNumberTooLargeWithTrailingJunkRejected() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=1-9223372036854775808x");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        assertThrows(BadRequestException.class, () -> ByteRangeRequest.parse(req, res, header.values(), 50));
+    }
+
+    @Test
+    void testEmptyRangeListElementsIgnored() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=,0-0,");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        List<ByteRangeRequest> requests = ByteRangeRequest.parse(req, res, header.values(), 50);
+        assertThat(requests, IsCollectionWithSize.hasSize(1));
+        ByteRangeRequest byteRange = requests.get(0);
+
+        assertThat(byteRange.fileLength(), is(50L));
+        assertThat(byteRange.offset(), is(0L));
+        assertThat(byteRange.length(), is(1L));
+    }
+
+    @Test
+    void testInvalidRangeMemberRejectsHeader() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=0-0,5-4");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        assertThrows(BadRequestException.class, () -> ByteRangeRequest.parse(req, res, header.values(), 50));
+    }
+
+    @Test
+    void testLaterUnsatisfiableRangeDoesNotDiscardSatisfiableRange() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=0-0,9223372036854775808-");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        List<ByteRangeRequest> requests = ByteRangeRequest.parse(req, res, header.values(), 50);
+        assertThat(requests, IsCollectionWithSize.hasSize(1));
+        ByteRangeRequest byteRange = requests.get(0);
+
+        assertThat(byteRange.fileLength(), is(50L));
+        assertThat(byteRange.offset(), is(0L));
+        assertThat(byteRange.length(), is(1L));
+    }
+
+    @Test
+    void testFirstPositionNumberTooLarge() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=9223372036854775808-");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        HttpException exception = assertThrows(HttpException.class,
+                                               () -> ByteRangeRequest.parse(req, res, header.values(), 50));
+        assertThat(exception.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+        verify(res).header(HeaderNames.CONTENT_RANGE, "bytes */50");
+    }
+
+    @Test
+    void testUnsupportedRangeUnitIgnored() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "items=0-0");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        List<ByteRangeRequest> requests = ByteRangeRequest.parse(req, res, header.values(), 50);
+        assertThat(requests, IsCollectionWithSize.hasSize(0));
+    }
+
+    @Test
+    void testMalformedDigitOnlyRangeRejectedWithoutBacktracking() {
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=" + "9".repeat(12_000));
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        assertThrows(BadRequestException.class, () -> ByteRangeRequest.parse(req, res, header.values(), 50));
+    }
+
+    @Test
     void testMultiRangeMultiValue() {
         Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=-1", "bytes=47-48", "bytes=0-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
@@ -104,7 +244,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testMultiRangeSingleValue() {
-        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=-1, bytes=47-48, s bytes=0-");
+        Header header = HeaderValues.create(HeaderNames.RANGE, "bytes=-1, 47-48, 0-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 

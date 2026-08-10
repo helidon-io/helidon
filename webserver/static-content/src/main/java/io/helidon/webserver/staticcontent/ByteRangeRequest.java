@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package io.helidon.webserver.staticcontent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderNames;
@@ -30,40 +28,92 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 record ByteRangeRequest(long fileLength, long offset, long length) {
-    private static final Pattern RANGE_PATTERN = Pattern.compile("(\\d+)?-(\\d+)?(?:, )?");
+    private static final String BYTES_UNIT = "bytes=";
 
     static List<ByteRangeRequest> parse(ServerRequest req, ServerResponse res, String headerValues, long fileLength) {
-        Matcher matcher = RANGE_PATTERN.matcher(headerValues);
+        if (!startsWithBytesUnit(headerValues)) {
+            return List.of();
+        }
+        if (fileLength == 0) {
+            return List.of();
+        }
 
         List<ByteRangeRequest> parts = new ArrayList<>();
-        boolean found = false;
-        while (matcher.find()) {
-            found = true;
+        boolean sawRange = false;
+        int start = 0;
+        while (start < headerValues.length()) {
+            int comma = headerValues.indexOf(',', start);
+            String part = headerValues.substring(start, comma == -1 ? headerValues.length() : comma).trim();
+            if (startsWithBytesUnit(part)) {
+                part = part.substring(BYTES_UNIT.length()).trim();
+            }
+            if (part.isEmpty()) {
+                if (comma == -1) {
+                    if (sawRange) {
+                        break;
+                    }
+                    throw new BadRequestException("Invalid range header");
+                }
+                start = comma + 1;
+                continue;
+            }
+            sawRange = true;
+
+            int dash = part.indexOf('-');
+            if (dash == -1 || dash != part.lastIndexOf('-')) {
+                throw new BadRequestException("Invalid range header");
+            }
+
+            String firstGroup = part.substring(0, dash);
+            String secondGroup = part.substring(dash + 1);
+            if (firstGroup.isEmpty() && secondGroup.isEmpty()) {
+                throw new BadRequestException("Invalid range header");
+            }
+
             //"bytes=0-1023" - 0 to 1023 (included both)
             // 500- (= 500 until end)
             // -500 (= last 500)
             // 0-0,-1 (first and last)
-            // a-b, b-c (multipart)
-            String firstGroup = matcher.group(1);
-            String secondGroup = matcher.group(2);
             long from = 0;
             long last = fileLength - 1;
-            if (firstGroup != null) {
-                from = Long.parseLong(firstGroup);
+            if (!firstGroup.isEmpty()) {
+                from = parseLong(firstGroup);
             }
-            if (secondGroup != null) {
-                long second = Long.parseLong(secondGroup);
-                if (firstGroup == null) {
-                    from = fileLength - second;
-                    last = fileLength - 1;
+            if (!secondGroup.isEmpty()) {
+                long second = parseLong(secondGroup);
+                if (firstGroup.isEmpty()) {
+                    if (second == 0 || fileLength == 0) {
+                        if (comma == -1) {
+                            break;
+                        }
+                        start = comma + 1;
+                        continue;
+                    }
+                    from = Math.max(fileLength - second, 0);
                 } else {
                     last = second;
                 }
             }
-            parts.add(ByteRangeRequest.create(req, res, from, last, fileLength));
+
+            if (!firstGroup.isEmpty() && !secondGroup.isEmpty() && last < from) {
+                throw new BadRequestException("Invalid range header");
+            }
+
+            last = Math.min(last, fileLength - 1);
+            if (from < fileLength && last >= from) {
+                long length = (last - from) + 1;
+                parts.add(new ByteRangeRequest(fileLength, from, length));
+            }
+
+            if (comma == -1) {
+                break;
+            }
+            start = comma + 1;
         }
-        if (!found) {
-            throw new BadRequestException("Invalid range header");
+
+        if (parts.isEmpty()) {
+            res.header(HeaderNames.CONTENT_RANGE, "bytes */" + fileLength);
+            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
         }
 
         return parts;
@@ -81,14 +131,26 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
         response.status(Status.PARTIAL_CONTENT_206);
     }
 
-    private static ByteRangeRequest create(ServerRequest req, ServerResponse res, long offset, long last, long fileLength) {
-        if (offset >= fileLength || last < offset) {
-            res.header(HeaderNames.CONTENT_RANGE, "*/" + fileLength);
-            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+    private static long parseLong(String value) {
+        long result = 0;
+        boolean overflow = false;
+        for (int i = 0; i < value.length(); i++) {
+            int digit = value.charAt(i) - '0';
+            if (digit < 0 || digit > 9) {
+                throw new BadRequestException("Invalid range header");
+            }
+            if (!overflow) {
+                if (result > (Long.MAX_VALUE - digit) / 10) {
+                    overflow = true;
+                } else {
+                    result = (result * 10) + digit;
+                }
+            }
         }
+        return overflow ? Long.MAX_VALUE : result;
+    }
 
-        long length = (last - offset) + 1;
-
-        return new ByteRangeRequest(fileLength, offset, length);
+    private static boolean startsWithBytesUnit(String value) {
+        return value.regionMatches(true, 0, BYTES_UNIT, 0, BYTES_UNIT.length());
     }
 }

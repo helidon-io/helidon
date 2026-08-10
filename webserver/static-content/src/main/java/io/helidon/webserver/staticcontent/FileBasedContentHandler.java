@@ -81,10 +81,13 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         }
     }
 
-    static void send(ServerRequest request, ServerResponse response, SeekableByteChannel channel) throws IOException {
+    static void send(ServerRequest request,
+                     ServerResponse response,
+                     SeekableByteChannel channel,
+                     String etag) throws IOException {
         ServerRequestHeaders headers = request.headers();
         long contentLength = channel.size();
-        if (headers.contains(HeaderNames.RANGE)) {
+        if (headers.contains(HeaderNames.RANGE) && StaticContentHandler.ifRangeMatches(etag, headers)) {
             List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
                                                                    response,
                                                                    headers.get(HeaderNames.RANGE).values(),
