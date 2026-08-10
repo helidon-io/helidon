@@ -65,12 +65,14 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_CONSUMES_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_FORM_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PRODUCES_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_QUERY_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_REQUEST_PARAMS_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_SUPPORT;
@@ -293,13 +295,6 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         produces(annotations, builder);
         headers(annotations, builder, REST_SERVER_HEADERS, REST_SERVER_HEADER);
         computedHeaders(annotations, builder, REST_SERVER_COMPUTED_HEADERS, REST_SERVER_COMPUTED_HEADER);
-
-        if (builder.consumes().isEmpty()) {
-            builder.consumes(endpointBuilder.consumes());
-        }
-        if (builder.produces().isEmpty()) {
-            builder.produces(endpointBuilder.produces());
-        }
         builder.addHeaders(endpointBuilder.headers());
         builder.addComputedHeaders(endpointBuilder.computedHeaders());
 
@@ -316,6 +311,16 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         for (TypedElementInfo parameterInfo : method.parameterArguments()) {
             processEndpointParameter(endpoint, method, parameterInfo, builder, index);
             index++;
+        }
+
+        if (Annotations.findFirst(HTTP_CONSUMES_ANNOTATION, annotations).isEmpty()) {
+            BodyParameters bodyParameters = bodyParameters(builder.build());
+            if (bodyParameters.entityCount() > 0 || bodyParameters.formCount() > 0) {
+                builder.consumes(endpointBuilder.consumes());
+            }
+        }
+        if (Annotations.findFirst(HTTP_PRODUCES_ANNOTATION, annotations).isEmpty()) {
+            builder.produces(endpointBuilder.produces());
         }
 
         endpointBuilder.addMethod(builder.build());

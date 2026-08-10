@@ -126,8 +126,8 @@ Annotations on type:
 - `@RestServer.Header` - a header to be sent with every response from the server, defined either on the endpoint class, or on a
   method (repeatable)
 - `@RestServer.ComputedHeader` - a header to be sent with every response computed from a service
-- `@Http.Produces` - default media types produced by endpoint methods, individually overridable on a method
-- `@Http.Consumes` - default media types consumed by endpoint methods, individually overridable on a method
+- `@Http.Produces` - default media types produced by endpoint methods, individually replaceable on a method
+- `@Http.Consumes` - default media types consumed by endpoint methods with request entities, individually replaceable on a method
 - `@Http.Path` - the path this endpoint will be available on
 
 Annotations on method(s), may be defined on the endpoint type, or on an interface the endpoint type implements:
@@ -136,9 +136,9 @@ Annotations on method(s), may be defined on the endpoint type, or on an interfac
 - `@Http.GET`, `@Http.POST` etc., or `@Http.Method("LIST")` - mutually exclusive, to define the HTTP method that the endpoint
   method will be available on
 - `@Http.Produces` - the media type produced by this method (returned in the `Content-Type` header), also used when matching the
-  `Accept` header of the request; overrides the endpoint type default
+  `Accept` header of the request; replaces the endpoint type default (an empty array clears it)
 - `@Http.Consumes` - the media type expected by this method, when the request has an entity, matched against `Content-Type` of
-  the request; overrides the endpoint type default
+  the request; replaces the endpoint type default (an empty array clears it)
 - `@Http.Path` - the path this method will be available on, nested within the endpoint path, may contain path parameters (same as
   we can do when setting up routing)
 
@@ -172,8 +172,9 @@ A `__HttpFeature` class is code generated for each `@RestServer.Endpoint`.
 This type creates entry point interceptors for each method.
 The feature is a "usual" `HttpFeature` picked up by WebServer starter service.
 In case a `Http.Produces` or `Http.Consumes` is defined on an endpoint type or method, the route tests the
-Content-Type/Accept headers respectively, and only invokes the method if both match. Method annotations override endpoint type
-defaults.
+Accept/Content-Type headers respectively, and only invokes the method if both match. Method annotations replace endpoint type
+defaults; an empty method annotation clears the corresponding default. Type-level `Http.Consumes` applies only to endpoint
+methods with request entities.
 
 For each qualified parameter, the parameter is obtained from the request using generated code that uses constants wherever
 possible (for header names, header values, media types etc.).
@@ -194,8 +195,8 @@ Annotations on type:
 - `@RestClient.Endpoint` - required annotation to generate a typed rest client
 - `@RestClient.Header` - a header to be sent with every request (repeatable)
 - `@RestClient.ComputedHeader` - a header to be sent with every request computed from a service
-- `@Http.Produces` - default media types produced by the server, individually overridable on a method
-- `@Http.Consumes` - default media types consumed by the server, individually overridable on a method
+- `@Http.Produces` - default media types produced by the server, individually replaceable on a method
+- `@Http.Consumes` - default media types consumed by the server for methods with request entities, individually replaceable on a method
 - `@Http.Path` - base path of every request from this client
 
 Annotations on the interface method(s):
@@ -205,8 +206,8 @@ Annotations on the interface method(s):
 - `@RestClient.ComputedHeader` - a header to be sent with every request computed from a
 - `@Http.GET`, `@Http.POST` etc., or `@Http.Method("LIST")` - mutually exclusive, to define the HTTP method that the client will
   invoke
-- `@Http.Produces` - the media type produced by the server (client response); overrides the client type default
-- `@Http.Consumes` - the media type expected by the server (client request); overrides the client type default
+- `@Http.Produces` - the media type produced by the server (client response); replaces the client type default (an empty array clears it)
+- `@Http.Consumes` - the media type expected by the server (client request); replaces the client type default (an empty array clears it)
 
 Parameters defined by qualifiers (may be an `Optional`, supports `Mappers`):
 

@@ -346,7 +346,7 @@ public final class Http {
      * exactly one type, that type will be set by Helidon on response.
      * <p>
      * When declared on an endpoint type, the media types are used as defaults for every endpoint method. An annotation
-     * declared on a method overrides the endpoint type defaults for that method.
+     * declared on a method replaces the endpoint type defaults for that method; an empty method annotation clears them.
      * <p>
      * When used by Helidon declarative server code on an endpoint method that accepts the server response, generated
      * routing code configures the content type before invoking the method, so it is available to output-stream response
@@ -368,8 +368,9 @@ public final class Http {
     /**
      * What media type(s) an endpoint or method can consume.
      * <p>
-     * When declared on an endpoint type, the media types are used as defaults for every endpoint method. An annotation
-     * declared on a method overrides the endpoint type defaults for that method.
+     * When declared on an endpoint type, the media types are used as defaults for endpoint methods that accept a request
+     * entity. An annotation declared on a method replaces the endpoint type defaults for that method; an empty method
+     * annotation clears them.
      */
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.TYPE, ElementType.METHOD})

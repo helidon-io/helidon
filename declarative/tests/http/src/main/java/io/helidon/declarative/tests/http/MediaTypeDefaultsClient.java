@@ -35,4 +35,14 @@ interface MediaTypeDefaultsClient {
     @Http.Consumes(MediaTypes.TEXT_PLAIN_VALUE)
     @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
     String override(@Http.Entity String entity);
+
+    @Http.GET
+    @Http.Path("/no-entity")
+    JsonObject noEntity();
+
+    @Http.POST
+    @Http.Path("/clear")
+    @Http.Consumes({})
+    @Http.Produces({})
+    String clear(@Http.Entity String entity);
 }

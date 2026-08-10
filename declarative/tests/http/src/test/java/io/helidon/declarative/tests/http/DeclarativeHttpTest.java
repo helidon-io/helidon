@@ -689,6 +689,27 @@ class DeclarativeHttpTest {
         assertThat(overrideResponse.headers().contentType().orElseThrow().mediaType(), is(MediaTypes.TEXT_PLAIN));
         assertThat(overrideResponse.entity(), is("override"));
 
+        try (var inheritedMediaResponse = client.post("/media-type-defaults/override")
+                .accept(MediaTypes.APPLICATION_JSON)
+                .contentType(MediaTypes.APPLICATION_JSON)
+                .submit(expected)) {
+            assertThat(inheritedMediaResponse.status(), is(Status.NOT_FOUND_404));
+        }
+
+        var noEntityResponse = client.get("/media-type-defaults/no-entity")
+                .accept(MediaTypes.APPLICATION_JSON)
+                .request(JsonObject.class);
+        assertThat(noEntityResponse.status(), is(Status.OK_200));
+        assertThat(noEntityResponse.entity().booleanValue("contentTypePresent").orElseThrow(), is(false));
+
+        var clearResponse = client.post("/media-type-defaults/clear")
+                .accept(MediaTypes.TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
+                .submit("clear", String.class);
+        assertThat(clearResponse.status(), is(Status.OK_200));
+        assertThat(clearResponse.headers().contentType().orElseThrow().mediaType(), is(MediaTypes.TEXT_PLAIN));
+        assertThat(clearResponse.entity(), is("clear|true|false"));
+
         MediaTypeDefaultsClient typedClient = registry.get(Lookup.builder()
                                                                    .addContract(MediaTypeDefaultsClient.class)
                                                                    .addQualifier(Qualifier.create(RestClient.Client.class))
@@ -696,6 +717,9 @@ class DeclarativeHttpTest {
 
         assertThat(typedClient.defaults(expected), is(expected));
         assertThat(typedClient.override("override"), is("override"));
+        assertThat(typedClient.noEntity().booleanValue("contentTypePresent").orElseThrow(), is(false));
+
+        assertThat(typedClient.clear("clear"), is("clear|true|false"));
     }
 
     @Test
