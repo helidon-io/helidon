@@ -88,6 +88,7 @@ class DataWriterSseSink implements SseSink {
             this.outputStream = entityOutputStream.orElseThrow();
             this.closeServerSocket = false;
             this.closeOutputStreamBeforeCommit = true;
+            context.flushHeaders();
         } else {
             // check for content encoding
             ContentEncoder encoder = null;

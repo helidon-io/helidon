@@ -40,6 +40,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -150,6 +151,40 @@ class DataWriterSseSinkTest {
         }
 
         assertThat("SSE headers when requesting the protocol stream", headersPrepared.get(), is(true));
+    }
+
+    @Test
+    void shouldFlushProtocolHeadersBeforeFirstEvent() {
+        AtomicBoolean entityStreamCreated = new AtomicBoolean();
+        AtomicBoolean headersFlushedAfterStreamCreation = new AtomicBoolean();
+        ByteArrayOutputStream entityOutputStream = new ByteArrayOutputStream();
+        SinkProviderContext context = mock(SinkProviderContext.class);
+        ServerResponse response = mock(ServerResponse.class);
+        ConnectionContext connectionContext = mock(ConnectionContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+
+        when(context.serverResponse()).thenReturn(response);
+        when(context.connectionContext()).thenReturn(connectionContext);
+        when(context.entityOutputStream(any())).thenAnswer(invocation -> {
+            invocation.<Runnable>getArgument(0).run();
+            entityStreamCreated.set(true);
+            return Optional.of(entityOutputStream);
+        });
+        doAnswer(_ -> {
+            headersFlushedAfterStreamCreation.set(entityStreamCreated.get());
+            return null;
+        }).when(context).flushHeaders();
+        when(context.closeRunnable()).thenReturn(() -> { });
+        when(response.status()).thenReturn(Status.OK_200);
+        when(response.headers()).thenReturn(ServerResponseHeaders.create());
+        when(connectionContext.listenerContext()).thenReturn(listenerContext);
+
+        try (DataWriterSseSink _ = new DataWriterSseSink(context)) {
+            assertThat("protocol headers flushed after entity stream creation",
+                       headersFlushedAfterStreamCreation.get(),
+                       is(true));
+            assertThat("entity bytes before first event", entityOutputStream.size(), is(0));
+        }
     }
 
     @Test

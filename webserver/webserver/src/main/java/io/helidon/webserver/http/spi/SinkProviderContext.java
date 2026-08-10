@@ -78,6 +78,16 @@ public interface SinkProviderContext {
     }
 
     /**
+     * Flushes final response headers while keeping the entity output stream open.
+     * <p>
+     * Protocols returning a stream from
+     * {@link io.helidon.webserver.http.spi.SinkProviderContext#entityOutputStream(Runnable)} must override this method so
+     * headers can be sent before the first entity byte.
+     */
+    default void flushHeaders() {
+    }
+
+    /**
      * Runnable to execute to close the response.
      *
      * @return the close runnable
