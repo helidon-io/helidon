@@ -79,7 +79,7 @@ class SseBaseTest {
 
     static void sseDelayed(ServerRequest req, ServerResponse res) throws InterruptedException {
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
-            delayedLatch.await(10, TimeUnit.SECONDS);
+            delayedLatch.await();
             sseSink.emit(SseEvent.create("delayed"));
         }
     }
