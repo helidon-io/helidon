@@ -206,7 +206,7 @@ class DataWriterSseSink implements SseSink {
         }
         headers.set(CACHE_NO_CACHE_ONLY);
         if (addDateHeader && !headers.contains(HeaderNames.DATE)) {
-            headers.set(create(HeaderNames.DATE, DateTime.rfc1123String()));
+            headers.set(create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
         }
         return headers;
     }

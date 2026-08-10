@@ -151,6 +151,7 @@ class DataWriterSseSinkTest {
         }
 
         assertThat("SSE headers when requesting the protocol stream", headersPrepared.get(), is(true));
+        assertThat("SSE Date header is changing", responseHeaders.get(HeaderNames.DATE).changing(), is(true));
     }
 
     @Test
