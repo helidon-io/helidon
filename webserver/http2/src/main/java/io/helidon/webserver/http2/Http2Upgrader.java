@@ -20,13 +20,14 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
@@ -56,7 +57,7 @@ public class Http2Upgrader implements Http1Upgrader {
     private final Http2Config config;
     private final List<Http2SubProtocolSelector> subProtocolProviders;
     private final Optional<AltSvcConfig> altSvcConfig;
-    private final ConcurrentMap<ListenerContext, AltSvc> altSvcByListener = new ConcurrentHashMap<>();
+    private final Map<ListenerContext, Header> altSvcByListener;
 
     /**
      * Creates an instance of HTTP/1.1 to HTTP/2 protocol upgrade.
@@ -67,6 +68,7 @@ public class Http2Upgrader implements Http1Upgrader {
         this.altSvcConfig = config.altSvc()
                 .filter(it -> it.prototype().enabled())
                 .map(AltSvc::prototype);
+        this.altSvcByListener = altSvcConfig.isPresent() ? new ConcurrentHashMap<>() : Map.of();
     }
 
     /**
@@ -88,10 +90,20 @@ public class Http2Upgrader implements Http1Upgrader {
     public ServerConnection upgrade(ConnectionContext ctx,
                                     HttpPrologue prologue,
                                     WritableHeaders<?> headers) {
-        Optional<AltSvc> altSvc = altSvcConfig.map(config -> altSvcByListener.computeIfAbsent(
-                ctx.listenerContext(),
-                listener -> AltSvc.create(config)));
-        Http2Connection connection = new Http2Connection(ctx, config, subProtocolProviders, altSvc);
+        Http2Connection connection;
+        if (altSvcConfig.isEmpty()) {
+            connection = new Http2Connection(ctx, config, subProtocolProviders);
+        } else {
+            AltSvcConfig altSvcPrototype = altSvcConfig.get();
+            int listenerPort = ctx.localPeer().port();
+            if (altSvcPrototype.port().isEmpty() && (listenerPort < 1 || listenerPort > 65_535)) {
+                connection = new Http2Connection(ctx, config, subProtocolProviders);
+            } else {
+                Header header = altSvcByListener.computeIfAbsent(ctx.listenerContext(),
+                                                                 _ -> AltSvc.create(altSvcPrototype).header(listenerPort));
+                connection = new Http2Connection(ctx, config, subProtocolProviders, header);
+            }
+        }
         if (headers.contains(HTTP2_SETTINGS_HEADER_NAME)) {
             connection.clientSettings(token68ToHttp2Settings(headers.get(HTTP2_SETTINGS_HEADER_NAME).valueBytes()));
         } else {

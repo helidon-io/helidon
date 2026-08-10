@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
@@ -135,7 +134,7 @@ class UpgradeSettingsTest {
 
     @Test
     void invalidMaxFrameSizeDoesNotReplaceLastValidSettings() {
-        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
 
         Http2Settings validSettings = Http2Settings.builder()
                 .add(MAX_FRAME_SIZE, 16384L)
@@ -155,7 +154,7 @@ class UpgradeSettingsTest {
 
     @Test
     void oversizedInitialWindowSizeDoesNotReplaceLastValidSettings() {
-        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
 
         Http2Settings validSettings = Http2Settings.builder()
                 .add(INITIAL_WINDOW_SIZE, 65_535L)
@@ -224,8 +223,7 @@ class UpgradeSettingsTest {
 
         Http2Connection connection = new Http2Connection(connectionContext,
                                                          Http2Config.builder().sendErrorDetails(true).build(),
-                                                         List.of(),
-                                                         Optional.empty());
+                                                         List.of());
         connection.expectPreface();
         connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
 
@@ -266,8 +264,7 @@ class UpgradeSettingsTest {
 
         Http2Connection connection = new Http2Connection(connectionContext,
                                                          Http2Config.builder().sendErrorDetails(true).build(),
-                                                         List.of(),
-                                                         Optional.empty());
+                                                         List.of());
         connection.expectPreface();
         connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
 

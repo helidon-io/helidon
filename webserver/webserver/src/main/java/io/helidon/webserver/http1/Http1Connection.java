@@ -43,6 +43,7 @@ import io.helidon.http.BadRequestException;
 import io.helidon.http.DateTime;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HtmlEncoder;
@@ -61,7 +62,6 @@ import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.SniRequestSupport;
-import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
@@ -102,7 +102,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private final long maxPayloadSize;
     private final Http1ConnectionListener recvListener;
     private final Http1ConnectionListener sendListener;
-    private final Optional<AltSvc> altSvc;
+    private final Header altSvcHeader;
 
     // overall connection
     private int requestId;
@@ -121,12 +121,25 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
      * @param ctx                connection context
      * @param http1Config        connection provider configuration
      * @param upgradeProviderMap map of upgrade providers (protocol id to provider)
-     * @param altSvc             alternative service runtime owned by the connection selector
+     */
+    Http1Connection(ConnectionContext ctx,
+                    Http1Config http1Config,
+                    Map<String, Http1Upgrader> upgradeProviderMap) {
+        this(ctx, http1Config, upgradeProviderMap, null);
+    }
+
+    /**
+     * Create a new connection with an alternative service advertisement.
+     *
+     * @param ctx                connection context
+     * @param http1Config        connection provider configuration
+     * @param upgradeProviderMap map of upgrade providers (protocol id to provider)
+     * @param altSvcHeader       alternative service header
      */
     Http1Connection(ConnectionContext ctx,
                     Http1Config http1Config,
                     Map<String, Http1Upgrader> upgradeProviderMap,
-                    Optional<AltSvc> altSvc) {
+                    Header altSvcHeader) {
         this.ctx = ctx;
         this.writer = ctx.dataWriter();
         this.reader = ctx.dataReader();
@@ -141,7 +154,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
-        this.altSvc = Objects.requireNonNull(altSvc, "altSvc");
+        this.altSvcHeader = altSvcHeader;
         this.lastRequestTimestamp = DateTime.timestamp();
     }
 
@@ -703,13 +716,21 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private Http1ServerResponse createResponse(Http1ServerRequest request, boolean keepAlive) {
+        if (altSvcHeader != null) {
+            return new Http1AltSvcServerResponse(ctx,
+                                                 sendListener,
+                                                 writer,
+                                                 request,
+                                                 keepAlive,
+                                                 http1Config.validateResponseHeaders(),
+                                                 altSvcHeader);
+        }
         return new Http1ServerResponse(ctx,
                                        sendListener,
                                        writer,
                                        request,
                                        keepAlive,
-                                       http1Config.validateResponseHeaders(),
-                                       altSvc);
+                                       http1Config.validateResponseHeaders());
     }
 
     private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response, CountDownLatch entityReadLatch) {

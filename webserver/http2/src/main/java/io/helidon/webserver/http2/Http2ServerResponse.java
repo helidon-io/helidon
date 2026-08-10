@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -38,12 +37,10 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
-import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.http.ServerResponseBase;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
-    private static final Runnable NO_OP = () -> { };
 
     private final ConnectionContext ctx;
     private final ServerResponseHeaders headers;
@@ -51,7 +48,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private final Http2ServerRequest request;
     private final Http2ServerStream stream;
     private final boolean validateResponseHeaders;
-    private final Optional<AltSvc> configuredAltSvc;
 
     private boolean isSent;
     private boolean streamingEntity;
@@ -62,8 +58,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     Http2ServerResponse(Http2ServerStream stream,
                         Http2ServerRequest request,
-                        boolean validateResponseHeaders,
-                        Optional<AltSvc> configuredAltSvc) {
+                        boolean validateResponseHeaders) {
         super(stream.connectionContext(), request);
         this.ctx = stream.connectionContext();
         this.request = request;
@@ -71,7 +66,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         this.validateResponseHeaders = validateResponseHeaders;
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
-        this.configuredAltSvc = configuredAltSvc;
     }
 
     @Override
@@ -120,7 +114,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 throw new IllegalStateException("When output stream is used, response is completed by closing the output stream"
                                                         + ", do not call send().");
             }
-            isSent = true;
 
             // handle content encoding
             int actualLength = length;
@@ -131,7 +124,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 actualLength = actualBytes.length;
             }
 
-            configureAltSvc();
             headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
                                                     true,
                                                     false,
@@ -139,6 +131,10 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true,
                                                     false,
                                                     DateTime.rfc1123String()));
+
+            beforeSend();
+            isSent = true;
+
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status());
             headers.remove(Http2Headers.STATUS_NAME, it -> ctx.log(LOGGER,
@@ -150,8 +146,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             // trailers set later on
             // even when client sends "te: trailers", we do not send trailers unless we have them
             boolean sendTrailers = sendTrailers(headers);
-
-            beforeSend();
 
             validateResponse(http2Headers);
             bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
@@ -187,18 +181,18 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         if (streamingEntity) {
             throw new IllegalStateException("OutputStream already obtained");
         }
-        streamingEntity = true;
 
         if (request.headers().containsToken(HeaderValues.TE_TRAILERS)) {
             headers.add(STREAM_TRAILERS);
         }
 
         beforeSend();
+        streamingEntity = true;
 
         outputStream = new BlockingOutputStream(request, this, () -> {
             this.isSent = true;
             afterSend();
-        }, beforeTrailers(), configuredAltSvc.isEmpty() ? NO_OP : this::configureAltSvc);
+        }, beforeTrailers());
         if (outputStreamFilter == null) {
             return contentEncode(outputStream);
         } else {
@@ -281,25 +275,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
     }
 
-    private void configureAltSvc() {
-        if (configuredAltSvc.isEmpty() || headers.contains(HeaderNames.ALT_SVC)) {
-            return;
-        }
-
-        switch (status().family()) {
-        case SUCCESSFUL:
-        case REDIRECTION:
-            AltSvc altSvc = configuredAltSvc.get();
-            int listenerPort = ctx.localPeer().port();
-            if (altSvc.prototype().port().isPresent() || listenerPort > 0 && listenerPort <= 65_535) {
-                headers.setIfAbsent(altSvc.header(listenerPort));
-            }
-            break;
-        default:
-            break;
-        }
-    }
-
     private static boolean sendTrailers(ServerResponseHeaders headers) {
         return headers.contains(HeaderNames.TRAILER);
     }
@@ -326,7 +301,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private final Runnable responseCloseRunnable;
         private final Http2ServerResponse response;
         private final Http2ServerStream stream;
-        private final Runnable beforeHeaders;
 
         private BufferData firstBuffer;
         private boolean closed;
@@ -337,8 +311,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private BlockingOutputStream(Http2ServerRequest request,
                                      Http2ServerResponse response,
                                      Runnable responseCloseRunnable,
-                                     Consumer<ServerResponseTrailers> beforeTrailers,
-                                     Runnable beforeHeaders) {
+                                     Consumer<ServerResponseTrailers> beforeTrailers) {
             this.request = request;
             this.response = response;
             this.headers = response.headers;
@@ -347,7 +320,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             this.status = response.status();
             this.responseCloseRunnable = responseCloseRunnable;
             this.beforeTrailers = beforeTrailers;
-            this.beforeHeaders = beforeHeaders;
         }
 
         @Override
@@ -437,7 +409,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                 String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
-            beforeHeaders.run();
             headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
@@ -453,7 +424,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void sendHeadersAndPrepare() {
-            beforeHeaders.run();
             headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);

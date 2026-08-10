@@ -20,7 +20,6 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 import javax.net.ssl.SSLException;
 
@@ -117,7 +116,6 @@ class Http1ServerResponseTest {
                                        dataWriter,
                                        request,
                                        true,
-                                       true,
-                                       Optional.empty());
+                                       true);
     }
 }

@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
@@ -39,6 +37,7 @@ import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.DateTime;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -73,7 +72,6 @@ import io.helidon.http.http2.WindowSize;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
-import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
@@ -129,7 +127,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final int maxEmptyFrames;
     private final long maxClientConcurrentStreams;
     private final Http2ConnectionChecks connectionChecks;
-    private final Optional<AltSvc> altSvc;
+    private final Header altSvcHeader;
     private int emptyFrames = 0;
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
@@ -149,13 +147,17 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private volatile boolean canRun = true;
     private volatile boolean closing;
 
+    Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
+        this(ctx, http2Config, subProviders, null);
+    }
+
     Http2Connection(ConnectionContext ctx,
                     Http2Config http2Config,
                     List<Http2SubProtocolSelector> subProviders,
-                    Optional<AltSvc> altSvc) {
+                    Header altSvcHeader) {
         this.ctx = ctx;
         this.http2Config = http2Config;
-        this.altSvc = Objects.requireNonNull(altSvc, "altSvc");
+        this.altSvcHeader = altSvcHeader;
         this.maxEmptyFrames = http2Config.maxEmptyFrames();
         this.serverSettings = Http2Settings.builder()
                 .update(builder -> settingsUpdate(http2Config, builder))
@@ -1137,7 +1139,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                                     locallyResetStreams,
                                                                     routing,
                                                                     http2Config,
-                                                                    altSvc,
                                                                     subProviders,
                                                                     streamId,
                                                                     serverSettings,
@@ -1145,7 +1146,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                                     connectionWriter,
                                                                     flowControl,
                                                                     inboundDataBudget,
-                                                                    connectionChecks));
+                                                                    connectionChecks,
+                                                                    altSvcHeader));
             streams.put(streamContext);
             streams.doMaintenance();
             // any request for a specific stream is now considered a valid update of connection (ignoring management messages

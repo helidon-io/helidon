@@ -41,6 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class SseServerTest extends SseBaseTest {
+    private static final String CUSTOM_ALT_SVC = "h2=\":443\"";
 
     SseServerTest(WebServer webServer) {
         super(webServer);
@@ -49,6 +50,10 @@ class SseServerTest extends SseBaseTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseServerTest::sseString1);
+        rules.get("/sseCustomAltSvc", (req, res) -> {
+            res.beforeSend(() -> res.header(HeaderNames.ALT_SVC, CUSTOM_ALT_SVC));
+            sseString1(req, res);
+        });
         rules.get("/sseString2", SseServerTest::sseString2);
         rules.get("/sseDelayed", SseServerTest::sseDelayed);
         rules.get("/sseFlush", SseServerTest::sseFlush);
@@ -109,6 +114,19 @@ class SseServerTest extends SseBaseTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null),
                        is("h3=\":" + webServer().port() + "\""));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testSsePreservesBeforeSendAltSvc() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer().port())
+                .build();
+        try (Http1ClientResponse response = client.get("/sseCustomAltSvc").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(CUSTOM_ALT_SVC));
         } finally {
             client.closeResource();
         }

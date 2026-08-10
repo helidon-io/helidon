@@ -18,12 +18,13 @@ package io.helidon.webserver.http2;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Header;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.http.AltSvc;
@@ -43,7 +44,7 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
     private final Http2Config http2Config;
     private final List<Http2SubProtocolSelector> subProviders;
     private final Optional<AltSvcConfig> altSvcConfig;
-    private final ConcurrentMap<ListenerContext, AltSvc> altSvcByListener = new ConcurrentHashMap<>();
+    private final Map<ListenerContext, Header> altSvcByListener;
 
     // Creates an instance of HTTP/2 server connection selector.
     Http2ConnectionSelector(Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
@@ -52,6 +53,7 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
         this.altSvcConfig = http2Config.altSvc()
                 .filter(it -> it.prototype().enabled())
                 .map(AltSvc::prototype);
+        this.altSvcByListener = altSvcConfig.isPresent() ? new ConcurrentHashMap<>() : Map.of();
     }
 
     /**
@@ -89,10 +91,20 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
 
     @Override
     public ServerConnection connection(ConnectionContext ctx) {
-        Optional<AltSvc> altSvc = altSvcConfig.map(config -> altSvcByListener.computeIfAbsent(
-                ctx.listenerContext(),
-                listener -> AltSvc.create(config)));
-        Http2Connection result = new Http2Connection(ctx, http2Config, subProviders, altSvc);
+        Http2Connection result;
+        if (altSvcConfig.isEmpty()) {
+            result = new Http2Connection(ctx, http2Config, subProviders);
+        } else {
+            AltSvcConfig altSvcPrototype = altSvcConfig.get();
+            int listenerPort = ctx.localPeer().port();
+            if (altSvcPrototype.port().isEmpty() && (listenerPort < 1 || listenerPort > 65_535)) {
+                result = new Http2Connection(ctx, http2Config, subProviders);
+            } else {
+                Header header = altSvcByListener.computeIfAbsent(ctx.listenerContext(),
+                                                                 _ -> AltSvc.create(altSvcPrototype).header(listenerPort));
+                result = new Http2Connection(ctx, http2Config, subProviders, header);
+            }
+        }
         result.expectPreface();
 
         return result;

@@ -21,7 +21,6 @@ import java.net.SocketException;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -74,7 +73,6 @@ import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.SniContext;
 import io.helidon.webserver.SniRequestSupport;
-import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.http2.spi.SubProtocolResult;
@@ -100,7 +98,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
-    private final Optional<AltSvc> altSvc;
+    private final Header altSvcHeader;
     private final List<Http2SubProtocolSelector> subProviders;
     private final int streamId;
     private final Http2Settings serverSettings;
@@ -162,7 +160,6 @@ class Http2ServerStream implements Runnable, Http2Stream {
                       LocallyResetStreamTracker locallyResetStreamTracker,
                       HttpRouting routing,
                       Http2Config http2Config,
-                      Optional<AltSvc> altSvc,
                       List<Http2SubProtocolSelector> subProviders,
                       int streamId,
                       Http2Settings serverSettings,
@@ -171,11 +168,41 @@ class Http2ServerStream implements Runnable, Http2Stream {
                       ConnectionFlowControl connectionFlowControl,
                       InboundDataBudget inboundDataBudget,
                       Http2ConnectionChecks connectionAttackVectorMetrics) {
+        this(ctx,
+             streams,
+             locallyResetStreamTracker,
+             routing,
+             http2Config,
+             subProviders,
+             streamId,
+             serverSettings,
+             clientSettings,
+             writer,
+             connectionFlowControl,
+             inboundDataBudget,
+             connectionAttackVectorMetrics,
+             null);
+    }
+
+    Http2ServerStream(ConnectionContext ctx,
+                      Http2ConcurrentConnectionStreams streams,
+                      LocallyResetStreamTracker locallyResetStreamTracker,
+                      HttpRouting routing,
+                      Http2Config http2Config,
+                      List<Http2SubProtocolSelector> subProviders,
+                      int streamId,
+                      Http2Settings serverSettings,
+                      Http2Settings clientSettings,
+                      Http2StreamWriter writer,
+                      ConnectionFlowControl connectionFlowControl,
+                      InboundDataBudget inboundDataBudget,
+                      Http2ConnectionChecks connectionAttackVectorMetrics,
+                      Header altSvcHeader) {
         this.ctx = ctx;
         this.streams = streams;
         this.routing = routing;
         this.http2Config = http2Config;
-        this.altSvc = altSvc;
+        this.altSvcHeader = altSvcHeader;
         this.subProviders = subProviders;
         this.streamId = streamId;
         this.serverSettings = serverSettings;
@@ -1231,10 +1258,15 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                    outcome,
                                                                    ctx.listenerContext().config().maxPayloadSize(),
                                                                    http2Config.maxBufferedEntitySize().toBytes());
-            Http2ServerResponse response = new Http2ServerResponse(this,
-                                                                   request,
-                                                                   http2Config.validateResponseHeaders(),
-                                                                   altSvc);
+            Http2ServerResponse response;
+            if (altSvcHeader == null) {
+                response = new Http2ServerResponse(this, request, http2Config.validateResponseHeaders());
+            } else {
+                response = new Http2AltSvcServerResponse(this,
+                                                         request,
+                                                         http2Config.validateResponseHeaders(),
+                                                         altSvcHeader);
+            }
             try {
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;

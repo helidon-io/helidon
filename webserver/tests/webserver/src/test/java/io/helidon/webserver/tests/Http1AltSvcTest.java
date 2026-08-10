@@ -46,6 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class Http1AltSvcTest {
     private static final Header LOCATION = HeaderValues.create(HeaderNames.LOCATION, "/ok");
+    private static final Header CUSTOM_ALT_SVC = HeaderValues.create(HeaderNames.ALT_SVC, "h2=\":443\"");
 
     private final WebServer server;
     private final Http1Client client;
@@ -77,6 +78,14 @@ class Http1AltSvcTest {
                              .send())
                 .get("/ok", (req, res) -> res.send("ok"))
                 .get("/custom", (req, res) -> res.header(HeaderNames.ALT_SVC, "h2=\":443\"").send())
+                .get("/before-send-custom", (req, res) -> {
+                    res.beforeSend(() -> res.headers().setIfAbsent(CUSTOM_ALT_SVC));
+                    res.send("ok");
+                })
+                .get("/before-send-error", (req, res) -> {
+                    res.beforeSend(() -> res.status(Status.BAD_REQUEST_400));
+                    res.send();
+                })
                 .get("/stream", (req, res) -> {
                     try (var output = res.outputStream()) {
                         output.write('x');
@@ -110,6 +119,21 @@ class Http1AltSvcTest {
     void shouldPreserveApplicationAltSvcHeader() {
         try (Http1ClientResponse response = client.get("/custom").request()) {
             assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is("h2=\":443\""));
+        }
+    }
+
+    @Test
+    void shouldPreserveAltSvcHeaderFromBeforeSendListener() {
+        try (Http1ClientResponse response = client.get("/before-send-custom").request()) {
+            assertThat(response.headers(), hasHeader(CUSTOM_ALT_SVC));
+        }
+    }
+
+    @Test
+    void shouldUseStatusFromBeforeSendListener() {
+        try (Http1ClientResponse response = client.get("/before-send-error").request()) {
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+            assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
         }
     }
 

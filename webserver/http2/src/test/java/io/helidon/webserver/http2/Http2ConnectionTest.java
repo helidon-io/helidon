@@ -98,10 +98,7 @@ class Http2ConnectionTest {
                 .initialWindowSize(0)
                 .build();
 
-        assertDoesNotThrow(() -> new Http2Connection(http2Context(mock(DataWriter.class)),
-                                                           config,
-                                                           List.of(),
-                                                           Optional.empty()));
+        assertDoesNotThrow(() -> new Http2Connection(http2Context(mock(DataWriter.class)), config, List.of()));
     }
 
     @Test
@@ -113,7 +110,7 @@ class Http2ConnectionTest {
 
         ConnectionContext ctx = http2Context(writer);
 
-        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
         connection.pendingPing(Http2Ping.create());
 
         ServerConnectionException exception = assertThrows(ServerConnectionException.class,
@@ -137,7 +134,7 @@ class Http2ConnectionTest {
         SocketWriter writer = SocketWriter.create(executor, socket, 2, true);
         try {
             ConnectionContext ctx = http2Context(writer);
-            Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(), Optional.empty());
+            Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
             connection.pendingPing(Http2Ping.create());
 
             ServerConnectionException exception = assertThrows(ServerConnectionException.class,
@@ -324,10 +321,7 @@ class Http2ConnectionTest {
                                              streamFlowControl,
                                              currentStreamState,
                                              router) -> new SubProtocolResult(true, handler);
-        Http2Connection connection = new Http2Connection(ctx,
-                                                         Http2Config.create(),
-                                                         List.of(selector),
-                                                         Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(selector));
 
         assertThrows(CloseConnectionException.class,
                      () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
@@ -348,7 +342,7 @@ class Http2ConnectionTest {
                 .build();
         ConnectionContext ctx = http2Context(writer);
 
-        Http2Connection connection = new Http2Connection(ctx, config, List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
         Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
 
         ServerConnectionException exception = assertThrows(ServerConnectionException.class,
@@ -382,8 +376,7 @@ class Http2ConnectionTest {
                                                                  .sendErrorDetails(true)
                                                                  .maxConcurrentStreams(0)
                                                                  .build(),
-                                                         List.of(),
-                                                         Optional.empty());
+                                                         List.of());
         Http2Headers headers = Http2Headers.create(WritableHeaders.create());
         headers.method(Method.GET);
         headers.path("/upgrade");
@@ -447,7 +440,7 @@ class Http2ConnectionTest {
         when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
         when(ctx.remotePeer()).thenReturn(peerInfo);
         when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
-        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
         connectionRef.set(connection);
         input.add(frameBytes(new Http2WindowUpdate(1)
                                      .toFrameData(null, 1, Http2Flag.NoFlags.create())));
@@ -502,8 +495,7 @@ class Http2ConnectionTest {
         when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
         Http2Connection connection = new Http2Connection(ctx,
                                                          Http2Config.builder().sendErrorDetails(true).build(),
-                                                         List.of(),
-                                                         Optional.empty());
+                                                         List.of());
 
         connection.expectPreface();
         connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
@@ -527,7 +519,7 @@ class Http2ConnectionTest {
                 .maxRapidResets(2)
                 .build();
         ConnectionContext ctx = http2Context(writer);
-        Http2Connection connection = new Http2Connection(ctx, config, List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
         Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
 
         checks.madeYouResetCheck();
@@ -544,7 +536,7 @@ class Http2ConnectionTest {
                 .maxRapidResets(-1)
                 .build();
         ConnectionContext ctx = http2Context(writer);
-        Http2Connection connection = new Http2Connection(ctx, config, List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
         Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
 
         for (int i = 0; i < 10; i++) {
@@ -562,7 +554,7 @@ class Http2ConnectionTest {
                 .maxRapidResets(2)
                 .build();
         ConnectionContext ctx = http2Context(writer);
-        Http2Connection connection = new Http2Connection(ctx, config, List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
         Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
 
         checks.rapidResetCheck(true);
@@ -580,7 +572,7 @@ class Http2ConnectionTest {
                 .maxRapidResets(2)
                 .build();
         ConnectionContext ctx = http2Context(writer);
-        Http2Connection connection = new Http2Connection(ctx, config, List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, config, List.of());
         Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
 
         checks.rapidResetCheck(true);
@@ -605,7 +597,7 @@ class Http2ConnectionTest {
     private static void closeBeforeHandleDoesNotRequireHandlerThread(boolean interrupt) {
         ConnectionContext ctx = http2Context(mock(DataWriter.class));
 
-        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(), Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
 
         connection.close(interrupt);
 

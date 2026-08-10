@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
@@ -48,6 +50,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class Http2AltSvcTest {
+    private static final Header CUSTOM_ALT_SVC = HeaderValues.create(HeaderNames.ALT_SVC, "h2=\":443\"");
+
     private final WebServer server;
     private final Http2Client client;
 
@@ -90,7 +94,19 @@ class Http2AltSvcTest {
                 .route(Http2Route.route(GET, "/ok", (req, res) -> res.send("ok")))
                 .route(Http2Route.route(GET, "/custom",
                                        (req, res) -> res.header(HeaderNames.ALT_SVC, "h2=\":443\"").send()))
+                .route(Http2Route.route(GET, "/before-send-error", (req, res) -> {
+                    res.beforeSend(() -> res.status(Status.BAD_REQUEST_400));
+                    res.send();
+                }))
                 .route(Http2Route.route(GET, "/stream", (req, res) -> {
+                    try (var output = res.outputStream()) {
+                        output.write('x');
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }))
+                .route(Http2Route.route(GET, "/before-send-custom-stream", (req, res) -> {
+                    res.beforeSend(() -> res.header(CUSTOM_ALT_SVC));
                     try (var output = res.outputStream()) {
                         output.write('x');
                     } catch (IOException e) {
@@ -148,10 +164,26 @@ class Http2AltSvcTest {
     }
 
     @Test
+    void shouldUseStatusFromBeforeSendListener() {
+        try (Http2ClientResponse response = client.get("/before-send-error").request()) {
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+            assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
+        }
+    }
+
+    @Test
     void shouldAdvertiseAltSvcOnStreamingResponse() {
         try (Http2ClientResponse response = client.get("/stream").request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(expectedAltSvc(server.port())));
+        }
+    }
+
+    @Test
+    void shouldPreserveAltSvcHeaderFromStreamingBeforeSendListener() {
+        try (Http2ClientResponse response = client.get("/before-send-custom-stream").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(CUSTOM_ALT_SVC.get()));
         }
     }
 
