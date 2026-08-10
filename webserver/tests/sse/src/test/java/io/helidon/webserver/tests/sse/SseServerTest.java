@@ -19,6 +19,7 @@ package io.helidon.webserver.tests.sse;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
@@ -45,6 +46,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class SseServerTest extends SseBaseTest {
     private static final String CUSTOM_ALT_SVC = "h2=\":443\"";
+    private static final String BEFORE_SEND_CALLS = "Before-Send-Calls";
+    private static final String BEFORE_SEND_CALLS_AFTER_FAILED_SINK_CREATION =
+            "Before-Send-Calls-After-Failed-Sink-Creation";
+    private static final String ALT_SVC_PRESENT_AFTER_FAILED_SINK_CREATION =
+            "Alt-Svc-Present-After-Failed-Sink-Creation";
 
     SseServerTest(WebServer webServer) {
         super(webServer);
@@ -54,7 +60,11 @@ class SseServerTest extends SseBaseTest {
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseServerTest::sseString1);
         rules.get("/sseCustomAltSvc", (req, res) -> {
-            res.beforeSend(() -> res.header(HeaderNames.ALT_SVC, CUSTOM_ALT_SVC));
+            AtomicInteger beforeSendCalls = new AtomicInteger();
+            res.beforeSend(() -> {
+                res.header(HeaderNames.ALT_SVC, CUSTOM_ALT_SVC);
+                res.header(BEFORE_SEND_CALLS, Integer.toString(beforeSendCalls.incrementAndGet()));
+            });
             sseString1(req, res);
         });
         rules.get("/sseRejected", (req, res) -> {
@@ -68,11 +78,16 @@ class SseServerTest extends SseBaseTest {
             }
         });
         rules.get("/sseProviderCreationFailure", (req, res) -> {
+            AtomicInteger beforeSendCalls = new AtomicInteger();
+            res.beforeSend(() -> res.header(BEFORE_SEND_CALLS,
+                                            Integer.toString(beforeSendCalls.incrementAndGet())));
             res.header(CONTENT_TYPE_JSON);
             try {
                 sseString1(req, res);
             } catch (IllegalStateException _) {
-                res.header("Alt-Svc-Present-After-Failed-Sink-Creation",
+                res.header(BEFORE_SEND_CALLS_AFTER_FAILED_SINK_CREATION,
+                           Integer.toString(beforeSendCalls.get()));
+                res.header(ALT_SVC_PRESENT_AFTER_FAILED_SINK_CREATION,
                            Boolean.toString(res.headers().contains(HeaderNames.ALT_SVC)));
                 res.headers().remove(HeaderNames.CONTENT_TYPE);
                 res.send("ok");
@@ -151,6 +166,7 @@ class SseServerTest extends SseBaseTest {
         try (Http1ClientResponse response = client.get("/sseCustomAltSvc").request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(CUSTOM_ALT_SVC));
+            assertThat(response.headers().first(HeaderNames.create(BEFORE_SEND_CALLS)).orElse(null), is("1"));
         } finally {
             client.closeResource();
         }
@@ -183,9 +199,14 @@ class SseServerTest extends SseBaseTest {
                 .request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers()
-                               .first(HeaderNames.create("Alt-Svc-Present-After-Failed-Sink-Creation"))
+                               .first(HeaderNames.create(BEFORE_SEND_CALLS_AFTER_FAILED_SINK_CREATION))
+                               .orElse(null),
+                       is("0"));
+            assertThat(response.headers()
+                               .first(HeaderNames.create(ALT_SVC_PRESENT_AFTER_FAILED_SINK_CREATION))
                                .orElse(null),
                        is("false"));
+            assertThat(response.headers().first(HeaderNames.create(BEFORE_SEND_CALLS)).orElse(null), is("1"));
             assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null),
                        is("h3=\":" + webServer().port() + "\""));
             assertThat(response.entity().as(String.class), is("ok"));

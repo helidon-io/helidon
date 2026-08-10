@@ -20,10 +20,16 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2FrameType;
+import io.helidon.http.http2.Http2FrameTypes;
+import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webclient.http2.Http2ClientResponse;
@@ -40,6 +46,8 @@ import io.helidon.webserver.http2.Http2Upgrader;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.testing.junit5.http2.Http2TestClient;
+import io.helidon.webserver.testing.junit5.http2.Http2TestConnection;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +58,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class Http2AltSvcTest {
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final Header CUSTOM_ALT_SVC = HeaderValues.create(HeaderNames.ALT_SVC, "h2=\":443\"");
 
     private final WebServer server;
@@ -97,6 +106,26 @@ class Http2AltSvcTest {
                 .route(Http2Route.route(GET, "/before-send-error", (req, res) -> {
                     res.beforeSend(() -> res.status(Status.BAD_REQUEST_400));
                     res.send();
+                }))
+                .route(Http2Route.route(GET, "/before-send-204", (req, res) -> {
+                    res.header(HeaderNames.TRAILER, "X-Test");
+                    res.beforeSend(() -> res.status(Status.NO_CONTENT_204));
+                    res.send("body");
+                }))
+                .route(Http2Route.route(GET, "/before-send-205", (req, res) -> {
+                    res.header(HeaderNames.TRAILER, "X-Test");
+                    res.beforeSend(() -> res.status(Status.RESET_CONTENT_205));
+                    res.send("body");
+                }))
+                .route(Http2Route.route(GET, "/before-send-304", (req, res) -> {
+                    res.header(HeaderNames.TRAILER, "X-Test");
+                    res.beforeSend(() -> res.status(Status.NOT_MODIFIED_304));
+                    res.send("body");
+                }))
+                .route(Http2Route.route(GET, "/before-send-100", (req, res) -> {
+                    res.header(HeaderNames.TRAILER, "X-Test");
+                    res.beforeSend(() -> res.status(Status.CONTINUE_100));
+                    res.send("body");
                 }))
                 .route(Http2Route.route(GET, "/stream", (req, res) -> {
                     try (var output = res.outputStream()) {
@@ -194,6 +223,14 @@ class Http2AltSvcTest {
     }
 
     @Test
+    void shouldEndNoContentStatusesSelectedByBeforeSendWithHeaders(Http2TestClient testClient) {
+        assertHeaderOnlyResponse(testClient, "/before-send-204", Status.NO_CONTENT_204, null, true);
+        assertHeaderOnlyResponse(testClient, "/before-send-205", Status.RESET_CONTENT_205, "0", true);
+        assertHeaderOnlyResponse(testClient, "/before-send-304", Status.NOT_MODIFIED_304, "4", true);
+        assertHeaderOnlyResponse(testClient, "/before-send-100", Status.INTERNAL_SERVER_ERROR_500, "0", false);
+    }
+
+    @Test
     void shouldAdvertiseAltSvcOnStreamingResponse() {
         try (Http2ClientResponse response = client.get("/stream").request()) {
             assertThat(response.status(), is(Status.OK_200));
@@ -230,6 +267,29 @@ class Http2AltSvcTest {
         try (Http2ClientResponse response = client.get("/missing").request()) {
             assertThat(response.status(), is(Status.NOT_FOUND_404));
             assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
+        }
+    }
+
+    private void assertHeaderOnlyResponse(Http2TestClient testClient,
+                                          String path,
+                                          Status expectedStatus,
+                                          String expectedContentLength,
+                                          boolean expectAltSvc) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            connection.request(1, GET, path, WritableHeaders.create(), BufferData.empty());
+            connection.assertSettings(TIMEOUT);
+            connection.assertWindowsUpdate(0, TIMEOUT);
+            connection.assertSettings(TIMEOUT);
+
+            Http2FrameData frame = connection.assertNextFrame(Http2FrameType.HEADERS, TIMEOUT);
+            assertThat(frame.header().flags(Http2FrameTypes.HEADERS).endOfStream(), is(true));
+            Http2Headers responseHeaders = connection.assertHeaders(frame, 1);
+            assertThat(responseHeaders.status(), is(expectedStatus));
+            assertThat(responseHeaders.httpHeaders().first(HeaderNames.CONTENT_LENGTH).orElse(null),
+                       is(expectedContentLength));
+            assertThat(responseHeaders.httpHeaders().contains(HeaderNames.TRAILER), is(false));
+            assertThat(responseHeaders.httpHeaders().first(HeaderNames.ALT_SVC).orElse(null),
+                       is(expectAltSvc ? expectedAltSvc(server.port()) : null));
         }
     }
 

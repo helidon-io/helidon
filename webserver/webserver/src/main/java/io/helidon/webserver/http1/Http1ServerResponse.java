@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -387,6 +388,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             }
 
             @Override
+            public Optional<OutputStream> entityOutputStream(Runnable responsePreparation) {
+                return Http1ServerResponse.this.sinkEntityOutputStream(responsePreparation);
+            }
+
+            @Override
             public Runnable closeRunnable() {
                 return () -> {
                     Http1ServerResponse.this.isSent = true;
@@ -412,6 +418,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         } else {
             this.outputStreamFilter = it -> filterFunction.apply(current.apply(it));
         }
+    }
+
+    protected Optional<OutputStream> sinkEntityOutputStream(Runnable responsePreparation) {
+        Objects.requireNonNull(responsePreparation);
+        return Optional.empty();
     }
 
     private void handleSinkData(Object data, MediaType mediaType) {

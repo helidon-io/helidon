@@ -132,7 +132,32 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                     false,
                                                     DateTime.rfc1123String()));
 
+            int initialStatusCode = status().code();
             beforeSend();
+
+            Status responseStatus = status();
+            int statusCode = responseStatus.code();
+            boolean statusChanged = statusCode != initialStatusCode;
+            boolean noEntityResponse = statusChanged
+                    && (statusCode == Status.NO_CONTENT_204.code()
+                    || statusCode == Status.RESET_CONTENT_205.code()
+                    || statusCode == Status.NOT_MODIFIED_304.code());
+            if (statusChanged && responseStatus.family() == Status.Family.INFORMATIONAL) {
+                LOGGER.log(System.Logger.Level.ERROR,
+                           "Attempt to send a final informational response. "
+                                   + "Server responded with Internal Server Error.");
+                status(Status.INTERNAL_SERVER_ERROR_500);
+                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+                headers.remove(HeaderNames.TRAILER);
+                noEntityResponse = true;
+            } else if (noEntityResponse) {
+                if (statusCode == Status.NO_CONTENT_204.code()) {
+                    headers.remove(HeaderNames.CONTENT_LENGTH);
+                } else if (statusCode == Status.RESET_CONTENT_205.code()) {
+                    headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+                }
+                headers.remove(HeaderNames.TRAILER);
+            }
             isSent = true;
 
             Http2Headers http2Headers = Http2Headers.create(headers);
@@ -148,6 +173,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             boolean sendTrailers = sendTrailers(headers);
 
             validateResponse(http2Headers);
+            if (noEntityResponse) {
+                bytesWritten += stream.writeHeaders(http2Headers, true);
+                afterSend();
+                return;
+            }
             bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
                                                         BufferData.create(actualBytes, actualPosition, actualLength),
                                                         !sendTrailers);

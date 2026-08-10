@@ -131,7 +131,7 @@ public final class AltSvc implements RuntimeType.Api<AltSvcConfig> {
      */
     public Header header(int listenerPort) {
         int effectivePort = config.port().orElse(listenerPort);
-        if (!validPort(effectivePort)) {
+        if (effectivePort < 1 || effectivePort > 65_535) {
             throw new IllegalArgumentException("Alt-Svc port must be between 1 and 65535.");
         }
         if (explicitPortHeader.isPresent()) {
@@ -163,10 +163,6 @@ public final class AltSvc implements RuntimeType.Api<AltSvcConfig> {
      */
     public String headerValue(int listenerPort) {
         return header(listenerPort).get();
-    }
-
-    private static boolean validPort(int port) {
-        return port > 0 && port <= 65_535;
     }
 
     private Header createHeader(int port) {
