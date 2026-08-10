@@ -69,6 +69,14 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
+    public Http2ServerResponse status(Status status) {
+        if (outputStream != null) {
+            throw new IllegalStateException("Cannot set response status after requesting output stream.");
+        }
+        return super.status(status);
+    }
+
+    @Override
     public Http2ServerResponse header(Header header) {
         if (streamingEntity) {
             throw new IllegalStateException("Cannot set response header after requesting output stream.");
