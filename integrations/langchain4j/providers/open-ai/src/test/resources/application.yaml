@@ -30,6 +30,10 @@ langchain4j:
       provider: open-ai
       size: size
       quality: quality
+      background: transparent
+      output-format: png
+      output-compression: 80
+      moderation: low
       style: style
       with-persisting: true
       persist-to: temp

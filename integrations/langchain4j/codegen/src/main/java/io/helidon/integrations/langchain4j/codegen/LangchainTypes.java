@@ -39,6 +39,7 @@ final class LangchainTypes {
     static final TypeName MODEL_CONFIGS_TYPE = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.ModelConfigs");
     static final TypeName MODEL_CONFIG_KEY_TYPE = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.ConfigKey");
     static final TypeName MODEL_DEFAULT_WEIGHT = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.DefaultWeight");
+    static final TypeName MODEL_LIFECYCLE = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.ModelLifecycle");
     static final TypeName MODEL_NESTED_CONFIG = TypeName.create("io.helidon.integrations.langchain4j.AiProvider.NestedConfig");
     static final TypeName MODEL_CUSTOM_FACTORIES =
             TypeName.create("io.helidon.integrations.langchain4j.AiProvider.CustomModelFactories");
