@@ -18,10 +18,13 @@ package io.helidon.webserver.observe.telemetry.metrics;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.service.registry.Service;
 import io.helidon.telemetry.otelconfig.HelidonOpenTelemetry;
@@ -55,7 +58,6 @@ import static java.lang.System.Logger.Level.WARNING;
  */
 @Service.Singleton
 class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProvider {
-
     // OpenTelemetry
     static final String HTTP_METHOD = HttpAttributes.HTTP_REQUEST_METHOD.getKey();
     static final String URL_SCHEME = UrlAttributes.URL_SCHEME.getKey();
@@ -67,6 +69,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     // Helidon
     static final String SOCKET_NAME = "socket.name";
     static final String TIMER_NAME = "http.server.request.duration";
+    private static final String OTHER_METHOD = "_OTHER";
     /*
     Bucket boundaries as recommended by the OpenTelemetry spec.
     https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpserverrequestduration
@@ -116,10 +119,15 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
 
         private final DoubleHistogram httpRequestDuration;
         private final AutoHttpMetricsConfig config;
+        private final Set<String> knownMethods;
 
         private MetricsRecordingFilter(DoubleHistogram httpRequestDuration, AutoHttpMetricsConfig config) {
             this.httpRequestDuration = httpRequestDuration;
             this.config = config;
+            this.knownMethods = config.knownMethods().stream()
+                    .map(Method::create)
+                    .map(Method::text)
+                    .collect(Collectors.toUnmodifiableSet());
         }
 
         @Override
@@ -210,7 +218,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             }
             AttributesBuilder attrBuilder = Attributes.builder();
 
-            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
+            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), httpMethod(req.prologue().method()))
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
@@ -246,7 +254,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             }
             AttributesBuilder attrBuilder = Attributes.builder();
 
-            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
+            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), httpMethod(req.prologue().method()))
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), legacyStatusCode(resp, exception))
@@ -277,5 +285,9 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     : resp.status().code();
         }
 
+        private String httpMethod(Method method) {
+            String methodName = method.text();
+            return knownMethods.contains(methodName) ? methodName : OTHER_METHOD;
+        }
     }
 }

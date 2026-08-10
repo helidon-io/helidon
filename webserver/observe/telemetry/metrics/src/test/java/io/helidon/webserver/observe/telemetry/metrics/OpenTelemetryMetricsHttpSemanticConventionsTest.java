@@ -30,6 +30,8 @@ import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -150,6 +152,119 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
 
         assertThat(routeInvocations.get(), is(0));
         verify(histogram, never()).record(anyDouble(), any(Attributes.class));
+    }
+
+    @Test
+    void knownStandardHttpMethodUsesMethodMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set, true)
+                .filter(mock(FilterChain.class), request(Method.GET), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("GET"));
+    }
+
+    @Test
+    void knownExtensionHttpMethodUsesMethodMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set, true)
+                .filter(mock(FilterChain.class), request(Method.create("LIST")), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("LIST"));
+    }
+
+    @Test
+    void unknownHttpMethodUsesOtherLegacyMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        CountDownLatch recorded = new CountDownLatch(1);
+
+        filter(attributes -> {
+            recordedAttributes.set(attributes);
+            recorded.countDown();
+        }, false).filter(mock(FilterChain.class), request(Method.create("UNIQUE_METHOD")), response(new AtomicReference<>()));
+
+        assertThat(recorded.await(5, TimeUnit.SECONDS), is(true));
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("_OTHER"));
+    }
+
+    @Test
+    void unknownHttpMethodUsesOtherMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set, true)
+                .filter(mock(FilterChain.class), request(Method.create("UNIQUE_METHOD")), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("_OTHER"));
+    }
+
+    @Test
+    void knownMethodsConfigFullyOverridesDefaults() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        Filter filter = filter(recordedAttributes::set, true, List.of(), List.of("list"));
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter.filter(mock(FilterChain.class), request(Method.GET), response(whenSent));
+        whenSent.get().run();
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("_OTHER"));
+
+        whenSent.set(null);
+        filter.filter(mock(FilterChain.class), request(Method.create("LIST")), response(whenSent));
+        whenSent.get().run();
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD)),
+                   is("LIST"));
+    }
+
+    @Test
+    void optedInServerAttributesUseRequestedUri() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set,
+               true,
+               List.of(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME + ":"
+                               + OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS,
+                       OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME + ":"
+                               + OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT))
+                .filter(mock(FilterChain.class), request(), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS)),
+                   is("logical.example"));
+        assertThat(recordedAttributes.get().get(AttributeKey.longKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT)),
+                   is(9443L));
+    }
+
+    @Test
+    void optedInLegacyServerAttributesUseRequestedUri() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        CountDownLatch recorded = new CountDownLatch(1);
+
+        filter(attributes -> {
+            recordedAttributes.set(attributes);
+            recorded.countDown();
+        }, false, List.of(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME + ":"
+                                   + OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS,
+                          OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME + ":"
+                                   + OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT))
+                .filter(mock(FilterChain.class), request(), response(new AtomicReference<>()));
+
+        assertThat(recorded.await(5, TimeUnit.SECONDS), is(true));
+        assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_ADDRESS)),
+                   is("logical.example"));
+        assertThat(recordedAttributes.get().get(AttributeKey.longKey(OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT)),
+                   is(9443L));
     }
 
     @Test
@@ -303,21 +418,46 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     private static Filter filter(Consumer<Attributes> recorder, boolean useUpdatedHttpMetrics) {
+        return filter(recorder, useUpdatedHttpMetrics, List.of(), null);
+    }
+
+    private static Filter filter(Consumer<Attributes> recorder, boolean useUpdatedHttpMetrics, List<String> optIn) {
+        return filter(recorder, useUpdatedHttpMetrics, optIn, null);
+    }
+
+    private static Filter filter(Consumer<Attributes> recorder,
+                                 boolean useUpdatedHttpMetrics,
+                                 List<String> optIn,
+                                 List<String> knownMethods) {
+        AutoHttpMetricsConfig.Builder configBuilder = AutoHttpMetricsConfig.builder()
+                .optIn(optIn)
+                .useUpdatedHttpMetrics(useUpdatedHttpMetrics);
+        if (knownMethods != null) {
+            configBuilder.knownMethods(knownMethods);
+        }
+        return filter(provider(histogram(recorder)), MetricsObserverConfig.builder()
+                .autoHttpMetrics(configBuilder.build())
+                .buildPrototype());
+    }
+
+    static Filter filter(DoubleHistogram histogram, MetricsObserverConfig metricsConfig) {
+        return filter(provider(histogram), metricsConfig);
+    }
+
+    private static Filter filter(OpenTelemetryMetricsHttpSemanticConventions provider, MetricsObserverConfig metricsConfig) {
+        return provider.filter(metricsConfig).orElseThrow();
+    }
+
+    private static DoubleHistogram histogram(Consumer<Attributes> recorder) {
         DoubleHistogram histogram = mock(DoubleHistogram.class);
         doAnswer(invocation -> {
             recorder.accept(invocation.getArgument(1));
             return null;
         }).when(histogram).record(anyDouble(), any(Attributes.class));
-
-        MetricsObserverConfig config = MetricsObserverConfig.builder()
-                .autoHttpMetrics(AutoHttpMetricsConfig.builder()
-                                         .useUpdatedHttpMetrics(useUpdatedHttpMetrics)
-                                         .build())
-                .buildPrototype();
-        return filter(histogram, config);
+        return histogram;
     }
 
-    static Filter filter(DoubleHistogram histogram, MetricsObserverConfig metricsConfig) {
+    private static OpenTelemetryMetricsHttpSemanticConventions provider(DoubleHistogram histogram) {
         OpenTelemetry openTelemetry = mock(OpenTelemetry.class);
         MeterBuilder meterBuilder = mock(MeterBuilder.class);
         Meter meter = mock(Meter.class);
@@ -331,30 +471,39 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         doReturn(histogramBuilder).when(histogramBuilder).setExplicitBucketBoundariesAdvice(any());
         when(histogramBuilder.build()).thenReturn(histogram);
 
-        OpenTelemetryMetricsHttpSemanticConventions provider =
-                new OpenTelemetryMetricsHttpSemanticConventions(openTelemetry,
-                                                                Config.just("telemetry.service: test",
-                                                                            MediaTypes.APPLICATION_YAML));
-
-        return provider.filter(metricsConfig).orElseThrow();
+        return new OpenTelemetryMetricsHttpSemanticConventions(openTelemetry,
+                                                               Config.just("telemetry.service: test",
+                                                                           MediaTypes.APPLICATION_YAML));
     }
 
     private static RoutingRequest request() {
+        return request(Method.GET);
+    }
+
+    private static RoutingRequest request(Method method) {
         RoutingRequest request = mock(RoutingRequest.class);
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
         ListenerContext listenerContext = mock(ListenerContext.class);
+        PeerInfo localPeer = mock(PeerInfo.class);
+        UriInfo requestedUri = mock(UriInfo.class);
 
         when(request.prologue()).thenReturn(HttpPrologue.create("HTTP/1.1",
                                                                 "HTTP",
                                                                 "1.1",
-                                                                Method.GET,
+                                                                method,
                                                                 "/test",
                                                                 false));
         when(request.matchingPattern()).thenReturn(Optional.empty());
         when(request.context()).thenReturn(Context.create());
         when(request.listenerContext()).thenReturn(listenerContext);
+        when(request.localPeer()).thenReturn(localPeer);
+        when(request.requestedUri()).thenReturn(requestedUri);
         when(listenerContext.config()).thenReturn(listenerConfig);
         when(listenerConfig.name()).thenReturn("@default");
+        when(localPeer.host()).thenReturn("127.0.0.1");
+        when(localPeer.port()).thenReturn(8080);
+        when(requestedUri.host()).thenReturn("logical.example");
+        when(requestedUri.port()).thenReturn(9443);
 
         return request;
     }
