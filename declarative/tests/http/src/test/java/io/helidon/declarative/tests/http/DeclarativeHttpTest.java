@@ -668,6 +668,37 @@ class DeclarativeHttpTest {
     }
 
     @Test
+    void testClassLevelMediaTypes() {
+        JsonObject expected = JsonObject.builder()
+                .set("message", "default")
+                .build();
+
+        var defaultResponse = client.post("/media-type-defaults")
+                .accept(MediaTypes.APPLICATION_JSON)
+                .contentType(MediaTypes.APPLICATION_JSON)
+                .submit(expected, JsonObject.class);
+        assertThat(defaultResponse.status(), is(Status.OK_200));
+        assertThat(defaultResponse.headers().contentType().orElseThrow().mediaType(), is(MediaTypes.APPLICATION_JSON));
+        assertThat(defaultResponse.entity(), is(expected));
+
+        var overrideResponse = client.post("/media-type-defaults/override")
+                .accept(MediaTypes.TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
+                .submit("override", String.class);
+        assertThat(overrideResponse.status(), is(Status.OK_200));
+        assertThat(overrideResponse.headers().contentType().orElseThrow().mediaType(), is(MediaTypes.TEXT_PLAIN));
+        assertThat(overrideResponse.entity(), is("override"));
+
+        MediaTypeDefaultsClient typedClient = registry.get(Lookup.builder()
+                                                                   .addContract(MediaTypeDefaultsClient.class)
+                                                                   .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                                   .build());
+
+        assertThat(typedClient.defaults(expected), is(expected));
+        assertThat(typedClient.override("override"), is("override"));
+    }
+
+    @Test
     void testTypedClientNullParams() {
         GreetServiceClient typedClient = registry.get(Lookup.builder()
                                                               .addContract(GreetServiceClient.class)

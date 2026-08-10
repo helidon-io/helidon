@@ -340,10 +340,13 @@ public final class Http {
     }
 
     /**
-     * What media type(s) this method produces.
+     * What media type(s) an endpoint or method produces.
      * <p>
      * If the method may produce more than one type, the response headers must be crafted by hand. If it produces
      * exactly one type, that type will be set by Helidon on response.
+     * <p>
+     * When declared on an endpoint type, the media types are used as defaults for every endpoint method. An annotation
+     * declared on a method overrides the endpoint type defaults for that method.
      * <p>
      * When used by Helidon declarative server code on an endpoint method that accepts the server response, generated
      * routing code configures the content type before invoking the method, so it is available to output-stream response
@@ -351,11 +354,11 @@ public final class Http {
      * after the method returns and before the generated response is sent.
      */
     @Retention(RetentionPolicy.CLASS)
-    @Target(ElementType.METHOD)
+    @Target({ElementType.TYPE, ElementType.METHOD})
     @Documented
     public @interface Produces {
         /**
-         * Media types produced by this method.
+         * Media types produced by this endpoint or method.
          *
          * @return produced media types, such as {@code application/json}
          */
@@ -363,13 +366,17 @@ public final class Http {
     }
 
     /**
-     * What media type(s) this method can consume.
+     * What media type(s) an endpoint or method can consume.
+     * <p>
+     * When declared on an endpoint type, the media types are used as defaults for every endpoint method. An annotation
+     * declared on a method overrides the endpoint type defaults for that method.
      */
     @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.TYPE, ElementType.METHOD})
     @Documented
     public @interface Consumes {
         /**
-         * Media types acceptable by this method.
+         * Media types acceptable by this endpoint or method.
          *
          * @return consumed media types, such as {@code application/json}
          */

@@ -160,6 +160,8 @@ Annotations on endpoint type:
 - link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Listener.html[`io.helidon.webserver.http.RestServer.Listener`] - to define the named listener this should be served on (named port/socket)
 - link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Header.html[`io.helidon.webserver.http.RestServer.Header`] - header to return with each response from this endpoint
 - link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.ComputedHeader.html[`io.helidon.webserver.http.RestServer.ComputedHeader`] - computed header to return with each response from this endpoint
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Produces.html[`io.helidon.http.Http.Produces`] - default media types produced by endpoint methods
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Consumes.html[`io.helidon.http.Http.Consumes`] - default media types consumed by endpoint methods
 - link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) this endpoint will be available on
 
 Annotations on endpoint methods:
@@ -170,8 +172,8 @@ Annotations on endpoint methods:
 - link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) this method will be available on (subpath of the endpoint path)
 - link:{http-javadoc-base-url}/io/helidon/http/Http.GET.html[`io.helidon.http.Http.GET`] (and other methods) - definition of HTTP method this method will serve
 - link:{http-javadoc-base-url}/io/helidon/http/Http.HttpMethod.html[`io.helidon.http.Http.HttpMethod`] - for custom HTTP method names (mutually exclusive with above)
-- link:{http-javadoc-base-url}/io/helidon/http/Http.Produces.html[`io.helidon.http.Http.Produces`] - what media type this method produces (return entity content type)
-- link:{http-javadoc-base-url}/io/helidon/http/Http.Consumes.html[`io.helidon.http.Http.Consumes`] - what media type this method accepts (request entity content type)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Produces.html[`io.helidon.http.Http.Produces`] - what media type this method produces (return entity content type), overriding the endpoint default
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Consumes.html[`io.helidon.http.Http.Consumes`] - what media type this method accepts (request entity content type), overriding the endpoint default
 
 Annotations on method parameters:
 
@@ -226,6 +228,8 @@ Annotations on endpoint type:
 - link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) the server listens on
 - link:{webclient-api-javadoc-base-url}/io/helidon/webclient/api/RestClient.Header.html[`io.helidon.webclient.api.RestClient.Header`] - header to include in every request to the server
 - link:{webclient-api-javadoc-base-url}/io/helidon/webclient/api/RestClient.ComputedHeader.html[`io.helidon.webclient.api.RestClient.ComputedHeader`] - header to compute and include in every request to the server
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Produces.html[`io.helidon.http.Http.Produces`] - default media types produced by the server
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Consumes.html[`io.helidon.http.Http.Consumes`] - default media types consumed by the server
 
 Annotations on endpoint methods:
 
@@ -234,8 +238,8 @@ Annotations on endpoint methods:
 - link:{http-javadoc-base-url}/io/helidon/http/Http.Path.html[`io.helidon.http.Http.Path`] - path (context) the server serves this endpoint method on
 - link:{http-javadoc-base-url}/io/helidon/http/Http.GET.html[`io.helidon.http.Http.GET`] (and other methods) - definition of HTTP method this method will invoke
 - link:{http-javadoc-base-url}/io/helidon/http/Http.HttpMethod.html[`io.helidon.http.Http.HttpMethod`] - for custom HTTP method names (mutually exclusive with above)
-- link:{http-javadoc-base-url}/io/helidon/http/Http.Produces.html[`io.helidon.http.Http.Produces`] - what media type this method produces (content type of entity from the server)
-- link:{http-javadoc-base-url}/io/helidon/http/Http.Consumes.html[`io.helidon.http.Http.Consumes`] - what media type this method accepts (request entity content type)
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Produces.html[`io.helidon.http.Http.Produces`] - what media type this method produces (content type of entity from the server), overriding the client type default
+- link:{http-javadoc-base-url}/io/helidon/http/Http.Consumes.html[`io.helidon.http.Http.Consumes`] - what media type this method accepts (request entity content type), overriding the client type default
 
 Annotations on method parameters:
 
