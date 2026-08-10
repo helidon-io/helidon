@@ -39,6 +39,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.Method.GET;
@@ -99,6 +100,11 @@ class Http2AltSvcTest {
                 .route(Http2Route.route(GET, "/error-redirect", (req, res) -> {
                     throw new RedirectException();
                 }));
+    }
+
+    @AfterEach
+    void cleanup() {
+        client.closeResource();
     }
 
     @Test
