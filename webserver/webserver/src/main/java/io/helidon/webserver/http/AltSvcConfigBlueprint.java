@@ -54,7 +54,9 @@ interface AltSvcConfigBlueprint extends Prototype.Factory<AltSvc> {
     /**
      * Advertised port.
      * The port must be between {@code 1} and {@code 65535}, inclusive, when advertisement is enabled.
-     * If not configured, the listener port is used.
+     * If not configured, the local port of a port-capable binding is used.
+     * A binding without a valid port, such as a Unix domain socket binding, does not emit the configured advertisement
+     * unless an explicit port is configured.
      *
      * @return advertised port
      */

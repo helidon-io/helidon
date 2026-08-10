@@ -1007,6 +1007,10 @@ To enable HTTP/2 support add the following dependency to your project's `pom.xml
 
 == Alternative Service Advertisement
 
+[NOTE]
+Alternative service advertisement is a preview feature. The APIs shown here are subject to change. These APIs will be
+finalized in a future release of Helidon.
+
 WebServer can add an `Alt-Svc` response header to advertise an alternative service from HTTP/1.1 or HTTP/2.
 Advertisement is opt-in and is added only to successful and redirection responses. An `Alt-Svc` header set by the
 application takes precedence over the configured value.
@@ -1028,8 +1032,9 @@ Http1Config http1Config = Http1Config.builder()
         .build();
 ----
 
-When the port is omitted, WebServer advertises the local listener port. The default protocol is `h3`; maximum age and
-the `persist` parameter are omitted by default.
+When `port` is omitted, WebServer uses the local port of a port-capable binding, such as TCP. A binding without a valid
+port, such as a Unix domain socket binding, does not add the configured `Alt-Svc` header unless `port` is set explicitly.
+The default protocol is `h3`; maximum age and the `persist` parameter are omitted by default.
 
 The same advertisement can be configured for either server protocol:
 
