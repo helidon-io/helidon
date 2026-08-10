@@ -67,7 +67,7 @@ class SseServerTest extends SseBaseTest {
         server.smartAsyncWrites(true);
         server.addConnectionSelector(Http1ConnectionSelector.builder()
                                              .config(Http1Config.builder()
-                                                             .altSvc(AltSvc.builder().buildPrototype())
+                                                             .altSvc(AltSvc.builder().build())
                                                              .build())
                                              .build());
     }

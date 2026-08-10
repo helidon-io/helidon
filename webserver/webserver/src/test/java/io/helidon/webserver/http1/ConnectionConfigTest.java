@@ -53,7 +53,7 @@ public class ConnectionConfigTest {
         assertThat(http1Config.validateRequestHeaders(), is(true));
         assertThat(http1Config.validateResponseHeaders(), is(true));
         assertThat(http1Config.log().unsafeRawData(), is(false));
-        AltSvcConfig altSvc = http1Config.altSvc().orElseThrow();
+        AltSvcConfig altSvc = http1Config.altSvc().orElseThrow().prototype();
         assertThat(altSvc.protocol(), is("h3"));
         assertThat(altSvc.port().orElseThrow(), is(8443));
         assertThat(altSvc.maxAge().orElseThrow(), is(Duration.ofHours(1)));

@@ -17,13 +17,19 @@
 package io.helidon.webserver.http1;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.http.AltSvc;
+import io.helidon.webserver.http.AltSvcConfig;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
@@ -38,11 +44,16 @@ public class Http1ConnectionSelector implements ServerConnectionSelector, Runtim
     // HTTP/1.1 connection upgrade providers
     private final Http1ConnectionSelectorConfig config;
     private final Map<String, Http1Upgrader> upgradeProviderMap;
+    private final Optional<AltSvcConfig> altSvcConfig;
+    private final ConcurrentMap<ListenerContext, AltSvc> altSvcByListener = new ConcurrentHashMap<>();
 
     // Creates an instance of HTTP/1.1 server connection selector.
     Http1ConnectionSelector(Http1ConnectionSelectorConfig config) {
         this.config = config;
         this.upgradeProviderMap = config.upgraders();
+        this.altSvcConfig = config.config().altSvc()
+                .filter(it -> it.prototype().enabled())
+                .map(AltSvc::prototype);
     }
 
     /**
@@ -111,7 +122,10 @@ public class Http1ConnectionSelector implements ServerConnectionSelector, Runtim
 
     @Override
     public ServerConnection connection(ConnectionContext ctx) {
-        return new Http1Connection(ctx, config.config(), upgradeProviderMap);
+        Optional<AltSvc> altSvc = altSvcConfig.map(config -> altSvcByListener.computeIfAbsent(
+                ctx.listenerContext(),
+                listener -> AltSvc.create(config)));
+        return new Http1Connection(ctx, config.config(), upgradeProviderMap, altSvc);
     }
 
     @Override

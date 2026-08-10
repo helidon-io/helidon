@@ -19,6 +19,7 @@ package io.helidon.webserver.http1;
 import java.io.UncheckedIOException;
 import java.net.SocketException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -84,7 +85,8 @@ class Http1ConnectionTest {
                                    Http1Config.builder()
                                            .continueImmediately(true)
                                            .build(),
-                                   Map.of());
+                                   Map.of(),
+                                   Optional.empty());
     }
 
     private static SocketWriter smartFailingWriter(ExecutorService executor) {

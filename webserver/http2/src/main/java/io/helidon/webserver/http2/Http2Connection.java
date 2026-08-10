@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -71,10 +72,8 @@ import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
-import io.helidon.webserver.ListenerRuntimeContext;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.AltSvc;
-import io.helidon.webserver.http.AltSvcConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
@@ -150,12 +149,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private volatile boolean canRun = true;
     private volatile boolean closing;
 
-    Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
+    Http2Connection(ConnectionContext ctx,
+                    Http2Config http2Config,
+                    List<Http2SubProtocolSelector> subProviders,
+                    Optional<AltSvc> altSvc) {
         this.ctx = ctx;
         this.http2Config = http2Config;
-        this.altSvc = http2Config.altSvc()
-                .filter(AltSvcConfig::enabled)
-                .map(config -> ListenerRuntimeContext.get(ctx.listenerContext()).altSvcRuntimeRegistry().resolve(config));
+        this.altSvc = Objects.requireNonNull(altSvc, "altSvc");
         this.maxEmptyFrames = http2Config.maxEmptyFrames();
         this.serverSettings = Http2Settings.builder()
                 .update(builder -> settingsUpdate(http2Config, builder))

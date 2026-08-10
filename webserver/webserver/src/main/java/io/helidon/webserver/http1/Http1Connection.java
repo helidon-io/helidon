@@ -58,12 +58,10 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
-import io.helidon.webserver.ListenerRuntimeContext;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.SniRequestSupport;
 import io.helidon.webserver.http.AltSvc;
-import io.helidon.webserver.http.AltSvcConfig;
 import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
@@ -123,10 +121,12 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
      * @param ctx                connection context
      * @param http1Config        connection provider configuration
      * @param upgradeProviderMap map of upgrade providers (protocol id to provider)
+     * @param altSvc             alternative service runtime owned by the connection selector
      */
     Http1Connection(ConnectionContext ctx,
                     Http1Config http1Config,
-                    Map<String, Http1Upgrader> upgradeProviderMap) {
+                    Map<String, Http1Upgrader> upgradeProviderMap,
+                    Optional<AltSvc> altSvc) {
         this.ctx = ctx;
         this.writer = ctx.dataWriter();
         this.reader = ctx.dataReader();
@@ -141,9 +141,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
-        this.altSvc = http1Config.altSvc()
-                .filter(AltSvcConfig::enabled)
-                .map(config -> ListenerRuntimeContext.get(ctx.listenerContext()).altSvcRuntimeRegistry().resolve(config));
+        this.altSvc = Objects.requireNonNull(altSvc, "altSvc");
         this.lastRequestTimestamp = DateTime.timestamp();
     }
 

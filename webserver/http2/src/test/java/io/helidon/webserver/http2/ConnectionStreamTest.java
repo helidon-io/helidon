@@ -18,6 +18,7 @@ package io.helidon.webserver.http2;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -324,6 +325,7 @@ class ConnectionStreamTest {
                                      NO_OP_RESET_TRACKER,
                                      HttpRouting.empty(),
                                      config,
+                                     Optional.empty(),
                                      subProtocols,
                                      STREAM_ID,
                                      Http2Settings.builder().build(),

@@ -26,7 +26,7 @@ import io.helidon.common.Api;
 /**
  * Configuration of a single advertised alternative service.
  */
-@Api.Incubating
+@Api.Preview
 @Prototype.Blueprint(decorator = AltSvcConfigSupport.BuilderDecorator.class)
 @Prototype.Configured(root = false)
 interface AltSvcConfigBlueprint extends Prototype.Factory<AltSvc> {

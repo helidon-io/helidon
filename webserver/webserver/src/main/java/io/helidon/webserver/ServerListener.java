@@ -44,7 +44,6 @@ import io.helidon.common.tls.TlsMaterial;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.metrics.api.Tag;
-import io.helidon.webserver.http.AltSvcRuntimeRegistry;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.PortTransportBinding;
 import io.helidon.webserver.spi.ProtocolConfig;
@@ -53,7 +52,7 @@ import io.helidon.webserver.spi.TransportBindingFactory;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
-class ServerListener implements TransportBindingContext, ListenerRuntimeContext {
+class ServerListener implements TransportBindingContext, ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
     // TransportBinding.stop receives the graceful period and may need time after it expires to run forced cleanup.
     private static final long BINDING_FORCE_STOP_COMPLETION_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
@@ -74,7 +73,6 @@ class ServerListener implements TransportBindingContext, ListenerRuntimeContext 
     private final MediaContext mediaContext;
     private final ContentEncodingContext contentEncodingContext;
     private final Context context;
-    private final AltSvcRuntimeRegistry altSvcRuntimeRegistry = AltSvcRuntimeRegistry.create();
     private final Limit connectionLimit;
     private final Limit requestLimit;
 
@@ -173,11 +171,6 @@ class ServerListener implements TransportBindingContext, ListenerRuntimeContext 
     @Override
     public Context context() {
         return context;
-    }
-
-    @Override
-    public AltSvcRuntimeRegistry altSvcRuntimeRegistry() {
-        return altSvcRuntimeRegistry;
     }
 
     @Override

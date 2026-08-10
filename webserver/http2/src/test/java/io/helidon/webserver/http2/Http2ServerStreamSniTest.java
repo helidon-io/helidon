@@ -1275,6 +1275,7 @@ class Http2ServerStreamSniTest {
                                      resetTracker,
                                      HttpRouting.empty(),
                                      config,
+                                     Optional.empty(),
                                      subProtocols,
                                      STREAM_ID,
                                      Http2Settings.builder().build(),

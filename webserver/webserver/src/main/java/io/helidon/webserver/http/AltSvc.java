@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
-import io.helidon.config.Config;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -33,7 +32,7 @@ import io.helidon.http.HeaderValues;
  * Runtime support for a single advertised alternative service.
  * Each instance is bound to at most one listener.
  */
-@Api.Incubating
+@Api.Preview
 public final class AltSvc implements RuntimeType.Api<AltSvcConfig> {
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
 
@@ -93,16 +92,6 @@ public final class AltSvc implements RuntimeType.Api<AltSvcConfig> {
      */
     public static AltSvcConfig.Builder builder() {
         return AltSvcConfig.builder();
-    }
-
-    /**
-     * Create from configuration.
-     *
-     * @param config config node
-     * @return a new alternative service runtime
-     */
-    public static AltSvc create(Config config) {
-        return builder().config(Objects.requireNonNull(config, "config")).build();
     }
 
     /**

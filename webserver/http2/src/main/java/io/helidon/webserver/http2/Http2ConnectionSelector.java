@@ -18,10 +18,16 @@ package io.helidon.webserver.http2;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.http.AltSvc;
+import io.helidon.webserver.http.AltSvcConfig;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
@@ -36,11 +42,16 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
 
     private final Http2Config http2Config;
     private final List<Http2SubProtocolSelector> subProviders;
+    private final Optional<AltSvcConfig> altSvcConfig;
+    private final ConcurrentMap<ListenerContext, AltSvc> altSvcByListener = new ConcurrentHashMap<>();
 
     // Creates an instance of HTTP/2 server connection selector.
     Http2ConnectionSelector(Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
         this.http2Config = http2Config;
         this.subProviders = subProviders;
+        this.altSvcConfig = http2Config.altSvc()
+                .filter(it -> it.prototype().enabled())
+                .map(AltSvc::prototype);
     }
 
     /**
@@ -78,7 +89,10 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
 
     @Override
     public ServerConnection connection(ConnectionContext ctx) {
-        Http2Connection result = new Http2Connection(ctx, http2Config, subProviders);
+        Optional<AltSvc> altSvc = altSvcConfig.map(config -> altSvcByListener.computeIfAbsent(
+                ctx.listenerContext(),
+                listener -> AltSvc.create(config)));
+        Http2Connection result = new Http2Connection(ctx, http2Config, subProviders, altSvc);
         result.expectPreface();
 
         return result;

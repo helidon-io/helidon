@@ -56,7 +56,9 @@ class AltSvcConfigTest {
 
     @Test
     void shouldAcceptWhitespaceOnlyProtocolFromConfig() {
-        AltSvc altSvc = AltSvc.create(Config.just(ConfigSources.create(Map.of("protocol", " \t"))));
+        AltSvc altSvc = AltSvc.builder()
+                .config(Config.just(ConfigSources.create(Map.of("protocol", " \t"))))
+                .build();
 
         assertThat(altSvc.prototype().protocol(), is(" \t"));
         assertThat(altSvc.headerValue(8443), is("%20%09=\":8443\""));
@@ -132,7 +134,6 @@ class AltSvcConfigTest {
     void shouldRejectNullApiArguments() {
         AltSvcConfig.Builder builder = AltSvc.builder();
 
-        assertThrows(NullPointerException.class, () -> AltSvc.create((Config) null));
         assertThrows(NullPointerException.class,
                      () -> AltSvc.create((Consumer<AltSvcConfig.Builder>) null));
         assertThrows(NullPointerException.class, () -> builder.config(null));

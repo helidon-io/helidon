@@ -49,7 +49,7 @@ class ConnectionConfigTest {
         assertThat(http2Configs, hasKey("@default"));
 
         Http2Config http2Config = http2Configs.get("@default");
-        AltSvcConfig altSvc = http2Config.altSvc().orElseThrow();
+        AltSvcConfig altSvc = http2Config.altSvc().orElseThrow().prototype();
 
         assertAll(
                 () -> assertThat("maxFrameSize", http2Config.maxFrameSize(), is(8192)),

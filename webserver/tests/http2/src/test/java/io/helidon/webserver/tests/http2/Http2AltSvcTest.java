@@ -110,6 +110,22 @@ class Http2AltSvcTest {
     }
 
     @Test
+    void shouldAdvertiseAltSvcAfterH2cUpgrade() {
+        Http2Client upgradeClient = Http2Client.builder()
+                .baseUri("http://localhost:" + server.port())
+                .protocolConfig(Http2ClientProtocolConfig.builder()
+                                        .priorKnowledge(false)
+                                        .build())
+                .build();
+        try (Http2ClientResponse response = upgradeClient.get("/ok").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(expectedAltSvc(server.port())));
+        } finally {
+            upgradeClient.closeResource();
+        }
+    }
+
+    @Test
     void shouldAdvertiseAltSvcOnRedirectFromErrorHandler() {
         try (Http2ClientResponse response = client.get("/error-redirect").followRedirects(false).request()) {
             assertThat(response.status(), is(Status.MOVED_PERMANENTLY_301));
