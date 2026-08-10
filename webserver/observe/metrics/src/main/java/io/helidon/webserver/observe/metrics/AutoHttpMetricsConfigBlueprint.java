@@ -73,11 +73,12 @@ interface AutoHttpMetricsConfigBlueprint {
     List<String> optIn();
 
     /**
-     * HTTP methods to be used in the HTTP method tag for automatic metrics.
+     * HTTP methods to be used in the HTTP method tag for automatic metrics, defaulted to the standard HTTP methods plus
+     * {@code LIST}; assigning this value fully replaces the set of method names.
      * <p>
-     * If assigned explicitly, this setting replaces the default known HTTP methods ({@code CONNECT}, {@code DELETE},
-     * {@code GET}, {@code HEAD},{@code LIST}, {@code OPTIONS}, {@code PATCH}, {@code POST}, {@code PUT}, and {@code TRACE})
-     * used in the HTTP method tag. Unlisted methods are reported as {@code _OTHER}, so configurations that add additional
+     * Default known HTTP methods: {@code CONNECT}, {@code DELETE},
+     * {@code GET}, {@code HEAD},{@code LIST}, {@code OPTIONS}, {@code PATCH}, {@code POST}, {@code PUT}, and {@code TRACE}).
+     * Unlisted methods are reported as {@code _OTHER}, so configurations that add additional
      * method names must also include default methods they intend to retain.
      * <p>
      * Method names are canonicalized using Helidon's HTTP method model.
