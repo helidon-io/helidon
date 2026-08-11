@@ -90,7 +90,9 @@ record CachedHandlerInMemory(MediaType mediaType,
                 range.setContentRange(response);
 
                 // only send a part of the file
-                response.send(Arrays.copyOfRange(bytes(), (int) range.offset(), (int) range.length()));
+                response.send(Arrays.copyOfRange(bytes(),
+                                                 (int) range.offset(),
+                                                 (int) (range.offset() + range.length())));
             } else {
                 // not supported, send full
                 send(response);

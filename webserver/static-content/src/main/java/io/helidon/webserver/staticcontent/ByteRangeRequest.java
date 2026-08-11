@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,10 +54,10 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             if (secondGroup != null) {
                 long second = Long.parseLong(secondGroup);
                 if (firstGroup == null) {
-                    from = fileLength - second;
+                    from = Math.max(0, fileLength - second);
                     last = fileLength - 1;
                 } else {
-                    last = second;
+                    last = Math.min(second, fileLength - 1);
                 }
             }
             parts.add(ByteRangeRequest.create(req, res, from, last, fileLength));

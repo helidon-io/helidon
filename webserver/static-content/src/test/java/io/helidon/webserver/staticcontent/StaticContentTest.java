@@ -79,6 +79,10 @@ class StaticContentTest {
         Files.writeString(alternateRoot.resolve("resource.txt"), "Alternate content");
 
         builder.register("/classpath", createService(ClasspathHandlerConfig.create("web")))
+                .register("/classpath-memory", createService(ClasspathHandlerConfig.builder()
+                                                                      .location("web")
+                                                                      .cachedFiles(Set.of("resource.txt"))
+                                                                      .build()))
                 .register("/singleclasspath", createService(ClasspathHandlerConfig.create("web/resource.txt")))
                 .register("/path", createService(FileSystemHandlerConfig.create(staticRoot)))
                 .register("/singlepath", createService(FileSystemHandlerConfig.create(resource)));
@@ -227,6 +231,42 @@ class StaticContentTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+    }
+
+    @Test
+    void testClasspathRangeWithNonZeroOffset() {
+        try (Http1ClientResponse response = testClient.get("/classpath-memory/resource.txt")
+                .header(HeaderNames.RANGE, "bytes=2-4")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-4/7"));
+            assertThat(response.as(String.class), is("nte"));
+        }
+    }
+
+    @Test
+    void testFileSystemRangeEndBeyondContent() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.RANGE, "bytes=2-999")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-6/7"));
+            assertThat(response.as(String.class), is("ntent"));
+        }
+    }
+
+    @Test
+    void testFileSystemSuffixRangeBeyondContent() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.RANGE, "bytes=-999")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 0-6/7"));
+            assertThat(response.as(String.class), is("Content"));
         }
     }
 
