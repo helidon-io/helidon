@@ -331,6 +331,30 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void upgradedConnectionClearsSocketReadTimeout() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            AtomicReference<Duration> socketReadTimeout = new AtomicReference<>(Duration.ofSeconds(30));
+            AtomicReference<Duration> firstHttp2ReadTimeout = new AtomicReference<>();
+            doAnswer(invocation -> {
+                socketReadTimeout.set(invocation.getArgument(0));
+                return null;
+            }).when(test.clientConnection).readTimeout(any(Duration.class));
+            when(test.clientConnection.reader()).thenReturn(DataReader.create(() -> {
+                firstHttp2ReadTimeout.compareAndSet(null, socketReadTimeout.get());
+                return test.nextInboundFrame();
+            }));
+            test.offerInbound(settingsFrame(10));
+
+            Http2ClientConnection connection = Http2ClientConnection.createUpgraded(test.client,
+                                                                                     test.clientConnection,
+                                                                                     ignored -> { });
+
+            assertThat(firstHttp2ReadTimeout.get(), is(Duration.ZERO));
+            connection.close();
+        }
+    }
+
+    @Test
     void initialSettingsFailureClosesConnection() {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.closeInbound();

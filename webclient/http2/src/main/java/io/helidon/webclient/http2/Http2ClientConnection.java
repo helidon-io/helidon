@@ -17,6 +17,7 @@
 package io.helidon.webclient.http2;
 
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -165,7 +166,15 @@ public class Http2ClientConnection {
                                         Consumer<Http2ClientConnection> closeListener) {
 
         Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection, closeListener);
-        return create(h2conn, http2Client, sendSettings);
+        return create(h2conn, http2Client, sendSettings, false);
+    }
+
+    static Http2ClientConnection createUpgraded(Http2ClientImpl http2Client,
+                                                ClientConnection connection,
+                                                Consumer<Http2ClientConnection> closeListener) {
+
+        Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection, closeListener);
+        return create(h2conn, http2Client, false, true);
     }
 
     /**
@@ -183,9 +192,22 @@ public class Http2ClientConnection {
     static <T extends Http2ClientConnection> T create(T connection,
                                                       Http2ClientImpl http2Client,
                                                       boolean sendSettings) {
+        return create(connection, http2Client, sendSettings, false);
+    }
+
+    private static <T extends Http2ClientConnection> T create(T connection,
+                                                              Http2ClientImpl http2Client,
+                                                              boolean sendSettings,
+                                                              boolean clearReadTimeout) {
         Http2ClientConnection rawConnection = connection;
         boolean success = false;
         try {
+            if (clearReadTimeout) {
+                // HTTP/1.1 installs a request-scoped socket timeout. HTTP/2 owns a permanent connection reader and
+                // applies read timeouts to individual streams, so the inherited socket timeout must not close an idle
+                // upgraded connection.
+                rawConnection.connection.readTimeout(Duration.ZERO);
+            }
             rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
             rawConnection.awaitInitialSettings();
             success = true;

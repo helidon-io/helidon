@@ -252,9 +252,7 @@ class Http2ClientConnectionHandler {
                                                       http2Client.protocolConfig());
             if (upgradeResponse.isUpgraded()) {
                 result.set(Result.HTTP_2);
-                Http2ClientConnection conn = createHttp2Connection(http2Client,
-                                                                   upgradeResponse.connection(),
-                                                                   false);
+                Http2ClientConnection conn = createUpgradedHttp2Connection(http2Client, upgradeResponse.connection());
                 activeConnection.set(conn);
                 return http2(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
             } else {
@@ -463,7 +461,7 @@ class Http2ClientConnectionHandler {
                     if (upgradeResponse.isUpgraded()) {
                         result.set(Result.HTTP_2);
                         connection = upgradeResponse.connection();
-                        usedConnection = createHttp2Connection(http2Client, connection, false);
+                        usedConnection = createUpgradedHttp2Connection(http2Client, connection);
                     } else {
                         HttpClientResponse response = upgradeResponse.response();
                         if (request.followRedirects() && RedirectionProcessor.redirectionStatusCode(response.status())) {
@@ -518,6 +516,11 @@ class Http2ClientConnectionHandler {
                                                         ClientConnection clientConnection,
                                                         boolean sendSettings) {
         return Http2ClientConnection.create(http2Client, clientConnection, sendSettings, this::removeConnection);
+    }
+
+    private Http2ClientConnection createUpgradedHttp2Connection(Http2ClientImpl http2Client,
+                                                                ClientConnection clientConnection) {
+        return Http2ClientConnection.createUpgraded(http2Client, clientConnection, this::removeConnection);
     }
 
     private void removeConnection(Http2ClientConnection connection) {
