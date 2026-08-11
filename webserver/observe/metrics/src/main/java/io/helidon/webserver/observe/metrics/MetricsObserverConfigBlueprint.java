@@ -67,16 +67,18 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * If you want to have multiple meter registries with different
      * endpoints, you may create them using
      * {@snippet :
-     *      MeterRegistry meterRegistry = Services.get(MetricsFactory.class)
+     *      MeterRegistry meterRegistry = io.helidon.service.registry.Services
+     *              .get(io.helidon.metrics.api.MetricsFactory.class)
      *              .createMeterRegistry(metricsConfig);
-     *      MetricsFeature.builder()
-     *              .meterRegistry(meterRegistry) // further settings on the feature builder, etc.
+     *      MetricsObserver.builder()
+     *              .meterRegistry(meterRegistry) // further settings on the observer builder, etc.
+     *              .build();
      * }
      * where {@code metricsConfig} in each case has different
      * {@link #endpoint() settings}.
      * <p>
      * If this method is not called,
-     * {@link MetricsFeature} would use the shared
+     * {@link MetricsObserver} uses the shared
      * instance as provided by
      * {@link io.helidon.service.registry.Services#get(java.lang.Class)
      * Services.get(MeterRegistry.class)}.
