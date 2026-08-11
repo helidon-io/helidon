@@ -1059,6 +1059,39 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void inheritedSecuritySchemeRequirementCannotCombineWithSecurityRequirement() {
+        var result = compile("openapi-inherited-mixed-security-requirements", """
+                interface DirectSecurityApi {
+                    @Http.GET
+                    @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                    String get();
+                }
+
+                interface StructuredSecurityApi {
+                    @Http.GET
+                    @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement(value = "oauth2", scopes = "read"))
+                    String get();
+                }
+
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint implements DirectSecurityApi, StructuredSecurityApi {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecuritySchemeRequirement on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot be combined with @OpenApi.SecurityRequirement or @OpenApi.SecurityRequirements");
+    }
+
+    @Test
     void securityRequirementScopesApplyOnlyToTheirSchemes() throws IOException {
         var result = compile("openapi-security-requirement-scopes", """
                 @OpenApi.SecurityRequirement({

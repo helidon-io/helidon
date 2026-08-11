@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
@@ -671,21 +672,20 @@ final class OpenApiSourceGenerator {
     }
 
     private Collection<Annotation> operationSecurityAnnotations(RestMethod restMethod) {
-        Collection<Annotation> directAnnotations = restMethod.method().annotations();
-        Collection<Annotation> securityAnnotations = hasSecurityRequirementAnnotations(directAnnotations)
-                ? directAnnotations
-                : annotationsWithMetaAnnotations(directAnnotations);
+        var direct = restMethod.method().annotations();
+        var securityAnnotations = hasSecurityRequirementAnnotations(direct) ? direct : annotationsWithMetaAnnotations(direct);
         if (hasSecurityRequirementAnnotations(securityAnnotations)) {
             return securityAnnotations;
         }
         TypeName annotationType = OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION;
-        List<List<Annotation>> candidates = TypeHierarchy.hierarchyAnnotationCandidates(ctx, restMethod.type(),
-                                                                                        restMethod.method(), annotationType);
+        var candidates = TypeHierarchy.hierarchyAnnotationCandidates(ctx, restMethod.type(), restMethod.method(), annotationType);
         if (candidates.size() > 1) {
             throw new CodegenException("Conflicting inherited @OpenApi.SecuritySchemeRequirement annotations on "
                                                + restMethodDescription(restMethod));
         }
-        return candidates.isEmpty() ? restMethod.annotations() : candidates.getFirst();
+        var inherited = restMethod.annotations();
+        return candidates.isEmpty() ? inherited : Stream.concat(
+                inherited.stream().filter(it -> !annotationType.equals(it.typeName())), candidates.getFirst().stream()).toList();
     }
 
     private List<Annotation> annotationsWithMetaAnnotations(Collection<Annotation> annotations) {
