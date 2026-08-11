@@ -67,6 +67,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected static final Header STREAM_TRAILERS =
             HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
+    private static final Header VARY_ACCEPT_ENCODING =
+            HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final ServerRequestHeaders requestHeaders;
@@ -272,6 +274,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             }
             entity = baos.toByteArray();
             encoder.headers(headers());
+            headers().add(VARY_ACCEPT_ENCODING);
         }
         return entity;
     }
@@ -286,6 +289,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         if (contentEncodingContext.contentEncodingEnabled() && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             encoder.headers(headers());
+            headers().add(VARY_ACCEPT_ENCODING);
 
             return encoder.apply(outputStream);
         }
