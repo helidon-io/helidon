@@ -93,10 +93,11 @@ abstract class StaticContentHandler implements HttpService {
         boolean ifMatchPresent = requestHeaders.contains(HeaderNames.IF_MATCH);
         if (newEtag != null && ifMatchPresent) {
             // Process If-Match header
-            List<String> ifMatches = requestHeaders.get(HeaderNames.IF_MATCH).allValues();
+            List<String> ifMatches = requestHeaders.values(HeaderNames.IF_MATCH);
             if (!ifMatches.isEmpty()) {
                 boolean ifMatchChecked = false;
                 for (String ifMatch : ifMatches) {
+                    ifMatch = ifMatch.trim();
                     boolean wildcard = "*".equals(ifMatch);
                     boolean weak = ifMatch.startsWith("W/") || ifMatch.startsWith("w/");
                     ifMatch = unquoteETag(ifMatch);
@@ -131,8 +132,9 @@ abstract class StaticContentHandler implements HttpService {
         // Process If-None-Match header
         boolean ifNoneMatchPresent = requestHeaders.contains(HeaderNames.IF_NONE_MATCH);
         if (newEtag != null && ifNoneMatchPresent) {
-            List<String> ifNoneMatches = requestHeaders.get(HeaderNames.IF_NONE_MATCH).allValues();
+            List<String> ifNoneMatches = requestHeaders.values(HeaderNames.IF_NONE_MATCH);
             for (String ifNoneMatch : ifNoneMatches) {
+                ifNoneMatch = ifNoneMatch.trim();
                 ifNoneMatch = unquoteETag(ifNoneMatch);
                 if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
                     // using exception to handle normal flow (same as in reactive static content)
