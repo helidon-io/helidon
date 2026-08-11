@@ -33,7 +33,7 @@ final class JdbcStatement implements JdbcClient.Statement {
     private final String sql;
     private final JdbcOperation.Bind[] binds;
 
-    // A terminal freezes the statement, so later mutation or execution must fail.
+    // A terminal operation freezes the statement, so later changes or execution attempts must fail.
     private boolean terminalStarted;
 
     /**
@@ -58,9 +58,10 @@ final class JdbcStatement implements JdbcClient.Statement {
      */
     @Override
     public JdbcClient.Statement bind(int index, Object value) {
-        Objects.requireNonNull(value, "Bind value must not be null; use bindNull for SQL NULL");
+        Objects.requireNonNull(value, "Bind value must not be null. Use bindNull for SQL NULL.");
         if (!JdbcRow.supportedScalar(value.getClass())) {
-            throw new IllegalArgumentException("Unsupported JDBC bind value type: " + value.getClass().getTypeName());
+            throw new IllegalArgumentException("JDBC does not support bind values of type: "
+                                                       + value.getClass().getTypeName());
         }
         return bind(index, new JdbcOperation.Bind(value, null));
     }
@@ -76,7 +77,7 @@ final class JdbcStatement implements JdbcClient.Statement {
     public JdbcClient.Statement bindNull(int index, JDBCType type) {
         Objects.requireNonNull(type, "JDBC null type must not be null");
         if (type == JDBCType.NULL || type == JDBCType.REF_CURSOR) {
-            throw new IllegalArgumentException("Unsupported JDBC null type: " + type);
+            throw new IllegalArgumentException("JDBC does not support null values of type: " + type);
         }
         return bind(index, new JdbcOperation.Bind(null, type));
     }
@@ -118,7 +119,8 @@ final class JdbcStatement implements JdbcClient.Statement {
         ensureMutable();
         Objects.requireNonNull(scalarType, "Scalar type must not be null");
         if (!JdbcRow.supportedScalar(scalarType)) {
-            throw new IllegalArgumentException("Unsupported JDBC scalar type: " + scalarType.getTypeName());
+            throw new IllegalArgumentException("JDBC does not support scalar values of type: "
+                                                       + scalarType.getTypeName());
         }
         return new JdbcRows<>(this,
                               row -> row.required(1, scalarType),
@@ -195,7 +197,7 @@ final class JdbcStatement implements JdbcClient.Statement {
     private JdbcClient.Statement bind(int index, JdbcOperation.Bind value) {
         ensureMutable();
         if (index < 1 || index > binds.length) {
-            throw new IllegalArgumentException("Bind index must be between 1 and " + binds.length + ": " + index);
+            throw new IllegalArgumentException("The bind index must be between 1 and " + binds.length + ": " + index);
         }
         if (binds[index - 1] != null) {
             throw new IllegalArgumentException("Bind position " + index + " was already assigned");
@@ -226,7 +228,7 @@ final class JdbcStatement implements JdbcClient.Statement {
      */
     void ensureMutable() {
         if (terminalStarted) {
-            throw new IllegalStateException("A JDBC statement stage permits exactly one terminal operation");
+            throw new IllegalStateException("A JDBC statement stage allows exactly one terminal operation");
         }
     }
 }

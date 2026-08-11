@@ -49,14 +49,12 @@ public abstract class BasePersistenceGenerator
         Objects.requireNonNull(codegenContext, "Codegen context value is null");
         Objects.requireNonNull(repositoryGenerator, "Data repository generator value is null");
 
-        // A missing provider annotation does not select every generator. Existing providers remain default, while
-        // providers such as JDBC can require explicit selection.
-        var configuredProvider = interfaceInfo.findAnnotation(DataCommonCodegenTypes.PROVIDER)
-                .flatMap(Annotation::value);
-        boolean should = configuredProvider.map(provider()::equals)
-                .orElseGet(this::generateByDefault);
+        boolean shouldGenerate = interfaceInfo.findAnnotation(DataCommonCodegenTypes.PROVIDER)
+                .flatMap(Annotation::value)
+                .map(provider()::equals)
+                .orElse(true);
 
-        if (should) {
+        if (shouldGenerate) {
             TypeName repositoryClassName = repositoryClassName(interfaceInfo.typeName());
             RepositoryInfo repositoryInfo = repositoryGenerator.createRepositoryInfo(interfaceInfo, codegenContext);
             ClassModel.Builder classModel = ClassModel.builder();
@@ -68,11 +66,25 @@ public abstract class BasePersistenceGenerator
                                     repositoryClassName,
                                     classModel);
 
+            copyTransactionAnnotations(interfaceInfo, classModel);
+
             roundContext.addGeneratedType(repositoryClassName,
                                           classModel,
                                           repositoryInfo.interfaceInfo().typeName(),
                                           repositoryInfo.interfaceInfo().originatingElementValue());
         }
+    }
+
+    private static void copyTransactionAnnotations(TypeInfo repositoryInfo, ClassModel.Builder classModel) {
+        // Recognize the transaction family by its semantic marker instead of coupling Data codegen to every Tx type.
+        // Keep directly declared, source-retained transaction annotations in the generated source so service codegen
+        // can include them in the interception metadata of the implementation. This deliberately copies every matching
+        // declaration without resolving transaction precedence. Other repository type annotations, including other
+        // interception annotations, are not copied by this step.
+        repositoryInfo.annotations()
+                .stream()
+                .filter(annotation -> annotation.hasMetaAnnotation(DataCommonCodegenTypes.TRANSACTION_TYPE))
+                .forEach(classModel::addAnnotation);
     }
 
     /**
@@ -81,18 +93,6 @@ public abstract class BasePersistenceGenerator
      * @return provider name
      */
     protected abstract String provider();
-
-    /**
-     * Checks whether this generator runs when a repository omits {@code @Data.Provider}.
-     * <p>
-     * Existing generators remain enabled by default. A provider that requires
-     * explicit selection overrides this method and returns {@code false}.
-     *
-     * @return {@code true} when this generator is a default provider
-     */
-    protected boolean generateByDefault() {
-        return true;
-    }
 
     /**
      * Data repository interface implementing class name for specific persistence provider.

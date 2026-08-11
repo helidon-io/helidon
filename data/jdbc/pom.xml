@@ -37,12 +37,4 @@
         <module>jdbc</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>tests</id>
-            <modules>
-                <module>tests</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

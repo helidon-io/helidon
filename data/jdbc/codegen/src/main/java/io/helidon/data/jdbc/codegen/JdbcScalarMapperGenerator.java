@@ -45,7 +45,7 @@ final class JdbcScalarMapperGenerator {
     }
 
     /**
-     * Adds column-one scalar mapping to a generated-key statement.
+     * Adds scalar mapping for the first column of a generated key statement.
      *
      * @param method generated method
      * @param mappedType scalar type
@@ -70,7 +70,7 @@ final class JdbcScalarMapperGenerator {
      * @param columnNames requested generated columns
      */
     static void addGeneratedKeyColumns(Method.Builder method, List<String> columnNames) {
-        // Use one builder call per column to avoid arrays, collections, and varargs in generated source.
+        // Use one builder call for each column to avoid arrays, collections, and varargs in generated source.
         for (String columnName : columnNames) {
             method.addContent(".addColumn(")
                     .addContentLiteral(columnName)

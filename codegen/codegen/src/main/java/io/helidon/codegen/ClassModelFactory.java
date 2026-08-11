@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ final class ClassModelFactory {
             ctx.typeInfo(typeName).ifPresent(builder::addInterfaceTypeInfo);
         }
         for (Field field : requestedType.fields()) {
-            addField(builder, field);
+            addField(builder, requestedType.kind(), field);
         }
         for (Constructor constructor : requestedType.constructors()) {
             addConstructor(requestedTypeName, builder, constructor);
@@ -160,10 +160,15 @@ final class ClassModelFactory {
         );
     }
 
-    private static void addField(TypeInfo.Builder builder, Field field) {
+    private static void addField(TypeInfo.Builder builder, ElementKind enclosingKind, Field field) {
         builder.addElementInfo(fieldInfo -> fieldInfo
                 .typeName(field.typeName())
-                .kind(ElementKind.FIELD)
+                // ClassModel represents record components as non-static fields. When an extension obtains TypeInfo
+                // for a record before javac compiles it, report the same element kind that javac reports in a later
+                // round. Static record members and fields declared by other types remain fields.
+                .kind(enclosingKind == ElementKind.RECORD && !field.isStatic()
+                              ? ElementKind.RECORD_COMPONENT
+                              : ElementKind.FIELD)
                 .accessModifier(field.accessModifier())
                 .elementName(field.name())
                 .description(String.join("\n", field.description()))

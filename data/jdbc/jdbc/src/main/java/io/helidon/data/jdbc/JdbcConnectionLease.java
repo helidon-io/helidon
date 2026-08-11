@@ -32,13 +32,21 @@ import javax.sql.DataSource;
 interface JdbcConnectionLease extends AutoCloseable {
 
     /**
+     * Returns the standard lease policy used outside local transactions.
+     *
+     * @return provider of physically owned connections
+     */
+    static Provider ownedProvider() {
+        return Owned::acquire;
+    }
+
+    /**
      * Returns the connection available to the current operation.
      *
      * @return leased connection
      */
     Connection connection();
 
-    /** {@inheritDoc} */
     @Override
     void close() throws SQLException;
 
@@ -58,18 +66,12 @@ interface JdbcConnectionLease extends AutoCloseable {
     }
 
     /**
-     * Returns the standard lease policy used outside local transactions.
-     *
-     * @return provider of physically owned connections
-     */
-    static Provider ownedProvider() {
-        return dataSource -> new Owned(dataSource.getConnection());
-    }
-
-    /**
      * Lease that closes its physical connection when the operation ends.
      */
     final class Owned implements JdbcConnectionLease {
+
+        private static final String AUTO_COMMIT_REQUIRED =
+                "Data sources used for JDBC operations must provide connections with auto-commit enabled.";
 
         private final Connection connection;
         private boolean closed;
@@ -79,11 +81,39 @@ interface JdbcConnectionLease extends AutoCloseable {
          *
          * @param connection owned connection
          */
-        Owned(Connection connection) {
+        private Owned(Connection connection) {
             this.connection = connection;
         }
 
-        /** {@inheritDoc} */
+        /**
+         * Acquires and validates a physically owned connection. Operations that
+         * own their connection require auto-commit so an ordinary lease close cannot leave
+         * transaction completion to driver-specific {@link Connection#close()}
+         * behavior. A rejected connection is closed before the acquisition
+         * failure is rethrown.
+         *
+         * @param dataSource source of the owned connection
+         * @return validated connection lease
+         * @throws SQLException when acquisition or validation fails
+         */
+        static Owned acquire(DataSource dataSource) throws SQLException {
+            Connection connection = dataSource.getConnection();
+            try {
+                if (!connection.getAutoCommit()) {
+                    throw JdbcExceptionTranslator.safeException(AUTO_COMMIT_REQUIRED);
+                }
+                return new Owned(connection);
+            } catch (SQLException | RuntimeException | Error failure) {
+                try {
+                    connection.close();
+                } catch (SQLException | RuntimeException | Error closeFailure) {
+                    // Preserve the acquisition failure and prevent driver cleanup details from escaping.
+                    JdbcExceptionTranslator.suppress(failure, "rejected connection close", closeFailure);
+                }
+                throw failure;
+            }
+        }
+
         @Override
         public Connection connection() {
             if (closed) {
@@ -92,7 +122,6 @@ interface JdbcConnectionLease extends AutoCloseable {
             return connection;
         }
 
-        /** {@inheritDoc} */
         @Override
         public void close() throws SQLException {
             if (!closed) {

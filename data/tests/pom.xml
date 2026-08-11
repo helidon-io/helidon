@@ -53,6 +53,7 @@
         <module>model</module>
         <module>repository</module>
         <module>common</module>
+        <module>jdbc</module>
     </modules>
 
     <profiles>
