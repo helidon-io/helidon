@@ -169,7 +169,7 @@ defined by another type (nested types).
      "key": "key in configuration (may be missing, if this merges with parent)",
      "type": "fully qualified type of the configuration option, defaults to java.lang.String",
      "description": "description of this configuration node (expected to be non-empty)",
-     "kind": "LIST|MAP|VALUE",
+     "kind": "LIST|MAP|MAP_OR_LIST|VALUE",
      "method": "annotated method",
      "merge": true,
      "experimental": true,
@@ -194,6 +194,7 @@ defined by another type (nested types).
   * `Kind.LIST` - this is a list of values (either simple values, or objects)
   * `Kind.MAP` - this is a map of values, using keys of the map as keys, and values of the map as values, `type` defines 
      the value type (must be a simple value), key is expected to be `java.lang.String`
+  * `Kind.MAP_OR_LIST` - either the `Kind.MAP` or `Kind.LIST` configuration shape is accepted
   * `Kind.VALUE` - either a simple value (String, Long etc.) or a nested object (this is the default)
 * method - method to be called to configure this option (may be a static factory method, such as `create(Config)`, or a builder method)
 * merge - if set to `true` (default is `false`) this option's key is ignored and all its nested keys are inserted

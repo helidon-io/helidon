@@ -2206,7 +2206,7 @@ class TypeHandlerTest {
     }
 
     @Test
-    void testExplicitKind() throws IOException {
+    void testExplicitMapOrListKind() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(Configured.class)
@@ -2234,7 +2234,7 @@ class TypeHandlerTest {
                                  * @param option1 option1
                                  * @return this builder
                                  */
-                                @ConfiguredOption(kind = Kind.LIST)
+                                @ConfiguredOption(kind = Kind.MAP_OR_LIST)
                                 Builder option1(Map<String, String> option1);
                             }
                         }
@@ -2259,7 +2259,7 @@ class TypeHandlerTest {
                                     {
                                         "key": "option1",
                                         "description": "Option1",
-                                        "kind": "LIST"
+                                        "kind": "MAP_OR_LIST"
                                     }
                                 ]
                             }

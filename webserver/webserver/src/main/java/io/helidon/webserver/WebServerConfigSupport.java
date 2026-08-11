@@ -157,7 +157,9 @@ class WebServerConfigSupport {
 
     static class ListenerConfigDecorator implements Prototype.BuilderDecorator<ListenerConfig.BuilderBase<?, ?>> {
         @Override
+        @SuppressWarnings("removal")
         public void decorate(ListenerConfig.BuilderBase<?, ?> target) {
+            target.maxTcpConnections(target.maxConnections());
             if (target.bindAddress().isPresent()) {
                 if (target.address().isEmpty()) {
                     target.address(InetAddress.getLoopbackAddress());

@@ -335,7 +335,11 @@ public sealed interface CmModel permits CmModelImpl {
             /**
              * Map tree node.
              */
-            MAP
+            MAP,
+            /**
+             * Map or list tree node.
+             */
+            MAP_OR_LIST
         }
 
         /**

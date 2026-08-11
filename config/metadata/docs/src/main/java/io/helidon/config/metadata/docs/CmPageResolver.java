@@ -551,6 +551,7 @@ final class CmPageResolver {
             case VALUE -> typeName;
             case LIST -> "List<" + typeName + ">";
             case MAP -> "Map<String, " + typeName + ">";
+            case MAP_OR_LIST -> "Map<String, " + typeName + "> or List<" + typeName + ">";
         };
     }
 
