@@ -422,6 +422,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
     protected Optional<OutputStream> sinkEntityOutputStream(Runnable responsePreparation) {
         Objects.requireNonNull(responsePreparation);
+        beforeSend();
         return Optional.empty();
     }
 

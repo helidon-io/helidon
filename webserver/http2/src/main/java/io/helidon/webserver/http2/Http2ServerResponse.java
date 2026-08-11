@@ -51,6 +51,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     private boolean isSent;
     private boolean streamingEntity;
+    private boolean preparingResponse;
     private long bytesWritten;
     private BlockingOutputStream outputStream;
     private UnaryOperator<OutputStream> outputStreamFilter;
@@ -96,6 +97,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public void send(byte[] entityBytes, int position, int length) {
+        if (preparingResponse) {
+            throw new IllegalStateException("Response preparation already in progress");
+        }
         try {
             if (outputStreamFilter != null) {
                 // in this case we must honor user's request to filter the stream
@@ -133,7 +137,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                     DateTime.rfc1123String()));
 
             int initialStatusCode = status().code();
-            beforeSend();
+            prepareResponse();
 
             Status responseStatus = status();
             int statusCode = responseStatus.code();
@@ -205,6 +209,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public OutputStream outputStream() {
+        if (preparingResponse) {
+            throw new IllegalStateException("Response preparation already in progress");
+        }
         if (isSent) {
             throw new IllegalStateException("Response already sent");
         }
@@ -216,7 +223,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             headers.add(STREAM_TRAILERS);
         }
 
-        beforeSend();
+        prepareResponse();
         streamingEntity = true;
 
         outputStream = new BlockingOutputStream(request, this, () -> {
@@ -227,6 +234,15 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             return contentEncode(outputStream);
         } else {
             return outputStreamFilter.apply(contentEncode(outputStream));
+        }
+    }
+
+    private void prepareResponse() {
+        preparingResponse = true;
+        try {
+            beforeSend();
+        } finally {
+            preparingResponse = false;
         }
     }
 

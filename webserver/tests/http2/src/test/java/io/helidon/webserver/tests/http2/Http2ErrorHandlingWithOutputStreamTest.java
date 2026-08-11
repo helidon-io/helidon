@@ -25,6 +25,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
@@ -60,6 +61,8 @@ class Http2ErrorHandlingWithOutputStreamTest {
 
     private static final HeaderName MAIN_HEADER_NAME = HeaderNames.create("main-handler");
     private static final HeaderName ERROR_HEADER_NAME = HeaderNames.create("error-handler");
+    private static final HeaderName REENTRY_RESULT_HEADER_NAME = HeaderNames.create("reentry-result");
+    private static final HeaderName CALLBACK_COUNT_HEADER_NAME = HeaderNames.create("callback-count");
     private static HttpClient httpClient;
     private final int plainPort;
     private final int tlsPort;
@@ -149,6 +152,34 @@ class Http2ErrorHandlingWithOutputStreamTest {
                         os.write("before send status accepted".getBytes(StandardCharsets.UTF_8));
                     }
                 }))
+                .route(Http2Route.route(GET, "beforeSend-reentrant-send", (req, res) -> {
+                    AtomicInteger callbackCount = new AtomicInteger();
+                    res.beforeSend(() -> {
+                        int count = callbackCount.incrementAndGet();
+                        res.header(CALLBACK_COUNT_HEADER_NAME, String.valueOf(count));
+                        if (count == 1) {
+                            String sendResult = reentryResult(() -> res.send("nested"));
+                            String outputStreamResult = reentryResult(res::outputStream);
+                            res.header(REENTRY_RESULT_HEADER_NAME, sendResult + '|' + outputStreamResult);
+                        }
+                    });
+                    res.send("outer send");
+                }))
+                .route(Http2Route.route(GET, "beforeSend-reentrant-outputStream", (req, res) -> {
+                    AtomicInteger callbackCount = new AtomicInteger();
+                    res.beforeSend(() -> {
+                        int count = callbackCount.incrementAndGet();
+                        res.header(CALLBACK_COUNT_HEADER_NAME, String.valueOf(count));
+                        if (count == 1) {
+                            String outputStreamResult = reentryResult(res::outputStream);
+                            String sendResult = reentryResult(() -> res.send("nested"));
+                            res.header(REENTRY_RESULT_HEADER_NAME, outputStreamResult + '|' + sendResult);
+                        }
+                    });
+                    try (OutputStream os = res.outputStream()) {
+                        os.write("outer stream".getBytes(StandardCharsets.UTF_8));
+                    }
+                }))
                 .get("get-outputStream-tryWithResources", (req, res) -> {
                     res.header(MAIN_HEADER_NAME, "x");
                     try (OutputStream os = res.outputStream()) {
@@ -223,6 +254,28 @@ class Http2ErrorHandlingWithOutputStreamTest {
     }
 
     @Test
+    void testBeforeSendRejectsReentrantSendAndOutputStream() {
+        var response = request("/beforeSend-reentrant-send");
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), is("outer send"));
+        assertThat(response.headers().firstValue(CALLBACK_COUNT_HEADER_NAME.lowerCase()), is(Optional.of("1")));
+        assertThat(response.headers().firstValue(REENTRY_RESULT_HEADER_NAME.lowerCase()),
+                   is(Optional.of("rejected|rejected")));
+    }
+
+    @Test
+    void testBeforeSendRejectsReentrantOutputStreamAndSend() {
+        var response = request("/beforeSend-reentrant-outputStream");
+
+        assertThat(response.statusCode(), is(200));
+        assertThat(response.body(), is("outer stream"));
+        assertThat(response.headers().firstValue(CALLBACK_COUNT_HEADER_NAME.lowerCase()), is(Optional.of("1")));
+        assertThat(response.headers().firstValue(REENTRY_RESULT_HEADER_NAME.lowerCase()),
+                   is(Optional.of("rejected|rejected")));
+    }
+
+    @Test
     void testGetOutputStreamTryWithResourcesThenError_expect_CustomErrorHandlerMessage() {
         var response = request("/get-outputStream-tryWithResources");
 
@@ -230,6 +283,15 @@ class Http2ErrorHandlingWithOutputStreamTest {
         assertThat(response.body(), is("TeaPotIAm"));
         assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
         assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
+    }
+
+    private static String reentryResult(Runnable action) {
+        try {
+            action.run();
+            return "accepted";
+        } catch (IllegalStateException e) {
+            return "rejected";
+        }
     }
 
     private static HttpClient http2Client() {

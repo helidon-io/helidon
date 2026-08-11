@@ -16,9 +16,7 @@
 
 package io.helidon.webserver.http1;
 
-import java.io.OutputStream;
 import java.util.Objects;
-import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.DataWriter;
@@ -100,13 +98,6 @@ final class Http1AltSvcServerResponse extends Http1ServerResponse {
         super.beforeSend();
         responsePrepared = true;
         reconcileAltSvcHeader();
-    }
-
-    @Override
-    protected Optional<OutputStream> sinkEntityOutputStream(Runnable responsePreparation) {
-        Objects.requireNonNull(responsePreparation);
-        beforeSend();
-        return Optional.empty();
     }
 
     private void reconcileAltSvcHeader() {

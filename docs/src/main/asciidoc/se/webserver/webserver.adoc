@@ -1011,7 +1011,8 @@ To enable HTTP/2 support add the following dependency to your project's `pom.xml
 Alternative service advertisement is a preview feature. The APIs shown here are subject to change. These APIs will be
 finalized in a future release of Helidon.
 
-WebServer can add an `Alt-Svc` response header to advertise an alternative service from HTTP/1.1 or HTTP/2.
+WebServer can add an `Alt-Svc` response header to advertise an alternative service from HTTP/1.1 or HTTP/2 responses
+handled by HTTP routing. HTTP/2 subprotocol responses, such as gRPC, do not include the configured advertisement.
 Advertisement is opt-in and is added only to successful and redirection responses. An `Alt-Svc` header set by the
 application takes precedence over the configured value.
 

@@ -159,7 +159,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
     boolean validatePath();
 
     /**
-     * Explicit {@code Alt-Svc} advertisement.
+     * Explicit {@code Alt-Svc} advertisement for responses handled by HTTP routing,
+     * excluding HTTP/2 subprotocol responses such as gRPC.
      *
      * @return alternative service advertisement
      */
