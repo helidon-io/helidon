@@ -672,19 +672,20 @@ final class OpenApiSourceGenerator {
 
     private Collection<Annotation> operationSecurityAnnotations(RestMethod restMethod) {
         Collection<Annotation> directAnnotations = restMethod.method().annotations();
-        if (hasSecurityRequirementAnnotations(directAnnotations)) {
-            return directAnnotations;
+        Collection<Annotation> securityAnnotations = hasSecurityRequirementAnnotations(directAnnotations)
+                ? directAnnotations
+                : annotationsWithMetaAnnotations(directAnnotations);
+        if (hasSecurityRequirementAnnotations(securityAnnotations)) {
+            return securityAnnotations;
         }
-        Collection<Annotation> composedAnnotations = annotationsWithMetaAnnotations(directAnnotations);
-        if (hasSecurityRequirementAnnotations(composedAnnotations)) {
-            return composedAnnotations;
-        }
-        if (TypeHierarchy.hierarchyAnnotationCandidates(ctx, restMethod.type(), restMethod.method(),
-                                                        OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION).size() > 1) {
+        TypeName annotationType = OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION;
+        List<List<Annotation>> candidates = TypeHierarchy.hierarchyAnnotationCandidates(ctx, restMethod.type(),
+                                                                                        restMethod.method(), annotationType);
+        if (candidates.size() > 1) {
             throw new CodegenException("Conflicting inherited @OpenApi.SecuritySchemeRequirement annotations on "
                                                + restMethodDescription(restMethod));
         }
-        return restMethod.annotations();
+        return candidates.isEmpty() ? restMethod.annotations() : candidates.getFirst();
     }
 
     private List<Annotation> annotationsWithMetaAnnotations(Collection<Annotation> annotations) {

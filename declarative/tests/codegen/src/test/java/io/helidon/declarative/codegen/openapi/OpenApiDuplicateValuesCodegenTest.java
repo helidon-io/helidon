@@ -1322,6 +1322,41 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void inheritedComposedMethodSecuritySchemeRequirementCannotRepeatSameRequirement() {
+        var result = compile("openapi-duplicate-inherited-composed-method-security-scheme-requirement", """
+                @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                @interface BearerAuth {
+                }
+
+                @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                @interface AlternateBearerAuth {
+                }
+
+                interface SecuredApi {
+                    @Http.GET
+                    @BearerAuth
+                    @AlternateBearerAuth
+                    String get();
+                }
+
+                @RestServer.Endpoint
+                @Service.Singleton
+                @OpenApi.Endpoint
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint implements SecuredApi {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityRequirement on com.example.InvalidOpenApiEndpoint.get",
+                               "cannot define security requirement [bearerAuth] more than once");
+    }
+
+    @Test
     void composedMethodSecurityRequirementCannotRepeatThroughDiamond() {
         var result = compile("openapi-duplicate-composed-method-security-requirement-diamond", """
                 @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))

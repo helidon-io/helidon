@@ -275,6 +275,43 @@ class OpenApiPathCodegenTest {
     }
 
     @Test
+    void inheritedComposedMethodSecuritySchemeRequirementsAreAllPreserved() throws IOException {
+        var result = compile("inherited-composed-method-security-scheme-requirements", """
+                @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                @interface BearerAuth {
+                }
+
+                @OpenApi.SecuritySchemeRequirement("apiKey")
+                @interface ApiKeyAuth {
+                }
+
+                interface SecuredApi {
+                    @Http.GET
+                    @BearerAuth
+                    @ApiKeyAuth
+                    String get();
+                }
+
+                @RestServer.Endpoint
+                @Service.Singleton
+                @OpenApi.Endpoint
+                @Http.Path("/inherited-composed-method-security")
+                class InheritedComposedMethodSecurityEndpoint implements SecuredApi {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated, containsString(".scheme(\"apiKey\", java.util.List.of())"));
+    }
+
+    @Test
     void conflictingInheritedMethodSecuritySchemeRequirementsFail() {
         var result = compile("conflicting-inherited-method-security-scheme-requirements", """
                 interface FirstApi {
@@ -309,15 +346,25 @@ class OpenApiPathCodegenTest {
     @Test
     void identicalInheritedMethodSecuritySchemeRequirementsAreDeduplicated() throws IOException {
         var result = compile("identical-inherited-method-security-scheme-requirements", """
+                @OpenApi.SecuritySchemeRequirement("sharedAuth")
+                @interface SharedAuth {
+                }
+
+                @OpenApi.SecuritySchemeRequirement("apiKey")
+                @interface ApiKeyAuth {
+                }
+
                 interface FirstApi {
                     @Http.GET
-                    @OpenApi.SecuritySchemeRequirement("sharedAuth")
+                    @SharedAuth
+                    @ApiKeyAuth
                     String get();
                 }
 
                 interface SecondApi {
                     @Http.GET
-                    @OpenApi.SecuritySchemeRequirement("sharedAuth")
+                    @ApiKeyAuth
+                    @SharedAuth
                     String get();
                 }
 
@@ -339,6 +386,9 @@ class OpenApiPathCodegenTest {
         String scheme = ".scheme(\"sharedAuth\", java.util.List.of())";
         assertThat(generated, containsString(scheme));
         assertThat(generated.lastIndexOf(scheme), is(generated.indexOf(scheme)));
+        String apiKey = ".scheme(\"apiKey\", java.util.List.of())";
+        assertThat(generated, containsString(apiKey));
+        assertThat(generated.lastIndexOf(apiKey), is(generated.indexOf(apiKey)));
     }
 
     @Test

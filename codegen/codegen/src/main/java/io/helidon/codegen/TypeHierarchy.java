@@ -19,7 +19,6 @@ package io.helidon.codegen;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -179,21 +178,24 @@ public final class TypeHierarchy {
     }
 
     /**
-     * Find all distinct occurrences of an annotation type on a method and matching methods in its type hierarchy.
-     * Meta-annotations are included. Unlike {@link #hierarchyAnnotations(CodegenContext, TypeInfo, TypedElementInfo)},
-     * this method does not apply annotation-type precedence.
+     * Find all distinct occurrences of an annotation type on matching methods in a method's type hierarchy, grouped by
+     * the declaring method. Meta-annotations are included. Unlike
+     * {@link #hierarchyAnnotations(CodegenContext, TypeInfo, TypedElementInfo)}, this method does not apply
+     * annotation-type precedence between declarations.
+     * The provided method itself and declarations without matching candidates are excluded. The outer list contains
+     * distinct declaration multisets; each inner list preserves candidate order and multiplicity.
      *
      * @param ctx codegen context
      * @param type type info owning the method
      * @param method method element
      * @param annotationType annotation type to find
-     * @return distinct annotation candidates
+     * @return distinct annotation candidates grouped by declaring method
      */
     @Api.Internal
-    public static List<Annotation> hierarchyAnnotationCandidates(CodegenContext ctx,
-                                                                 TypeInfo type,
-                                                                 TypedElementInfo method,
-                                                                 TypeName annotationType) {
+    public static List<List<Annotation>> hierarchyAnnotationCandidates(CodegenContext ctx,
+                                                                       TypeInfo type,
+                                                                       TypedElementInfo method,
+                                                                       TypeName annotationType) {
         if (method.kind() != ElementKind.METHOD) {
             throw new CodegenException("Only method elements have hierarchy annotation candidates: " + method.kind());
         }
@@ -214,12 +216,22 @@ public final class TypeHierarchy {
                 method,
                 packageName));
 
-        Set<Annotation> result = new LinkedHashSet<>();
-        method.annotations().forEach(it -> collectAnnotationCandidates(ctx, annotationType, result, it, new HashSet<>()));
-        prototypes.stream()
-                .map(TypedElementInfo::annotations)
-                .flatMap(List::stream)
-                .forEach(it -> collectAnnotationCandidates(ctx, annotationType, result, it, new HashSet<>()));
+        List<List<Annotation>> result = new ArrayList<>();
+        Set<Map<Annotation, Long>> distinctCandidates = new HashSet<>();
+        for (TypedElementInfo prototype : prototypes) {
+            List<Annotation> candidates = new ArrayList<>();
+            prototype.annotations()
+                    .forEach(it -> collectAnnotationCandidates(ctx,
+                                                               annotationType,
+                                                               candidates,
+                                                               it,
+                                                               new HashSet<>()));
+            Map<Annotation, Long> candidateCounts = candidates.stream()
+                    .collect(Collectors.groupingBy(it -> it, Collectors.counting()));
+            if (!candidates.isEmpty() && distinctCandidates.add(candidateCounts)) {
+                result.add(List.copyOf(candidates));
+            }
+        }
         return List.copyOf(result);
     }
 
@@ -604,7 +616,7 @@ public final class TypeHierarchy {
 
     private static void collectAnnotationCandidates(CodegenContext ctx,
                                                     TypeName annotationType,
-                                                    Set<Annotation> result,
+                                                    List<Annotation> result,
                                                     Annotation annotation,
                                                     Set<TypeName> path) {
         if (!path.add(annotation.typeName())) {
