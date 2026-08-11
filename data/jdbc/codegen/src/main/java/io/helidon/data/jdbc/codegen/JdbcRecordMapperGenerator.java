@@ -15,12 +15,9 @@
  */
 package io.helidon.data.jdbc.codegen;
 
-import java.util.List;
+import java.util.Optional;
 
-import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.classmodel.ClassModel;
-import io.helidon.common.types.ElementKind;
-import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -36,24 +33,16 @@ final class JdbcRecordMapperGenerator {
     }
 
     /**
-     * Validates a record and emits its reusable row mapper.
+     * Emits a reusable row mapper from record metadata validated during method
+     * planning.
      *
      * @param plan method plan
      * @param fieldName generated mapper field name
      * @param classModel repository implementation
-     * @param context code-generation context
      */
     static void generate(JdbcMethodPlan plan,
                          String fieldName,
-                         ClassModel.Builder classModel,
-                         CodegenContext context) {
-        TypeInfo recordInfo = context.typeInfo(plan.mappedType().genericTypeName())
-                .orElseThrow(() -> JdbcMethodPlan.failure(plan.method(),
-                                                          "Record type information is unavailable: "
-                                                                  + plan.mappedType().resolvedName()));
-        validateAccessibility(plan.method(), recordInfo, context);
-        List<TypedElementInfo> components = components(recordInfo);
-        validateComponents(plan, components);
+                         ClassModel.Builder classModel) {
 
         TypeName mapperType = TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
                 .addTypeArgument(plan.mappedType())
@@ -67,72 +56,22 @@ final class JdbcRecordMapperGenerator {
                     .addContent("row -> new ")
                     .addContent(plan.mappedType())
                     .addContent("(");
-            // Components are in canonical constructor order. Labels let the SQL columns use a different order.
-            for (int index = 0; index < components.size(); index++) {
+            // Record components use canonical constructor order. Labels allow the SQL columns to use a different order.
+            for (int index = 0; index < plan.recordComponents().size(); index++) {
                 if (index > 0) {
                     field.addContent(", ");
                 }
-                TypedElementInfo component = components.get(index);
-                TypeName optionalType = JdbcScalarTypes.optionalScalarType(component.typeName());
+                TypedElementInfo component = plan.recordComponents().get(index);
+                Optional<TypeName> optionalType = JdbcScalarTypes.optionalScalarType(component.typeName());
                 field.addContent("row.")
-                        .addContent(optionalType == null ? "required(" : "optional(")
+                        .addContent(optionalType.isPresent() ? "optional(" : "required(")
                         .addContentLiteral(component.elementName())
                         .addContent(", ")
-                        .addContent((optionalType == null ? component.typeName() : optionalType).boxed())
+                        .addContent(optionalType.orElse(component.typeName()).boxed())
                         .addContent(".class)");
             }
             field.addContent(")");
         });
     }
 
-    /**
-     * Verifies that generated code can name and construct the record.
-     *
-     * @param method repository method
-     * @param recordInfo record metadata
-     * @param context code-generation context
-     */
-    private static void validateAccessibility(TypedElementInfo method,
-                                              TypeInfo recordInfo,
-                                              CodegenContext context) {
-        String repositoryPackage = method.enclosingType()
-                .map(TypeName::packageName)
-                .orElse("");
-        if (!JdbcTypeAccessibility.accessible(context, recordInfo, repositoryPackage)) {
-            throw JdbcMethodPlan.failure(method,
-                                         "Record type is not accessible to generated code: "
-                                                 + recordInfo.typeName().resolvedName());
-        }
-    }
-
-    /**
-     * Returns canonical record components in declaration order.
-     *
-     * @param recordInfo record metadata
-     * @return record components
-     */
-    private static List<TypedElementInfo> components(TypeInfo recordInfo) {
-        return recordInfo.elementInfo()
-                .stream()
-                .filter(element -> element.kind() == ElementKind.RECORD_COMPONENT)
-                .toList();
-    }
-
-    /**
-     * Restricts record components to scalars and explicit Optional scalars.
-     *
-     * @param plan method plan
-     * @param components record components
-     */
-    private static void validateComponents(JdbcMethodPlan plan, List<TypedElementInfo> components) {
-        for (TypedElementInfo component : components) {
-            if (!JdbcScalarTypes.isScalar(component.typeName())
-                    && JdbcScalarTypes.optionalScalarType(component.typeName()) == null) {
-                throw JdbcMethodPlan.failure(plan.method(),
-                                             "Unsupported record component type "
-                                                     + component.typeName().resolvedName() + " for "
-                                                     + component.elementName());
-            }
-        }
-    }
 }

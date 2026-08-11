@@ -17,8 +17,6 @@ package io.helidon.data.jdbc.codegen;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.JDBCType;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -26,6 +24,7 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -33,38 +32,38 @@ import io.helidon.common.types.TypeNames;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcScalarTypesTest {
 
-    private static final Map<Class<?>, JDBCType> REFERENCE_TYPES = Map.ofEntries(
-            Map.entry(Boolean.class, JDBCType.BOOLEAN),
-            Map.entry(Byte.class, JDBCType.TINYINT),
-            Map.entry(Short.class, JDBCType.SMALLINT),
-            Map.entry(Integer.class, JDBCType.INTEGER),
-            Map.entry(Long.class, JDBCType.BIGINT),
-            Map.entry(Float.class, JDBCType.REAL),
-            Map.entry(Double.class, JDBCType.DOUBLE),
-            Map.entry(BigDecimal.class, JDBCType.DECIMAL),
-            Map.entry(String.class, JDBCType.VARCHAR),
-            Map.entry(byte[].class, JDBCType.VARBINARY),
-            Map.entry(LocalDate.class, JDBCType.DATE),
-            Map.entry(LocalTime.class, JDBCType.TIME),
-            Map.entry(LocalDateTime.class, JDBCType.TIMESTAMP),
-            Map.entry(OffsetTime.class, JDBCType.TIME_WITH_TIMEZONE),
-            Map.entry(OffsetDateTime.class, JDBCType.TIMESTAMP_WITH_TIMEZONE),
-            Map.entry(java.sql.Date.class, JDBCType.DATE),
-            Map.entry(java.sql.Time.class, JDBCType.TIME),
-            Map.entry(Timestamp.class, JDBCType.TIMESTAMP));
+    private static final Map<TypeName, String> REFERENCE_TYPES = Map.ofEntries(
+            Map.entry(TypeName.create(Boolean.class), "BOOLEAN"),
+            Map.entry(TypeName.create(Byte.class), "TINYINT"),
+            Map.entry(TypeName.create(Short.class), "SMALLINT"),
+            Map.entry(TypeName.create(Integer.class), "INTEGER"),
+            Map.entry(TypeName.create(Long.class), "BIGINT"),
+            Map.entry(TypeName.create(Float.class), "REAL"),
+            Map.entry(TypeName.create(Double.class), "DOUBLE"),
+            Map.entry(TypeName.create(BigDecimal.class), "DECIMAL"),
+            Map.entry(TypeName.create(String.class), "VARCHAR"),
+            Map.entry(TypeName.create(byte[].class), "VARBINARY"),
+            Map.entry(TypeName.create(LocalDate.class), "DATE"),
+            Map.entry(TypeName.create(LocalTime.class), "TIME"),
+            Map.entry(TypeName.create(LocalDateTime.class), "TIMESTAMP"),
+            Map.entry(TypeName.create(OffsetTime.class), "TIME_WITH_TIMEZONE"),
+            Map.entry(TypeName.create(OffsetDateTime.class), "TIMESTAMP_WITH_TIMEZONE"),
+            Map.entry(TypeName.create("java.sql.Date"), "DATE"),
+            Map.entry(TypeName.create("java.sql.Time"), "TIME"),
+            Map.entry(TypeName.create("java.sql.Timestamp"), "TIMESTAMP"));
 
     @Test
     void assignsTheCanonicalNullTypeToEverySupportedReferenceType() {
-        REFERENCE_TYPES.forEach((javaType, jdbcType) -> {
-            TypeName typeName = TypeName.create(javaType);
-            assertThat(javaType.getTypeName(), JdbcScalarTypes.isScalar(typeName), is(true));
-            assertThat(javaType.getTypeName(), JdbcScalarTypes.nullJdbcType(typeName), is(jdbcType));
+        REFERENCE_TYPES.forEach((javaType, jdbcTypeConstant) -> {
+            assertThat(javaType.resolvedName(), JdbcScalarTypes.isScalar(javaType), is(true));
+            assertThat(javaType.resolvedName(),
+                       JdbcScalarTypes.nullJdbcTypeConstant(javaType),
+                       is(jdbcTypeConstant));
         });
     }
 
@@ -81,8 +80,8 @@ class JdbcScalarTypesTest {
                     TypeName primitive = TypeName.create(primitiveType);
                     assertThat(primitiveType.getTypeName(), JdbcScalarTypes.isScalar(primitive), is(true));
                     assertThat(primitiveType.getTypeName(),
-                               JdbcScalarTypes.nullJdbcType(primitive),
-                               is(REFERENCE_TYPES.get(wrapperType)));
+                               JdbcScalarTypes.nullJdbcTypeConstant(primitive),
+                               is(REFERENCE_TYPES.get(TypeName.create(wrapperType))));
                 });
     }
 
@@ -91,20 +90,25 @@ class JdbcScalarTypesTest {
         TypeName bigInteger = TypeName.create(BigInteger.class);
         assertThat(JdbcScalarTypes.isScalar(bigInteger), is(false));
         assertThat(JdbcScalarTypes.isScalar(TypeName.create(String[].class)), is(false));
-        assertThrows(IllegalArgumentException.class, () -> JdbcScalarTypes.nullJdbcType(bigInteger));
+        assertThrows(IllegalArgumentException.class, () -> JdbcScalarTypes.nullJdbcTypeConstant(bigInteger));
     }
 
     @Test
-    void acceptsOnlyOptionalScalarComponents() {
+    void returnsScalarOnlyForExactSupportedOptionalTypes() {
         TypeName optionalString = TypeName.builder(TypeNames.OPTIONAL)
                 .addTypeArgument(TypeNames.STRING)
                 .build();
         TypeName optionalList = TypeName.builder(TypeNames.OPTIONAL)
                 .addTypeArgument(TypeName.create(List.class))
                 .build();
+        TypeName optionalWildcard = TypeName.builder(TypeNames.OPTIONAL)
+                .addTypeArgument(TypeName.create("? extends java.lang.String"))
+                .build();
 
-        assertThat(JdbcScalarTypes.optionalScalarType(optionalString), is(TypeNames.STRING));
-        assertThat(JdbcScalarTypes.optionalScalarType(optionalList), nullValue());
-        assertThat(JdbcScalarTypes.optionalScalarType(TypeNames.STRING), nullValue());
+        assertThat(JdbcScalarTypes.optionalScalarType(optionalString), is(Optional.of(TypeNames.STRING)));
+        assertThat(JdbcScalarTypes.optionalScalarType(TypeNames.OPTIONAL), is(Optional.empty()));
+        assertThat(JdbcScalarTypes.optionalScalarType(optionalWildcard), is(Optional.empty()));
+        assertThat(JdbcScalarTypes.optionalScalarType(optionalList), is(Optional.empty()));
+        assertThat(JdbcScalarTypes.optionalScalarType(TypeNames.STRING), is(Optional.empty()));
     }
 }

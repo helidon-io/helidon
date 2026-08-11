@@ -16,14 +16,13 @@
 package io.helidon.data.jdbc.codegen;
 
 import java.math.BigDecimal;
-import java.sql.JDBCType;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -62,25 +61,25 @@ final class JdbcScalarTypes {
     // | OffsetTime         | TIME_WITH_TIMEZONE                 | TIME_WITH_TIMEZONE      |
     // | OffsetDateTime     | TIMESTAMP_WITH_TIMEZONE            | TIMESTAMP_WITH_TIMEZONE |
     // +--------------------+------------------------------------+-------------------------+
-    private static final Map<TypeName, JDBCType> NULL_TYPES = Map.ofEntries(
-            Map.entry(TypeName.create(Boolean.class), JDBCType.BOOLEAN),
-            Map.entry(TypeName.create(Byte.class), JDBCType.TINYINT),
-            Map.entry(TypeName.create(Short.class), JDBCType.SMALLINT),
-            Map.entry(TypeName.create(Integer.class), JDBCType.INTEGER),
-            Map.entry(TypeName.create(Long.class), JDBCType.BIGINT),
-            Map.entry(TypeName.create(Float.class), JDBCType.REAL),
-            Map.entry(TypeName.create(Double.class), JDBCType.DOUBLE),
-            Map.entry(TypeName.create(BigDecimal.class), JDBCType.DECIMAL),
-            Map.entry(TypeName.create(String.class), JDBCType.VARCHAR),
-            Map.entry(TypeName.create(byte[].class), JDBCType.VARBINARY),
-            Map.entry(TypeName.create(LocalDate.class), JDBCType.DATE),
-            Map.entry(TypeName.create(LocalTime.class), JDBCType.TIME),
-            Map.entry(TypeName.create(LocalDateTime.class), JDBCType.TIMESTAMP),
-            Map.entry(TypeName.create(OffsetTime.class), JDBCType.TIME_WITH_TIMEZONE),
-            Map.entry(TypeName.create(OffsetDateTime.class), JDBCType.TIMESTAMP_WITH_TIMEZONE),
-            Map.entry(TypeName.create(java.sql.Date.class), JDBCType.DATE),
-            Map.entry(TypeName.create(java.sql.Time.class), JDBCType.TIME),
-            Map.entry(TypeName.create(Timestamp.class), JDBCType.TIMESTAMP));
+    private static final Map<TypeName, String> NULL_TYPE_CONSTANTS = Map.ofEntries(
+            Map.entry(TypeName.create(Boolean.class), "BOOLEAN"),
+            Map.entry(TypeName.create(Byte.class), "TINYINT"),
+            Map.entry(TypeName.create(Short.class), "SMALLINT"),
+            Map.entry(TypeName.create(Integer.class), "INTEGER"),
+            Map.entry(TypeName.create(Long.class), "BIGINT"),
+            Map.entry(TypeName.create(Float.class), "REAL"),
+            Map.entry(TypeName.create(Double.class), "DOUBLE"),
+            Map.entry(TypeName.create(BigDecimal.class), "DECIMAL"),
+            Map.entry(TypeName.create(String.class), "VARCHAR"),
+            Map.entry(TypeName.create(byte[].class), "VARBINARY"),
+            Map.entry(TypeName.create(LocalDate.class), "DATE"),
+            Map.entry(TypeName.create(LocalTime.class), "TIME"),
+            Map.entry(TypeName.create(LocalDateTime.class), "TIMESTAMP"),
+            Map.entry(TypeName.create(OffsetTime.class), "TIME_WITH_TIMEZONE"),
+            Map.entry(TypeName.create(OffsetDateTime.class), "TIMESTAMP_WITH_TIMEZONE"),
+            Map.entry(TypeName.create("java.sql.Date"), "DATE"),
+            Map.entry(TypeName.create("java.sql.Time"), "TIME"),
+            Map.entry(TypeName.create("java.sql.Timestamp"), "TIMESTAMP"));
 
     /**
      * Prevents construction of the constant holder.
@@ -95,36 +94,36 @@ final class JdbcScalarTypes {
      * @return whether the type is supported
      */
     static boolean isScalar(TypeName type) {
-        return NULL_TYPES.containsKey(normalized(type));
+        return NULL_TYPE_CONSTANTS.containsKey(normalized(type));
     }
 
     /**
-     * Returns the standard JDBC null type for a supported scalar.
+     * Returns the standard {@code JDBCType} constant name for a supported scalar.
      *
      * @param type scalar type
-     * @return JDBC type used to bind null
+     * @return {@code JDBCType} constant name used to bind null
      * @throws IllegalArgumentException if the type is not supported
      */
-    static JDBCType nullJdbcType(TypeName type) {
-        JDBCType jdbcType = NULL_TYPES.get(normalized(type));
-        if (jdbcType == null) {
+    static String nullJdbcTypeConstant(TypeName type) {
+        String constant = NULL_TYPE_CONSTANTS.get(normalized(type));
+        if (constant == null) {
             throw new IllegalArgumentException("Unsupported JDBC scalar type: " + type.resolvedName());
         }
-        return jdbcType;
+        return constant;
     }
 
     /**
      * Returns the scalar argument of an exact {@code Optional} type.
      *
      * @param type candidate record component type
-     * @return scalar argument, or {@code null} when the type is not supported
+     * @return scalar argument, or empty when the type is not supported
      */
-    static TypeName optionalScalarType(TypeName type) {
+    static Optional<TypeName> optionalScalarType(TypeName type) {
         if (!type.genericTypeName().equals(TypeNames.OPTIONAL) || type.typeArguments().size() != 1) {
-            return null;
+            return Optional.empty();
         }
         TypeName valueType = type.typeArguments().getFirst();
-        return valueType.wildcard() || !isScalar(valueType) ? null : valueType;
+        return valueType.wildcard() || !isScalar(valueType) ? Optional.empty() : Optional.of(valueType);
     }
 
     private static TypeName normalized(TypeName type) {

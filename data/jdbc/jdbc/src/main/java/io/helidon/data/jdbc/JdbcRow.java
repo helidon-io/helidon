@@ -34,7 +34,12 @@ import java.util.Set;
 import io.helidon.data.DataException;
 
 /**
- * Callback-scoped row implementation backed by one provider-owned result set.
+ * Implements the row view available during a mapper callback.
+ * <p>
+ * The row belongs to the thread that created it. Calls from another thread
+ * fail before accessing the result set. Expiration changes the visible state
+ * without waiting for application work, so a retained row cannot delay
+ * provider cleanup.
  */
 final class JdbcRow implements JdbcClient.Row {
 
@@ -70,15 +75,15 @@ final class JdbcRow implements JdbcClient.Row {
     private final ResultSet resultSet;
     private final JdbcColumnLayout columns;
     private final JdbcOperation operation;
+    private final Thread callbackThread;
 
-    // Expiration uses a private lock so application synchronization on the row cannot block the provider.
-    private final Object accessLock = new Object();
-    private boolean active = true;
+    // Volatile makes expiration visible to code that retained the row after the callback.
+    private volatile boolean active = true;
 
     /**
-     * Creates a callback-scoped view of one result row.
+     * Creates a view of one result row for a mapper callback.
      *
-     * @param resultSet provider-owned result set
+     * @param resultSet result set owned by the provider
      * @param columns validated column layout
      * @param operation current operation
      */
@@ -86,6 +91,7 @@ final class JdbcRow implements JdbcClient.Row {
         this.resultSet = resultSet;
         this.columns = columns;
         this.operation = operation;
+        this.callbackThread = Thread.currentThread();
     }
 
     /**
@@ -99,77 +105,53 @@ final class JdbcRow implements JdbcClient.Row {
     }
 
     /**
-     * Normalizes a primitive scalar and rejects unsupported types.
-     *
-     * @param type requested scalar type
-     * @return supported reference type
+     * Marks this row as no longer available to its mapper callback.
+     * Later reads fail before accessing the result set.
      */
-    static Class<?> normalizedScalar(Class<?> type) {
-        Class<?> normalized = normalized(type);
-        if (!SUPPORTED_TYPES.contains(normalized)) {
-            throw new IllegalArgumentException("Unsupported JDBC scalar type: " + type.getTypeName());
-        }
-        return normalized;
-    }
-
     void expire() {
-        synchronized (accessLock) {
-            active = false;
-        }
+        active = false;
     }
 
-    /** {@inheritDoc} */
     @Override
     public <T> Optional<T> optional(int index, Class<T> type) {
-        synchronized (accessLock) {
-            ensureActive();
-            validateIndex(index);
-            return Optional.ofNullable(read(index, type));
-        }
+        ensureReadable();
+        validateIndex(index);
+        return Optional.ofNullable(read(index, type));
     }
 
-    /** {@inheritDoc} */
     @Override
     public <T> Optional<T> optional(String label, Class<T> type) {
-        synchronized (accessLock) {
-            ensureActive();
-            Objects.requireNonNull(label, "Column label must not be null");
-            if (label.isBlank()) {
-                throw new IllegalArgumentException("Column label must not be blank");
-            }
-            return Optional.ofNullable(read(columns.index(label), type));
+        ensureReadable();
+        Objects.requireNonNull(label, "Column label must not be null");
+        if (label.isBlank()) {
+            throw new IllegalArgumentException("Column label must not be blank");
         }
+        return Optional.ofNullable(read(columns.index(label), type));
     }
 
-    /** {@inheritDoc} */
     @Override
     public <T> T required(int index, Class<T> type) {
-        synchronized (accessLock) {
-            ensureActive();
-            validateIndex(index);
-            T value = read(index, type);
-            if (value == null) {
-                throw new DataException("Required result column " + index + " contains SQL NULL");
-            }
-            return value;
+        ensureReadable();
+        validateIndex(index);
+        T value = read(index, type);
+        if (value == null) {
+            throw new DataException("Required result column " + index + " contains SQL NULL");
         }
+        return value;
     }
 
-    /** {@inheritDoc} */
     @Override
     public <T> T required(String label, Class<T> type) {
-        synchronized (accessLock) {
-            ensureActive();
-            Objects.requireNonNull(label, "Column label must not be null");
-            if (label.isBlank()) {
-                throw new IllegalArgumentException("Column label must not be blank");
-            }
-            T value = read(columns.index(label), type);
-            if (value == null) {
-                throw new DataException("Required result column '" + label + "' contains SQL NULL");
-            }
-            return value;
+        ensureReadable();
+        Objects.requireNonNull(label, "Column label must not be null");
+        if (label.isBlank()) {
+            throw new IllegalArgumentException("Column label must not be blank");
         }
+        T value = read(columns.index(label), type);
+        if (value == null) {
+            throw new DataException("Required result column '" + label + "' contains SQL NULL");
+        }
+        return value;
     }
 
     /**
@@ -214,9 +196,15 @@ final class JdbcRow implements JdbcClient.Row {
         }
     }
 
-    private void ensureActive() {
+    /**
+     * Verifies that the current callback can read this row.
+     */
+    private void ensureReadable() {
         if (!active) {
             throw new IllegalStateException("JDBC row is valid only during its mapper callback");
+        }
+        if (Thread.currentThread() != callbackThread) {
+            throw new IllegalStateException("JDBC row may be read only by its mapper callback thread");
         }
     }
 

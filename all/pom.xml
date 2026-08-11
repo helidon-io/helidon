@@ -343,6 +343,14 @@
             <artifactId>helidon-data</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.data.jdbc</groupId>
+            <artifactId>helidon-data-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.jdbc</groupId>
+            <artifactId>helidon-data-jdbc-codegen</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.data.jakarta.persistence</groupId>
             <artifactId>helidon-data-jakarta-persistence</artifactId>
         </dependency>

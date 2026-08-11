@@ -105,6 +105,7 @@ class JdbcBindingMatrixTest {
     private void prepareOperation() throws Exception {
         reset(dataSource, connection, statement);
         when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(1L, -1L);

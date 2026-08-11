@@ -47,21 +47,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data.jdbc</groupId>
-            <artifactId>helidon-data-jdbc</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.codegen</groupId>
-            <artifactId>helidon-data-codegen</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.codegen</groupId>
-            <artifactId>helidon-data-codegen-common</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.data.jakarta.persistence</groupId>
             <artifactId>helidon-data-jakarta-persistence</artifactId>
             <scope>test</scope>
@@ -79,28 +64,6 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-testing</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-apt</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.transaction</groupId>
-            <artifactId>helidon-transaction</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -44,6 +44,14 @@ public interface JdbcClient {
 
     /**
      * Creates a single-use statement description from positional JDBC SQL.
+     * <p>
+     * Marker recognition uses a portable lexical policy. Question marks
+     * inside single-quoted strings, double-quoted identifiers, valid dollar or
+     * Oracle alternative strings, and conventional comments are ignored.
+     * Square brackets and backticks are ordinary punctuation, and each
+     * question mark in {@code ??} is a bind marker. A {@code --} comment
+     * requires following whitespace, a control character, or end-of-input.
+     * Nested block comments are rejected.
      *
      * @param sql SQL containing zero or more {@code ?} markers
      * @return statement description
@@ -144,7 +152,7 @@ public interface JdbcClient {
          * @param columnName non-blank generated column name
          * @return this generated key stage
          * @throws NullPointerException if the column name is {@code null}
-         * @throws IllegalArgumentException if the column name is blank or duplicates an existing name
+         * @throws IllegalArgumentException if the column name is blank or exactly duplicates an existing name
          * @throws IllegalStateException if mapping has already been selected
          */
         GeneratedKeys addColumn(String columnName);
@@ -205,7 +213,7 @@ public interface JdbcClient {
     }
 
     /**
-     * Maps one callback-scoped JDBC row to an application value.
+     * Maps one JDBC row to an application value during a callback.
      * <p>
      * Imperative code passes a mapper to {@link Statement#map(RowMapper)} or
      * {@link GeneratedKeys#map(RowMapper)}. Applications may also register
@@ -215,8 +223,10 @@ public interface JdbcClient {
      * exact {@code T} type.
      * <p>
      * A mapper held by a singleton repository may be invoked concurrently. It
-     * must be stateless or safe for concurrent use. The provider retains
-     * ownership of the JDBC resources and exposes only the scoped row view.
+     * must be stateless or safe for concurrent use. Each invocation receives
+     * its own row. The row may be read only by the thread executing
+     * {@link RowMapper#map(Row)}. The provider retains ownership of the JDBC
+     * resources and exposes only the scoped row view.
      *
      * @param <T> mapped type
      */
@@ -226,8 +236,10 @@ public interface JdbcClient {
     interface RowMapper<T> {
 
         /**
-         * Maps the current row. The row is no longer valid after this method
-         * returns.
+         * Maps the current row synchronously. Row reads call the JDBC driver
+         * and may block until the driver returns or reports a failure. The row
+         * may be read only by the current thread and is no longer valid after
+         * this method returns.
          *
          * @param row current row
          * @return mapped value, never {@code null}
@@ -237,6 +249,10 @@ public interface JdbcClient {
 
     /**
      * Restricted view of the current result row.
+     * <p>
+     * The row may be read only by the thread executing the current
+     * {@link RowMapper#map(Row)} callback. It must not be passed to another
+     * thread and is no longer valid after the callback returns.
      */
     @Api.Preview
     interface Row {
@@ -250,7 +266,8 @@ public interface JdbcClient {
          * @return optional value
          * @throws DataException if the column cannot be read
          * @throws IllegalArgumentException if the index or type is invalid
-         * @throws IllegalStateException if the row is no longer active
+         * @throws IllegalStateException if the row is no longer active or the
+         *                                  caller is not the callback thread
          */
         <T> Optional<T> optional(int index, Class<T> type);
 
@@ -264,7 +281,8 @@ public interface JdbcClient {
          * @throws DataException if the label is absent or ambiguous, or the column cannot be read
          * @throws NullPointerException if the label or type is {@code null}
          * @throws IllegalArgumentException if the label or type is invalid
-         * @throws IllegalStateException if the row is no longer active
+         * @throws IllegalStateException if the row is no longer active or the
+         *                                  caller is not the callback thread
          */
         <T> Optional<T> optional(String label, Class<T> type);
 
@@ -277,7 +295,8 @@ public interface JdbcClient {
          * @return non-null value
          * @throws DataException if the column contains SQL {@code NULL} or cannot be read
          * @throws IllegalArgumentException if the index or type is invalid
-         * @throws IllegalStateException if the row is no longer active
+         * @throws IllegalStateException if the row is no longer active or the
+         *                                  caller is not the callback thread
          */
         <T> T required(int index, Class<T> type);
 
@@ -291,7 +310,8 @@ public interface JdbcClient {
          * @throws DataException if the column contains SQL {@code NULL} or cannot be read
          * @throws NullPointerException if the label or type is {@code null}
          * @throws IllegalArgumentException if the label or type is invalid
-         * @throws IllegalStateException if the row is no longer active
+         * @throws IllegalStateException if the row is no longer active or the
+         *                                  caller is not the callback thread
          */
         <T> T required(String label, Class<T> type);
     }

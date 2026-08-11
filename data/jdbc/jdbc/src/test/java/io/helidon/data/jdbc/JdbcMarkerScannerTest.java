@@ -17,38 +17,44 @@ package io.helidon.data.jdbc;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcMarkerScannerTest {
 
     @Test
-    void countsTheSameProtectedRegionsAndDriverEscapesAsDeclarativeCodegen() {
+    void appliesPortablePunctuationAndCommentRules() {
         String sql = """
-                select ':literal', "quoted:name", `mysql:name`, [sql:name],
-                       value::text, JSON_VALUE ?? 'name',
-                       TAGS ??| ARRAY['a'], TAGS ??& ARRAY['a', 'b'],
-                       PAYLOAD @?? '$.items[*]'
-                from T -- :line and ?
-                where ID = ? /* :block and ? */
-                  and BODY = $tag$:dollar and ?$tag$
-                  and Q = q'[oracle:name and ?]'
+                select [question?], `question?`, ?, ??
+                from T
+                where BALANCE--? > 0 and ID = ?
+                -- ? ignored
+                /* ? ignored */
                 """;
 
-        assertThat(JdbcOperation.parameterCount(sql), is(1));
+        assertThat(JdbcOperation.parameterCount(sql), is(7));
+        assertThat(JdbcOperation.parameterCount("select 1 -- ? ignored"), is(0));
     }
 
     @Test
-    void treatsEveryUnescapedQuestionMarkAsMarker() {
-        String sql = """
-                select DOCUMENT ? 'name',
-                       TAGS ?| ARRAY['a'],
-                       TAGS ?& ARRAY['a', 'b'],
-                       PAYLOAD @? '$.items[*]'
-                """;
+    void appliesDollarQuoteGrammarOnlyAtTokenBoundaries() {
+        String sql = "select $$?$$, ($tag$?$tag$), identifier$tag$ from T where ID = ?";
 
-        assertThat(JdbcOperation.parameterCount(sql), is(4));
+        assertThat(JdbcOperation.parameterCount(sql), is(1));
+        assertThat(JdbcOperation.parameterCount("select $1$ ?"), is(1));
+        assertThat(JdbcOperation.parameterCount("select $bad-tag$ ?"), is(1));
+    }
+
+    @Test
+    void rejectsUnterminatedDollarQuotesOnlyForValidOpeners() {
+        assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select $$unterminated"));
+        assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select ($tag$unterminated"));
+
+        assertThat(JdbcOperation.parameterCount("select identifier$tag$ from T where ID = ?"), is(1));
     }
 
     @Test
@@ -56,10 +62,20 @@ class JdbcMarkerScannerTest {
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select :id"));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select 'unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select \"unterminated"));
-        assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select `unterminated"));
-        assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select [unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select /* unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select $tag$unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select q'[unterminated"));
+    }
+
+    @Test
+    void reportsPortableProfileFailuresWithoutRenderingSql() {
+        String sql = "select /* outer /* nested */ outer */";
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                         () -> JdbcOperation.parameterCount(sql));
+
+        assertThat(failure.getMessage(), containsString("PORTABLE"));
+        assertThat(failure.getMessage(), endsWith("offset 16"));
+        assertThat(failure.getMessage(), not(containsString(sql)));
     }
 }

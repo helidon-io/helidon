@@ -29,8 +29,8 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
     private final JdbcStatement statement;
     private final List<String> columns = new ArrayList<>();
 
-    // JDBC column names are compared without regard to case.
-    private final Set<String> normalizedColumns = new HashSet<>();
+    // Reject only exact duplicates because case-distinct identifiers can designate different quoted database columns.
+    private final Set<String> uniqueColumns = new HashSet<>();
     private boolean mapped;
 
     /**
@@ -39,7 +39,7 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
      * @param statement owning statement
      */
     JdbcGeneratedKeys(JdbcStatement statement) {
-        this.statement = Objects.requireNonNull(statement, "Generated-key statement must not be null");
+        this.statement = Objects.requireNonNull(statement, "Generated key statement must not be null");
     }
 
     /**
@@ -53,8 +53,8 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
         ensureConfiguring();
         // Another terminal stage may already have claimed the shared statement.
         statement.ensureMutable();
-        String normalized = JdbcPreparationPlan.validateGeneratedColumn(columnName, columns.size());
-        if (!normalizedColumns.add(normalized)) {
+        String validated = JdbcPreparationPlan.validateGeneratedColumn(columnName, columns.size());
+        if (!uniqueColumns.add(validated)) {
             throw new IllegalArgumentException("Duplicate generated column name: " + columnName);
         }
         columns.add(columnName);
@@ -72,7 +72,7 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
     public <T> JdbcClient.Rows<T> map(JdbcClient.RowMapper<T> mapper) {
         ensureConfiguring();
         statement.ensureMutable();
-        Objects.requireNonNull(mapper, "Generated-key mapper must not be null");
+        Objects.requireNonNull(mapper, "Generated key mapper must not be null");
         JdbcPreparationPlan plan = JdbcPreparationPlan.generatedKeys(columns);
         mapped = true;
         return new JdbcRows<>(statement, mapper, plan);
@@ -83,7 +83,7 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
      */
     private void ensureConfiguring() {
         if (mapped) {
-            throw new IllegalStateException("Generated-key mapping was already selected");
+            throw new IllegalStateException("Generated key mapping has already been selected");
         }
     }
 }

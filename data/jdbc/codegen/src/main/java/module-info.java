@@ -19,8 +19,6 @@
  */
 module io.helidon.data.jdbc.codegen {
 
-    requires java.sql;
-
     requires io.helidon.codegen;
     requires io.helidon.data.codegen.common;
 

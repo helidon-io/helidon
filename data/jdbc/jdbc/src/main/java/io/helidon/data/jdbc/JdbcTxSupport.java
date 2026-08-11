@@ -39,12 +39,14 @@ import io.helidon.transaction.spi.TxSupport;
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
 final class JdbcTxSupport implements TxSupport {
-    /** Monotonic source of compact transaction identities. */
+
+    // Monotonic source of compact transaction identities.
     private static final AtomicLong IDS = new AtomicLong();
 
-    /** Lifecycle listeners, copied once to keep notification order stable. */
+    // Lifecycle listeners, copied once to keep notification order stable.
     private final List<TxLifeCycle> listeners;
-    /** Active and suspended transaction stack for the current thread. */
+
+    // Active and suspended transaction stack for the current thread.
     private final ThreadLocal<ArrayDeque<Transaction>> transactions = new ThreadLocal<>();
 
     /**
@@ -57,13 +59,11 @@ final class JdbcTxSupport implements TxSupport {
         this.listeners = List.copyOf(listeners);
     }
 
-    /** {@inheritDoc} */
     @Override
     public String type() {
         return Jdbc.PROVIDER;
     }
 
-    /** {@inheritDoc} */
     @Override
     public <T> T transaction(Tx.Type type, Callable<T> task) {
         Objects.requireNonNull(type, "Missing transaction type");
@@ -451,7 +451,9 @@ final class JdbcTxSupport implements TxSupport {
         return null;
     }
 
-    /** Clears empty thread-local state after completion or suspension. */
+    /**
+     * Clears empty thread-local state after completion or suspension.
+     */
     private void removeThreadStateIfEmpty() {
         ArrayDeque<Transaction> stack = transactions.get();
         if (stack != null && stack.isEmpty()) {
@@ -583,13 +585,21 @@ final class JdbcTxSupport implements TxSupport {
         FAILED
     }
 
-    /** Mutable state for one transaction while it remains on the thread's transaction stack. */
+    /**
+     * Mutable state for one transaction while it remains on the thread's transaction stack.
+     */
     private static final class Transaction {
-        /** Identity shared with lifecycle listeners. */
+        /**
+         * Identity shared with lifecycle listeners.
+         */
         private final String identity;
-        /** Current validated transaction state. */
+        /**
+         * Current validated transaction state.
+         */
         private TransactionState state = TransactionState.ACTIVE;
-        /** State restored after a successful suspension. */
+        /**
+         * State restored after a successful suspension.
+         */
         private TransactionState resumeState;
 
         /**
@@ -610,7 +620,9 @@ final class JdbcTxSupport implements TxSupport {
             return state == TransactionState.MARKED_ROLLBACK;
         }
 
-        /** Marks a usable transaction for rollback at its outer boundary. */
+        /**
+         * Marks a usable transaction for rollback at its outer boundary.
+         */
         private void markRollbackOnly() {
             switch (state) {
                 case ACTIVE -> state = TransactionState.MARKED_ROLLBACK;
@@ -620,7 +632,9 @@ final class JdbcTxSupport implements TxSupport {
             }
         }
 
-        /** Moves a usable transaction to its suspended state. */
+        /**
+         * Moves a usable transaction to its suspended state.
+         */
         private void suspend() {
             requireUsable();
             // Preserve rollback-only state so suspension cannot make the transaction
@@ -629,14 +643,18 @@ final class JdbcTxSupport implements TxSupport {
             state = TransactionState.SUSPENDED;
         }
 
-        /** Restores the pre-suspension state. */
+        /**
+         * Restores the pre-suspension state.
+         */
         private void resume() {
             require(TransactionState.SUSPENDED, JdbcTransactionAction.RESUME.text());
             state = resumeState;
             resumeState = null;
         }
 
-        /** Restores a transaction after suspension failed and makes rollback mandatory. */
+        /**
+         * Restores a transaction after suspension failed and makes rollback mandatory.
+         */
         private void restoreAfterSuspendFailure() {
             require(TransactionState.SUSPENDED, "restore after suspend failure");
             resumeState = null;
@@ -652,30 +670,40 @@ final class JdbcTxSupport implements TxSupport {
             return state == TransactionState.SUSPENDED;
         }
 
-        /** Starts terminal transaction completion. */
+        /**
+         * Starts terminal transaction completion.
+         */
         private void beginCompletion() {
             requireUsable();
             state = TransactionState.COMPLETING;
         }
 
-        /** Records a confirmed commit. */
+        /**
+         * Records a confirmed commit.
+         */
         private void committed() {
             transition(TransactionState.COMPLETING, TransactionState.COMMITTED, JdbcTransactionAction.COMMIT.text());
         }
 
-        /** Records a confirmed rollback. */
+        /**
+         * Records a confirmed rollback.
+         */
         private void rolledBack() {
             transition(TransactionState.COMPLETING,
                        TransactionState.ROLLED_BACK,
                        JdbcTransactionAction.ROLLBACK.text());
         }
 
-        /** Records a failed terminal lifecycle notification. */
+        /**
+         * Records a failed terminal lifecycle notification.
+         */
         private void failed() {
             transition(TransactionState.COMPLETING, TransactionState.FAILED, "fail completion");
         }
 
-        /** Verifies that application work may use or join this transaction. */
+        /**
+         * Verifies that application work may use or join this transaction.
+         */
         private void requireUsable() {
             if (state != TransactionState.ACTIVE && state != TransactionState.MARKED_ROLLBACK) {
                 throw invalidTransition("join");

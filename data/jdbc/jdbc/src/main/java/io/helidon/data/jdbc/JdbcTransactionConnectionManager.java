@@ -21,7 +21,6 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Executor;
 
 import javax.sql.DataSource;
 
@@ -56,19 +55,15 @@ import io.helidon.transaction.spi.TxLifeCycle;
 @Service.Singleton
 final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnectionLease.Provider {
 
-    // Connection.abort requires an executor even though transaction completion is synchronous.
-    private static final Executor ABORT_EXECUTOR = Runnable::run;
-
     // Transaction context is synchronous and does not propagate to another thread.
     private final ThreadLocal<State> local = new ThreadLocal<>();
 
-    /** {@inheritDoc} */
     @Override
     public JdbcConnectionLease acquire(DataSource dataSource) throws SQLException {
-        Objects.requireNonNull(dataSource, "Missing JDBC datasource");
+        Objects.requireNonNull(dataSource, "The JDBC data source is required");
         State state = local.get();
         if (state == null) {
-            return new JdbcConnectionLease.Owned(dataSource.getConnection());
+            return JdbcConnectionLease.Owned.acquire(dataSource);
         }
         if (state.failedJdbc != null) {
             throw new DataException("The active local JDBC transaction is unusable after a lifecycle failure");
@@ -83,7 +78,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         // Lifecycle state may exist without an active transaction, such as during
         // supported work or while an outer transaction is suspended.
         if (state.activeJdbc == null) {
-            return new JdbcConnectionLease.Owned(dataSource.getConnection());
+            return JdbcConnectionLease.Owned.acquire(dataSource);
         }
 
         Association association = state.jdbcTransactions.get(state.activeJdbc);
@@ -96,7 +91,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             throw new DataException("One local JDBC transaction cannot use more than one datasource identity");
         }
         if (!association.dataSourceIdentitySet) {
-            // Fix the identity before acquisition so a failed first datasource cannot be replaced by another one.
+            // Fix the identity before acquisition so a failed first data source cannot be replaced by another one.
             association.dataSourceIdentity = identity;
             association.dataSourceIdentitySet = true;
         }
@@ -110,13 +105,14 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             }
             try {
                 if (!connection.getAutoCommit()) {
-                    throw new SQLException("A datasource used for local JDBC transactions must supply auto-commit connections");
+                    throw JdbcExceptionTranslator.safeException(
+                            "Data sources used for local JDBC transactions must provide connections with auto-commit enabled.");
                 }
                 connection.setAutoCommit(false);
                 // Publish the connection only after it is ready for transaction use.
                 association.connection = connection;
             } catch (SQLException | RuntimeException | Error failure) {
-                invalidate(connection, failure);
+                JdbcConnectionInvalidator.invalidate(connection, failure);
                 failJdbcAssociation(state, state.activeJdbc, association);
                 throw failure;
             }
@@ -124,7 +120,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         return new TransactionLease(association.connection);
     }
 
-    /** {@inheritDoc} */
     @Override
     public void start(String type) {
         State state = local.get();
@@ -135,7 +130,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         state.invocationTypes.push(Objects.requireNonNull(type, "Missing transaction support type"));
     }
 
-    /** {@inheritDoc} */
     @Override
     public void end() {
         State state = requireState("end a transaction lifecycle");
@@ -146,7 +140,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         removeIfEmpty(state);
     }
 
-    /** {@inheritDoc} */
     @Override
     public void begin(String txIdentity) {
         Objects.requireNonNull(txIdentity, "Missing transaction identity");
@@ -168,19 +161,16 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         }
     }
 
-    /** {@inheritDoc} */
     @Override
     public void commit(String txIdentity) {
         complete(txIdentity, true);
     }
 
-    /** {@inheritDoc} */
     @Override
     public void rollback(String txIdentity) {
         complete(txIdentity, false);
     }
 
-    /** {@inheritDoc} */
     @Override
     public void suspend(String txIdentity) {
         Objects.requireNonNull(txIdentity, "Missing transaction identity");
@@ -214,7 +204,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         }
     }
 
-    /** {@inheritDoc} */
     @Override
     public void resume(String txIdentity) {
         Objects.requireNonNull(txIdentity, "Missing transaction identity");
@@ -303,6 +292,12 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     /**
      * Completes and closes a lazily acquired physical connection.
+     * <p>
+     * A failed commit has an unknown database outcome even when the following
+     * best-effort rollback succeeds. Unknown outcomes bypass auto-commit
+     * restoration and ordinary pooled close and instead invalidate the
+     * connection. Cleanup after a confirmed commit or rollback records the
+     * confirmed outcome separately before invalidation.
      *
      * @param association JDBC transaction association
      * @param commit whether to commit rather than roll back
@@ -324,11 +319,13 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         } catch (SQLException | RuntimeException | Error failure) {
             completionFailure = failure;
             if (commit) {
-                // A rollback attempt cannot prove that the commit did not reach the database.
+                // Best-effort rollback releases server work; it cannot make a failed commit outcome known.
                 try {
                     connection.rollback();
                 } catch (SQLException | RuntimeException | Error rollbackFailure) {
-                    suppress(completionFailure, rollbackFailure);
+                    JdbcExceptionTranslator.suppress(completionFailure,
+                                                     "transaction rollback after commit failure",
+                                                     rollbackFailure);
                 }
             }
         }
@@ -336,7 +333,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         if (completionFailure != null) {
             association.failed(CompletionOutcome.UNKNOWN);
             // Restoring auto commit after an unknown outcome could commit pending work.
-            invalidate(connection, completionFailure);
+            JdbcConnectionInvalidator.invalidate(connection, completionFailure);
             throwTransactionFailure(commit
                                             ? "Local JDBC transaction commit failed with unknown outcome"
                                             : "Local JDBC transaction rollback failed with unknown outcome",
@@ -351,7 +348,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             connection.setAutoCommit(true);
         } catch (SQLException | RuntimeException | Error restoreFailure) {
             association.failed(outcome);
-            invalidate(connection, restoreFailure);
+            JdbcConnectionInvalidator.invalidate(connection, restoreFailure);
             throwTransactionFailure(completionCleanupMessage(association.outcome, "restore auto-commit"), restoreFailure);
             return;
         }
@@ -360,40 +357,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             connection.close();
         } catch (SQLException | RuntimeException | Error closeFailure) {
             association.failed(outcome);
-            invalidate(connection, closeFailure);
+            JdbcConnectionInvalidator.invalidate(connection, closeFailure);
             throwTransactionFailure(completionCleanupMessage(association.outcome, "close the connection"), closeFailure);
-        }
-    }
-
-    /**
-     * Invalidates a connection which must not return to normal pool reuse.
-     *
-     * @param connection unsafe connection
-     * @param primaryFailure failure which required invalidation
-     */
-    private static void invalidate(Connection connection, Throwable primaryFailure) {
-        // Abort first to prevent normal pool reuse, then close as a fallback.
-        try {
-            connection.abort(ABORT_EXECUTOR);
-        } catch (SQLException | RuntimeException | Error abortFailure) {
-            suppress(primaryFailure, abortFailure);
-        }
-        try {
-            connection.close();
-        } catch (SQLException | RuntimeException | Error closeFailure) {
-            suppress(primaryFailure, closeFailure);
-        }
-    }
-
-    /**
-     * Adds a later cleanup failure without risking self-suppression.
-     *
-     * @param primaryFailure primary failure
-     * @param cleanupFailure later cleanup failure
-     */
-    private static void suppress(Throwable primaryFailure, Throwable cleanupFailure) {
-        if (primaryFailure != cleanupFailure) {
-            primaryFailure.addSuppressed(cleanupFailure);
         }
     }
 
@@ -410,7 +375,9 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     }
 
     /**
-     * Throws a completion failure while preserving fatal JVM errors.
+     * Throws a completion failure while preserving fatal JVM errors. Non-fatal
+     * JDBC failures are sanitized before becoming the transaction exception's
+     * cause.
      *
      * @param message transaction diagnostic
      * @param cause original failure
@@ -419,7 +386,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         if (cause instanceof Error error) {
             throw error;
         }
-        throw new TxException(message, cause);
+        throw new TxException(message, JdbcExceptionTranslator.sanitize("transaction completion", cause));
     }
 
     /**
@@ -608,6 +575,25 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     }
 
     /**
+     * Implemented only by internal datasource adapters whose configuration defines a stable transaction identity.
+     */
+    interface IdentitySource {
+        /**
+         * Returns the immutable identity used across equivalent adapters.
+         *
+         * @return stable datasource identity
+         */
+        StableIdentity transactionIdentity();
+    }
+
+    /**
+     * Marker for immutable value identities.
+     * Ordinary pooled datasources continue to use object identity.
+     */
+    interface StableIdentity {
+    }
+
+    /**
      * Validated lifecycle states of one connection association.
      */
     private enum AssociationState {
@@ -657,7 +643,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         private final String txIdentity;
         private AssociationState state = AssociationState.ACTIVE;
 
-        // The first operation fixes the only datasource identity allowed in the transaction.
+        // The first operation fixes the only data source identity allowed in the transaction.
         private Object dataSourceIdentity;
         private boolean dataSourceIdentitySet;
 
@@ -743,25 +729,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     }
 
     /**
-     * Implemented only by internal datasource adapters whose configuration defines a stable transaction identity.
-     */
-    interface IdentitySource {
-        /**
-         * Returns the immutable identity used across equivalent adapters.
-         *
-         * @return stable datasource identity
-         */
-        StableIdentity transactionIdentity();
-    }
-
-    /**
-     * Marker for immutable value identities.
-     * Ordinary pooled datasources continue to use object identity.
-     */
-    interface StableIdentity {
-    }
-
-    /**
      * Logical operation lease.
      * Its close is a no-op because transaction completion owns the physical connection.
      */
@@ -779,7 +746,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             this.connection = connection;
         }
 
-        /** {@inheritDoc} */
         @Override
         public Connection connection() {
             if (closed) {
@@ -788,7 +754,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             return connection;
         }
 
-        /** {@inheritDoc} */
         @Override
         public void close() {
             closed = true;

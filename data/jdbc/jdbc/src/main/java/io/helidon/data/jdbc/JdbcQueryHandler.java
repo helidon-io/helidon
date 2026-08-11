@@ -299,7 +299,7 @@ final class JdbcQueryHandler {
                 }
                 return value;
             } finally {
-                // A mapper must not retain a usable row view after its callback returns.
+                // Expire the row before the cursor can advance or release its resources.
                 row.expire();
             }
         }

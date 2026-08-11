@@ -15,11 +15,12 @@
  */
 package io.helidon.data.jdbc;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
+import io.helidon.common.configurable.Resource;
 import io.helidon.data.sql.common.SqlConfig;
 import io.helidon.service.registry.Service;
 
@@ -29,7 +30,8 @@ import io.helidon.service.registry.Service;
  * The generated configuration type is read from {@code data.persistence-units.jdbc}. Exactly one inherited SQL
  * connection choice must be configured: a named datasource or a direct connection.
  */
-@Prototype.Blueprint(isPublic = false)
+@Api.Preview
+@Prototype.Blueprint
 @Prototype.Configured(JdbcPersistenceUnitFactory.CONFIG_KEY)
 interface JdbcPersistenceUnitConfigBlueprint extends SqlConfig {
 
@@ -43,19 +45,23 @@ interface JdbcPersistenceUnitConfigBlueprint extends SqlConfig {
     String name();
 
     /**
-     * Path to the database initialization script on the application classpath.
+     * Resource containing the database initialization script.
+     * URI-backed resources are not supported because the common resource
+     * opens a URI before the JDBC bootstrap policy can validate it.
      *
-     * @return database initialization script path
+     * @return database initialization script resource
      */
     @Option.Configured
-    Optional<Path> initScript();
+    Optional<Resource> initScript();
 
     /**
-     * Path to the database drop script on the application classpath.
+     * Resource containing the database drop script.
+     * URI-backed resources are not supported because the common resource
+     * opens a URI before the JDBC bootstrap policy can validate it.
      *
-     * @return database drop script path
+     * @return database drop script resource
      */
     @Option.Configured
-    Optional<Path> dropScript();
+    Optional<Resource> dropScript();
 
 }

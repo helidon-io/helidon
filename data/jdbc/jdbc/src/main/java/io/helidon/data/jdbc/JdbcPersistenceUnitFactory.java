@@ -16,7 +16,6 @@
 package io.helidon.data.jdbc;
 
 import java.io.PrintWriter;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
@@ -33,6 +32,7 @@ import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
+import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.data.Data;
 import io.helidon.data.DataException;
@@ -54,6 +54,8 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     private static final String NAME_CONFIG_KEY = "name";
     private static final String DATA_SOURCE_CONFIG_KEY = "data-source";
     private static final String CONNECTION_CONFIG_KEY = "connection";
+    private static final String INIT_SCRIPT_CONFIG_KEY = "init-script";
+    private static final String DROP_SCRIPT_CONFIG_KEY = "drop-script";
     private static final String USER_PROPERTY = "user";
     private static final String PASSWORD_PROPERTY = "password";
     private static final Qualifier PROVIDER_QUALIFIER = Qualifier.builder()
@@ -76,33 +78,54 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     JdbcPersistenceUnitFactory(Supplier<List<ServiceInstance<DataSource>>> dataSources,
                                Supplier<Config> config,
                                JdbcTransactionConnectionManager connectionManager) {
-        this.dataSources = Objects.requireNonNull(dataSources, "Datasource supplier must not be null");
-        this.config = Objects.requireNonNull(config, "Config supplier must not be null");
-        this.connectionManager = Objects.requireNonNull(connectionManager, "Connection manager must not be null");
+        this.dataSources = dataSources;
+        this.config = config;
+        this.connectionManager = connectionManager;
     }
 
-    /** {@inheritDoc} */
     @Override
     public List<Service.QualifiedInstance<JdbcClient>> services() {
         List<Config> units = config.get().get(CONFIG_KEY).asNodeList().orElse(List.of());
-        List<JdbcPersistenceUnitConfig> validatedUnits = new ArrayList<>(units.size());
         Set<String> names = new HashSet<>();
-        // Validate every unit before driver loading or script execution can cause side effects.
+        // Validate every unit before resource creation, driver loading, or datasource activation can cause side effects.
         for (Config unitConfig : units) {
             validateConnectionSource(unitConfig);
-            JdbcPersistenceUnitConfig unit = JdbcPersistenceUnitConfig.create(unitConfig);
-            if (unit.name().isBlank()) {
+            String unitName = unitConfig.get(NAME_CONFIG_KEY).asString().orElse(Service.Named.DEFAULT_NAME);
+            validateBootstrapResources(unitName, bootstrapDescriptors(unitConfig));
+            if (unitName.isBlank()) {
                 throw new DataException("JDBC persistence-unit name must not be blank");
             }
-            if (!names.add(unit.name())) {
-                throw new DataException("Duplicate JDBC persistence-unit name: " + unit.name());
+            if (!names.add(unitName)) {
+                throw new DataException("Duplicate JDBC persistence-unit name: " + unitName);
             }
-            validatedUnits.add(unit);
         }
 
-        List<Service.QualifiedInstance<JdbcClient>> result = new ArrayList<>(validatedUnits.size());
-        for (JdbcPersistenceUnitConfig unit : validatedUnits) {
-            JdbcClient client = createClient(unit);
+        List<ConfiguredUnit> configuredUnits = new ArrayList<>(units.size());
+        for (Config unitConfig : units) {
+            String unitName = unitConfig.get(NAME_CONFIG_KEY).asString().orElse(Service.Named.DEFAULT_NAME);
+            List<JdbcBootstrapResource.Descriptor> descriptors = bootstrapDescriptors(unitConfig);
+            JdbcPersistenceUnitConfig unit;
+            try {
+                unit = JdbcPersistenceUnitConfig.create(unitConfig);
+            } catch (RuntimeException e) {
+                throw new DataException("JDBC persistence unit '" + unitName
+                                                + "' configuration could not be created"
+                                                + bootstrapDescription(descriptors),
+                                        JdbcExceptionTranslator.sanitize("persistence-unit configuration", e));
+            }
+            List<JdbcBootstrapResource> resources = new ArrayList<>(2);
+            // Drop is both loaded and executed before initialization.
+            unit.dropScript().ifPresent(resource -> resources.add(
+                    JdbcBootstrapResource.create(JdbcBootstrapResource.Role.DROP, resources.size() + 1, resource)));
+            unit.initScript().ifPresent(resource -> resources.add(
+                    JdbcBootstrapResource.create(JdbcBootstrapResource.Role.INIT, resources.size() + 1, resource)));
+            configuredUnits.add(new ConfiguredUnit(unit, JdbcScriptRunner.load(unitName, resources)));
+        }
+
+        List<Service.QualifiedInstance<JdbcClient>> result = new ArrayList<>(configuredUnits.size());
+        for (ConfiguredUnit configuredUnit : configuredUnits) {
+            JdbcPersistenceUnitConfig unit = configuredUnit.config();
+            JdbcClient client = createClient(configuredUnit);
             Qualifier named = Qualifier.createNamed(unit.name());
             // A single view with both qualifiers avoids duplicate candidates for named lookups.
             result.add(Service.QualifiedInstance.create(client, named, PROVIDER_QUALIFIER));
@@ -133,18 +156,109 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     }
 
     /**
+     * Rejects URI bootstrap configuration before the common resource factory
+     * can open its stream. The script runner repeats this check for resources
+     * supplied programmatically.
+     *
+     * @param unitName persistence-unit name
+     * @param descriptors configured bootstrap descriptors
+     */
+    private static void validateBootstrapResources(String unitName,
+                                                   List<JdbcBootstrapResource.Descriptor> descriptors) {
+        descriptors.stream()
+                .filter(descriptor -> descriptor.sourceType() == JdbcBootstrapResource.SourceType.URI)
+                .findFirst()
+                .ifPresent(descriptor -> {
+                    throw new DataException("JDBC persistence unit '" + unitName
+                                                    + "' does not support URI-backed " + descriptor);
+                });
+    }
+
+    /**
+     * Creates safe descriptors directly from configuration so failures during
+     * generated resource construction cannot disclose a location through the
+     * common resource exception.
+     *
+     * @param unitConfig persistence-unit configuration
+     * @return descriptors in bootstrap execution order
+     */
+    private static List<JdbcBootstrapResource.Descriptor> bootstrapDescriptors(Config unitConfig) {
+        List<JdbcBootstrapResource.Descriptor> descriptors = new ArrayList<>(2);
+        addBootstrapDescriptor(unitConfig.get(DROP_SCRIPT_CONFIG_KEY),
+                               JdbcBootstrapResource.Role.DROP,
+                               descriptors);
+        addBootstrapDescriptor(unitConfig.get(INIT_SCRIPT_CONFIG_KEY),
+                               JdbcBootstrapResource.Role.INIT,
+                               descriptors);
+        return List.copyOf(descriptors);
+    }
+
+    /**
+     * Adds one descriptor without reading a configured location or content.
+     *
+     * @param scriptConfig script configuration node
+     * @param role bootstrap role
+     * @param descriptors target descriptors
+     */
+    private static void addBootstrapDescriptor(Config scriptConfig,
+                                               JdbcBootstrapResource.Role role,
+                                               List<JdbcBootstrapResource.Descriptor> descriptors) {
+        if (!scriptConfig.exists()) {
+            return;
+        }
+        descriptors.add(new JdbcBootstrapResource.Descriptor(role,
+                                                              configuredSourceType(scriptConfig),
+                                                              descriptors.size() + 1));
+    }
+
+    /**
+     * Resolves the source category using the same precedence as
+     * {@link Resource#create(io.helidon.common.configurable.ResourceConfig)}.
+     *
+     * @param scriptConfig script configuration node
+     * @return configured source category
+     */
+    private static JdbcBootstrapResource.SourceType configuredSourceType(Config scriptConfig) {
+        if (scriptConfig.get("path").exists()) {
+            return JdbcBootstrapResource.SourceType.FILE;
+        }
+        if (scriptConfig.get("resource-path").exists()) {
+            return JdbcBootstrapResource.SourceType.CLASSPATH;
+        }
+        if (scriptConfig.get("uri").exists()) {
+            return JdbcBootstrapResource.SourceType.URI;
+        }
+        if (scriptConfig.get("content-plain").exists()) {
+            return JdbcBootstrapResource.SourceType.CONFIGURED_TEXT;
+        }
+        if (scriptConfig.get("content").exists()) {
+            return JdbcBootstrapResource.SourceType.CONFIGURED_BINARY;
+        }
+        return JdbcBootstrapResource.SourceType.UNSPECIFIED;
+    }
+
+    /**
+     * Formats configured bootstrap descriptors without exposing their values.
+     *
+     * @param descriptors configured descriptors
+     * @return diagnostic suffix
+     */
+    private static String bootstrapDescription(List<JdbcBootstrapResource.Descriptor> descriptors) {
+        return descriptors.isEmpty()
+                ? ""
+                : "; bootstrap resources: " + String.join(", ", descriptors.stream().map(Object::toString).toList());
+    }
+
+    /**
      * Resolves one unit's datasource and creates its client.
      *
-     * @param unit persistence-unit configuration
+     * @param configuredUnit persistence-unit configuration and detached scripts
      * @return configured client
      */
-    private JdbcClient createClient(JdbcPersistenceUnitConfig unit) {
+    private JdbcClient createClient(ConfiguredUnit configuredUnit) {
+        JdbcPersistenceUnitConfig unit = configuredUnit.config();
         DataSource dataSource = connectionSource(unit);
-        List<Path> scripts = new ArrayList<>(2);
-        // Drop runs before initialization when both scripts are configured.
-        unit.dropScript().ifPresent(scripts::add);
-        unit.initScript().ifPresent(scripts::add);
-        JdbcScriptRunner.execute(unit.name(), dataSource, scripts);
+        JdbcScriptRunner.execute(unit.name(), dataSource, configuredUnit.scripts());
         return new JdbcClientImpl(dataSource, connectionManager);
     }
 
@@ -209,6 +323,16 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     }
 
     /**
+     * Persistence-unit configuration paired with scripts detached from their
+     * configurable resources.
+     *
+     * @param config persistence-unit configuration
+     * @param scripts preloaded scripts
+     */
+    private record ConfiguredUnit(JdbcPersistenceUnitConfig config, JdbcScriptRunner.PreparedScripts scripts) {
+    }
+
+    /**
      * Minimal DataSource adaptation for the existing direct SQL connection configuration.
      */
     private static final class DirectDataSource implements DataSource, JdbcTransactionConnectionManager.IdentitySource {
@@ -251,13 +375,11 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                                                           passwordChars);
         }
 
-        /** {@inheritDoc} */
         @Override
         public Connection getConnection() throws SQLException {
             return connect(copy(defaults));
         }
 
-        /** {@inheritDoc} */
         @Override
         public Connection getConnection(String username, String password) throws SQLException {
             Properties properties = copy(defaults);
@@ -276,19 +398,16 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             return connect(properties);
         }
 
-        /** {@inheritDoc} */
         @Override
         public PrintWriter getLogWriter() {
             return logWriter;
         }
 
-        /** {@inheritDoc} */
         @Override
         public void setLogWriter(PrintWriter out) {
             logWriter = out;
         }
 
-        /** {@inheritDoc} */
         @Override
         public void setLoginTimeout(int seconds) throws SQLException {
             if (seconds < 0) {
@@ -299,19 +418,16 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             }
         }
 
-        /** {@inheritDoc} */
         @Override
         public int getLoginTimeout() {
             return 0;
         }
 
-        /** {@inheritDoc} */
         @Override
         public Logger getParentLogger() throws SQLFeatureNotSupportedException {
             return driver.getParentLogger();
         }
 
-        /** {@inheritDoc} */
         @Override
         public <T> T unwrap(Class<T> iface) throws SQLException {
             Objects.requireNonNull(iface, "Unwrap type must not be null");
@@ -324,14 +440,12 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             throw new SQLException("Direct JDBC datasource cannot unwrap to " + iface.getName());
         }
 
-        /** {@inheritDoc} */
         @Override
         public boolean isWrapperFor(Class<?> iface) {
             Objects.requireNonNull(iface, "Wrapper type must not be null");
             return iface.isInstance(this) || iface.isInstance(driver);
         }
 
-        /** {@inheritDoc} */
         @Override
         public DirectIdentity transactionIdentity() {
             return transactionIdentity;
@@ -347,7 +461,7 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         private Connection connect(Properties properties) throws SQLException {
             Connection connection = driver.connect(url, properties);
             if (connection == null) {
-                throw new SQLException("Configured JDBC driver does not accept URL: " + url);
+                throw new SQLException("Configured JDBC driver does not accept the configured URL");
             }
             return connection;
         }
@@ -393,7 +507,6 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             this.password = password == null ? null : password.clone();
         }
 
-        /** {@inheritDoc} */
         @Override
         public boolean equals(Object other) {
             if (this == other) {
@@ -406,7 +519,6 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                     && Arrays.equals(password, that.password);
         }
 
-        /** {@inheritDoc} */
         @Override
         public int hashCode() {
             int result = Objects.hash(url, driverClass, username);

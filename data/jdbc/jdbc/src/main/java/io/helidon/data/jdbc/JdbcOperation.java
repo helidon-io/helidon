@@ -58,22 +58,44 @@ final class JdbcOperation {
     /**
      * Counts positional markers for a statement stage.
      *
-     * <p>The scanner is deliberately lexical rather than a SQL parser. It
-     * ignores question marks in quoted values, quoted identifiers, comments,
-     * and doubled question marks preserved for the JDBC driver. Declarative
-     * named markers have already been rewritten by the annotation processor.
-     * A runtime named marker is rejected because this client stage accepts
-     * positional JDBC SQL.</p>
+     * <p>The scanner is deliberately lexical rather than a SQL parser. The
+     * portable profile protects unambiguous quoted values, quoted identifiers,
+     * and comments while treating every question mark as a bind marker.
+     * Declarative named markers have already been rewritten by the annotation
+     * processor. A runtime named marker is rejected because this client stage
+     * accepts positional JDBC SQL.</p>
      *
      * @param sql SQL text to scan
      * @return number of positional bind markers
      */
     static int parameterCount(String sql) {
+        return parameterCount(sql, JdbcLexicalProfile.PORTABLE);
+    }
+
+    /**
+     * Counts positional markers using one explicit lexical profile.
+     *
+     * @param sql SQL text to scan
+     * @param profile marker lexical profile
+     * @return number of positional bind markers
+     */
+    static int parameterCount(String sql, JdbcLexicalProfile profile) {
         Objects.requireNonNull(sql, "SQL must not be null");
+        Objects.requireNonNull(profile, "JDBC lexical profile must not be null");
         if (sql.isBlank()) {
             throw new IllegalArgumentException("SQL must not be blank");
         }
-        return MarkerScanner.count(sql);
+        return MarkerScanner.count(sql, profile);
+    }
+
+    /**
+     * Describes the operation without exposing bound values.
+     *
+     * @return operation kind and bind count
+     */
+    @Override
+    public String toString() {
+        return "JdbcOperation[" + preparationPlan.resultKind() + ", parameters=" + binds.length + "]";
     }
 
     /**
@@ -104,16 +126,6 @@ final class JdbcOperation {
     }
 
     /**
-     * Describes the operation without exposing bound values.
-     *
-     * @return operation kind and bind count
-     */
-    @Override
-    public String toString() {
-        return "JdbcOperation[" + preparationPlan.resultKind() + ", parameters=" + binds.length + "]";
-    }
-
-    /**
      * Immutable value and optional JDBC type for one positional parameter.
      *
      * <p>A {@code null} entry in the statement's bind array means that the
@@ -137,6 +149,33 @@ final class JdbcOperation {
         Bind(Object value, JDBCType type) {
             this.value = snapshot(value);
             this.type = type;
+        }
+
+        /**
+         * Returns the value to bind.
+         *
+         * @return value, possibly null
+         */
+        Object value() {
+            return value;
+        }
+
+        /**
+         * Returns the explicit JDBC type.
+         *
+         * @return JDBC type, or null when untyped
+         */
+        JDBCType type() {
+            return type;
+        }
+
+        /**
+         * Tests whether the JDBC type was explicitly supplied.
+         *
+         * @return true for a typed bind
+         */
+        boolean typed() {
+            return type != null;
         }
 
         /**
@@ -169,47 +208,20 @@ final class JdbcOperation {
             }
             return value;
         }
-
-        /**
-         * Returns the value to bind.
-         *
-         * @return value, possibly null
-         */
-        Object value() {
-            return value;
-        }
-
-        /**
-         * Returns the explicit JDBC type.
-         *
-         * @return JDBC type, or null when untyped
-         */
-        JDBCType type() {
-            return type;
-        }
-
-        /**
-         * Tests whether the JDBC type was explicitly supplied.
-         *
-         * @return true for a typed bind
-         */
-        boolean typed() {
-            return type != null;
-        }
     }
 
     /**
      * Lexically counts positional markers without interpreting SQL grammar.
      *
-     * <p>Quoted text and comments are treated as opaque regions. A doubled
-     * question mark is preserved for the JDBC driver and does not consume a
-     * bind position. The scanner intentionally leaves SQL validation to the
-     * JDBC driver and database.</p>
+     * <p>The selected profile controls every dialect-sensitive protected
+     * region. The scanner intentionally validates only marker lexing and leaves
+     * SQL grammar to the JDBC driver and database.</p>
      */
     private static final class MarkerScanner {
 
         private final String sql;
         private final int length;
+        private final JdbcLexicalProfile profile;
         private int index;
         private int count;
 
@@ -217,20 +229,23 @@ final class JdbcOperation {
          * Creates a scanner positioned before the first character.
          *
          * @param sql SQL text
+         * @param profile marker lexical profile
          */
-        private MarkerScanner(String sql) {
+        private MarkerScanner(String sql, JdbcLexicalProfile profile) {
             this.sql = sql;
             this.length = sql.length();
+            this.profile = profile;
         }
 
         /**
          * Scans one SQL string and returns its positional marker count.
          *
          * @param sql SQL text
+         * @param profile marker lexical profile
          * @return marker count
          */
-        static int count(String sql) {
-            MarkerScanner scanner = new MarkerScanner(sql);
+        static int count(String sql, JdbcLexicalProfile profile) {
+            MarkerScanner scanner = new MarkerScanner(sql, profile);
             scanner.scan();
             return scanner.count;
         }
@@ -242,17 +257,19 @@ final class JdbcOperation {
                     quoted('\'');
                 } else if (current == '"') {
                     quoted('"');
-                } else if (current == '`') {
+                } else if (current == '`' && profile.backtickIdentifiers()) {
                     quoted('`');
-                } else if (current == '[') {
+                } else if (current == '[' && profile.bracketIdentifiers()) {
                     bracketIdentifier();
-                } else if (current == '-' && peek(1) == '-') {
+                } else if (current == '-' && peek(1) == '-' && profile.lineComment(sql, index)) {
                     lineComment();
                 } else if (current == '/' && peek(1) == '*') {
                     blockComment();
-                } else if ((current == 'q' || current == 'Q') && peek(1) == '\'' && index + 2 < length) {
-                    oracleQuoted();
-                } else if (current == '$' && dollarQuoted()) {
+                } else if ((current == 'q' || current == 'Q')
+                        && profile.qQuotedStrings()
+                        && JdbcSqlLexicalRules.qQuoteClosingDelimiter(sql, index) != '\0') {
+                    qQuoted();
+                } else if (profile.dollarQuotedStrings() && current == '$' && dollarQuoted()) {
                     // The helper advances past the complete dollar-quoted region.
                 } else if (current == '?') {
                     positionalMarker();
@@ -264,10 +281,10 @@ final class JdbcOperation {
             }
         }
 
-        // A doubled question mark leaves a literal question mark for drivers that support this escape.
+        // An escape is recognized only when the selected driver contract defines it.
         private void positionalMarker() {
             char next = peek(1);
-            if (next == '?') {
+            if (next == '?' && profile.questionMarkEscape()) {
                 index += 2;
             } else {
                 count++;
@@ -285,7 +302,8 @@ final class JdbcOperation {
             }
             if (Character.isJavaIdentifierStart(next)) {
                 throw new IllegalArgumentException(
-                        "JdbcClient SQL accepts positional '?' markers only; named marker found at offset " + index);
+                        "JdbcClient SQL accepts positional '?' markers only; named marker found for lexical profile "
+                                + profile + " at offset " + index);
             }
             index++;
         }
@@ -335,12 +353,14 @@ final class JdbcOperation {
             }
         }
 
-        // Some databases allow block comments to be nested.
         private void blockComment() {
             index += 2;
             int depth = 1;
             while (index < length) {
                 if (sql.charAt(index) == '/' && peek(1) == '*') {
+                    if (!profile.nestedBlockComments()) {
+                        throw malformed("Nested block comment is not supported");
+                    }
                     depth++;
                     index += 2;
                 } else if (sql.charAt(index) == '*' && peek(1) == '/') {
@@ -356,17 +376,8 @@ final class JdbcOperation {
             throw malformed("Unterminated block comment");
         }
 
-        private void oracleQuoted() {
-            char opening = sql.charAt(index + 2);
-            // Oracle pairs bracket delimiters. The same character closes other
-            // quoted values.
-            char closing = switch (opening) {
-                case '[' -> ']';
-                case '(' -> ')';
-                case '{' -> '}';
-                case '<' -> '>';
-                default -> opening;
-            };
+        private void qQuoted() {
+            char closing = JdbcSqlLexicalRules.qQuoteClosingDelimiter(sql, index);
             index += 3;
             while (index + 1 < length) {
                 if (sql.charAt(index) == closing && sql.charAt(index + 1) == '\'') {
@@ -380,18 +391,11 @@ final class JdbcOperation {
 
         // A lone dollar sign is ordinary SQL text, not an opening delimiter.
         private boolean dollarQuoted() {
-            int delimiterEnd = index + 1;
-            while (delimiterEnd < length && sql.charAt(delimiterEnd) != '$') {
-                if (!Character.isJavaIdentifierPart(sql.charAt(delimiterEnd))) {
-                    return false;
-                }
-                delimiterEnd++;
-            }
-            if (delimiterEnd >= length) {
+            String delimiter = JdbcSqlLexicalRules.dollarDelimiter(sql, index);
+            if (delimiter == null) {
                 return false;
             }
-            String delimiter = sql.substring(index, delimiterEnd + 1);
-            int contentEnd = sql.indexOf(delimiter, delimiterEnd + 1);
+            int contentEnd = sql.indexOf(delimiter, index + delimiter.length());
             if (contentEnd < 0) {
                 throw malformed("Unterminated dollar-quoted string");
             }
@@ -417,7 +421,9 @@ final class JdbcOperation {
          * @return exception to throw
          */
         private IllegalArgumentException malformed(String message) {
-            return new IllegalArgumentException(message + " near offset " + index);
+            return new IllegalArgumentException(message
+                                                        + " for lexical profile " + profile
+                                                        + " near offset " + index);
         }
     }
 }

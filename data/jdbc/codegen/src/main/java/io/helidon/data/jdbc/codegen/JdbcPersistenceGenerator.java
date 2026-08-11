@@ -31,23 +31,24 @@ import io.helidon.data.codegen.common.spi.RepositoryGenerator;
  */
 final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
 
-    // Recorded in generated source so its origin remains traceable.
+    // The generated source records its origin for traceability.
     static final TypeName GENERATOR = TypeName.create(JdbcPersistenceGenerator.class);
 
-    /** {@inheritDoc} */
+    @Override
+    public QueryBuilder queryBuilder(RepositoryInfo repositoryInfo) {
+        throw new UnsupportedOperationException("JDBC repositories do not use entity query generation");
+    }
+
+    @Override
+    public StatementGenerator statementGenerator() {
+        throw new UnsupportedOperationException("JDBC repositories do not use entity statement generation");
+    }
+
     @Override
     protected String provider() {
         return JdbcCodegenConstants.PROVIDER;
     }
 
-    /** {@inheritDoc} */
-    @Override
-    protected boolean generateByDefault() {
-        // JDBC is opt-in so it does not compete with Jakarta Persistence when no provider is declared.
-        return false;
-    }
-
-    /** {@inheritDoc} */
     @Override
     protected TypeName repositoryClassName(TypeName baseName) {
         return TypeName.builder()
@@ -57,19 +58,6 @@ final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
                 .build();
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public QueryBuilder queryBuilder(RepositoryInfo repositoryInfo) {
-        throw new UnsupportedOperationException("JDBC repositories do not use entity query generation");
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public StatementGenerator statementGenerator() {
-        throw new UnsupportedOperationException("JDBC repositories do not use entity statement generation");
-    }
-
-    /** {@inheritDoc} */
     @Override
     protected void generateRepositoryClass(CodegenContext codegenContext,
                                            RoundContext roundContext,
@@ -84,7 +72,7 @@ final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
                                                + "must not extend entity-oriented repository interfaces",
                                        repositoryInfo.interfaceInfo().originatingElementValue());
         }
-        JdbcRepositoryClassGenerator.generate(codegenContext,
+        JdbcRepositoryClassGenerator.generate(roundContext,
                                                repositoryInfo,
                                                className,
                                                classModel);

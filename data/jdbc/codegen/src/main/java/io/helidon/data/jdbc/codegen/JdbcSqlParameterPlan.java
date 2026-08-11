@@ -15,7 +15,6 @@
  */
 package io.helidon.data.jdbc.codegen;
 
-import java.sql.JDBCType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -165,7 +164,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
         return new Bind(position,
                         parameter,
                         nullable,
-                        JdbcScalarTypes.nullJdbcType(parameter.typeName()));
+                        JdbcScalarTypes.nullJdbcTypeConstant(parameter.typeName()));
     }
 
     /**
@@ -185,11 +184,11 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
      * @param position one-based JDBC position
      * @param parameter repository parameter
      * @param nullable whether generated code accepts a null argument
-     * @param nullJdbcType JDBCType constant used for null
+     * @param nullJdbcTypeConstant name of the {@code JDBCType} constant used for null
      */
     record Bind(int position,
                 TypedElementInfo parameter,
                 boolean nullable,
-                JDBCType nullJdbcType) {
+                String nullJdbcTypeConstant) {
     }
 }

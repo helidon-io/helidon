@@ -17,14 +17,15 @@ package io.helidon.data.jdbc.codegen;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.RoundContext;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -51,6 +52,7 @@ final class JdbcMethodPlan {
     private final JdbcSqlParameterPlan parameterPlan;
     private final List<String> generatedColumns;
     private final TypeName explicitMapper;
+    private final List<TypedElementInfo> recordComponents;
     private String sqlFieldName;
     private String mapperFieldName;
 
@@ -65,6 +67,7 @@ final class JdbcMethodPlan {
      * @param parameterPlan SQL parameter plan
      * @param generatedColumns generated columns
      * @param explicitMapper explicit mapper type
+     * @param recordComponents validated canonical record components
      */
     private JdbcMethodPlan(TypedElementInfo method,
                            Operation operation,
@@ -73,7 +76,8 @@ final class JdbcMethodPlan {
                            TypeName mappedType,
                            JdbcSqlParameterPlan parameterPlan,
                            List<String> generatedColumns,
-                           TypeName explicitMapper) {
+                           TypeName explicitMapper,
+                           List<TypedElementInfo> recordComponents) {
         this.method = method;
         this.operation = operation;
         this.returnShape = returnShape;
@@ -82,16 +86,18 @@ final class JdbcMethodPlan {
         this.parameterPlan = parameterPlan;
         this.generatedColumns = generatedColumns;
         this.explicitMapper = explicitMapper;
+        this.recordComponents = List.copyOf(recordComponents);
     }
 
     /**
      * Validates and plans one abstract repository method.
      *
      * @param method repository method
-     * @param context code-generation context
+     * @param roundContext current generation round
      * @return validated plan
      */
-    static JdbcMethodPlan create(TypedElementInfo method, CodegenContext context) {
+    static JdbcMethodPlan create(TypedElementInfo method,
+                                 RoundContext roundContext) {
         Annotation statement = method.findAnnotation(JdbcPersistenceTypes.JDBC_STATEMENT)
                 .orElseThrow(() -> failure(method, "An abstract JDBC repository method requires @Jdbc.Statement"));
         String sql = statement.stringValue()
@@ -119,22 +125,101 @@ final class JdbcMethodPlan {
         }
 
         validateReturn(method, operation, result);
+        validateMappedTypeParameters(method, operation, result.mappedType());
         List<String> generatedColumns = generatedColumns(method, generatedKeys);
-        MappingKind mappingKind = mappingKind(method,
-                                              context,
-                                              operation,
-                                              result.mappedType(),
-                                              rowMapperRequested,
-                                              explicitMapper);
+        Mapping mapping = mapping(method,
+                                  roundContext,
+                                  operation,
+                                  result.mappedType(),
+                                  rowMapperRequested,
+                                  explicitMapper);
         JdbcSqlParameterPlan parameters = JdbcSqlParameterPlan.create(sql, method.parameterArguments(), method);
         return new JdbcMethodPlan(method,
                                   operation,
                                   result.shape(),
-                                  mappingKind,
+                                  mapping.kind(),
                                   result.mappedType(),
                                   parameters,
                                   generatedColumns,
-                                  explicitMapper);
+                                  explicitMapper,
+                                  mapping.recordComponents());
+    }
+
+    /**
+     * Creates a code-generation diagnostic attached to a repository method.
+     *
+     * @param method repository method
+     * @param message diagnostic text
+     * @return code-generation exception
+     */
+    static CodegenException failure(TypedElementInfo method, String message) {
+        return new CodegenException(message, method.originatingElementValue());
+    }
+
+    TypedElementInfo method() {
+        return method;
+    }
+
+    Operation operation() {
+        return operation;
+    }
+
+    ReturnShape returnShape() {
+        return returnShape;
+    }
+
+    MappingKind mappingKind() {
+        return mappingKind;
+    }
+
+    TypeName mappedType() {
+        return mappedType;
+    }
+
+    JdbcSqlParameterPlan parameterPlan() {
+        return parameterPlan;
+    }
+
+    String jdbcSql() {
+        return parameterPlan.sql();
+    }
+
+    List<String> generatedColumns() {
+        return generatedColumns;
+    }
+
+    TypeName explicitMapper() {
+        return explicitMapper;
+    }
+
+    List<TypedElementInfo> recordComponents() {
+        return recordComponents;
+    }
+
+    String sqlFieldName() {
+        return sqlFieldName;
+    }
+
+    /**
+     * Records the generated SQL constant name.
+     *
+     * @param sqlFieldName field name
+     */
+    void sqlFieldName(String sqlFieldName) {
+        this.sqlFieldName = sqlFieldName;
+    }
+
+    String mapperFieldName() {
+        return mapperFieldName;
+    }
+
+    /**
+     * Records the generated record mapper constant name.
+     *
+     * @param mapperFieldName field name
+     */
+    void mapperFieldName(String mapperFieldName) {
+        this.mapperFieldName = mapperFieldName;
     }
 
     /**
@@ -251,6 +336,50 @@ final class JdbcMethodPlan {
     }
 
     /**
+     * Rejects a mapped result whose type is scoped to the repository method.
+     *
+     * <p>Generated mapping needs the mapped type in class-scoped mapper state
+     * or a class literal, so a method-scoped type cannot satisfy that contract.
+     * Type parameters remain valid where no mapping or binding contract needs
+     * to resolve them, including generic checked exceptions.</p>
+     *
+     * @param method repository method
+     * @param operation resolved operation
+     * @param mappedType mapped result type
+     */
+    private static void validateMappedTypeParameters(TypedElementInfo method,
+                                                     Operation operation,
+                                                     TypeName mappedType) {
+        if (operation == Operation.UPDATE) {
+            return;
+        }
+        for (TypeName typeParameter : method.typeParameters()) {
+            String parameterName = typeParameter.className();
+            if (usesTypeParameter(mappedType, parameterName)) {
+                throw failure(method, "JDBC mapped result cannot use method type parameter " + parameterName);
+            }
+        }
+    }
+
+    /**
+     * Determines whether a type, including its nested bounds and components,
+     * refers to a named method type parameter.
+     *
+     * @param type type to inspect
+     * @param parameterName type-parameter name
+     * @return whether the type parameter is used
+     */
+    private static boolean usesTypeParameter(TypeName type, String parameterName) {
+        if (type.generic() && type.className().equals(parameterName)) {
+            return true;
+        }
+        return type.typeArguments().stream().anyMatch(it -> usesTypeParameter(it, parameterName))
+                || type.lowerBounds().stream().anyMatch(it -> usesTypeParameter(it, parameterName))
+                || type.upperBounds().stream().anyMatch(it -> usesTypeParameter(it, parameterName))
+                || type.componentType().map(it -> usesTypeParameter(it, parameterName)).orElse(false);
+    }
+
+    /**
      * Reads and validates generated column names.
      *
      * @param method repository method
@@ -265,12 +394,13 @@ final class JdbcMethodPlan {
                 .stringValues()
                 .orElse(List.of());
         Set<String> unique = new HashSet<>();
-        // Reject names that differ only by case, but retain their spelling and order for generated builder calls.
+        // Column-name resolution belongs to the JDBC driver. Reject only an exact duplicate so quoted,
+        // case-distinct database identifiers remain representable, while preserving spelling and declaration order.
         for (String column : columns) {
             if (column.isBlank()) {
                 throw failure(method, "@Jdbc.GeneratedKeys column names must not be blank");
             }
-            if (!unique.add(column.toLowerCase(Locale.ROOT))) {
+            if (!unique.add(column)) {
                 throw failure(method, "Duplicate @Jdbc.GeneratedKeys column name: " + column);
             }
         }
@@ -278,119 +408,146 @@ final class JdbcMethodPlan {
     }
 
     /**
-     * Selects scalar, record, service, or explicit mapping.
+     * Resolves and validates scalar, record, service, or explicit mapping.
      *
      * @param method repository method
-     * @param context code-generation context
+     * @param roundContext current generation round
      * @param operation resolved operation
      * @param mappedType mapped type
      * @param rowMapperRequested whether {@code @Jdbc.RowMapper} is present
      * @param explicitMapper explicit mapper type
-     * @return mapping kind
+     * @return validated mapping metadata
      */
-    private static MappingKind mappingKind(TypedElementInfo method,
-                                           CodegenContext context,
-                                           Operation operation,
-                                           TypeName mappedType,
-                                           boolean rowMapperRequested,
-                                           TypeName explicitMapper) {
+    private static Mapping mapping(TypedElementInfo method,
+                                   RoundContext roundContext,
+                                   Operation operation,
+                                   TypeName mappedType,
+                                   boolean rowMapperRequested,
+                                   TypeName explicitMapper) {
         if (operation == Operation.UPDATE) {
             if (rowMapperRequested) {
                 throw failure(method, "@Jdbc.RowMapper is not valid on an update-count method");
             }
-            return MappingKind.NONE;
+            return Mapping.of(MappingKind.NONE);
         }
         if (rowMapperRequested) {
             if (mappedType.primitive()) {
                 throw failure(method, "@Jdbc.RowMapper does not support primitive result type "
                         + mappedType.resolvedName());
             }
-            return explicitMapper == null ? MappingKind.SERVICE : MappingKind.EXPLICIT;
+            if (explicitMapper == null) {
+                return Mapping.of(MappingKind.SERVICE);
+            }
+            validateExplicitMapper(method,
+                                   roundContext,
+                                   mappedType,
+                                   explicitMapper);
+            return Mapping.of(MappingKind.EXPLICIT);
         }
         if (JdbcScalarTypes.isScalar(mappedType)) {
-            return MappingKind.SCALAR;
+            return Mapping.of(MappingKind.SCALAR);
         }
-        TypeInfo typeInfo = context.typeInfo(mappedType.genericTypeName())
+        TypeInfo typeInfo = roundContext.typeInfo(mappedType.genericTypeName())
                 .orElseThrow(() -> failure(method, "Mapped result type information is unavailable: "
                         + mappedType.resolvedName()));
         if (typeInfo.kind() == ElementKind.RECORD) {
-            return MappingKind.RECORD;
+            List<TypedElementInfo> components = typeInfo.elementInfo()
+                    .stream()
+                    .filter(element -> element.kind() == ElementKind.RECORD_COMPONENT)
+                    .toList();
+            validateRecordComponents(method, components);
+            return new Mapping(MappingKind.RECORD, components);
         }
         throw failure(method, "Non-scalar JDBC result must be a record or declare @Jdbc.RowMapper: "
                 + mappedType.resolvedName());
     }
 
     /**
-     * Creates a code-generation diagnostic attached to a repository method.
+     * Validates service injection and generic compatibility of an explicitly
+     * selected mapper before any source is emitted.
      *
      * @param method repository method
-     * @param message diagnostic text
-     * @return code-generation exception
+     * @param roundContext current generation round
+     * @param mappedType mapper result type
+     * @param mapperType explicit mapper type
      */
-    static CodegenException failure(TypedElementInfo method, String message) {
-        return new CodegenException(message, method.originatingElementValue());
-    }
-
-    TypedElementInfo method() {
-        return method;
-    }
-
-    Operation operation() {
-        return operation;
-    }
-
-    ReturnShape returnShape() {
-        return returnShape;
-    }
-
-    MappingKind mappingKind() {
-        return mappingKind;
-    }
-
-    TypeName mappedType() {
-        return mappedType;
-    }
-
-    JdbcSqlParameterPlan parameterPlan() {
-        return parameterPlan;
-    }
-
-    String jdbcSql() {
-        return parameterPlan.sql();
-    }
-
-    List<String> generatedColumns() {
-        return generatedColumns;
-    }
-
-    TypeName explicitMapper() {
-        return explicitMapper;
-    }
-
-    String sqlFieldName() {
-        return sqlFieldName;
+    private static void validateExplicitMapper(TypedElementInfo method,
+                                               RoundContext roundContext,
+                                               TypeName mappedType,
+                                               TypeName mapperType) {
+        TypeInfo mapperInfo = roundContext.typeInfo(mapperType)
+                .orElseThrow(() -> failure(method,
+                                           "Mapper type information is unavailable: " + mapperType.resolvedName()));
+        if (mapperInfo.kind() != ElementKind.CLASS
+                || mapperInfo.elementModifiers().contains(Modifier.ABSTRACT)) {
+            throw failure(method, "Mapper must be a concrete class: " + mapperType.resolvedName());
+        }
+        if (!mapperType.enclosingNames().isEmpty() && !mapperInfo.elementModifiers().contains(Modifier.STATIC)) {
+            throw failure(method, "Mapper must not be a non-static nested class: " + mapperType.resolvedName());
+        }
+        TypeName mapperInterface = findImplementedInterface(mapperInfo,
+                                                            JdbcPersistenceTypes.ROW_MAPPER,
+                                                            Map.of());
+        if (mapperInterface == null
+                || mapperInterface.typeArguments().size() != 1
+                || !mapperInterface.typeArguments().getFirst().equals(mappedType)) {
+            throw failure(method, "Mapper must implement JdbcClient.RowMapper<" + mappedType.resolvedName() + ">");
+        }
     }
 
     /**
-     * Records the generated SQL constant name.
+     * Restricts record components to scalars and explicit Optional scalars.
      *
-     * @param sqlFieldName field name
+     * @param method repository method
+     * @param components canonical record components
      */
-    void sqlFieldName(String sqlFieldName) {
-        this.sqlFieldName = sqlFieldName;
-    }
-
-    String mapperFieldName() {
-        return mapperFieldName;
+    private static void validateRecordComponents(TypedElementInfo method, List<TypedElementInfo> components) {
+        for (TypedElementInfo component : components) {
+            if (!JdbcScalarTypes.isScalar(component.typeName())
+                    && JdbcScalarTypes.optionalScalarType(component.typeName()).isEmpty()) {
+                throw failure(method,
+                              "Unsupported record component type " + component.typeName().resolvedName()
+                                      + " for " + component.elementName());
+            }
+        }
     }
 
     /**
-     * Records the generated record mapper constant name.
+     * Finds a generic interface through the mapper's interface and superclass
+     * hierarchy.
      *
-     * @param mapperFieldName field name
+     * @param typeInfo candidate type
+     * @param contract generic contract
+     * @param inheritedSubstitutions type substitutions inherited from the caller
+     * @return implemented interface, or {@code null}
      */
-    void mapperFieldName(String mapperFieldName) {
-        this.mapperFieldName = mapperFieldName;
+    private static TypeName findImplementedInterface(TypeInfo typeInfo,
+                                                     TypeName contract,
+                                                     Map<String, TypeName> inheritedSubstitutions) {
+        Map<String, TypeName> substitutions = JdbcTypeHierarchy.substitutions(typeInfo, inheritedSubstitutions);
+        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
+            TypeName resolvedType = JdbcTypeHierarchy.substitute(interfaceInfo.typeName(), substitutions);
+            if (resolvedType.genericTypeName().equals(contract)) {
+                return resolvedType;
+            }
+            // Carry the actual type into the next level so recursive substitutions do not revert to type variables.
+            TypeInfo resolvedInfo = TypeInfo.builder(interfaceInfo)
+                    .typeName(resolvedType)
+                    .build();
+            TypeName inherited = findImplementedInterface(resolvedInfo, contract, substitutions);
+            if (inherited != null) {
+                return inherited;
+            }
+        }
+        return typeInfo.superTypeInfo()
+                .map(superType -> {
+                    TypeName resolvedType = JdbcTypeHierarchy.substitute(superType.typeName(), substitutions);
+                    TypeInfo resolvedInfo = TypeInfo.builder(superType)
+                            .typeName(resolvedType)
+                            .build();
+                    return findImplementedInterface(resolvedInfo, contract, substitutions);
+                })
+                .orElse(null);
     }
 
     /**
@@ -400,15 +557,6 @@ final class JdbcMethodPlan {
         QUERY,
         UPDATE,
         GENERATED_KEYS
-    }
-
-    /**
-     * Public execution choices used while resolving an operation.
-     */
-    private enum ExecutionSelection {
-        AUTO,
-        QUERY,
-        UPDATE
     }
 
     /**
@@ -429,6 +577,31 @@ final class JdbcMethodPlan {
         RECORD,
         SERVICE,
         EXPLICIT
+    }
+
+    /**
+     * Public execution choices used while resolving an operation.
+     */
+    private enum ExecutionSelection {
+        AUTO,
+        QUERY,
+        UPDATE
+    }
+
+    /**
+     * Mapping strategy paired with any metadata needed by source emission.
+     *
+     * @param kind selected mapping strategy
+     * @param recordComponents canonical record components, otherwise empty
+     */
+    private record Mapping(MappingKind kind, List<TypedElementInfo> recordComponents) {
+        private Mapping {
+            recordComponents = List.copyOf(recordComponents);
+        }
+
+        private static Mapping of(MappingKind kind) {
+            return new Mapping(kind, List.of());
+        }
     }
 
     /**

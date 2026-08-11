@@ -38,8 +38,16 @@ import io.helidon.data.DataException;
  * exception translation identical for every terminal. A transaction lease may
  * retain the physical connection, but result sets and statements always close
  * before the terminal returns.
+ * <p>
+ * JDBC warnings remain non-fatal on success. When an operation fails, warnings
+ * and JDBC cleanup failures are sanitized before they are attached to the
+ * application-visible failure tree.
  */
 final class JdbcRunner {
+
+    // A singular terminal needs the second row as evidence of non-unique cardinality.
+    private static final ExecutionOptions SINGULAR_QUERY = new ExecutionOptions(2);
+    private static final ExecutionOptions UNBOUNDED = new ExecutionOptions(0);
 
     private final DataSource dataSource;
     private final JdbcConnectionLease.Provider leaseProvider;
@@ -66,7 +74,7 @@ final class JdbcRunner {
      * @return large update count
      */
     long execute(JdbcOperation operation) {
-        return run(operation, updateHandler::execute);
+        return run(operation, UNBOUNDED, updateHandler::execute);
     }
 
     /**
@@ -79,8 +87,8 @@ final class JdbcRunner {
      */
     <T> T one(JdbcOperation operation, JdbcClient.RowMapper<T> mapper) {
         return switch (operation.preparationPlan().resultKind()) {
-        case QUERY -> run(operation, scope -> queryHandler.one(scope, mapper));
-        case GENERATED_KEYS -> run(operation, scope -> updateHandler.one(scope, mapper));
+        case QUERY -> run(operation, SINGULAR_QUERY, scope -> queryHandler.one(scope, mapper));
+        case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.one(scope, mapper));
         case UPDATE -> throw incompatibleTerminal(operation, "one");
         };
     }
@@ -95,8 +103,8 @@ final class JdbcRunner {
      */
     <T> Optional<T> optional(JdbcOperation operation, JdbcClient.RowMapper<T> mapper) {
         return switch (operation.preparationPlan().resultKind()) {
-        case QUERY -> run(operation, scope -> queryHandler.optional(scope, mapper));
-        case GENERATED_KEYS -> run(operation, scope -> updateHandler.optional(scope, mapper));
+        case QUERY -> run(operation, SINGULAR_QUERY, scope -> queryHandler.optional(scope, mapper));
+        case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.optional(scope, mapper));
         case UPDATE -> throw incompatibleTerminal(operation, "optional");
         };
     }
@@ -112,8 +120,8 @@ final class JdbcRunner {
      */
     <T> Optional<T> optionalScalar(JdbcOperation operation, Class<T> scalarType) {
         return switch (operation.preparationPlan().resultKind()) {
-        case QUERY -> run(operation, scope -> queryHandler.optionalScalar(scope, scalarType));
-        case GENERATED_KEYS -> run(operation, scope -> updateHandler.optionalScalar(scope, scalarType));
+        case QUERY -> run(operation, SINGULAR_QUERY, scope -> queryHandler.optionalScalar(scope, scalarType));
+        case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.optionalScalar(scope, scalarType));
         default -> throw new IllegalStateException("Optional scalar mapping requires a row-producing operation");
         };
     }
@@ -128,8 +136,8 @@ final class JdbcRunner {
      */
     <T> List<T> list(JdbcOperation operation, JdbcClient.RowMapper<T> mapper) {
         return switch (operation.preparationPlan().resultKind()) {
-        case QUERY -> run(operation, scope -> queryHandler.list(scope, mapper));
-        case GENERATED_KEYS -> run(operation, scope -> updateHandler.list(scope, mapper));
+        case QUERY -> run(operation, UNBOUNDED, scope -> queryHandler.list(scope, mapper));
+        case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.list(scope, mapper));
         case UPDATE -> throw incompatibleTerminal(operation, "list");
         };
     }
@@ -138,11 +146,14 @@ final class JdbcRunner {
      * Runs one terminal inside the provider-owned resource boundary.
      *
      * @param operation immutable operation
+     * @param options execution options selected by the terminal
      * @param action result-specific handler action
      * @param <T> terminal result type
      * @return terminal result
      */
-    private <T> T run(JdbcOperation operation, HandlerAction<T> action) {
+    private <T> T run(JdbcOperation operation,
+                      ExecutionOptions options,
+                      HandlerAction<T> action) {
         // Explicit cleanup preserves every failure in resource ownership order.
         JdbcConnectionLease lease = null;
         PreparedStatement statement = null;
@@ -152,10 +163,11 @@ final class JdbcRunner {
         try {
             lease = leaseProvider.acquire(dataSource);
             Connection connection = lease.connection();
-            connection.clearWarnings();
+            clearWarnings("connection warning reset", connection::clearWarnings);
             statement = prepare(connection, operation);
+            applyOptions(statement, options);
             bind(statement, operation.binds());
-            statement.clearWarnings();
+            clearWarnings("statement warning reset", statement::clearWarnings);
             scope = new ExecutionScope(operation, statement);
             result = action.execute(scope);
         } catch (Throwable caught) {
@@ -171,9 +183,9 @@ final class JdbcRunner {
             if (failure == null) {
                 failure = cleanupFailure;
             } else if (failure instanceof SQLException) {
-                failure.addSuppressed(cleanupFailure);
+                JdbcExceptionTranslator.suppress(failure, "resource cleanup", cleanupFailure);
             } else {
-                // Add JDBC context when the primary failure came from application code.
+                // cleanupException returns a provider-owned diagnostic safe to attach to application code.
                 failure.addSuppressed(cleanupException(operation, cleanupFailure));
             }
         }
@@ -184,6 +196,29 @@ final class JdbcRunner {
             rethrow(operation, failure);
         }
         return result;
+    }
+
+    /**
+     * Applies portable statement-level execution controls. A driver which
+     * explicitly reports row limits as unsupported retains the cursor-based
+     * cardinality check; all other failures remain operation failures.
+     *
+     * @param statement prepared statement
+     * @param options terminal execution options
+     * @throws SQLException when a supported JDBC option cannot be applied
+     */
+    private static void applyOptions(PreparedStatement statement,
+                                     ExecutionOptions options) throws SQLException {
+        if (options.maxRows() == 0) {
+            return;
+        }
+        try {
+            statement.setMaxRows(options.maxRows());
+        } catch (SQLFeatureNotSupportedException unsupported) {
+            // The result cursor still reads at most two rows before reporting cardinality.
+        } catch (RuntimeException runtimeException) {
+            throw (RuntimeException) JdbcExceptionTranslator.sanitize("query maximum rows", runtimeException);
+        }
     }
 
     /**
@@ -228,21 +263,6 @@ final class JdbcRunner {
     }
 
     /**
-     * Reads a large update count with the legacy integer fallback.
-     *
-     * @param statement prepared statement
-     * @return update count
-     * @throws SQLException when neither accessor succeeds
-     */
-    private static long largeUpdateCount(PreparedStatement statement) throws SQLException {
-        try {
-            return statement.getLargeUpdateCount();
-        } catch (SQLFeatureNotSupportedException e) {
-            return statement.getUpdateCount();
-        }
-    }
-
-    /**
      * Rejects any result channel following the accepted primary result.
      *
      * @param scope execution scope
@@ -258,7 +278,7 @@ final class JdbcRunner {
             // The driver closed the exhausted result set during advancement.
             scope.clearCurrentResultSet();
         }
-        if (drainFromCurrent(scope.statement(), nextIsResultSet)) {
+        if (drainFromCurrent(scope, nextIsResultSet)) {
             throw new DataException("JDBC " + scope.operation().preparationPlan().resultKind()
                                             + " returned unexpected additional results");
         }
@@ -267,13 +287,14 @@ final class JdbcRunner {
     /**
      * Closes and advances through incompatible JDBC result channels.
      *
-     * @param statement prepared statement
+     * @param scope current execution scope
      * @param currentIsResultSet whether the current channel is a result set
      * @return whether any result channel was present
      * @throws SQLException when result closure or advancement fails
      */
-    private static boolean drainFromCurrent(PreparedStatement statement,
+    private static boolean drainFromCurrent(ExecutionScope scope,
                                             boolean currentIsResultSet) throws SQLException {
+        PreparedStatement statement = scope.statement();
         boolean found = false;
         boolean resultSet = currentIsResultSet;
         while (true) {
@@ -284,7 +305,7 @@ final class JdbcRunner {
                     current.close();
                 }
             } else {
-                long count = largeUpdateCount(statement);
+                long count = scope.largeUpdateCount();
                 if (count == -1) {
                     return found;
                 }
@@ -308,6 +329,8 @@ final class JdbcRunner {
 
     /**
      * Reads and clears warnings while their JDBC owners are still open.
+     * Warning-access failures are diagnostics only when another failure already
+     * exists; warning handling never turns successful work into a failure.
      *
      * @param primary primary failure, or {@code null} on success
      * @param connection current connection
@@ -318,24 +341,66 @@ final class JdbcRunner {
                                          Connection connection,
                                          PreparedStatement statement,
                                          ResultSet resultSet) {
+        if (resultSet != null) {
+            preserveWarnings(primary,
+                             "result-set warning",
+                             resultSet::getWarnings,
+                             resultSet::clearWarnings);
+        }
+        if (statement != null) {
+            preserveWarnings(primary,
+                             "statement warning",
+                             statement::getWarnings,
+                             statement::clearWarnings);
+        }
+        if (connection != null) {
+            preserveWarnings(primary,
+                             "connection warning",
+                             connection::getWarnings,
+                             connection::clearWarnings);
+        }
+    }
+
+    /**
+     * Reads, sanitizes, and clears warnings for one JDBC owner. Reading and
+     * clearing are isolated so a broken getter does not prevent a best-effort
+     * clear or warning processing for later owners.
+     *
+     * @param primary primary failure, or {@code null} on success
+     * @param owner stable warning-owner label
+     * @param source warning accessor
+     * @param clearAction warning clear action
+     */
+    private static void preserveWarnings(Throwable primary,
+                                         String owner,
+                                         WarningSource source,
+                                         WarningClearAction clearAction) {
+        SQLWarning first = null;
         try {
-            if (resultSet != null) {
-                addWarnings(primary, resultSet.getWarnings());
-                resultSet.clearWarnings();
-            }
-            if (statement != null) {
-                addWarnings(primary, statement.getWarnings());
-                statement.clearWarnings();
-            }
-            if (connection != null) {
-                addWarnings(primary, connection.getWarnings());
-                connection.clearWarnings();
-            }
+            first = source.getWarnings();
         } catch (Throwable warningFailure) {
-            // Warning access must not turn successful work into a failure.
-            if (primary != null) {
-                primary.addSuppressed(warningFailure);
-            }
+            suppressWarningFailure(primary, owner + " read", warningFailure);
+        }
+        addWarnings(primary, owner, first);
+        try {
+            clearAction.clearWarnings();
+        } catch (Throwable warningFailure) {
+            suppressWarningFailure(primary, owner + " clear", warningFailure);
+        }
+    }
+
+    /**
+     * Attaches a sanitized warning-access failure when a primary failure is
+     * already present.
+     *
+     * @param primary primary failure, or {@code null} on success
+     * @param operation stable warning operation label
+     * @param warningFailure JDBC-owned warning-access failure
+     */
+    private static void suppressWarningFailure(Throwable primary, String operation, Throwable warningFailure) {
+        // Warning access must not turn successful work into a failure.
+        if (primary != null) {
+            JdbcExceptionTranslator.suppress(primary, operation, warningFailure);
         }
     }
 
@@ -343,15 +408,35 @@ final class JdbcRunner {
      * Adds a JDBC warning chain to an existing failure.
      *
      * @param primary receiving failure
+     * @param owner stable warning-owner label
      * @param warning first warning
      */
-    private static void addWarnings(Throwable primary, SQLWarning warning) {
+    private static void addWarnings(Throwable primary, String owner, SQLWarning warning) {
         if (primary == null) {
             // Warnings remain diagnostic and are not promoted on successful work.
             return;
         }
-        for (SQLWarning current = warning; current != null; current = current.getNextWarning()) {
-            primary.addSuppressed(current);
+        for (Throwable sanitized : JdbcExceptionTranslator.sanitizeWarnings(owner, warning)) {
+            JdbcExceptionTranslator.suppress(primary, owner, sanitized);
+        }
+    }
+
+    /**
+     * Clears warnings before execution. SQL exceptions continue through normal
+     * JDBC translation; unexpected driver runtime failures are rebuilt here so
+     * their messages and cause trees cannot escape.
+     *
+     * @param operation stable warning operation label
+     * @param clearAction warning clear action
+     * @throws SQLException when the driver reports an SQL failure
+     */
+    private static void clearWarnings(String operation, WarningClearAction clearAction) throws SQLException {
+        try {
+            clearAction.clearWarnings();
+        } catch (SQLException sqlException) {
+            throw sqlException;
+        } catch (RuntimeException runtimeException) {
+            throw (RuntimeException) JdbcExceptionTranslator.sanitize(operation, runtimeException);
         }
     }
 
@@ -366,29 +451,35 @@ final class JdbcRunner {
     private static Throwable closeAll(ResultSet resultSet,
                                       PreparedStatement statement,
                                       JdbcConnectionLease lease) {
-        Throwable failure = close(resultSet, null);
-        failure = close(statement, failure);
-        return close(lease, failure);
+        Throwable failure = close(resultSet, "result-set close", null);
+        failure = close(statement, "statement close", failure);
+        return close(lease, "connection lease close", failure);
     }
 
     /**
      * Closes one resource and preserves failures in ownership order.
      *
      * @param resource resource to close
+     * @param operation stable cleanup operation label
      * @param previousFailure earlier cleanup failure
      * @return first cleanup failure, or {@code null}
      */
-    private static Throwable close(AutoCloseable resource, Throwable previousFailure) {
+    private static Throwable close(AutoCloseable resource, String operation, Throwable previousFailure) {
         if (resource == null) {
             return previousFailure;
         }
         try {
             resource.close();
         } catch (Throwable closeFailure) {
-            if (previousFailure == null) {
+            // Preserve a primary fatal error; an error attached below another failure is sanitized.
+            if (previousFailure == null && closeFailure instanceof Error) {
                 return closeFailure;
             }
-            previousFailure.addSuppressed(closeFailure);
+            Throwable sanitized = JdbcExceptionTranslator.sanitize(operation, closeFailure);
+            if (previousFailure == null) {
+                return sanitized;
+            }
+            JdbcExceptionTranslator.suppress(previousFailure, operation, sanitized);
         }
         return previousFailure;
     }
@@ -405,10 +496,7 @@ final class JdbcRunner {
         if (failure instanceof SQLException sqlException) {
             return JdbcExceptionTranslator.translate(operation, sqlException);
         }
-        if (failure instanceof RuntimeException || failure instanceof Error) {
-            return failure;
-        }
-        return new DataException("JDBC resource cleanup failed", failure);
+        return JdbcExceptionTranslator.sanitize("resource cleanup", failure);
     }
 
     /**
@@ -443,6 +531,21 @@ final class JdbcRunner {
     }
 
     /**
+     * Statement controls selected by a terminal before JDBC resources are
+     * acquired. A zero maximum leaves the driver's row limit unchanged.
+     *
+     * @param maxRows maximum rows exposed by the statement, or zero for no limit
+     */
+    private record ExecutionOptions(int maxRows) {
+
+        ExecutionOptions {
+            if (maxRows < 0) {
+                throw new IllegalArgumentException("Maximum rows must not be negative");
+            }
+        }
+    }
+
+    /**
      * Operation-specific work performed inside the resource boundary.
      *
      * @param <T> terminal result type
@@ -461,6 +564,35 @@ final class JdbcRunner {
     }
 
     /**
+     * Reads the first warning from one JDBC owner.
+     */
+    @FunctionalInterface
+    private interface WarningSource {
+
+        /**
+         * Returns the first current warning.
+         *
+         * @return first warning, or {@code null}
+         * @throws SQLException when warning access fails
+         */
+        SQLWarning getWarnings() throws SQLException;
+    }
+
+    /**
+     * Clears warnings from one JDBC owner.
+     */
+    @FunctionalInterface
+    private interface WarningClearAction {
+
+        /**
+         * Clears current warnings.
+         *
+         * @throws SQLException when warning clearing fails
+         */
+        void clearWarnings() throws SQLException;
+    }
+
+    /**
      * Runner-owned view of one prepared operation.
      */
     static final class ExecutionScope {
@@ -468,11 +600,14 @@ final class JdbcRunner {
         private final JdbcOperation operation;
         private final PreparedStatement statement;
 
-        // Some drivers discard result warnings as soon as the result is exhausted.
+        // Some drivers discard warnings when a result is exhausted. This list contains sanitized provider copies only.
         private final List<Throwable> capturedWarnings = new ArrayList<>();
 
         // Registered here so the runner closes it on every exit path.
         private ResultSet resultSet;
+
+        // Capability is statement-instance scoped because wrappers from one pool may behave differently by instance.
+        private boolean largeUpdateCountsUnsupported;
 
         /**
          * Creates an execution scope.
@@ -537,13 +672,29 @@ final class JdbcRunner {
         }
 
         /**
-         * Reads the current large update count.
+         * Reads the current large update count, falling back to the legacy
+         * integer accessor when the driver reports that large counts are not
+         * supported. Java SE's default implementation reports this with
+         * {@link UnsupportedOperationException}; drivers may instead use
+         * {@link SQLFeatureNotSupportedException}.
+         * <p>
+         * Once either signal is observed, this statement scope uses the legacy
+         * accessor directly so result draining does not repeatedly use an
+         * exception as capability detection.
          *
          * @return update count
          * @throws SQLException when JDBC access fails
          */
         long largeUpdateCount() throws SQLException {
-            return JdbcRunner.largeUpdateCount(statement);
+            if (largeUpdateCountsUnsupported) {
+                return statement.getUpdateCount();
+            }
+            try {
+                return statement.getLargeUpdateCount();
+            } catch (SQLFeatureNotSupportedException | UnsupportedOperationException unsupported) {
+                largeUpdateCountsUnsupported = true;
+                return statement.getUpdateCount();
+            }
         }
 
         /**
@@ -554,7 +705,7 @@ final class JdbcRunner {
          * @throws SQLException when result advancement fails
          */
         boolean drainFromCurrent(boolean currentIsResultSet) throws SQLException {
-            return JdbcRunner.drainFromCurrent(statement, currentIsResultSet);
+            return JdbcRunner.drainFromCurrent(this, currentIsResultSet);
         }
 
         /**
@@ -578,18 +729,24 @@ final class JdbcRunner {
 
         /**
          * Captures warnings before JDBC closes an exhausted query result set.
+         * Every warning and warning-access failure is sanitized before it enters
+         * {@link #capturedWarnings}.
          */
         private void captureCurrentResultWarnings() {
             if (resultSet == null) {
                 return;
             }
+            SQLWarning first = null;
             try {
-                for (SQLWarning warning = resultSet.getWarnings(); warning != null; warning = warning.getNextWarning()) {
-                    capturedWarnings.add(warning);
-                }
+                first = resultSet.getWarnings();
+            } catch (Throwable warningFailure) {
+                capturedWarnings.add(JdbcExceptionTranslator.sanitize("result-set warning read", warningFailure));
+            }
+            capturedWarnings.addAll(JdbcExceptionTranslator.sanitizeWarnings("result-set warning", first));
+            try {
                 resultSet.clearWarnings();
             } catch (Throwable warningFailure) {
-                capturedWarnings.add(warningFailure);
+                capturedWarnings.add(JdbcExceptionTranslator.sanitize("result-set warning clear", warningFailure));
             }
         }
 
@@ -603,6 +760,8 @@ final class JdbcRunner {
 
         /**
          * Adds previously captured warnings to a terminal failure.
+         * Sanitization is repeated at the suppression boundary so this method
+         * remains safe if the capture implementation changes.
          *
          * @param failure terminal failure, or {@code null}
          */
@@ -611,9 +770,7 @@ final class JdbcRunner {
                 return;
             }
             for (Throwable warning : capturedWarnings) {
-                if (warning != failure) {
-                    failure.addSuppressed(warning);
-                }
+                JdbcExceptionTranslator.suppress(failure, "captured result-set warning", warning);
             }
         }
     }

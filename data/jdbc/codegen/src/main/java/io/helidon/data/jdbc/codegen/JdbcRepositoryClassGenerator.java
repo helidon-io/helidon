@@ -15,13 +15,12 @@
  */
 package io.helidon.data.jdbc.codegen;
 
-import java.util.List;
-
-import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenUtil;
+import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.Parameter;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -43,12 +42,12 @@ final class JdbcRepositoryClassGenerator {
      * Defines the generated repository class and delegates its method body
      * generation to the JDBC provider.
      *
-     * @param codegenContext code-generation context
+     * @param roundContext current generation round
      * @param repositoryInfo repository metadata
      * @param className generated class name
      * @param classModel generated class
      */
-    static void generate(CodegenContext codegenContext,
+    static void generate(RoundContext roundContext,
                          RepositoryInfo repositoryInfo,
                          TypeName className,
                          ClassModel.Builder classModel) {
@@ -64,12 +63,8 @@ final class JdbcRepositoryClassGenerator {
                                                                className,
                                                                JdbcCodegenConstants.GENERATED_VERSION,
                                                                ""))
-                // Generated repositories must call preview JdbcClient APIs. Application calls remain unsuppressed.
-                .addAnnotation(Annotation.builder()
-                                       .type(SuppressWarnings.class)
-                                       .property(JdbcCodegenConstants.ANNOTATION_VALUE_PROPERTY,
-                                                 List.of(JdbcCodegenConstants.PREVIEW_WARNING))
-                                       .build())
+                // Helidon owns generated implementation details. Application-authored API usage remains unsuppressed.
+                .addAnnotation(Annotation.create(SuppressWarnings.class, Api.SUPPRESS_ALL))
                 .classType(ElementKind.CLASS)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addInterface(repositoryType)
@@ -78,7 +73,9 @@ final class JdbcRepositoryClassGenerator {
                         .isFinal(true)
                         .type(JdbcPersistenceTypes.JDBC_CLIENT));
 
-        JdbcMethodGenerator.generate(repositoryInfo, classModel, codegenContext);
+        JdbcMethodGenerator.generate(repositoryInfo,
+                                     classModel,
+                                     roundContext);
     }
 
     /**

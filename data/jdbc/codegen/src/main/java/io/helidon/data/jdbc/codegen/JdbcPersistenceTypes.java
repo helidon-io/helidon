@@ -15,7 +15,6 @@
  */
 package io.helidon.data.jdbc.codegen;
 
-import java.sql.JDBCType;
 import java.util.List;
 
 import io.helidon.common.types.TypeName;
@@ -38,7 +37,7 @@ final class JdbcPersistenceTypes {
     static final TypeName SERVICE_SINGLETON = TypeName.create("io.helidon.service.registry.Service.Singleton");
     static final TypeName SERVICE_NAMED = TypeName.create("io.helidon.service.registry.Service.Named");
     static final TypeName OPTIONAL = TypeNames.OPTIONAL;
-    static final TypeName JDBC_TYPE = TypeName.create(JDBCType.class);
+    static final TypeName JDBC_TYPE = TypeName.create("java.sql.JDBCType");
     static final TypeName SUPPLIER = TypeNames.SUPPLIER;
     static final TypeName TX_MANDATORY = TypeName.create("io.helidon.transaction.Tx.Mandatory");
     static final TypeName TX_NEW = TypeName.create("io.helidon.transaction.Tx.New");

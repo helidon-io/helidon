@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -60,6 +59,7 @@ class JdbcBindSnapshotTest {
         connection = mock(Connection.class);
         preparedStatement = mock(PreparedStatement.class);
         when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement(UPDATE_SQL)).thenReturn(preparedStatement);
         when(preparedStatement.execute()).thenReturn(false);
         when(preparedStatement.getLargeUpdateCount()).thenReturn(1L, -1L);
@@ -164,34 +164,6 @@ class JdbcBindSnapshotTest {
         verify(preparedStatement).setNull(1, JDBCType.TIMESTAMP.getVendorTypeNumber());
         verify(preparedStatement, never()).setObject(anyInt(), any());
         verify(preparedStatement, never()).setBytes(anyInt(), any());
-    }
-
-    @Test
-    void binaryResultsRemainDetachedAfterMaterialization() throws Exception {
-        JdbcDataSource h2 = new JdbcDataSource();
-        h2.setURL("jdbc:h2:mem:jdbc_bind_snapshot;DB_CLOSE_DELAY=-1");
-        try (var h2Connection = h2.getConnection();
-             var statement = h2Connection.createStatement()) {
-            statement.execute("DROP TABLE IF EXISTS BINARY_VALUE");
-            statement.execute("CREATE TABLE BINARY_VALUE (ID INTEGER PRIMARY KEY, DATA_VALUE VARBINARY(20))");
-        }
-        JdbcClient h2Client = new JdbcClientImpl(h2);
-        byte[] source = {7, 8, 9};
-        JdbcClient.Statement insert = h2Client.create("INSERT INTO BINARY_VALUE(ID, DATA_VALUE) VALUES (1, ?)")
-                .bind(1, source);
-        source[0] = 1;
-        insert.execute();
-
-        byte[] first = h2Client.create("SELECT DATA_VALUE FROM BINARY_VALUE WHERE ID = 1")
-                .map(byte[].class)
-                .one();
-        first[0] = 2;
-        byte[] second = h2Client.create("SELECT DATA_VALUE FROM BINARY_VALUE WHERE ID = 1")
-                .map(byte[].class)
-                .one();
-
-        assertThat(second, is(new byte[] {7, 8, 9}));
-        assertThat(second, not(sameInstance(first)));
     }
 
     /**

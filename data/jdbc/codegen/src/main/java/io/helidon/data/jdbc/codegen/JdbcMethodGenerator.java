@@ -23,14 +23,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.Annotation;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Parameter;
-import io.helidon.common.types.ElementKind;
-import io.helidon.common.types.Modifier;
-import io.helidon.common.types.TypeInfo;
+import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
@@ -52,24 +50,24 @@ final class JdbcMethodGenerator {
      *
      * @param repositoryInfo repository metadata
      * @param classModel generated implementation
-     * @param context code-generation context
+     * @param roundContext current generation round
      */
     static void generate(RepositoryInfo repositoryInfo,
                          ClassModel.Builder classModel,
-                         CodegenContext context) {
+                         RoundContext roundContext) {
         // Validate and name every method first so constructor dependencies and fields are complete before emission.
-        List<TypedElementInfo> methods = JdbcTypeHierarchy.abstractMethods(repositoryInfo.interfaceInfo(), context);
+        List<TypedElementInfo> methods = JdbcTypeHierarchy.abstractMethods(repositoryInfo.interfaceInfo(), roundContext);
         Map<String, Integer> generatedNames = new HashMap<>();
         List<JdbcMethodPlan> plans = new ArrayList<>(methods.size());
         for (TypedElementInfo method : methods) {
-            JdbcMethodPlan plan = JdbcMethodPlan.create(method, context);
+            JdbcMethodPlan plan = JdbcMethodPlan.create(method, roundContext);
             String suffix = uniqueSuffix(method.elementName(), generatedNames);
             plan.sqlFieldName(JdbcCodegenConstants.SQL_FIELD_PREFIX + suffix);
             plan.mapperFieldName(JdbcCodegenConstants.MAPPER_FIELD_PREFIX + suffix);
             plans.add(plan);
         }
 
-        List<MapperDependency> mapperDependencies = mapperDependencies(plans, classModel, context);
+        List<MapperDependency> mapperDependencies = mapperDependencies(plans, classModel);
         JdbcRepositoryClassGenerator.generateConstructor(classModel, repositoryInfo, mapperDependencies);
         for (JdbcMethodPlan plan : plans) {
             classModel.addField(field -> field.name(plan.sqlFieldName())
@@ -79,49 +77,9 @@ final class JdbcMethodGenerator {
                     .isFinal(true)
                     .addContentLiteral(plan.jdbcSql()));
             if (plan.mappingKind() == JdbcMethodPlan.MappingKind.RECORD) {
-                JdbcRecordMapperGenerator.generate(plan, plan.mapperFieldName(), classModel, context);
+                JdbcRecordMapperGenerator.generate(plan, plan.mapperFieldName(), classModel);
             }
             classModel.addMethod(method -> generateMethod(plan, method));
-        }
-    }
-
-    /**
-     * Validates service injection and generic compatibility of an explicit mapper.
-     *
-     * @param plan method plan
-     * @param context code-generation context
-     */
-    private static void validateExplicitMapper(JdbcMethodPlan plan, CodegenContext context) {
-        TypeName mapperType = plan.explicitMapper();
-        TypeInfo mapperInfo = context.typeInfo(mapperType)
-                .orElseThrow(() -> JdbcMethodPlan.failure(plan.method(),
-                                                          "Mapper type information is unavailable: "
-                                                                  + mapperType.resolvedName()));
-        String repositoryPackage = plan.method()
-                .enclosingType()
-                .map(TypeName::packageName)
-                .orElse("");
-        if (mapperInfo.kind() != ElementKind.CLASS
-                || mapperInfo.elementModifiers().contains(Modifier.ABSTRACT)) {
-            throw JdbcMethodPlan.failure(plan.method(), "Mapper must be a concrete class: "
-                    + mapperType.resolvedName());
-        }
-        if (!mapperType.enclosingNames().isEmpty() && !mapperInfo.elementModifiers().contains(Modifier.STATIC)) {
-            throw JdbcMethodPlan.failure(plan.method(), "Mapper must not be a non-static nested class: "
-                    + mapperType.resolvedName());
-        }
-        if (!JdbcTypeAccessibility.accessible(context, mapperInfo, repositoryPackage)) {
-            throw JdbcMethodPlan.failure(plan.method(), "Mapper is not accessible to generated code: "
-                    + mapperType.resolvedName());
-        }
-        TypeName mapperInterface = findImplementedInterface(mapperInfo,
-                                                            JdbcPersistenceTypes.ROW_MAPPER,
-                                                            Map.of());
-        if (mapperInterface == null
-                || mapperInterface.typeArguments().size() != 1
-                || !mapperInterface.typeArguments().getFirst().equals(plan.mappedType())) {
-            throw JdbcMethodPlan.failure(plan.method(), "Mapper must implement JdbcClient.RowMapper<"
-                    + plan.mappedType().resolvedName() + ">");
         }
     }
 
@@ -130,18 +88,15 @@ final class JdbcMethodGenerator {
      *
      * @param plans repository method plans
      * @param classModel generated repository class
-     * @param context code-generation context
      * @return mapper dependencies in stable declaration order
      */
     private static List<MapperDependency> mapperDependencies(List<JdbcMethodPlan> plans,
-                                                             ClassModel.Builder classModel,
-                                                             CodegenContext context) {
+                                                             ClassModel.Builder classModel) {
         // Share one injected dependency between methods with the same mapper selection.
         // LinkedHashMap preserves first-use order for stable generated source.
         Map<MapperDependencyKey, List<JdbcMethodPlan>> groupedPlans = new LinkedHashMap<>();
         for (JdbcMethodPlan plan : plans) {
             if (plan.mappingKind() == JdbcMethodPlan.MappingKind.EXPLICIT) {
-                validateExplicitMapper(plan, context);
                 MapperDependencyKey key = new MapperDependencyKey(plan.explicitMapper(), plan.mappedType(), true);
                 groupedPlans.computeIfAbsent(key, ignored -> new ArrayList<>()).add(plan);
             } else if (plan.mappingKind() == JdbcMethodPlan.MappingKind.SERVICE) {
@@ -177,44 +132,10 @@ final class JdbcMethodGenerator {
     }
 
     /**
-     * Finds a generic interface through the mapper's interface and superclass
-     * hierarchy.
-     *
-     * @param typeInfo candidate type
-     * @param contract generic contract
-     * @return implemented interface, or {@code null}
-     */
-    private static TypeName findImplementedInterface(TypeInfo typeInfo,
-                                                     TypeName contract,
-                                                     Map<String, TypeName> inheritedSubstitutions) {
-        Map<String, TypeName> substitutions = JdbcTypeHierarchy.substitutions(typeInfo, inheritedSubstitutions);
-        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
-            TypeName resolvedType = JdbcTypeHierarchy.substitute(interfaceInfo.typeName(), substitutions);
-            if (resolvedType.genericTypeName().equals(contract)) {
-                return resolvedType;
-            }
-            // Carry the actual type into the next level so recursive substitutions do not revert to type variables.
-            TypeInfo resolvedInfo = TypeInfo.builder(interfaceInfo)
-                    .typeName(resolvedType)
-                    .build();
-            TypeName inherited = findImplementedInterface(resolvedInfo, contract, substitutions);
-            if (inherited != null) {
-                return inherited;
-            }
-        }
-        return typeInfo.superTypeInfo()
-                .map(superType -> {
-                    TypeName resolvedType = JdbcTypeHierarchy.substitute(superType.typeName(), substitutions);
-                    TypeInfo resolvedInfo = TypeInfo.builder(superType)
-                            .typeName(resolvedType)
-                            .build();
-                    return findImplementedInterface(resolvedInfo, contract, substitutions);
-                })
-                .orElse(null);
-    }
-
-    /**
-     * Emits one repository method and its transaction annotations.
+     * Emits one repository method.
+     * Transaction annotations remain on the repository contract; common service
+     * codegen merges those annotations into the generated method metadata used
+     * for interception.
      *
      * @param plan method plan
      * @param method generated method
@@ -224,16 +145,14 @@ final class JdbcMethodGenerator {
                 .description("Executes the JDBC statement declared by the repository method.")
                 .returnType(plan.method().typeName())
                 .addAnnotation(Annotation.create(Override.class));
+        plan.method().typeParameters()
+                .forEach(typeParameter -> method.addGenericArgument(TypeArgument.create(typeParameter)));
         plan.method().parameterArguments()
                 .forEach(parameter -> method.addParameter(Parameter.builder()
                                                             .name(parameter.elementName())
                                                             .type(parameter.typeName())
                                                             .build()));
         plan.method().throwsChecked().forEach(method::addThrows);
-        for (TypeName txAnnotation : JdbcPersistenceTypes.TX_ANNOTATIONS) {
-            plan.method().findAnnotation(txAnnotation).ifPresent(method::addAnnotation);
-        }
-
         String statementName = localName(plan, JdbcCodegenConstants.JDBC_STATEMENT_NAME);
         method.addContent(JdbcPersistenceTypes.JDBC_CLIENT_STATEMENT)
                 .addContent(" ")
@@ -278,7 +197,7 @@ final class JdbcMethodGenerator {
                 .addContent(", ")
                 .addContent(JdbcPersistenceTypes.JDBC_TYPE)
                 .addContent(".")
-                .addContent(bind.nullJdbcType().name())
+                .addContent(bind.nullJdbcTypeConstant())
                 .addContentLine(");")
                 .decreaseContentPadding()
                 .addContentLine("} else {")

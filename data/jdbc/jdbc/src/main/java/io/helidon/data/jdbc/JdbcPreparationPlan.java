@@ -18,7 +18,6 @@ package io.helidon.data.jdbc;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -89,18 +88,18 @@ record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns)
     }
 
     /**
-     * Validates and normalizes one generated column name.
+     * Validates one generated column name.
      *
      * @param name generated column name
      * @param index zero-based column index
-     * @return normalized name for duplicate detection
+     * @return validated name for exact duplicate detection
      */
     static String validateGeneratedColumn(String name, int index) {
         Objects.requireNonNull(name, "Generated column name must not be null");
         if (name.isBlank()) {
             throw new IllegalArgumentException("Generated column name must not be blank at index " + index);
         }
-        return name.toLowerCase(Locale.ROOT);
+        return name;
     }
 
     /**
