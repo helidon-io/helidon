@@ -91,7 +91,7 @@ public class WsConnection implements ServerConnection, WsSession {
                                       .config()
                                       .protocols()
                                       .stream()
-                                      .filter(p -> p instanceof WsConfig)
+                                      .filter(p -> p instanceof WsConfig && p.enabled())
                                       .findFirst()
                                       .orElseThrow(() -> new InternalError("Unable to find WebSocket config"));
     }
