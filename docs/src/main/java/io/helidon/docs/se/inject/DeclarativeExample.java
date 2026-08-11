@@ -59,9 +59,9 @@ public class DeclarativeExample {
     // tag::snippet_3[]
     @RestClient.Endpoint("${greet-service.client.uri:http://localhost:8080}")
     @RestClient.Header(name = HeaderNames.USER_AGENT_NAME, value = "my-client")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
     interface GreetClient {
         @Http.GET
-        @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
         JsonObject getDefaultMessageHandler();
     }
     // end::snippet_3[]
@@ -106,6 +106,7 @@ public class DeclarativeExample {
     // tag::snippet_2[]
     @RestServer.Endpoint // identifies this class as a server endpoint
     @Http.Path("/greet") // serve this endpoint on /greet context root (path)
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE) // default response media type for all endpoint methods
     @Service.Singleton   // a singleton service (single instance within a service registry)
     static class GreetEndpoint {
         private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
@@ -117,7 +118,6 @@ public class DeclarativeExample {
         }
 
         @Http.GET   // HTTP GET endpoint
-        @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE) // produces entity of application/json media type
         public JsonObject getDefaultMessageHandler() {
             // build the JSON object (requires `helidon-http-media-jsonp` on classpath)
             return JSON.createObjectBuilder()
