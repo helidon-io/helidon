@@ -678,12 +678,15 @@ final class OpenApiSourceGenerator {
             return securityAnnotations;
         }
         TypeName annotationType = OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION;
+        var inherited = restMethod.annotations();
+        if (!hasAnnotation(inherited, annotationType)) {
+            return inherited;
+        }
         var candidates = TypeHierarchy.hierarchyAnnotationCandidates(ctx, restMethod.type(), restMethod.method(), annotationType);
         if (candidates.size() > 1) {
             throw new CodegenException("Conflicting inherited @OpenApi.SecuritySchemeRequirement annotations on "
                                                + restMethodDescription(restMethod));
         }
-        var inherited = restMethod.annotations();
         return candidates.isEmpty() ? inherited : Stream.concat(
                 inherited.stream().filter(it -> !annotationType.equals(it.typeName())), candidates.getFirst().stream()).toList();
     }
@@ -1053,11 +1056,9 @@ final class OpenApiSourceGenerator {
                     .decreaseContentPadding()
                     .decreaseContentPadding();
         }
-
         for (Annotation content : contentAnnotations) {
             addContent(method, restMethod.produces(), content, responseType, hasEntity, componentNames);
         }
-
         method.addContentLine(")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
@@ -1093,7 +1094,6 @@ final class OpenApiSourceGenerator {
         method.addContentLine(")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
-
         if (returnType.isOptional()) {
             addNotFoundResponse(method);
         }
