@@ -544,6 +544,55 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
     <cve>CVE-2026-42582</cve>
 </suppress>
 
+<!-- Under dispute
+     These CVEs are being disputed. For details see:
+     https://github.com/HdrHistogram/HdrHistogram/issues/222
+     https://github.com/HdrHistogram/HdrHistogram/issues/221
+     https://github.com/HdrHistogram/HdrHistogram/issues/220
+     https://github.com/HdrHistogram/HdrHistogram/issues/218
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14683</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14685</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14686</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: HdrHistogram-2.2.2.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.hdrhistogram/HdrHistogram@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-14684</vulnerabilityName>
+</suppress>
+
+<!--
+  This CVE only applies when using the KAPT incremental build cache (typically with Gradle).
+  We do not use Kotlin nor the Kotlin Compiler or KAPT at build time. Kotlin would only be
+  present as a transitive runtime dependencies in the form of kotlin-stdlib,
+  kotlin-stdlib-common or kotlin-stdlib-jdk8.
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: kotlin-stdlib-1.9.10.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib.*@.*$</packageUrl>
+    <cve>CVE-2026-53914</cve>
+</suppress>
 
 
 </suppressions>
