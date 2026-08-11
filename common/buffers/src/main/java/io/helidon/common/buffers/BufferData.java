@@ -82,11 +82,11 @@ public interface BufferData {
      * Consume a range from the source and return an independently positioned read-only view of exactly that range.
      *
      * <p>Sources created with
-     * {@link io.helidon.common.buffers.BufferData#createReadOnly(byte[], int, int)} share their backing array with the
+     * {@link #createReadOnly(byte[], int, int)} share their backing array with the
      * returned view. The caller must not modify that array while either buffer is in use. All other sources use an exact
      * defensive copy on the first slice. A slice backed by such a private copy may share that copy when it is re-sliced.
      * The returned logical range never includes bytes before or after the consumed source range,
-     * including after {@link io.helidon.common.buffers.BufferData#rewind()}.
+     * including after {@link #rewind()}.
      *
      * @param source source buffer
      * @param length number of bytes to consume

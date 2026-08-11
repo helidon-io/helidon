@@ -88,20 +88,22 @@ class BufferDataReadOnlySliceTest {
 
     @Test
     void dataReaderSourcesUseIndependentCopyRegardlessOfFragmentation() {
-        byte[] contiguousBytes = {1, 2, 3};
+        byte[] contiguousBytes = {0, 1, 2, 3};
         DataReader contiguousReader = DataReader.create(() -> contiguousBytes);
+        contiguousReader.skip(1);
         BufferData contiguousSlice = BufferData.readOnlySlice(contiguousReader.getBuffer(3), 3);
         BufferData contiguousReslice = BufferData.readOnlySlice(contiguousSlice, 2);
 
-        byte[] first = {4, 5};
+        byte[] first = {0, 4, 5};
         byte[] second = {6};
         Iterator<byte[]> chunks = List.of(first, second).iterator();
         DataReader fragmentedReader = DataReader.create(chunks::next);
+        fragmentedReader.skip(1);
         BufferData fragmentedSlice = BufferData.readOnlySlice(fragmentedReader.getBuffer(3), 3);
         BufferData fragmentedReslice = BufferData.readOnlySlice(fragmentedSlice, 2);
 
-        contiguousBytes[0] = 9;
-        first[0] = 9;
+        contiguousBytes[1] = 9;
+        first[1] = 9;
         second[0] = 9;
 
         assertThat(contiguousReslice.readBytes(), is(new byte[] {1, 2}));
