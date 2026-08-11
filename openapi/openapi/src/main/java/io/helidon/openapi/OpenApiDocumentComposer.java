@@ -403,7 +403,9 @@ final class OpenApiDocumentComposer {
                     : dynamicRefDialect;
             boolean currentOpenApiDocumentResource = openApiDocumentResource && !map.containsKey("$id");
             Object ref = map.get("$ref");
-            if (ref instanceof String refValue && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
+            if (currentOpenApiDocumentResource
+                    && ref instanceof String refValue
+                    && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
                 ((Map<String, Object>) map).put("$ref", rewriteSchemaRef(refValue, schemaNames));
             }
             Object dynamicRef = map.get("$dynamicRef");
@@ -419,14 +421,18 @@ final class OpenApiDocumentComposer {
                 Object mapping = discriminatorMap.get("mapping");
                 if (mapping instanceof Map<?, ?> mappingMap) {
                     ((Map<String, Object>) mappingMap).replaceAll((_, mappingValue) -> {
-                        if (mappingValue instanceof String mappingRef) {
+                        if (mappingValue instanceof String mappingRef
+                                && (currentOpenApiDocumentResource
+                                        || !mappingRef.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX))) {
                             return rewriteSchemaRef(mappingRef, schemaNames);
                         }
                         return mappingValue;
                     });
                 }
                 Object defaultMapping = discriminatorMap.get("defaultMapping");
-                if (defaultMapping instanceof String mappingRef) {
+                if (defaultMapping instanceof String mappingRef
+                        && (currentOpenApiDocumentResource
+                                || !mappingRef.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX))) {
                     ((Map<String, Object>) discriminatorMap).put("defaultMapping",
                                                                  rewriteSchemaRef(mappingRef, schemaNames));
                 }
