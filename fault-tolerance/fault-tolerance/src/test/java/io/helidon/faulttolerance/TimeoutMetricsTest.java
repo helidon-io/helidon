@@ -55,7 +55,7 @@ class TimeoutMetricsTest {
                 .name("quick")      // same name
                 .build();
         timeout.invoke(() -> null);
-        callsCounter = MetricsUtils.counter(meterRegistry,
+        callsCounter = MetricsTestSupport.counter(meterRegistry,
                                             Timeout.FT_TIMEOUT_CALLS_TOTAL,
                                             MetricsUtils.tag(metricsFactory, "name", "quick"));
         assertThat(callsCounter.count(), is(1L));
@@ -78,7 +78,7 @@ class TimeoutMetricsTest {
                 .name("very_quick")      // same name
                 .build();
         timeout.invoke(() -> null);
-        timer = MetricsUtils.timer(meterRegistry,
+        timer = MetricsTestSupport.timer(meterRegistry,
                                    Timeout.FT_TIMEOUT_EXECUTIONDURATION,
                                    MetricsUtils.tag(metricsFactory, "name", "very_quick"));
         assertThat(timer.count(), is(1L));

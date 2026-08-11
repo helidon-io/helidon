@@ -57,7 +57,7 @@ class MetricsExplicitConfigTest {
 
         retry.invoke(() -> 0);
 
-        Counter callsCounter = MetricsUtils.counter(meterRegistry,
+        Counter callsCounter = MetricsTestSupport.counter(meterRegistry,
                                                     Retry.FT_RETRY_CALLS_TOTAL,
                                                     MetricsUtils.tag(metricsFactory, "name", retry.name()));
         assertThat(callsCounter.count(), is(1L));

@@ -16,13 +16,11 @@
 package io.helidon.faulttolerance;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
-import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
@@ -84,41 +82,6 @@ class MetricsUtils {
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
         return meterRegistry.getOrCreate(builder);
-    }
-
-    static <T extends Number> Gauge<T> gauge(MeterRegistry meterRegistry,
-                                             String name,
-                                             Tag... tags) {
-        return meter(meterRegistry, Gauge.class, Meter.Type.GAUGE, name, List.of(tags));
-    }
-
-    static Counter counter(MeterRegistry meterRegistry, String name, Tag... tags) {
-        return meter(meterRegistry, Counter.class, Meter.Type.COUNTER, name, List.of(tags));
-    }
-
-    static Timer timer(MeterRegistry meterRegistry, String name, Tag... tags) {
-        return meter(meterRegistry, Timer.class, Meter.Type.TIMER, name, List.of(tags));
-    }
-
-    private static <M extends Meter> M meter(MeterRegistry meterRegistry,
-                                             Class<M> meterClass,
-                                             Meter.Type meterType,
-                                             String name,
-                                             List<Tag> tags) {
-        for (Meter meter : meterRegistry.meters(List.of(VENDOR))) {
-            if (meterClass.isInstance(meter)
-                    && meter.type() == meterType
-                    && meter.id().name().equals(name)
-                    && containsTags(meter, tags)) {
-                return meterClass.cast(meter);
-            }
-        }
-        throw new NoSuchElementException("No " + meterType + " meter found for " + name + " and tags " + tags);
-    }
-
-    private static boolean containsTags(Meter meter, List<Tag> tags) {
-        return tags.stream()
-                .allMatch(tag -> tag.value().equals(meter.id().tagsMap().get(tag.key())));
     }
 
 }

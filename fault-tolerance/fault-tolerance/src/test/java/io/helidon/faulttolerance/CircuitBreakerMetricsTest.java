@@ -66,11 +66,11 @@ class CircuitBreakerMetricsTest extends CircuitBreakerBaseTest {
         bad(breaker);
         bad(breaker);       // should open - window complete
 
-        Counter callsCounter = MetricsUtils.counter(meterRegistry,
+        Counter callsCounter = MetricsTestSupport.counter(meterRegistry,
                                                     FT_CIRCUITBREAKER_CALLS_TOTAL,
                                                     MetricsUtils.tag(metricsFactory, "name", breaker.name()));
         assertThat(callsCounter.count(), is(10L));
-        Counter openedCounter = MetricsUtils.counter(meterRegistry,
+        Counter openedCounter = MetricsTestSupport.counter(meterRegistry,
                                                      FT_CIRCUITBREAKER_OPENED_TOTAL,
                                                      MetricsUtils.tag(metricsFactory, "name", breaker.name()));
         assertThat(openedCounter.count(), is(1L));

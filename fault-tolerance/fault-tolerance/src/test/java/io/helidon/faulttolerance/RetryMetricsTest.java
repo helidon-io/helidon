@@ -59,11 +59,11 @@ class RetryMetricsTest {
                 .name("flaky")     // same name
                 .build();
         retry.invoke(new FlakySupplier(2));
-        callsCounter = MetricsUtils.counter(meterRegistry,
+        callsCounter = MetricsTestSupport.counter(meterRegistry,
                                             Retry.FT_RETRY_CALLS_TOTAL,
                                             MetricsUtils.tag(metricsFactory, "name", "flaky"));
         assertThat(callsCounter.count(), is(3L));
-        retryCounter = MetricsUtils.counter(meterRegistry,
+        retryCounter = MetricsTestSupport.counter(meterRegistry,
                                             Retry.FT_RETRY_RETRIES_TOTAL,
                                             MetricsUtils.tag(metricsFactory, "name", "flaky"));
         assertThat(retryCounter.count(), is(2L));
@@ -91,11 +91,11 @@ class RetryMetricsTest {
                 .delay(Duration.ofMillis(0))
                 .build();
         retry.invoke(new FlakySupplier(1));
-        callsCounter = MetricsUtils.counter(meterRegistry,
+        callsCounter = MetricsTestSupport.counter(meterRegistry,
                                             Retry.FT_RETRY_CALLS_TOTAL,
                                             MetricsUtils.tag(metricsFactory, "name", retry.name()));
         assertThat(callsCounter.count(), is(2L));
-        retryCounter = MetricsUtils.counter(meterRegistry,
+        retryCounter = MetricsTestSupport.counter(meterRegistry,
                                             Retry.FT_RETRY_RETRIES_TOTAL,
                                             MetricsUtils.tag(metricsFactory, "name", retry.name()));
         assertThat(retryCounter.count(), is(1L));

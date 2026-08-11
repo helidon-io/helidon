@@ -68,7 +68,7 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
         }
 
         Tag nameTag = MetricsUtils.tag(metricsFactory, "name", bulkhead.name());
-        Counter callsTotal = MetricsUtils.counter(meterRegistry, FT_BULKHEAD_CALLS_TOTAL, nameTag);
+        Counter callsTotal = MetricsTestSupport.counter(meterRegistry, FT_BULKHEAD_CALLS_TOTAL, nameTag);
         assertThat(callsTotal.count(), is(1L));
     }
 
@@ -86,7 +86,7 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
 
         Tag nameTag = MetricsUtils.tag(metricsFactory, "name", bulkhead.name());
         assertThrows(NoSuchElementException.class,
-                     () -> MetricsUtils.counter(meterRegistry, FT_BULKHEAD_CALLS_TOTAL, nameTag));
+                     () -> MetricsTestSupport.counter(meterRegistry, FT_BULKHEAD_CALLS_TOTAL, nameTag));
     }
 
     @Test
@@ -99,7 +99,7 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
         good(breaker);
         good(breaker);
 
-        Counter callsCounter = MetricsUtils.counter(meterRegistry,
+        Counter callsCounter = MetricsTestSupport.counter(meterRegistry,
                                                     FT_CIRCUITBREAKER_CALLS_TOTAL,
                                                     MetricsUtils.tag(metricsFactory, "name", breaker.name()));
         assertThat(callsCounter.count(), Matchers.is(2L));
@@ -116,7 +116,7 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
         good(breaker);
 
         assertThrows(NoSuchElementException.class,
-                     () -> MetricsUtils.counter(meterRegistry,
+                     () -> MetricsTestSupport.counter(meterRegistry,
                                                 FT_CIRCUITBREAKER_CALLS_TOTAL,
                                                 MetricsUtils.tag(metricsFactory, "name", breaker.name())));
     }
@@ -130,7 +130,7 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
         retry.invoke(() -> 0);
 
         Tag nameTag = MetricsUtils.tag(metricsFactory, "name", retry.name());
-        Counter callsCounter = MetricsUtils.counter(meterRegistry, Retry.FT_RETRY_CALLS_TOTAL, nameTag);
+        Counter callsCounter = MetricsTestSupport.counter(meterRegistry, Retry.FT_RETRY_CALLS_TOTAL, nameTag);
         assertThat(callsCounter.count(), is(1L));
     }
 
@@ -144,7 +144,7 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
 
         Tag nameTag = MetricsUtils.tag(metricsFactory, "name", retry.name());
         assertThrows(NoSuchElementException.class,
-                     () -> MetricsUtils.counter(meterRegistry, Retry.FT_RETRY_CALLS_TOTAL, nameTag));
+                     () -> MetricsTestSupport.counter(meterRegistry, Retry.FT_RETRY_CALLS_TOTAL, nameTag));
     }
 
     @Test
@@ -156,7 +156,7 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
         timeout.invoke(() -> 0);
 
         Tag nameTag = MetricsUtils.tag(metricsFactory, "name", timeout.name());
-        Counter callsCounter = MetricsUtils.counter(meterRegistry, Timeout.FT_TIMEOUT_CALLS_TOTAL, nameTag);
+        Counter callsCounter = MetricsTestSupport.counter(meterRegistry, Timeout.FT_TIMEOUT_CALLS_TOTAL, nameTag);
         assertThat(callsCounter.count(), is(1L));
     }
 
@@ -170,6 +170,6 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
 
         Tag nameTag = MetricsUtils.tag(metricsFactory, "name", timeout.name());
         assertThrows(NoSuchElementException.class,
-                     () -> MetricsUtils.counter(meterRegistry, Timeout.FT_TIMEOUT_CALLS_TOTAL, nameTag));
+                     () -> MetricsTestSupport.counter(meterRegistry, Timeout.FT_TIMEOUT_CALLS_TOTAL, nameTag));
     }
 }
