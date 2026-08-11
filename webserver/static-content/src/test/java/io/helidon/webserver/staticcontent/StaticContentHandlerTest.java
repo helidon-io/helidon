@@ -88,6 +88,40 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void etag_BareWildcardInNoneMatch_Accept() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_NONE_MATCH)).thenReturn(true);
+        when(req.contains(IF_MATCH)).thenReturn(false);
+        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("*"));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+        assertHttpException(() -> StaticContentHandler.processPreconditions("aaa", null, req, res),
+                            Status.NOT_MODIFIED_304);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
+    }
+
+    @Test
+    void etag_StrongQuotedWildcardInNoneMatch_NotAccept() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_NONE_MATCH)).thenReturn(true);
+        when(req.contains(IF_MATCH)).thenReturn(false);
+        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("\"*\""));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+        StaticContentHandler.processPreconditions("aaa", null, req, res);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
+    }
+
+    @Test
+    void etag_WeakQuotedWildcardInNoneMatch_NotAccept() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_NONE_MATCH)).thenReturn(true);
+        when(req.contains(IF_MATCH)).thenReturn(false);
+        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("W/\"*\""));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+        StaticContentHandler.processPreconditions("aaa", null, req, res);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
+    }
+
+    @Test
     void etag_InMatch_NotAccept() {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);

@@ -135,8 +135,9 @@ abstract class StaticContentHandler implements HttpService {
             List<String> ifNoneMatches = requestHeaders.values(HeaderNames.IF_NONE_MATCH);
             for (String ifNoneMatch : ifNoneMatches) {
                 ifNoneMatch = ifNoneMatch.trim();
+                boolean wildcard = "*".equals(ifNoneMatch);
                 ifNoneMatch = unquoteETag(ifNoneMatch);
-                if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
+                if (wildcard || ifNoneMatch.equals(etag)) {
                     // using exception to handle normal flow (same as in reactive static content)
                     throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true)
                             .header(newEtag);
