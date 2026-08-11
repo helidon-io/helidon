@@ -85,6 +85,11 @@ endpoint contract also apply to its implementations. `OpenApi.Document` describe
 type and is not inherited by endpoint implementations.
 An endpoint-level security requirement declared directly on an implementation replaces the security requirements
 inherited from its endpoint contract.
+If matching methods inherited from multiple endpoint contracts declare `OpenApi.SecuritySchemeRequirement` annotations,
+each inherited method must declare the same requirements, including repeated occurrences, although the annotation order
+can differ. Helidon emits the inherited requirements once. Different inherited declarations cause code generation to
+fail. A scheme requirement declared directly on the endpoint implementation method replaces all inherited method-level
+requirements.
 
 The final composed OpenAPI document must contain Info metadata. Supply it using `@OpenApi.Document` and `@OpenApi.Info`
 on an application type, from a custom

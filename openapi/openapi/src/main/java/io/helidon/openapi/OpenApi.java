@@ -1710,6 +1710,12 @@ public final class OpenApi {
      * Type-level usage on a declarative REST endpoint contract also applies to its implementations.
      * A security requirement declared directly on an endpoint implementation replaces requirements inherited from its
      * contract.
+     * <p>
+     * If matching methods inherited from multiple endpoint contracts declare scheme requirements, each inherited method
+     * must declare the same requirements, including repeated occurrences, although the annotation order can differ.
+     * Helidon emits the inherited requirements once. Different inherited declarations cause code generation to fail.
+     * A scheme requirement declared directly on the endpoint implementation method replaces all inherited method-level
+     * requirements.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
