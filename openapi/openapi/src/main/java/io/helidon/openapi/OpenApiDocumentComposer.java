@@ -124,24 +124,16 @@ final class OpenApiDocumentComposer {
                 sourceDocuments.add(sourceBuilder.build());
             }
         }
-        boolean hasDocumentDialect = false;
-        Object documentDialect = null;
-        if (mergeDocument.isPresent()) {
-            Map<String, Object> mergeNode = mergeDocument.orElseThrow().mutableNode();
-            if (mergeNode.containsKey("jsonSchemaDialect")) {
-                hasDocumentDialect = true;
-                documentDialect = mergeNode.get("jsonSchemaDialect");
+        Optional<String> documentDialect = mergeDocument.flatMap(OpenApiDocument::jsonSchemaDialect);
+        if (documentDialect.isEmpty()) {
+            for (OpenApiDocument sourceDocument : sourceDocuments) {
+                documentDialect = sourceDocument.jsonSchemaDialect();
+                if (documentDialect.isPresent()) {
+                    break;
+                }
             }
         }
-        for (OpenApiDocument sourceDocument : sourceDocuments) {
-            Map<String, Object> sourceNode = sourceDocument.mutableNode();
-            if (!hasDocumentDialect && sourceNode.containsKey("jsonSchemaDialect")) {
-                hasDocumentDialect = true;
-                documentDialect = sourceNode.get("jsonSchemaDialect");
-            }
-        }
-        boolean dynamicRefDialect = !hasDocumentDialect
-                || documentDialect instanceof String dialect && DYNAMIC_REF_DIALECTS.contains(dialect);
+        boolean dynamicRefDialect = documentDialect.map(DYNAMIC_REF_DIALECTS::contains).orElse(true);
         OpenApiDocument.Builder builder = OpenApiDocument.builder();
         Map<Object, String> schemaNamesByValue = new HashMap<>();
         for (OpenApiDocument sourceDocument : sourceDocuments) {
