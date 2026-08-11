@@ -37,6 +37,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
 
         List<ByteRangeRequest> parts = new ArrayList<>();
         boolean found = false;
+        boolean satisfiableEmptyRange = false;
         while (matcher.find()) {
             found = true;
             //"bytes=0-1023" - 0 to 1023 (included both)
@@ -48,11 +49,12 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             String secondGroup = matcher.group(2);
             long from = 0;
             long last = fileLength - 1;
+            long second = 0;
             if (firstGroup != null) {
                 from = Long.parseLong(firstGroup);
             }
             if (secondGroup != null) {
-                long second = Long.parseLong(secondGroup);
+                second = Long.parseLong(secondGroup);
                 if (firstGroup == null) {
                     from = Math.max(0, fileLength - second);
                     last = fileLength - 1;
@@ -60,10 +62,18 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
                     last = Math.min(second, fileLength - 1);
                 }
             }
+            if (fileLength == 0) {
+                satisfiableEmptyRange |= firstGroup == null && second > 0;
+                continue;
+            }
             parts.add(ByteRangeRequest.create(req, res, from, last, fileLength));
         }
         if (!found) {
             throw new BadRequestException("Invalid range header");
+        }
+        if (fileLength == 0 && !satisfiableEmptyRange) {
+            res.header(HeaderNames.CONTENT_RANGE, "*/0");
+            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
         }
 
         return parts;
