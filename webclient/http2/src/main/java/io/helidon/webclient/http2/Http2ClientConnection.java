@@ -202,14 +202,14 @@ public class Http2ClientConnection {
         Http2ClientConnection rawConnection = connection;
         boolean success = false;
         try {
-            if (clearReadTimeout) {
-                // HTTP/1.1 installs a request-scoped socket timeout. HTTP/2 owns a permanent connection reader and
-                // applies read timeouts to individual streams, so the inherited socket timeout must not close an idle
-                // upgraded connection.
-                rawConnection.connection.readTimeout(Duration.ZERO);
-            }
             rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
             rawConnection.awaitInitialSettings();
+            if (clearReadTimeout) {
+                // Preserve the HTTP/1.1 request timeout through the upgrade handshake. Once the peer's initial
+                // SETTINGS arrive, HTTP/2 owns a permanent connection reader and applies timeouts to individual
+                // streams, so the inherited socket timeout must not close an idle upgraded connection.
+                rawConnection.connection.readTimeout(Duration.ZERO);
+            }
             success = true;
         } finally {
             if (!success) {
