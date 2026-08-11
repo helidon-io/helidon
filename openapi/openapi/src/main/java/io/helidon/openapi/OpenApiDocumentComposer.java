@@ -312,6 +312,10 @@ final class OpenApiDocumentComposer {
             if (ref instanceof String refValue && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
                 ((Map<String, Object>) map).put("$ref", rewriteSchemaRef(refValue, schemaNames));
             }
+            Object dynamicRef = map.get("$dynamicRef");
+            if (dynamicRef instanceof String refValue && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
+                ((Map<String, Object>) map).put("$dynamicRef", rewriteSchemaRef(refValue, schemaNames));
+            }
             Object discriminator = map.get("discriminator");
             if (discriminator instanceof Map<?, ?> discriminatorMap) {
                 Object mapping = discriminatorMap.get("mapping");
@@ -347,12 +351,19 @@ final class OpenApiDocumentComposer {
     private static String rewriteSchemaRef(String refValue, Map<String, String> schemaNames) {
         String prefix = "";
         String sourceName = refValue;
+        String suffix = "";
         if (refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
             prefix = OpenApiSourceBase.SCHEMA_REF_PREFIX;
-            sourceName = refValue.substring(prefix.length());
+            int suffixStart = refValue.indexOf('/', prefix.length());
+            if (suffixStart < 0) {
+                sourceName = refValue.substring(prefix.length());
+            } else {
+                sourceName = refValue.substring(prefix.length(), suffixStart);
+                suffix = refValue.substring(suffixStart);
+            }
         }
         String targetName = schemaNames.get(sourceName);
-        return targetName == null ? refValue : prefix + targetName;
+        return targetName == null ? refValue : prefix + targetName + suffix;
     }
 
     private static String renderGenerated(OpenApiDocumentContext context, OpenApiDocument generated) {

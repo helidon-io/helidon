@@ -19,6 +19,7 @@ package io.helidon.codegen;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -175,6 +176,51 @@ public final class TypeHierarchy {
         processMetaAnnotations(ctx, processedTypes, annotations);
 
         return List.copyOf(annotations.values());
+    }
+
+    /**
+     * Find all distinct occurrences of an annotation type on a method and matching methods in its type hierarchy.
+     * Meta-annotations are included. Unlike {@link #hierarchyAnnotations(CodegenContext, TypeInfo, TypedElementInfo)},
+     * this method does not apply annotation-type precedence.
+     *
+     * @param ctx codegen context
+     * @param type type info owning the method
+     * @param method method element
+     * @param annotationType annotation type to find
+     * @return distinct annotation candidates
+     */
+    @Api.Internal
+    public static List<Annotation> hierarchyAnnotationCandidates(CodegenContext ctx,
+                                                                 TypeInfo type,
+                                                                 TypedElementInfo method,
+                                                                 TypeName annotationType) {
+        if (method.kind() != ElementKind.METHOD) {
+            throw new CodegenException("Only method elements have hierarchy annotation candidates: " + method.kind());
+        }
+
+        List<TypedElementInfo> prototypes = new ArrayList<>();
+        Set<TypeName> processedTypes = new HashSet<>();
+        String packageName = type.typeName().packageName();
+        type.superTypeInfo().ifPresent(it -> collectInheritedMethods(
+                processedTypes,
+                prototypes,
+                it,
+                method,
+                packageName));
+        type.interfaceTypeInfo().forEach(it -> collectInheritedMethods(
+                processedTypes,
+                prototypes,
+                it,
+                method,
+                packageName));
+
+        Set<Annotation> result = new LinkedHashSet<>();
+        method.annotations().forEach(it -> collectAnnotationCandidates(ctx, annotationType, result, it, new HashSet<>()));
+        prototypes.stream()
+                .map(TypedElementInfo::annotations)
+                .flatMap(List::stream)
+                .forEach(it -> collectAnnotationCandidates(ctx, annotationType, result, it, new HashSet<>()));
+        return List.copyOf(result);
     }
 
     /**
@@ -554,6 +600,30 @@ public final class TypeHierarchy {
         }
 
         newAnnotations.forEach(it -> annotations.putIfAbsent(it.typeName(), it));
+    }
+
+    private static void collectAnnotationCandidates(CodegenContext ctx,
+                                                    TypeName annotationType,
+                                                    Set<Annotation> result,
+                                                    Annotation annotation,
+                                                    Set<TypeName> path) {
+        if (!path.add(annotation.typeName())) {
+            return;
+        }
+        if (annotationType.equals(annotation.typeName())) {
+            result.add(annotation);
+        }
+        List<Annotation> metaAnnotations = annotation.metaAnnotations();
+        if (metaAnnotations.isEmpty()) {
+            metaAnnotations = ctx.typeInfo(annotation.typeName())
+                    .map(TypeInfo::annotations)
+                    .orElseGet(List::of);
+        }
+        metaAnnotations.forEach(it -> collectAnnotationCandidates(ctx,
+                                                                   annotationType,
+                                                                   result,
+                                                                   it,
+                                                                   new HashSet<>(path)));
     }
 
     private static void collectMetaAnnotations(CodegenContext ctx,

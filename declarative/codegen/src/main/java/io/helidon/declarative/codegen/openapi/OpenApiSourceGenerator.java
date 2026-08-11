@@ -241,8 +241,7 @@ final class OpenApiSourceGenerator {
         addInfo(method, info, annotations);
 
         String owner = typeInfo.typeName().fqName();
-        List<Annotation> servers = repeatableAnnotations(annotations,
-                                                         OPENAPI_SERVERS_ANNOTATION,
+        List<Annotation> servers = repeatableAnnotations(annotations, OPENAPI_SERVERS_ANNOTATION,
                                                          OPENAPI_SERVER_ANNOTATION);
         validator.validateServers(owner, servers);
         servers.forEach(server -> writeServer(method, "document.server", true, server));
@@ -251,8 +250,7 @@ final class OpenApiSourceGenerator {
         tags.forEach(tag -> writeTag(method, tag));
         Annotations.findFirst(OPENAPI_EXTERNAL_DOCS_ANNOTATION, annotations)
                 .ifPresent(externalDocs -> writeExternalDocs(method, "document.externalDocs", true, externalDocs));
-        List<Annotation> extensions = repeatableAnnotations(annotations,
-                                                            OPENAPI_EXTENSIONS_ANNOTATION,
+        List<Annotation> extensions = repeatableAnnotations(annotations, OPENAPI_EXTENSIONS_ANNOTATION,
                                                             OPENAPI_EXTENSION_ANNOTATION);
         validator.validateExtensions(owner, extensions);
         extensions.forEach(extension -> writeExtension(method, "document.extension", true, extension));
@@ -660,20 +658,16 @@ final class OpenApiSourceGenerator {
                                                                                     securityAnnotations);
         if (!securityRequirements.isEmpty()) {
             validator.validateSecurityRequirements(restMethodDescription(restMethod), securityRequirements);
-            securityRequirements.forEach(requirement -> writeSecurityRequirement(method,
-                                                                                ".securityRequirement",
-                                                                                false,
-                                                                                requirement));
+            securityRequirements.forEach(requirement -> writeSecurityRequirement(
+                    method, ".securityRequirement", false, requirement));
             return;
         }
         if (endpointClearsSecurity) {
             method.addContentLine(".security(java.util.List.of())");
             return;
         }
-        endpointSecurityRequirements.forEach(requirement -> writeSecurityRequirement(method,
-                                                                                    ".securityRequirement",
-                                                                                    false,
-                                                                                    requirement));
+        endpointSecurityRequirements.forEach(requirement -> writeSecurityRequirement(
+                method, ".securityRequirement", false, requirement));
     }
 
     private Collection<Annotation> operationSecurityAnnotations(RestMethod restMethod) {
@@ -684,6 +678,11 @@ final class OpenApiSourceGenerator {
         Collection<Annotation> composedAnnotations = annotationsWithMetaAnnotations(directAnnotations);
         if (hasSecurityRequirementAnnotations(composedAnnotations)) {
             return composedAnnotations;
+        }
+        if (TypeHierarchy.hierarchyAnnotationCandidates(ctx, restMethod.type(), restMethod.method(),
+                                                        OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION).size() > 1) {
+            throw new CodegenException("Conflicting inherited @OpenApi.SecuritySchemeRequirement annotations on "
+                                               + restMethodDescription(restMethod));
         }
         return restMethod.annotations();
     }
@@ -1915,22 +1914,22 @@ final class OpenApiSourceGenerator {
     }
 
     private List<OpenApiSecurityRequirement> securityRequirements(String owner, Collection<Annotation> annotations) {
-        Optional<Annotation> direct = Annotations.findFirst(OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION,
-                                                            annotations);
+        List<Annotation> direct = annotations.stream()
+                .filter(it -> it.typeName().name().equals(OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION.name()))
+                .toList();
         List<Annotation> containers = annotations.stream()
                 .filter(it -> it.typeName().name().equals(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION.name()))
                 .toList();
         List<Annotation> requirements = annotations.stream()
                 .filter(it -> it.typeName().name().equals(OPENAPI_SECURITY_REQUIREMENT_ANNOTATION.name()))
                 .toList();
-
-        if (direct.isPresent()) {
+        if (!direct.isEmpty()) {
             if (!containers.isEmpty() || !requirements.isEmpty()) {
                 throw new CodegenException("@OpenApi.SecuritySchemeRequirement on " + owner
                                                    + " cannot be combined with @OpenApi.SecurityRequirement or "
                                                    + "@OpenApi.SecurityRequirements");
             }
-            return List.of(new OpenApiSecurityRequirement(List.of(direct.get())));
+            return direct.stream().map(it -> new OpenApiSecurityRequirement(List.of(it))).toList();
         }
 
         List<OpenApiSecurityRequirement> result = new ArrayList<>();

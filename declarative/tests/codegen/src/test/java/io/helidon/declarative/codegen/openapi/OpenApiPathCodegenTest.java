@@ -243,6 +243,141 @@ class OpenApiPathCodegenTest {
     }
 
     @Test
+    void composedMethodSecuritySchemeRequirementsAreAllPreserved() throws IOException {
+        var result = compile("composed-method-security-scheme-requirements", """
+                @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                @interface BearerAuth {
+                }
+
+                @OpenApi.SecuritySchemeRequirement("apiKey")
+                @interface ApiKeyAuth {
+                }
+
+                @RestServer.Endpoint
+                @Service.Singleton
+                @OpenApi.Endpoint
+                @Http.Path("/composed-method-security")
+                class ComposedMethodSecurityEndpoint {
+                    @Http.GET
+                    @BearerAuth
+                    @ApiKeyAuth
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated, containsString(".scheme(\"apiKey\", java.util.List.of())"));
+    }
+
+    @Test
+    void conflictingInheritedMethodSecuritySchemeRequirementsFail() {
+        var result = compile("conflicting-inherited-method-security-scheme-requirements", """
+                interface FirstApi {
+                    @Http.GET
+                    @OpenApi.SecuritySchemeRequirement("firstAuth")
+                    String get();
+                }
+
+                interface SecondApi {
+                    @Http.GET
+                    @OpenApi.SecuritySchemeRequirement("secondAuth")
+                    String get();
+                }
+
+                @RestServer.Endpoint
+                @Service.Singleton
+                @OpenApi.Endpoint
+                @Http.Path("/conflicting-inherited-security")
+                class ConflictingSecurityEndpoint implements FirstApi, SecondApi {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Conflicting inherited @OpenApi.SecuritySchemeRequirement annotations",
+                               "com.example.ConflictingSecurityEndpoint.get");
+    }
+
+    @Test
+    void identicalInheritedMethodSecuritySchemeRequirementsAreDeduplicated() throws IOException {
+        var result = compile("identical-inherited-method-security-scheme-requirements", """
+                interface FirstApi {
+                    @Http.GET
+                    @OpenApi.SecuritySchemeRequirement("sharedAuth")
+                    String get();
+                }
+
+                interface SecondApi {
+                    @Http.GET
+                    @OpenApi.SecuritySchemeRequirement("sharedAuth")
+                    String get();
+                }
+
+                @RestServer.Endpoint
+                @Service.Singleton
+                @OpenApi.Endpoint
+                @Http.Path("/identical-inherited-security")
+                class SharedSecurityEndpoint implements FirstApi, SecondApi {
+                    @Override
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        String scheme = ".scheme(\"sharedAuth\", java.util.List.of())";
+        assertThat(generated, containsString(scheme));
+        assertThat(generated.lastIndexOf(scheme), is(generated.indexOf(scheme)));
+    }
+
+    @Test
+    void concreteMethodSecurityRequirementOverridesConflictingInheritedRequirements() throws IOException {
+        var result = compile("concrete-security-overrides-conflicting-inherited-requirements", """
+                interface FirstApi {
+                    @Http.GET
+                    @OpenApi.SecuritySchemeRequirement("firstAuth")
+                    String get();
+                }
+
+                interface SecondApi {
+                    @Http.GET
+                    @OpenApi.SecuritySchemeRequirement("secondAuth")
+                    String get();
+                }
+
+                @RestServer.Endpoint
+                @Service.Singleton
+                @OpenApi.Endpoint
+                @Http.Path("/concrete-security-override")
+                class ConcreteSecurityEndpoint implements FirstApi, SecondApi {
+                    @Override
+                    @OpenApi.SecuritySchemeRequirement("methodAuth")
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"methodAuth\", java.util.List.of())"));
+        assertThat(generated, not(containsString(".scheme(\"firstAuth\", java.util.List.of())")));
+        assertThat(generated, not(containsString(".scheme(\"secondAuth\", java.util.List.of())")));
+    }
+
+    @Test
     void hiddenAnnotationOnEndpointContractHidesImplementation() throws IOException {
         var result = compile("contract-hidden-openapi-endpoint", """
                 @OpenApi.Endpoint

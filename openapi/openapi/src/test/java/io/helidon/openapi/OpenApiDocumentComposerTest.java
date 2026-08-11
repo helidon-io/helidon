@@ -729,6 +729,7 @@ class OpenApiDocumentComposerTest {
                                                     RawOpenApiVersion.OPEN_API_32);
         JsonObject literalDiscriminator = JsonObject.builder()
                 .set("$ref", "#/components/schemas/Item")
+                .set("$dynamicRef", "#/components/schemas/Item")
                 .setValues("oneOf",
                            List.of(JsonObject.builder()
                                            .set("$ref", "#/components/schemas/Item")
@@ -760,6 +761,28 @@ class OpenApiDocumentComposerTest {
                                                      .set("item",
                                                           JsonObject.builder()
                                                                   .set("$ref", "#/components/schemas/Item")
+                                                                  .build())
+                                                     .set("nestedItem",
+                                                          JsonObject.builder()
+                                                                  .set("$ref",
+                                                                       "#/components/schemas/Item/properties/a~1b/$defs/m~0n")
+                                                                  .build())
+                                                     .set("dynamicItem",
+                                                          JsonObject.builder()
+                                                                  .set("$dynamicRef", "#/components/schemas/Item")
+                                                                  .build())
+                                                     .set("dynamicNestedItem",
+                                                          JsonObject.builder()
+                                                                  .set("$dynamicRef",
+                                                                       "#/components/schemas/Item/properties/a~1b/$defs/m~0n")
+                                                                  .build())
+                                                     .set("dynamicAnchor",
+                                                          JsonObject.builder()
+                                                                  .set("$dynamicRef", "#item")
+                                                                  .build())
+                                                     .set("dynamicExternal",
+                                                          JsonObject.builder()
+                                                                  .set("$dynamicRef", "https://example.com/schemas/Item")
                                                                   .build())
                                                      .set("example",
                                                           JsonObject.builder()
@@ -837,6 +860,14 @@ class OpenApiDocumentComposerTest {
         assertThat(map(schemas, "Item").get("type"), is("string"));
         assertThat(map(schemas, "Item2").get("type"), is("integer"));
         assertThat(map(properties, "item").get("$ref"), is("#/components/schemas/Item2"));
+        assertThat(map(properties, "nestedItem").get("$ref"),
+                   is("#/components/schemas/Item2/properties/a~1b/$defs/m~0n"));
+        assertThat(map(properties, "dynamicItem").get("$dynamicRef"), is("#/components/schemas/Item2"));
+        assertThat(map(properties, "dynamicNestedItem").get("$dynamicRef"),
+                   is("#/components/schemas/Item2/properties/a~1b/$defs/m~0n"));
+        assertThat(map(properties, "dynamicAnchor").get("$dynamicRef"), is("#item"));
+        assertThat(map(properties, "dynamicExternal").get("$dynamicRef"),
+                   is("https://example.com/schemas/Item"));
         assertThat(mapping.get("second"), is("#/components/schemas/Item2"));
         assertThat(mapping.get("secondByName"), is("Item2"));
         assertThat(mapping.get("external"), is("https://example.com/schemas/Item"));
@@ -847,6 +878,7 @@ class OpenApiDocumentComposerTest {
         assertThat(map(map(example, "discriminator"), "mapping").get("literal"), is("Item"));
         assertThat(map(example, "discriminator").get("defaultMapping"), is("Item"));
         assertThat(example.get("$ref"), is("#/components/schemas/Item"));
+        assertThat(example.get("$dynamicRef"), is("#/components/schemas/Item"));
         assertThat(defaultValue.get("$ref"), is("#/components/schemas/Item"));
         assertThat(map(map(extension, "discriminator"), "mapping").get("literal"), is("Item"));
         assertThat(map(extension, "discriminator").get("defaultMapping"), is("Item"));
