@@ -88,7 +88,7 @@ The rest of this section takes you through the process of using Micrometer meter
 ----
 include::{sourcedir}/se/metrics/MicrometerSnippets.java[tag=snippet_1, indent=0]
 ----
-<1> Acquire the Micrometer meter registry your application will use.
+<1> Acquire Helidon's service-owned meter registry and unwrap the Micrometer registry which backs it.
 <2> Create the service using that registry.
 <3> Register the service with the web server.
 

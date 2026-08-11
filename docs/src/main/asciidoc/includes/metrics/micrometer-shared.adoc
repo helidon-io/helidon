@@ -136,6 +136,15 @@ micrometer:
 // Following tag assumes the referring document is mid-sentence, with something like "Your code"
 // tag::use-micrometer-api[]
 can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The link:{micrometer-api-url}[Micrometer concepts document] provides a good starting point for learning how to use Micrometer's interfaces and classes.
+
+[IMPORTANT]
+====
+Helidon does not use Micrometer's process-wide `Metrics.globalRegistry` as its backing registry.
+To expose directly-created Micrometer meters through Helidon's configured metrics publishers, obtain Helidon's
+`io.helidon.metrics.api.MeterRegistry` using injection or
+`Services.get(io.helidon.metrics.api.MeterRegistry.class)` and invoke
+`unwrap(io.micrometer.core.instrument.MeterRegistry.class)`.
+====
 // end::use-micrometer-api[]
 
 // tag::example-apps[]
