@@ -16,6 +16,7 @@
 
 package io.helidon.openapi;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -52,6 +53,9 @@ final class OpenApiDocumentComposer {
                                                                 "dependentSchemas",
                                                                 "patternProperties",
                                                                 "properties");
+    private static final Set<String> DYNAMIC_REF_DIALECTS = Set.of(
+            "https://json-schema.org/draft/2020-12/schema",
+            "https://spec.openapis.org/oas/3.1/dialect/base");
 
     private OpenApiDocumentComposer() {
     }
@@ -70,13 +74,17 @@ final class OpenApiDocumentComposer {
             return mode == OpenApiGeneratedMode.GENERATED_ONLY ? "" : staticContent;
         }
 
-        OpenApiDocument generated = generatedDocument(context, sources);
+        Optional<OpenApiDocument> mergeDocument = mode == OpenApiGeneratedMode.MERGE && hasStaticContent
+                ? Optional.of(staticDocument.orElseThrow().get())
+                : Optional.empty();
+        GeneratedDocument generatedResult = generatedDocument(context, sources, mergeDocument);
+        OpenApiDocument generated = generatedResult.document();
         if (generated.isEmpty()) {
             if (mode == OpenApiGeneratedMode.GENERATED_ONLY) {
                 return "";
             }
             if (mode == OpenApiGeneratedMode.MERGE && hasStaticContent) {
-                OpenApiDocument composed = staticDocument.orElseThrow().get();
+                OpenApiDocument composed = mergeDocument.orElseThrow();
                 validateComposedDocument(context, composed);
                 return context.openApiVersion().render(context, composed);
             }
@@ -90,8 +98,13 @@ final class OpenApiDocumentComposer {
 
         if (mode == OpenApiGeneratedMode.MERGE) {
             OpenApiDocument.Builder builder = OpenApiDocument.builder()
-                    .merge(staticDocument.orElseThrow().get());
-            mergeGeneratedDocument(builder, generated, false, Map.of());
+                    .merge(mergeDocument.orElseThrow());
+            mergeGeneratedDocument(context,
+                                   builder,
+                                   generated,
+                                   false,
+                                   Map.of(),
+                                   generatedResult.dynamicRefDialect());
             OpenApiDocument merged = builder.build();
             validateComposedDocument(context, merged);
             return context.openApiVersion().render(context, merged);
@@ -100,29 +113,63 @@ final class OpenApiDocumentComposer {
         return staticContent;
     }
 
-    private static OpenApiDocument generatedDocument(OpenApiDocumentContext context, List<OpenApiDocumentSource> sources) {
-        OpenApiDocument.Builder builder = OpenApiDocument.builder();
-        Map<Object, String> schemaNamesByValue = new HashMap<>();
+    private static GeneratedDocument generatedDocument(OpenApiDocumentContext context,
+                                                       List<OpenApiDocumentSource> sources,
+                                                       Optional<OpenApiDocument> mergeDocument) {
+        List<OpenApiDocument> sourceDocuments = new ArrayList<>();
         for (OpenApiDocumentSource source : sources) {
             if (source.supports(context)) {
                 OpenApiDocument.Builder sourceBuilder = OpenApiDocument.builder();
                 source.describe(context, sourceBuilder);
-                mergeGeneratedDocument(builder, sourceBuilder.build(), true, schemaNamesByValue);
+                sourceDocuments.add(sourceBuilder.build());
             }
         }
-        return builder.build();
+        boolean hasDocumentDialect = false;
+        Object documentDialect = null;
+        if (mergeDocument.isPresent()) {
+            Map<String, Object> mergeNode = mergeDocument.orElseThrow().mutableNode();
+            if (mergeNode.containsKey("jsonSchemaDialect")) {
+                hasDocumentDialect = true;
+                documentDialect = mergeNode.get("jsonSchemaDialect");
+            }
+        }
+        for (OpenApiDocument sourceDocument : sourceDocuments) {
+            Map<String, Object> sourceNode = sourceDocument.mutableNode();
+            if (!hasDocumentDialect && sourceNode.containsKey("jsonSchemaDialect")) {
+                hasDocumentDialect = true;
+                documentDialect = sourceNode.get("jsonSchemaDialect");
+            }
+        }
+        boolean dynamicRefDialect = !hasDocumentDialect
+                || documentDialect instanceof String dialect && DYNAMIC_REF_DIALECTS.contains(dialect);
+        OpenApiDocument.Builder builder = OpenApiDocument.builder();
+        Map<Object, String> schemaNamesByValue = new HashMap<>();
+        for (OpenApiDocument sourceDocument : sourceDocuments) {
+            mergeGeneratedDocument(context,
+                                   builder,
+                                   sourceDocument,
+                                   true,
+                                   schemaNamesByValue,
+                                   dynamicRefDialect);
+        }
+        return new GeneratedDocument(builder.build(), dynamicRefDialect);
     }
 
-    private static void mergeGeneratedDocument(OpenApiDocument.Builder targetBuilder,
+    private static void mergeGeneratedDocument(OpenApiDocumentContext context,
+                                               OpenApiDocument.Builder targetBuilder,
                                                OpenApiDocument source,
                                                boolean reuseEquivalentSchemas,
-                                               Map<Object, String> schemaNamesByValue) {
+                                               Map<Object, String> schemaNamesByValue,
+                                               boolean dynamicRefDialect) {
+        Map<String, Object> targetNode = targetBuilder.node();
         Map<String, Object> sourceNode = source.mutableNode();
-        Map<String, String> schemaNames = rewriteSchemaNames(targetBuilder.node(),
+        Map<String, String> schemaNames = rewriteSchemaNames(targetNode,
                                                              sourceNode,
                                                              reuseEquivalentSchemas,
                                                              schemaNamesByValue);
-        rewriteSchemaRefs(sourceNode, schemaNames);
+        boolean supportsDynamicRef = "3.1".equals(context.openApiVersion().type())
+                || "3.2".equals(context.openApiVersion().type());
+        rewriteSchemaRefs(sourceNode, schemaNames, supportsDynamicRef, dynamicRefDialect);
         if (reuseEquivalentSchemas) {
             while (true) {
                 Map<String, Object> sourceSchemas = schemas(sourceNode);
@@ -137,7 +184,7 @@ final class OpenApiDocumentComposer {
                     break;
                 }
                 equivalentSchemaNames.keySet().forEach(sourceSchemas::remove);
-                rewriteSchemaRefs(sourceNode, equivalentSchemaNames);
+                rewriteSchemaRefs(sourceNode, equivalentSchemaNames, supportsDynamicRef, dynamicRefDialect);
             }
         }
         targetBuilder.mergeNode(sourceNode);
@@ -211,34 +258,52 @@ final class OpenApiDocumentComposer {
     }
 
     @SuppressWarnings("unchecked")
-    private static void rewriteSchemaRefs(Object value, Map<String, String> schemaNames) {
+    private static void rewriteSchemaRefs(Object value,
+                                          Map<String, String> schemaNames,
+                                          boolean supportsDynamicRef,
+                                          boolean dynamicRefDialect) {
         if (schemaNames.isEmpty()) {
             return;
         }
         if (value instanceof Map<?, ?> map) {
             schemas((Map<String, Object>) map).values()
-                    .forEach(schema -> rewriteSchemaValueRefs(schema, schemaNames));
+                    .forEach(schema -> rewriteSchemaValueRefs(schema,
+                                                              schemaNames,
+                                                              supportsDynamicRef,
+                                                              dynamicRefDialect,
+                                                              true,
+                                                              true));
         }
-        rewriteOpenApiSchemaRefs(value, schemaNames, InlineSchemaContext.OPEN_API_OBJECT);
+        rewriteOpenApiSchemaRefs(value,
+                                 schemaNames,
+                                 InlineSchemaContext.OPEN_API_OBJECT,
+                                 supportsDynamicRef,
+                                 dynamicRefDialect);
     }
 
     private static void rewriteOpenApiSchemaRefs(Object value,
                                                  Map<String, String> schemaNames,
-                                                 InlineSchemaContext context) {
+                                                 InlineSchemaContext context,
+                                                 boolean supportsDynamicRef,
+                                                 boolean dynamicRefDialect) {
         if (value instanceof Map<?, ?> map) {
             switch (context) {
             case NAMED_OPEN_API_OBJECTS:
                 map.values().forEach(item -> rewriteOpenApiSchemaRefs(
                         item,
                         schemaNames,
-                        InlineSchemaContext.OPEN_API_OBJECT));
+                        InlineSchemaContext.OPEN_API_OBJECT,
+                        supportsDynamicRef,
+                        dynamicRefDialect));
                 return;
             case EXTENSIBLE_NAMED_OPEN_API_OBJECTS:
                 map.forEach((key, item) -> {
                     if (key instanceof String field && !field.startsWith("x-")) {
                         rewriteOpenApiSchemaRefs(item,
                                                  schemaNames,
-                                                 InlineSchemaContext.OPEN_API_OBJECT);
+                                                 InlineSchemaContext.OPEN_API_OBJECT,
+                                                 supportsDynamicRef,
+                                                 dynamicRefDialect);
                     }
                 });
                 return;
@@ -246,13 +311,17 @@ final class OpenApiDocumentComposer {
                 map.values().forEach(item -> rewriteOpenApiSchemaRefs(
                         item,
                         schemaNames,
-                        InlineSchemaContext.EXTENSIBLE_NAMED_OPEN_API_OBJECTS));
+                        InlineSchemaContext.EXTENSIBLE_NAMED_OPEN_API_OBJECTS,
+                        supportsDynamicRef,
+                        dynamicRefDialect));
                 return;
             case LINKS:
                 map.values().forEach(item -> rewriteOpenApiSchemaRefs(
                         item,
                         schemaNames,
-                        InlineSchemaContext.LINK_OBJECT));
+                        InlineSchemaContext.LINK_OBJECT,
+                        supportsDynamicRef,
+                        dynamicRefDialect));
                 return;
             case COMPONENTS:
                 map.forEach((key, item) -> {
@@ -264,7 +333,11 @@ final class OpenApiDocumentComposer {
                     case "links" -> InlineSchemaContext.LINKS;
                     default -> InlineSchemaContext.NAMED_OPEN_API_OBJECTS;
                     };
-                    rewriteOpenApiSchemaRefs(item, schemaNames, childContext);
+                    rewriteOpenApiSchemaRefs(item,
+                                             schemaNames,
+                                             childContext,
+                                             supportsDynamicRef,
+                                             dynamicRefDialect);
                 });
                 return;
             case OPEN_API_OBJECT, LINK_OBJECT:
@@ -283,7 +356,12 @@ final class OpenApiDocumentComposer {
                     return;
                 }
                 if ("schema".equals(field) || "itemSchema".equals(field)) {
-                    rewriteSchemaValueRefs(item, schemaNames);
+                    rewriteSchemaValueRefs(item,
+                                           schemaNames,
+                                           supportsDynamicRef,
+                                           dynamicRefDialect,
+                                           true,
+                                           true);
                 } else {
                     InlineSchemaContext childContext = switch (field) {
                     case "components" -> InlineSchemaContext.COMPONENTS;
@@ -294,26 +372,46 @@ final class OpenApiDocumentComposer {
                             InlineSchemaContext.NAMED_OPEN_API_OBJECTS;
                     default -> InlineSchemaContext.OPEN_API_OBJECT;
                     };
-                    rewriteOpenApiSchemaRefs(item, schemaNames, childContext);
+                    rewriteOpenApiSchemaRefs(item,
+                                             schemaNames,
+                                             childContext,
+                                             supportsDynamicRef,
+                                             dynamicRefDialect);
                 }
             });
         } else if (value instanceof List<?> list) {
             list.forEach(it -> rewriteOpenApiSchemaRefs(
                     it,
                     schemaNames,
-                    InlineSchemaContext.OPEN_API_OBJECT));
+                    InlineSchemaContext.OPEN_API_OBJECT,
+                    supportsDynamicRef,
+                    dynamicRefDialect));
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static void rewriteSchemaValueRefs(Object value, Map<String, String> schemaNames) {
+    private static void rewriteSchemaValueRefs(Object value,
+                                               Map<String, String> schemaNames,
+                                               boolean supportsDynamicRef,
+                                               boolean dynamicRefDialect,
+                                               boolean openApiDocumentResource,
+                                               boolean schemaResourceRoot) {
         if (value instanceof Map<?, ?> map) {
+            boolean currentSchemaResourceRoot = schemaResourceRoot || map.containsKey("$id");
+            boolean currentDynamicRefDialect = currentSchemaResourceRoot && map.containsKey("$schema")
+                    ? map.get("$schema") instanceof String dialect && DYNAMIC_REF_DIALECTS.contains(dialect)
+                    : dynamicRefDialect;
+            boolean currentOpenApiDocumentResource = openApiDocumentResource && !map.containsKey("$id");
             Object ref = map.get("$ref");
             if (ref instanceof String refValue && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
                 ((Map<String, Object>) map).put("$ref", rewriteSchemaRef(refValue, schemaNames));
             }
             Object dynamicRef = map.get("$dynamicRef");
-            if (dynamicRef instanceof String refValue && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
+            if (supportsDynamicRef
+                    && currentDynamicRefDialect
+                    && currentOpenApiDocumentResource
+                    && dynamicRef instanceof String refValue
+                    && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
                 ((Map<String, Object>) map).put("$dynamicRef", rewriteSchemaRef(refValue, schemaNames));
             }
             Object discriminator = map.get("discriminator");
@@ -338,13 +436,28 @@ final class OpenApiDocumentComposer {
                     return;
                 }
                 if (SCHEMA_VALUE_FIELDS.contains(field)) {
-                    rewriteSchemaValueRefs(item, schemaNames);
+                    rewriteSchemaValueRefs(item,
+                                           schemaNames,
+                                           supportsDynamicRef,
+                                           currentDynamicRefDialect,
+                                           currentOpenApiDocumentResource,
+                                           false);
                 } else if (SCHEMA_MAP_FIELDS.contains(field) && item instanceof Map<?, ?> schemaMap) {
-                    schemaMap.values().forEach(schema -> rewriteSchemaValueRefs(schema, schemaNames));
+                    schemaMap.values().forEach(schema -> rewriteSchemaValueRefs(schema,
+                                                                                schemaNames,
+                                                                                supportsDynamicRef,
+                                                                                currentDynamicRefDialect,
+                                                                                currentOpenApiDocumentResource,
+                                                                                false));
                 }
             });
         } else if (value instanceof List<?> list) {
-            list.forEach(it -> rewriteSchemaValueRefs(it, schemaNames));
+            list.forEach(it -> rewriteSchemaValueRefs(it,
+                                                      schemaNames,
+                                                      supportsDynamicRef,
+                                                      dynamicRefDialect,
+                                                      openApiDocumentResource,
+                                                      schemaResourceRoot));
         }
     }
 
@@ -477,5 +590,8 @@ final class OpenApiDocumentComposer {
         CALLBACKS,
         LINKS,
         LINK_OBJECT
+    }
+
+    private record GeneratedDocument(OpenApiDocument document, boolean dynamicRefDialect) {
     }
 }

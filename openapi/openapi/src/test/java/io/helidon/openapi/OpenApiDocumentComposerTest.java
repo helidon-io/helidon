@@ -784,6 +784,19 @@ class OpenApiDocumentComposerTest {
                                                           JsonObject.builder()
                                                                   .set("$dynamicRef", "https://example.com/schemas/Item")
                                                                   .build())
+                                                     .set("embeddedResource",
+                                                          JsonObject.builder()
+                                                                  .set("$id", "embedded.json")
+                                                                  .set("$dynamicRef", "#/components/schemas/Item")
+                                                                  .set("properties",
+                                                                       JsonObject.builder()
+                                                                               .set("nested",
+                                                                                    JsonObject.builder()
+                                                                                            .set("$dynamicRef",
+                                                                                                 "#/components/schemas/Item")
+                                                                                            .build())
+                                                                               .build())
+                                                                  .build())
                                                      .set("example",
                                                           JsonObject.builder()
                                                                   .setValues("oneOf",
@@ -827,6 +840,21 @@ class OpenApiDocumentComposerTest {
                                         .set("example", literalDiscriminator)
                                         .set("default", literalDiscriminator)
                                         .set("x-payload", literalDiscriminator)
+                                        .build())
+                        .schema("CustomDialect",
+                                JsonObject.builder()
+                                        .set("$schema", "https://example.com/dialect")
+                                        .set("$dynamicRef", "#/components/schemas/Item")
+                                        .build())
+                        .schema("Draft2020Dialect",
+                                JsonObject.builder()
+                                        .set("$schema", "https://json-schema.org/draft/2020-12/schema")
+                                        .set("$dynamicRef", "#/components/schemas/Item")
+                                        .build())
+                        .schema("OasDialect",
+                                JsonObject.builder()
+                                        .set("$schema", "https://spec.openapis.org/oas/3.1/dialect/base")
+                                        .set("$dynamicRef", "#/components/schemas/Item")
                                         .build()))
                 .path("/second",
                       path -> path.operation(
@@ -868,6 +896,14 @@ class OpenApiDocumentComposerTest {
         assertThat(map(properties, "dynamicAnchor").get("$dynamicRef"), is("#item"));
         assertThat(map(properties, "dynamicExternal").get("$dynamicRef"),
                    is("https://example.com/schemas/Item"));
+        Map<String, Object> embeddedResource = map(properties, "embeddedResource");
+        assertThat(embeddedResource.get("$dynamicRef"), is("#/components/schemas/Item"));
+        assertThat(map(map(embeddedResource, "properties"), "nested").get("$dynamicRef"),
+                   is("#/components/schemas/Item"));
+        assertThat(map(schemas, "CustomDialect").get("$dynamicRef"), is("#/components/schemas/Item"));
+        assertThat(map(schemas, "Draft2020Dialect").get("$dynamicRef"),
+                   is("#/components/schemas/Item2"));
+        assertThat(map(schemas, "OasDialect").get("$dynamicRef"), is("#/components/schemas/Item2"));
         assertThat(mapping.get("second"), is("#/components/schemas/Item2"));
         assertThat(mapping.get("secondByName"), is("Item2"));
         assertThat(mapping.get("external"), is("https://example.com/schemas/Item"));
@@ -884,6 +920,171 @@ class OpenApiDocumentComposerTest {
         assertThat(map(extension, "discriminator").get("defaultMapping"), is("Item"));
         assertThat(extension.get("$ref"), is("#/components/schemas/Item"));
         assertThat(map(content, "schema").get("$ref"), is("#/components/schemas/Envelope"));
+    }
+
+    @Test
+    void generatedDocumentPreservesDynamicRefsForOpenApi30() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                    RawOpenApiVersion.OPEN_API_30);
+        OpenApiDocumentSource first = (documentContext, document) -> document
+                .info("Generated API", "1.0.0")
+                .components(components -> components.schema(
+                        "Item",
+                        JsonObject.builder().set("type", "string").build()));
+        OpenApiDocumentSource second = (documentContext, document) -> document
+                .components(components -> components
+                        .schema("Item", JsonObject.builder().set("type", "integer").build())
+                        .schema("Envelope",
+                                JsonObject.builder()
+                                        .set("$ref", "#/components/schemas/Item")
+                                        .set("$dynamicRef", "#/components/schemas/Item")
+                                        .build()));
+
+        Map<String, Object> document = parse(compose(
+                context,
+                context.openApiVersion(),
+                "",
+                MediaTypes.APPLICATION_OPENAPI_YAML,
+                List.of(first, second)));
+        Map<String, Object> envelope = map(map(map(document, "components"), "schemas"), "Envelope");
+
+        assertThat(envelope.get("$ref"), is("#/components/schemas/Item2"));
+        assertThat(envelope.get("$dynamicRef"), is("#/components/schemas/Item"));
+    }
+
+    @Test
+    void generatedDocumentRewritesDynamicRefsForOpenApi31() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                    RawOpenApiVersion.OPEN_API_31);
+        OpenApiDocumentSource first = (documentContext, document) -> document
+                .info("Generated API", "1.0.0")
+                .components(components -> components.schema(
+                        "Item",
+                        JsonObject.builder().set("type", "string").build()));
+        OpenApiDocumentSource second = (documentContext, document) -> document
+                .components(components -> components
+                        .schema("Item", JsonObject.builder().set("type", "integer").build())
+                        .schema("Envelope",
+                                JsonObject.builder()
+                                        .set("$dynamicRef", "#/components/schemas/Item")
+                                        .build()));
+
+        Map<String, Object> document = parse(compose(
+                context,
+                context.openApiVersion(),
+                "",
+                MediaTypes.APPLICATION_OPENAPI_YAML,
+                List.of(first, second)));
+        Map<String, Object> envelope = map(map(map(document, "components"), "schemas"), "Envelope");
+
+        assertThat(envelope.get("$dynamicRef"), is("#/components/schemas/Item2"));
+    }
+
+    @Test
+    void generatedDocumentPreservesDynamicRefsForCustomDocumentDialect() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                    RawOpenApiVersion.OPEN_API_32);
+        OpenApiDocumentSource first = (documentContext, document) -> document
+                .info("Generated API", "1.0.0")
+                .components(components -> components.schema(
+                        "Item",
+                        JsonObject.builder().set("type", "string").build()));
+        OpenApiDocumentSource second = (documentContext, document) -> document
+                .components(components -> components
+                        .schema("Item", JsonObject.builder().set("type", "integer").build())
+                        .schema("Envelope",
+                                JsonObject.builder()
+                                        .set("$ref", "#/components/schemas/Item")
+                                        .set("$dynamicRef", "#/components/schemas/Item")
+                                        .build())
+                        .schema("Draft2020Envelope",
+                                JsonObject.builder()
+                                        .set("$schema", "https://json-schema.org/draft/2020-12/schema")
+                                        .set("$dynamicRef", "#/components/schemas/Item")
+                                        .build())
+                        .schema("OasEnvelope",
+                                JsonObject.builder()
+                                        .set("$schema", "https://spec.openapis.org/oas/3.1/dialect/base")
+                                        .set("$dynamicRef", "#/components/schemas/Item")
+                                        .build()));
+        OpenApiDocumentSource third = (documentContext, document) -> document
+                .jsonSchemaDialect("https://example.com/dialect");
+
+        Map<String, Object> document = parse(compose(
+                context,
+                context.openApiVersion(),
+                "",
+                MediaTypes.APPLICATION_OPENAPI_YAML,
+                List.of(first, second, third)));
+        Map<String, Object> schemas = map(map(document, "components"), "schemas");
+        Map<String, Object> envelope = map(schemas, "Envelope");
+
+        assertThat(envelope.get("$ref"), is("#/components/schemas/Item2"));
+        assertThat(envelope.get("$dynamicRef"), is("#/components/schemas/Item"));
+        assertThat(map(schemas, "Draft2020Envelope").get("$dynamicRef"),
+                   is("#/components/schemas/Item2"));
+        assertThat(map(schemas, "OasEnvelope").get("$dynamicRef"),
+                   is("#/components/schemas/Item2"));
+    }
+
+    @Test
+    void generatedDocumentRewritesDynamicRefsForDraft2020DocumentDialect() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                    RawOpenApiVersion.OPEN_API_32);
+        OpenApiDocumentSource first = (documentContext, document) -> document
+                .info("Generated API", "1.0.0")
+                .jsonSchemaDialect("https://json-schema.org/draft/2020-12/schema")
+                .components(components -> components.schema(
+                        "Item",
+                        JsonObject.builder().set("type", "string").build()));
+        OpenApiDocumentSource second = (documentContext, document) -> document
+                .components(components -> components
+                        .schema("Item", JsonObject.builder().set("type", "integer").build())
+                        .schema("Envelope",
+                                JsonObject.builder()
+                                        .set("$dynamicRef", "#/components/schemas/Item")
+                                        .build()));
+
+        Map<String, Object> document = parse(compose(
+                context,
+                context.openApiVersion(),
+                "",
+                MediaTypes.APPLICATION_OPENAPI_YAML,
+                List.of(first, second)));
+        Map<String, Object> envelope = map(map(map(document, "components"), "schemas"), "Envelope");
+
+        assertThat(envelope.get("$dynamicRef"), is("#/components/schemas/Item2"));
+    }
+
+    @Test
+    void mergePreservesGeneratedDynamicRefsForCustomDocumentDialect() {
+        OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.MERGE,
+                                                    RawOpenApiVersion.OPEN_API_32);
+        OpenApiDocument staticDocument = OpenApiDocument.builder()
+                .info("Static API", "1.0.0")
+                .jsonSchemaDialect("https://example.com/dialect")
+                .build();
+        OpenApiDocumentSource first = (documentContext, document) -> document
+                .components(components -> components.schema(
+                        "Item",
+                        JsonObject.builder().set("type", "string").build()));
+        OpenApiDocumentSource second = (documentContext, document) -> document
+                .components(components -> components
+                        .schema("Item", JsonObject.builder().set("type", "integer").build())
+                        .schema("Envelope",
+                                JsonObject.builder()
+                                        .set("$ref", "#/components/schemas/Item")
+                                        .set("$dynamicRef", "#/components/schemas/Item")
+                                        .build()));
+
+        String content = OpenApiDocumentComposer.compose(context,
+                                                         Optional.of(() -> staticDocument),
+                                                         "static",
+                                                         List.of(first, second));
+        Map<String, Object> envelope = map(map(map(parse(content), "components"), "schemas"), "Envelope");
+
+        assertThat(envelope.get("$ref"), is("#/components/schemas/Item2"));
+        assertThat(envelope.get("$dynamicRef"), is("#/components/schemas/Item"));
     }
 
     @Test
@@ -1461,6 +1662,8 @@ class OpenApiDocumentComposerTest {
 
     private static final class RawOpenApiVersion implements OpenApiVersion {
         private static final RawOpenApiVersion INSTANCE = new RawOpenApiVersion("raw", "raw");
+        private static final RawOpenApiVersion OPEN_API_30 = new RawOpenApiVersion("3.0", "3.0.4");
+        private static final RawOpenApiVersion OPEN_API_31 = new RawOpenApiVersion("3.1", "3.1.2");
         private static final RawOpenApiVersion OPEN_API_32 = new RawOpenApiVersion("3.2", "3.2.0");
 
         private final String type;
