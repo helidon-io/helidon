@@ -574,7 +574,7 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
     <notes><![CDATA[
     file name: kotlin-stdlib-1.9.10.jar
     ]]></notes>
-    <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@.*$</packageUrl>
+    <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib.*@.*$</packageUrl>
     <cve>CVE-2026-53914</cve>
 </suppress>
 
