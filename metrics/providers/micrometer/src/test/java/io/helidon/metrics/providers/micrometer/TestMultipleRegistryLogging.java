@@ -531,6 +531,55 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
+    void testFactoryCloseAttemptsAllCleanupAfterResourceErrors() {
+        OutOfMemoryError firstProviderFailure = new OutOfMemoryError("first provider failure");
+        OutOfMemoryError secondProviderFailure = new OutOfMemoryError("second provider failure");
+        ResourceExhaustedMetersProvider firstProvider = new ResourceExhaustedMetersProvider(firstProviderFailure);
+        ResourceExhaustedMetersProvider secondProvider = new ResourceExhaustedMetersProvider(secondProviderFailure);
+        OutOfMemoryError firstPublisherFailure = new OutOfMemoryError("first publisher failure");
+        OutOfMemoryError secondPublisherFailure = new OutOfMemoryError("second publisher failure");
+        OutOfMemoryError thirdPublisherFailure = new OutOfMemoryError("third publisher failure");
+        ResourceExhaustedMeterRegistry firstPublisher = new ResourceExhaustedMeterRegistry(firstPublisherFailure);
+        ResourceExhaustedMeterRegistry secondPublisher = new ResourceExhaustedMeterRegistry(secondPublisherFailure);
+        ResourceExhaustedMeterRegistry thirdPublisher = new ResourceExhaustedMeterRegistry(thirdPublisherFailure);
+        MicrometerMetricsFactory metricsFactory = MicrometerMetricsFactory.create(MetricsConfig.create(),
+                                                                                   List.of(firstProvider, secondProvider));
+        metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                   .publishers(List.of(new TestPublisher(firstPublisher),
+                                                                       new TestPublisher(secondPublisher)))
+                                                   .warnOnMultipleRegistries(false)
+                                                   .build());
+        metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                   .addPublisher(new TestPublisher(thirdPublisher))
+                                                   .warnOnMultipleRegistries(false)
+                                                   .build());
+
+        OutOfMemoryError failure = assertThrows(OutOfMemoryError.class, metricsFactory::close);
+
+        assertThat("First failure is rethrown unchanged", failure, sameInstance(firstProviderFailure));
+        assertThat("First provider close attempted", firstProvider.closeAttempts.get(), is(1));
+        assertThat("Second provider close attempted", secondProvider.closeAttempts.get(), is(1));
+        assertThat("First publisher close attempted", firstPublisher.closeAttempts.get(), is(1));
+        assertThat("Second publisher close attempted", secondPublisher.closeAttempts.get(), is(1));
+        assertThat("Third publisher close attempted", thirdPublisher.closeAttempts.get(), is(1));
+        assertThat("Later cleanup failures are suppressed", failure.getSuppressed().length, is(3));
+        assertThat("Second provider failure is retained",
+                   failure.getSuppressed()[0],
+                   sameInstance(secondProviderFailure));
+        assertThat("First registry failure is retained",
+                   failure.getSuppressed()[1],
+                   is(instanceOf(OutOfMemoryError.class)));
+        Throwable firstRegistryFailure = failure.getSuppressed()[1];
+        assertThat("Later failure in first registry is suppressed", firstRegistryFailure.getSuppressed().length, is(1));
+        assertThat("Both first registry publisher failures are retained",
+                   Set.of(firstRegistryFailure, firstRegistryFailure.getSuppressed()[0]),
+                   is(Set.of(firstPublisherFailure, secondPublisherFailure)));
+        assertThat("Second registry failure is retained",
+                   failure.getSuppressed()[2],
+                   sameInstance(thirdPublisherFailure));
+    }
+
+    @Test
     void testRegistryConstructionFailureClosesPublishers() {
         SimpleMeterRegistry publisherRegistry = new SimpleMeterRegistry();
         Tag failingTag = new Tag() {
@@ -1034,6 +1083,42 @@ class TestMultipleRegistryLogging {
         public void close() {
             closeAttempts.incrementAndGet();
             super.close();
+            throw failure;
+        }
+    }
+
+    private static class ResourceExhaustedMeterRegistry extends SimpleMeterRegistry {
+        private final AtomicInteger closeAttempts = new AtomicInteger();
+        private final OutOfMemoryError failure;
+
+        private ResourceExhaustedMeterRegistry(OutOfMemoryError failure) {
+            this.failure = failure;
+        }
+
+        @Override
+        public void close() {
+            closeAttempts.incrementAndGet();
+            super.close();
+            throw failure;
+        }
+    }
+
+    private static class ResourceExhaustedMetersProvider implements MetersProvider, AutoCloseable {
+        private final AtomicInteger closeAttempts = new AtomicInteger();
+        private final OutOfMemoryError failure;
+
+        private ResourceExhaustedMetersProvider(OutOfMemoryError failure) {
+            this.failure = failure;
+        }
+
+        @Override
+        public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
+            return List.of();
+        }
+
+        @Override
+        public void close() {
+            closeAttempts.incrementAndGet();
             throw failure;
         }
     }

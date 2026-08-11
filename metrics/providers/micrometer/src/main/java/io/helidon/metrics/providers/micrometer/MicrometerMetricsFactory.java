@@ -499,32 +499,33 @@ class MicrometerMetricsFactory implements MetricsFactory {
         }
 
         try {
-            metersProviders.forEach(provider -> {
+            Throwable closeFailure = null;
+            for (MetersProvider provider : metersProviders) {
                 if (provider instanceof AutoCloseable closeable) {
                     try {
                         closeable.close();
-                    } catch (Exception e) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Error closing metrics meter provider", e);
+                    } catch (Throwable e) {
+                        if (e instanceof Exception exception) {
+                            try {
+                                LOGGER.log(System.Logger.Level.WARNING, "Error closing metrics meter provider", exception);
+                            } catch (Throwable loggingFailure) {
+                                closeFailure = recordCloseFailure(closeFailure, loggingFailure);
+                            }
+                        } else {
+                            closeFailure = recordCloseFailure(closeFailure, e);
+                        }
                     }
                 }
-            });
-            Throwable closeFailure = null;
+            }
             for (MMeterRegistry registry : registries) {
                 try {
                     registry.close();
-                } catch (RuntimeException | Error e) {
-                    if (closeFailure == null) {
-                        closeFailure = e;
-                    } else if (closeFailure != e) {
-                        closeFailure.addSuppressed(e);
-                    }
+                } catch (Throwable e) {
+                    closeFailure = recordCloseFailure(closeFailure, e);
                 }
             }
-            if (closeFailure instanceof RuntimeException e) {
-                throw e;
-            }
-            if (closeFailure instanceof Error e) {
-                throw e;
+            if (closeFailure != null) {
+                MicrometerMetricsFactory.<RuntimeException>rethrow(closeFailure);
             }
         } finally {
             lock.lock();
@@ -536,6 +537,25 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 lock.unlock();
             }
         }
+    }
+
+    private static Throwable recordCloseFailure(Throwable closeFailure, Throwable newFailure) {
+        if (closeFailure == null) {
+            return newFailure;
+        }
+        if (closeFailure != newFailure) {
+            try {
+                closeFailure.addSuppressed(newFailure);
+            } catch (Throwable _) {
+                // Continue cleanup even if recording a later failure needs unavailable resources.
+            }
+        }
+        return closeFailure;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void rethrow(Throwable failure) throws T {
+        throw (T) failure;
     }
 
     private static class MultipleRegistryWarnings {

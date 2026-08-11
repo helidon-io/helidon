@@ -176,31 +176,31 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         List<io.micrometer.core.instrument.MeterRegistry> publishers = List.of();
         try {
             publishers = List.copyOf(compositeMeterRegistry.getRegistries());
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             closeFailure = recordCloseFailure(closeFailure, e);
         }
         for (io.micrometer.core.instrument.MeterRegistry publisher : publishers) {
             try {
                 publisher.close();
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 closeFailure = recordCloseFailure(closeFailure, e);
             }
             try {
                 compositeMeterRegistry.remove(publisher);
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 closeFailure = recordCloseFailure(closeFailure, e);
             }
         }
         try {
             compositeMeterRegistry.close();
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             closeFailure = recordCloseFailure(closeFailure, e);
         }
         try {
             if (registeredWithFactory) {
                 metricsFactory.onMeterRegistryClosed(this);
             }
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             closeFailure = recordCloseFailure(closeFailure, e);
         } finally {
             lock.writeLock().lock();
@@ -213,11 +213,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             }
         }
 
-        if (closeFailure instanceof RuntimeException e) {
-            throw e;
-        }
-        if (closeFailure instanceof Error e) {
-            throw e;
+        if (closeFailure != null) {
+            MMeterRegistry.<RuntimeException>rethrow(closeFailure);
         }
     }
 
@@ -226,9 +223,18 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             return newFailure;
         }
         if (closeFailure != newFailure) {
-            closeFailure.addSuppressed(newFailure);
+            try {
+                closeFailure.addSuppressed(newFailure);
+            } catch (Throwable _) {
+                // Continue cleanup even if recording a later failure needs unavailable resources.
+            }
         }
         return closeFailure;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void rethrow(Throwable failure) throws T {
+        throw (T) failure;
     }
 
     private void checkOpen() {
