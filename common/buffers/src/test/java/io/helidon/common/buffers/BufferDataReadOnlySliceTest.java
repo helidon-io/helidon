@@ -17,6 +17,8 @@
 package io.helidon.common.buffers;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -63,10 +65,11 @@ class BufferDataReadOnlySliceTest {
         BufferData source = BufferData.createReadOnly(bytes, 0, bytes.length);
         source.skip(1);
 
-        BufferData slice = BufferData.readOnlySlice(source, 2);
+        BufferData slice = BufferData.readOnlySlice(source, 3);
+        BufferData resliced = BufferData.readOnlySlice(slice, 2);
         bytes[1] = 9;
 
-        assertThat(slice.readBytes(), is(new byte[] {9, 3}));
+        assertThat(resliced.readBytes(), is(new byte[] {9, 3}));
     }
 
     @Test
@@ -75,11 +78,34 @@ class BufferDataReadOnlySliceTest {
         BufferData source = BufferData.create(bytes);
 
         BufferData slice = BufferData.readOnlySlice(source, 3);
+        BufferData resliced = BufferData.readOnlySlice(slice, 2);
         bytes[0] = 9;
 
-        assertThat(slice.readBytes(), is(new byte[] {1, 2, 3}));
+        assertThat(resliced.readBytes(), is(new byte[] {1, 2}));
         assertThat(source.readBytes(), is(new byte[] {4}));
-        assertThrows(UnsupportedOperationException.class, () -> slice.write(1));
+        assertThrows(UnsupportedOperationException.class, () -> resliced.write(1));
+    }
+
+    @Test
+    void dataReaderSourcesUseIndependentCopyRegardlessOfFragmentation() {
+        byte[] contiguousBytes = {1, 2, 3};
+        DataReader contiguousReader = DataReader.create(() -> contiguousBytes);
+        BufferData contiguousSlice = BufferData.readOnlySlice(contiguousReader.getBuffer(3), 3);
+        BufferData contiguousReslice = BufferData.readOnlySlice(contiguousSlice, 2);
+
+        byte[] first = {4, 5};
+        byte[] second = {6};
+        Iterator<byte[]> chunks = List.of(first, second).iterator();
+        DataReader fragmentedReader = DataReader.create(chunks::next);
+        BufferData fragmentedSlice = BufferData.readOnlySlice(fragmentedReader.getBuffer(3), 3);
+        BufferData fragmentedReslice = BufferData.readOnlySlice(fragmentedSlice, 2);
+
+        contiguousBytes[0] = 9;
+        first[0] = 9;
+        second[0] = 9;
+
+        assertThat(contiguousReslice.readBytes(), is(new byte[] {1, 2}));
+        assertThat(fragmentedReslice.readBytes(), is(new byte[] {4, 5}));
     }
 
     @Test

@@ -75,7 +75,7 @@ public interface BufferData {
      * @return new byte array buffer data that are read only
      */
     static BufferData createReadOnly(byte[] bytes, int offset, int length) {
-        return new ReadOnlyArrayData(bytes, offset, length);
+        return new ReadOnlyArrayData(bytes, offset, length, true);
     }
 
     /**
@@ -83,8 +83,9 @@ public interface BufferData {
      *
      * <p>Sources created with
      * {@link io.helidon.common.buffers.BufferData#createReadOnly(byte[], int, int)} share their backing array with the
-     * returned view. The caller must not modify that array while either buffer is in use. Other sources use an exact
-     * defensive copy. The returned logical range never includes bytes before or after the consumed source range,
+     * returned view. The caller must not modify that array while either buffer is in use. All other sources use an exact
+     * defensive copy on the first slice. A slice backed by such a private copy may share that copy when it is re-sliced.
+     * The returned logical range never includes bytes before or after the consumed source range,
      * including after {@link io.helidon.common.buffers.BufferData#rewind()}.
      *
      * @param source source buffer
