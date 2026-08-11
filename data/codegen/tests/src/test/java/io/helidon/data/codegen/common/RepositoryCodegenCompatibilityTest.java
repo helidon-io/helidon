@@ -49,12 +49,12 @@ class RepositoryCodegenCompatibilityTest {
     private static final TypeName REPOSITORY_TYPE = TypeName.create("example.TestRepository");
 
     @Test
-    void preservesDefaultAndExplicitProviderSelection() {
+    void generatesUnqualifiedRepositoriesAndFiltersQualifiedRepositories() {
         TypeInfo unqualified = annotationOnlyRepository(null);
         TypeInfo explicitlySelected = annotationOnlyRepository("jdbc");
+        TypeInfo unavailableProvider = annotationOnlyRepository("unavailable");
         CodegenContext context = mock(CodegenContext.class);
-        RoundContext round = mock(RoundContext.class);
-        RepositoryGenerator repositoryGenerator = mock(RepositoryGenerator.class);
+        RepositoryGenerator repositoryGenerator = generator(Set.of(REPOSITORY_ANNOTATION), Set.of());
         TypeInfo placeholder = TypeInfo.builder()
                 .typeName(TypeName.create(Object.class))
                 .kind(ElementKind.CLASS)
@@ -65,18 +65,23 @@ class RepositoryCodegenCompatibilityTest {
                                                              placeholder,
                                                              TypeName.create(Object.class)));
 
-        RecordingPersistenceGenerator defaultProvider = new RecordingPersistenceGenerator("legacy", true);
-        RecordingPersistenceGenerator optInProvider = new RecordingPersistenceGenerator("jdbc", false);
+        RecordingPersistenceGenerator legacyProvider = new RecordingPersistenceGenerator("legacy");
+        RecordingPersistenceGenerator jdbcProvider = new RecordingPersistenceGenerator("jdbc");
+        RepositoryCodegen codegen = new RepositoryCodegen(context,
+                                                          List.of(repositoryGenerator),
+                                                          List.of(legacyProvider, jdbcProvider));
 
-        defaultProvider.generate(context, round, unqualified, repositoryGenerator);
-        optInProvider.generate(context, round, unqualified, repositoryGenerator);
-        assertThat(defaultProvider.generated(), is(1));
-        assertThat(optInProvider.generated(), is(0));
+        codegen.process(round(unqualified));
+        assertThat(legacyProvider.generated(), is(1));
+        assertThat(jdbcProvider.generated(), is(1));
 
-        defaultProvider.generate(context, round, explicitlySelected, repositoryGenerator);
-        optInProvider.generate(context, round, explicitlySelected, repositoryGenerator);
-        assertThat(defaultProvider.generated(), is(1));
-        assertThat(optInProvider.generated(), is(1));
+        codegen.process(round(explicitlySelected));
+        assertThat(legacyProvider.generated(), is(1));
+        assertThat(jdbcProvider.generated(), is(2));
+
+        codegen.process(round(unavailableProvider));
+        assertThat(legacyProvider.generated(), is(1));
+        assertThat(jdbcProvider.generated(), is(2));
     }
 
     @Test
@@ -95,18 +100,15 @@ class RepositoryCodegenCompatibilityTest {
     }
 
     @Test
-    void requiresProviderForRepositoryWithoutSupportedBaseInterface() {
+    void selectsAnnotationOwnerWithoutProvider() {
         TypeInfo repository = annotationOnlyRepository(null);
         RepositoryGenerator owner = generator(Set.of(REPOSITORY_ANNOTATION), Set.of());
         DirectPersistenceGenerator persistence = new DirectPersistenceGenerator();
 
-        CodegenException failure = assertThrows(
-                CodegenException.class,
-                () -> new RepositoryCodegen(mock(CodegenContext.class), List.of(owner), List.of(persistence))
-                        .process(round(repository)));
+        new RepositoryCodegen(mock(CodegenContext.class), List.of(owner), List.of(persistence))
+                .process(round(repository));
 
-        assertThat(failure.getMessage(), containsString("must declare @Data.Provider"));
-        assertThat(persistence.generated(), is(0));
+        assertThat(persistence.generated(), is(1));
     }
 
     @Test
@@ -228,22 +230,15 @@ class RepositoryCodegenCompatibilityTest {
     private static final class RecordingPersistenceGenerator extends BasePersistenceGenerator {
 
         private final String provider;
-        private final boolean generateByDefault;
         private int generated;
 
-        private RecordingPersistenceGenerator(String provider, boolean generateByDefault) {
+        private RecordingPersistenceGenerator(String provider) {
             this.provider = provider;
-            this.generateByDefault = generateByDefault;
         }
 
         @Override
         protected String provider() {
             return provider;
-        }
-
-        @Override
-        protected boolean generateByDefault() {
-            return generateByDefault;
         }
 
         @Override

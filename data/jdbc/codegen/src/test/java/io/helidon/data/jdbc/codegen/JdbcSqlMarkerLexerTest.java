@@ -19,11 +19,34 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcSqlMarkerLexerTest {
+
+    @Test
+    void appliesPortablePunctuationAndCommentRules() {
+        String sql = """
+                select VALUES_COLUMN[:index]
+                from T
+                where BALANCE--:delta > 0 and ID = :id
+                -- :ignored
+                """;
+
+        JdbcSqlMarkerLexer.Result named = JdbcSqlMarkerLexer.parse(sql);
+        JdbcSqlMarkerLexer.Result positional = JdbcSqlMarkerLexer.parse("select [question?], `question?`, ?");
+
+        assertThat(named.sql(), is(sql.replace(":index", "?")
+                                            .replace(":delta", "?")
+                                            .replace(":id", "?")));
+        assertThat(named.markers(), is(List.of("index", "delta", "id")));
+        assertThat(named.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+        assertThat(positional.markers(), is(List.of("", "", "")));
+    }
 
     @Test
     void rewritesNamedMarkersInEncounterOrder() {
@@ -46,26 +69,21 @@ class JdbcSqlMarkerLexerTest {
     }
 
     @Test
-    void preservesDriverEscapesAndCountsPositionalMarkers() {
-        String sql = "select DOCUMENT ?? 'name', TAGS ??| ARRAY['a'], TAGS ??& ARRAY['a', 'b'], "
-                + "PAYLOAD @?? '$.items[*]' from T where ID = ?";
+    void treatsDoubledQuestionMarksAsPortableMarkers() {
+        String sql = "select ??";
 
         JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
 
         assertThat(result.sql(), is(sql));
-        assertThat(result.markers(), is(List.of("")));
+        assertThat(result.markers(), is(List.of("", "")));
         assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL));
     }
 
     @Test
-    void preservesDriverEscapesWithNamedMarkers() {
+    void rejectsDoubledQuestionMarksMixedWithNamedMarkers() {
         String sql = "select PAYLOAD @?? '$.items[*]' from T where ID = :id";
 
-        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
-
-        assertThat(result.sql(), is("select PAYLOAD @?? '$.items[*]' from T where ID = ?"));
-        assertThat(result.markers(), is(List.of("id")));
-        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse(sql));
     }
 
     @Test
@@ -92,7 +110,7 @@ class JdbcSqlMarkerLexerTest {
     @Test
     void protectsQuotedCommentedAndVendorSyntax() {
         String sql = """
-                select ':literal', "quoted:name", `mysql:name`, [sql:name], value::text, data ??| array['x']
+                select ':literal', "quoted:name", value::text
                 from T -- :line and ?
                 where ID = :id /* :block and ? */
                   and BODY = $tag$:dollar and ?$tag$ and Q = q'[oracle:name and ?]'
@@ -116,15 +134,49 @@ class JdbcSqlMarkerLexerTest {
     }
 
     @Test
+    void appliesDollarQuoteGrammarOnlyAtTokenBoundaries() {
+        String sql = "select $$:empty and ?$$, ($tag$:named and ?$tag$), identifier$tag$ "
+                + "from T where ID = :id";
+
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.sql(), is(sql.replace(":id", "?")));
+        assertThat(result.markers(), is(List.of("id")));
+        assertThat(JdbcSqlMarkerLexer.parse("select $1$ ?").markers(), is(List.of("")));
+        assertThat(JdbcSqlMarkerLexer.parse("select $bad-tag$ ?").markers(), is(List.of("")));
+    }
+
+    @Test
+    void rejectsUnterminatedDollarQuotesOnlyForValidOpeners() {
+        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select $$unterminated"));
+        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select ($tag$unterminated"));
+
+        JdbcSqlMarkerLexer.Result identifier = JdbcSqlMarkerLexer.parse("select identifier$tag$ from T where ID = :id");
+        assertThat(identifier.markers(), is(List.of("id")));
+    }
+
+    @Test
     void rejectsMixedMarkersAndMalformedRegions() {
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select :id, ?"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select :user.id"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select 'unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select \"unterminated"));
-        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select `unterminated"));
-        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select [unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select /* unterminated"));
+        assertThrows(IllegalArgumentException.class,
+                     () -> JdbcSqlMarkerLexer.parse("select /* outer /* nested */ outer */"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select $tag$unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select q'[unterminated"));
+    }
+
+    @Test
+    void reportsPortableProfileFailuresWithoutRenderingSql() {
+        String sql = "select /* outer /* nested */ outer */";
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                         () -> JdbcSqlMarkerLexer.parse(sql));
+
+        assertThat(failure.getMessage(), containsString("PORTABLE"));
+        assertThat(failure.getMessage(), endsWith("offset 16"));
+        assertThat(failure.getMessage(), not(containsString(sql)));
     }
 }

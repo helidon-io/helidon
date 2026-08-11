@@ -118,6 +118,7 @@ class JdbcGeneratedKeyScalarMatrixTest {
 
         reset(dataSource, connection, statement, resultSet, metadata);
         when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement(eq(SQL), aryEq(new String[] {"ID", "VERSION"}))).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(1L, -1L);
@@ -166,6 +167,7 @@ class JdbcGeneratedKeyScalarMatrixTest {
     private void prepareOperation() throws Exception {
         reset(dataSource, connection, statement, resultSet, metadata);
         when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement(SQL, Statement.RETURN_GENERATED_KEYS)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(1L, -1L);

@@ -21,7 +21,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.List;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -34,6 +38,8 @@ import org.mockito.InOrder;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -56,6 +62,7 @@ class JdbcRunnerFailureTest {
         connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement("UPDATE TEST_VALUE SET VALUE = 1")).thenReturn(statement);
         when(connection.prepareStatement("INSERT INTO TEST_VALUE DEFAULT VALUES",
                                          Statement.RETURN_GENERATED_KEYS)).thenReturn(statement);
@@ -94,7 +101,7 @@ class JdbcRunnerFailureTest {
         DataException failure = assertThrows(DataException.class,
                                              () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
 
-        assertThat(failure.getCause(), sameInstance(prepareFailure));
+        assertSafeSqlCause(failure.getCause(), prepareFailure);
         assertThat(failure.getMessage(), containsString("SQLState=42000"));
         assertThat(failure.getMessage(), containsString("vendorCode=91"));
         verify(connection).close();
@@ -108,8 +115,66 @@ class JdbcRunnerFailureTest {
         DataException failure = assertThrows(DataException.class,
                                              () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
 
-        assertThat(failure.getCause(), sameInstance(acquisitionFailure));
+        assertSafeSqlCause(failure.getCause(), acquisitionFailure);
         verify(connection, never()).clearWarnings();
+        verify(statement, never()).execute();
+    }
+
+    @Test
+    void rejectsOwnedConnectionsWithoutAutoCommitBeforeEveryExecutionChannel() throws Exception {
+        when(connection.getAutoCommit()).thenReturn(false);
+
+        assertOwnedAutoCommitFailure(() -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
+        verify(connection, never()).prepareStatement("UPDATE TEST_VALUE SET VALUE = 1");
+
+        setUp();
+        when(connection.getAutoCommit()).thenReturn(false);
+
+        assertOwnedAutoCommitFailure(() -> client.create("SELECT VALUE FROM TEST_VALUE")
+                .map(String.class)
+                .list());
+        verify(connection, never()).prepareStatement("SELECT VALUE FROM TEST_VALUE");
+
+        setUp();
+        when(connection.getAutoCommit()).thenReturn(false);
+
+        assertOwnedAutoCommitFailure(() -> client.create("INSERT INTO TEST_VALUE DEFAULT VALUES")
+                .generatedKeys()
+                .map(row -> row.required(1, Long.class))
+                .list());
+        verify(connection, never()).prepareStatement("INSERT INTO TEST_VALUE DEFAULT VALUES",
+                                                     Statement.RETURN_GENERATED_KEYS);
+    }
+
+    @Test
+    void closesTheOwnedConnectionWhenAutoCommitInspectionFails() throws Exception {
+        SQLException inspectionFailure = new SQLException("auto-commit inspection failed", "08000", 96);
+        when(connection.getAutoCommit()).thenThrow(inspectionFailure);
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
+
+        assertSafeSqlCause(failure.getCause(), inspectionFailure);
+        verify(connection).close();
+        verify(connection, never()).prepareStatement("UPDATE TEST_VALUE SET VALUE = 1");
+        verify(statement, never()).execute();
+    }
+
+    @Test
+    void keepsTheAutoCommitInvariantFailurePrimaryWhenConnectionCloseFails() throws Exception {
+        SQLException closeFailure = new SQLException("connection close failed");
+        when(connection.getAutoCommit()).thenReturn(false);
+        doThrow(closeFailure).when(connection).close();
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
+
+        assertThat(failure.getCause(), instanceOf(SQLException.class));
+        assertThat(failure.getCause().getMessage(),
+                   is("Data sources used for JDBC operations must provide connections with auto-commit enabled."));
+        assertThat(failure.getCause().getSuppressed().length, is(1));
+        assertSafeSqlCause(failure.getCause().getSuppressed()[0], closeFailure);
+        verify(connection, never()).prepareStatement("UPDATE TEST_VALUE SET VALUE = 1");
         verify(statement, never()).execute();
     }
 
@@ -124,7 +189,7 @@ class JdbcRunnerFailureTest {
                                                      .bind(1, "value")
                                                      .execute());
 
-        assertThat(failure.getCause(), sameInstance(bindFailure));
+        assertSafeSqlCause(failure.getCause(), bindFailure);
         InOrder order = inOrder(statement, connection);
         order.verify(statement).close();
         order.verify(connection).close();
@@ -141,7 +206,7 @@ class JdbcRunnerFailureTest {
                                                      .bindNull(1, JDBCType.VARCHAR)
                                                      .execute());
 
-        assertThat(failure.getCause(), sameInstance(bindFailure));
+        assertSafeSqlCause(failure.getCause(), bindFailure);
         InOrder order = inOrder(statement, connection);
         order.verify(statement).close();
         order.verify(connection).close();
@@ -262,10 +327,10 @@ class JdbcRunnerFailureTest {
         assertThat(failure.getSuppressed().length, is(1));
         assertThat(failure.getSuppressed()[0], instanceOf(DataException.class));
         Throwable cleanup = failure.getSuppressed()[0].getCause();
-        assertThat(cleanup, sameInstance(resultClose));
+        assertSafeSqlCause(cleanup, resultClose);
         assertThat(cleanup.getSuppressed().length, is(2));
-        assertThat(cleanup.getSuppressed()[0], sameInstance(statementClose));
-        assertThat(cleanup.getSuppressed()[1], sameInstance(connectionClose));
+        assertSafeSqlCause(cleanup.getSuppressed()[0], statementClose);
+        assertSafeSqlCause(cleanup.getSuppressed()[1], connectionClose);
         InOrder order = inOrder(resultSet, statement, connection);
         order.verify(resultSet).close();
         order.verify(statement).close();
@@ -363,9 +428,189 @@ class JdbcRunnerFailureTest {
 
         assertThat(failure.getSuppressed().length, is(1));
         Throwable cleanup = failure.getSuppressed()[0].getCause();
-        assertThat(cleanup, sameInstance(resultClose));
-        assertThat(cleanup.getSuppressed()[0], sameInstance(statementClose));
-        assertThat(cleanup.getSuppressed()[1], sameInstance(connectionClose));
+        assertSafeSqlCause(cleanup, resultClose);
+        assertSafeSqlCause(cleanup.getSuppressed()[0], statementClose);
+        assertSafeSqlCause(cleanup.getSuppressed()[1], connectionClose);
+    }
+
+    @Test
+    void sanitizesWarningsBeforeAttachingThemToMapperFailures() throws Exception {
+        ResultSet resultSet = mock(ResultSet.class);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement("SELECT VALUE FROM TEST_VALUE")).thenReturn(statement);
+        when(statement.execute()).thenReturn(true);
+        when(statement.getResultSet()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metadata);
+        when(metadata.getColumnCount()).thenReturn(1);
+        when(metadata.getColumnLabel(1)).thenReturn("VALUE");
+        when(resultSet.next()).thenReturn(true);
+        SQLWarning first = new SQLWarning("secret result-set warning", "01001", 11);
+        first.setNextWarning(new SQLWarning("secret chained warning", "01002", 12));
+        when(resultSet.getWarnings()).thenReturn(first);
+        when(statement.getWarnings()).thenReturn(new SQLWarning("secret statement warning", "01003", 13));
+        when(connection.getWarnings()).thenReturn(new SQLWarning("secret connection warning", "01004", 14));
+        IllegalStateException mapperFailure = new IllegalStateException("mapper failed");
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                     () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                             .map(row -> {
+                                                                 throw mapperFailure;
+                                                             })
+                                                             .one());
+
+        assertThat(failure, sameInstance(mapperFailure));
+        assertThat(failure.getSuppressed().length, is(4));
+        assertSafeWarning(failure.getSuppressed()[0], "01001", 11);
+        assertSafeWarning(failure.getSuppressed()[1], "01002", 12);
+        assertSafeWarning(failure.getSuppressed()[2], "01003", 13);
+        assertSafeWarning(failure.getSuppressed()[3], "01004", 14);
+        for (Throwable warning : failure.getSuppressed()) {
+            assertThat(warning.getMessage(), not(containsString("secret")));
+        }
+    }
+
+    @Test
+    void storesOnlySanitizedWarningsBeforeResultSetAdvancement() throws Exception {
+        ResultSet resultSet = mock(ResultSet.class);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement("SELECT VALUE FROM TEST_VALUE")).thenReturn(statement);
+        when(statement.execute()).thenReturn(true);
+        when(statement.getResultSet()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metadata);
+        when(metadata.getColumnCount()).thenReturn(1);
+        when(resultSet.next()).thenReturn(true, false);
+        when(resultSet.getObject(1, String.class)).thenReturn("value");
+        when(resultSet.getWarnings()).thenReturn(new SQLWarning("secret captured warning", "01005", 15));
+        when(statement.getLargeUpdateCount()).thenReturn(1L, -1L);
+        when(statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT)).thenReturn(false);
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                     .map(String.class)
+                                                     .list());
+
+        assertThat(failure.getMessage(), containsString("unexpected additional results"));
+        assertThat(failure.getSuppressed().length, is(1));
+        assertSafeWarning(failure.getSuppressed()[0], "01005", 15);
+        assertThat(failure.getSuppressed()[0].getMessage(), not(containsString("secret")));
+    }
+
+    @Test
+    void sanitizesWarningAccessFailuresWithoutRetainingTheirTrees() throws Exception {
+        ResultSet resultSet = mock(ResultSet.class);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(connection.prepareStatement("SELECT VALUE FROM TEST_VALUE")).thenReturn(statement);
+        when(statement.execute()).thenReturn(true);
+        when(statement.getResultSet()).thenReturn(resultSet);
+        when(resultSet.getMetaData()).thenReturn(metadata);
+        when(metadata.getColumnCount()).thenReturn(1);
+        when(metadata.getColumnLabel(1)).thenReturn("VALUE");
+        when(resultSet.next()).thenReturn(true);
+        IllegalStateException warningFailure = new IllegalStateException("secret warning access",
+                                                                          new RuntimeException("secret cause"));
+        when(resultSet.getWarnings()).thenThrow(warningFailure);
+        UnsupportedOperationException clearFailure = new UnsupportedOperationException("secret warning clear");
+        doThrow(clearFailure).when(resultSet).clearWarnings();
+        IllegalArgumentException mapperFailure = new IllegalArgumentException("mapper failed");
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                        () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                                .map(row -> {
+                                                                    throw mapperFailure;
+                                                                })
+                                                                .one());
+
+        assertThat(failure, sameInstance(mapperFailure));
+        assertThat(failure.getSuppressed().length, is(2));
+        Throwable diagnostic = failure.getSuppressed()[0];
+        assertThat(diagnostic.getMessage(),
+                   is("JDBC result-set warning read failure [java.lang.IllegalStateException]"));
+        assertThat(diagnostic.getMessage(), not(containsString("secret")));
+        assertThat(diagnostic.getCause(), nullValue());
+        assertThat(diagnostic.getSuppressed().length, is(0));
+        Throwable clearDiagnostic = failure.getSuppressed()[1];
+        assertThat(clearDiagnostic.getMessage(),
+                   is("JDBC result-set warning clear failure [java.lang.UnsupportedOperationException]"));
+        assertThat(clearDiagnostic.getMessage(), not(containsString("secret")));
+        assertThat(clearDiagnostic.getCause(), nullValue());
+    }
+
+    @Test
+    void keepsWarningsNonFatalAfterSuccessfulWork() throws Exception {
+        prepareSuccessfulUpdate();
+        when(statement.getWarnings()).thenReturn(new SQLWarning("secret successful warning", "01006", 16));
+
+        long count = client.create("UPDATE TEST_VALUE SET VALUE = 1").execute();
+
+        assertThat(count, is(1L));
+        verify(statement).getWarnings();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void limitsEverySingularQueryTerminalToTwoRows() throws Exception {
+        prepareSuccessfulQuery();
+
+        assertThat(client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).one(), is("value"));
+        verify(statement).setMaxRows(2);
+
+        setUp();
+        prepareSuccessfulQuery();
+
+        assertThat(client.create("SELECT VALUE FROM TEST_VALUE").map(row -> "value").optional(),
+                   is(Optional.of("value")));
+        verify(statement).setMaxRows(2);
+
+        setUp();
+        prepareSuccessfulQuery();
+
+        assertThat(client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).optional(),
+                   is(Optional.of("value")));
+        verify(statement).setMaxRows(2);
+    }
+
+    @Test
+    void leavesListAndGeneratedKeyTerminalsUnbounded() throws Exception {
+        prepareSuccessfulQuery();
+
+        assertThat(client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).list(),
+                   is(List.of("value")));
+        verify(statement, never()).setMaxRows(2);
+
+        setUp();
+        prepareSuccessfulGeneratedKeys();
+
+        assertThat(generatedKey(), is(1L));
+        verify(statement, never()).setMaxRows(2);
+    }
+
+    @Test
+    void retainsCursorCardinalityCheckWhenMaximumRowsAreUnsupported() throws Exception {
+        prepareSuccessfulQuery();
+        doThrow(new SQLFeatureNotSupportedException("unsupported")).when(statement).setMaxRows(2);
+
+        assertThat(client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).one(), is("value"));
+
+        verify(statement).setMaxRows(2);
+        verify(statement).execute();
+    }
+
+    @Test
+    void sanitizesUnexpectedMaximumRowsFailure() throws Exception {
+        prepareSuccessfulQuery();
+        doThrow(new IllegalStateException("secret maximum rows failure")).when(statement).setMaxRows(2);
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                     () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                             .map(String.class)
+                                                             .one());
+
+        assertThat(failure.getMessage(), is("JDBC query maximum rows failure [java.lang.IllegalStateException]"));
+        assertThat(failure.getCause(), nullValue());
+        verify(statement, never()).execute();
+        verify(statement).close();
+        verify(connection).close();
     }
 
     private void prepareSuccessfulUpdate() throws Exception {
@@ -413,14 +658,26 @@ class JdbcRunnerFailureTest {
     private static void assertCleanupFailure(ThrowingInvocation invocation, SQLException expected) {
         DataException failure = assertThrows(DataException.class, invocation::run);
 
-        assertThat(failure.getCause(), sameInstance(expected));
+        assertSafeSqlCause(failure.getCause(), expected);
+    }
+
+    private void assertOwnedAutoCommitFailure(ThrowingInvocation invocation) throws SQLException {
+        DataException failure = assertThrows(DataException.class, invocation::run);
+
+        assertThat(failure.getCause(), instanceOf(SQLException.class));
+        assertThat(failure.getCause().getMessage(),
+                   is("Data sources used for JDBC operations must provide connections with auto-commit enabled."));
+        verify(connection).getAutoCommit();
+        verify(connection).close();
+        verify(connection, never()).clearWarnings();
+        verify(statement, never()).execute();
     }
 
     private void assertExecutionFailure(ThrowingInvocation invocation,
                                         SQLException expected) throws SQLException {
         DataException failure = assertThrows(DataException.class, invocation::run);
 
-        assertThat(failure.getCause(), sameInstance(expected));
+        assertSafeSqlCause(failure.getCause(), expected);
         InOrder order = inOrder(statement, connection);
         order.verify(statement).close();
         order.verify(connection).close();
@@ -431,11 +688,29 @@ class JdbcRunnerFailureTest {
                                         ResultSet resultSet) throws SQLException {
         DataException failure = assertThrows(DataException.class, invocation::run);
 
-        assertThat(failure.getCause(), sameInstance(expected));
+        assertSafeSqlCause(failure.getCause(), expected);
         InOrder order = inOrder(resultSet, statement, connection);
         order.verify(resultSet).close();
         order.verify(statement).close();
         order.verify(connection).close();
+    }
+
+    private static void assertSafeSqlCause(Throwable actual, SQLException expected) {
+        assertThat(actual, instanceOf(SQLException.class));
+        SQLException safe = (SQLException) actual;
+        assertThat(safe.getMessage(), is("JDBC driver failure"));
+        assertThat(safe.getSQLState(), is(expected.getSQLState()));
+        assertThat(safe.getErrorCode(), is(expected.getErrorCode()));
+    }
+
+    private static void assertSafeWarning(Throwable actual, String sqlState, int vendorCode) {
+        assertThat(actual, instanceOf(SQLWarning.class));
+        SQLWarning warning = (SQLWarning) actual;
+        assertThat(warning.getMessage(), is("JDBC driver warning"));
+        assertThat(warning.getSQLState(), is(sqlState));
+        assertThat(warning.getErrorCode(), is(vendorCode));
+        assertThat(warning.getCause(), nullValue());
+        assertThat(warning.getSuppressed().length, is(0));
     }
 
     @FunctionalInterface

@@ -25,12 +25,16 @@ import java.util.Objects;
  * Marker-like text inside quoted regions and comments is copied unchanged.
  * Named markers are rewritten to JDBC {@code ?}. Positional markers already
  * have that form. Mixing the two styles is rejected. Other SQL text is copied
- * without validation so database syntax remains the driver's concern.
+ * without validation so database syntax remains the driver's concern. The
+ * private lexical profile makes every dialect-sensitive recognition
+ * rule explicit and is verified against the runtime scanner's conformance
+ * corpus.
  */
 final class JdbcSqlMarkerLexer {
 
     private final String source;
     private final int length;
+    private final JdbcLexicalProfile profile;
     private final StringBuilder jdbcSql;
 
     // Empty entries preserve the number and order of positional markers.
@@ -43,10 +47,12 @@ final class JdbcSqlMarkerLexer {
      * Creates a lexer for one statement.
      *
      * @param source SQL source
+     * @param profile marker lexical profile
      */
-    private JdbcSqlMarkerLexer(String source) {
+    private JdbcSqlMarkerLexer(String source, JdbcLexicalProfile profile) {
         this.source = source;
         this.length = source.length();
+        this.profile = profile;
         this.jdbcSql = new StringBuilder(source.length());
     }
 
@@ -57,11 +63,23 @@ final class JdbcSqlMarkerLexer {
      * @return marker plan
      */
     static Result parse(String sql) {
+        return parse(sql, JdbcLexicalProfile.PORTABLE);
+    }
+
+    /**
+     * Parses one statement using an explicit lexical profile.
+     *
+     * @param sql SQL statement
+     * @param profile marker lexical profile
+     * @return marker plan
+     */
+    private static Result parse(String sql, JdbcLexicalProfile profile) {
         Objects.requireNonNull(sql, "SQL must not be null");
+        Objects.requireNonNull(profile, "JDBC lexical profile must not be null");
         if (sql.isBlank()) {
             throw new IllegalArgumentException("SQL must not be blank");
         }
-        JdbcSqlMarkerLexer lexer = new JdbcSqlMarkerLexer(sql);
+        JdbcSqlMarkerLexer lexer = new JdbcSqlMarkerLexer(sql, profile);
         lexer.scan();
         if (lexer.named && lexer.positional) {
             throw lexer.malformed("Declarative SQL cannot mix named and positional markers");
@@ -84,22 +102,24 @@ final class JdbcSqlMarkerLexer {
             } else if (current == '"') {
                 // A double quote starts a quoted identifier. Markers inside it are ordinary text.
                 copyQuoted('"');
-            } else if (current == '`') {
-                // Some databases use backticks for quoted identifiers. Treat their contents as protected.
+            } else if (current == '`' && profile.backtickIdentifiers()) {
+                // Backtick protection is enabled only by a profile whose database defines it.
                 copyQuoted('`');
-            } else if (current == '[') {
-                // Some databases use brackets for quoted identifiers. Treat their contents as protected.
+            } else if (current == '[' && profile.bracketIdentifiers()) {
+                // Bracket protection is enabled only by a profile whose database defines it.
                 copyBracketIdentifier();
-            } else if (current == '-' && peek(1) == '-') {
+            } else if (current == '-' && peek(1) == '-' && profile.lineComment(source, index)) {
                 // A line comment may contain marker-like text that must remain unchanged.
                 copyLineComment();
             } else if (current == '/' && peek(1) == '*') {
                 // A block comment may contain marker-like text that must remain unchanged.
                 copyBlockComment();
-            } else if ((current == 'q' || current == 'Q') && peek(1) == '\'' && index + 2 < length) {
-                // Oracle alternative quoting protects everything up to its matching delimiter.
-                copyOracleQuoted();
-            } else if (current == '$' && copyDollarQuoted()) {
+            } else if ((current == 'q' || current == 'Q')
+                    && profile.qQuotedStrings()
+                    && JdbcSqlLexicalRules.qQuoteClosingDelimiter(source, index) != '\0') {
+                // A q-quoted string protects everything up to its matching delimiter.
+                copyQQuoted();
+            } else if (profile.dollarQuotedStrings() && current == '$' && copyDollarQuoted()) {
                 // The helper copied the complete quoted region and advanced past it.
                 // Its contents must not be scanned for bind markers.
             } else if (current == ':') {
@@ -147,11 +167,12 @@ final class JdbcSqlMarkerLexer {
     }
 
     /**
-     * Records an unescaped positional marker or preserves a doubled question mark for the JDBC driver.
+     * Records one positional marker unless the selected profile defines a
+     * doubled-question-mark driver escape.
      */
     private void positionalMarker() {
         char next = peek(1);
-        if (next == '?') {
+        if (next == '?' && profile.questionMarkEscape()) {
             jdbcSql.append('?').append(next);
             index += 2;
             return;
@@ -222,7 +243,7 @@ final class JdbcSqlMarkerLexer {
     }
 
     /**
-     * Copies a possibly nested block comment.
+     * Copies a block comment according to the selected nesting policy.
      */
     private void copyBlockComment() {
         jdbcSql.append("/*");
@@ -230,6 +251,9 @@ final class JdbcSqlMarkerLexer {
         int depth = 1;
         while (index < length) {
             if (source.charAt(index) == '/' && peek(1) == '*') {
+                if (!profile.nestedBlockComments()) {
+                    throw malformed("Nested block comment is not supported");
+                }
                 jdbcSql.append("/*");
                 index += 2;
                 depth++;
@@ -247,17 +271,10 @@ final class JdbcSqlMarkerLexer {
     }
 
     /**
-     * Copies an Oracle alternative-quoted string.
+     * Copies a {@code q} quoted string.
      */
-    private void copyOracleQuoted() {
-        char opening = source.charAt(index + 2);
-        char closing = switch (opening) {
-        case '[' -> ']';
-        case '(' -> ')';
-        case '{' -> '}';
-        case '<' -> '>';
-        default -> opening;
-        };
+    private void copyQQuoted() {
+        char closing = JdbcSqlLexicalRules.qQuoteClosingDelimiter(source, index);
         jdbcSql.append(source, index, index + 3);
         index += 3;
         while (index + 1 < length) {
@@ -279,18 +296,11 @@ final class JdbcSqlMarkerLexer {
      * @return whether a dollar-quoted region was copied
      */
     private boolean copyDollarQuoted() {
-        int delimiterEnd = index + 1;
-        while (delimiterEnd < length && source.charAt(delimiterEnd) != '$') {
-            if (!Character.isJavaIdentifierPart(source.charAt(delimiterEnd))) {
-                return false;
-            }
-            delimiterEnd++;
-        }
-        if (delimiterEnd >= length) {
+        String delimiter = JdbcSqlLexicalRules.dollarDelimiter(source, index);
+        if (delimiter == null) {
             return false;
         }
-        String delimiter = source.substring(index, delimiterEnd + 1);
-        int contentEnd = source.indexOf(delimiter, delimiterEnd + 1);
+        int contentEnd = source.indexOf(delimiter, index + delimiter.length());
         if (contentEnd < 0) {
             throw malformed("Unterminated dollar-quoted string");
         }
@@ -318,7 +328,168 @@ final class JdbcSqlMarkerLexer {
      * @return malformed SQL exception
      */
     private IllegalArgumentException malformed(String message) {
-        return new IllegalArgumentException(message + " near SQL offset " + index);
+        return new IllegalArgumentException(message
+                                                    + " for lexical profile " + profile
+                                                    + " near SQL offset " + index);
+    }
+
+    /**
+     * Immutable lexical policy used to identify and rewrite JDBC bind markers
+     * without parsing database-specific SQL grammar.
+     */
+    private enum JdbcLexicalProfile {
+
+        /**
+         * Portable marker policy used for every generated JDBC repository.
+         * <p>
+         * Brackets and backticks are ordinary punctuation, doubled question
+         * marks are two bind markers, and nested block comments are rejected.
+         * Valid PostgreSQL dollar quotes and Oracle alternative quotes remain
+         * protected because their complete opening delimiters are unambiguous.
+         */
+        PORTABLE(false, false, false, false, true, true);
+
+        private final boolean backtickIdentifiers;
+        private final boolean bracketIdentifiers;
+        private final boolean questionMarkEscape;
+        private final boolean nestedBlockComments;
+        private final boolean dollarQuotedStrings;
+        private final boolean qQuotedStrings;
+
+        JdbcLexicalProfile(boolean backtickIdentifiers,
+                           boolean bracketIdentifiers,
+                           boolean questionMarkEscape,
+                           boolean nestedBlockComments,
+                           boolean dollarQuotedStrings,
+                           boolean qQuotedStrings) {
+            this.backtickIdentifiers = backtickIdentifiers;
+            this.bracketIdentifiers = bracketIdentifiers;
+            this.questionMarkEscape = questionMarkEscape;
+            this.nestedBlockComments = nestedBlockComments;
+            this.dollarQuotedStrings = dollarQuotedStrings;
+            this.qQuotedStrings = qQuotedStrings;
+        }
+
+        private boolean backtickIdentifiers() {
+            return backtickIdentifiers;
+        }
+
+        private boolean bracketIdentifiers() {
+            return bracketIdentifiers;
+        }
+
+        private boolean questionMarkEscape() {
+            return questionMarkEscape;
+        }
+
+        private boolean nestedBlockComments() {
+            return nestedBlockComments;
+        }
+
+        private boolean dollarQuotedStrings() {
+            return dollarQuotedStrings;
+        }
+
+        private boolean qQuotedStrings() {
+            return qQuotedStrings;
+        }
+
+        /**
+         * Tests the portable line-comment delimiter. Requiring conventional
+         * whitespace avoids hiding a MySQL bind in an expression such as
+         * {@code balance--?}.
+         *
+         * @param source SQL source
+         * @param start first dash offset
+         * @return whether the two dashes begin a protected line comment
+         */
+        private boolean lineComment(String source, int start) {
+            // The offset identifies the first dash, so advance past both dashes before examining the next character.
+            int contentStart = start + 2;
+            if (contentStart == source.length()) {
+                return true;
+            }
+            char next = source.charAt(contentStart);
+            return Character.isWhitespace(next) || Character.isISOControl(next);
+        }
+    }
+
+    /**
+     * Lexical delimiter rules used only by this scanner.
+     */
+    private static final class JdbcSqlLexicalRules {
+
+        private JdbcSqlLexicalRules() {
+        }
+
+        /**
+         * Recognizes a PostgreSQL dollar-quote delimiter at a token boundary.
+         *
+         * @param source SQL source
+         * @param start candidate opening dollar index
+         * @return complete delimiter, or {@code null}
+         */
+        private static String dollarDelimiter(String source, int start) {
+            if (start > 0 && identifierContinuation(source.charAt(start - 1))) {
+                return null;
+            }
+            int index = start + 1;
+            if (index >= source.length()) {
+                return null;
+            }
+            char first = source.charAt(index);
+            if (first == '$') {
+                return "$$";
+            }
+            if (!Character.isLetter(first) && first != '_') {
+                return null;
+            }
+            index++;
+            while (index < source.length()) {
+                char current = source.charAt(index);
+                if (current == '$') {
+                    return source.substring(start, index + 1);
+                }
+                if (!Character.isLetterOrDigit(current) && current != '_') {
+                    return null;
+                }
+                index++;
+            }
+            return null;
+        }
+
+        /**
+         * Recognizes a {@code q} quoted string opening delimiter at a token boundary.
+         *
+         * @param source SQL source
+         * @param start candidate {@code q} or {@code Q} offset
+         * @return closing delimiter, or NUL when the candidate is not a valid opener
+         */
+        private static char qQuoteClosingDelimiter(String source, int start) {
+            if (start > 0 && identifierContinuation(source.charAt(start - 1))) {
+                return '\0';
+            }
+            if (start + 2 >= source.length()
+                    || (source.charAt(start) != 'q' && source.charAt(start) != 'Q')
+                    || source.charAt(start + 1) != '\'') {
+                return '\0';
+            }
+            char opening = source.charAt(start + 2);
+            if (opening == '\'' || Character.isWhitespace(opening) || Character.isISOControl(opening)) {
+                return '\0';
+            }
+            return switch (opening) {
+            case '[' -> ']';
+            case '(' -> ')';
+            case '{' -> '}';
+            case '<' -> '>';
+            default -> opening;
+            };
+        }
+
+        private static boolean identifierContinuation(char character) {
+            return Character.isLetterOrDigit(character) || character == '_' || character == '$';
+        }
     }
 
     /**
