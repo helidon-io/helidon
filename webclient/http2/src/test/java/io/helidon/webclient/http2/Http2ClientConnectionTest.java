@@ -331,16 +331,16 @@ class Http2ClientConnectionTest {
     }
 
     @Test
-    void upgradedConnectionClearsSocketReadTimeoutAfterInitialSettings() {
+    void upgradedConnectionClearsSocketReadTimeoutAfterInitialSettings() throws InterruptedException {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             AtomicReference<Duration> socketReadTimeout = new AtomicReference<>(Duration.ofSeconds(30));
-            AtomicReference<Duration> firstHttp2ReadTimeout = new AtomicReference<>();
+            LinkedBlockingQueue<Duration> http2ReadTimeouts = new LinkedBlockingQueue<>();
             doAnswer(invocation -> {
                 socketReadTimeout.set(invocation.getArgument(0));
                 return null;
             }).when(test.clientConnection).readTimeout(any(Duration.class));
             when(test.clientConnection.reader()).thenReturn(DataReader.create(() -> {
-                firstHttp2ReadTimeout.compareAndSet(null, socketReadTimeout.get());
+                http2ReadTimeouts.add(socketReadTimeout.get());
                 return test.nextInboundFrame();
             }));
             test.offerInbound(settingsFrame(10));
@@ -349,7 +349,10 @@ class Http2ClientConnectionTest {
                                                                                      test.clientConnection,
                                                                                      ignored -> { });
 
-            assertThat(firstHttp2ReadTimeout.get(), is(Duration.ofSeconds(30)));
+            assertThat(http2ReadTimeouts.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(Duration.ofSeconds(30)));
+            assertThat(http2ReadTimeouts.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(Duration.ZERO));
             assertThat(socketReadTimeout.get(), is(Duration.ZERO));
             connection.close();
         }
