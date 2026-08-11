@@ -25,7 +25,6 @@ import java.time.ZonedDateTime;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -95,23 +94,9 @@ abstract class StaticContentHandler implements HttpService {
         boolean ifMatchPresent = requestHeaders.contains(HeaderNames.IF_MATCH);
         if (newEtag != null && ifMatchPresent) {
             // Process If-Match header
-            List<String> ifMatches = requestHeaders.values(HeaderNames.IF_MATCH);
-            if (!ifMatches.isEmpty()) {
-                boolean ifMatchChecked = false;
-                for (String ifMatch : ifMatches) {
-                    ifMatch = ifMatch.trim();
-                    boolean wildcard = "*".equals(ifMatch);
-                    boolean weak = ifMatch.startsWith("W/") || ifMatch.startsWith("w/");
-                    ifMatch = unquoteETag(ifMatch);
-                    if (wildcard || (!weak && ifMatch.equals(etag))) {
-                        ifMatchChecked = true;
-                        break;
-                    }
-                }
-                if (!ifMatchChecked) {
-                    throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true)
-                            .header(newEtag);
-                }
+            if (!matchesEntityTag(requestHeaders.get(HeaderNames.IF_MATCH), etag, true)) {
+                throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true)
+                        .header(newEtag);
             }
         }
 
@@ -133,16 +118,10 @@ abstract class StaticContentHandler implements HttpService {
         // Process If-None-Match header
         boolean ifNoneMatchPresent = requestHeaders.contains(HeaderNames.IF_NONE_MATCH);
         if (newEtag != null && ifNoneMatchPresent) {
-            List<String> ifNoneMatches = requestHeaders.values(HeaderNames.IF_NONE_MATCH);
-            for (String ifNoneMatch : ifNoneMatches) {
-                ifNoneMatch = ifNoneMatch.trim();
-                boolean wildcard = "*".equals(ifNoneMatch);
-                ifNoneMatch = unquoteETag(ifNoneMatch);
-                if (wildcard || ifNoneMatch.equals(etag)) {
-                    // using exception to handle normal flow (same as in reactive static content)
-                    throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true)
-                            .header(newEtag);
-                }
+            if (matchesEntityTag(requestHeaders.get(HeaderNames.IF_NONE_MATCH), etag, false)) {
+                // using exception to handle normal flow (same as in reactive static content)
+                throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true)
+                        .header(newEtag);
             }
         }
 
@@ -153,6 +132,79 @@ abstract class StaticContentHandler implements HttpService {
                 throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
             }
         }
+    }
+
+    private static boolean matchesEntityTag(Header header, String etag, boolean strongComparison) {
+        for (String fieldValue : header.allValues()) {
+            int tokenStart = 0;
+            int fieldLength = fieldValue.length();
+            while (tokenStart <= fieldLength) {
+                int start = tokenStart;
+                while (start < fieldLength && fieldValue.charAt(start) <= ' ') {
+                    start++;
+                }
+
+                boolean weak = fieldLength - start >= 2
+                        && (fieldValue.charAt(start) == 'W' || fieldValue.charAt(start) == 'w')
+                        && fieldValue.charAt(start + 1) == '/';
+                int entityStart = weak ? start + 2 : start;
+                if (entityStart < fieldLength && fieldValue.charAt(entityStart) == '"') {
+                    int entityEnd = fieldValue.indexOf('"', entityStart + 1);
+                    if (entityEnd < 0) {
+                        if (fieldLength - entityStart == 1) {
+                            // Preserve the existing malformed-tag failure until invalid entity tags are handled separately.
+                            unquoteETag(fieldValue.substring(entityStart));
+                        }
+                        break;
+                    }
+
+                    int separator = entityEnd + 1;
+                    while (separator < fieldLength && fieldValue.charAt(separator) <= ' ') {
+                        separator++;
+                    }
+                    if (separator == fieldLength || fieldValue.charAt(separator) == ',') {
+                        int length = entityEnd - entityStart - 1;
+                        if ((!strongComparison || !weak)
+                                && length == etag.length()
+                                && fieldValue.regionMatches(entityStart + 1, etag, 0, length)) {
+                            return true;
+                        }
+                    } else {
+                        separator = fieldValue.indexOf(',', separator);
+                        if (separator < 0) {
+                            break;
+                        }
+                    }
+                    if (separator == fieldLength) {
+                        break;
+                    }
+                    tokenStart = separator + 1;
+                } else {
+                    int separator = fieldValue.indexOf(',', start);
+                    int end = separator < 0 ? fieldLength : separator;
+                    while (start < end && fieldValue.charAt(end - 1) <= ' ') {
+                        end--;
+                    }
+                    if (end - start == 1 && fieldValue.charAt(start) == '*') {
+                        return true;
+                    }
+                    if (weak) {
+                        start += 2;
+                    }
+                    int length = end - start;
+                    if ((!strongComparison || !weak)
+                            && length == etag.length()
+                            && fieldValue.regionMatches(start, etag, 0, length)) {
+                        return true;
+                    }
+                    if (separator < 0) {
+                        break;
+                    }
+                    tokenStart = separator + 1;
+                }
+            }
+        }
+        return false;
     }
 
     private static Optional<Instant> conditionalDate(Supplier<Optional<ZonedDateTime>> dateSupplier) {

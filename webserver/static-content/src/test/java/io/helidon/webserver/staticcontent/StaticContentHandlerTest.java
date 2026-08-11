@@ -22,7 +22,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -69,7 +68,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
-        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "\"ccc\"", "\"ddd\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processPreconditions("aaa", null, req, res);
         verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
@@ -80,7 +79,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
-        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("\"ccc\"", "W/\"aaa\""));
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "\"ccc\"", " W/\"aaa\" "));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processPreconditions("aaa", null, req, res),
                             Status.NOT_MODIFIED_304);
@@ -92,7 +91,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
-        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("*"));
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, " * "));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processPreconditions("aaa", null, req, res),
                             Status.NOT_MODIFIED_304);
@@ -104,7 +103,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
-        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("\"*\""));
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, " \"*\" "));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processPreconditions("aaa", null, req, res);
         verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
@@ -115,7 +114,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
-        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("W/\"*\""));
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, " W/\"*\" "));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processPreconditions("aaa", null, req, res);
         verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
@@ -126,7 +125,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.values(IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"ddd\""));
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "\"ccc\"", "\"ddd\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processPreconditions("aaa", null, req, res),
                             Status.PRECONDITION_FAILED_412);
@@ -138,7 +137,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.values(IF_MATCH)).thenReturn(List.of("\"ccc\"", "\"aaa\""));
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "\"ccc\"", " \"aaa\" "));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processPreconditions("aaa", null, req, res);
         verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
@@ -149,7 +148,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.values(IF_MATCH)).thenReturn(List.of("W/\"aaa\""));
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, " W/\"aaa\" "));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processPreconditions("aaa", null, req, res),
                             Status.PRECONDITION_FAILED_412);
@@ -161,7 +160,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.values(IF_MATCH)).thenReturn(List.of("W/\"*\""));
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, " W/\"*\" "));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processPreconditions("aaa", null, req, res),
                             Status.PRECONDITION_FAILED_412);
@@ -172,9 +171,9 @@ class StaticContentHandlerTest {
     void etag_IfMatchTakesPrecedenceOverIfNoneMatch() {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
-        when(req.values(IF_NONE_MATCH)).thenReturn(List.of("\"aaa\""));
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "\"aaa\""));
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.values(IF_MATCH)).thenReturn(List.of("W/\"aaa\""));
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "W/\"aaa\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processPreconditions("aaa", null, req, res),
                             Status.PRECONDITION_FAILED_412);
@@ -186,7 +185,7 @@ class StaticContentHandlerTest {
         ZonedDateTime modified = ZonedDateTime.now();
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.values(IF_MATCH)).thenReturn(List.of(ETAG_VALUE));
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, ETAG_VALUE));
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         Mockito.doReturn(Optional.of(modified.minusSeconds(60))).when(req).ifUnmodifiedSince();
         Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
@@ -201,7 +200,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_MATCH)).thenReturn(false);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
-        when(req.values(IF_NONE_MATCH)).thenReturn(List.of(ETAG_VALUE));
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, ETAG_VALUE));
         Mockito.doReturn(Optional.of(modified.minusSeconds(60))).when(req).ifUnmodifiedSince();
         Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
