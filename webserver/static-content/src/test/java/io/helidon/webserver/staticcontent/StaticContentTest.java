@@ -165,6 +165,18 @@ class StaticContentTest {
     }
 
     @Test
+    void testIfNoneMatchTakesPrecedenceOverIfModifiedSince() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_NONE_MATCH, "\"different\"")
+                .header(HeaderNames.IF_MODIFIED_SINCE, "Wed, 21 Oct 2099 07:28:00 GMT")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
     void testFileSystemSymlinkOutsideRoot() throws Exception {
         Path link = staticRoot.resolve("external");
         assumeTrue(createSymbolicLink(link, externalDir), "Symbolic links cannot be created");

@@ -90,6 +90,27 @@ abstract class StaticContentHandler implements HttpService {
         // Put ETag into the response
         responseHeaders.set(newEtag);
 
+        if (requestHeaders.contains(HeaderNames.IF_MATCH)) {
+            // Process If-Match header
+            List<String> ifMatches = requestHeaders.get(HeaderNames.IF_MATCH).allValues();
+            if (!ifMatches.isEmpty()) {
+                boolean ifMatchChecked = false;
+                for (String ifMatch : ifMatches) {
+                    boolean wildcard = "*".equals(ifMatch);
+                    boolean weak = ifMatch.startsWith("W/") || ifMatch.startsWith("w/");
+                    ifMatch = unquoteETag(ifMatch);
+                    if (wildcard || (!weak && ifMatch.equals(etag))) {
+                        ifMatchChecked = true;
+                        break;
+                    }
+                }
+                if (!ifMatchChecked) {
+                    throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true)
+                            .header(newEtag);
+                }
+            }
+        }
+
         // Process If-None-Match header
         if (requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
             List<String> ifNoneMatches = requestHeaders.get(HeaderNames.IF_NONE_MATCH).allValues();
@@ -98,25 +119,6 @@ abstract class StaticContentHandler implements HttpService {
                 if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
                     // using exception to handle normal flow (same as in reactive static content)
                     throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true)
-                            .header(newEtag);
-                }
-            }
-        }
-
-        if (requestHeaders.contains(HeaderNames.IF_MATCH)) {
-            // Process If-Match header
-            List<String> ifMatches = requestHeaders.get(HeaderNames.IF_MATCH).allValues();
-            if (!ifMatches.isEmpty()) {
-                boolean ifMatchChecked = false;
-                for (String ifMatch : ifMatches) {
-                    ifMatch = unquoteETag(ifMatch);
-                    if ("*".equals(ifMatch) || ifMatch.equals(etag)) {
-                        ifMatchChecked = true;
-                        break;
-                    }
-                }
-                if (!ifMatchChecked) {
-                    throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true)
                             .header(newEtag);
                 }
             }
@@ -134,11 +136,13 @@ abstract class StaticContentHandler implements HttpService {
         // Last-Modified
         setModified.accept(responseHeaders, modified);
         // If-Modified-Since
-        Optional<Instant> ifModSince = requestHeaders
-                .ifModifiedSince()
-                .map(ChronoZonedDateTime::toInstant);
-        if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
-            throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
+        if (!requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
+            Optional<Instant> ifModSince = requestHeaders
+                    .ifModifiedSince()
+                    .map(ChronoZonedDateTime::toInstant);
+            if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
+                throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
+            }
         }
         // If-Unmodified-Since
         Optional<Instant> ifUnmodSince = requestHeaders

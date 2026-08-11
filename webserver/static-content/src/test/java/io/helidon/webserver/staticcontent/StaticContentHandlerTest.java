@@ -108,6 +108,40 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void etag_WeakInMatch_NotAccept() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_NONE_MATCH)).thenReturn(false);
+        when(req.contains(IF_MATCH)).thenReturn(true);
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "W/\"aaa\""));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Status.PRECONDITION_FAILED_412);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
+    }
+
+    @Test
+    void etag_WeakQuotedWildcardInMatch_NotAccept() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_NONE_MATCH)).thenReturn(false);
+        when(req.contains(IF_MATCH)).thenReturn(true);
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "W/\"*\""));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Status.PRECONDITION_FAILED_412);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
+    }
+
+    @Test
+    void etag_IfMatchTakesPrecedenceOverIfNoneMatch() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_NONE_MATCH)).thenReturn(true);
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "\"aaa\""));
+        when(req.contains(IF_MATCH)).thenReturn(true);
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "W/\"aaa\""));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Status.PRECONDITION_FAILED_412);
+        verify(res).set(HeaderValues.create(ETAG, true, false, ETAG_VALUE));
+    }
+
+    @Test
     void ifModifySince_Accept() {
         ZonedDateTime modified = ZonedDateTime.now();
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
