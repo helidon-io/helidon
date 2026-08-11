@@ -725,6 +725,8 @@ class OpenApiDocumentComposerTest {
 
     @Test
     void generatedDocumentRenamesCollidingSchemasAndReferences() {
+        String nestedItemRef = "#/components/schemas/Item/properties/a~1b/$defs/m~0n";
+        String renamedNestedItemRef = "#/components/schemas/Item2/properties/a~1b/$defs/m~0n";
         OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
                                                     RawOpenApiVersion.OPEN_API_32);
         JsonObject literalDiscriminator = JsonObject.builder()
@@ -764,8 +766,7 @@ class OpenApiDocumentComposerTest {
                                                                   .build())
                                                      .set("nestedItem",
                                                           JsonObject.builder()
-                                                                  .set("$ref",
-                                                                       "#/components/schemas/Item/properties/a~1b/$defs/m~0n")
+                                                                  .set("$ref", nestedItemRef)
                                                                   .build())
                                                      .set("dynamicItem",
                                                           JsonObject.builder()
@@ -773,8 +774,7 @@ class OpenApiDocumentComposerTest {
                                                                   .build())
                                                      .set("dynamicNestedItem",
                                                           JsonObject.builder()
-                                                                  .set("$dynamicRef",
-                                                                       "#/components/schemas/Item/properties/a~1b/$defs/m~0n")
+                                                                  .set("$dynamicRef", nestedItemRef)
                                                                   .build())
                                                      .set("dynamicAnchor",
                                                           JsonObject.builder()
@@ -787,8 +787,7 @@ class OpenApiDocumentComposerTest {
                                                      .set("embeddedResource",
                                                           JsonObject.builder()
                                                                   .set("$id", "embedded.json")
-                                                                  .set("$ref",
-                                                                       "#/components/schemas/Item/properties/a~1b/$defs/m~0n")
+                                                                  .set("$ref", nestedItemRef)
                                                                   .set("$dynamicRef", "#/components/schemas/Item")
                                                                   .set("properties",
                                                                        JsonObject.builder()
@@ -799,8 +798,7 @@ class OpenApiDocumentComposerTest {
                                                                                             .build())
                                                                                .set("nestedRef",
                                                                                     JsonObject.builder()
-                                                                                            .set("$ref",
-                                                                                                 "#/components/schemas/Item/properties/a~1b/$defs/m~0n")
+                                                                                            .set("$ref", nestedItemRef)
                                                                                             .build())
                                                                                .build())
                                                                   .set("discriminator",
@@ -809,11 +807,11 @@ class OpenApiDocumentComposerTest {
                                                                                .set("mapping",
                                                                                     JsonObject.builder()
                                                                                             .set("byRef",
-                                                                                                 "#/components/schemas/Item/properties/a~1b/$defs/m~0n")
+                                                                                                 nestedItemRef)
                                                                                             .set("byName", "Item")
                                                                                             .build())
                                                                                .set("defaultMapping",
-                                                                                    "#/components/schemas/Item/properties/a~1b/$defs/m~0n")
+                                                                                    nestedItemRef)
                                                                                .build())
                                                                   .build())
                                                      .set("example",
@@ -908,28 +906,28 @@ class OpenApiDocumentComposerTest {
         assertThat(map(schemas, "Item2").get("type"), is("integer"));
         assertThat(map(properties, "item").get("$ref"), is("#/components/schemas/Item2"));
         assertThat(map(properties, "nestedItem").get("$ref"),
-                   is("#/components/schemas/Item2/properties/a~1b/$defs/m~0n"));
+                   is(renamedNestedItemRef));
         assertThat(map(properties, "dynamicItem").get("$dynamicRef"), is("#/components/schemas/Item2"));
         assertThat(map(properties, "dynamicNestedItem").get("$dynamicRef"),
-                   is("#/components/schemas/Item2/properties/a~1b/$defs/m~0n"));
+                   is(renamedNestedItemRef));
         assertThat(map(properties, "dynamicAnchor").get("$dynamicRef"), is("#item"));
         assertThat(map(properties, "dynamicExternal").get("$dynamicRef"),
                    is("https://example.com/schemas/Item"));
         Map<String, Object> embeddedResource = map(properties, "embeddedResource");
         assertThat(embeddedResource.get("$ref"),
-                   is("#/components/schemas/Item/properties/a~1b/$defs/m~0n"));
+                   is(nestedItemRef));
         assertThat(embeddedResource.get("$dynamicRef"), is("#/components/schemas/Item"));
         assertThat(map(map(embeddedResource, "properties"), "nested").get("$dynamicRef"),
                    is("#/components/schemas/Item"));
         assertThat(map(map(embeddedResource, "properties"), "nestedRef").get("$ref"),
-                   is("#/components/schemas/Item/properties/a~1b/$defs/m~0n"));
+                   is(nestedItemRef));
         Map<String, Object> embeddedDiscriminator = map(embeddedResource, "discriminator");
         Map<String, Object> embeddedMapping = map(embeddedDiscriminator, "mapping");
         assertThat(embeddedMapping.get("byRef"),
-                   is("#/components/schemas/Item/properties/a~1b/$defs/m~0n"));
+                   is(nestedItemRef));
         assertThat(embeddedMapping.get("byName"), is("Item2"));
         assertThat(embeddedDiscriminator.get("defaultMapping"),
-                   is("#/components/schemas/Item/properties/a~1b/$defs/m~0n"));
+                   is(nestedItemRef));
         assertThat(map(schemas, "CustomDialect").get("$dynamicRef"), is("#/components/schemas/Item"));
         assertThat(map(schemas, "Draft2020Dialect").get("$dynamicRef"),
                    is("#/components/schemas/Item2"));
