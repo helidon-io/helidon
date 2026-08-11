@@ -75,7 +75,7 @@
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
         <version.lib.microprofile-cdi-tck>4.0.13</version.lib.microprofile-cdi-tck>
         <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
-        <version.lib.jsoup>1.15.3</version.lib.jsoup>
+        <version.lib.jsoup>1.23.1</version.lib.jsoup>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.mockito>2.23.4</version.lib.mockito>
