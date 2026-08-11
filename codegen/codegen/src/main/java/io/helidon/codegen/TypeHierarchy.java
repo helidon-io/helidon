@@ -196,6 +196,10 @@ public final class TypeHierarchy {
                                                                        TypeInfo type,
                                                                        TypedElementInfo method,
                                                                        TypeName annotationType) {
+        Objects.requireNonNull(ctx, "ctx is null");
+        Objects.requireNonNull(type, "type is null");
+        Objects.requireNonNull(method, "method is null");
+        Objects.requireNonNull(annotationType, "annotationType is null");
         if (method.kind() != ElementKind.METHOD) {
             throw new CodegenException("Only method elements have hierarchy annotation candidates: " + method.kind());
         }
