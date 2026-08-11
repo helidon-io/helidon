@@ -37,6 +37,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriAuthority;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -793,7 +794,7 @@ class GrpcProtocolHandlerTest {
             }
 
             @Override
-            public AuthorityCheck checkAuthority(String authority) {
+            public AuthorityCheck checkAuthority(UriAuthority authority) {
                 return AuthorityCheck.ALLOWED;
             }
         };

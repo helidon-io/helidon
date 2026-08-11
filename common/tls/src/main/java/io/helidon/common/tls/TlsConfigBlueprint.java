@@ -35,8 +35,11 @@ import io.helidon.common.tls.spi.TlsManagerProvider;
 @Prototype.CustomMethods(TlsConfigSupport.CustomMethods.class)
 interface TlsConfigBlueprint extends TlsMaterialBlueprint, Prototype.Factory<Tls> {
     /**
-     * Provide a fully configured {@link javax.net.ssl.SSLContext}. If defined, context related configuration
-     * is ignored, and reload of Tls is not supported, and will throw an exception.
+     * Provide a fully configured {@link javax.net.ssl.SSLContext}. If defined, a custom TLS manager and options for
+     * context creation, key or trust material, session cache size, and session timeout cannot be configured, and reload
+     * of Tls is not supported and will throw an exception.
+     * Engine-level options such as enabled protocols, cipher suites, client authentication, and application protocols
+     * are supported and are applied to engines created by the context.
      *
      * @return SSL context to use
      */

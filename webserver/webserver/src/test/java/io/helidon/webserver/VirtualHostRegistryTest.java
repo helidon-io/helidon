@@ -16,10 +16,12 @@
 
 package io.helidon.webserver;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
+import io.helidon.common.uri.UriAuthority;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,6 +35,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class VirtualHostRegistryTest {
+    private static final String DNS_LABEL_63 = "a".repeat(63);
+    private static final String DNS_LABEL_64 = "a".repeat(64);
+    private static final String TOO_LONG_DNS_NAME = DNS_LABEL_63 + "."
+            + DNS_LABEL_63 + "."
+            + DNS_LABEL_63 + "."
+            + "a".repeat(62);
     private static final String SOCKET_NAME = "test";
     private static final Tls TLS = Tls.builder()
             .trustAll(true)
@@ -85,14 +93,42 @@ class VirtualHostRegistryTest {
     void exactHostWinsOverWildcardAndAuthorityMustMatchPresentedSni() {
         VirtualHostRegistry registry = registry("api.example.com", "*.example.com");
 
-        VirtualHostRegistry.Selection selection = registry.select("api.example.com");
+        ListenerTlsContext.Selection selection = registry.select("api.example.com");
 
         assertThat(selection.tls(), is(TLS));
         assertThat(selection.sniContext().matchType(), is(SniMatchType.EXACT));
         assertThat(selection.sniContext().matchedHost(), is(Optional.of("api.example.com")));
-        assertThat(selection.sniContext().checkAuthority("api.example.com"), is(SniContext.AuthorityCheck.ALLOWED));
-        assertThat(selection.sniContext().checkAuthority("admin.example.com"),
+        assertThat(selection.sniContext().checkAuthority(UriAuthority.create("api.example.com")),
+                   is(SniContext.AuthorityCheck.ALLOWED));
+        assertThat(selection.sniContext().checkAuthority(UriAuthority.create("admin.example.com")),
                    is(SniContext.AuthorityCheck.AUTHORITY_MISMATCH));
+    }
+
+    @Test
+    void selectNormalizesRawPresentedSni() {
+        VirtualHostRegistry registry = registry("api.example.com");
+
+        SniContext context = registry.select("Api.Example.COM").sniContext();
+
+        assertThat(context.presentedHost(), is(Optional.of("api.example.com")));
+        assertThat(context.matchedHost(), is(Optional.of("api.example.com")));
+        assertThat(context.matchType(), is(SniMatchType.EXACT));
+        assertThat(context.checkAuthority(UriAuthority.create("API.EXAMPLE.COM")),
+                   is(SniContext.AuthorityCheck.ALLOWED));
+    }
+
+    @Test
+    void selectRejectsInvalidRawPresentedSni() {
+        VirtualHostRegistry registry = registry("api.example.com");
+
+        for (String host : List.of("",
+                                   "api.example.com.",
+                                   TOO_LONG_DNS_NAME,
+                                   DNS_LABEL_64,
+                                   "127.0.0.1",
+                                   "api.ex\u00e4mple.com")) {
+            assertThrows(IllegalArgumentException.class, () -> registry.select(host), host);
+        }
     }
 
     @Test
@@ -115,9 +151,12 @@ class VirtualHostRegistryTest {
         SniContext context = registry.selectWithoutSni().sniContext();
 
         assertThat(context.matchType(), is(SniMatchType.FALLBACK_MISSING));
-        assertThat(context.checkAuthority("api.example.com"), is(SniContext.AuthorityCheck.FALLBACK_AUTHORITY));
-        assertThat(context.checkAuthority("admin.example.org"), is(SniContext.AuthorityCheck.FALLBACK_AUTHORITY));
-        assertThat(context.checkAuthority("other.example.net"), is(SniContext.AuthorityCheck.ALLOWED));
+        assertThat(context.checkAuthority(UriAuthority.create("api.example.com")),
+                   is(SniContext.AuthorityCheck.FALLBACK_AUTHORITY));
+        assertThat(context.checkAuthority(UriAuthority.create("admin.example.org")),
+                   is(SniContext.AuthorityCheck.FALLBACK_AUTHORITY));
+        assertThat(context.checkAuthority(UriAuthority.create("other.example.net")),
+                   is(SniContext.AuthorityCheck.ALLOWED));
     }
 
     @Test
@@ -125,8 +164,10 @@ class VirtualHostRegistryTest {
         VirtualHostRegistry registry = registry("api.example.com");
         SniContext context = registry.select("unmatched.example.com").sniContext();
 
-        assertThat(context.checkAuthority("unmatched.example.com"), is(SniContext.AuthorityCheck.ALLOWED));
-        assertThat(context.checkAuthority("other.example.com"), is(SniContext.AuthorityCheck.AUTHORITY_MISMATCH));
+        assertThat(context.checkAuthority(UriAuthority.create("unmatched.example.com")),
+                   is(SniContext.AuthorityCheck.ALLOWED));
+        assertThat(context.checkAuthority(UriAuthority.create("other.example.com")),
+                   is(SniContext.AuthorityCheck.AUTHORITY_MISMATCH));
     }
 
     @Test
@@ -150,10 +191,10 @@ class VirtualHostRegistryTest {
                 .build();
         VirtualHostRegistry registry = VirtualHostRegistry.create(SOCKET_NAME, listener, TLS);
 
-        VirtualHostRegistry.RejectedSniException missing =
-                assertThrows(VirtualHostRegistry.RejectedSniException.class, registry::selectWithoutSni);
-        VirtualHostRegistry.RejectedSniException unmatched =
-                assertThrows(VirtualHostRegistry.RejectedSniException.class,
+        ListenerTlsContext.RejectedSniException missing =
+                assertThrows(ListenerTlsContext.RejectedSniException.class, registry::selectWithoutSni);
+        ListenerTlsContext.RejectedSniException unmatched =
+                assertThrows(ListenerTlsContext.RejectedSniException.class,
                              () -> registry.select("other.example.com"));
 
         assertThat(missing.sendUnrecognizedNameAlert(), is(false));

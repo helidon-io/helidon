@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -71,5 +73,57 @@ class Http1PrologueTest {
             assertThat(e.safeMessage(), is(true));
             assertThat(e.getMessage(), containsString("HTTP 1.0 is not supported"));
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "example.com:443",
+            "service+name:443",
+            "service%2Dname:443",
+            "192.0.2.10:8443",
+            "[2001:db8::1]:9443",
+            "[v1.fe80]:443",
+            "[Vf.foo-bar]:443"
+    })
+    void testConnectAuthorityForm(String authority) {
+        DataReader reader = DataReader.create(() -> ("CONNECT " + authority + " HTTP/1.1\r\n")
+                .getBytes(StandardCharsets.US_ASCII));
+
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method(), is(Method.CONNECT));
+        assertThat(prologue.uriPath().rawPath(), is(authority));
+        assertThat(prologue.uriPath().path(), is(""));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "example.com",
+            ":443",
+            "user@example.com:443",
+            "http://example.com:443",
+            "example.com:443?query=value",
+            "example.com:443#fragment",
+            "service/name:443",
+            "service%2Gname:443",
+            "[2001:db8::1]",
+            "[1:2:3]:443",
+            "[1.2.3.4]:443",
+            "[v1.]:443",
+            "[vG.fe80]:443",
+            "[v1.fe80]x:443",
+            "2001:db8::1:443",
+            "example.com:not-a-port",
+            "example.com:65536"
+    })
+    void testInvalidConnectAuthorityForm(String authority) {
+        DataReader reader = DataReader.create(() -> ("CONNECT " + authority + " HTTP/1.1\r\n")
+                .getBytes(StandardCharsets.US_ASCII));
+
+        RequestException exception = assertThrows(RequestException.class,
+                                                  () -> new Http1Prologue(reader, 100, true).readPrologue());
+
+        assertThat(exception.status(), is(Status.BAD_REQUEST_400));
+        assertThat(exception.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
     }
 }

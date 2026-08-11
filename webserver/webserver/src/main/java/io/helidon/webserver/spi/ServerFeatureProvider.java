@@ -36,10 +36,12 @@ import io.helidon.config.ConfiguredProvider;
  * </ol>
  * The following weights are used by features of Helidon:
  * <ul>
+ *     <li>Concurrency limits: 2000</li>
  *     <li>Context: 1100</li>
+ *     <li>Stuck thread detection: 1050</li>
  *     <li>Access Log: 1000</li>
  *     <li>Tracing: 900</li>
- *     <li>CORS: 950</li>
+ *     <li>CORS: 850</li>
  *     <li>Security: 800</li>
  *     <li>User routing (all handlers): 100</li>
  *     <li>OpenAPI: 90</li>

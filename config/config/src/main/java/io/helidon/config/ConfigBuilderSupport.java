@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -25,7 +26,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.builder.api.Option.Provider.ConfigForm;
+import io.helidon.builder.api.Option.Provider.Identity;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.service.registry.ServiceRegistry;
 
@@ -43,6 +47,24 @@ public final class ConfigBuilderSupport {
     private static final Pattern PATTERN_BACKSLASH = Pattern.compile(REGEX_BACKSLASH);
 
     private ConfigBuilderSupport() {
+    }
+
+    /**
+     * Validate the configured provider container before generated builder code maps or discovers provider values.
+     *
+     * @param config     configuration located at the parent of the provider option
+     * @param configKey  configuration key of the provider option
+     * @param identity   configured provider identity
+     * @param configForm configured provider outer container form
+     */
+    @Api.Internal
+    public static void validateProviderConfig(Config config,
+                                              String configKey,
+                                              Identity identity,
+                                              ConfigForm configForm) {
+        ProvidedUtil.validateProviderConfig(config.get(configKey),
+                                            Objects.requireNonNull(identity),
+                                            Objects.requireNonNull(configForm));
     }
 
     /**
@@ -77,7 +99,46 @@ public final class ConfigBuilderSupport {
                                              serviceRegistry,
                                              providerType,
                                              configType,
-                                             allFromRegistry,
+                                             ProviderSettings.create(Identity.TYPE_AND_NAME,
+                                                                     ConfigForm.AUTO,
+                                                                     allFromRegistry),
+                                             existingValues);
+    }
+
+    /**
+     * Used by generated configured builders to discover services from
+     * {@link io.helidon.service.registry.ServiceRegistry} after the configured provider identity and outer container
+     * form have been validated.
+     *
+     * @param config           configuration of the option
+     * @param configKey        configuration key associated with this option
+     * @param serviceRegistry  service registry instance
+     * @param providerType     type of the service provider (contract)
+     * @param configType       type of the configuration
+     * @param settings         provider identity, outer container form, and discovery settings
+     * @param existingValues   values explicitly configured by the user
+     * @param <S>              type of the service
+     * @param <T>              type of the service provider (contract)
+     * @return user instances augmented with instances from the registry
+     */
+    @Api.Internal
+    public static <
+            S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S> discoverServices(
+            Config config,
+            String configKey,
+            Optional<ServiceRegistry> serviceRegistry,
+            Class<T> providerType,
+            Class<S> configType,
+            ProviderSettings settings,
+            List<S> existingValues) {
+
+        return ProvidedUtil.discoverServices(config,
+                                             configKey,
+                                             serviceRegistry,
+                                             providerType,
+                                             configType,
+                                             Objects.requireNonNull(settings).withoutConfigValidation(),
                                              existingValues);
     }
 
@@ -113,7 +174,46 @@ public final class ConfigBuilderSupport {
                                             serviceRegistry,
                                             providerType,
                                             configType,
-                                            discoverServices,
+                                            ProviderSettings.create(Identity.TYPE_AND_NAME,
+                                                                    ConfigForm.AUTO,
+                                                                    discoverServices),
+                                            existingValue);
+    }
+
+    /**
+     * Used by generated configured builders to discover one service from
+     * {@link io.helidon.service.registry.ServiceRegistry}, validating the configured provider identity and outer
+     * container form when configuration is consulted.
+     *
+     * @param config           configuration of the option
+     * @param configKey        configuration key associated with this option
+     * @param serviceRegistry  service registry instance
+     * @param providerType     type of the service provider (contract)
+     * @param configType       type of the configuration
+     * @param settings         provider identity, outer container form, and discovery settings
+     * @param existingValue    value explicitly configured by the user
+     * @param <S>              type of the service
+     * @param <T>              type of the service provider (contract)
+     * @return the configured or discovered service, if available
+     */
+    @Api.Internal
+    public static <
+            S extends NamedService,
+            T extends ConfiguredProvider<S>> Optional<S> discoverService(
+            Config config,
+            String configKey,
+            Optional<ServiceRegistry> serviceRegistry,
+            Class<T> providerType,
+            Class<S> configType,
+            ProviderSettings settings,
+            Optional<S> existingValue) {
+
+        return ProvidedUtil.discoverService(config,
+                                            configKey,
+                                            serviceRegistry,
+                                            providerType,
+                                            configType,
+                                            Objects.requireNonNull(settings),
                                             existingValue);
     }
 
@@ -150,7 +250,43 @@ public final class ConfigBuilderSupport {
                                              HelidonServiceLoader.create(providerType),
                                              providerType,
                                              configType,
-                                             allFromServiceLoader,
+                                             ProviderSettings.create(Identity.TYPE_AND_NAME,
+                                                                     ConfigForm.AUTO,
+                                                                     allFromServiceLoader),
+                                             existingInstances);
+    }
+
+    /**
+     * Used by generated configured builders to discover services using {@link java.util.ServiceLoader} after the
+     * configured provider identity and outer container form have been validated.
+     *
+     * @param config               configuration located at the parent node of the service providers
+     * @param configKey            configuration key of the provider collection
+     * @param providerType         service provider interface used for discovery
+     * @param configType           configured service type
+     * @param settings             provider identity, outer container form, and discovery settings
+     * @param existingInstances    explicitly configured instances
+     * @param <S>                  type of the expected service
+     * @param <T>                  type of the service provider
+     * @return discovered services ordered by weight
+     */
+    @Api.Internal
+    public static <
+            S extends NamedService,
+            T extends ConfiguredProvider<S>> List<S> discoverServices(
+            Config config,
+            String configKey,
+            Class<T> providerType,
+            Class<S> configType,
+            ProviderSettings settings,
+            List<S> existingInstances) {
+
+        return ProvidedUtil.discoverServices(config,
+                                             configKey,
+                                             HelidonServiceLoader.create(providerType),
+                                             providerType,
+                                             configType,
+                                             Objects.requireNonNull(settings).withoutConfigValidation(),
                                              existingInstances);
     }
 
@@ -187,29 +323,44 @@ public final class ConfigBuilderSupport {
                                             HelidonServiceLoader.create(providerType),
                                             providerType,
                                             configType,
-                                            allFromServiceLoader,
+                                            ProviderSettings.create(Identity.TYPE_AND_NAME,
+                                                                    ConfigForm.AUTO,
+                                                                    allFromServiceLoader),
                                             existingValue);
     }
 
     /**
-     * Extension of {@link io.helidon.builder.api.Prototype.Builder} that supports configuration.
-     * If a blueprint is marked as {@code @Configured}, build will accept configuration.
+     * Used by generated configured builders to discover one service using {@link java.util.ServiceLoader}, validating
+     * the configured provider identity and outer container form when configuration is consulted.
      *
-     * @param <BUILDER>   type of the builder
-     * @param <PROTOTYPE> type of the prototype to be built
+     * @param config               configuration located at the parent node of the service provider
+     * @param configKey            configuration key of the provider collection
+     * @param providerType         service provider interface used for discovery
+     * @param configType           configured service type
+     * @param settings             provider identity, outer container form, and discovery settings
+     * @param existingValue        explicitly configured value
+     * @param <S>                  type of the expected service
+     * @param <T>                  type of the service provider
+     * @return the configured or discovered service, if available
      */
-    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Prototype.Builder<BUILDER, PROTOTYPE> {
-        /**
-         * Update builder from configuration.
-         * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,
-         * it will override current value for that option on this builder.
-         * Options that do not exist in the provided config will not impact current values.
-         * The config instance is kept and may be used in builder decorator, it is not available in prototype implementation.
-         *
-         * @param config configuration to use
-         * @return updated builder instance
-         */
-        BUILDER config(Config config);
+    @Api.Internal
+    public static <
+            S extends NamedService,
+            T extends ConfiguredProvider<S>> Optional<S> discoverService(
+            Config config,
+            String configKey,
+            Class<T> providerType,
+            Class<S> configType,
+            ProviderSettings settings,
+            Optional<S> existingValue) {
+
+        return ProvidedUtil.discoverService(config,
+                                            configKey,
+                                            HelidonServiceLoader.create(providerType),
+                                            providerType,
+                                            configType,
+                                            Objects.requireNonNull(settings),
+                                            existingValue);
     }
 
     /**
@@ -305,5 +456,113 @@ public final class ConfigBuilderSupport {
         } catch (ConfigException e) {
             throw new ConfigException("Failed to resolve expression: " + expression, e);
         }
+    }
+
+    /**
+     * Provider discovery settings used by generated configured builders.
+     * <p>
+     * Provider identity and configuration form are independent. Identity determines how configured provider
+     * instances are distinguished, while configuration form determines only the permitted outer configuration
+     * container. Service discovery controls whether providers without an explicit configuration entry are included.
+     */
+    @Api.Internal
+    public static final class ProviderSettings {
+        private final Identity identity;
+        private final ConfigForm configForm;
+        private final boolean discoverServices;
+        private final boolean validateConfig;
+
+        private ProviderSettings(Identity identity,
+                                 ConfigForm configForm,
+                                 boolean discoverServices,
+                                 boolean validateConfig) {
+            this.identity = identity;
+            this.configForm = configForm;
+            this.discoverServices = discoverServices;
+            this.validateConfig = validateConfig;
+        }
+
+        /**
+         * Create provider discovery settings for generated configured builders.
+         *
+         * @param identity provider identity policy; determines whether provider instances are identified only by type,
+         *                 or by both type and name
+         * @param configForm permitted outer configuration container form; independent of the provider identity policy
+         * @param discoverServices whether providers without an explicit configuration entry should be discovered
+         * @return provider discovery settings
+         */
+        public static ProviderSettings create(Identity identity,
+                                              ConfigForm configForm,
+                                              boolean discoverServices) {
+            return new ProviderSettings(Objects.requireNonNull(identity),
+                                        Objects.requireNonNull(configForm),
+                                        discoverServices,
+                                        true);
+        }
+
+        /**
+         * Provider identity policy.
+         * <p>
+         * This determines how configured provider instances are distinguished. It does not determine whether the
+         * outer configuration container is an object or a list.
+         *
+         * @return provider identity policy
+         */
+        public Identity identity() {
+            return identity;
+        }
+
+        /**
+         * Permitted outer configuration container form.
+         * <p>
+         * This determines whether provider entries may be declared in an object, a list, or either form. It does not
+         * determine how provider instances are identified.
+         *
+         * @return permitted outer configuration container form
+         */
+        public ConfigForm configForm() {
+            return configForm;
+        }
+
+        /**
+         * Whether providers without an explicit configuration entry should be discovered.
+         * <p>
+         * Explicitly configured providers are processed regardless of this value. Generated builders may expose a
+         * corresponding {@code *-discover-services} configuration option that overrides the annotation default.
+         *
+         * @return whether unconfigured providers should be discovered
+         */
+        public boolean discoverServices() {
+            return discoverServices;
+        }
+
+        ProviderSettings withoutConfigValidation() {
+            return new ProviderSettings(identity, configForm, discoverServices, false);
+        }
+
+        boolean validateConfig() {
+            return validateConfig;
+        }
+    }
+
+    /**
+     * Extension of {@link io.helidon.builder.api.Prototype.Builder} that supports configuration.
+     * If a blueprint is marked as {@code @Configured}, build will accept configuration.
+     *
+     * @param <BUILDER>   type of the builder
+     * @param <PROTOTYPE> type of the prototype to be built
+     */
+    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Prototype.Builder<BUILDER, PROTOTYPE> {
+        /**
+         * Update builder from configuration.
+         * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,
+         * it will override current value for that option on this builder.
+         * Options that do not exist in the provided config will not impact current values.
+         * The config instance is kept and may be used in builder decorator, it is not available in prototype implementation.
+         *
+         * @param config configuration to use
+         * @return updated builder instance
+         */
+        BUILDER config(Config config);
     }
 }

@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriAuthority;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -69,7 +70,7 @@ class GrpcConnectionContextImplTest {
             }
 
             @Override
-            public AuthorityCheck checkAuthority(String authority) {
+            public AuthorityCheck checkAuthority(UriAuthority authority) {
                 return AuthorityCheck.ALLOWED;
             }
         };

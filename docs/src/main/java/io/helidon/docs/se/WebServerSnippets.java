@@ -16,6 +16,7 @@
 package io.helidon.docs.se;
 
 import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
@@ -44,6 +45,9 @@ import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ProxyProtocolV2Data;
+import io.helidon.webserver.StuckThreadDetectionFeature;
+import io.helidon.webserver.TcpTransportConfig;
+import io.helidon.webserver.UdsTransportConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.accesslog.AccessLogFeature;
@@ -382,6 +386,15 @@ class WebServerSnippets {
         // end::snippet_29[]
     }
 
+    void snippet_44() {
+        // tag::snippet_44[]
+        WebServer.builder()
+                .addFeature(StuckThreadDetectionFeature.create(config -> config
+                        .threshold(Duration.ofMinutes(10))
+                        .checkPeriod(Duration.ofMinutes(1))));
+        // end::snippet_44[]
+    }
+
     void snippet_30() {
         // tag::snippet_30[]
         Tls tls = Tls.builder()
@@ -461,6 +474,19 @@ class WebServerSnippets {
 
         server.reloadVirtualHostTls(apiMaterial, "api.example.com");
         // end::snippet_42[]
+    }
+
+    void snippet_45() {
+        // tag::snippet_45[]
+        WebServer.builder()
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .build())
+                .addBinding(UdsTransportConfig.builder()
+                                    .socket(UnixDomainSocketAddress.of("/var/run/helidon.sock"))
+                                    .required(true)
+                                    .build());
+        // end::snippet_45[]
     }
 
     void snippet_32() {

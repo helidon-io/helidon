@@ -490,83 +490,25 @@ public interface BufferData {
      * HPack integer value (may be 1 or more bytes).
      *
      * @param originalValue value (only bitsOfPrefix are used, bits before that are ignored)
-     * @param bitsOfPrefix number of bits significant in the value
+     * @param bitsOfPrefix number of bits significant in the value, between {@code 1} and {@code 8}
      * @return integer value
+     * @throws java.lang.IllegalArgumentException if the prefix width is outside the supported range
      */
     default int readHpackInt(int originalValue, int bitsOfPrefix) {
-        // significant bits of the value
-
-        int value = originalValue & (0b11111111 >> (8 - bitsOfPrefix));
-        /*
-        The value is computed as
-        max + (read integer from the next x 7 bits, where next 7 bits are read if the first bit of the octet is 1)
-         */
-        int max = (1 << bitsOfPrefix) - 1;
-        if (value < max) { // 31 is the max number of 5 bits
-            // value fits into the prefix, no need to read additional bytes
-            // System.out.println("Resolved original value " + Integer.toBinaryString(originalValue) + " to " + value);
-            return value;
-        }
-        //System.out.println("Original value " + Integer.toBinaryString(originalValue) + " has more than one byte, carry on: "
-        // + value);
-        int shiftBy = 0;
-        long longValue = value;
-        while (true) {
-            if (shiftBy > 28) {
-                throw new IllegalArgumentException("HPACK integer exceeds supported range");
-            }
-            if (available() == 0) {
-                throw new IllegalArgumentException("Truncated HPACK integer");
-            }
-            int next = read();
-            //System.out.println("Read additional byte " + Integer.toBinaryString(next));
-            // add all valid bits to the number and continue next cycle
-            longValue += (long) (next & 0b01111111) << shiftBy;
-            if (longValue > Integer.MAX_VALUE) {
-                throw new IllegalArgumentException("HPACK integer exceeds supported range");
-            }
-            shiftBy += 7; // the next iteration must be shifted by 7 additional bits
-
-            if ((next & 0b10000000) == 0) {
-                // last byte
-                return (int) longValue;
-            }
-        }
+        return PrefixedIntegerCodec.readInt(this, originalValue, bitsOfPrefix);
     }
 
     /**
      * Write hpack integer to this buffer.
      *
-     * @param value the full value we want to write
+     * @param value the full non-negative value we want to write
      * @param prefixedInt value to store in the other bits of the first byte
-     * @param bitPrefix bits reserved for our value in the first byte
+     * @param bitPrefix bits reserved for our value in the first byte, between {@code 1} and {@code 8}
      * @return this instance
+     * @throws java.lang.IllegalArgumentException if the value or prefix width is outside the supported range
      */
     default BufferData writeHpackInt(int value, int prefixedInt, int bitPrefix) {
-        // we do not want possible garbage from wrong value
-        int prefixedValue = prefixedInt & (~(0b11111111 >> (8 - bitPrefix)));
-
-        int max = (1 << bitPrefix) - 1;
-        if (value < max) {
-            write(value | prefixedValue);
-            return this;
-        }
-        write(max | prefixedValue);
-
-        // now encode the rest of the value
-        int remainingValue = value - max;
-        while (true) {
-            if (remainingValue < (1 << 7)) {
-                write(remainingValue);
-                return this;
-            }
-            // write the seven bits + the first bit to mark this continues
-            int toWrite = (remainingValue & 0b01111111) | 0b10000000;
-            write(toWrite);
-
-            // shift to the right by seven bits
-            remainingValue = remainingValue >> 7;
-        }
+        return PrefixedIntegerCodec.writeInt(this, value, prefixedInt, bitPrefix);
     }
 
     /**

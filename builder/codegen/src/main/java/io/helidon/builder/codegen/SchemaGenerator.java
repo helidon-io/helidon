@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenLogger;
@@ -354,7 +355,11 @@ class SchemaGenerator {
                 .or(() -> {
                     var className = lookup.classNameWithEnclosingNames();
                     var blueprintName = className.replace(".Builder", "") + "Blueprint";
-                    return ctx.typeInfo(TypeName.builder(typeInfo.typeName())
+                    var packageName = lookup.packageName().isBlank()
+                            ? typeInfo.typeName().packageName()
+                            : lookup.packageName();
+                    return ctx.typeInfo(TypeName.builder()
+                            .packageName(packageName)
                             .className(blueprintName)
                             .build());
                 })
@@ -408,6 +413,22 @@ class SchemaGenerator {
     }
 
     private String optionKind(OptionInfo optionInfo) {
+        var provider = optionInfo.provider().orElse(null);
+        if (provider != null) {
+            Option.Provider.ConfigForm configForm = provider.configForm();
+            if (configForm == Option.Provider.ConfigForm.AUTO) {
+                configForm = provider.providerIdentity() == Option.Provider.Identity.TYPE_ONLY
+                        ? Option.Provider.ConfigForm.OBJECT
+                        : Option.Provider.ConfigForm.OBJECT_OR_LIST;
+            }
+            if (configForm == Option.Provider.ConfigForm.OBJECT) {
+                return "MAP";
+            }
+            if (configForm == Option.Provider.ConfigForm.LIST) {
+                return "LIST";
+            }
+        }
+
         var typeName = optionInfo.declaredType();
         if (typeName.isOptional()) {
             typeName = typeName.typeArguments().getFirst();

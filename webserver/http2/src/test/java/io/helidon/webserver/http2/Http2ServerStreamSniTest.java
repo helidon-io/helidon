@@ -1319,7 +1319,7 @@ class Http2ServerStreamSniTest {
             }
 
             @Override
-            public AuthorityCheck checkAuthority(String authority) {
+            public AuthorityCheck checkAuthority(UriAuthority authority) {
                 return AuthorityCheck.ALLOWED;
             }
         };
@@ -1343,8 +1343,8 @@ class Http2ServerStreamSniTest {
             }
 
             @Override
-            public AuthorityCheck checkAuthority(String authority) {
-                UriAuthority.create(authority).host();
+            public AuthorityCheck checkAuthority(UriAuthority authority) {
+                authority.host();
                 return AuthorityCheck.ALLOWED;
             }
         };

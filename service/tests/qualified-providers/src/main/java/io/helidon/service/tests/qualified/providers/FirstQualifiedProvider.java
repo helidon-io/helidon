@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,18 @@ import io.helidon.service.registry.Service.QualifiedInstance;
 class FirstQualifiedProvider implements Service.QualifiedFactory<Object, FirstQualifier> {
     private final Map<String, String> values = Map.of("first", "first",
                                                       "second", "49");
+    private int calls;
 
     @Override
     public Optional<QualifiedInstance<Object>> first(Qualifier qualifier, Lookup lookup, GenericType<Object> type) {
+        calls++;
         Optional<String> stringValue = Optional.of(values.get(qualifier.value().orElse("not-defined")));
 
         return stringValue.map(str -> QualifiedInstance.create(mapType(str, type), qualifier));
+    }
+
+    int calls() {
+        return calls;
     }
 
     private Object mapType(String str, GenericType<Object> type) {

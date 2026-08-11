@@ -46,6 +46,7 @@ class SseServerTest extends SseBaseTest {
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseServerTest::sseString1);
         rules.get("/sseString2", SseServerTest::sseString2);
+        rules.get("/sseDelayed", SseServerTest::sseDelayed);
         rules.get("/sseFlush", SseServerTest::sseFlush);
         rules.get("/sseJson1", SseServerTest::sseJson1);
         rules.get("/sseJson2", SseServerTest::sseJson2);
@@ -70,6 +71,24 @@ class SseServerTest extends SseBaseTest {
     @Test
     void testSseString2() throws Exception {
         testSse("/sseString2", "data:1", "data:2", "data:3");
+    }
+
+    @Test
+    void testSseHeadersAreSentBeforeFirstEvent() throws Exception {
+        CountDownLatch delayedLatch = new CountDownLatch(1);
+        SseBaseTest.delayedLatch(delayedLatch);
+        try (SimpleSseClient sseClient = SimpleSseClient.create("localhost",
+                                                                webServer().port(),
+                                                                "/sseDelayed",
+                                                                Duration.ofSeconds(10))) {
+            sseClient.awaitHeaders();
+
+            delayedLatch.countDown();
+            assertThat(sseClient.nextEvent(), is("data:delayed"));
+        } finally {
+            delayedLatch.countDown();
+            SseBaseTest.delayedLatch(new CountDownLatch(0));
+        }
     }
 
     @Test

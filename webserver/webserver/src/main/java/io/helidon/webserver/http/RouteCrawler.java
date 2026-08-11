@@ -23,6 +23,7 @@ import java.util.Map;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriPathSegment;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
@@ -243,6 +244,11 @@ class RouteCrawler {
             @Override
             public String path() {
                 return path.path();
+            }
+
+            @Override
+            public List<UriPathSegment> segments() {
+                return path.segments();
             }
 
             @Override

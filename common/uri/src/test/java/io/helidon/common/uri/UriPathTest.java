@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package io.helidon.common.uri;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriPathTest {
     @Test
@@ -50,5 +52,48 @@ class UriPathTest {
     void testDoubleSlash(String rawPath) {
         UriPath path = UriPath.create(rawPath);
         assertThat(path.path(), is("/foo/bar"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "example.com:443",
+            "localhost:443"
+    })
+    void opaqueUriHasEmptyPath(String rawPath) {
+        UriPath path = UriPath.create(rawPath);
+
+        assertThat(path.rawPath(), is(rawPath));
+        assertThat(path.path(), is(""));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/first:second",
+            "first/second:third"
+    })
+    void colonInPath(String rawPath) {
+        UriPath path = UriPath.create(rawPath);
+
+        assertThat(path.rawPath(), is(rawPath));
+        assertThat(path.path(), is(rawPath));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "first:second, first%3Asecond, first:second",
+            "first:second;key=value, first%3Asecond;key=value, first:second"
+    })
+    void decodedColonInPath(String decodedPath, String expectedRawPath, String expectedPath) {
+        UriPath path = UriPath.createFromDecoded(decodedPath);
+
+        assertThat(path.rawPath(), is(expectedRawPath));
+        assertThat(path.path(), is(expectedPath));
+    }
+
+    @Test
+    void malformedAuthorityLikePathFailsValidation() {
+        UriPath path = UriPath.create("service%2Gname:443");
+
+        assertThrows(IllegalArgumentException.class, path::validate);
     }
 }
