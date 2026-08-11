@@ -99,6 +99,8 @@ final class JdbcClientImpl implements JdbcClient {
                    LruCache<String, Integer> parameterCounts) {
         this.runner = new JdbcRunner(Objects.requireNonNull(dataSource, "DataSource must not be null"),
                                      Objects.requireNonNull(leaseProvider, "Connection lease provider must not be null"));
+        this.lexicalProfile = Objects.requireNonNull(lexicalProfile, "JDBC lexical profile must not be null");
+        this.parameterCounts = Objects.requireNonNull(parameterCounts, "Parameter-count cache must not be null");
     }
 
     /**
