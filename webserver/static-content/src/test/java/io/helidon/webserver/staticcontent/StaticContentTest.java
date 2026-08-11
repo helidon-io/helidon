@@ -177,6 +177,28 @@ class StaticContentTest {
     }
 
     @Test
+    void testInvalidIfModifiedSinceIsIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_MODIFIED_SINCE, "nope")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testInvalidIfUnmodifiedSinceIsIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_UNMODIFIED_SINCE, "nope")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
     void testFileSystemSymlinkOutsideRoot() throws Exception {
         Path link = staticRoot.resolve("external");
         assumeTrue(createSymbolicLink(link, externalDir), "Symbolic links cannot be created");

@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -120,9 +121,7 @@ abstract class StaticContentHandler implements HttpService {
             setModified.accept(responseHeaders, modified);
             // If-Unmodified-Since
             if (!ifMatchPresent) {
-                Optional<Instant> ifUnmodSince = requestHeaders
-                        .ifUnmodifiedSince()
-                        .map(ChronoZonedDateTime::toInstant);
+                Optional<Instant> ifUnmodSince = conditionalDate(requestHeaders::ifUnmodifiedSince);
                 if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
                     throw new HttpException("Not valid for If-Unmodified-Since header",
                                             Status.PRECONDITION_FAILED_412,
@@ -149,12 +148,18 @@ abstract class StaticContentHandler implements HttpService {
 
         if (modified != null && !ifNoneMatchPresent) {
             // If-Modified-Since
-            Optional<Instant> ifModSince = requestHeaders
-                    .ifModifiedSince()
-                    .map(ChronoZonedDateTime::toInstant);
+            Optional<Instant> ifModSince = conditionalDate(requestHeaders::ifModifiedSince);
             if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
                 throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
             }
+        }
+    }
+
+    private static Optional<Instant> conditionalDate(Supplier<Optional<ZonedDateTime>> dateSupplier) {
+        try {
+            return dateSupplier.get().map(ChronoZonedDateTime::toInstant);
+        } catch (DateTimeParseException _) {
+            return Optional.empty();
         }
     }
 
