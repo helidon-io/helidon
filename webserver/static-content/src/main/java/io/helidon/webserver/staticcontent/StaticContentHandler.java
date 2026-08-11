@@ -71,26 +71,27 @@ abstract class StaticContentHandler implements HttpService {
         this.memoryCache = config.memoryCache().orElseGet(MemoryCache::create);
     }
 
-    /**
-     * Put {@code etag} parameter (if provided ) into the response headers, than validates {@code If-Match} and
-     * {@code If-None-Match} headers and react accordingly.
-     *
-     * @param etag            the proposed ETag. If {@code null} then method returns false
-     * @param requestHeaders  an HTTP request headers
-     * @param responseHeaders an HTTP response headers
-     * @throws io.helidon.http.RequestException if ETag is checked
-     */
-    static void processEtag(String etag, ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {
-        if (etag == null || etag.isEmpty()) {
-            return;
+    static void processPreconditions(String etag,
+                                     Instant modified,
+                                     ServerRequestHeaders requestHeaders,
+                                     ServerResponseHeaders responseHeaders) {
+        processPreconditions(etag, modified, requestHeaders, responseHeaders, ServerResponseHeaders::lastModified);
+    }
+
+    static void processPreconditions(String etag,
+                                     Instant modified,
+                                     ServerRequestHeaders requestHeaders,
+                                     ServerResponseHeaders responseHeaders,
+                                     BiConsumer<ServerResponseHeaders, Instant> setModified) {
+        Header newEtag = null;
+        if (etag != null && !etag.isEmpty()) {
+            etag = unquoteETag(etag);
+            newEtag = HeaderValues.create(HeaderNames.ETAG, true, false, '"' + etag + '"');
+            responseHeaders.set(newEtag);
         }
-        etag = unquoteETag(etag);
 
-        Header newEtag = HeaderValues.create(HeaderNames.ETAG, true, false, '"' + etag + '"');
-        // Put ETag into the response
-        responseHeaders.set(newEtag);
-
-        if (requestHeaders.contains(HeaderNames.IF_MATCH)) {
+        boolean ifMatchPresent = requestHeaders.contains(HeaderNames.IF_MATCH);
+        if (newEtag != null && ifMatchPresent) {
             // Process If-Match header
             List<String> ifMatches = requestHeaders.get(HeaderNames.IF_MATCH).allValues();
             if (!ifMatches.isEmpty()) {
@@ -111,8 +112,25 @@ abstract class StaticContentHandler implements HttpService {
             }
         }
 
+        if (modified != null) {
+            // Last-Modified
+            setModified.accept(responseHeaders, modified);
+            // If-Unmodified-Since
+            if (!ifMatchPresent) {
+                Optional<Instant> ifUnmodSince = requestHeaders
+                        .ifUnmodifiedSince()
+                        .map(ChronoZonedDateTime::toInstant);
+                if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
+                    throw new HttpException("Not valid for If-Unmodified-Since header",
+                                            Status.PRECONDITION_FAILED_412,
+                                            true);
+                }
+            }
+        }
+
         // Process If-None-Match header
-        if (requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
+        boolean ifNoneMatchPresent = requestHeaders.contains(HeaderNames.IF_NONE_MATCH);
+        if (newEtag != null && ifNoneMatchPresent) {
             List<String> ifNoneMatches = requestHeaders.get(HeaderNames.IF_NONE_MATCH).allValues();
             for (String ifNoneMatch : ifNoneMatches) {
                 ifNoneMatch = unquoteETag(ifNoneMatch);
@@ -123,20 +141,9 @@ abstract class StaticContentHandler implements HttpService {
                 }
             }
         }
-    }
 
-    static void processModifyHeaders(Instant modified,
-                                     ServerRequestHeaders requestHeaders,
-                                     ServerResponseHeaders responseHeaders,
-                                     BiConsumer<ServerResponseHeaders, Instant> setModified) {
-        if (modified == null) {
-            return;
-        }
-
-        // Last-Modified
-        setModified.accept(responseHeaders, modified);
-        // If-Modified-Since
-        if (!requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
+        if (modified != null && !ifNoneMatchPresent) {
+            // If-Modified-Since
             Optional<Instant> ifModSince = requestHeaders
                     .ifModifiedSince()
                     .map(ChronoZonedDateTime::toInstant);
@@ -144,28 +151,6 @@ abstract class StaticContentHandler implements HttpService {
                 throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
             }
         }
-        // If-Unmodified-Since
-        Optional<Instant> ifUnmodSince = requestHeaders
-                .ifUnmodifiedSince()
-                .map(ChronoZonedDateTime::toInstant);
-        if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
-            throw new HttpException("Not valid for If-Unmodified-Since header", Status.PRECONDITION_FAILED_412, true);
-        }
-    }
-
-    /**
-     * Validates {@code If-Modify-Since} and {@code If-Unmodify-Since} headers and react accordingly.
-     * Returns {@code true} only if response was sent.
-     *
-     * @param modified        the last modification instance. If {@code null} then method just returns {@code false}.
-     * @param requestHeaders  an HTTP request headers
-     * @param responseHeaders an HTTP response headers
-     * @throws io.helidon.http.RequestException if (un)modify since header is checked
-     */
-    static void processModifyHeaders(Instant modified,
-                                     ServerRequestHeaders requestHeaders,
-                                     ServerResponseHeaders responseHeaders) {
-        processModifyHeaders(modified, requestHeaders, responseHeaders, ServerResponseHeaders::lastModified);
     }
 
     /**

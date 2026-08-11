@@ -47,8 +47,10 @@ record CachedHandlerUrlStream(MediaType mediaType, URL url) implements CachedHan
         long lastModified = urlConnection.getLastModified();
 
         if (lastModified != 0) {
-            StaticContentHandler.processEtag(String.valueOf(lastModified), request.headers(), response.headers());
-            StaticContentHandler.processModifyHeaders(Instant.ofEpochMilli(lastModified), request.headers(), response.headers());
+            StaticContentHandler.processPreconditions(String.valueOf(lastModified),
+                                                      Instant.ofEpochMilli(lastModified),
+                                                      request.headers(),
+                                                      response.headers());
         }
 
         response.headers().contentType(mediaType);

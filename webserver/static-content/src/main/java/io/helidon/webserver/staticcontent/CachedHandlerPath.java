@@ -36,8 +36,7 @@ import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import static io.helidon.webserver.staticcontent.StaticContentHandler.processEtag;
-import static io.helidon.webserver.staticcontent.StaticContentHandler.processModifyHeaders;
+import static io.helidon.webserver.staticcontent.StaticContentHandler.processPreconditions;
 
 record CachedHandlerPath(Path path,
                          MediaType mediaType,
@@ -99,8 +98,11 @@ record CachedHandlerPath(Path path,
 
         // etag etc.
         if (lastModified != null) {
-            processEtag(String.valueOf(lastModified.toEpochMilli()), request.headers(), response.headers());
-            processModifyHeaders(lastModified, request.headers(), response.headers(), setLastModifiedHeader());
+            processPreconditions(String.valueOf(lastModified.toEpochMilli()),
+                                 lastModified,
+                                 request.headers(),
+                                 response.headers(),
+                                 setLastModifiedHeader());
         }
 
         response.headers().contentType(mediaType);
