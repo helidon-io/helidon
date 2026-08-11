@@ -370,17 +370,8 @@ class StaticContentTest {
     }
 
     private void assertEmptyRanges(String path) {
-        try (Http1ClientResponse response = testClient.get(path)
-                .header(HeaderNames.RANGE, "bytes=-1")
-                .request()) {
-
-            assertThat(path + " status for bytes=-1", response.status(), is(Status.OK_200));
-            assertThat(path + " content length for bytes=-1",
-                       response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_LENGTH, "0"));
-            assertThat(path + " content range for bytes=-1",
-                       response.headers().contains(HeaderNames.CONTENT_RANGE), is(false));
-            assertThat(path + " entity for bytes=-1", response.entity().hasEntity(), is(false));
-        }
+        assertEmptyRangeIgnored(path, "bytes=-1");
+        assertEmptyRangeIgnored(path, "bytes=-1, 9223372036854775808-");
 
         try (Http1ClientResponse response = testClient.get(path)
                 .header(HeaderNames.RANGE, "bytes=-0")
@@ -396,6 +387,21 @@ class StaticContentTest {
 
             assertThat(path + " status for bytes=0-",
                        response.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+        }
+    }
+
+    private void assertEmptyRangeIgnored(String path, String range) {
+        try (Http1ClientResponse response = testClient.get(path)
+                .header(HeaderNames.RANGE, range)
+                .request()) {
+
+            String description = path + " with " + range;
+            assertThat(description + " status", response.status(), is(Status.OK_200));
+            assertThat(description + " content length",
+                       response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_LENGTH, "0"));
+            assertThat(description + " content range",
+                       response.headers().contains(HeaderNames.CONTENT_RANGE), is(false));
+            assertThat(description + " entity", response.entity().hasEntity(), is(false));
         }
     }
 

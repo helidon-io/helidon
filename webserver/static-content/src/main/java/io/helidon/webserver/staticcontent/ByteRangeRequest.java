@@ -47,24 +47,30 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             // a-b, b-c (multipart)
             String firstGroup = matcher.group(1);
             String secondGroup = matcher.group(2);
+            if (fileLength == 0) {
+                if (firstGroup == null && secondGroup != null) {
+                    for (int i = 0; i < secondGroup.length(); i++) {
+                        if (secondGroup.charAt(i) != '0') {
+                            satisfiableEmptyRange = true;
+                            break;
+                        }
+                    }
+                }
+                continue;
+            }
             long from = 0;
             long last = fileLength - 1;
-            long second = 0;
             if (firstGroup != null) {
                 from = Long.parseLong(firstGroup);
             }
             if (secondGroup != null) {
-                second = Long.parseLong(secondGroup);
+                long second = Long.parseLong(secondGroup);
                 if (firstGroup == null) {
                     from = Math.max(0, fileLength - second);
                     last = fileLength - 1;
                 } else {
                     last = Math.min(second, fileLength - 1);
                 }
-            }
-            if (fileLength == 0) {
-                satisfiableEmptyRange |= firstGroup == null && second > 0;
-                continue;
             }
             parts.add(ByteRangeRequest.create(req, res, from, last, fileLength));
         }
