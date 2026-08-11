@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -114,6 +115,7 @@ abstract class StaticContentHandler implements HttpService {
         }
 
         if (modified != null) {
+            modified = modified.truncatedTo(ChronoUnit.SECONDS);
             // Last-Modified
             setModified.accept(responseHeaders, modified);
             // If-Unmodified-Since

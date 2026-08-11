@@ -232,10 +232,31 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void ifModifiedSinceUsesHttpDatePrecision() {
+        ZonedDateTime modified = ZonedDateTime.parse("2026-08-11T12:34:56.123Z");
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        Mockito.doReturn(Optional.of(modified.withNano(0))).when(req).ifModifiedSince();
+        Mockito.doReturn(Optional.empty()).when(req).ifUnmodifiedSince();
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+        assertHttpException(() -> StaticContentHandler.processPreconditions(null, modified.toInstant(), req, res),
+                            Status.NOT_MODIFIED_304);
+    }
+
+    @Test
     void ifUnmodifySince_Accept() {
         ZonedDateTime modified = ZonedDateTime.now();
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         Mockito.doReturn(Optional.of(modified)).when(req).ifUnmodifiedSince();
+        Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+        StaticContentHandler.processPreconditions(null, modified.toInstant(), req, res);
+    }
+
+    @Test
+    void ifUnmodifiedSinceUsesHttpDatePrecision() {
+        ZonedDateTime modified = ZonedDateTime.parse("2026-08-11T12:34:56.123Z");
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        Mockito.doReturn(Optional.of(modified.withNano(0))).when(req).ifUnmodifiedSince();
         Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processPreconditions(null, modified.toInstant(), req, res);
