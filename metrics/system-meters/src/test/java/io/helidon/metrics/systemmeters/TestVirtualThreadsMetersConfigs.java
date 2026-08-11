@@ -26,6 +26,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -180,6 +183,62 @@ class TestVirtualThreadsMetersConfigs {
         } finally {
             meterRegistry.close();
             provider.close();
+            metricsFactory.close();
+        }
+    }
+
+    @Test
+    void interruptedCloseStillClearsProviderState() {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
+        MetricsFactory metricsFactory = configuredMetricsFactory(config);
+        VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsFactory.metricsConfig());
+        RecordingTracker recordingTracker = new RecordingTracker();
+        IllegalStateException closeFailure = new IllegalStateException("Interrupted during recording stream close");
+        Logger logger = Logger.getLogger(VThreadSystemMetersProvider.class.getName());
+        Handler interruptingHandler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                if (record.getMessage().equals("Stopping recording stream")) {
+                    Thread.currentThread().interrupt();
+                    throw closeFailure;
+                }
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        Recording recording = null;
+        logger.addHandler(interruptingHandler);
+        try {
+            provider.meterBuilders(metricsFactory, meterRegistry).stream()
+                    .filter(builder -> builder.name().equals(METER_NAME_PREFIX + RECENT_PINNED))
+                    .map(Timer.Builder.class::cast)
+                    .forEach(meterRegistry::getOrCreate);
+            recording = recordingTracker.awaitNewRecording();
+
+            IllegalStateException failure = assertThrows(IllegalStateException.class, provider::close);
+
+            assertThat("Original close failure is reported", failure, sameInstance(closeFailure));
+            assertThat("Interrupt status is preserved", Thread.currentThread().isInterrupted(), is(true));
+            Thread.interrupted();
+            provider.resume();
+            recordingTracker.assertNoNewRecording("Recording after interrupted close");
+            IllegalStateException unavailable = assertThrows(IllegalStateException.class, provider::findPinned);
+            assertThat("Provider releases its meter registry", unavailable.getMessage(), is("Meter registry not available"));
+        } finally {
+            logger.removeHandler(interruptingHandler);
+            Thread.interrupted();
+            if (recording != null) {
+                recording.close();
+            }
+            provider.close();
+            meterRegistry.close();
             metricsFactory.close();
         }
     }

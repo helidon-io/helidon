@@ -224,13 +224,18 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     @Override
     public void close() {
         boolean updateShutdownHandler;
+        Throwable closeFailure = null;
         lifecycleLock.lock();
         try {
             closed = true;
             lifecycleGeneration++;
             resumableGeneration++;
             if (recordingStream != null) {
-                stopRecordingStream();
+                try {
+                    stopRecordingStream();
+                } catch (Throwable e) {
+                    closeFailure = recordCloseFailure(closeFailure, e);
+                }
             }
             if (shutdownHandlerRegistrationRequired) {
                 shutdownHandlerRegistrationRequired = false;
@@ -246,7 +251,14 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
             lifecycleLock.unlock();
         }
         if (updateShutdownHandler) {
-            updateShutdownHandlerRegistration(false);
+            try {
+                updateShutdownHandlerRegistration(false);
+            } catch (Throwable e) {
+                closeFailure = recordCloseFailure(closeFailure, e);
+            }
+        }
+        if (closeFailure != null) {
+            VThreadSystemMetersProvider.<RuntimeException>rethrow(closeFailure);
         }
     }
 
@@ -295,14 +307,49 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     private void stopRecordingStream() {
         RecordingStream streamToStop = recordingStream;
         recordingStream = null;
+        Throwable stopFailure = null;
         try {
             LOGGER.log(System.Logger.Level.INFO, "Stopping recording stream");
+        } catch (Throwable e) {
+            stopFailure = recordCloseFailure(stopFailure, e);
+        }
+        try {
             streamToStop.close();
+        } catch (Throwable e) {
+            stopFailure = recordCloseFailure(stopFailure, e);
+        }
+        try {
             streamToStop.awaitTermination(Duration.ofSeconds(10));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while stopping virtual thread metrics recording", e);
+            stopFailure = recordCloseFailure(
+                    stopFailure,
+                    new IllegalStateException("Interrupted while stopping virtual thread metrics recording", e));
+        } catch (Throwable e) {
+            stopFailure = recordCloseFailure(stopFailure, e);
         }
+        if (stopFailure != null) {
+            VThreadSystemMetersProvider.<RuntimeException>rethrow(stopFailure);
+        }
+    }
+
+    private static Throwable recordCloseFailure(Throwable closeFailure, Throwable newFailure) {
+        if (closeFailure == null) {
+            return newFailure;
+        }
+        if (closeFailure != newFailure) {
+            try {
+                closeFailure.addSuppressed(newFailure);
+            } catch (Throwable _) {
+                // Continue cleanup even if recording a later failure needs unavailable resources.
+            }
+        }
+        return closeFailure;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void rethrow(Throwable failure) throws T {
+        throw (T) failure;
     }
 
     private void suspend(long generation) {
