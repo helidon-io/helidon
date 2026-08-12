@@ -142,7 +142,7 @@ class ErrorHandlersTest {
         RoutingResponse res = mock(RoutingResponse.class);
         ListenerContext listenerContext = mock(ListenerContext.class);
 
-        when(res.resetStream()).thenReturn(true);
+        when(res.resetEntity()).thenReturn(true);
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",
                                                             "1.0",
@@ -184,7 +184,7 @@ class ErrorHandlersTest {
         ConnectionContext ctx = mock(ConnectionContext.class);
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
-        when(res.resetStream()).thenReturn(false);
+        when(res.resetEntity()).thenReturn(false);
         ErrorHandlers handlers = ErrorHandlers.create(Map.of(OtherException.class,
                 (request, response, t) -> res.send(t.getMessage())));
         try {
@@ -201,7 +201,7 @@ class ErrorHandlersTest {
         ConnectionContext ctx = mock(ConnectionContext.class);
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
-        when(res.resetStream()).thenReturn(true);
+        when(res.resetEntity()).thenReturn(true);
 
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",
@@ -238,7 +238,7 @@ class ErrorHandlersTest {
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
         when(res.isSent()).thenReturn(true);
-        when(res.resetStream()).thenReturn(true);
+        when(res.resetEntity()).thenReturn(true);
 
         handlers.runWithErrorHandling(ctx, req, res, () -> {
             throw e;

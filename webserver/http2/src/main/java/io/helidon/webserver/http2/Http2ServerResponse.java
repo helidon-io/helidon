@@ -303,6 +303,15 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
+    public boolean resetEntity() {
+        if (!super.resetEntity()) {
+            return false;
+        }
+        trailers.clear();
+        return true;
+    }
+
+    @Override
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();

@@ -101,6 +101,19 @@ class Http2ErrorHandlingWithOutputStreamTest {
                 .route(Http2Route.route(GET, "get-outputStream", (req, res) -> {
                     res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
+                    res.header(HeaderNames.CONTENT_LENGTH, "1");
+                    res.header(HeaderNames.TRAILER, "x-stale-trailer");
+                    res.header(HeaderNames.CONTENT_RANGE, "bytes 0-0/1");
+                    res.header(HeaderNames.CONTENT_TYPE, "application/stale");
+                    res.header(HeaderNames.CONTENT_ENCODING, "stale");
+                    res.header(HeaderNames.CONTENT_LANGUAGE, "en");
+                    res.header(HeaderNames.CONTENT_LOCATION, "/stale");
+                    res.header(HeaderNames.CONTENT_DISPOSITION, "attachment");
+                    res.header(HeaderNames.ETAG, "\"stale\"");
+                    res.header(HeaderNames.LAST_MODIFIED, "stale");
+                    res.header(HeaderNames.ACCEPT_RANGES, "bytes");
+                    res.header(HeaderNames.CACHE_CONTROL, "no-store");
+                    res.header(HeaderNames.VARY, "Origin");
                     res.outputStream();
                     throw new CustomException();
                 }))
@@ -208,6 +221,21 @@ class Http2ErrorHandlingWithOutputStreamTest {
         assertThat(response.body(), is("TeaPotIAm"));
         assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
         assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValueAsLong(HeaderNames.CONTENT_LENGTH.lowerCase()).orElse(-1),
+                   is((long) "TeaPotIAm".getBytes(StandardCharsets.UTF_8).length));
+        assertThat(response.headers().firstValue(HeaderNames.TRAILER.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_RANGE.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_TYPE.lowerCase()),
+                   is(Optional.of("text/plain; charset=UTF-8")));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_ENCODING.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_LANGUAGE.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_LOCATION.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_DISPOSITION.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.ETAG.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.LAST_MODIFIED.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.ACCEPT_RANGES.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CACHE_CONTROL.lowerCase()), is(Optional.of("no-store")));
+        assertThat(response.headers().firstValue(HeaderNames.VARY.lowerCase()), is(Optional.of("Origin")));
     }
 
     @Test

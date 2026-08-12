@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 
 /**
@@ -83,5 +84,37 @@ public interface RoutingResponse extends ServerResponse {
      */
     default boolean resetStream() {
         return reset();
+    }
+
+    /**
+     * Reset the response entity so an unsent response can be replaced while preserving response metadata unrelated to
+     * the entity, such as CORS, cookies, cache controls, and {@code Vary} headers.
+     * <p>
+     * This resets entity buffers and removes framing, representation, validator, range, and trailer headers.
+     * Implementations with separate trailer state must reset that state as well.
+     * <p>
+     * This method calls {@link #resetStream()} and removes entity headers by default.
+     *
+     * @return {@code true} if reset was successful and a new entity can be created instead of the existing one,
+     *         {@code false} if reset failed and status and headers (and maybe entity bytes) were already sent
+     */
+    default boolean resetEntity() {
+        if (!resetStream()) {
+            return false;
+        }
+        var headers = headers();
+        headers.remove(HeaderNames.CONTENT_LENGTH);
+        headers.remove(HeaderNames.TRANSFER_ENCODING);
+        headers.remove(HeaderNames.TRAILER);
+        headers.remove(HeaderNames.CONTENT_RANGE);
+        headers.remove(HeaderNames.CONTENT_TYPE);
+        headers.remove(HeaderNames.CONTENT_ENCODING);
+        headers.remove(HeaderNames.CONTENT_LANGUAGE);
+        headers.remove(HeaderNames.CONTENT_LOCATION);
+        headers.remove(HeaderNames.CONTENT_DISPOSITION);
+        headers.remove(HeaderNames.ETAG);
+        headers.remove(HeaderNames.LAST_MODIFIED);
+        headers.remove(HeaderNames.ACCEPT_RANGES);
+        return true;
     }
 }

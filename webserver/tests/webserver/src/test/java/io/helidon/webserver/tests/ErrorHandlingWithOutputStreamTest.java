@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,20 @@ class ErrorHandlingWithOutputStreamTest {
         router.error(CustomException.class, new CustomRoutingHandler())
                 .get("get-outputStream", (req, res) -> {
                     res.header(MAIN_HEADER_NAME, "x");
+                    res.header(HeaderNames.CONTENT_LENGTH, "1");
+                    res.header(HeaderNames.TRANSFER_ENCODING, "chunked");
+                    res.header(HeaderNames.TRAILER, "x-stale-trailer");
+                    res.header(HeaderNames.CONTENT_RANGE, "bytes 0-0/1");
+                    res.header(HeaderNames.CONTENT_TYPE, "application/stale");
+                    res.header(HeaderNames.CONTENT_ENCODING, "stale");
+                    res.header(HeaderNames.CONTENT_LANGUAGE, "en");
+                    res.header(HeaderNames.CONTENT_LOCATION, "/stale");
+                    res.header(HeaderNames.CONTENT_DISPOSITION, "attachment");
+                    res.header(HeaderNames.ETAG, "\"stale\"");
+                    res.header(HeaderNames.LAST_MODIFIED, "stale");
+                    res.header(HeaderNames.ACCEPT_RANGES, "bytes");
+                    res.header(HeaderNames.CACHE_CONTROL, "no-store");
+                    res.header(HeaderNames.VARY, "Origin");
                     res.outputStream();
                     throw new CustomException();
                 })
@@ -105,6 +119,21 @@ class ErrorHandlingWithOutputStreamTest {
             assertThat(response.entity().as(String.class), is("CustomErrorContent"));
             assertThat(response.headers().contains(ERROR_HEADER_NAME), is(true));
             assertThat(response.headers().contains(MAIN_HEADER_NAME), is(false));
+            assertThat(response.headers().contentLength().orElse(-1),
+                       is((long) "CustomErrorContent".getBytes(StandardCharsets.UTF_8).length));
+            assertThat(response.headers().contains(HeaderNames.TRANSFER_ENCODING), is(false));
+            assertThat(response.headers().contains(HeaderNames.TRAILER), is(false));
+            assertThat(response.headers().contains(HeaderNames.CONTENT_RANGE), is(false));
+            assertThat(response.headers().get(HeaderNames.CONTENT_TYPE).get(), is("text/plain; charset=UTF-8"));
+            assertThat(response.headers().contains(HeaderNames.CONTENT_ENCODING), is(false));
+            assertThat(response.headers().contains(HeaderNames.CONTENT_LANGUAGE), is(false));
+            assertThat(response.headers().contains(HeaderNames.CONTENT_LOCATION), is(false));
+            assertThat(response.headers().contains(HeaderNames.CONTENT_DISPOSITION), is(false));
+            assertThat(response.headers().contains(HeaderNames.ETAG), is(false));
+            assertThat(response.headers().contains(HeaderNames.LAST_MODIFIED), is(false));
+            assertThat(response.headers().contains(HeaderNames.ACCEPT_RANGES), is(false));
+            assertThat(response.headers().get(HeaderNames.CACHE_CONTROL).get(), is("no-store"));
+            assertThat(response.headers().get(HeaderNames.VARY).get(), is("Origin"));
         }
     }
 

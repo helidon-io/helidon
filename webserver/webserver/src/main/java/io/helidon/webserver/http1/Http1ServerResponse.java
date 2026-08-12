@@ -348,6 +348,15 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     }
 
     @Override
+    public boolean resetEntity() {
+        if (!super.resetEntity()) {
+            return false;
+        }
+        trailers.clear();
+        return true;
+    }
+
+    @Override
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();
