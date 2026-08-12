@@ -35,6 +35,7 @@ import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -106,7 +107,9 @@ abstract class StaticContentHandler implements HttpService {
             setModified.accept(responseHeaders, modified);
             // If-Unmodified-Since
             if (!ifMatchPresent) {
-                Optional<Instant> ifUnmodSince = conditionalDate(requestHeaders::ifUnmodifiedSince);
+                Optional<Instant> ifUnmodSince = conditionalDate(requestHeaders,
+                                                                 HeaderNames.IF_UNMODIFIED_SINCE,
+                                                                 requestHeaders::ifUnmodifiedSince);
                 if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
                     throw new HttpException("Not valid for If-Unmodified-Since header",
                                             Status.PRECONDITION_FAILED_412,
@@ -127,7 +130,9 @@ abstract class StaticContentHandler implements HttpService {
 
         if (modified != null && !ifNoneMatchPresent) {
             // If-Modified-Since
-            Optional<Instant> ifModSince = conditionalDate(requestHeaders::ifModifiedSince);
+            Optional<Instant> ifModSince = conditionalDate(requestHeaders,
+                                                           HeaderNames.IF_MODIFIED_SINCE,
+                                                           requestHeaders::ifModifiedSince);
             if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
                 throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
             }
@@ -207,7 +212,12 @@ abstract class StaticContentHandler implements HttpService {
         return false;
     }
 
-    private static Optional<Instant> conditionalDate(Supplier<Optional<ZonedDateTime>> dateSupplier) {
+    private static Optional<Instant> conditionalDate(ServerRequestHeaders requestHeaders,
+                                                     HeaderName headerName,
+                                                     Supplier<Optional<ZonedDateTime>> dateSupplier) {
+        if (requestHeaders.contains(headerName) && requestHeaders.get(headerName).valueCount() != 1) {
+            return Optional.empty();
+        }
         try {
             return dateSupplier.get().map(ChronoZonedDateTime::toInstant);
         } catch (DateTimeParseException _) {

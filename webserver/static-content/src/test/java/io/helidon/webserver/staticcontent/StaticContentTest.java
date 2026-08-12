@@ -188,9 +188,35 @@ class StaticContentTest {
     }
 
     @Test
+    void testMultipleIfModifiedSinceValuesAreIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_MODIFIED_SINCE,
+                        "Wed, 21 Oct 2099 07:28:00 GMT",
+                        "Wed, 21 Oct 2015 07:28:00 GMT")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
     void testInvalidIfUnmodifiedSinceIsIgnored() {
         try (Http1ClientResponse response = testClient.get("/path/resource.txt")
                 .header(HeaderNames.IF_UNMODIFIED_SINCE, "nope")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testMultipleIfUnmodifiedSinceValuesAreIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_UNMODIFIED_SINCE,
+                        "Wed, 21 Oct 2015 07:28:00 GMT",
+                        "Wed, 21 Oct 2099 07:28:00 GMT")
                 .request()) {
 
             assertThat(response.status(), is(Status.OK_200));
