@@ -69,6 +69,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected static final Header STREAM_TRAILERS =
             HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
+    private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
+    private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
     private static final Header VARY_ACCEPT_ENCODING =
             HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
     private final ContentEncodingContext contentEncodingContext;
@@ -231,9 +233,24 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
     @Override
     public boolean resetEntity() {
-        if (!RoutingResponse.super.resetEntity()) {
+        if (!resetStream()) {
             return false;
         }
+        var headers = headers();
+        headers.remove(HeaderNames.CONTENT_LENGTH);
+        headers.remove(HeaderNames.TRANSFER_ENCODING);
+        headers.remove(HeaderNames.TRAILER);
+        headers.remove(HeaderNames.CONTENT_RANGE);
+        headers.remove(HeaderNames.CONTENT_TYPE);
+        headers.remove(HeaderNames.CONTENT_ENCODING);
+        headers.remove(HeaderNames.CONTENT_LANGUAGE);
+        headers.remove(HeaderNames.CONTENT_LOCATION);
+        headers.remove(HeaderNames.CONTENT_DISPOSITION);
+        headers.remove(CONTENT_DIGEST_NAME);
+        headers.remove(REPR_DIGEST_NAME);
+        headers.remove(HeaderNames.ETAG);
+        headers.remove(HeaderNames.LAST_MODIFIED);
+        headers.remove(HeaderNames.ACCEPT_RANGES);
         beforeSend.clear();
         if (persistentBeforeSend != null) {
             beforeSend.add(persistentBeforeSend);

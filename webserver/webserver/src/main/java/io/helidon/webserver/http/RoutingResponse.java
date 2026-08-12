@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 import io.helidon.common.Api;
-import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 
 /**
@@ -99,34 +98,11 @@ public interface RoutingResponse extends ServerResponse {
      * <p>
      * This resets entity buffers and removes framing, representation, validator, range, and trailer headers.
      * Implementations with separate trailer state must reset that state as well.
-     * <p>
-     * This method calls {@link #resetStream()} and removes entity headers by default.
-     *
      * @return {@code true} if reset was successful and a new entity can be created instead of the existing one,
      *         {@code false} if reset failed and status and headers (and maybe entity bytes) were already sent
      */
     @Api.Internal
-    default boolean resetEntity() {
-        if (!resetStream()) {
-            return false;
-        }
-        var headers = headers();
-        headers.remove(HeaderNames.CONTENT_LENGTH);
-        headers.remove(HeaderNames.TRANSFER_ENCODING);
-        headers.remove(HeaderNames.TRAILER);
-        headers.remove(HeaderNames.CONTENT_RANGE);
-        headers.remove(HeaderNames.CONTENT_TYPE);
-        headers.remove(HeaderNames.CONTENT_ENCODING);
-        headers.remove(HeaderNames.CONTENT_LANGUAGE);
-        headers.remove(HeaderNames.CONTENT_LOCATION);
-        headers.remove(HeaderNames.CONTENT_DISPOSITION);
-        headers.remove(HeaderNames.create("Content-Digest"));
-        headers.remove(HeaderNames.create("Repr-Digest"));
-        headers.remove(HeaderNames.ETAG);
-        headers.remove(HeaderNames.LAST_MODIFIED);
-        headers.remove(HeaderNames.ACCEPT_RANGES);
-        return true;
-    }
+    boolean resetEntity();
 
     /**
      * Configure an infrastructure output stream filter that remains registered when an unsent response entity is reset.
