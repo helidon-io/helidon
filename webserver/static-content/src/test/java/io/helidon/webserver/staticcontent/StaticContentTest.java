@@ -203,6 +203,32 @@ class StaticContentTest {
     }
 
     @Test
+    void testWildcardMustBeSoleConditionalEntityTagValue() {
+        String etag;
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .request()) {
+            etag = response.headers().get(HeaderNames.ETAG).get();
+        }
+
+        for (String value : List.of(etag + ", *", "*, " + etag)) {
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_NONE_MATCH, value)
+                    .request()) {
+
+                assertThat("If-None-Match: " + value, response.status(), is(Status.OK_200));
+                assertThat("If-None-Match body for: " + value, response.as(String.class), is("Content"));
+            }
+
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_MATCH, value)
+                    .request()) {
+
+                assertThat("If-Match: " + value, response.status(), is(Status.PRECONDITION_FAILED_412));
+            }
+        }
+    }
+
+    @Test
     void testInvalidIfModifiedSinceIsIgnored() {
         try (Http1ClientResponse response = testClient.get("/path/resource.txt")
                 .header(HeaderNames.IF_MODIFIED_SINCE, "nope")

@@ -150,6 +150,8 @@ abstract class StaticContentHandler implements HttpService {
     }
 
     private static boolean matchesEntityTag(Header header, String etag, boolean strongComparison) {
+        boolean matched = false;
+        boolean singleValue = header.valueCount() == 1;
         for (String fieldValue : header.allValues()) {
             int tokenStart = 0;
             int fieldLength = fieldValue.length();
@@ -179,7 +181,7 @@ abstract class StaticContentHandler implements HttpService {
                                 && (!strongComparison || !weak)
                                 && length == etag.length()
                                 && fieldValue.regionMatches(entityStart + 1, etag, 0, length)) {
-                            return true;
+                            matched = true;
                         }
                     } else {
                         separator = fieldValue.indexOf(',', separator);
@@ -198,7 +200,7 @@ abstract class StaticContentHandler implements HttpService {
                         end--;
                     }
                     if (end - start == 1 && fieldValue.charAt(start) == '*') {
-                        return true;
+                        return singleValue && tokenStart == 0 && separator < 0;
                     }
                     if (weak) {
                         start += 2;
@@ -208,7 +210,7 @@ abstract class StaticContentHandler implements HttpService {
                             && (!strongComparison || !weak)
                             && length == etag.length()
                             && fieldValue.regionMatches(start, etag, 0, length)) {
-                        return true;
+                        matched = true;
                     }
                     if (separator < 0) {
                         break;
@@ -217,7 +219,7 @@ abstract class StaticContentHandler implements HttpService {
                 }
             }
         }
-        return false;
+        return matched;
     }
 
     private static Optional<Instant> conditionalDate(ServerRequestHeaders requestHeaders,
