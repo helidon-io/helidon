@@ -150,10 +150,10 @@ class KeyPerformanceIndicatorMetricsImpls {
             return totalCount;
         }
 
-        protected String meterName(String camelCaseMeterName){
+        protected String meterName(String camelCaseMeterName) {
             return builtInMeterNameFormat == BuiltInMeterNameFormat.CAMEL
-            ? camelCaseMeterName
-            : CAMEL_TO_SNAKE_CASE_METER_NAMES.getOrDefault(camelCaseMeterName, camelCaseMeterName);
+                    ? camelCaseMeterName
+                    : CAMEL_TO_SNAKE_CASE_METER_NAMES.getOrDefault(camelCaseMeterName, camelCaseMeterName);
         }
     }
 
