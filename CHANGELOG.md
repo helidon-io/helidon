@@ -9,6 +9,17 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.20]
+
+This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 3. Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Dependencies: Upgrade Netty to 4.1.137.Final and PostgreSQL to 42.7.13 [12268](https://github.com/helidon-io/helidon/pull/12268)
+- LRA: Clarify coordinator test-only scope [a3ae1a13e4](https://github.com/helidon-io/helidon/commit/a3ae1a13e45656d383f8a9187ba74e461e72c4c7)
+- Security: Preserve requested URI prefix for OIDC redirects [f308943f6d](https://github.com/helidon-io/helidon/commit/f308943f6dbad9c149c8933a4a1d302695f1a6d1)
+- Security: Use constant-time JWT authentication tag comparison [6fd892b72c](https://github.com/helidon-io/helidon/commit/6fd892b72c50ab1136a2a49b16de26094572f3db)
+
 ## [3.2.19]
 
 This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 3. Helidon 3 requires Java 17 or newer.
@@ -1137,6 +1148,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.20]: https://github.com/helidon-io/helidon/compare/3.2.19...3.2.20
 [3.2.19]: https://github.com/helidon-io/helidon/compare/3.2.18...3.2.19
 [3.2.18]: https://github.com/helidon-io/helidon/compare/3.2.17...3.2.18
 [3.2.17]: https://github.com/helidon-io/helidon/compare/3.2.16...3.2.17
