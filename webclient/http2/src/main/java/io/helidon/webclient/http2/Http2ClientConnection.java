@@ -180,10 +180,11 @@ public class Http2ClientConnection {
 
     static Http2ClientConnection createUpgraded(Http2ClientImpl http2Client,
                                                 ClientConnection connection,
-                                                Consumer<Http2ClientConnection> closeListener) {
+                                                Consumer<Http2ClientConnection> closeListener,
+                                                Consumer<Http2ClientConnection> beforeStart) {
 
         Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection, closeListener, true);
-        return create(h2conn, http2Client, false);
+        return create(h2conn, http2Client, false, beforeStart);
     }
 
     /**
@@ -201,9 +202,17 @@ public class Http2ClientConnection {
     static <T extends Http2ClientConnection> T create(T connection,
                                                       Http2ClientImpl http2Client,
                                                       boolean sendSettings) {
+        return create(connection, http2Client, sendSettings, _ -> { });
+    }
+
+    private static <T extends Http2ClientConnection> T create(T connection,
+                                                              Http2ClientImpl http2Client,
+                                                              boolean sendSettings,
+                                                              Consumer<T> beforeStart) {
         Http2ClientConnection rawConnection = connection;
         boolean success = false;
         try {
+            beforeStart.accept(connection);
             rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
             rawConnection.awaitInitialSettings();
             success = true;

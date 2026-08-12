@@ -347,6 +347,7 @@ class Http2ClientConnectionTest {
 
             Http2ClientConnection connection = Http2ClientConnection.createUpgraded(test.client,
                                                                                      test.clientConnection,
+                                                                                     ignored -> { },
                                                                                      ignored -> { });
 
             assertThat(http2ReadTimeouts.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
