@@ -53,6 +53,7 @@ import static org.hamcrest.Matchers.is;
 @ServerTest
 class ContentEncodingContextTest {
 
+    private static final String ETAG = "\"content-encoding\"";
     private static final Header VARY_ACCEPT_ENCODING =
             HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
     private static final Header VARY_ORIGIN =
@@ -83,6 +84,14 @@ class ContentEncodingContextTest {
                 .get("/vary", (_, res) -> {
                     res.headers().add(HeaderValues.create(HeaderNames.VARY, HeaderNames.ORIGIN.defaultCase()));
                     res.send("hello webserver");
+                })
+                .get("/not-modified", (req, res) -> {
+                    res.header(HeaderNames.ETAG, ETAG);
+                    if (req.headers().contains(HeaderValues.create(HeaderNames.IF_NONE_MATCH, ETAG))) {
+                        res.status(Status.NOT_MODIFIED_304).send();
+                    } else {
+                        res.send("hello webserver");
+                    }
                 });
     }
 
@@ -143,6 +152,35 @@ class ContentEncodingContextTest {
             assertThat(response.headers().values(HeaderNames.VARY), hasSize(2));
             assertThat(response.headers().containsToken(VARY_ORIGIN), is(true));
             assertThat(response.headers().containsToken(VARY_ACCEPT_ENCODING), is(true));
+        }
+    }
+
+    @Test
+    void testAutomaticContentEncodingAddsVaryToNotModified() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/not-modified")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+
+            var varyValues = response.headers().values(HeaderNames.VARY);
+            assertThat("Vary response header " + varyValues,
+                       response.headers().containsToken(VARY_ACCEPT_ENCODING), is(true));
+        }
+
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/not-modified")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .header(HeaderNames.IF_NONE_MATCH, ETAG)
+                .request()) {
+            assertThat(response.status(), is(Status.NOT_MODIFIED_304));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.entity().hasEntity(), is(false));
+
+            var varyValues = response.headers().values(HeaderNames.VARY);
+            assertThat("Vary response header " + varyValues,
+                       response.headers().containsToken(VARY_ACCEPT_ENCODING), is(true));
         }
     }
 
