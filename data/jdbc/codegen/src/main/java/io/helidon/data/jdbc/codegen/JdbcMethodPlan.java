@@ -447,6 +447,8 @@ final class JdbcMethodPlan {
         if (JdbcScalarTypes.isScalar(mappedType)) {
             return Mapping.of(MappingKind.SCALAR);
         }
+        // RoundContext presents records known to javac and records generated earlier in this processing run
+        // through the same TypeInfo contract.
         TypeInfo typeInfo = roundContext.typeInfo(mappedType.genericTypeName())
                 .orElseThrow(() -> failure(method, "Mapped result type information is unavailable: "
                         + mappedType.resolvedName()));

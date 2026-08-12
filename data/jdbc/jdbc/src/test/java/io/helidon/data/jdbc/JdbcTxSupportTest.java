@@ -15,7 +15,6 @@
  */
 package io.helidon.data.jdbc;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -126,7 +125,7 @@ class JdbcTxSupportTest {
         assertThat(events.count("rollback"), is(0L));
         assertThat(events.count("start:jdbc"), is(3L));
         assertThat(events.count("end"), is(3L));
-        assertThat(threadState(support), is((Object) null));
+        assertThat(support.threadStatePresent(), is(false));
     }
 
     @Test
@@ -480,7 +479,7 @@ class JdbcTxSupportTest {
                                is(1L));
                 }
                 assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
-                assertThat(threadState(support), is((Object) null));
+                assertThat(support.threadStatePresent(), is(false));
             }
         }
     }
@@ -637,19 +636,4 @@ class JdbcTxSupportTest {
         }
     }
 
-    /**
-     * Reads the transaction thread-local without creating an empty stack.
-     *
-     * @param support transaction support
-     * @return current stack, or {@code null}
-     */
-    private static Object threadState(JdbcTxSupport support) {
-        try {
-            Field field = JdbcTxSupport.class.getDeclaredField("transactions");
-            field.setAccessible(true);
-            return ((ThreadLocal<?>) field.get(support)).get();
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError("Cannot inspect local JDBC transaction state", e);
-        }
-    }
 }

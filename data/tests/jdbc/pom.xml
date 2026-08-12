@@ -60,12 +60,10 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.data.sql</groupId>
             <artifactId>helidon-data-sql-common</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
@@ -108,8 +106,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <configuration>
-                    <!-- Main sources use transaction annotations with source retention. -->
-                    <ignoredNonTestScopedDependencies>io.helidon.transaction:helidon-transaction</ignoredNonTestScopedDependencies>
+                    <!-- Main sources need these JPMS modules. -->
+                    <ignoredNonTestScopedDependencies>
+                        <dependency>io.helidon.config:helidon-config</dependency>
+                        <dependency>io.helidon.data.sql:helidon-data-sql-common</dependency>
+                        <dependency>io.helidon.transaction:helidon-transaction</dependency>
+                    </ignoredNonTestScopedDependencies>
                 </configuration>
             </plugin>
             <plugin>

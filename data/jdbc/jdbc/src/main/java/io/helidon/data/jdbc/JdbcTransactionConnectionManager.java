@@ -58,6 +58,17 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     // Transaction context is synchronous and does not propagate to another thread.
     private final ThreadLocal<State> local = new ThreadLocal<>();
 
+    /**
+     * Reports whether the current thread retains connection-association state.
+     * Package access allows focused cleanup tests to verify removal without
+     * exposing mutable transaction state.
+     *
+     * @return whether connection-association state is present for the current thread
+     */
+    boolean threadStatePresent() {
+        return local.get() != null;
+    }
+
     @Override
     public JdbcConnectionLease acquire(DataSource dataSource) throws SQLException {
         Objects.requireNonNull(dataSource, "The JDBC data source is required");

@@ -319,7 +319,21 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
      * @return datasource adapter
      */
     private static DataSource directDataSource(ConnectionConfig config) {
-        return new DirectDataSource(config, SqlDriver.create(config).driver());
+        return directDataSource(config, SqlDriver.create(config).driver());
+    }
+
+    /**
+     * Adapts direct connection configuration using an already selected driver.
+     * Package access supports focused adapter tests without exposing the private
+     * datasource implementation.
+     *
+     * @param config direct connection configuration
+     * @param driver selected driver
+     * @return datasource adapter
+     */
+    static DataSource directDataSource(ConnectionConfig config, Driver driver) {
+        return new DirectDataSource(Objects.requireNonNull(config, "Connection configuration must not be null"),
+                                    Objects.requireNonNull(driver, "JDBC driver must not be null"));
     }
 
     /**
