@@ -185,7 +185,7 @@ class DeclarativeGraphQlTest {
 
         assertThat(data.stringValue("tracedHello").orElseThrow(), is("Traced Trace"));
 
-        var spans = spanExporter.spanData("graphql-traced-hello");
+        var spans = spanExporter.spanDataForTrace("graphql-traced-hello", "HTTP Request", "content-write");
         spanExporter.clear();
         SpanData httpRequest = null;
         SpanData contentWrite = null;
