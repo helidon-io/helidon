@@ -375,6 +375,9 @@ Helidon {h1-prefix} also includes additional, extended KPI metrics which are dis
 * load - a `Counter` (`requests.load`) measuring the number of requests worked on (as opposed to received)
 * deferred - a `Gauge` (`requests.deferred`) measuring delayed request processing (work on a request was delayed after Helidon received the request)
 
+The names above use the default `CAMEL` built-in meter name format. With the `SNAKE` format, Helidon reports the
+in-flight and long-running metrics as `requests.in_flight` and `requests.long_running`, respectively.
+
 You can enable and control these {metrics} using configuration:
 ifdef::mp-flavor[]
 [source,properties]
