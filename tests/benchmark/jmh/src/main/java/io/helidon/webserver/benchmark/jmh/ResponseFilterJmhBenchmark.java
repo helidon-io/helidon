@@ -1,0 +1,248 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.webserver.benchmark.jmh;
+
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import java.util.function.UnaryOperator;
+
+import io.helidon.logging.common.LogConfig;
+import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webclient.http2.Http2ClientResponse;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.FilterChain;
+import io.helidon.webserver.http.RoutingRequest;
+import io.helidon.webserver.http.RoutingResponse;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http2.Http2Config;
+import io.helidon.webserver.http2.Http2ConnectionSelector;
+
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.infra.Blackhole;
+
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.SECONDS)
+@State(Scope.Benchmark)
+public class ResponseFilterJmhBenchmark {
+    private static final String HOST = "127.0.0.1";
+    private static final String DIRECT_NONE = "/direct-none";
+    private static final String DIRECT_ENTITY = "/direct-entity";
+    private static final String DIRECT_PERSISTENT = "/direct-persistent";
+    private static final String STREAM_NONE = "/stream-none";
+    private static final String STREAM_ENTITY = "/stream-entity";
+    private static final String STREAM_PERSISTENT = "/stream-persistent";
+    private static final int REQUESTS_PER_INVOCATION = 16;
+    private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.UTF_8);
+    private static final UnaryOperator<OutputStream> OUTPUT_FILTER = PassthroughOutputStream::new;
+
+    private WebServer server;
+    private HttpClient http1Client;
+    private Http2Client http2Client;
+    private HttpRequest http1DirectNone;
+    private HttpRequest http1DirectEntity;
+    private HttpRequest http1DirectPersistent;
+    private HttpRequest http1StreamNone;
+    private HttpRequest http1StreamEntity;
+    private HttpRequest http1StreamPersistent;
+
+    @Setup
+    public void setup() {
+        LogConfig.configureRuntime();
+        Http2Config http2Config = Http2Config.builder().build();
+        server = WebServer.builder()
+                .host(HOST)
+                .addProtocol(http2Config)
+                .addConnectionSelector(Http2ConnectionSelector.builder()
+                                               .http2Config(http2Config)
+                                               .build())
+                .routing(routing -> routing
+                        .addFilter(ResponseFilterJmhBenchmark::configureFilter)
+                        .get(DIRECT_NONE, ResponseFilterJmhBenchmark::sendDirect)
+                        .get(DIRECT_ENTITY, ResponseFilterJmhBenchmark::sendDirect)
+                        .get(DIRECT_PERSISTENT, ResponseFilterJmhBenchmark::sendDirect)
+                        .get(STREAM_NONE, ResponseFilterJmhBenchmark::sendStream)
+                        .get(STREAM_ENTITY, ResponseFilterJmhBenchmark::sendStream)
+                        .get(STREAM_PERSISTENT, ResponseFilterJmhBenchmark::sendStream))
+                .build()
+                .start();
+
+        String baseUri = "http://" + HOST + ":" + server.port();
+        http1Client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+        http2Client = Http2Client.builder()
+                .shareConnectionCache(false)
+                .protocolConfig(http2 -> http2.priorKnowledge(true))
+                .baseUri(baseUri)
+                .build();
+        http1DirectNone = request(baseUri, DIRECT_NONE);
+        http1DirectEntity = request(baseUri, DIRECT_ENTITY);
+        http1DirectPersistent = request(baseUri, DIRECT_PERSISTENT);
+        http1StreamNone = request(baseUri, STREAM_NONE);
+        http1StreamEntity = request(baseUri, STREAM_ENTITY);
+        http1StreamPersistent = request(baseUri, STREAM_PERSISTENT);
+    }
+
+    @TearDown
+    public void tearDown() {
+        http2Client.closeResource();
+        server.stop();
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1DirectNoFilter(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1DirectNone, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1DirectEntityFilter(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1DirectEntity, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1DirectPersistentFilter(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1DirectPersistent, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1StreamNoFilter(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1StreamNone, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1StreamEntityFilter(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1StreamEntity, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1StreamPersistentFilter(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1StreamPersistent, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2DirectNoFilter(Blackhole blackhole) {
+        http2(DIRECT_NONE, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2DirectEntityFilter(Blackhole blackhole) {
+        http2(DIRECT_ENTITY, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2DirectPersistentFilter(Blackhole blackhole) {
+        http2(DIRECT_PERSISTENT, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2StreamNoFilter(Blackhole blackhole) {
+        http2(STREAM_NONE, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2StreamEntityFilter(Blackhole blackhole) {
+        http2(STREAM_ENTITY, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2StreamPersistentFilter(Blackhole blackhole) {
+        http2(STREAM_PERSISTENT, blackhole);
+    }
+
+    private static HttpRequest request(String baseUri, String path) {
+        return HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(baseUri + path))
+                .build();
+    }
+
+    private static void configureFilter(FilterChain chain, RoutingRequest request, RoutingResponse response) {
+        switch (request.path().path()) {
+        case DIRECT_ENTITY, STREAM_ENTITY -> response.streamFilter(OUTPUT_FILTER);
+        case DIRECT_PERSISTENT, STREAM_PERSISTENT -> response.persistentStreamFilter(OUTPUT_FILTER);
+        default -> {
+        }
+        }
+        chain.proceed();
+    }
+
+    private static void sendDirect(ServerRequest request, ServerResponse response) {
+        response.send(RESPONSE_BYTES);
+    }
+
+    private static void sendStream(ServerRequest request, ServerResponse response) {
+        try (OutputStream outputStream = response.outputStream()) {
+            outputStream.write(RESPONSE_BYTES);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void http1(HttpRequest request, Blackhole blackhole) throws IOException, InterruptedException {
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            HttpResponse<byte[]> response = http1Client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            blackhole.consume(response.statusCode());
+            blackhole.consume(response.body());
+        }
+    }
+
+    private void http2(String path, Blackhole blackhole) {
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            try (Http2ClientResponse response = http2Client.get(path).request()) {
+                blackhole.consume(response.status());
+                blackhole.consume(response.entity().as(byte[].class));
+            }
+        }
+    }
+
+    private static final class PassthroughOutputStream extends FilterOutputStream {
+        private PassthroughOutputStream(OutputStream outputStream) {
+            super(outputStream);
+        }
+    }
+}
