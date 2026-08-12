@@ -37,52 +37,11 @@ Helidon {h1-prefix} simplifies how you can use Micrometer for application-specif
 
 * A Micrometer-backed Helidon meter registry for application-specific metrics.
 * The standard `/observe/metrics` endpoint, exposed by the metrics observer.
-* Configuration to tailor the Prometheus and other Micrometer metrics publishers.
+* Configuration to tailor the Prometheus and OTLP Micrometer metrics publishers.
 
 The Micrometer provider backs Helidon's neutral metrics API and configured metrics publishers.
 
 // end::intro[]
-
-// tag::overriding-intro[]
-==== Overriding Defaults for Built-in Meter Registry Types
-Unless you specify otherwise, Helidon uses defaults for any built-in Micrometer meter registry.
-For example, Helidon configures the built-in Prometheus registry using `PrometheusConfig.DEFAULT`.
-
-// end::overriding-intro[]
-
-
-// tag::overriding-using-config[]
-To use configuration to control the selection and behavior of Helidon's built-in Micrometer meter registries,
-include in your configuration (such as `application.yaml`) a `micrometer.builtin-registries` section.
-
-.Enroll Prometheus built-in meter registry using default configuration
-[source,yaml]
-----
-micrometer:
-  builtin-registries:
-    - type: prometheus
-----
-
-.Enroll Prometheus built-in meter registry with non-default configuration
-[source,yaml]
-----
-micrometer:
-  builtin-registries:
-    - type: prometheus
-      prefix: myPrefix
-----
-Note that the first config example is equivalent to the default Helidon Micrometer behavior; Helidon by default supports the Prometheus meter registry.
-
-The configuration keys that are valid for the `builtin-registries` child entries depend on the type of Micrometer meter
-registry.
-For example, support in Helidon for the link:{micrometer-javadoc-registry-prometheus-base-url}/PrometheusConfig.html[Prometheus meter registry] respects the `prefix` configuration setting but other meter registries might not and might support other settings.
-Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry
-type.
-
-Helidon does not validate the configuration keys you specify for
-meter registries.
-
-// end::overriding-using-config[]
 
 // tag::accessing-endpoint-intro[]
 === Accessing the Helidon Metrics Endpoint
@@ -95,6 +54,9 @@ supported response formats.
 // tag::configuring-endpoint[]
 == Configuration
 Helidon's Micrometer support is exposed through the Micrometer-backed metrics publishers.
+Configure publishers under `metrics.publishers` or under
+`server.features.observe.observers.metrics.publishers` for observer-specific settings.
+If you do not configure any publishers explicitly, Helidon infers a Prometheus publisher.
 The generated configuration references below describe the currently supported publisher types.
 
 include::{rootdir}/config/io_helidon_metrics_providers_micrometer_PrometheusPublisher.adoc[tag=config,leveloffset=+1]

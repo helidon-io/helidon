@@ -71,11 +71,12 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      *              .get(io.helidon.metrics.api.MetricsFactory.class)
      *              .createMeterRegistry(metricsConfig);
      *      MetricsObserver.builder()
+     *              .endpoint("metrics-2")
      *              .meterRegistry(meterRegistry) // further settings on the observer builder, etc.
      *              .build();
      * }
-     * where {@code metricsConfig} in each case has different
-     * {@link #endpoint() settings}.
+     * where {@code metricsConfig} can contain registry-specific settings.
+     * Configure a different {@link #endpoint()} on each observer.
      * <p>
      * If this method is not called,
      * {@link MetricsObserver} uses the shared

@@ -43,10 +43,12 @@ include::{rootdir}/includes/dependencies.adoc[tag=maven-dependency]
 .`pom.xml`
 ----
 <dependency>
-    <groupId>io.helidon.metrics.providers</groupId>
-    <artifactId>helidon-metrics-providers-micrometer</artifactId>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-metrics</artifactId>
 </dependency>
 ----
+This dependency adds the metrics observer and the `/observe/metrics` endpoint and transitively includes Helidon's
+Micrometer-based metrics implementation.
 
 == Usage
 Your application registers and updates Micrometer meters using annotations or direct use of the Micrometer API.
@@ -105,18 +107,9 @@ include::{sourcedir}/se/metrics/MicrometerSnippets.java[tag=snippet_2, indent=0]
 <2> Add routing for any request to invoke the method which counts requests by updating the counter.
 <3> Update the counter and then delegate the rest of the request processing to the next handler in the chain.
 
-The example above enrolls the built-in Prometheus meter registry with the default Prometheus registry configuration.
-You can change the default setup for built-in registries, and you can enroll other meter registries your application
-creates itself.
-
-include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=overriding-intro]
-
-You can override these defaults using configuration.
-
-
-==== Using Configuration
-
-include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=overriding-using-config]
+The example registers the counter in Helidon's service-owned registry, so the configured metrics publishers expose it.
+If you do not configure any publishers explicitly, Helidon infers a Prometheus publisher.
+See xref:{rootdir}/se/metrics/metrics.adoc#usage-publishing[publishing Helidon metrics] for publisher configuration.
 
 
 == Additional Information

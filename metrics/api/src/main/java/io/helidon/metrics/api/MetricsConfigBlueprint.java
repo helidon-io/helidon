@@ -207,7 +207,7 @@ interface MetricsConfigBlueprint {
 
     /**
      * Metrics publishers which make the metrics data available to external systems. Helidon's Micrometer-based
-     * metrics provider includes {@code micrometer-prometheus} (used by default) and {@code micrometer-otlp}.
+     * metrics provider includes publishers with the config keys {@code prometheus} (inferred by default) and {@code otlp}.
      * See the config reference entries for {@code io.helidon.metrics.providers.micrometer.PrometheusPublisher} and
      * {@code io.helidon.metrics.providers.micrometer.OtlpPublisher}.
      *
