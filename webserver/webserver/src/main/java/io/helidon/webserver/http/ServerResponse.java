@@ -200,6 +200,8 @@ public interface ServerResponse {
      * Executed right before the first byte is written to the socket (including response status and headers).
      * Response can be modified (i.e. headers, status) at this point, though modifying the entity may not be done, as
      * this method is most likely called from within one of the {@link #send()} methods.
+     * The listener is associated with the current response entity and may be removed if error handling replaces that entity
+     * before it is sent.
      * <p>
      * Note: this method is implemented as a default method that does nothing, for backward compatibility.
      *

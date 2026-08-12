@@ -542,8 +542,9 @@ metadata before sending the response.
 
 If a handler throws an exception while its response can still be reset, WebServer discards the unsent entity before
 invoking error handling. It also removes entity-related framing, representation, validator, range, digest, and trailer
-metadata. Status and unrelated metadata, such as CORS, cookies, cache controls, `Vary`, and custom headers, remain
-available to the error handler. Once response metadata or entity bytes have been sent, the response cannot be replaced.
+metadata, together with entity-scoped response preparation callbacks and output stream filters. Status and unrelated
+metadata, such as CORS, cookies, cache controls, `Vary`, and custom headers, remain available to the error handler. Once
+response metadata or entity bytes have been sent, the response cannot be replaced.
 
 [[anchor-filtering]]
 === Filtering

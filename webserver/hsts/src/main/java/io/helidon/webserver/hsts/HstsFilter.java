@@ -33,7 +33,7 @@ class HstsFilter implements Filter {
 
     @Override
     public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
-        res.beforeSend(() -> maybeAddHeader(req, res));
+        res.persistentBeforeSend(() -> maybeAddHeader(req, res));
         chain.proceed();
     }
 

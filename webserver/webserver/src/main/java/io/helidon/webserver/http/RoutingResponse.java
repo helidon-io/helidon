@@ -137,4 +137,17 @@ public interface RoutingResponse extends ServerResponse {
     default void persistentStreamFilter(UnaryOperator<OutputStream> filterFunction) {
         streamFilter(Objects.requireNonNull(filterFunction));
     }
+
+    /**
+     * Register an infrastructure listener that remains registered when an unsent response entity is reset.
+     * <p>
+     * This method is intended for Helidon features that must prepare both the original response entity and any replacement
+     * entity produced by error handling. Application listeners should use {@link #beforeSend(Runnable)}.
+     *
+     * @param listener listener invoked before the response is sent
+     */
+    @Api.Internal
+    default void persistentBeforeSend(Runnable listener) {
+        beforeSend(Objects.requireNonNull(listener));
+    }
 }

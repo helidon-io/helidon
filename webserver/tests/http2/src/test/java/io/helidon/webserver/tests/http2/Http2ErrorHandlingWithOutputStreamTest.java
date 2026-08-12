@@ -125,6 +125,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
                     res.header(HeaderNames.CACHE_CONTROL, "no-store");
                     res.header(HeaderNames.VARY, "Origin");
                     res.streamFilter(_ -> OutputStream.nullOutputStream());
+                    res.beforeSend(() -> res.header(HeaderNames.CONTENT_ENCODING, "stale"));
                     res.outputStream();
                     throw new CustomException();
                 }))

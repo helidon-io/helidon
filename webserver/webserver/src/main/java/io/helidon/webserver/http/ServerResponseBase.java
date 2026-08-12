@@ -84,6 +84,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private UriQuery rerouteQuery;
     private String reroutePath;
     private Consumer<ServerResponseTrailers> beforeTrailers;
+    private List<Runnable> persistentBeforeSend;
     private UnaryOperator<OutputStream> persistentStreamFilter;
     private UnaryOperator<OutputStream> streamFilter;
 
@@ -139,8 +140,18 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
     @Override
     public ServerResponse beforeSend(Runnable listener) {
-        beforeSend.add(listener);
+        beforeSend.add(Objects.requireNonNull(listener));
         return (T) this;
+    }
+
+    @Override
+    public void persistentBeforeSend(Runnable listener) {
+        Objects.requireNonNull(listener);
+        if (persistentBeforeSend == null) {
+            persistentBeforeSend = new ArrayList<>(1);
+        }
+        persistentBeforeSend.add(listener);
+        beforeSend.add(listener);
     }
 
     @Override
@@ -221,6 +232,10 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     public boolean resetEntity() {
         if (!RoutingResponse.super.resetEntity()) {
             return false;
+        }
+        beforeSend.clear();
+        if (persistentBeforeSend != null) {
+            beforeSend.addAll(persistentBeforeSend);
         }
         beforeTrailers = null;
         streamFilter = persistentStreamFilter;

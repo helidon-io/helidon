@@ -55,6 +55,24 @@ import static org.mockito.Mockito.when;
 class Http1ServerResponseTest {
 
     @Test
+    void resetEntityPreservesPersistentBeforeSendListeners() {
+        Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
+        List<String> invokedListeners = new ArrayList<>();
+
+        response.persistentBeforeSend(() -> invokedListeners.add("persistent"));
+        response.beforeSend(() -> invokedListeners.add("entity"));
+
+        response.outputStream();
+        assertThat(invokedListeners, is(List.of("persistent", "entity")));
+
+        assertThat(response.resetEntity(), is(true));
+        invokedListeners.clear();
+        response.outputStream();
+
+        assertThat(invokedListeners, is(List.of("persistent")));
+    }
+
+    @Test
     void resetEntityPreservesPersistentStreamFilters() {
         Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
         List<String> appliedFilters = new ArrayList<>();
