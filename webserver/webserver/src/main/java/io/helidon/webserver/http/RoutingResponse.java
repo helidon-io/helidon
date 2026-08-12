@@ -96,13 +96,20 @@ public interface RoutingResponse extends ServerResponse {
      * <p>
      * This method is intended for Helidon infrastructure that replaces a failed response entity.
      * <p>
-     * This resets entity buffers and removes framing, representation, validator, range, and trailer headers.
-     * Implementations with separate trailer state must reset that state as well.
+     * Implementations that track entity metadata must override this method to reset entity buffers and remove framing,
+     * representation, validator, range, and trailer headers. Implementations with separate trailer state must reset that
+     * state as well.
+     * <p>
+     * For compatibility with existing {@link RoutingResponse} implementations, the default implementation calls
+     * {@link #resetStream()}.
+     *
      * @return {@code true} if reset was successful and a new entity can be created instead of the existing one,
      *         {@code false} if reset failed and status and headers (and maybe entity bytes) were already sent
      */
     @Api.Internal
-    boolean resetEntity();
+    default boolean resetEntity() {
+        return resetStream();
+    }
 
     /**
      * Configure an infrastructure output stream filter that remains registered when an unsent response entity is reset.
