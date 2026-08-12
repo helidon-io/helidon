@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.webclient.api;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
+import io.helidon.webclient.spi.HttpClientSpiProvider;
 import io.helidon.webclient.spi.Protocol;
 import io.helidon.webclient.spi.ProtocolConfig;
 
@@ -96,6 +99,24 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
      * @return a new protocol client instance
      */
     <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol);
+
+    /**
+     * Active TCP protocol IDs in preference order.
+     * Implementations that do not expose their active protocols return an empty list.
+     * The returned list is an immutable snapshot.
+     * <p>
+     * This method must not be called from
+     * {@link HttpClientSpiProvider#protocol(WebClient, Object)} while this client is being
+     * constructed. Protocol clients should retain the {@link WebClient} instance and obtain the protocol IDs after
+     * construction completes.
+     *
+     * @return unmodifiable list of active TCP protocol IDs
+     * @throws IllegalStateException if the protocol inventory is not yet available
+     */
+    @Api.Internal
+    default List<String> tcpProtocolIds() {
+        return List.of();
+    }
 
     /**
      * Executor services, uses virtual threads.
