@@ -169,28 +169,6 @@ metrics:
       interval: PT20S
 ----
 
-==== Writing Additional Publishers
-You can write other publishers by following these steps:
-
-. Choose one of the Micrometer `MeterRegistry` implementations for the type of publishing you want to support. (for example link:https://github.com/micrometer-metrics/micrometer/tree/main/implementations/micrometer-registry-datadog[`DatadogMeterRegistry`])
-. Create a config blueprint which exposes the meter registry's link:https://github.com/micrometer-metrics/micrometer/blob/main/implementations/micrometer-registry-datadog/src/main/java/io/micrometer/datadog/DatadogConfig.java[settable properties from `DatadogConfig`].
-. Write a `DatadogPublisher` class which implements Helidon's `MetricsPublisher` for Datadog.
-. Write a `DatadogPublisherProvider` class which implements Helidon's `MetricsPublisherProvider` for your publisher.
-. Advertise your provider so Java service loading can find it, creating a `META-INF/services/io.helidon.metrics.spi.PublisherProvider` file listing your implementation class.
-
-Look at Helidon's link:https://github.com/helidon-io/helidon/tree/main/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java[OTLP publisher blueprint] and the related types as an example.
-
-Refer to your publisher in configuration using the config key you set up in the publisher provider.
-
-[source,yaml]
-.Example config using a hypothetical Datadog publisher
-----
-metrics:
-  publishers:
-    micrometer-datadog:
-      interval: PT15S
-----
-
 ==== Using and Controlling the Metrics Endpoint
 When you add the
 `helidon-webserver-observe-metrics` dependency
