@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ConfigurationValueFactoryTest {
@@ -57,6 +58,39 @@ class ConfigurationValueFactoryTest {
 
         assertThat(values, hasSize(1));
         assertThat(values.getFirst().get(), is("Ahoj"));
+    }
+
+    @Test
+    void literalKeyMapsScalarToCharArray() {
+        ConfigurationValueFactory factory = factory(Map.of("app.password", "secret-value"));
+
+        List<Service.QualifiedInstance<Object>> values = factory.list(Qualifier.create(Configuration.Value.class,
+                                                                                      "app.password"),
+                                                                      Lookup.create(char[].class),
+                                                                      asObjectType(GenericType.create(char[].class)));
+
+        assertThat(values, hasSize(1));
+        assertArrayEquals("secret-value".toCharArray(), (char[]) values.getFirst().get());
+    }
+
+    @Test
+    void literalKeyUsesCustomCharArrayMapper() {
+        Config config = Config.builder()
+                .sources(ConfigSources.create(Map.of("app.password", "secret-value")))
+                .addMapper(char[].class, it -> "custom-value".toCharArray())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .disableFilterServices()
+                .build();
+        ConfigurationValueFactory factory = new ConfigurationValueFactory(() -> defaultsResolver(config), () -> config);
+
+        List<Service.QualifiedInstance<Object>> values = factory.list(Qualifier.create(Configuration.Value.class,
+                                                                                      "app.password"),
+                                                                      Lookup.create(char[].class),
+                                                                      asObjectType(GenericType.create(char[].class)));
+
+        assertThat(values, hasSize(1));
+        assertArrayEquals("custom-value".toCharArray(), (char[]) values.getFirst().get());
     }
 
     @Test
