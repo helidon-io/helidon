@@ -55,11 +55,11 @@ class TestKpiMeterNameCase {
                                                 KeyPerformanceIndicatorMetricsConfig.builder().extended(true).build(),
                                                 BuiltInMeterNameFormat.CAMEL);
 
-        assertThat("In-flight KPI",
-                   meterRegistry.meters().stream()
-                           .map(m -> m.id().name())
-                           .toList(),
-                   hasItem("requests.inFlight"));
+        var meterNames = meterRegistry.meters().stream()
+                .map(m -> m.id().name())
+                .toList();
+        assertThat("In-flight KPI", meterNames, hasItem("requests.inFlight"));
+        assertThat("Long-running KPI", meterNames, hasItem("requests.longRunning"));
     }
 
     @Test
@@ -78,11 +78,11 @@ class TestKpiMeterNameCase {
                                                 KeyPerformanceIndicatorMetricsConfig.builder().extended(true).build(),
                                                 BuiltInMeterNameFormat.SNAKE);
 
-        assertThat("In-flight KPI",
-                   meterRegistry.meters().stream()
-                           .map(m -> m.id().name())
-                           .toList(),
-                   hasItem("requests.in_flight"));
+        var meterNames = meterRegistry.meters().stream()
+                .map(m -> m.id().name())
+                .toList();
+        assertThat("In-flight KPI", meterNames, hasItem("requests.in_flight"));
+        assertThat("Long-running KPI", meterNames, hasItem("requests.long_running"));
     }
 
     @Test

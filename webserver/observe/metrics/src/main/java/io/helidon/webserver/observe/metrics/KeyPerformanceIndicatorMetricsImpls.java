@@ -196,7 +196,7 @@ class KeyPerformanceIndicatorMetricsImpls {
                             .description("Measures the number of requests currently being processed")));
 
             longRunningRequests = add(kpiMeterRegistry.getOrCreate(
-                    metricsFactory.counterBuilder(meterNamePrefix + LONG_RUNNING_REQUESTS_NAME)
+                    metricsFactory.counterBuilder(meterNamePrefix + meterName(LONG_RUNNING_REQUESTS_NAME))
                             .description("Measures the total number of long-running requests and rates at which they occur")
                             .scope(KPI_METERS_SCOPE)
             ));
