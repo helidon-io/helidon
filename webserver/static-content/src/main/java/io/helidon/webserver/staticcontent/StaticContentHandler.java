@@ -166,10 +166,6 @@ abstract class StaticContentHandler implements HttpService {
                 if (entityStart < fieldLength && fieldValue.charAt(entityStart) == '"') {
                     int entityEnd = fieldValue.indexOf('"', entityStart + 1);
                     if (entityEnd < 0) {
-                        if (fieldLength - entityStart == 1) {
-                            // Preserve the existing malformed-tag failure until invalid entity tags are handled separately.
-                            unquoteETag(fieldValue.substring(entityStart));
-                        }
                         break;
                     }
 

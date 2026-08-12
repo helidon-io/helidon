@@ -19,6 +19,7 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
@@ -173,6 +174,31 @@ class StaticContentTest {
 
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testMalformedIfNoneMatchIsIgnored() {
+        for (String value : List.of("\"", "W/\"")) {
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_NONE_MATCH, value)
+                    .request()) {
+
+                assertThat("If-None-Match: " + value, response.status(), is(Status.OK_200));
+                assertThat("If-None-Match body for: " + value, response.as(String.class), is("Content"));
+            }
+        }
+    }
+
+    @Test
+    void testMalformedIfMatchFailsPrecondition() {
+        for (String value : List.of("\"", "W/\"")) {
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_MATCH, value)
+                    .request()) {
+
+                assertThat("If-Match: " + value, response.status(), is(Status.PRECONDITION_FAILED_412));
+            }
         }
     }
 
