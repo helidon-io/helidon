@@ -68,9 +68,11 @@ class StaticContentTest {
         Files.createDirectories(alternateRoot);
 
         Path resource = staticRoot.resolve("resource.txt");
+        Path empty = staticRoot.resolve("empty.txt");
         Path favicon = staticRoot.resolve("favicon.ico");
 
         Files.writeString(resource, "Content");
+        Files.writeString(empty, "");
         Files.writeString(favicon, "Wrong icon text");
         Files.writeString(nested.resolve("resource.txt"), "Nested content");
         Files.writeString(staticRoot.resolve("alias-one.txt"), "Alias one");
@@ -79,8 +81,16 @@ class StaticContentTest {
         Files.writeString(alternateRoot.resolve("resource.txt"), "Alternate content");
 
         builder.register("/classpath", createService(ClasspathHandlerConfig.create("web")))
+                .register("/classpath-memory", createService(ClasspathHandlerConfig.builder()
+                                                                      .location("web")
+                                                                      .cachedFiles(Set.of("resource.txt"))
+                                                                      .build()))
                 .register("/singleclasspath", createService(ClasspathHandlerConfig.create("web/resource.txt")))
                 .register("/path", createService(FileSystemHandlerConfig.create(staticRoot)))
+                .register("/path-memory", createService(FileSystemHandlerConfig.builder()
+                                                                .location(staticRoot)
+                                                                .cachedFiles(Set.of("empty.txt"))
+                                                                .build()))
                 .register("/singlepath", createService(FileSystemHandlerConfig.create(resource)));
 
         builder.register("/welcome-path", createService(FileSystemHandlerConfig.builder()
@@ -231,6 +241,52 @@ class StaticContentTest {
     }
 
     @Test
+    void testClasspathRangeWithNonZeroOffset() {
+        try (Http1ClientResponse response = testClient.get("/classpath-memory/resource.txt")
+                .header(HeaderNames.RANGE, "bytes=2-4")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-4/7"));
+            assertThat(response.as(String.class), is("nte"));
+        }
+    }
+
+    @Test
+    void testFileSystemRangeEndBeyondContent() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.RANGE, "bytes=2-999")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-6/7"));
+            assertThat(response.as(String.class), is("ntent"));
+        }
+    }
+
+    @Test
+    void testFileSystemSuffixRangeBeyondContent() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.RANGE, "bytes=-999")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 0-6/7"));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testFileSystemEmptyRange() {
+        assertEmptyRanges("/path/empty.txt");
+    }
+
+    @Test
+    void testCachedEmptyRange() {
+        assertEmptyRanges("/path-memory/empty.txt");
+    }
+
+    @Test
     void testFileSystemWelcomeFileSymlinkOutsideRoot() throws Exception {
         Path link = staticRoot.resolve("welcome").resolve("index.html");
         assumeTrue(createSymbolicLink(link, externalDir.resolve("resource.txt")), "Symbolic links cannot be created");
@@ -310,6 +366,42 @@ class StaticContentTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    private void assertEmptyRanges(String path) {
+        assertEmptyRangeIgnored(path, "bytes=-1");
+        assertEmptyRangeIgnored(path, "bytes=-1, 9223372036854775808-");
+
+        try (Http1ClientResponse response = testClient.get(path)
+                .header(HeaderNames.RANGE, "bytes=-0")
+                .request()) {
+
+            assertThat(path + " status for bytes=-0",
+                       response.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+        }
+
+        try (Http1ClientResponse response = testClient.get(path)
+                .header(HeaderNames.RANGE, "bytes=0-")
+                .request()) {
+
+            assertThat(path + " status for bytes=0-",
+                       response.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+        }
+    }
+
+    private void assertEmptyRangeIgnored(String path, String range) {
+        try (Http1ClientResponse response = testClient.get(path)
+                .header(HeaderNames.RANGE, range)
+                .request()) {
+
+            String description = path + " with " + range;
+            assertThat(description + " status", response.status(), is(Status.OK_200));
+            assertThat(description + " content length",
+                       response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_LENGTH, "0"));
+            assertThat(description + " content range",
+                       response.headers().contains(HeaderNames.CONTENT_RANGE), is(false));
+            assertThat(description + " entity", response.entity().hasEntity(), is(false));
         }
     }
 
