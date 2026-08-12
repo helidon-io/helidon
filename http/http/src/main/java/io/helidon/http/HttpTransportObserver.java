@@ -30,6 +30,31 @@ import io.helidon.common.Api;
 @FunctionalInterface
 public interface HttpTransportObserver {
     /**
+     * Known transport identifier for TCP.
+     */
+    String TRANSPORT_TCP = "tcp";
+    /**
+     * Known transport identifier for Unix domain sockets.
+     */
+    String TRANSPORT_UNIX = "unix";
+    /**
+     * Known transport identifier for QUIC.
+     */
+    String TRANSPORT_QUIC = "quic";
+    /**
+     * Known protocol identifier for HTTP/1.1, aligned with the HTTP transport metrics tag value.
+     */
+    String PROTOCOL_HTTP_1_1 = "http/1.1";
+    /**
+     * Known protocol identifier for HTTP/2, aligned with the HTTP transport metrics tag value.
+     */
+    String PROTOCOL_HTTP_2 = "http/2";
+    /**
+     * Known protocol identifier for HTTP/3, aligned with the HTTP transport metrics tag value.
+     */
+    String PROTOCOL_HTTP_3 = "http/3";
+
+    /**
      * Returns an observer which ignores all lifecycle events.
      *
      * @return no-op observer
@@ -58,11 +83,11 @@ public interface HttpTransportObserver {
      * The returned observation must not be {@code null}.
      *
      * @param role endpoint role
-     * @param transport physical transport
+     * @param transport non-blank physical transport identifier
      * @param handshake connection handshake type
      * @return connection observation
      */
-    ConnectionObservation connectionOpened(Role role, Transport transport, Handshake handshake);
+    ConnectionObservation connectionOpened(Role role, String transport, Handshake handshake);
 
     /**
      * Endpoint role.
@@ -76,28 +101,6 @@ public interface HttpTransportObserver {
          * Server endpoint.
          */
         SERVER
-    }
-
-    /**
-     * Physical transport.
-     */
-    enum Transport {
-        /**
-         * TCP transport.
-         */
-        TCP,
-        /**
-         * Unix domain socket transport.
-         */
-        UNIX,
-        /**
-         * QUIC transport.
-         */
-        QUIC,
-        /**
-         * Another transport.
-         */
-        OTHER
     }
 
     /**
@@ -116,28 +119,6 @@ public interface HttpTransportObserver {
          * TLS integrated with QUIC.
          */
         QUIC_TLS
-    }
-
-    /**
-     * Selected HTTP protocol.
-     */
-    enum Protocol {
-        /**
-         * No HTTP protocol has been selected.
-         */
-        UNKNOWN,
-        /**
-         * HTTP/1.1.
-         */
-        HTTP_1_1,
-        /**
-         * HTTP/2.
-         */
-        HTTP_2,
-        /**
-         * HTTP/3.
-         */
-        HTTP_3
     }
 
     /**
@@ -272,12 +253,11 @@ public interface HttpTransportObserver {
          * <p>The first selection marks the physical connection as established and usable for that protocol. A publisher
          * must therefore report the first selection only after any required transport security handshake has succeeded.
          * The selected protocol may later change, for example after a successful HTTP/1.1 upgrade to HTTP/2. Repeated
-         * selection of the same protocol has no effect. {@link Protocol#UNKNOWN} is not a selected protocol and must not
-         * be reported.
+         * selection of an equal protocol identifier has no effect.
          *
-         * @param protocol selected protocol
+         * @param protocol non-blank selected protocol identifier
          */
-        void protocolSelected(Protocol protocol);
+        void protocolSelected(String protocol);
 
         /**
          * Observes an opened HTTP stream.

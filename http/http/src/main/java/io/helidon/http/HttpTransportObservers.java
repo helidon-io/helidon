@@ -32,7 +32,6 @@ import io.helidon.http.HttpTransportObserver.Direction;
 import io.helidon.http.HttpTransportObserver.HandshakeObservation;
 import io.helidon.http.HttpTransportObserver.HandshakeOutcome;
 import io.helidon.http.HttpTransportObserver.Initiator;
-import io.helidon.http.HttpTransportObserver.Protocol;
 import io.helidon.http.HttpTransportObserver.StreamObservation;
 import io.helidon.http.HttpTransportObserver.StreamOutcome;
 
@@ -42,7 +41,7 @@ final class HttpTransportObservers {
     static final ConnectionObservation NOOP_CONNECTION = new NoOpConnectionObservation();
     static final HttpTransportObserver NOOP = (role, transport, handshake) -> {
         Objects.requireNonNull(role, "role");
-        Objects.requireNonNull(transport, "transport");
+        requireIdentifier(transport, "transport");
         Objects.requireNonNull(handshake, "handshake");
         return NOOP_CONNECTION;
     };
@@ -78,6 +77,14 @@ final class HttpTransportObservers {
         LOGGER.log(WARNING, "HTTP transport observer failed while processing " + event, failure);
     }
 
+    private static String requireIdentifier(String identifier, String name) {
+        Objects.requireNonNull(identifier, name);
+        if (identifier.isBlank()) {
+            throw new IllegalArgumentException(name + " must not be blank");
+        }
+        return identifier;
+    }
+
     private static final class CompositeObserver implements HttpTransportObserver {
         private final List<HttpTransportObserver> observers;
 
@@ -86,9 +93,9 @@ final class HttpTransportObservers {
         }
 
         @Override
-        public ConnectionObservation connectionOpened(Role role, Transport transport, Handshake handshake) {
+        public ConnectionObservation connectionOpened(Role role, String transport, Handshake handshake) {
             Objects.requireNonNull(role, "role");
-            Objects.requireNonNull(transport, "transport");
+            requireIdentifier(transport, "transport");
             Objects.requireNonNull(handshake, "handshake");
             List<ConnectionObservation> observations = new ArrayList<>(observers.size());
             for (HttpTransportObserver observer : observers) {
@@ -116,7 +123,7 @@ final class HttpTransportObservers {
         private final Set<CompositeStreamObservation> streams = new HashSet<>();
         private final ArrayDeque<Runnable> transitions = new ArrayDeque<>();
         private CompositeHandshakeObservation handshake;
-        private Protocol protocol = Protocol.UNKNOWN;
+        private String protocol;
         private ConnectionOutcome connectionOutcome;
         private int inFlightOperations;
         private boolean transitionDraining;
@@ -182,22 +189,19 @@ final class HttpTransportObservers {
         }
 
         @Override
-        public void protocolSelected(Protocol protocol) {
-            Objects.requireNonNull(protocol, "protocol");
-            if (protocol == Protocol.UNKNOWN) {
-                throw new IllegalArgumentException("Protocol must be selected");
-            }
+        public void protocolSelected(String protocol) {
+            String selectedProtocol = requireIdentifier(protocol, "protocol");
             boolean drain;
             lifecycleLock.lock();
             try {
-                if (closed || this.protocol == protocol) {
+                if (closed || Objects.equals(this.protocol, selectedProtocol)) {
                     return;
                 }
-                this.protocol = protocol;
+                this.protocol = selectedProtocol;
                 drain = enqueueTransitionLocked(() -> {
                     for (ConnectionObservation observation : observations) {
                         try {
-                            observation.protocolSelected(protocol);
+                            observation.protocolSelected(selectedProtocol);
                         } catch (Throwable failure) {
                             observerFailed("protocol selection", failure);
                         }
@@ -497,11 +501,8 @@ final class HttpTransportObservers {
         }
 
         @Override
-        public void protocolSelected(Protocol protocol) {
-            Objects.requireNonNull(protocol, "protocol");
-            if (protocol == Protocol.UNKNOWN) {
-                throw new IllegalArgumentException("Protocol must be selected");
-            }
+        public void protocolSelected(String protocol) {
+            requireIdentifier(protocol, "protocol");
         }
 
         @Override

@@ -33,7 +33,6 @@ import io.helidon.http.HttpTransportObserver.Direction;
 import io.helidon.http.HttpTransportObserver.HandshakeObservation;
 import io.helidon.http.HttpTransportObserver.HandshakeOutcome;
 import io.helidon.http.HttpTransportObserver.Initiator;
-import io.helidon.http.HttpTransportObserver.Protocol;
 import io.helidon.http.HttpTransportObserver.StreamObservation;
 import io.helidon.http.HttpTransportObserver.StreamOutcome;
 
@@ -45,12 +44,15 @@ import static io.helidon.http.HttpTransportObserver.Direction.BIDIRECTIONAL;
 import static io.helidon.http.HttpTransportObserver.Handshake.TLS;
 import static io.helidon.http.HttpTransportObserver.HandshakeOutcome.SUCCESS;
 import static io.helidon.http.HttpTransportObserver.Initiator.REMOTE;
-import static io.helidon.http.HttpTransportObserver.Protocol.HTTP_1_1;
-import static io.helidon.http.HttpTransportObserver.Protocol.HTTP_2;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_1_1;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_2;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_3;
 import static io.helidon.http.HttpTransportObserver.Role.SERVER;
 import static io.helidon.http.HttpTransportObserver.StreamOutcome.CANCELLED;
 import static io.helidon.http.HttpTransportObserver.StreamOutcome.COMPLETED;
-import static io.helidon.http.HttpTransportObserver.Transport.TCP;
+import static io.helidon.http.HttpTransportObserver.TRANSPORT_QUIC;
+import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
+import static io.helidon.http.HttpTransportObserver.TRANSPORT_UNIX;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -58,6 +60,54 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpTransportObserverTest {
+    @Test
+    void knownIdentifiersMatchMetricsTags() {
+        assertThat(TRANSPORT_TCP, is("tcp"));
+        assertThat(TRANSPORT_UNIX, is("unix"));
+        assertThat(TRANSPORT_QUIC, is("quic"));
+        assertThat(PROTOCOL_HTTP_1_1, is("http/1.1"));
+        assertThat(PROTOCOL_HTTP_2, is("http/2"));
+        assertThat(PROTOCOL_HTTP_3, is("http/3"));
+    }
+
+    @Test
+    void customIdentifiersAreForwarded() {
+        AtomicReference<String> observedTransport = new AtomicReference<>();
+        AtomicReference<String> observedProtocol = new AtomicReference<>();
+        HttpTransportObserver observer = (role, transport, handshake) -> {
+            observedTransport.set(transport);
+            return new ConnectionObservation() {
+                @Override
+                public HandshakeObservation handshakeStarted() {
+                    return HandshakeObservation.noop();
+                }
+
+                @Override
+                public void protocolSelected(String protocol) {
+                    observedProtocol.set(protocol);
+                }
+
+                @Override
+                public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                    return StreamObservation.noop();
+                }
+
+                @Override
+                public void close(ConnectionOutcome outcome) {
+                }
+            };
+        };
+        HttpTransportObserver composed = HttpTransportObserver.compose(List.of(observer));
+        ConnectionObservation connection = composed.connectionOpened(SERVER, "custom-transport", TLS);
+
+        connection.protocolSelected("custom-protocol");
+
+        assertThat(observedTransport.get(), is("custom-transport"));
+        assertThat(observedProtocol.get(), is("custom-protocol"));
+        assertThrows(IllegalArgumentException.class, () -> composed.connectionOpened(SERVER, " ", TLS));
+        assertThrows(NullPointerException.class, () -> composed.connectionOpened(SERVER, null, TLS));
+    }
+
     @Test
     void emptyCompositionIsNoOp() {
         assertThat(HttpTransportObserver.compose(List.of()), sameInstance(HttpTransportObserver.noop()));
@@ -78,7 +128,7 @@ class HttpTransportObserverTest {
         };
 
         HttpTransportObserver.compose(List.of(first, first, second))
-                .connectionOpened(SERVER, TCP, TLS);
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
 
         assertThat(events, is(List.of("first", "second")));
     }
@@ -101,7 +151,7 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
                 throw new IllegalStateException("protocol");
             }
 
@@ -125,7 +175,7 @@ class HttpTransportObserverTest {
                 }
 
                 @Override
-                public void protocolSelected(Protocol protocol) {
+                public void protocolSelected(String protocol) {
                     protocolSelected.incrementAndGet();
                 }
 
@@ -145,9 +195,9 @@ class HttpTransportObserverTest {
         assertDoesNotThrow(() -> {
             ConnectionObservation connection =
                     HttpTransportObserver.compose(List.of(failingOpen, failingCallbacks, recording))
-                            .connectionOpened(SERVER, TCP, TLS);
+                            .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
             connection.handshakeStarted().close(SUCCESS);
-            connection.protocolSelected(HTTP_2);
+            connection.protocolSelected(PROTOCOL_HTTP_2);
             connection.streamOpened(BIDIRECTIONAL, REMOTE).close(COMPLETED);
             connection.close(ConnectionOutcome.LOCAL_CLOSE);
         });
@@ -178,7 +228,7 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
             }
 
             @Override
@@ -196,7 +246,7 @@ class HttpTransportObserverTest {
             }
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
-                .connectionOpened(SERVER, TCP, TLS);
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
         HandshakeObservation handshake = connection.handshakeStarted();
         StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
 
@@ -233,7 +283,7 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
                 selections.incrementAndGet();
             }
 
@@ -247,15 +297,15 @@ class HttpTransportObserverTest {
             }
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
-                .connectionOpened(SERVER, TCP, TLS);
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
 
-        connection.protocolSelected(HTTP_1_1);
-        connection.protocolSelected(HTTP_1_1);
-        connection.protocolSelected(HTTP_2);
+        connection.protocolSelected(PROTOCOL_HTTP_1_1);
+        connection.protocolSelected(new String(PROTOCOL_HTTP_1_1));
+        connection.protocolSelected(PROTOCOL_HTTP_2);
 
         assertThat(selections.get(), is(2));
-        assertThrows(IllegalArgumentException.class,
-                     () -> connection.protocolSelected(Protocol.UNKNOWN));
+        assertThrows(IllegalArgumentException.class, () -> connection.protocolSelected(" "));
+        assertThrows(NullPointerException.class, () -> connection.protocolSelected(null));
     }
 
     @Test
@@ -269,10 +319,10 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
                 events.add("first-" + protocol);
-                if (protocol == HTTP_1_1) {
-                    connectionReference.get().protocolSelected(HTTP_2);
+                if (protocol.equals(PROTOCOL_HTTP_1_1)) {
+                    connectionReference.get().protocolSelected(PROTOCOL_HTTP_2);
                 } else {
                     connectionReference.get().close(ConnectionOutcome.NORMAL);
                 }
@@ -295,7 +345,7 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
                 events.add("second-" + protocol);
             }
 
@@ -310,16 +360,16 @@ class HttpTransportObserverTest {
             }
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(first, second))
-                .connectionOpened(SERVER, TCP, TLS);
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
         connectionReference.set(connection);
 
-        connection.protocolSelected(HTTP_1_1);
+        connection.protocolSelected(PROTOCOL_HTTP_1_1);
 
         assertThat(events,
-                   is(List.of("first-HTTP_1_1",
-                              "second-HTTP_1_1",
-                              "first-HTTP_2",
-                              "second-HTTP_2",
+                   is(List.of("first-http/1.1",
+                              "second-http/1.1",
+                              "first-http/2",
+                              "second-http/2",
                               "first-close",
                               "second-close")));
     }
@@ -336,7 +386,7 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
             }
 
             @Override
@@ -355,7 +405,7 @@ class HttpTransportObserverTest {
             }
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
-                .connectionOpened(SERVER, TCP, TLS);
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
         connectionReference.set(connection);
 
         StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
@@ -376,7 +426,7 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
             }
 
             @Override
@@ -392,7 +442,7 @@ class HttpTransportObserverTest {
             }
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
-                .connectionOpened(SERVER, TCP, TLS);
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
         StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
         streamReference.set(stream);
 
@@ -416,7 +466,7 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
             }
 
             @Override
@@ -444,7 +494,7 @@ class HttpTransportObserverTest {
             }
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
-                .connectionOpened(SERVER, TCP, TLS);
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
         CompletableFuture<StreamObservation> opening = CompletableFuture.supplyAsync(
                 () -> connection.streamOpened(BIDIRECTIONAL, REMOTE));
 
@@ -486,7 +536,7 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
             }
 
             @Override
@@ -501,7 +551,7 @@ class HttpTransportObserverTest {
             }
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
-                .connectionOpened(SERVER, TCP, TLS);
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
         CompletableFuture<HandshakeObservation> opening = CompletableFuture.supplyAsync(connection::handshakeStarted);
 
         assertThat(handshakeOpenStarted.await(5, TimeUnit.SECONDS), is(true));
@@ -528,7 +578,7 @@ class HttpTransportObserverTest {
             }
 
             @Override
-            public void protocolSelected(Protocol protocol) {
+            public void protocolSelected(String protocol) {
             }
 
             @Override
@@ -554,7 +604,7 @@ class HttpTransportObserverTest {
             }
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
-                .connectionOpened(SERVER, TCP, TLS);
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
         boolean concurrent;
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
             CompletableFuture<StreamObservation> first = CompletableFuture.supplyAsync(
