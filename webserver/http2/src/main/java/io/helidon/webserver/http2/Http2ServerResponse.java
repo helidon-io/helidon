@@ -307,6 +307,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         if (!super.resetEntity()) {
             return false;
         }
+        outputStreamFilter = null;
         trailers.clear();
         return true;
     }

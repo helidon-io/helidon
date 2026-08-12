@@ -70,6 +70,7 @@ class ErrorHandlingWithOutputStreamTest {
                     res.header(HeaderNames.ACCEPT_RANGES, "bytes");
                     res.header(HeaderNames.CACHE_CONTROL, "no-store");
                     res.header(HeaderNames.VARY, "Origin");
+                    res.streamFilter(_ -> OutputStream.nullOutputStream());
                     res.outputStream();
                     throw new CustomException();
                 })

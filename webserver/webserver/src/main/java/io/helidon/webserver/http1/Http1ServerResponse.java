@@ -352,6 +352,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         if (!super.resetEntity()) {
             return false;
         }
+        outputStreamFilter = null;
         trailers.clear();
         return true;
     }
