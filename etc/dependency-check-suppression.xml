@@ -564,4 +564,19 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
     <vulnerabilityName>CVE-2026-14684</vulnerabilityName>
 </suppress>
 
+<!--
+  This CVE only applies when using the KAPT incremental build cache (typically with Gradle).
+  We do not use Kotlin nor the Kotlin Compiler or KAPT at build time. Kotlin would only be
+  present as a transitive runtime dependencies in the form of kotlin-stdlib,
+  kotlin-stdlib-common or kotlin-stdlib-jdk8.
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: kotlin-stdlib-1.9.10.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib.*@.*$</packageUrl>
+    <cve>CVE-2026-53914</cve>
+</suppress>
+
+
 </suppressions>
