@@ -259,6 +259,8 @@ public interface HttpTransportObserver {
          * Observes the start of the configured handshake.
          *
          * <p>The same observation is returned if this method is invoked more than once.
+         * The returned observation must not be {@code null}. Implementations that do not observe handshakes should
+         * return {@link HandshakeObservation#noop()}.
          *
          * @return handshake observation
          */

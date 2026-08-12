@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -68,11 +70,11 @@ class HttpTransportObserverTest {
         List<String> events = new ArrayList<>();
         HttpTransportObserver first = (role, transport, handshake) -> {
             events.add("first");
-            return HttpTransportObserver.ConnectionObservation.noop();
+            return ConnectionObservation.noop();
         };
         HttpTransportObserver second = (role, transport, handshake) -> {
             events.add("second");
-            return HttpTransportObserver.ConnectionObservation.noop();
+            return ConnectionObservation.noop();
         };
 
         HttpTransportObserver.compose(List.of(first, first, second))
@@ -141,7 +143,7 @@ class HttpTransportObserverTest {
         };
 
         assertDoesNotThrow(() -> {
-            HttpTransportObserver.ConnectionObservation connection =
+            ConnectionObservation connection =
                     HttpTransportObserver.compose(List.of(failingOpen, failingCallbacks, recording))
                             .connectionOpened(SERVER, TCP, TLS);
             connection.handshakeStarted().close(SUCCESS);
@@ -553,15 +555,21 @@ class HttpTransportObserverTest {
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
                 .connectionOpened(SERVER, TCP, TLS);
-        CompletableFuture<StreamObservation> first = CompletableFuture.supplyAsync(
-                () -> connection.streamOpened(BIDIRECTIONAL, REMOTE));
-        CompletableFuture<StreamObservation> second = CompletableFuture.supplyAsync(
-                () -> connection.streamOpened(BIDIRECTIONAL, REMOTE));
+        boolean concurrent;
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            CompletableFuture<StreamObservation> first = CompletableFuture.supplyAsync(
+                    () -> connection.streamOpened(BIDIRECTIONAL, REMOTE), executor);
+            CompletableFuture<StreamObservation> second = CompletableFuture.supplyAsync(
+                    () -> connection.streamOpened(BIDIRECTIONAL, REMOTE), executor);
 
-        boolean concurrent = bothStreamsStarted.await(5, TimeUnit.SECONDS);
-        completeStreams.countDown();
-        first.get(5, TimeUnit.SECONDS).close(COMPLETED);
-        second.get(5, TimeUnit.SECONDS).close(COMPLETED);
+            try {
+                concurrent = bothStreamsStarted.await(5, TimeUnit.SECONDS);
+            } finally {
+                completeStreams.countDown();
+            }
+            first.get(5, TimeUnit.SECONDS).close(COMPLETED);
+            second.get(5, TimeUnit.SECONDS).close(COMPLETED);
+        }
         connection.close(ConnectionOutcome.NORMAL);
 
         assertThat(concurrent, is(true));
