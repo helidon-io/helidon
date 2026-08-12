@@ -32,6 +32,7 @@ import io.helidon.service.registry.Services;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -69,6 +70,11 @@ class TestPrometheusFormatting {
         metricsConfig = metricsConfigBuilder.build();
         metricsFactory = Services.get(MetricsFactory.class);
         meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+    }
+
+    @AfterAll
+    static void cleanUp() {
+        meterRegistry.close();
     }
 
     @Test
