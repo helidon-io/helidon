@@ -53,35 +53,38 @@ class TestJsonFormatting {
 
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        try {
+            Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c1"));
+            assertThat("Initial counter value", c.count(), is(0L));
+            c.increment();
+            assertThat("After increment", c.count(), is(1L));
 
-        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c1"));
-        assertThat("Initial counter value", c.count(), is(0L));
-        c.increment();
-        assertThat("After increment", c.count(), is(1L));
+            Counter c1WithTag = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c1")
+                                                                  .tags(Set.of(metricsFactory.tagCreate("t1", "v1"))));
+            c1WithTag.increment(4L);
 
-        Counter c1WithTag = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c1")
-                                                              .tags(Set.of(metricsFactory.tagCreate("t1", "v1"))));
-        c1WithTag.increment(4L);
-
-        Timer d = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t1"));
-        d.record(3, TimeUnit.SECONDS);
+            Timer d = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t1"));
+            d.record(3, TimeUnit.SECONDS);
 
 
-        JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
-                .scopeTagName(SCOPE_TAG_NAME)
-                .build();
+            JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
+                    .scopeTagName(SCOPE_TAG_NAME)
+                    .build();
 
-        JsonObject jsonOutput = checkAndCast(formatter.format());
-        JsonObject app = jsonOutput.objectValue("application").orElseThrow();
-        assertThat("Counter 1",
-                   app.numberValue("c1;t1=v1").orElseThrow().intValue(),
-                   is(4));
-        assertThat("Counter 2",
-                   app.numberValue("c1").orElseThrow().intValue(),
-                   is(1));
-        JsonObject timerJson = app.objectValue("t1").orElseThrow();
-        assertThat("Timer", timerJson, notNullValue());
-        assertThat("Timer count", timerJson.numberValue("count").orElseThrow().intValue(), is(1));
+            JsonObject jsonOutput = checkAndCast(formatter.format());
+            JsonObject app = jsonOutput.objectValue("application").orElseThrow();
+            assertThat("Counter 1",
+                       app.numberValue("c1;t1=v1").orElseThrow().intValue(),
+                       is(4));
+            assertThat("Counter 2",
+                       app.numberValue("c1").orElseThrow().intValue(),
+                       is(1));
+            JsonObject timerJson = app.objectValue("t1").orElseThrow();
+            assertThat("Timer", timerJson, notNullValue());
+            assertThat("Timer count", timerJson.numberValue("count").orElseThrow().intValue(), is(1));
+        } finally {
+            meterRegistry.close();
+        }
     }
 
 
@@ -95,24 +98,27 @@ class TestJsonFormatting {
 
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        try {
+            Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c2"));
+            assertThat("Initial counter value", c.count(), is(0L));
+            c.increment();
+            assertThat("After increment", c.count(), is(1L));
 
-        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c2"));
-        assertThat("Initial counter value", c.count(), is(0L));
-        c.increment();
-        assertThat("After increment", c.count(), is(1L));
+            Timer d = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t2"));
+            d.record(7, TimeUnit.SECONDS);
 
-        Timer d = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t2"));
-        d.record(7, TimeUnit.SECONDS);
+            JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
+                    .meterNameSelection(Set.of("c2"))
+                    .build();
 
-        JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
-                .meterNameSelection(Set.of("c2"))
-                .build();
+            JsonObject jsonOutput = checkAndCast(formatter.format());
+            JsonObject app = jsonOutput.objectValue("application").orElseThrow();
+            assertThat("Counter 2", app.numberValue("c2").orElseThrow().intValue(), is(1));
 
-        JsonObject jsonOutput = checkAndCast(formatter.format());
-        JsonObject app = jsonOutput.objectValue("application").orElseThrow();
-        assertThat("Counter 2", app.numberValue("c2").orElseThrow().intValue(), is(1));
-
-        assertThat("Timer", app.objectValue("t2").orElse(null), nullValue());
+            assertThat("Timer", app.objectValue("t2").orElse(null), nullValue());
+        } finally {
+            meterRegistry.close();
+        }
 
     }
 
@@ -127,27 +133,30 @@ class TestJsonFormatting {
 
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        try {
+            Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timerWithMilliseconds")
+                                                        .baseUnit("milliseconds"));
+            t.record(Duration.ofMillis(256));
 
-        Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timerWithMilliseconds")
-                                                    .baseUnit("milliseconds"));
-        t.record(Duration.ofMillis(256));
+            JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
+                    .meterNameSelection(Set.of("timerWithMilliseconds"))
+                    .build();
+            JsonObject jsonOutput = checkAndCast(formatter.format());
+            JsonObject metadata = checkAndCast(formatter.formatMetadata());
 
-        JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
-                .meterNameSelection(Set.of("timerWithMilliseconds"))
-                .build();
-        JsonObject jsonOutput = checkAndCast(formatter.format());
-        JsonObject metadata = checkAndCast(formatter.formatMetadata());
+            JsonObject app = jsonOutput.objectValue("application").orElseThrow();
+            JsonObject timerJson = app.objectValue("timerWithMilliseconds").orElseThrow();
+            assertThat("Timer", timerJson.numberValue("elapsedTime").orElseThrow().doubleValue(), is(0.256d));
 
-        JsonObject app = jsonOutput.objectValue("application").orElseThrow();
-        JsonObject timerJson = app.objectValue("timerWithMilliseconds").orElseThrow();
-        assertThat("Timer", timerJson.numberValue("elapsedTime").orElseThrow().doubleValue(), is(0.256d));
+            JsonObject metaApp = metadata.objectValue("application").orElseThrow();
+            JsonObject metaTimerJson = metaApp.objectValue("timerWithMilliseconds").orElseThrow();
 
-        JsonObject metaApp = metadata.objectValue("application").orElseThrow();
-        JsonObject metaTimerJson = metaApp.objectValue("timerWithMilliseconds").orElseThrow();
-
-        // We did not set the default JSON output units in config, so it should be seconds even though the timer was set
-        // to milliseconds.
-        assertThat("Timer units metadata", metaTimerJson.stringValue("unit").orElseThrow(), is("SECONDS"));
+            // We did not set the default JSON output units in config, so it should be seconds even though the timer was set
+            // to milliseconds.
+            assertThat("Timer units metadata", metaTimerJson.stringValue("unit").orElseThrow(), is("SECONDS"));
+        } finally {
+            meterRegistry.close();
+        }
     }
 
     @Test
@@ -162,39 +171,42 @@ class TestJsonFormatting {
 
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        try {
+            Timer timerWithMicroSeconds = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timerWithMicroSeconds")
+                                                        .baseUnit("microseconds"));
+            timerWithMicroSeconds.record(Duration.ofMillis(3256));
 
-        Timer timerWithMicroSeconds = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timerWithMicroSeconds")
-                                                    .baseUnit("microseconds"));
-        timerWithMicroSeconds.record(Duration.ofMillis(3256));
+            Timer timerWithNoUnits = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timerWithNoUnits"));
+            timerWithNoUnits.record(Duration.ofMillis(128));
 
-        Timer timerWithNoUnits = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timerWithNoUnits"));
-        timerWithNoUnits.record(Duration.ofMillis(128));
+            JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
+                    .meterNameSelection(Set.of("timerWithMicroSeconds", "timerWithNoUnits"))
+                    .build();
+            JsonObject jsonOutput = checkAndCast(formatter.format());
+            JsonObject metadata = checkAndCast(formatter.formatMetadata());
 
-        JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
-                .meterNameSelection(Set.of("timerWithMicroSeconds", "timerWithNoUnits"))
-                .build();
-        JsonObject jsonOutput = checkAndCast(formatter.format());
-        JsonObject metadata = checkAndCast(formatter.formatMetadata());
+            JsonObject app = jsonOutput.objectValue("application").orElseThrow();
+            JsonObject timerWithMicroSecondsJson = app.objectValue("timerWithMicroSeconds").orElseThrow();
+            JsonObject timerWithNoUnitsJson = app.objectValue("timerWithNoUnits").orElseThrow();
 
-        JsonObject app = jsonOutput.objectValue("application").orElseThrow();
-        JsonObject timerWithMicroSecondsJson = app.objectValue("timerWithMicroSeconds").orElseThrow();
-        JsonObject timerWithNoUnitsJson = app.objectValue("timerWithNoUnits").orElseThrow();
+            JsonObject metadataApp = metadata.objectValue("application").orElseThrow();
+            JsonObject metadataTimerWithMicroSecondsJson = metadataApp.objectValue("timerWithMicroSeconds").orElseThrow();
+            JsonObject metadataTimerWithNoUnitsJson = metadataApp.objectValue("timerWithNoUnits").orElseThrow();
 
-        JsonObject metadataApp = metadata.objectValue("application").orElseThrow();
-        JsonObject metadataTimerWithMicroSecondsJson = metadataApp.objectValue("timerWithMicroSeconds").orElseThrow();
-        JsonObject metadataTimerWithNoUnitsJson = metadataApp.objectValue("timerWithNoUnits").orElseThrow();
+            assertThat("Timer with explicit microseconds units",
+                       timerWithMicroSecondsJson.numberValue("elapsedTime").orElseThrow().doubleValue(),
+                       is(3256000d));
+            assertThat("Timer with no explicit units",
+                       timerWithNoUnitsJson.numberValue("elapsedTime").orElseThrow().doubleValue(),
+                       is(128d));
 
-        assertThat("Timer with explicit microseconds units",
-                   timerWithMicroSecondsJson.numberValue("elapsedTime").orElseThrow().doubleValue(),
-                   is(3256000d));
-        assertThat("Timer with no explicit units",
-                   timerWithNoUnitsJson.numberValue("elapsedTime").orElseThrow().doubleValue(),
-                   is(128d));
-
-        assertThat("Timer with explicit microseconds metadata units",
-                   metadataTimerWithMicroSecondsJson.stringValue("unit").orElseThrow(), is("MICROSECONDS"));
-        assertThat("Timer with no explicit units metadata units",
-                   metadataTimerWithNoUnitsJson.stringValue("unit").orElseThrow(), is("MILLISECONDS"));
+            assertThat("Timer with explicit microseconds metadata units",
+                       metadataTimerWithMicroSecondsJson.stringValue("unit").orElseThrow(), is("MICROSECONDS"));
+            assertThat("Timer with no explicit units metadata units",
+                       metadataTimerWithNoUnitsJson.stringValue("unit").orElseThrow(), is("MILLISECONDS"));
+        } finally {
+            meterRegistry.close();
+        }
 
     }
     private static JsonObject checkAndCast(Optional<Object> metricsOutput) {
