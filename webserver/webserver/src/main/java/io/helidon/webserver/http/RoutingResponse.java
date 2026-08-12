@@ -16,6 +16,11 @@
 
 package io.helidon.webserver.http;
 
+import java.io.OutputStream;
+import java.util.Objects;
+import java.util.function.UnaryOperator;
+
+import io.helidon.common.Api;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 
@@ -118,5 +123,18 @@ public interface RoutingResponse extends ServerResponse {
         headers.remove(HeaderNames.LAST_MODIFIED);
         headers.remove(HeaderNames.ACCEPT_RANGES);
         return true;
+    }
+
+    /**
+     * Configure an infrastructure output stream filter that remains registered when an unsent response entity is reset.
+     * <p>
+     * This method is intended for Helidon features that must observe or transform both the original response entity and any
+     * replacement entity produced by error handling. Application filters should use {@link #streamFilter(UnaryOperator)}.
+     *
+     * @param filterFunction function that wraps the response output stream
+     */
+    @Api.Internal
+    default void persistentStreamFilter(UnaryOperator<OutputStream> filterFunction) {
+        streamFilter(Objects.requireNonNull(filterFunction));
     }
 }

@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
@@ -82,6 +84,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private UriQuery rerouteQuery;
     private String reroutePath;
     private Consumer<ServerResponseTrailers> beforeTrailers;
+    private UnaryOperator<OutputStream> persistentStreamFilter;
+    private UnaryOperator<OutputStream> streamFilter;
 
     /**
      * Create server response.
@@ -219,7 +223,21 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             return false;
         }
         beforeTrailers = null;
+        streamFilter = persistentStreamFilter;
         return true;
+    }
+
+    @Override
+    public void streamFilter(UnaryOperator<OutputStream> filterFunction) {
+        checkStreamFilter(filterFunction);
+        streamFilter = addStreamFilter(streamFilter, filterFunction);
+    }
+
+    @Override
+    public void persistentStreamFilter(UnaryOperator<OutputStream> filterFunction) {
+        checkStreamFilter(filterFunction);
+        persistentStreamFilter = addStreamFilter(persistentStreamFilter, filterFunction);
+        streamFilter = addStreamFilter(streamFilter, filterFunction);
     }
 
     @Override
@@ -235,6 +253,26 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected Consumer<ServerResponseTrailers> beforeTrailers() {
         return beforeTrailers;
+    }
+
+    /**
+     * Whether this response has any output stream filters.
+     *
+     * @return whether an output stream filter is configured
+     */
+    protected final boolean hasStreamFilter() {
+        return streamFilter != null;
+    }
+
+    /**
+     * Apply configured output stream filters.
+     *
+     * @param outputStream output stream to wrap
+     * @return filtered output stream
+     */
+    protected final OutputStream applyStreamFilters(OutputStream outputStream) {
+        UnaryOperator<OutputStream> filter = streamFilter;
+        return filter == null ? outputStream : filter.apply(outputStream);
     }
 
     /**
@@ -325,6 +363,24 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         for (Runnable runnable : whenSent) {
             runnable.run();
         }
+    }
+
+    private void checkStreamFilter(UnaryOperator<OutputStream> filterFunction) {
+        if (isSent()) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (hasEntity()) {
+            throw new IllegalStateException("OutputStream already obtained");
+        }
+        Objects.requireNonNull(filterFunction);
+    }
+
+    private static UnaryOperator<OutputStream> addStreamFilter(UnaryOperator<OutputStream> current,
+                                                               UnaryOperator<OutputStream> filterFunction) {
+        if (current == null) {
+            return filterFunction;
+        }
+        return it -> filterFunction.apply(current.apply(it));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

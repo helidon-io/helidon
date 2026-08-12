@@ -103,8 +103,9 @@ public interface ServerResponse {
      * Set header with a value.
      * <p>
      * Headers are mutable response metadata. Once configured, they remain on this response unless later application
-     * code or error handling changes them. Calling {@link #next()}, calling {@link #reroute(String)}, or throwing an
-     * exception does not clear configured headers automatically.
+     * code or error handling changes them. Calling {@link #next()} or {@link #reroute(String)} does not clear configured
+     * headers automatically. If error handling replaces an unsent response entity, it removes entity-specific headers
+     * while preserving response metadata unrelated to the entity.
      * <p>
      * Headers cannot be set after {@link #outputStream()} method is called, or after the response was sent.
      *
@@ -310,6 +311,8 @@ public interface ServerResponse {
 
     /**
      * Configure a custom output stream to wrap the output stream of the response.
+     * The filter is associated with the current response entity and may be removed if error handling replaces that entity
+     * before it is sent.
      *
      * @param filterFunction the function to replace output stream of this response with a user provided one
      */

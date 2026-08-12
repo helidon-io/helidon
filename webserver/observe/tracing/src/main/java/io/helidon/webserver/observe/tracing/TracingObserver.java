@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,7 +237,7 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
             Register an output stream filter to correctly handle content write span
              */
             if (spanConfig.logEnabled(CONTENT_WRITE_SPAN_NAME, true)) {
-                res.streamFilter(os -> {
+                res.persistentStreamFilter(os -> {
                     // this is invoked when the user requests output stream, we just replace it with our own delegate
                     return new TracingStreamOutputDelegate(tracer, span, os);
                 });

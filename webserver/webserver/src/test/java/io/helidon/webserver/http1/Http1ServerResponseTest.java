@@ -20,6 +20,8 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.net.ssl.SSLException;
 
@@ -51,6 +53,30 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class Http1ServerResponseTest {
+
+    @Test
+    void resetEntityPreservesPersistentStreamFilters() {
+        Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
+        List<String> appliedFilters = new ArrayList<>();
+
+        response.persistentStreamFilter(outputStream -> {
+            appliedFilters.add("persistent");
+            return outputStream;
+        });
+        response.streamFilter(outputStream -> {
+            appliedFilters.add("entity");
+            return outputStream;
+        });
+
+        response.outputStream();
+        assertThat(appliedFilters, is(List.of("persistent", "entity")));
+
+        assertThat(response.resetEntity(), is(true));
+        appliedFilters.clear();
+        response.outputStream();
+
+        assertThat(appliedFilters, is(List.of("persistent")));
+    }
 
     @Test
     void resetEntityClearsEntityMetadata() {
