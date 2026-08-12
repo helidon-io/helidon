@@ -74,9 +74,10 @@ interface MetricsConfigBlueprint {
     boolean enabled();
 
     /**
-     * Whether to allow anybody to access the endpoint.
+     * Whether to allow anybody to access the metrics endpoint when this config is used by a metrics observer.
+     * This setting has no effect in the top-level {@code metrics} config which controls the shared registry.
      *
-     * @return whether to permit access to metrics endpoint to anybody, defaults to {@code true}
+     * @return whether to permit access to the observer's metrics endpoint to anybody, defaults to {@code true}
      * @see #roles()
      */
     @Option.Configured
@@ -84,9 +85,11 @@ interface MetricsConfigBlueprint {
     boolean permitAll();
 
     /**
-     * Hints for role names the user is expected to be in.
+     * Role names allowed to access the metrics endpoint when this config is used by a metrics observer and
+     * {@link #permitAll()} is {@code false}.
+     * This setting has no effect in the top-level {@code metrics} config which controls the shared registry.
      *
-     * @return list of hints
+     * @return allowed role names
      */
     @Option.Configured
     @Option.Default("observe")

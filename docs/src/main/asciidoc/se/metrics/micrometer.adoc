@@ -46,9 +46,14 @@ include::{rootdir}/includes/dependencies.adoc[tag=maven-dependency]
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-metrics</artifactId>
 </dependency>
+<dependency>
+    <groupId>io.helidon.metrics.providers</groupId>
+    <artifactId>helidon-metrics-providers-micrometer</artifactId>
+</dependency>
 ----
-This dependency adds the metrics observer and the `/observe/metrics` endpoint and transitively includes Helidon's
-Micrometer-based metrics implementation.
+The first dependency adds the metrics observer and the `/observe/metrics` endpoint. It includes Helidon's
+Micrometer-based metrics implementation at runtime. The second dependency makes the Micrometer API available when
+compiling application code which uses Micrometer types directly, as the examples on this page do.
 
 == Usage
 Your application registers and updates Micrometer meters using annotations or direct use of the Micrometer API.
