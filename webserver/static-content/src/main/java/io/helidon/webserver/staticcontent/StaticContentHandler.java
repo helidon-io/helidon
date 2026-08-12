@@ -93,11 +93,16 @@ abstract class StaticContentHandler implements HttpService {
         }
 
         boolean ifMatchPresent = requestHeaders.contains(HeaderNames.IF_MATCH);
-        if (newEtag != null && ifMatchPresent) {
+        if (ifMatchPresent) {
             // Process If-Match header
             if (!matchesEntityTag(requestHeaders.get(HeaderNames.IF_MATCH), etag, true)) {
-                throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true)
-                        .header(newEtag);
+                HttpException exception = new HttpException("Not accepted by If-Match header",
+                                                            Status.PRECONDITION_FAILED_412,
+                                                            true);
+                if (newEtag != null) {
+                    exception.header(newEtag);
+                }
+                throw exception;
             }
         }
 
@@ -120,11 +125,16 @@ abstract class StaticContentHandler implements HttpService {
 
         // Process If-None-Match header
         boolean ifNoneMatchPresent = requestHeaders.contains(HeaderNames.IF_NONE_MATCH);
-        if (newEtag != null && ifNoneMatchPresent) {
+        if (ifNoneMatchPresent) {
             if (matchesEntityTag(requestHeaders.get(HeaderNames.IF_NONE_MATCH), etag, false)) {
                 // using exception to handle normal flow (same as in reactive static content)
-                throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true)
-                        .header(newEtag);
+                HttpException exception = new HttpException("Accepted by If-None-Match header",
+                                                            Status.NOT_MODIFIED_304,
+                                                            true);
+                if (newEtag != null) {
+                    exception.header(newEtag);
+                }
+                throw exception;
             }
         }
 
@@ -169,7 +179,8 @@ abstract class StaticContentHandler implements HttpService {
                     }
                     if (separator == fieldLength || fieldValue.charAt(separator) == ',') {
                         int length = entityEnd - entityStart - 1;
-                        if ((!strongComparison || !weak)
+                        if (etag != null
+                                && (!strongComparison || !weak)
                                 && length == etag.length()
                                 && fieldValue.regionMatches(entityStart + 1, etag, 0, length)) {
                             return true;
@@ -197,7 +208,8 @@ abstract class StaticContentHandler implements HttpService {
                         start += 2;
                     }
                     int length = end - start;
-                    if ((!strongComparison || !weak)
+                    if (etag != null
+                            && (!strongComparison || !weak)
                             && length == etag.length()
                             && fieldValue.regionMatches(start, etag, 0, length)) {
                         return true;

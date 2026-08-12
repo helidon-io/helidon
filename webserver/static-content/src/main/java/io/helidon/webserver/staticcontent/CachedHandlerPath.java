@@ -97,13 +97,11 @@ record CachedHandlerPath(Path path,
         }
 
         // etag etc.
-        if (lastModified != null) {
-            processPreconditions(String.valueOf(lastModified.toEpochMilli()),
-                                 lastModified,
-                                 request.headers(),
-                                 response.headers(),
-                                 setLastModifiedHeader());
-        }
+        processPreconditions(lastModified == null ? null : String.valueOf(lastModified.toEpochMilli()),
+                             lastModified,
+                             request.headers(),
+                             response.headers(),
+                             setLastModifiedHeader());
 
         response.headers().contentType(mediaType);
 

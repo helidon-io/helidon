@@ -181,6 +181,48 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void etag_NoValidatorBareWildcardInMatch_Accept() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_MATCH)).thenReturn(true);
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "*"));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+
+        StaticContentHandler.processPreconditions(null, null, req, res);
+    }
+
+    @Test
+    void etag_NoValidatorInMatch_NotAccept() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_MATCH)).thenReturn(true);
+        when(req.get(IF_MATCH)).thenReturn(HeaderValues.create(IF_MATCH, "\"other\""));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+
+        assertHttpException(() -> StaticContentHandler.processPreconditions(null, null, req, res),
+                            Status.PRECONDITION_FAILED_412);
+    }
+
+    @Test
+    void etag_NoValidatorBareWildcardInNoneMatch_Accept() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_NONE_MATCH)).thenReturn(true);
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "*"));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+
+        assertHttpException(() -> StaticContentHandler.processPreconditions(null, null, req, res),
+                            Status.NOT_MODIFIED_304);
+    }
+
+    @Test
+    void etag_NoValidatorInNoneMatch_NotAccept() {
+        ServerRequestHeaders req = mock(ServerRequestHeaders.class);
+        when(req.contains(IF_NONE_MATCH)).thenReturn(true);
+        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderValues.create(IF_NONE_MATCH, "\"other\""));
+        ServerResponseHeaders res = mock(ServerResponseHeaders.class);
+
+        StaticContentHandler.processPreconditions(null, null, req, res);
+    }
+
+    @Test
     void ifMatchTakesPrecedenceOverIfUnmodifiedSince() {
         ZonedDateTime modified = ZonedDateTime.now();
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);

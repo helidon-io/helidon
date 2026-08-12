@@ -22,6 +22,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
@@ -38,6 +40,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import io.helidon.common.LruCache;
 import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
@@ -47,10 +50,12 @@ import io.helidon.http.ForbiddenException;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -166,6 +171,48 @@ class CachedHandlerTest {
         assertThat("Last modified function", pathHandler.lastModified(), notNullValue());
         assertThat("Last modified", pathHandler.lastModified().apply(pathHandler.path()), notNullValue());
         assertThat("Media type", pathHandler.mediaType(), is(MediaTypes.TEXT_PLAIN));
+    }
+
+    @Test
+    void testUrlStreamPreconditionsWithoutLastModified() throws IOException {
+        URL url = URL.of(URI.create("test:/resource.txt"), new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL url) {
+                return new URLConnection(url) {
+                    @Override
+                    public void connect() {
+                    }
+
+                    @Override
+                    public long getLastModified() {
+                        return 0;
+                    }
+                };
+            }
+        });
+
+        ServerRequestHeaders requestHeaders = mock(ServerRequestHeaders.class);
+        when(requestHeaders.contains(HeaderNames.IF_NONE_MATCH)).thenReturn(true);
+        when(requestHeaders.get(HeaderNames.IF_NONE_MATCH))
+                .thenReturn(HeaderValues.create(HeaderNames.IF_NONE_MATCH, "*"));
+        ServerRequest request = mock(ServerRequest.class);
+        when(request.headers()).thenReturn(requestHeaders);
+
+        ServerResponse response = mock(ServerResponse.class);
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        when(response.headers()).thenReturn(responseHeaders);
+
+        CachedHandlerUrlStream handler = new CachedHandlerUrlStream(MediaTypes.TEXT_PLAIN, url);
+        HttpException exception = assertThrows(HttpException.class,
+                                               () -> handler.handle(LruCache.create(),
+                                                                    Method.HEAD,
+                                                                    request,
+                                                                    response,
+                                                                    "resource.txt"));
+
+        assertThat(exception.status(), is(Status.NOT_MODIFIED_304));
+        assertThat(responseHeaders.contains(HeaderNames.ETAG), is(false));
+        assertThat(exception.headers().contains(HeaderNames.ETAG), is(false));
     }
 
     @Test
