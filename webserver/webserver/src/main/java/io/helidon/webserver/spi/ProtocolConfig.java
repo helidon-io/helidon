@@ -27,6 +27,15 @@ import io.helidon.webserver.TransportBindingTypes;
  */
 public interface ProtocolConfig extends NamedService {
     /**
+     * Whether this protocol configuration is enabled.
+     *
+     * @return whether this protocol is enabled
+     */
+    default boolean enabled() {
+        return true;
+    }
+
+    /**
      * Transport binding provider keys compatible with this protocol.
      * <p>
      * An empty set means this protocol has no transport preference and can use the listener default binding.

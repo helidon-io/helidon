@@ -21,8 +21,13 @@ import java.util.Set;
 import io.helidon.webserver.spi.ProtocolConfig;
 
 record TestRequiredTransportProtocolConfig(String name,
-                                           Set<String> transportBindingTypes) implements ProtocolConfig {
+                                           Set<String> transportBindingTypes,
+                                           boolean enabled) implements ProtocolConfig {
     static final String TYPE = "required-transport-test";
+
+    TestRequiredTransportProtocolConfig(String name, Set<String> transportBindingTypes) {
+        this(name, transportBindingTypes, true);
+    }
 
     @Override
     public String type() {
