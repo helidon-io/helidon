@@ -23,7 +23,12 @@ Intention (target solution):
 
 There is only one `Tls` instance per use (i.e. listener).
 
-There is only one `TlsManager` instance per instance of `Tls`.
+An automatically created `ConfiguredTlsManager` is owned by one `Tls` instance.
+
+An explicitly supplied or provider-created `TlsManager` may be shared by multiple `Tls` instances. A shared manager must
+keep the first successfully initialized `SSLContext` identity across repeated `init(TlsConfig)` calls, either ignoring later
+calls or rejecting incompatible configuration. Its reload state and reported generation are shared by all `Tls` instances
+using it.
 
 The method `reload(TlsMaterial)` on listener(s) will delegate the call to the currently configured `TlsManager` - this may not be supported by the chosen manager (i.e. OCI based manager may refuse or ignore calls, as it has a scheduler to read rotated information).
 
