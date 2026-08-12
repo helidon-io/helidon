@@ -16,7 +16,6 @@
 package io.helidon.data.jdbc;
 
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -63,9 +62,9 @@ class JdbcTransactionConnectionManagerTest {
         JdbcClient client = new JdbcClientImpl(dataSource, manager);
 
         assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one(), is(0L));
-        assertThat(threadState(manager), is((Object) null));
+        assertThat(manager.threadStatePresent(), is(false));
         assertThrows(IllegalStateException.class, manager::end);
-        assertThat(threadState(manager), is((Object) null));
+        assertThat(manager.threadStatePresent(), is(false));
     }
 
     @Test
@@ -443,7 +442,7 @@ class JdbcTransactionConnectionManagerTest {
                     assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one(), is(1L));
                     return null;
                 });
-                return threadState(manager) == null;
+                return !manager.threadStatePresent();
             });
 
             assertThat(result.get(), is(true));
@@ -533,7 +532,7 @@ class JdbcTransactionConnectionManagerTest {
                 entered.await();
                 return null;
             });
-            return threadState(manager) == null;
+            return !manager.threadStatePresent();
         };
 
         Future<Boolean> first = executor.submit(task);
@@ -797,10 +796,4 @@ class JdbcTransactionConnectionManagerTest {
         Connection get() throws SQLException;
     }
 
-    // Reads the private thread-local value without creating provider state.
-    private static Object threadState(JdbcTransactionConnectionManager manager) throws ReflectiveOperationException {
-        Field field = JdbcTransactionConnectionManager.class.getDeclaredField("local");
-        field.setAccessible(true);
-        return ((ThreadLocal<?>) field.get(manager)).get();
-    }
 }

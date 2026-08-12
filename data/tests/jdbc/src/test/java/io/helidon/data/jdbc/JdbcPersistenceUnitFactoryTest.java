@@ -18,7 +18,6 @@ package io.helidon.data.jdbc;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -455,7 +454,7 @@ class JdbcPersistenceUnitFactoryTest {
                 .username("configured-user")
                 .password("configured-password".toCharArray())
                 .build();
-        DataSource dataSource = directDataSource(config, driver);
+        DataSource dataSource = JdbcPersistenceUnitFactory.directDataSource(config, driver);
 
         assertThat(dataSource.getConnection(), sameInstance(firstConnection));
         assertThat(dataSource.getConnection(), sameInstance(secondConnection));
@@ -479,7 +478,7 @@ class JdbcPersistenceUnitFactoryTest {
         ConnectionConfig config = ConnectionConfig.builder()
                 .url(url)
                 .build();
-        DataSource dataSource = directDataSource(config, driver);
+        DataSource dataSource = JdbcPersistenceUnitFactory.directDataSource(config, driver);
 
         SQLException failure = assertThrows(SQLException.class, dataSource::getConnection);
 
@@ -535,22 +534,6 @@ class JdbcPersistenceUnitFactoryTest {
      */
     private static ServiceInstance<DataSource> instance(String name, DataSource dataSource) {
         return new TestServiceInstance(dataSource, Set.of(Qualifier.createNamed(name)));
-    }
-
-    /**
-     * Instantiates the private direct datasource adapter for focused contract
-     * testing without widening its production visibility.
-     *
-     * @param config direct connection configuration
-     * @param driver recording driver
-     * @return direct datasource
-     * @throws Exception if the private implementation cannot be constructed
-     */
-    private static DataSource directDataSource(ConnectionConfig config, Driver driver) throws Exception {
-        Class<?> type = Class.forName(JdbcPersistenceUnitFactory.class.getName() + "$DirectDataSource");
-        Constructor<?> constructor = type.getDeclaredConstructor(ConnectionConfig.class, Driver.class);
-        constructor.setAccessible(true);
-        return (DataSource) constructor.newInstance(config, driver);
     }
 
     // Datasource that proves malformed scripts fail before connection acquisition.
