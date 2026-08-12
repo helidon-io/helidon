@@ -57,14 +57,17 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Benchmark)
 public class ResponseFilterJmhBenchmark {
     private static final String HOST = "127.0.0.1";
-    private static final String DIRECT_NONE = "/direct-none";
+    private static final String DIRECT_BEFORE_SEND = "/direct-before-send";
     private static final String DIRECT_ENTITY = "/direct-entity";
+    private static final String DIRECT_NONE = "/direct-none";
+    private static final String DIRECT_PERSISTENT_BEFORE_SEND = "/direct-persistent-before-send";
     private static final String DIRECT_PERSISTENT = "/direct-persistent";
-    private static final String STREAM_NONE = "/stream-none";
     private static final String STREAM_ENTITY = "/stream-entity";
+    private static final String STREAM_NONE = "/stream-none";
     private static final String STREAM_PERSISTENT = "/stream-persistent";
     private static final int REQUESTS_PER_INVOCATION = 16;
     private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.UTF_8);
+    private static final Runnable BEFORE_SEND = () -> { };
     private static final UnaryOperator<OutputStream> OUTPUT_FILTER = PassthroughOutputStream::new;
 
     private WebServer server;
@@ -73,6 +76,8 @@ public class ResponseFilterJmhBenchmark {
     private HttpRequest http1DirectNone;
     private HttpRequest http1DirectEntity;
     private HttpRequest http1DirectPersistent;
+    private HttpRequest http1DirectBeforeSend;
+    private HttpRequest http1DirectPersistentBeforeSend;
     private HttpRequest http1StreamNone;
     private HttpRequest http1StreamEntity;
     private HttpRequest http1StreamPersistent;
@@ -92,6 +97,8 @@ public class ResponseFilterJmhBenchmark {
                         .get(DIRECT_NONE, ResponseFilterJmhBenchmark::sendDirect)
                         .get(DIRECT_ENTITY, ResponseFilterJmhBenchmark::sendDirect)
                         .get(DIRECT_PERSISTENT, ResponseFilterJmhBenchmark::sendDirect)
+                        .get(DIRECT_BEFORE_SEND, ResponseFilterJmhBenchmark::sendDirect)
+                        .get(DIRECT_PERSISTENT_BEFORE_SEND, ResponseFilterJmhBenchmark::sendDirect)
                         .get(STREAM_NONE, ResponseFilterJmhBenchmark::sendStream)
                         .get(STREAM_ENTITY, ResponseFilterJmhBenchmark::sendStream)
                         .get(STREAM_PERSISTENT, ResponseFilterJmhBenchmark::sendStream))
@@ -111,6 +118,8 @@ public class ResponseFilterJmhBenchmark {
         http1DirectNone = request(baseUri, DIRECT_NONE);
         http1DirectEntity = request(baseUri, DIRECT_ENTITY);
         http1DirectPersistent = request(baseUri, DIRECT_PERSISTENT);
+        http1DirectBeforeSend = request(baseUri, DIRECT_BEFORE_SEND);
+        http1DirectPersistentBeforeSend = request(baseUri, DIRECT_PERSISTENT_BEFORE_SEND);
         http1StreamNone = request(baseUri, STREAM_NONE);
         http1StreamEntity = request(baseUri, STREAM_ENTITY);
         http1StreamPersistent = request(baseUri, STREAM_PERSISTENT);
@@ -138,6 +147,18 @@ public class ResponseFilterJmhBenchmark {
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http1DirectPersistentFilter(Blackhole blackhole) throws IOException, InterruptedException {
         http1(http1DirectPersistent, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1DirectBeforeSend(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1DirectBeforeSend, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1DirectPersistentBeforeSend(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1DirectPersistentBeforeSend, blackhole);
     }
 
     @Benchmark
@@ -178,6 +199,18 @@ public class ResponseFilterJmhBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2DirectBeforeSend(Blackhole blackhole) {
+        http2(DIRECT_BEFORE_SEND, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2DirectPersistentBeforeSend(Blackhole blackhole) {
+        http2(DIRECT_PERSISTENT_BEFORE_SEND, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http2StreamNoFilter(Blackhole blackhole) {
         http2(STREAM_NONE, blackhole);
     }
@@ -205,6 +238,8 @@ public class ResponseFilterJmhBenchmark {
         switch (request.path().path()) {
         case DIRECT_ENTITY, STREAM_ENTITY -> response.streamFilter(OUTPUT_FILTER);
         case DIRECT_PERSISTENT, STREAM_PERSISTENT -> response.persistentStreamFilter(OUTPUT_FILTER);
+        case DIRECT_BEFORE_SEND -> response.beforeSend(BEFORE_SEND);
+        case DIRECT_PERSISTENT_BEFORE_SEND -> response.persistentBeforeSend(BEFORE_SEND);
         default -> {
         }
         }

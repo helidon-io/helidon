@@ -129,7 +129,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
                     res.outputStream();
                     throw new CustomException();
                 }))
-                .route(Http2Route.route(GET, "get-outputStream-stale-trailers", (req, res) -> {
+                .route(Http2Route.route(GET, "get-outputStream-stale-trailers", (_, res) -> {
                     res.beforeTrailers(trailers -> trailers.set(STALE_TRAILER_NAME, "stale"));
                     res.streamResult("stale-result");
                     res.outputStream();

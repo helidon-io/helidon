@@ -264,6 +264,9 @@ public interface ServerResponse {
 
     /**
      * Response trailers (mutable).
+     * Trailer state is associated with the current response entity and is cleared if error handling replaces that entity
+     * before it is sent.
+     *
      * @return trailers
      * @throws java.lang.IllegalStateException if client didn't ask for trailers with {@code TE: trailers} header in request
      * or response doesn't contain trailer declaration headers {@code Trailer: <trailer-name>}
@@ -273,6 +276,8 @@ public interface ServerResponse {
     /**
      * Callback to update any last minute trailers before they are written to the
      * output stream.
+     * The callback is associated with the current response entity and is cleared if error handling replaces that entity
+     * before it is sent.
      *
      * @param beforeTrailers consumer of mutable trailers
      * @return this instance
@@ -286,6 +291,8 @@ public interface ServerResponse {
      * In case an output stream was used, calling this method will immediately close the stream and return this
      * message as the reason for closing the response.
      * In HTTP/1 this would be in a trailer header
+     * The result is associated with the current response entity and is cleared if error handling replaces that entity
+     * before it is sent.
      *
      * @param result result description
      */

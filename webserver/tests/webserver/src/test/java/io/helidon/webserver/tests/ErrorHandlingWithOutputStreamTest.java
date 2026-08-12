@@ -84,7 +84,7 @@ class ErrorHandlingWithOutputStreamTest {
                     res.outputStream();
                     throw new CustomException();
                 })
-                .get("get-outputStream-stale-trailers", (req, res) -> {
+                .get("get-outputStream-stale-trailers", (_, res) -> {
                     res.beforeTrailers(trailers -> trailers.set(STALE_TRAILER_NAME, "stale"));
                     res.streamResult("stale-result");
                     res.outputStream();

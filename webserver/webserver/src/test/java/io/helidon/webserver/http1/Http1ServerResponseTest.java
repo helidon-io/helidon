@@ -59,17 +59,18 @@ class Http1ServerResponseTest {
         Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
         List<String> invokedListeners = new ArrayList<>();
 
-        response.persistentBeforeSend(() -> invokedListeners.add("persistent"));
+        response.persistentBeforeSend(() -> invokedListeners.add("persistent-1"));
+        response.persistentBeforeSend(() -> invokedListeners.add("persistent-2"));
         response.beforeSend(() -> invokedListeners.add("entity"));
 
         response.outputStream();
-        assertThat(invokedListeners, is(List.of("persistent", "entity")));
+        assertThat(invokedListeners, is(List.of("persistent-1", "persistent-2", "entity")));
 
         assertThat(response.resetEntity(), is(true));
         invokedListeners.clear();
         response.outputStream();
 
-        assertThat(invokedListeners, is(List.of("persistent")));
+        assertThat(invokedListeners, is(List.of("persistent-1", "persistent-2")));
     }
 
     @Test
