@@ -38,7 +38,9 @@ class StaticContentPreconditionsJmhRunnerTest {
                                  + "|matchingIfNoneMatch304"
                                  + "|nonMatchingIfNoneMatch200"
                                  + "|quotedCommaShortList200"
-                                 + "|nearLimitIfNoneMatch200)$")
+                                 + "|nearLimitIfNoneMatch200"
+                                 + "|nearLimitMatchingIfNoneMatch304"
+                                 + "|nearLimitMatchingIfMatch200)$")
                 .forks(Integer.getInteger("static.content.preconditions.jmh.forks", 3))
                 .threads(1)
                 .warmupIterations(Integer.getInteger("static.content.preconditions.jmh.warmupIterations", 5))

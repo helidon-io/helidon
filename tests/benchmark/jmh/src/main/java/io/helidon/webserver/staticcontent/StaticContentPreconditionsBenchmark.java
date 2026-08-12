@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -56,13 +57,15 @@ public class StaticContentPreconditionsBenchmark {
     private ServerRequestHeaders nonMatchingIfNoneMatch;
     private ServerRequestHeaders quotedCommaList;
     private ServerRequestHeaders largeNonMatchingList;
+    private ServerRequestHeaders largeMatchingIfNoneMatch;
+    private ServerRequestHeaders largeMatchingIfMatch;
 
     @Setup
     public void setup() {
         noConditionalHeader = ServerRequestHeaders.create();
-        matchingIfNoneMatch = requestHeaders('"' + ETAG + '"');
-        nonMatchingIfNoneMatch = requestHeaders("\"different-etag\"");
-        quotedCommaList = requestHeaders("\"tag,with,commas\", \"different-etag\"");
+        matchingIfNoneMatch = requestHeaders(HeaderNames.IF_NONE_MATCH, '"' + ETAG + '"');
+        nonMatchingIfNoneMatch = requestHeaders(HeaderNames.IF_NONE_MATCH, "\"different-etag\"");
+        quotedCommaList = requestHeaders(HeaderNames.IF_NONE_MATCH, "\"tag,with,commas\", \"different-etag\"");
 
         StringBuilder largeValue = new StringBuilder(8_000);
         for (int i = 0; i < 800; i++) {
@@ -71,7 +74,10 @@ public class StaticContentPreconditionsBenchmark {
             }
             largeValue.append('"').append("tag").append(i).append('"');
         }
-        largeNonMatchingList = requestHeaders(largeValue.toString());
+        largeNonMatchingList = requestHeaders(HeaderNames.IF_NONE_MATCH, largeValue.toString());
+        String largeMatchingValue = '"' + ETAG + "\", " + largeValue;
+        largeMatchingIfNoneMatch = requestHeaders(HeaderNames.IF_NONE_MATCH, largeMatchingValue);
+        largeMatchingIfMatch = requestHeaders(HeaderNames.IF_MATCH, largeMatchingValue);
     }
 
     @Benchmark
@@ -117,6 +123,28 @@ public class StaticContentPreconditionsBenchmark {
         return responseHeaders;
     }
 
+    @Benchmark
+    public void nearLimitMatchingIfNoneMatch304(Blackhole blackhole) {
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        try {
+            process(largeMatchingIfNoneMatch, responseHeaders);
+            throw new AssertionError("Expected 304 response");
+        } catch (HttpException e) {
+            if (e.status() != Status.NOT_MODIFIED_304) {
+                throw e;
+            }
+            blackhole.consume(responseHeaders);
+            blackhole.consume(e);
+        }
+    }
+
+    @Benchmark
+    public ServerResponseHeaders nearLimitMatchingIfMatch200() {
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        process(largeMatchingIfMatch, responseHeaders);
+        return responseHeaders;
+    }
+
     private static void process(ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {
         StaticContentHandler.processPreconditions(ETAG,
                                                   LAST_MODIFIED,
@@ -125,9 +153,9 @@ public class StaticContentPreconditionsBenchmark {
                                                   SET_MODIFIED);
     }
 
-    private static ServerRequestHeaders requestHeaders(String value) {
+    private static ServerRequestHeaders requestHeaders(HeaderName headerName, String value) {
         WritableHeaders<?> headers = WritableHeaders.create();
-        headers.set(HeaderValues.create(HeaderNames.IF_NONE_MATCH, value));
+        headers.set(HeaderValues.create(headerName, value));
         return ServerRequestHeaders.create(headers);
     }
 }
