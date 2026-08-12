@@ -160,7 +160,7 @@ In particular, Helidon _does not_ use the inferred Prometheus publisher if you c
 You can configure other publishers and still have Helidon use the default one by simply adding the `prometheus` publisher entry. You do not need to specify further settings for it.
 
 [source,yaml]
-.Using an OLTP publisher *and* the default Prometheus publisher
+.Using an OTLP publisher *and* the default Prometheus publisher
 ----
 metrics:
   publishers:
