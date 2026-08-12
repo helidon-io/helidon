@@ -252,7 +252,10 @@ class Http2ClientConnectionHandler {
                                                       http2Client.protocolConfig());
             if (upgradeResponse.isUpgraded()) {
                 result.set(Result.HTTP_2);
-                Http2ClientConnection conn = createUpgradedHttp2Connection(http2Client, upgradeResponse.connection());
+                ClientConnection connection = upgradeResponse.connection();
+                Http2ClientConnection conn = createUpgradedHttp2Connection(http2Client, connection);
+                allConnections.put(conn, true);
+                h2ConnByConn.put(connection, conn);
                 activeConnection.set(conn);
                 return http2(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
             } else {
