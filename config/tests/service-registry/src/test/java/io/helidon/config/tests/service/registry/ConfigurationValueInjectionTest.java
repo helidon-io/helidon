@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Default;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.Configuration;
@@ -42,6 +43,7 @@ class ConfigurationValueInjectionTest {
     private static final String PASSWORD = "secret-value";
     private static final List<String> PASSWORDS = List.of("first-secret", "second-secret");
     private static final String INLINE_DEFAULT_PASSWORD = "inline-secret";
+    private static final String ANNOTATION_DEFAULT_PASSWORD = "annotation-default-secret";
     private static final String COMPOSITE_PASSWORD = "prefix-" + PASSWORD + "-suffix";
     private static final String INFERRED_PASSWORD_KEY =
             CharArrayResolutionService.class.getCanonicalName() + ".inferredPassword";
@@ -113,6 +115,7 @@ class ConfigurationValueInjectionTest {
         assertArrayEquals(PASSWORD.toCharArray(), service.inferredPassword());
         assertArrayEquals(new char[0], service.emptyPassword());
         assertArrayEquals(INLINE_DEFAULT_PASSWORD.toCharArray(), service.inlineDefaultPassword());
+        assertArrayEquals(ANNOTATION_DEFAULT_PASSWORD.toCharArray(), service.annotationDefaultPassword());
         assertArrayEquals(COMPOSITE_PASSWORD.toCharArray(), service.compositePassword());
     }
 
@@ -290,6 +293,7 @@ class ConfigurationValueInjectionTest {
         private final char[] inferredPassword;
         private char[] emptyPassword;
         private char[] inlineDefaultPassword;
+        private char[] annotationDefaultPassword;
         private char[] compositePassword;
 
         @Service.Inject
@@ -300,9 +304,12 @@ class ConfigurationValueInjectionTest {
         @Service.Inject
         void configure(@Configuration.Value("app.empty") char[] emptyPassword,
                        @Configuration.Value("${app.missing:inline-secret}") char[] inlineDefaultPassword,
+                       @Configuration.Value("app.missing.password")
+                       @Default.Value(ANNOTATION_DEFAULT_PASSWORD) char[] annotationDefaultPassword,
                        @Configuration.Value("prefix-${app.password}-suffix") char[] compositePassword) {
             this.emptyPassword = emptyPassword;
             this.inlineDefaultPassword = inlineDefaultPassword;
+            this.annotationDefaultPassword = annotationDefaultPassword;
             this.compositePassword = compositePassword;
         }
 
@@ -316,6 +323,10 @@ class ConfigurationValueInjectionTest {
 
         char[] inlineDefaultPassword() {
             return inlineDefaultPassword;
+        }
+
+        char[] annotationDefaultPassword() {
+            return annotationDefaultPassword;
         }
 
         char[] compositePassword() {

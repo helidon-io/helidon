@@ -77,7 +77,7 @@ class ConfigurationValueFactoryTest {
     void literalKeyUsesCustomCharArrayMapper() {
         Config config = Config.builder()
                 .sources(ConfigSources.create(Map.of("app.password", "secret-value")))
-                .addMapper(char[].class, it -> "custom-value".toCharArray())
+                .addMapper(char[].class, _ -> "custom-value".toCharArray())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
