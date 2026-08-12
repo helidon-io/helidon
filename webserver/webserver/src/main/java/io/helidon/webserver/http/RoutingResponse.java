@@ -112,6 +112,8 @@ public interface RoutingResponse extends ServerResponse {
         headers.remove(HeaderNames.CONTENT_LANGUAGE);
         headers.remove(HeaderNames.CONTENT_LOCATION);
         headers.remove(HeaderNames.CONTENT_DISPOSITION);
+        headers.remove(HeaderNames.create("Content-Digest"));
+        headers.remove(HeaderNames.create("Repr-Digest"));
         headers.remove(HeaderNames.ETAG);
         headers.remove(HeaderNames.LAST_MODIFIED);
         headers.remove(HeaderNames.ACCEPT_RANGES);

@@ -67,6 +67,8 @@ class Http2ErrorHandlingWithOutputStreamTest {
     private static final HeaderName ERROR_HEADER_NAME = HeaderNames.create("error-handler");
     private static final HeaderName STALE_TRAILER_NAME = HeaderNames.create("stale-trailer");
     private static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
+    private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
+    private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
     private static final HeaderName REENTRY_RESULT_HEADER_NAME = HeaderNames.create("reentry-result");
     private static final HeaderName CALLBACK_COUNT_HEADER_NAME = HeaderNames.create("callback-count");
     private static HttpClient httpClient;
@@ -115,6 +117,8 @@ class Http2ErrorHandlingWithOutputStreamTest {
                     res.header(HeaderNames.CONTENT_LANGUAGE, "en");
                     res.header(HeaderNames.CONTENT_LOCATION, "/stale");
                     res.header(HeaderNames.CONTENT_DISPOSITION, "attachment");
+                    res.header(CONTENT_DIGEST_NAME, "sha-256=:YWJjZA==:");
+                    res.header(REPR_DIGEST_NAME, "sha-256=:YWJjZA==:");
                     res.header(HeaderNames.ETAG, "\"stale\"");
                     res.header(HeaderNames.LAST_MODIFIED, "stale");
                     res.header(HeaderNames.ACCEPT_RANGES, "bytes");
@@ -244,6 +248,8 @@ class Http2ErrorHandlingWithOutputStreamTest {
         assertThat(response.headers().firstValue(HeaderNames.CONTENT_LANGUAGE.lowerCase()), is(emptyOptional()));
         assertThat(response.headers().firstValue(HeaderNames.CONTENT_LOCATION.lowerCase()), is(emptyOptional()));
         assertThat(response.headers().firstValue(HeaderNames.CONTENT_DISPOSITION.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(CONTENT_DIGEST_NAME.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(REPR_DIGEST_NAME.lowerCase()), is(emptyOptional()));
         assertThat(response.headers().firstValue(HeaderNames.ETAG.lowerCase()), is(emptyOptional()));
         assertThat(response.headers().firstValue(HeaderNames.LAST_MODIFIED.lowerCase()), is(emptyOptional()));
         assertThat(response.headers().firstValue(HeaderNames.ACCEPT_RANGES.lowerCase()), is(emptyOptional()));

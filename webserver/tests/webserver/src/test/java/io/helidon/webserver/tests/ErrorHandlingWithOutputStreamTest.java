@@ -49,6 +49,8 @@ class ErrorHandlingWithOutputStreamTest {
     private static final HeaderName ERROR_HEADER_NAME = HeaderNames.create("error-handler");
     private static final HeaderName STALE_TRAILER_NAME = HeaderNames.create("stale-trailer");
     private static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
+    private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
+    private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
 
     private final Http1Client client;
 
@@ -70,6 +72,8 @@ class ErrorHandlingWithOutputStreamTest {
                     res.header(HeaderNames.CONTENT_LANGUAGE, "en");
                     res.header(HeaderNames.CONTENT_LOCATION, "/stale");
                     res.header(HeaderNames.CONTENT_DISPOSITION, "attachment");
+                    res.header(CONTENT_DIGEST_NAME, "sha-256=:YWJjZA==:");
+                    res.header(REPR_DIGEST_NAME, "sha-256=:YWJjZA==:");
                     res.header(HeaderNames.ETAG, "\"stale\"");
                     res.header(HeaderNames.LAST_MODIFIED, "stale");
                     res.header(HeaderNames.ACCEPT_RANGES, "bytes");
@@ -141,6 +145,8 @@ class ErrorHandlingWithOutputStreamTest {
             assertThat(response.headers().contains(HeaderNames.CONTENT_LANGUAGE), is(false));
             assertThat(response.headers().contains(HeaderNames.CONTENT_LOCATION), is(false));
             assertThat(response.headers().contains(HeaderNames.CONTENT_DISPOSITION), is(false));
+            assertThat(response.headers().contains(CONTENT_DIGEST_NAME), is(false));
+            assertThat(response.headers().contains(REPR_DIGEST_NAME), is(false));
             assertThat(response.headers().contains(HeaderNames.ETAG), is(false));
             assertThat(response.headers().contains(HeaderNames.LAST_MODIFIED), is(false));
             assertThat(response.headers().contains(HeaderNames.ACCEPT_RANGES), is(false));

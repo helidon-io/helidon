@@ -56,6 +56,8 @@ class Http1ServerResponseTest {
     void resetEntityClearsEntityMetadata() {
         Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
         var staleTrailer = HeaderNames.create("x-stale-trailer");
+        var contentDigest = HeaderNames.create("Content-Digest");
+        var reprDigest = HeaderNames.create("Repr-Digest");
 
         response.status(Status.PARTIAL_CONTENT_206);
         response.header(HeaderNames.CONTENT_LENGTH, "1");
@@ -67,6 +69,8 @@ class Http1ServerResponseTest {
         response.header(HeaderNames.CONTENT_LANGUAGE, "en");
         response.header(HeaderNames.CONTENT_LOCATION, "/stale");
         response.header(HeaderNames.CONTENT_DISPOSITION, "attachment");
+        response.header(contentDigest, "sha-256=:YWJjZA==:");
+        response.header(reprDigest, "sha-256=:YWJjZA==:");
         response.header(HeaderNames.ETAG, "\"stale\"");
         response.header(HeaderNames.LAST_MODIFIED, "stale");
         response.header(HeaderNames.ACCEPT_RANGES, "bytes");
@@ -97,6 +101,8 @@ class Http1ServerResponseTest {
                                  response.headers().contains(HeaderNames.CONTENT_LOCATION), is(false)),
                 () -> assertThat(HeaderNames.CONTENT_DISPOSITION.defaultCase(),
                                  response.headers().contains(HeaderNames.CONTENT_DISPOSITION), is(false)),
+                () -> assertThat(contentDigest.defaultCase(), response.headers().contains(contentDigest), is(false)),
+                () -> assertThat(reprDigest.defaultCase(), response.headers().contains(reprDigest), is(false)),
                 () -> assertThat(HeaderNames.ETAG.defaultCase(),
                                  response.headers().contains(HeaderNames.ETAG), is(false)),
                 () -> assertThat(HeaderNames.LAST_MODIFIED.defaultCase(),
