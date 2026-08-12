@@ -1,0 +1,570 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.http;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.Direction;
+import io.helidon.http.HttpTransportObserver.HandshakeObservation;
+import io.helidon.http.HttpTransportObserver.HandshakeOutcome;
+import io.helidon.http.HttpTransportObserver.Initiator;
+import io.helidon.http.HttpTransportObserver.Protocol;
+import io.helidon.http.HttpTransportObserver.StreamObservation;
+import io.helidon.http.HttpTransportObserver.StreamOutcome;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import static io.helidon.http.HttpTransportObserver.Direction.BIDIRECTIONAL;
+import static io.helidon.http.HttpTransportObserver.Handshake.TLS;
+import static io.helidon.http.HttpTransportObserver.HandshakeOutcome.SUCCESS;
+import static io.helidon.http.HttpTransportObserver.Initiator.REMOTE;
+import static io.helidon.http.HttpTransportObserver.Protocol.HTTP_1_1;
+import static io.helidon.http.HttpTransportObserver.Protocol.HTTP_2;
+import static io.helidon.http.HttpTransportObserver.Role.SERVER;
+import static io.helidon.http.HttpTransportObserver.StreamOutcome.CANCELLED;
+import static io.helidon.http.HttpTransportObserver.StreamOutcome.COMPLETED;
+import static io.helidon.http.HttpTransportObserver.Transport.TCP;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class HttpTransportObserverTest {
+    @Test
+    void emptyCompositionIsNoOp() {
+        assertThat(HttpTransportObserver.compose(List.of()), sameInstance(HttpTransportObserver.noop()));
+        assertThat(HttpTransportObserver.compose(List.of(HttpTransportObserver.noop())),
+                   sameInstance(HttpTransportObserver.noop()));
+    }
+
+    @Test
+    void compositionDeduplicatesByIdentityAndPreservesOrder() {
+        List<String> events = new ArrayList<>();
+        HttpTransportObserver first = (role, transport, handshake) -> {
+            events.add("first");
+            return HttpTransportObserver.ConnectionObservation.noop();
+        };
+        HttpTransportObserver second = (role, transport, handshake) -> {
+            events.add("second");
+            return HttpTransportObserver.ConnectionObservation.noop();
+        };
+
+        HttpTransportObserver.compose(List.of(first, first, second))
+                .connectionOpened(SERVER, TCP, TLS);
+
+        assertThat(events, is(List.of("first", "second")));
+    }
+
+    @Test
+    void compositionIsolatesObserverFailures() {
+        AtomicInteger connectionOpened = new AtomicInteger();
+        AtomicInteger protocolSelected = new AtomicInteger();
+        AtomicInteger streamOpened = new AtomicInteger();
+        AtomicInteger streamClosed = new AtomicInteger();
+        AtomicInteger connectionClosed = new AtomicInteger();
+
+        HttpTransportObserver failingOpen = (role, transport, handshake) -> {
+            throw new IllegalStateException("open");
+        };
+        HttpTransportObserver failingCallbacks = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                throw new IllegalStateException("handshake");
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+                throw new IllegalStateException("protocol");
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                throw new IllegalStateException("stream");
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                throw new IllegalStateException("close");
+            }
+        };
+        HttpTransportObserver recording = (role, transport, handshake) -> {
+            connectionOpened.incrementAndGet();
+            return new ConnectionObservation() {
+                @Override
+                public HandshakeObservation handshakeStarted() {
+                    return outcome -> {
+                    };
+                }
+
+                @Override
+                public void protocolSelected(Protocol protocol) {
+                    protocolSelected.incrementAndGet();
+                }
+
+                @Override
+                public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                    streamOpened.incrementAndGet();
+                    return outcome -> streamClosed.incrementAndGet();
+                }
+
+                @Override
+                public void close(ConnectionOutcome outcome) {
+                    connectionClosed.incrementAndGet();
+                }
+            };
+        };
+
+        assertDoesNotThrow(() -> {
+            HttpTransportObserver.ConnectionObservation connection =
+                    HttpTransportObserver.compose(List.of(failingOpen, failingCallbacks, recording))
+                            .connectionOpened(SERVER, TCP, TLS);
+            connection.handshakeStarted().close(SUCCESS);
+            connection.protocolSelected(HTTP_2);
+            connection.streamOpened(BIDIRECTIONAL, REMOTE).close(COMPLETED);
+            connection.close(ConnectionOutcome.LOCAL_CLOSE);
+        });
+
+        assertThat(connectionOpened.get(), is(1));
+        assertThat(protocolSelected.get(), is(1));
+        assertThat(streamOpened.get(), is(1));
+        assertThat(streamClosed.get(), is(1));
+        assertThat(connectionClosed.get(), is(1));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ConnectionOutcome.class)
+    void connectionCloseCompletesOpenChildrenExactlyOnce(ConnectionOutcome outcome) {
+        AtomicInteger handshakeClosed = new AtomicInteger();
+        AtomicInteger streamClosed = new AtomicInteger();
+        AtomicInteger connectionClosed = new AtomicInteger();
+        AtomicReference<HandshakeOutcome> handshakeOutcome = new AtomicReference<>();
+        AtomicReference<StreamOutcome> streamOutcome = new AtomicReference<>();
+        AtomicReference<ConnectionOutcome> connectionOutcome = new AtomicReference<>();
+        HttpTransportObserver observer = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return outcome -> {
+                    handshakeClosed.incrementAndGet();
+                    handshakeOutcome.set(outcome);
+                };
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return outcome -> {
+                    streamClosed.incrementAndGet();
+                    streamOutcome.set(outcome);
+                };
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                connectionClosed.incrementAndGet();
+                connectionOutcome.set(outcome);
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TCP, TLS);
+        HandshakeObservation handshake = connection.handshakeStarted();
+        StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+
+        assertThat(connection.handshakeStarted(), sameInstance(handshake));
+        connection.close(outcome);
+        connection.close(outcome);
+        handshake.close(SUCCESS);
+        stream.close(COMPLETED);
+
+        assertThat(handshakeClosed.get(), is(1));
+        HandshakeOutcome expectedHandshakeOutcome = switch (outcome) {
+            case NORMAL, LOCAL_CLOSE -> HandshakeOutcome.CANCELLED;
+            case REMOTE_CLOSE, ERROR -> HandshakeOutcome.FAILURE;
+            case TIMEOUT -> HandshakeOutcome.TIMEOUT;
+        };
+        assertThat(handshakeOutcome.get(), is(expectedHandshakeOutcome));
+        assertThat(streamClosed.get(), is(1));
+        StreamOutcome expectedStreamOutcome = switch (outcome) {
+            case NORMAL, LOCAL_CLOSE, REMOTE_CLOSE -> CANCELLED;
+            case TIMEOUT, ERROR -> StreamOutcome.ERROR;
+        };
+        assertThat(streamOutcome.get(), is(expectedStreamOutcome));
+        assertThat(connectionClosed.get(), is(1));
+        assertThat(connectionOutcome.get(), is(outcome));
+    }
+
+    @Test
+    void protocolSelectionForwardsOnlySelectionsAndTransitions() {
+        AtomicInteger selections = new AtomicInteger();
+        HttpTransportObserver observer = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+                selections.incrementAndGet();
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return StreamObservation.noop();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TCP, TLS);
+
+        connection.protocolSelected(HTTP_1_1);
+        connection.protocolSelected(HTTP_1_1);
+        connection.protocolSelected(HTTP_2);
+
+        assertThat(selections.get(), is(2));
+        assertThrows(IllegalArgumentException.class,
+                     () -> connection.protocolSelected(Protocol.UNKNOWN));
+    }
+
+    @Test
+    void protocolSelectionAndConnectionCloseAllowSameThreadReentry() {
+        List<String> events = new ArrayList<>();
+        AtomicReference<ConnectionObservation> connectionReference = new AtomicReference<>();
+        HttpTransportObserver first = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+                events.add("first-" + protocol);
+                if (protocol == HTTP_1_1) {
+                    connectionReference.get().protocolSelected(HTTP_2);
+                } else {
+                    connectionReference.get().close(ConnectionOutcome.NORMAL);
+                }
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return StreamObservation.noop();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                events.add("first-close");
+            }
+        };
+        HttpTransportObserver second = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+                events.add("second-" + protocol);
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return StreamObservation.noop();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                events.add("second-close");
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(first, second))
+                .connectionOpened(SERVER, TCP, TLS);
+        connectionReference.set(connection);
+
+        connection.protocolSelected(HTTP_1_1);
+
+        assertThat(events,
+                   is(List.of("first-HTTP_1_1",
+                              "second-HTTP_1_1",
+                              "first-HTTP_2",
+                              "second-HTTP_2",
+                              "first-close",
+                              "second-close")));
+    }
+
+    @Test
+    void connectionCloseDuringStreamOpenCompletesTheStreamBeforeTheConnection() {
+        List<String> events = new ArrayList<>();
+        AtomicInteger streamClosed = new AtomicInteger();
+        AtomicReference<ConnectionObservation> connectionReference = new AtomicReference<>();
+        HttpTransportObserver observer = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                events.add("stream-open");
+                connectionReference.get().close(ConnectionOutcome.NORMAL);
+                return outcome -> {
+                    streamClosed.incrementAndGet();
+                    events.add("stream-close-" + outcome);
+                };
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                events.add("connection-close");
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TCP, TLS);
+        connectionReference.set(connection);
+
+        StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+        stream.close(COMPLETED);
+
+        assertThat(streamClosed.get(), is(1));
+        assertThat(events, is(List.of("stream-open", "stream-close-CANCELLED", "connection-close")));
+    }
+
+    @Test
+    void streamCloseAllowsSameThreadReentry() {
+        AtomicInteger streamClosed = new AtomicInteger();
+        AtomicReference<StreamObservation> streamReference = new AtomicReference<>();
+        HttpTransportObserver observer = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return outcome -> {
+                    streamClosed.incrementAndGet();
+                    streamReference.get().close(CANCELLED);
+                };
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TCP, TLS);
+        StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+        streamReference.set(stream);
+
+        stream.close(COMPLETED);
+        connection.close(ConnectionOutcome.NORMAL);
+
+        assertThat(streamClosed.get(), is(1));
+    }
+
+    @Test
+    void concurrentConnectionCloseAndStreamOpenCompleteExactlyOnce() throws Exception {
+        CountDownLatch streamOpenStarted = new CountDownLatch(1);
+        CountDownLatch completeStreamOpen = new CountDownLatch(1);
+        AtomicInteger streamClosed = new AtomicInteger();
+        AtomicInteger connectionClosed = new AtomicInteger();
+        List<String> events = new CopyOnWriteArrayList<>();
+        HttpTransportObserver observer = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                events.add("stream-open");
+                streamOpenStarted.countDown();
+                try {
+                    if (!completeStreamOpen.await(5, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Timed out waiting to complete stream open");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while opening stream", e);
+                }
+                return outcome -> {
+                    streamClosed.incrementAndGet();
+                    events.add("stream-close");
+                };
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                connectionClosed.incrementAndGet();
+                events.add("connection-close");
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TCP, TLS);
+        CompletableFuture<StreamObservation> opening = CompletableFuture.supplyAsync(
+                () -> connection.streamOpened(BIDIRECTIONAL, REMOTE));
+
+        assertThat(streamOpenStarted.await(5, TimeUnit.SECONDS), is(true));
+        connection.close(ConnectionOutcome.NORMAL);
+        completeStreamOpen.countDown();
+        StreamObservation stream = opening.get(5, TimeUnit.SECONDS);
+        stream.close(COMPLETED);
+
+        assertThat(streamClosed.get(), is(1));
+        assertThat(connectionClosed.get(), is(1));
+        assertThat(events, is(List.of("stream-open", "stream-close", "connection-close")));
+    }
+
+    @Test
+    void concurrentConnectionCloseAndHandshakeOpenCompleteExactlyOnce() throws Exception {
+        CountDownLatch handshakeOpenStarted = new CountDownLatch(1);
+        CountDownLatch completeHandshakeOpen = new CountDownLatch(1);
+        AtomicInteger handshakeClosed = new AtomicInteger();
+        AtomicInteger connectionClosed = new AtomicInteger();
+        List<String> events = new CopyOnWriteArrayList<>();
+        HttpTransportObserver observer = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                events.add("handshake-open");
+                handshakeOpenStarted.countDown();
+                try {
+                    if (!completeHandshakeOpen.await(5, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Timed out waiting to complete handshake open");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while opening handshake", e);
+                }
+                return outcome -> {
+                    handshakeClosed.incrementAndGet();
+                    events.add("handshake-close");
+                };
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return StreamObservation.noop();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                connectionClosed.incrementAndGet();
+                events.add("connection-close");
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TCP, TLS);
+        CompletableFuture<HandshakeObservation> opening = CompletableFuture.supplyAsync(connection::handshakeStarted);
+
+        assertThat(handshakeOpenStarted.await(5, TimeUnit.SECONDS), is(true));
+        connection.close(ConnectionOutcome.NORMAL);
+        completeHandshakeOpen.countDown();
+        HandshakeObservation handshake = opening.get(5, TimeUnit.SECONDS);
+        handshake.close(SUCCESS);
+
+        assertThat(handshakeClosed.get(), is(1));
+        assertThat(connectionClosed.get(), is(1));
+        assertThat(events, is(List.of("handshake-open", "handshake-close", "connection-close")));
+    }
+
+    @Test
+    void concurrentStreamOpenCallbacksAreNotSerialized() throws Exception {
+        CountDownLatch bothStreamsStarted = new CountDownLatch(2);
+        CountDownLatch completeStreams = new CountDownLatch(1);
+        AtomicInteger activeCallbacks = new AtomicInteger();
+        AtomicInteger maximumActiveCallbacks = new AtomicInteger();
+        HttpTransportObserver observer = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(Protocol protocol) {
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                int active = activeCallbacks.incrementAndGet();
+                maximumActiveCallbacks.accumulateAndGet(active, Math::max);
+                bothStreamsStarted.countDown();
+                try {
+                    if (!completeStreams.await(5, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Timed out waiting to complete stream callbacks");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while opening stream", e);
+                } finally {
+                    activeCallbacks.decrementAndGet();
+                }
+                return StreamObservation.noop();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TCP, TLS);
+        CompletableFuture<StreamObservation> first = CompletableFuture.supplyAsync(
+                () -> connection.streamOpened(BIDIRECTIONAL, REMOTE));
+        CompletableFuture<StreamObservation> second = CompletableFuture.supplyAsync(
+                () -> connection.streamOpened(BIDIRECTIONAL, REMOTE));
+
+        boolean concurrent = bothStreamsStarted.await(5, TimeUnit.SECONDS);
+        completeStreams.countDown();
+        first.get(5, TimeUnit.SECONDS).close(COMPLETED);
+        second.get(5, TimeUnit.SECONDS).close(COMPLETED);
+        connection.close(ConnectionOutcome.NORMAL);
+
+        assertThat(concurrent, is(true));
+        assertThat(maximumActiveCallbacks.get(), is(2));
+    }
+}
