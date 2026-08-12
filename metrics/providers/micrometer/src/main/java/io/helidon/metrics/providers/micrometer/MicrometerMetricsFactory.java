@@ -17,9 +17,10 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -61,7 +62,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
     private final Collection<MeterRegistryLifeCycleListener> meterRegistryLifeCycleListeners;
     private final SpanContextSupplierProvider spanContextSupplierProvider;
 
-    private final Collection<MMeterRegistry> meterRegistries = new ConcurrentLinkedQueue<>();
+    private final Set<MMeterRegistry> meterRegistries = new LinkedHashSet<>();
     private final ReentrantLock lock = new ReentrantLock();
     private final ReentrantLock globalRegistryLock = new ReentrantLock();
     private final MultipleRegistryWarnings multipleRegistryWarnings = new MultipleRegistryWarnings();
