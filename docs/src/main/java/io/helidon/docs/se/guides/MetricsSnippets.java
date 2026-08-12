@@ -85,6 +85,7 @@ class MetricsSnippets {
         MeterRegistry meterRegistry = Services.get(MetricsFactory.class) // <5>
                 .createMeterRegistry(metricsConfig);
 
+        WebServer server = null;
         try {
             MetricsObserver metrics = MetricsObserver.builder()
                     .metricsConfig(metricsConfig) // <6>
@@ -96,19 +97,25 @@ class MetricsSnippets {
                     .addObserver(metrics) // <8>
                     .build();
 
-            WebServer server = WebServer.builder() // <9>
+            server = WebServer.builder() // <9>
                     .config(config.get("server"))
                     .addFeature(observe)
                     .routing(Main::routing)
                     .build();
-            try {
-                server.start();
-                // ...
-            } finally {
-                server.stop(); // <10>
-            }
+            server.start();
+            // ...
         } finally {
-            meterRegistry.close(); // <11>
+            if (server == null) {
+                meterRegistry.close(); // <10>
+            } else {
+                try {
+                    server.stop(); // <11>
+                } finally {
+                    if (!server.isRunning()) {
+                        meterRegistry.close(); // <12>
+                    }
+                }
+            }
         }
         // end::snippet_2[]
     }
