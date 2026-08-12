@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
@@ -49,7 +50,7 @@ import io.helidon.webclient.spi.WebClientService;
 import static io.helidon.http.HeaderNames.CONTENT_ENCODING;
 import static io.helidon.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
-abstract class Http2CallChainBase implements WebClientService.Chain {
+abstract class Http2CallChainBase implements WebClientService.Chain, Supplier<String> {
     private final Http2ClientImpl http2Client;
     private final HttpClientConfig clientConfig;
     private final Http2ClientRequestImpl clientRequest;
@@ -170,6 +171,15 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     }
 
     void releaseRequestEntity() {
+    }
+
+    @Override
+    public String get() {
+        return actualProtocolId();
+    }
+
+    String actualProtocolId() {
+        return response == null ? http1FallbackHandler.actualProtocolId() : response.protocolId();
     }
 
     CompletableFuture<WebClientServiceResponse> whenComplete() {

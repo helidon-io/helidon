@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.webclient.api.WebClientServiceRequest;
+import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 
@@ -30,6 +31,7 @@ final class Http1FallbackHandler {
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final Function<Http1ClientRequest, Http1ClientResponse> responseFunction;
     private final boolean upgradeFailureResponseAllowed;
+    private volatile String actualProtocolId = Http2Client.PROTOCOL_ID;
 
     Http1FallbackHandler(CompletableFuture<WebClientServiceRequest> whenSent,
                          Function<Http1ClientRequest, Http1ClientResponse> responseFunction,
@@ -46,7 +48,7 @@ final class Http1FallbackHandler {
     <T> T invoke(Http1ClientRequest request,
                  WebClientServiceRequest serviceRequest,
                  Supplier<T> responseSupplier) {
-        Context context = Http1FallbackService.context(serviceRequest, whenSent);
+        Context context = Http1FallbackService.context(serviceRequest, this);
         copyFinalHeaders(request, serviceRequest);
         try {
             return Contexts.runInContext(context, responseSupplier::get);
@@ -57,6 +59,7 @@ final class Http1FallbackHandler {
     }
 
     void completeSent(WebClientServiceRequest serviceRequest) {
+        actualProtocolId = Http1Client.PROTOCOL_ID;
         whenSent.complete(serviceRequest);
     }
 
@@ -66,6 +69,10 @@ final class Http1FallbackHandler {
 
     boolean upgradeFailureResponseAllowed() {
         return upgradeFailureResponseAllowed;
+    }
+
+    String actualProtocolId() {
+        return actualProtocolId;
     }
 
     static void copyFinalHeaders(Http1ClientRequest request, WebClientServiceRequest serviceRequest) {

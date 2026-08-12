@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.common.Version;
 import io.helidon.common.buffers.BufferData;
@@ -566,6 +567,38 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                       CompletableFuture<WebClientServiceRequest> whenSent,
                                                       CompletableFuture<WebClientServiceResponse> whenComplete,
                                                       ClientUri usedUri) {
+        return invokeServices(httpCallChain, whenSent, whenComplete, usedUri, protocolId, null);
+    }
+
+    /**
+     * Invoke configured client services.
+     *
+     * @param whenSent      completable future to be completed when the request is sent over the network
+     * @param whenComplete  completable future to be completed when the request/response interaction finishes
+     * @param httpCallChain invocation of the HTTP request (the actual network call)
+     * @param usedUri       URI configured on the request, combined with the base URI of the client
+     * @param protocolId    supplier of the actual wire protocol ID when known
+     * @return web client service response
+     */
+    protected WebClientServiceResponse invokeServices(WebClientService.Chain httpCallChain,
+                                                      CompletableFuture<WebClientServiceRequest> whenSent,
+                                                      CompletableFuture<WebClientServiceResponse> whenComplete,
+                                                      ClientUri usedUri,
+                                                      Supplier<String> protocolId) {
+        return invokeServices(httpCallChain,
+                              whenSent,
+                              whenComplete,
+                              usedUri,
+                              null,
+                              Objects.requireNonNull(protocolId));
+    }
+
+    private WebClientServiceResponse invokeServices(WebClientService.Chain httpCallChain,
+                                                    CompletableFuture<WebClientServiceRequest> whenSent,
+                                                    CompletableFuture<WebClientServiceResponse> whenComplete,
+                                                    ClientUri usedUri,
+                                                    String protocolId,
+                                                    Supplier<String> protocolIdSupplier) {
 
         // include any stored cookies in request
         cookieManager.request(usedUri, headers, !redirectSensitiveHeadersShouldBeStripped(usedUri));
@@ -573,6 +606,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         WebClientServiceRequest serviceRequest = new ServiceRequestImpl(usedUri,
                                                                         method,
                                                                         protocolId,
+                                                                        protocolIdSupplier,
                                                                         headers,
                                                                         Contexts.context().orElseGet(Context::create),
                                                                         requestId,

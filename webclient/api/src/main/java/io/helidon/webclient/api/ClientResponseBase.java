@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,18 @@ import io.helidon.http.Status;
  * Http client response base.
  */
 interface ClientResponseBase {
+    /**
+     * Actual protocol used on the wire for this response.
+     * <p>
+     * The default implementation returns {@code http/1.1} as a best-effort value. Non-Helidon implementations that can
+     * use another wire protocol should override this method; otherwise the returned value may be inaccurate.
+     *
+     * @return protocol identifier, such as {@code http/1.1}, {@code h2}, or {@code h3}
+     */
+    default String protocolId() {
+        return "http/1.1";
+    }
+
     /**
      * Response status.
      *

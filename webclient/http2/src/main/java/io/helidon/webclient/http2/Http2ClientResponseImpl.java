@@ -42,6 +42,7 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 
 class Http2ClientResponseImpl implements Http2ClientResponse {
     private final HttpClientConfig httpClientConfig;
+    private final String protocolId;
     private final Status responseStatus;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
@@ -59,6 +60,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     private boolean entityRequested;
 
     Http2ClientResponseImpl(HttpClientConfig httpClientConfig,
+                            String protocolId,
                             Status status,
                             ClientRequestHeaders requestHeaders,
                             ClientResponseHeaders responseHeaders,
@@ -73,6 +75,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                             boolean hasRequestEntity,
                             Object requestEntity) {
         this.httpClientConfig = httpClientConfig;
+        this.protocolId = protocolId;
         this.responseStatus = status;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
@@ -86,6 +89,11 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
         this.maxBufferedEntitySize = maxBufferedEntitySize;
         this.hasRequestEntity = hasRequestEntity;
         this.requestEntity = requestEntity;
+    }
+
+    @Override
+    public String protocolId() {
+        return protocolId;
     }
 
     @Override
