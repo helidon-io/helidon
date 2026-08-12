@@ -17,6 +17,7 @@
 package io.helidon.webclient.tests.http2;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -230,8 +231,12 @@ class H2cShutdownTest {
                 assertArrayEquals(clientPreface, input.readNBytes(clientPreface.length));
 
                 http2Client.closeResource();
-                output.write(new byte[] {0, 0, 0, 4, 0, 0, 0, 0, 0});
-                output.flush();
+                try {
+                    output.write(new byte[] {0, 0, 0, 4, 0, 0, 0, 0, 0});
+                    output.flush();
+                } catch (IOException ignored) {
+                    // The client may close before the peer sends its initial settings.
+                }
                 while (input.read() != -1) {
                     // Drain any final HTTP/2 frames until the client closes its socket.
                 }
