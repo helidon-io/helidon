@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,14 +100,23 @@ public class DataCommonCodegenTypesTest {
         checkField("PROVIDER", Data.Provider.class);
     }
 
+    @Test
+    void testTransactionType() {
+        checkField("TRANSACTION_TYPE", "io.helidon.transaction.Tx.TransactionType");
+    }
+
     private static void checkField(String name, Class<?> expectedType) {
+        checkField(name, expectedType.getCanonicalName());
+    }
+
+    private static void checkField(String name, String expectedType) {
         Field field = fields.get(name);
         assertThat("Field " + name + " does not exist in the class", field, notNullValue());
         try {
             toCheck.remove(name);
             if (checked.add(name)) {
                 TypeName value = (TypeName) field.get(null);
-                assertThat("Field " + name, value.fqName(), is(expectedType.getCanonicalName()));
+                assertThat("Field " + name, value.fqName(), is(expectedType));
             } else {
                 fail("Field " + name + " is checked more than once.class");
             }
