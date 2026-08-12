@@ -103,8 +103,14 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
      * Active TCP protocol IDs in preference order.
      * Implementations that do not expose their active protocols return an empty list.
      * The returned list is an immutable snapshot.
+     * <p>
+     * This method must not be called from
+     * {@link io.helidon.webclient.spi.HttpClientSpiProvider#protocol(WebClient, Object)} while this client is being
+     * constructed. Protocol clients should retain the {@link WebClient} instance and obtain the protocol IDs after
+     * construction completes.
      *
      * @return unmodifiable list of active TCP protocol IDs
+     * @throws IllegalStateException if the protocol inventory is not yet available
      */
     @Api.Internal
     default List<String> tcpProtocolIds() {
