@@ -98,6 +98,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
+    private final Header altSvcHeader;
     private final List<Http2SubProtocolSelector> subProviders;
     private final int streamId;
     private final Http2Settings serverSettings;
@@ -167,10 +168,41 @@ class Http2ServerStream implements Runnable, Http2Stream {
                       ConnectionFlowControl connectionFlowControl,
                       InboundDataBudget inboundDataBudget,
                       Http2ConnectionChecks connectionAttackVectorMetrics) {
+        this(ctx,
+             streams,
+             locallyResetStreamTracker,
+             routing,
+             http2Config,
+             subProviders,
+             streamId,
+             serverSettings,
+             clientSettings,
+             writer,
+             connectionFlowControl,
+             inboundDataBudget,
+             connectionAttackVectorMetrics,
+             null);
+    }
+
+    Http2ServerStream(ConnectionContext ctx,
+                      Http2ConcurrentConnectionStreams streams,
+                      LocallyResetStreamTracker locallyResetStreamTracker,
+                      HttpRouting routing,
+                      Http2Config http2Config,
+                      List<Http2SubProtocolSelector> subProviders,
+                      int streamId,
+                      Http2Settings serverSettings,
+                      Http2Settings clientSettings,
+                      Http2StreamWriter writer,
+                      ConnectionFlowControl connectionFlowControl,
+                      InboundDataBudget inboundDataBudget,
+                      Http2ConnectionChecks connectionAttackVectorMetrics,
+                      Header altSvcHeader) {
         this.ctx = ctx;
         this.streams = streams;
         this.routing = routing;
         this.http2Config = http2Config;
+        this.altSvcHeader = altSvcHeader;
         this.subProviders = subProviders;
         this.streamId = streamId;
         this.serverSettings = serverSettings;
@@ -1226,8 +1258,15 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                    outcome,
                                                                    ctx.listenerContext().config().maxPayloadSize(),
                                                                    http2Config.maxBufferedEntitySize().toBytes());
-            Http2ServerResponse response = new Http2ServerResponse(this, request,
-                                                                   http2Config.validateResponseHeaders());
+            Http2ServerResponse response;
+            if (altSvcHeader == null) {
+                response = new Http2ServerResponse(this, request, http2Config.validateResponseHeaders());
+            } else {
+                response = new Http2AltSvcServerResponse(this,
+                                                         request,
+                                                         http2Config.validateResponseHeaders(),
+                                                         altSvcHeader);
+            }
             try {
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;

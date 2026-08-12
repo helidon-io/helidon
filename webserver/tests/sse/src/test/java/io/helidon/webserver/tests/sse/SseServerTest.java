@@ -18,25 +18,39 @@ package io.helidon.webserver.tests.sse;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
 import static io.helidon.http.HeaderValues.ACCEPT_JSON;
+import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class SseServerTest extends SseBaseTest {
+    private static final String CUSTOM_ALT_SVC = "h2=\":443\"";
+    private static final String BEFORE_SEND_CALLS = "Before-Send-Calls";
+    private static final String BEFORE_SEND_CALLS_AFTER_FAILED_SINK_CREATION =
+            "Before-Send-Calls-After-Failed-Sink-Creation";
+    private static final String ALT_SVC_PRESENT_AFTER_FAILED_SINK_CREATION =
+            "Alt-Svc-Present-After-Failed-Sink-Creation";
 
     SseServerTest(WebServer webServer) {
         super(webServer);
@@ -45,6 +59,44 @@ class SseServerTest extends SseBaseTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseServerTest::sseString1);
+        rules.get("/sseBeforeSendStatus", (req, res) -> {
+            res.beforeSend(() -> res.status(Status.BAD_REQUEST_400));
+            sseString1(req, res);
+        });
+        rules.get("/sseCustomAltSvc", (req, res) -> {
+            AtomicInteger beforeSendCalls = new AtomicInteger();
+            res.beforeSend(() -> {
+                res.header(HeaderNames.ALT_SVC, CUSTOM_ALT_SVC);
+                res.header(BEFORE_SEND_CALLS, Integer.toString(beforeSendCalls.incrementAndGet()));
+            });
+            sseString1(req, res);
+        });
+        rules.get("/sseRejected", (req, res) -> {
+            AtomicBoolean beforeSendCalled = new AtomicBoolean();
+            res.beforeSend(() -> beforeSendCalled.set(true));
+            try {
+                sseString1(req, res);
+            } catch (RuntimeException e) {
+                res.header("Before-Send-Called-During-Sink-Lookup", Boolean.toString(beforeSendCalled.get()));
+                throw e;
+            }
+        });
+        rules.get("/sseProviderCreationFailure", (req, res) -> {
+            AtomicInteger beforeSendCalls = new AtomicInteger();
+            res.beforeSend(() -> res.header(BEFORE_SEND_CALLS,
+                                            Integer.toString(beforeSendCalls.incrementAndGet())));
+            res.header(CONTENT_TYPE_JSON);
+            try {
+                sseString1(req, res);
+            } catch (IllegalStateException _) {
+                res.header(BEFORE_SEND_CALLS_AFTER_FAILED_SINK_CREATION,
+                           Integer.toString(beforeSendCalls.get()));
+                res.header(ALT_SVC_PRESENT_AFTER_FAILED_SINK_CREATION,
+                           Boolean.toString(res.headers().contains(HeaderNames.ALT_SVC)));
+                res.headers().remove(HeaderNames.CONTENT_TYPE);
+                res.send("ok");
+            }
+        });
         rules.get("/sseString2", SseServerTest::sseString2);
         rules.get("/sseDelayed", SseServerTest::sseDelayed);
         rules.get("/sseFlush", SseServerTest::sseFlush);
@@ -61,6 +113,11 @@ class SseServerTest extends SseBaseTest {
     static void server(WebServerConfig.Builder server) {
         server.writeQueueLength(2);
         server.smartAsyncWrites(true);
+        server.addConnectionSelector(Http1ConnectionSelector.builder()
+                                             .config(Http1Config.builder()
+                                                             .altSvc(AltSvc.builder().build())
+                                                             .build())
+                                             .build());
     }
 
     @Test
@@ -88,6 +145,90 @@ class SseServerTest extends SseBaseTest {
         } finally {
             delayedLatch.countDown();
             SseBaseTest.delayedLatch(new CountDownLatch(0));
+        }
+    }
+
+    @Test
+    void testSseAdvertisesAltSvc() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer().port())
+                .build();
+        try (Http1ClientResponse response = client.get("/sseString1").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null),
+                       is("h3=\":" + webServer().port() + "\""));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testBeforeSendStatusIsAppliedToSseWithAltSvcConfigured() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer().port())
+                .build();
+        try (Http1ClientResponse response = client.get("/sseBeforeSendStatus").request()) {
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+            assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testSsePreservesBeforeSendAltSvc() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer().port())
+                .build();
+        try (Http1ClientResponse response = client.get("/sseCustomAltSvc").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null), is(CUSTOM_ALT_SVC));
+            assertThat(response.headers().first(HeaderNames.create(BEFORE_SEND_CALLS)).orElse(null), is("1"));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testRejectedSseDoesNotAdvertiseAltSvcOrRunBeforeSendDuringSinkLookup() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer().port())
+                .build();
+        try (Http1ClientResponse response = client.get("/sseRejected").header(ACCEPT_JSON).request()) {
+            assertThat(response.status(), is(Status.NOT_ACCEPTABLE_406));
+            assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
+            assertThat(response.headers()
+                               .first(HeaderNames.create("Before-Send-Called-During-Sink-Lookup"))
+                               .orElse(null),
+                       is("false"));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void testFailedSseProviderCreationRollsBackAndReadvertisesAltSvc() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer().port())
+                .build();
+        try (Http1ClientResponse response = client.get("/sseProviderCreationFailure")
+                .header(ACCEPT_EVENT_STREAM)
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers()
+                               .first(HeaderNames.create(BEFORE_SEND_CALLS_AFTER_FAILED_SINK_CREATION))
+                               .orElse(null),
+                       is("0"));
+            assertThat(response.headers()
+                               .first(HeaderNames.create(ALT_SVC_PRESENT_AFTER_FAILED_SINK_CREATION))
+                               .orElse(null),
+                       is("false"));
+            assertThat(response.headers().first(HeaderNames.create(BEFORE_SEND_CALLS)).orElse(null), is("1"));
+            assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null),
+                       is("h3=\":" + webServer().port() + "\""));
+            assertThat(response.entity().as(String.class), is("ok"));
+        } finally {
+            client.closeResource();
         }
     }
 

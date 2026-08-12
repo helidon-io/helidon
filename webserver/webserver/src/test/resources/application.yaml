@@ -24,6 +24,11 @@ server:
       max-prologue-length: 4096
       max-headers-size: 8192
       max-buffered-entity-size: "8 KB"
+      alt-svc:
+        protocol: "h3"
+        port: 8443
+        max-age: PT1H
+        persist: true
   sockets:
     - name: "other"
       write-buffer-size: 1024

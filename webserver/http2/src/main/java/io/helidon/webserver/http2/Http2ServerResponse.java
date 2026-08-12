@@ -51,6 +51,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     private boolean isSent;
     private boolean streamingEntity;
+    private boolean preparingResponse;
     private long bytesWritten;
     private BlockingOutputStream outputStream;
     private UnaryOperator<OutputStream> outputStreamFilter;
@@ -96,6 +97,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public void send(byte[] entityBytes, int position, int length) {
+        if (preparingResponse) {
+            throw new IllegalStateException("Response preparation already in progress");
+        }
         try {
             if (outputStreamFilter != null) {
                 // in this case we must honor user's request to filter the stream
@@ -114,7 +118,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 throw new IllegalStateException("When output stream is used, response is completed by closing the output stream"
                                                         + ", do not call send().");
             }
-            isSent = true;
 
             // handle content encoding
             int actualLength = length;
@@ -132,6 +135,35 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true,
                                                     false,
                                                     DateTime.rfc1123String()));
+
+            int initialStatusCode = status().code();
+            prepareResponse();
+
+            Status responseStatus = status();
+            int statusCode = responseStatus.code();
+            boolean statusChanged = statusCode != initialStatusCode;
+            boolean noEntityResponse = statusChanged
+                    && (statusCode == Status.NO_CONTENT_204.code()
+                    || statusCode == Status.RESET_CONTENT_205.code()
+                    || statusCode == Status.NOT_MODIFIED_304.code());
+            if (statusChanged && responseStatus.family() == Status.Family.INFORMATIONAL) {
+                LOGGER.log(System.Logger.Level.ERROR,
+                           "Attempt to send a final informational response. "
+                                   + "Server responded with Internal Server Error.");
+                status(Status.INTERNAL_SERVER_ERROR_500);
+                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+                headers.remove(HeaderNames.TRAILER);
+                noEntityResponse = true;
+            } else if (noEntityResponse) {
+                if (statusCode == Status.NO_CONTENT_204.code()) {
+                    headers.remove(HeaderNames.CONTENT_LENGTH);
+                } else if (statusCode == Status.RESET_CONTENT_205.code()) {
+                    headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+                }
+                headers.remove(HeaderNames.TRAILER);
+            }
+            isSent = true;
+
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status());
             headers.remove(Http2Headers.STATUS_NAME, it -> ctx.log(LOGGER,
@@ -144,9 +176,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             // even when client sends "te: trailers", we do not send trailers unless we have them
             boolean sendTrailers = sendTrailers(headers);
 
-            beforeSend();
-
             validateResponse(http2Headers);
+            if (noEntityResponse) {
+                bytesWritten += stream.writeHeaders(http2Headers, true);
+                afterSend();
+                return;
+            }
             bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
                                                         BufferData.create(actualBytes, actualPosition, actualLength),
                                                         !sendTrailers);
@@ -174,19 +209,22 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public OutputStream outputStream() {
+        if (preparingResponse) {
+            throw new IllegalStateException("Response preparation already in progress");
+        }
         if (isSent) {
             throw new IllegalStateException("Response already sent");
         }
         if (streamingEntity) {
             throw new IllegalStateException("OutputStream already obtained");
         }
-        streamingEntity = true;
 
         if (request.headers().containsToken(HeaderValues.TE_TRAILERS)) {
             headers.add(STREAM_TRAILERS);
         }
 
-        beforeSend();
+        prepareResponse();
+        streamingEntity = true;
 
         outputStream = new BlockingOutputStream(request, this, () -> {
             this.isSent = true;
@@ -196,6 +234,15 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             return contentEncode(outputStream);
         } else {
             return outputStreamFilter.apply(contentEncode(outputStream));
+        }
+    }
+
+    private void prepareResponse() {
+        preparingResponse = true;
+        try {
+            beforeSend();
+        } finally {
+            preparingResponse = false;
         }
     }
 

@@ -17,11 +17,14 @@
 package io.helidon.webserver.http1;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.http.HttpConfig;
 import io.helidon.http.RequestedUriDiscoveryContext;
+import io.helidon.webserver.http.AltSvc;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 
@@ -31,7 +34,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Blueprint(decorator = Http1BuilderDecorator.class)
 @Prototype.Configured(root = false, value = Http1ConnectionProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
-@Prototype.IncludeDefaultMethods({"maxBufferedEntitySize", "log"})
+@Prototype.IncludeDefaultMethods({"maxBufferedEntitySize", "log", "altSvc"})
 interface Http1ConfigBlueprint extends HttpConfig, ProtocolConfig {
     /**
      * Name of this configuration, in most cases the same as {@link #type()}.
@@ -112,6 +115,18 @@ interface Http1ConfigBlueprint extends HttpConfig, ProtocolConfig {
      */
     @Option.Singular
     List<Http1ConnectionListener> receiveListeners();
+
+    /**
+     * Explicit {@code Alt-Svc} advertisement.
+     *
+     * @return alternative service advertisement
+     */
+    @Api.Preview
+    @Option.Configured
+    @Option.PrototypedBy("io.helidon.webserver.http.AltSvcConfig")
+    default Optional<AltSvc> altSvc() {
+        return Optional.empty();
+    }
 
     /**
      * A single send listener, this value is computed.

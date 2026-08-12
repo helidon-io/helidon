@@ -26,3 +26,8 @@ server:
       initial-window-size: 8192
       flow-control-timeout: PT0.7S
       validate-path: false
+      alt-svc:
+        protocol: "h3"
+        port: 8443
+        max-age: PT1H
+        persist: true
