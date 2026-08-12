@@ -237,7 +237,7 @@ class H2cShutdownTest {
                 try {
                     output.write(new byte[] {0, 0, 0, 4, 0, 0, 0, 0, 0});
                     output.flush();
-                } catch (IOException ignored) {
+                } catch (IOException _) {
                     // The client may close before the peer sends its initial settings.
                 }
 

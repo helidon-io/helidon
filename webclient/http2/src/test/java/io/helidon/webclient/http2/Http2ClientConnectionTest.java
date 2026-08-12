@@ -348,7 +348,7 @@ class Http2ClientConnectionTest {
 
             Http2ClientConnection connection = Http2ClientConnection.createUpgraded(test.client,
                                                                                      test.clientConnection,
-                                                                                     ignored -> { },
+                                                                                     _ -> { },
                                                                                      ignored -> { });
 
             assertThat(http2ReadTimeouts.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
@@ -490,7 +490,7 @@ class Http2ClientConnectionTest {
             CompletableFuture<Http2ClientConnection> connectionFuture = CompletableFuture.supplyAsync(
                     () -> Http2ClientConnection.createUpgraded(test.client,
                                                                test.clientConnection,
-                                                               ignored -> { },
+                                                               _ -> { },
                                                                connectionRef::set));
 
             assertTrue(blockedWrite.awaitEntered());
