@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -121,19 +121,24 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=disabling-whole-summary]
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=KPI]
 
-Your Helidon SE application can also control the KPI settings programmatically.
+Your Helidon SE application can also control KPI settings programmatically by creating a custom meter registry
+with the registry-specific metrics configuration and assigning that registry to the metrics observer.
 [source,java]
 .Assign KPI metrics behavior from code
 ----
 include::{rootdir}/../java/io/helidon/docs/se/guides/MetricsSnippets.java[tag=snippet_2, indent=0]
 ----
-<1> Create a link:{metrics-javadoc-base-url}/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html[`KeyPerformanceIndicatorMetricsConfig]` instance (via its link:{metrics-javadoc-base-url}/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.Builder.html[`Builder`]) with non-default values.
-<2> Enabled extended KPI {metrics}.
+<1> Create a link:{metrics-javadoc-base-url}/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html[`KeyPerformanceIndicatorMetricsConfig`] instance (via its link:{metrics-javadoc-base-url}/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.Builder.html[`Builder`]) with non-default values.
+<2> Enable extended KPI {metrics}.
 <3> Set the long-running request threshold.
-<4> Prepare the metrics observer's builder.
-<5> Update the metrics observer's builder using the just-prepared KPI metrics config.
-<6> Add the metrics observer to the `ObserveFeature`.
-<7> Add the `ObserveFeature` to the `WebServer`.
+<4> Prepare a link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MetricsConfig.html[`MetricsConfig`] with the just-prepared KPI metrics config.
+<5> Create a custom link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MeterRegistry.html[`MeterRegistry`] using that metrics config.
+<6> Assign the same metrics config to the observer; with a custom registry, the observer uses these settings for registry-specific behavior as well as endpoint settings.
+<7> Assign the custom meter registry to the observer.
+<8> Add the metrics observer to the `ObserveFeature`.
+<9> Add the `ObserveFeature` to the `WebServer`.
+
+The custom meter registry is owned by the application. Close it after stopping the `WebServer` to release registry and publisher resources.
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=virtualThreadsMetrics]
 
@@ -328,4 +333,3 @@ This guide demonstrated how to use metrics in a Helidon SE application using var
 Refer to the following references for additional information:
 
 * link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
-

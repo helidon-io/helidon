@@ -78,17 +78,24 @@ class MetricsSnippets {
                         .longRunningRequestThreshold(Duration.ofSeconds(4)) // <3>
                         .build();
 
+        MetricsConfig metricsConfig = MetricsConfig.builder() // <4>
+                .keyPerformanceIndicatorMetricsConfig(kpiConfig)
+                .build();
+
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class) // <5>
+                .createMeterRegistry(metricsConfig);
+
         MetricsObserver metrics = MetricsObserver.builder()
-                .metricsConfig(MetricsConfig.builder() // <4>
-                                       .keyPerformanceIndicatorMetricsConfig(kpiConfig)) // <5>
+                .metricsConfig(metricsConfig) // <6>
+                .meterRegistry(meterRegistry) // <7>
                 .build();
 
         ObserveFeature observe = ObserveFeature.builder()
                 .config(config.get("server.features.observe"))
-                .addObserver(metrics) // <6>
+                .addObserver(metrics) // <8>
                 .build();
 
-        WebServer server = WebServer.builder() // <7>
+        WebServer server = WebServer.builder() // <9>
                 .config(config.get("server"))
                 .addFeature(observe)
                 .routing(Main::routing)
