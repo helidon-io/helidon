@@ -42,6 +42,10 @@ ACME server configuration.
 |`List<ExternalListener>`
 |pass:[Listeners]
 
+| `external-handler-alternatives`
+|`Map<String, ExternalHandler> or List<ExternalHandler>`
+|pass:[Handler alternatives]
+
 | `host`
 |`String`
 |pass:[Host]

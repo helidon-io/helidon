@@ -64,6 +64,12 @@
             "description": "Handlers"
           },
           {
+            "key": "external-handler-alternatives",
+            "kind": "MAP_OR_LIST",
+            "type": "com.acme.ExternalHandler",
+            "description": "Handler alternatives"
+          },
+          {
             "key": "modes",
             "kind": "LIST",
             "type": "com.acme.AcmeMode",

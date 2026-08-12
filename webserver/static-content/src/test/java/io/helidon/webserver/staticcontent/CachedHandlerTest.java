@@ -503,6 +503,62 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testMemoryCacheCountsAliasedHandlerOnce(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Files.createDirectories(root);
+
+        MemoryCache memoryCache = MemoryCache.create(it -> it.capacity(Size.create(10)));
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .memoryCache(memoryCache)
+                        .build());
+        handler.cacheInMemory("resource.txt",
+                              MediaTypes.TEXT_PLAIN,
+                              "12345".getBytes(StandardCharsets.UTF_8),
+                              Optional.empty());
+        CachedHandlerInMemory cached = handler.cacheInMemory("resource.txt").orElseThrow();
+
+        handler.cacheInMemory("alias.txt", cached);
+
+        assertThat("Aliased cache keys should share the payload capacity",
+                   memoryCache.available(5),
+                   is(true));
+        assertThat("The shared payload should still consume its capacity",
+                   memoryCache.available(6),
+                   is(false));
+
+        byte[] replacementBytes = "1".getBytes(StandardCharsets.UTF_8);
+        CachedHandlerInMemory replacement = new CachedHandlerInMemory(MediaTypes.TEXT_PLAIN,
+                                                                       null,
+                                                                       null,
+                                                                       replacementBytes,
+                                                                       replacementBytes.length,
+                                                                       HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                                                           replacementBytes.length));
+        handler.cacheInMemory("alias.txt", replacement);
+
+        assertThat("Replacing one alias should retain both distinct payloads",
+                   memoryCache.available(4),
+                   is(true));
+        assertThat("Both distinct payloads should consume capacity",
+                   memoryCache.available(5),
+                   is(false));
+
+        handler.cacheInMemory("resource.txt", replacement);
+
+        assertThat("Replacing the last original alias should release its payload",
+                   memoryCache.available(9),
+                   is(true));
+
+        handler.releaseCache();
+
+        assertThat("Clearing aliases should release their shared capacity",
+                   memoryCache.available(10),
+                   is(true));
+    }
+
+    @Test
     void testSingleFileSymlinkRetargetingAfterStart(@TempDir Path tempDir) throws IOException {
         Path root = tempDir.resolve("root");
         Path externalDir = tempDir.resolve("external");

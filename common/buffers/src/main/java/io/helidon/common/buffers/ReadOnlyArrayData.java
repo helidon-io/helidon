@@ -22,19 +22,42 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Objects;
 
 class ReadOnlyArrayData extends ReadOnlyBufferData {
+    static final BufferData EMPTY = new ReadOnlyArrayData(BufferData.EMPTY_BYTES, 0, 0);
+
     private final byte[] bytes;
     private final int offset;
     private final int length;
+    private final boolean sliceSharesBacking;
     private int position;
 
     ReadOnlyArrayData(byte[] bytes, int offset, int length) {
+        this(bytes, offset, length, false);
+    }
+
+    ReadOnlyArrayData(byte[] bytes, int offset, int length, boolean sliceSharesBacking) {
         this.bytes = bytes;
         this.offset = offset;
         this.length = length;
+        this.sliceSharesBacking = sliceSharesBacking;
         this.position = 0;
+    }
+
+    BufferData readOnlySlice(int sliceLength) {
+        Objects.checkFromIndexSize(position, sliceLength, length);
+        int sliceOffset = offset + position;
+        BufferData result;
+        if (sliceSharesBacking) {
+            result = new ReadOnlyArrayData(bytes, sliceOffset, sliceLength, true);
+        } else {
+            byte[] copy = Arrays.copyOfRange(bytes, sliceOffset, sliceOffset + sliceLength);
+            result = BufferData.createReadOnly(copy, 0, copy.length);
+        }
+        position += sliceLength;
+        return result;
     }
 
     @Override
