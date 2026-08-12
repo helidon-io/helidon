@@ -26,7 +26,6 @@ final class MetricsTypes {
     static final TypeName ANNOTATION_GAUGE = TypeName.create("io.helidon.metrics.api.Metrics.Gauge");
 
     static final TypeName METER_REGISTRY = TypeName.create("io.helidon.metrics.api.MeterRegistry");
-    static final TypeName METRICS_FACTORY = TypeName.create("io.helidon.metrics.api.MetricsFactory");
     static final TypeName GAUGE = TypeName.create("io.helidon.metrics.api.Gauge");
     static final TypeName COUNTER = TypeName.create("io.helidon.metrics.api.Counter");
     static final TypeName TIMER = TypeName.create("io.helidon.metrics.api.Timer");

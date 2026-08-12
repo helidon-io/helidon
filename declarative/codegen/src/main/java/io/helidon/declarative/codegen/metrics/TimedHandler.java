@@ -38,7 +38,6 @@ import io.helidon.service.codegen.ServiceCodegenTypes;
 import static io.helidon.declarative.codegen.metrics.MetricsExtension.GENERATOR;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.ANNOTATION_TIMED;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.METER_REGISTRY;
-import static io.helidon.declarative.codegen.metrics.MetricsTypes.METRICS_FACTORY;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.TIMER;
 
 class TimedHandler {
@@ -91,10 +90,7 @@ class TimedHandler {
                         .type(METER_REGISTRY)
                         .name("meterRegistry")
                 )
-                .addParameter(metricsFactory -> metricsFactory
-                        .type(METRICS_FACTORY)
-                        .name("metricsFactory")
-                )
+                .addContentLine("var metricsFactory = meterRegistry.metricsFactory();")
                 .addContent("this.timer = meterRegistry.getOrCreate(")
                 .addContent("metricsFactory.timerBuilder(")
                 .addContentLiteral(name)

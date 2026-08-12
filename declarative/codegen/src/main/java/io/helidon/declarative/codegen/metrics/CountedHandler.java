@@ -38,7 +38,6 @@ import static io.helidon.declarative.codegen.metrics.MetricsExtension.GENERATOR;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.ANNOTATION_COUNTED;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.COUNTER;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.METER_REGISTRY;
-import static io.helidon.declarative.codegen.metrics.MetricsTypes.METRICS_FACTORY;
 
 class CountedHandler {
     private final RegistryRoundContext ctx;
@@ -90,10 +89,7 @@ class CountedHandler {
                         .type(METER_REGISTRY)
                         .name("meterRegistry")
                 )
-                .addParameter(metricsFactory -> metricsFactory
-                        .type(METRICS_FACTORY)
-                        .name("metricsFactory")
-                )
+                .addContentLine("var metricsFactory = meterRegistry.metricsFactory();")
                 .addContent("this.counter = meterRegistry.getOrCreate(")
                 .addContent("metricsFactory.counterBuilder(")
                 .addContentLiteral(name)

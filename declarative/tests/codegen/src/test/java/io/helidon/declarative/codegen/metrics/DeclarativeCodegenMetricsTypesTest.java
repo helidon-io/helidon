@@ -28,7 +28,6 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -71,7 +70,6 @@ class DeclarativeCodegenMetricsTypesTest {
         checkField(toCheck, checked, fields, "ANNOTATION_GAUGE", Metrics.Gauge.class);
 
         checkField(toCheck, checked, fields, "METER_REGISTRY", MeterRegistry.class);
-        checkField(toCheck, checked, fields, "METRICS_FACTORY", MetricsFactory.class);
         checkField(toCheck, checked, fields, "GAUGE", Gauge.class);
         checkField(toCheck, checked, fields, "COUNTER", Counter.class);
         checkField(toCheck, checked, fields, "TIMER", Timer.class);
