@@ -111,6 +111,7 @@ public class Http2ClientConnection {
     private volatile int lastStreamId;
     private volatile long expectedPingAck = NO_PING_ACK;
     private volatile long peerMaxConcurrentStreams = Http2Setting.MAX_CONCURRENT_STREAMS.defaultValue();
+    private volatile boolean clientPrefaceSent;
     private volatile boolean initialSettingsReceived;
     private int reservedStreams;
 
@@ -458,6 +459,10 @@ public class Http2ClientConnection {
      */
     public void close() {
         initialSettingsLatch.countDown();
+        if (!clientPrefaceSent) {
+            closeConnection();
+            return;
+        }
         try {
             this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
         } catch (Throwable e) {
@@ -524,6 +529,7 @@ public class Http2ClientConnection {
             ctx.log(LOGGER, TRACE, "Starting HTTP/2 connection, thread: %s", Thread.currentThread().getName());
             try {
                 sendPreface(protocolConfig, sendSettings);
+                clientPrefaceSent = true;
             } catch (Throwable e) {
                 ctx.log(LOGGER, WARNING, "Failed to send preface.", e);
             } finally {

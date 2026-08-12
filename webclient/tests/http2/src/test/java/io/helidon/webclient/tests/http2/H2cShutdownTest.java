@@ -231,14 +231,14 @@ class H2cShutdownTest {
                 assertArrayEquals(clientPreface, input.readNBytes(clientPreface.length));
 
                 http2Client.closeResource();
+                while (input.read() != -1) {
+                    // Drain any final HTTP/2 frames until the client closes its socket.
+                }
                 try {
                     output.write(new byte[] {0, 0, 0, 4, 0, 0, 0, 0, 0});
                     output.flush();
                 } catch (IOException ignored) {
                     // The client may close before the peer sends its initial settings.
-                }
-                while (input.read() != -1) {
-                    // Drain any final HTTP/2 frames until the client closes its socket.
                 }
 
                 ExecutionException requestFailure = assertThrows(ExecutionException.class,

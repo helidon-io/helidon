@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -478,6 +479,35 @@ class Http2ClientConnectionTest {
             }
             cancel.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             stream.close();
+        }
+    }
+
+    @Test
+    void closeBeforePrefaceDoesNotSendGoAway() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            AtomicReference<Http2ClientConnection> connectionRef = new AtomicReference<>();
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            CompletableFuture<Http2ClientConnection> connectionFuture = CompletableFuture.supplyAsync(
+                    () -> Http2ClientConnection.createUpgraded(test.client,
+                                                               test.clientConnection,
+                                                               ignored -> { },
+                                                               connectionRef::set));
+
+            assertTrue(blockedWrite.awaitEntered());
+            Http2ClientConnection connection = connectionRef.get();
+            assertNotNull(connection);
+            try {
+                connection.close();
+                test.assertConnectionClosed();
+                verify(test.dataWriter).writeNow(any(BufferData.class));
+            } finally {
+                blockedWrite.release();
+            }
+            ExecutionException connectionFailure = assertThrows(ExecutionException.class,
+                                                                () -> connectionFuture.get(
+                                                                        TEST_WAIT_TIMEOUT.toMillis(),
+                                                                        TimeUnit.MILLISECONDS));
+            assertNotNull(connectionFailure.getCause());
         }
     }
 
