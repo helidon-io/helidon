@@ -27,8 +27,7 @@ interface ClientResponseBase {
     /**
      * Actual protocol used on the wire for this response.
      * <p>
-     * The default implementation returns {@code http/1.1} as a best-effort value. Non-Helidon implementations that can
-     * use another wire protocol should override this method; otherwise the returned value may be inaccurate.
+     * The default implementation returns {@code http/1.1}.
      *
      * @return protocol identifier, such as {@code http/1.1}, {@code h2}, or {@code h3}
      */
