@@ -84,8 +84,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
     }
 
     @Override
-    String actualProtocolId() {
-        return redirectedResponse == null ? super.actualProtocolId() : redirectedResponse.protocolId();
+    public String protocolId() {
+        return redirectedResponse == null ? super.protocolId() : redirectedResponse.protocolId();
     }
 
     @Override

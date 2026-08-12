@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -58,5 +59,18 @@ public interface WebClientService extends NamedService {
          * @return response from the next service or HTTP call
          */
         WebClientServiceResponse proceed(WebClientServiceRequest clientRequest);
+    }
+
+    /**
+     * Terminal service chain that exposes the currently selected wire protocol.
+     */
+    @Api.Internal
+    interface WireProtocolChain extends Chain {
+        /**
+         * Protocol currently selected for the request.
+         *
+         * @return protocol identifier
+         */
+        String protocolId();
     }
 }
