@@ -136,9 +136,9 @@ include::{rootdir}/../java/io/helidon/docs/se/guides/MetricsSnippets.java[tag=sn
 <6> Assign the same metrics config to the observer; with a custom registry, the observer uses these settings for registry-specific behavior as well as endpoint settings.
 <7> Assign the custom meter registry to the observer.
 <8> Add the metrics observer to the `ObserveFeature`.
-<9> Add the `ObserveFeature` to the `WebServer`.
-<10> When the application is ready to shut down, stop the `WebServer`.
-<11> Close the application-owned custom meter registry to release registry and publisher resources.
+<9> Add the `ObserveFeature` to the `WebServer`, then start the server.
+<10> When the application is ready to shut down, stop the `WebServer` in an inner `finally` block.
+<11> Close the application-owned custom meter registry in an outer `finally` block so it is released even if construction, startup, or shutdown fails.
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=virtualThreadsMetrics]
 
