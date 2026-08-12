@@ -59,6 +59,17 @@ final class JdbcTxSupport implements TxSupport {
         this.listeners = List.copyOf(listeners);
     }
 
+    /**
+     * Reports whether the current thread retains transaction state.
+     * Package access allows focused cleanup tests to verify removal without
+     * exposing the transaction stack.
+     *
+     * @return whether transaction state is present for the current thread
+     */
+    boolean threadStatePresent() {
+        return transactions.get() != null;
+    }
+
     @Override
     public String type() {
         return Jdbc.PROVIDER;

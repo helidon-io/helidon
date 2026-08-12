@@ -82,10 +82,14 @@ final class JdbcBootstrapResource {
      */
     enum Role {
 
-        /** Drop script executed before initialization. */
+        /**
+         * Drop script executed before initialization.
+         */
         DROP("drop"),
 
-        /** Initialization script. */
+        /**
+         * Initialization script.
+         */
         INIT("init");
 
         private final String text;
@@ -110,25 +114,39 @@ final class JdbcBootstrapResource {
      */
     enum SourceType {
 
-        /** Classpath resource. */
+        /**
+         * Classpath resource.
+         */
         CLASSPATH("classpath"),
 
-        /** Filesystem resource. */
+        /**
+         * Filesystem resource.
+         */
         FILE("file"),
 
-        /** URI-backed resource. */
+        /**
+         * URI-backed resource.
+         */
         URI("URI"),
 
-        /** Plain configured text. */
+        /**
+         * Plain configured text.
+         */
         CONFIGURED_TEXT("configured text"),
 
-        /** Base64-configured binary content. */
+        /**
+         * Base64-configured binary content.
+         */
         CONFIGURED_BINARY("configured binary"),
 
-        /** Programmatically supplied stream. */
+        /**
+         * Programmatically supplied stream.
+         */
         SUPPLIED_STREAM("supplied stream"),
 
-        /** Invalid or incomplete configured-resource definition. */
+        /**
+         * Invalid or incomplete configured-resource definition.
+         */
         UNSPECIFIED("unspecified");
 
         private final String text;

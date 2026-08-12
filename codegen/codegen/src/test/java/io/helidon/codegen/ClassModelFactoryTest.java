@@ -17,9 +17,15 @@ package io.helidon.codegen;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.codegen.spi.AnnotationMapper;
+import io.helidon.codegen.spi.ElementMapper;
+import io.helidon.codegen.spi.TypeMapper;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -61,6 +67,54 @@ class ClassModelFactoryTest {
         TypeInfo classInfo = ClassModelFactory.create(roundContext, classType, classModel);
 
         assertThat(element(classInfo, "value").kind(), is(ElementKind.FIELD));
+    }
+
+    @Test
+    void resolvesInProgressRecordFromSimpleName() {
+        TypeName recordType = TypeName.create("example.GeneratedRecord");
+        RoundContextImpl roundContext = newRoundContext();
+        roundContext.addGeneratedType(recordType,
+                                      record(recordType),
+                                      TypeNames.OBJECT);
+
+        TypeInfo recordInfo = roundContext.typeInfo(TypeName.create("GeneratedRecord"))
+                .orElseThrow();
+
+        assertThat(recordInfo.typeName(), is(recordType));
+        assertThat(recordInfo.kind(), is(ElementKind.RECORD));
+        assertThat(element(recordInfo, "value").kind(), is(ElementKind.RECORD_COMPONENT));
+    }
+
+    @Test
+    void preservesQualifiedInProgressRecordName() {
+        TypeName recordType = TypeName.create("example.GeneratedRecord");
+        RoundContextImpl roundContext = newRoundContext();
+        roundContext.addGeneratedType(recordType,
+                                      record(recordType),
+                                      TypeNames.OBJECT);
+
+        TypeInfo recordInfo = roundContext.typeInfo(recordType)
+                .orElseThrow();
+
+        assertThat(recordInfo.typeName(), is(recordType));
+        assertThat(element(recordInfo, "value").kind(), is(ElementKind.RECORD_COMPONENT));
+    }
+
+    private static ClassModel.Builder record(TypeName recordType) {
+        return ClassModel.builder()
+                .type(recordType)
+                .classType(ElementKind.RECORD)
+                .addField(field -> field.name("value").type(TypeNames.STRING));
+    }
+
+    private static RoundContextImpl newRoundContext() {
+        return new RoundContextImpl(new EmptyCodegenContext(),
+                                    List.of(),
+                                    Set.of(),
+                                    Map.of(),
+                                    Map.of(),
+                                    List.of(),
+                                    List.of());
     }
 
     private static TypedElementInfo element(TypeInfo typeInfo, String name) {
@@ -108,6 +162,78 @@ class ClassModelFactoryTest {
         @Override
         public Optional<TypeInfo> typeInfo(TypeName typeName) {
             return Optional.empty();
+        }
+    }
+
+    private static final class EmptyCodegenContext implements CodegenContext {
+        @Override
+        public Optional<ModuleInfo> module() {
+            return Optional.empty();
+        }
+
+        @Override
+        public CodegenFiler filer() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CodegenLogger logger() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CodegenScope scope() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CodegenOptions options() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Optional<TypeInfo> typeInfo(TypeName typeName) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<TypeInfo> typeInfo(TypeName typeName, Predicate<TypedElementInfo> elementPredicate) {
+            return Optional.empty();
+        }
+
+        @Override
+        public List<ElementMapper> elementMappers() {
+            return List.of();
+        }
+
+        @Override
+        public List<TypeMapper> typeMappers() {
+            return List.of();
+        }
+
+        @Override
+        public List<AnnotationMapper> annotationMappers() {
+            return List.of();
+        }
+
+        @Override
+        public Set<TypeName> mapperSupportedAnnotations() {
+            return Set.of();
+        }
+
+        @Override
+        public Set<String> mapperSupportedAnnotationPackages() {
+            return Set.of();
+        }
+
+        @Override
+        public Set<Option<?>> supportedOptions() {
+            return Set.of();
+        }
+
+        @Override
+        public String uniqueName(TypeInfo type, TypedElementInfo element) {
+            throw new UnsupportedOperationException();
         }
     }
 }
