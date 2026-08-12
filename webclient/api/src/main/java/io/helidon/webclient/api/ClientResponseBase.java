@@ -25,7 +25,7 @@ import io.helidon.http.Status;
  */
 interface ClientResponseBase {
     /**
-     * Actual protocol used on the wire for this response.
+     * Protocol selected by WebClient for this response.
      * <p>
      * The default implementation returns {@code http/1.1}.
      *
