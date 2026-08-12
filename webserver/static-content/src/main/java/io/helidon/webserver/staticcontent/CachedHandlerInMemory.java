@@ -33,8 +33,7 @@ import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import static io.helidon.webserver.staticcontent.StaticContentHandler.processEtag;
-import static io.helidon.webserver.staticcontent.StaticContentHandler.processModifyHeaders;
+import static io.helidon.webserver.staticcontent.StaticContentHandler.processPreconditions;
 
 record CachedHandlerInMemory(MediaType mediaType,
                              Instant lastModified,
@@ -50,10 +49,11 @@ record CachedHandlerInMemory(MediaType mediaType,
                           ServerResponse response,
                           String requestedResource) {
         // etag etc.
-        if (lastModified != null) {
-            processEtag(String.valueOf(lastModified.toEpochMilli()), request.headers(), response.headers());
-            processModifyHeaders(lastModified, request.headers(), response.headers(), setLastModifiedHeader);
-        }
+        processPreconditions(lastModified == null ? null : String.valueOf(lastModified.toEpochMilli()),
+                             lastModified,
+                             request.headers(),
+                             response.headers(),
+                             setLastModifiedHeader);
 
         response.headers().contentType(mediaType);
 

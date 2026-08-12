@@ -19,6 +19,7 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
@@ -171,6 +172,117 @@ class StaticContentTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Nested content"));
+        }
+    }
+
+    @Test
+    void testIfNoneMatchTakesPrecedenceOverIfModifiedSince() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_NONE_MATCH, "\"different\"")
+                .header(HeaderNames.IF_MODIFIED_SINCE, "Wed, 21 Oct 2099 07:28:00 GMT")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testMalformedIfNoneMatchIsIgnored() {
+        for (String value : List.of("\"", "W/\"")) {
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_NONE_MATCH, value)
+                    .request()) {
+
+                assertThat("If-None-Match: " + value, response.status(), is(Status.OK_200));
+                assertThat("If-None-Match body for: " + value, response.as(String.class), is("Content"));
+            }
+        }
+    }
+
+    @Test
+    void testMalformedIfMatchFailsPrecondition() {
+        for (String value : List.of("\"", "W/\"")) {
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_MATCH, value)
+                    .request()) {
+
+                assertThat("If-Match: " + value, response.status(), is(Status.PRECONDITION_FAILED_412));
+            }
+        }
+    }
+
+    @Test
+    void testWildcardMustBeSoleConditionalEntityTagValue() {
+        String etag;
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .request()) {
+            etag = response.headers().get(HeaderNames.ETAG).get();
+        }
+
+        for (String value : List.of(etag + ", *", "*, " + etag)) {
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_NONE_MATCH, value)
+                    .request()) {
+
+                assertThat("If-None-Match: " + value, response.status(), is(Status.OK_200));
+                assertThat("If-None-Match body for: " + value, response.as(String.class), is("Content"));
+            }
+
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_MATCH, value)
+                    .request()) {
+
+                assertThat("If-Match: " + value, response.status(), is(Status.PRECONDITION_FAILED_412));
+            }
+        }
+    }
+
+    @Test
+    void testInvalidIfModifiedSinceIsIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_MODIFIED_SINCE, "nope")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testMultipleIfModifiedSinceValuesAreIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_MODIFIED_SINCE,
+                        "Wed, 21 Oct 2099 07:28:00 GMT",
+                        "Wed, 21 Oct 2015 07:28:00 GMT")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testInvalidIfUnmodifiedSinceIsIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_UNMODIFIED_SINCE, "nope")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testMultipleIfUnmodifiedSinceValuesAreIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_UNMODIFIED_SINCE,
+                        "Wed, 21 Oct 2015 07:28:00 GMT",
+                        "Wed, 21 Oct 2099 07:28:00 GMT")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
         }
     }
 

@@ -106,6 +106,13 @@ class StaticContentTest {
 
         assertThat(response.status(), is(Status.NOT_MODIFIED_304));
         assertThat(response.headers(), hasHeader(HeaderNames.ETAG));
+
+        response = client.get("/files/static-content.txt")
+                .header(HeaderNames.IF_NONE_MATCH, "\"wrong,tag\", " + header.get())
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.NOT_MODIFIED_304));
+        assertThat(response.headers(), hasHeader(HeaderNames.ETAG));
     }
 
     @Test
@@ -116,11 +123,21 @@ class StaticContentTest {
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.headers(), hasHeader(HeaderNames.ETAG));
 
+        Header header = response.headers()
+                .get(HeaderNames.ETAG);
+
         response = client.get("/files/static-content.txt")
                 .header(HeaderNames.IF_MATCH, "\"wrong\"")
                 .request(String.class);
 
         assertThat(response.status(), is(Status.PRECONDITION_FAILED_412));
+        assertThat(response.headers(), hasHeader(HeaderNames.ETAG));
+
+        response = client.get("/files/static-content.txt")
+                .header(HeaderNames.IF_MATCH, "\"wrong,tag\", " + header.get())
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.headers(), hasHeader(HeaderNames.ETAG));
     }
 }
