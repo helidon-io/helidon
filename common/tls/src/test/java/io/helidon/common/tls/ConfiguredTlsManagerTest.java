@@ -345,6 +345,32 @@ class ConfiguredTlsManagerTest {
         assertThat(manager.trustManager().orElseThrow(), sameInstance(initialTrustManager));
     }
 
+    @Test
+    @SuppressWarnings("removal")
+    void reloadTlsRetriesUntilSourceGenerationIsStable() {
+        X509KeyManager reloadedKeyManager = new TestKeyManager();
+        X509TrustManager initialTrustManager = new TestTrustManager();
+        X509TrustManager reloadedTrustManager = new TestTrustManager();
+        ChangingGenerationTlsManager sourceManager = new ChangingGenerationTlsManager(reloadedKeyManager,
+                                                                                       initialTrustManager,
+                                                                                       reloadedTrustManager);
+        Tls source = Tls.create(it -> it.manager(sourceManager));
+
+        ConfiguredTlsManager targetManager = new ConfiguredTlsManager();
+        targetManager.initSslContext(Tls.builder().buildPrototype(),
+                                     new SecureRandom(),
+                                     new KeyManager[] {new TestKeyManager()},
+                                     new TrustManager[] {new TestTrustManager()});
+
+        targetManager.reload(source);
+
+        assertThat(targetManager.keyManager().orElseThrow(), sameInstance(reloadedKeyManager));
+        assertThat(targetManager.trustManager().orElseThrow(), sameInstance(reloadedTrustManager));
+        assertThat(sourceManager.keyManagerReads, is(2));
+        assertThat(sourceManager.trustManagerReads, is(2));
+        assertThat(sourceManager.generationReads, is(4));
+    }
+
     private static SSLContext createSslContext() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -399,6 +425,59 @@ class ConfiguredTlsManagerTest {
         protected void reload(Optional<X509KeyManager> keyManager, Optional<X509TrustManager> trustManager) {
             super.reload(keyManager, trustManager);
             throw new IllegalStateException("reload failed after publication");
+        }
+    }
+
+    private static final class ChangingGenerationTlsManager implements TlsManager {
+        private final SSLContext sslContext = createSslContext();
+        private final X509KeyManager keyManager;
+        private final X509TrustManager initialTrustManager;
+        private final X509TrustManager reloadedTrustManager;
+        private int generationReads;
+        private int keyManagerReads;
+        private int trustManagerReads;
+
+        private ChangingGenerationTlsManager(X509KeyManager keyManager,
+                                             X509TrustManager initialTrustManager,
+                                             X509TrustManager reloadedTrustManager) {
+            this.keyManager = keyManager;
+            this.initialTrustManager = initialTrustManager;
+            this.reloadedTrustManager = reloadedTrustManager;
+        }
+
+        @Override
+        public void init(TlsConfig tls) {
+        }
+
+        @Override
+        public long generation() {
+            return generationReads++ == 0 ? 0L : 1L;
+        }
+
+        @Override
+        public SSLContext sslContext() {
+            return sslContext;
+        }
+
+        @Override
+        public Optional<X509KeyManager> keyManager() {
+            keyManagerReads++;
+            return Optional.of(keyManager);
+        }
+
+        @Override
+        public Optional<X509TrustManager> trustManager() {
+            return Optional.of(trustManagerReads++ == 0 ? initialTrustManager : reloadedTrustManager);
+        }
+
+        @Override
+        public String name() {
+            return "changing-generation";
+        }
+
+        @Override
+        public String type() {
+            return "changing-generation";
         }
     }
 

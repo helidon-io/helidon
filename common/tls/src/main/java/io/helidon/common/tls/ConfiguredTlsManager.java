@@ -118,7 +118,15 @@ public class ConfiguredTlsManager implements TlsManager {
     @SuppressWarnings("removal")
     public void reload(Tls tls) {
         Tls.validateReloadSource(tls);
-        reload(tls.keyManager(), tls.trustManager());
+        long sourceGeneration;
+        Optional<X509KeyManager> keyManager;
+        Optional<X509TrustManager> trustManager;
+        do {
+            sourceGeneration = tls.generation();
+            keyManager = tls.keyManager();
+            trustManager = tls.trustManager();
+        } while (sourceGeneration != tls.generation());
+        reload(keyManager, trustManager);
     }
 
     @Override // TlsManager
