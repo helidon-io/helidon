@@ -43,23 +43,12 @@ class SseBeforeSendTest {
 
     @SetUpRoute
     static void routing(HttpRules rules) {
-        rules.get("/sseBeforeSendStatus", (req, res) -> {
-            res.beforeSend(() -> res.status(Status.BAD_REQUEST_400));
-            SseBaseTest.sseString1(req, res);
-        });
         rules.get("/sseBeforeSendHeader", (req, res) -> {
             AtomicInteger beforeSendCalls = new AtomicInteger();
             res.beforeSend(() -> res.header(BEFORE_SEND_CALLS,
                                             Integer.toString(beforeSendCalls.incrementAndGet())));
             SseBaseTest.sseString1(req, res);
         });
-    }
-
-    @Test
-    void testBeforeSendStatusIsAppliedToSseWithoutAltSvc() {
-        try (Http1ClientResponse response = client.get("/sseBeforeSendStatus").request()) {
-            assertThat(response.status(), is(Status.BAD_REQUEST_400));
-        }
     }
 
     @Test

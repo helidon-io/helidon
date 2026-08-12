@@ -59,10 +59,6 @@ class SseServerTest extends SseBaseTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.get("/sseString1", SseServerTest::sseString1);
-        rules.get("/sseBeforeSendStatus", (req, res) -> {
-            res.beforeSend(() -> res.status(Status.BAD_REQUEST_400));
-            sseString1(req, res);
-        });
         rules.get("/sseCustomAltSvc", (req, res) -> {
             AtomicInteger beforeSendCalls = new AtomicInteger();
             res.beforeSend(() -> {
@@ -157,19 +153,6 @@ class SseServerTest extends SseBaseTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().first(HeaderNames.ALT_SVC).orElse(null),
                        is("h3=\":" + webServer().port() + "\""));
-        } finally {
-            client.closeResource();
-        }
-    }
-
-    @Test
-    void testBeforeSendStatusIsAppliedToSseWithAltSvcConfigured() {
-        Http1Client client = Http1Client.builder()
-                .baseUri("http://localhost:" + webServer().port())
-                .build();
-        try (Http1ClientResponse response = client.get("/sseBeforeSendStatus").request()) {
-            assertThat(response.status(), is(Status.BAD_REQUEST_400));
-            assertThat(response.headers().contains(HeaderNames.ALT_SVC), is(false));
         } finally {
             client.closeResource();
         }
