@@ -72,11 +72,16 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      *              .createMeterRegistry(metricsConfig);
      *      MetricsObserver.builder()
      *              .endpoint("metrics-2")
+     *              .metricsConfig(metricsConfig)
      *              .meterRegistry(meterRegistry) // further settings on the observer builder, etc.
      *              .build();
      * }
      * where {@code metricsConfig} can contain registry-specific settings.
      * Configure a different {@link #endpoint()} on each observer.
+     * <p>
+     * A meter registry has one effective set of registry-specific settings. Multiple metrics observers may share the same
+     * registry only when their registry-specific settings are equivalent; endpoint settings may differ. Use separate meter
+     * registries for observers that require different registry-specific behavior.
      * <p>
      * If this method is not called,
      * {@link MetricsObserver} uses the shared
