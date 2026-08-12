@@ -11,6 +11,54 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## 4.5.3
+
+This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### NOTABLE CHANGES
+
+- Non-JAX-RS LRA participant callbacks are now authenticated. Applications using them must configure `mp.lra.participant.url` and `lra.participant.non-jax-rs.callback-auth.secret`; use `lra.participant.non-jax-rs.callback-auth.compatibility-mode` only temporarily during a rolling upgrade as described in the LRA documentation.
+- Helidon JSON parsers now reject documents containing more than 1,000 nested object and array structures.
+
+### CHANGES
+
+- Build: Add Apple Silicon support to the ShellCheck script [12233](https://github.com/helidon-io/helidon/pull/12233)
+- Build: Stabilize Maven installation caching [12216](https://github.com/helidon-io/helidon/pull/12216)
+- Config: Balance Javadoc HTML in generated config schema descriptions [12213](https://github.com/helidon-io/helidon/pull/12213)
+- Dependencies: Force upgrade OpenNLP Tools to 2.5.11 and update Dependency-Check [12230](https://github.com/helidon-io/helidon/pull/12230)
+- Dependencies: Upgrade Netty to 4.1.137.Final [12269](https://github.com/helidon-io/helidon/pull/12269)
+- Dependencies: Upgrade PostgreSQL JDBC driver to 42.7.13 [12201](https://github.com/helidon-io/helidon/pull/12201)
+- Docs: Convert documentation source from AsciiDoc to Markdown [12220](https://github.com/helidon-io/helidon/pull/12220)
+- Docs: Fix unresolved placeholder in the metrics guide [12235](https://github.com/helidon-io/helidon/pull/12235)
+- JSON: Limit parser nesting depth [48c331fcab](https://github.com/helidon-io/helidon/commit/48c331fcab1ff79b8ebf57f4ac6bf77e4c62228b)
+- LRA: Authenticate non-JAX-RS participant callbacks [d0ebe4e55f](https://github.com/helidon-io/helidon/commit/d0ebe4e55f08e423b5fb4383c0d4d0d99129735d)
+- LRA: Clarify coordinator test-only scope [7bf39bcb09](https://github.com/helidon-io/helidon/commit/7bf39bcb09d219b5df5424310b7a9e80d9440f8f)
+- Metrics: Restrict non-standard HTTP method usage [12245](https://github.com/helidon-io/helidon/pull/12245)
+- Tracing: Register the Jersey client filter only when CDI can resolve the Helidon tracer [12212](https://github.com/helidon-io/helidon/pull/12212)
+- WebClient: Fix resolved URI query parameters [12228](https://github.com/helidon-io/helidon/pull/12228)
+
+## 4.5.2
+
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### NOTABLE CHANGES
+
+The OIDC security provider has been updated to support compression of token cookies. This is enabled
+by default for `server-type=idcs` and disabled by default for other server types. For more information
+see [PR 12218](https://github.com/helidon-io/helidon/pull/12218).
+
+### CHANGES
+
+- Metrics: Support OpenTelemetry HTTP server metrics semantic conventions from MP [12070](https://github.com/helidon-io/helidon/pull/12070)
+- Security: OIDC cookie compression [12218](https://github.com/helidon-io/helidon/pull/12218)
+- Security: Preserve OIDC authorization and logout endpoint query parameters [12207](https://github.com/helidon-io/helidon/pull/12207)
+- Security: Use request scheme for WebClient security transport [12203](https://github.com/helidon-io/helidon/pull/12203)
+- Tests: Use stable Eclipse URLs for Jakarta EE TCK downloads [12191](https://github.com/helidon-io/helidon/pull/12191)
+
 ## 4.5.1
 
 This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 4.
@@ -2756,6 +2804,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.5.3]: https://github.com/oracle/helidon/compare/4.5.2...4.5.3
+[4.5.2]: https://github.com/oracle/helidon/compare/4.5.1...4.5.2
 [4.5.1]: https://github.com/oracle/helidon/compare/4.5.0...4.5.1
 [4.5.0]: https://github.com/oracle/helidon/compare/4.4.1...4.5.0
 [4.4.1]: https://github.com/oracle/helidon/compare/4.4.0...4.4.1
