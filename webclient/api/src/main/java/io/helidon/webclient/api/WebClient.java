@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
+import io.helidon.webclient.spi.HttpClientSpiProvider;
 import io.helidon.webclient.spi.Protocol;
 import io.helidon.webclient.spi.ProtocolConfig;
 
@@ -105,7 +106,7 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
      * The returned list is an immutable snapshot.
      * <p>
      * This method must not be called from
-     * {@link io.helidon.webclient.spi.HttpClientSpiProvider#protocol(WebClient, Object)} while this client is being
+     * {@link HttpClientSpiProvider#protocol(WebClient, Object)} while this client is being
      * constructed. Protocol clients should retain the {@link WebClient} instance and obtain the protocol IDs after
      * construction completes.
      *
