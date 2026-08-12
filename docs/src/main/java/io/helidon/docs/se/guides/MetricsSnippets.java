@@ -101,6 +101,10 @@ class MetricsSnippets {
                 .routing(Main::routing)
                 .build()
                 .start();
+
+        // ...
+        server.stop(); // <10>
+        meterRegistry.close(); // <11>
         // end::snippet_2[]
     }
 

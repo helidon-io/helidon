@@ -83,6 +83,8 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * registry only when their registry-specific settings are equivalent; endpoint settings may differ. Use separate meter
      * registries for observers that require different registry-specific behavior.
      * <p>
+     * A custom meter registry passed to an observer remains caller-owned. Close it after all observers using it have stopped.
+     * <p>
      * If this method is not called,
      * {@link MetricsObserver} uses the shared
      * instance as provided by

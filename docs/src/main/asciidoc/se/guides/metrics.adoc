@@ -137,8 +137,8 @@ include::{rootdir}/../java/io/helidon/docs/se/guides/MetricsSnippets.java[tag=sn
 <7> Assign the custom meter registry to the observer.
 <8> Add the metrics observer to the `ObserveFeature`.
 <9> Add the `ObserveFeature` to the `WebServer`.
-
-The custom meter registry is owned by the application. Close it after stopping the `WebServer` to release registry and publisher resources.
+<10> When the application is ready to shut down, stop the `WebServer`.
+<11> Close the application-owned custom meter registry to release registry and publisher resources.
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=virtualThreadsMetrics]
 
