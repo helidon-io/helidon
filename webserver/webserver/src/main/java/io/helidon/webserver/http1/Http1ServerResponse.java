@@ -353,6 +353,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             return false;
         }
         outputStreamFilter = null;
+        streamResult = "";
         trailers.clear();
         return true;
     }

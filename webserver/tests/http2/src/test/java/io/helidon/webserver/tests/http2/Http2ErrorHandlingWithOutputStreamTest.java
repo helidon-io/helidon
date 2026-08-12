@@ -32,7 +32,11 @@ import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.ErrorHandler;
@@ -61,6 +65,8 @@ class Http2ErrorHandlingWithOutputStreamTest {
 
     private static final HeaderName MAIN_HEADER_NAME = HeaderNames.create("main-handler");
     private static final HeaderName ERROR_HEADER_NAME = HeaderNames.create("error-handler");
+    private static final HeaderName STALE_TRAILER_NAME = HeaderNames.create("stale-trailer");
+    private static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
     private static final HeaderName REENTRY_RESULT_HEADER_NAME = HeaderNames.create("reentry-result");
     private static final HeaderName CALLBACK_COUNT_HEADER_NAME = HeaderNames.create("callback-count");
     private static HttpClient httpClient;
@@ -115,6 +121,12 @@ class Http2ErrorHandlingWithOutputStreamTest {
                     res.header(HeaderNames.CACHE_CONTROL, "no-store");
                     res.header(HeaderNames.VARY, "Origin");
                     res.streamFilter(_ -> OutputStream.nullOutputStream());
+                    res.outputStream();
+                    throw new CustomException();
+                }))
+                .route(Http2Route.route(GET, "get-outputStream-stale-trailers", (req, res) -> {
+                    res.beforeTrailers(trailers -> trailers.set(STALE_TRAILER_NAME, "stale"));
+                    res.streamResult("stale-result");
                     res.outputStream();
                     throw new CustomException();
                 }))
@@ -240,6 +252,19 @@ class Http2ErrorHandlingWithOutputStreamTest {
     }
 
     @Test
+    void testGetOutputStreamThenErrorClearsStaleTrailerState(WebClient webClient) {
+        Http2Client client = webClient.client(Http2Client.PROTOCOL);
+        ClientResponseTyped<String> response = client.get("/get-outputStream-stale-trailers")
+                .header(HeaderValues.TE_TRAILERS)
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.I_AM_A_TEAPOT_418));
+        assertThat(response.entity(), is("TeaPotIAm"));
+        assertThat(response.trailers().contains(STALE_TRAILER_NAME), is(false));
+        assertThat(response.trailers().get(STREAM_RESULT_NAME).get(), is("OK"));
+    }
+
+    @Test
     void testGetOutputStreamWriteOnceThenError_expect_CustomErrorHandlerMessage() {
         var response = request("/get-outputStream-writeOnceThenError");
 
@@ -353,6 +378,10 @@ class Http2ErrorHandlingWithOutputStreamTest {
             res.header(ERROR_HEADER_NAME, "err");
             // this is now the responsibility of an error handler, as otherwise we may remove CORS headers etc.
             res.headers().remove(MAIN_HEADER_NAME);
+            if (req.path().path().equals("/get-outputStream-stale-trailers")) {
+                res.header(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
+                res.streamFilter(outputStream -> outputStream);
+            }
             res.send("TeaPotIAm");
         }
     }

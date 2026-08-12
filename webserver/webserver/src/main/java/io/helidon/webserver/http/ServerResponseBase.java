@@ -214,6 +214,15 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     @Override
+    public boolean resetEntity() {
+        if (!RoutingResponse.super.resetEntity()) {
+            return false;
+        }
+        beforeTrailers = null;
+        return true;
+    }
+
+    @Override
     public ServerResponse beforeTrailers(Consumer<ServerResponseTrailers> beforeTrailers) {
         this.beforeTrailers = beforeTrailers;
         return this;
