@@ -59,8 +59,15 @@ class JdbcMarkerScannerTest {
 
     @Test
     void rejectsRuntimeNamedMarkersAndEveryMalformedProtectedRegion() {
-        assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select :id"));
-        assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select 'unterminated"));
+        IllegalArgumentException named = assertThrows(IllegalArgumentException.class,
+                                                      () -> JdbcOperation.parameterCount("select :id"));
+        assertThat(named.getMessage(),
+                   is("JdbcClient SQL accepts only positional '?' markers. A named marker was found for lexical "
+                              + "profile PORTABLE at offset 7."));
+        IllegalArgumentException quoted = assertThrows(IllegalArgumentException.class,
+                                                       () -> JdbcOperation.parameterCount("select 'unterminated"));
+        assertThat(quoted.getMessage(),
+                   is("Unterminated quoted SQL region. The lexical profile is PORTABLE, and the SQL offset is 20."));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select \"unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select /* unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select $tag$unterminated"));
@@ -75,7 +82,7 @@ class JdbcMarkerScannerTest {
                                                          () -> JdbcOperation.parameterCount(sql));
 
         assertThat(failure.getMessage(), containsString("PORTABLE"));
-        assertThat(failure.getMessage(), endsWith("offset 16"));
+        assertThat(failure.getMessage(), endsWith("offset is 16."));
         assertThat(failure.getMessage(), not(containsString(sql)));
     }
 }

@@ -103,10 +103,16 @@ class JdbcTxSupportTest {
     void enforcesMandatoryAndNeverPropagation() {
         JdbcTxSupport support = new JdbcTxSupport(List.of());
 
-        assertThrows(TxException.class, () -> support.transaction(Tx.Type.MANDATORY, () -> null));
+        TxException mandatoryFailure = assertThrows(TxException.class,
+                                                    () -> support.transaction(Tx.Type.MANDATORY, () -> null));
+        assertThat(mandatoryFailure.getMessage(),
+                   is("@Tx.Mandatory requires an active local JDBC transaction."));
         support.transaction(Tx.Type.REQUIRED, () -> {
             assertThat(support.transaction(Tx.Type.MANDATORY, () -> "joined"), is("joined"));
-            assertThrows(TxException.class, () -> support.transaction(Tx.Type.NEVER, () -> null));
+            TxException neverFailure = assertThrows(TxException.class,
+                                                    () -> support.transaction(Tx.Type.NEVER, () -> null));
+            assertThat(neverFailure.getMessage(),
+                       is("@Tx.Never cannot run inside an active local JDBC transaction."));
             return null;
         });
     }

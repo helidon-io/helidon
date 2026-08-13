@@ -30,7 +30,6 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -95,7 +94,8 @@ class JdbcTransactionConnectionManagerHikariTest {
                                                        return null;
                                                    }));
 
-                assertThat(failure.getMessage(), containsString("unknown outcome"));
+                assertThat(failure.getMessage(),
+                           is("The local JDBC transaction commit failed, and the outcome is unknown."));
                 assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one(), is(0L));
                 assertPoolReusable(pool);
             } finally {
@@ -125,7 +125,8 @@ class JdbcTransactionConnectionManagerHikariTest {
                                                    }));
 
                 assertThat(failure.getSuppressed().length, is(1));
-                assertThat(failure.getSuppressed()[0].getMessage(), containsString("unknown outcome"));
+                assertThat(failure.getSuppressed()[0].getMessage(),
+                           is("The local JDBC transaction rollback failed, and the outcome is unknown."));
                 assertThat(client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one(), is(0L));
                 assertPoolReusable(pool);
             } finally {

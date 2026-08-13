@@ -71,20 +71,20 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public JdbcConnectionLease acquire(DataSource dataSource) throws SQLException {
-        Objects.requireNonNull(dataSource, "The JDBC data source is required");
+        Objects.requireNonNull(dataSource, "The JDBC datasource must not be null.");
         State state = local.get();
         if (state == null) {
             return JdbcConnectionLease.Owned.acquire(dataSource);
         }
         if (state.failedJdbc != null) {
-            throw new DataException("The active local JDBC transaction is unusable after a lifecycle failure");
+            throw new DataException("The active local JDBC transaction cannot be used after a lifecycle failure.");
         }
         if (state.failedForeign != null) {
-            throw new DataException("A local JDBC connection cannot join a failed foreign transaction");
+            throw new DataException("A local JDBC connection cannot join a failed transaction from another provider.");
         }
         if (state.activeForeign != null) {
-            throw new DataException("A local JDBC connection cannot join active transaction type '"
-                                            + state.foreignTransactions.get(state.activeForeign) + "'");
+            throw new DataException("A local JDBC connection cannot join the active transaction type '"
+                                            + state.foreignTransactions.get(state.activeForeign) + "'.");
         }
         // Lifecycle state may exist without an active transaction, such as during
         // supported work or while an outer transaction is suspended.
@@ -94,12 +94,12 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
         Association association = state.jdbcTransactions.get(state.activeJdbc);
         if (association == null) {
-            throw new IllegalStateException("Active JDBC transaction has no lifecycle association");
+            throw new IllegalStateException("The active JDBC transaction has no lifecycle association.");
         }
         association.require(AssociationState.ACTIVE, "acquire a connection");
         Object identity = transactionIdentity(dataSource);
         if (association.dataSourceIdentitySet && !sameIdentity(association.dataSourceIdentity, identity)) {
-            throw new DataException("One local JDBC transaction cannot use more than one datasource identity");
+            throw new DataException("A local JDBC transaction cannot use more than one datasource.");
         }
         if (!association.dataSourceIdentitySet) {
             // Fix the identity before acquisition so a failed first data source cannot be replaced by another one.
@@ -117,7 +117,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             try {
                 if (!connection.getAutoCommit()) {
                     throw JdbcExceptionTranslator.safeException(
-                            "Data sources used for local JDBC transactions must provide connections with auto-commit enabled.");
+                            "Datasources used for local JDBC transactions must provide connections with auto-commit enabled.");
                 }
                 connection.setAutoCommit(false);
                 // Publish the connection only after it is ready for transaction use.
@@ -138,14 +138,14 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             state = new State();
             local.set(state);
         }
-        state.invocationTypes.push(Objects.requireNonNull(type, "Missing transaction support type"));
+        state.invocationTypes.push(Objects.requireNonNull(type, "The transaction support type must not be null."));
     }
 
     @Override
     public void end() {
         State state = requireState("end a transaction lifecycle");
         if (state.invocationTypes.isEmpty()) {
-            throw new IllegalStateException("Transaction lifecycle end has no matching start");
+            throw new IllegalStateException("The transaction lifecycle end has no matching start.");
         }
         state.invocationTypes.pop();
         removeIfEmpty(state);
@@ -153,15 +153,15 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public void begin(String txIdentity) {
-        Objects.requireNonNull(txIdentity, "Missing transaction identity");
-        State state = requireState("begin transaction " + txIdentity);
-        requireNoActiveTransaction(state, "begin transaction " + txIdentity);
+        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        State state = requireState("begin a transaction");
+        requireNoActiveTransaction(state, "begin a transaction");
         if (state.jdbcTransactions.containsKey(txIdentity) || state.foreignTransactions.containsKey(txIdentity)) {
-            throw new IllegalStateException("Duplicate transaction identity: " + txIdentity);
+            throw new IllegalStateException("The transaction identity is already active.");
         }
         String type = currentType(state);
         if (Jdbc.PROVIDER.equals(type)) {
-            state.jdbcTransactions.put(txIdentity, new Association(txIdentity));
+            state.jdbcTransactions.put(txIdentity, new Association());
             state.activeJdbc = txIdentity;
         } else {
             // Record foreign transactions so JDBC acquisition fails instead of claiming
@@ -184,8 +184,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public void suspend(String txIdentity) {
-        Objects.requireNonNull(txIdentity, "Missing transaction identity");
-        State state = requireState("suspend transaction " + txIdentity);
+        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        State state = requireState("suspend a transaction");
         if (txIdentity.equals(state.activeJdbc)) {
             Association association = requireAssociation(state, txIdentity);
             try {
@@ -211,15 +211,15 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             } else {
                 failKnownContext(state);
             }
-            throw new IllegalStateException("Cannot suspend inactive transaction identity: " + txIdentity);
+            throw new IllegalStateException("The transaction cannot be suspended because it is not active.");
         }
     }
 
     @Override
     public void resume(String txIdentity) {
-        Objects.requireNonNull(txIdentity, "Missing transaction identity");
-        State state = requireState("resume transaction " + txIdentity);
-        requireNoActiveTransaction(state, "resume transaction " + txIdentity);
+        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        State state = requireState("resume a transaction");
+        requireNoActiveTransaction(state, "resume a transaction");
         Association association = state.jdbcTransactions.get(txIdentity);
         if (association != null) {
             try {
@@ -240,7 +240,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             state.activeForeign = txIdentity;
         } else {
             failKnownContext(state);
-            throw new IllegalStateException("Cannot resume unknown transaction identity: " + txIdentity);
+            throw new IllegalStateException("The transaction cannot be resumed because its identity is not recognized.");
         }
     }
 
@@ -251,13 +251,13 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      * @param commit whether a JDBC association should commit
      */
     private void complete(String txIdentity, boolean commit) {
-        Objects.requireNonNull(txIdentity, "Missing transaction identity");
-        State state = requireState("complete transaction " + txIdentity);
+        Objects.requireNonNull(txIdentity, "The transaction identity must not be null.");
+        State state = requireState("complete a transaction");
         Association association = state.jdbcTransactions.get(txIdentity);
         if (association == null) {
             String foreignType = state.foreignTransactions.get(txIdentity);
             if (foreignType == null) {
-                throw new IllegalStateException("Cannot complete unknown transaction identity: " + txIdentity);
+                throw new IllegalStateException("The transaction cannot be completed because its identity is not recognized.");
             }
             completeForeign(state, txIdentity);
             return;
@@ -276,7 +276,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         try {
             completeConnection(association, effectiveCommit);
             if (failedContext && commit) {
-                runtimeFailure = new TxException("A failed local JDBC transaction was rolled back instead of committed");
+                runtimeFailure = new TxException("The failed local JDBC transaction was rolled back instead of committed.");
             }
         } catch (RuntimeException failure) {
             runtimeFailure = failure;
@@ -335,7 +335,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                     connection.rollback();
                 } catch (SQLException | RuntimeException | Error rollbackFailure) {
                     JdbcExceptionTranslator.suppress(completionFailure,
-                                                     "transaction rollback after commit failure",
+                                                     "rolling back after a failed transaction commit",
                                                      rollbackFailure);
                 }
             }
@@ -346,8 +346,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             // Restoring auto commit after an unknown outcome could commit pending work.
             JdbcConnectionInvalidator.invalidate(connection, completionFailure);
             throwTransactionFailure(commit
-                                            ? "Local JDBC transaction commit failed with unknown outcome"
-                                            : "Local JDBC transaction rollback failed with unknown outcome",
+                                            ? "The local JDBC transaction commit failed, and the outcome is unknown."
+                                            : "The local JDBC transaction rollback failed, and the outcome is unknown.",
                                     completionFailure);
             return;
         }
@@ -360,7 +360,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         } catch (SQLException | RuntimeException | Error restoreFailure) {
             association.failed(outcome);
             JdbcConnectionInvalidator.invalidate(connection, restoreFailure);
-            throwTransactionFailure(completionCleanupMessage(association.outcome, "restore auto-commit"), restoreFailure);
+            throwTransactionFailure(completionCleanupMessage(association.outcome, "restore automatic commit mode"),
+                                    restoreFailure);
             return;
         }
 
@@ -381,8 +382,9 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      * @return cleanup failure message
      */
     private static String completionCleanupMessage(CompletionOutcome outcome, String action) {
-        return "Local JDBC transaction was " + (outcome == CompletionOutcome.COMMITTED ? "committed" : "rolled back")
-                + " but failed to " + action;
+        return "The local JDBC transaction was "
+                + (outcome == CompletionOutcome.COMMITTED ? "committed" : "rolled back")
+                + ", but the provider failed to " + action + ".";
     }
 
     /**
@@ -397,7 +399,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         if (cause instanceof Error error) {
             throw error;
         }
-        throw new TxException(message, JdbcExceptionTranslator.sanitize("transaction completion", cause));
+        throw new TxException(message, JdbcExceptionTranslator.sanitize("completing a transaction", cause));
     }
 
     /**
@@ -408,7 +410,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      */
     private static Object transactionIdentity(DataSource dataSource) {
         return dataSource instanceof IdentitySource source
-                ? Objects.requireNonNull(source.transactionIdentity(), "Missing stable datasource identity")
+                ? Objects.requireNonNull(source.transactionIdentity(), "The stable datasource identity must not be null.")
                 : dataSource;
     }
 
@@ -435,7 +437,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      */
     private static String currentType(State state) {
         if (state.invocationTypes.isEmpty()) {
-            throw new IllegalStateException("Transaction begin has no active transaction support");
+            throw new IllegalStateException("The transaction begin event has no active transaction support.");
         }
         return state.invocationTypes.peek();
     }
@@ -449,7 +451,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     private static void requireNoActiveTransaction(State state, String operation) {
         if (state.activeJdbc != null || state.activeForeign != null
                 || state.failedJdbc != null || state.failedForeign != null) {
-            throw new IllegalStateException("Cannot " + operation + " while another transaction association is active");
+            throw new IllegalStateException("The provider cannot " + operation
+                                                    + " while another transaction association is active.");
         }
     }
 
@@ -463,7 +466,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     private static Association requireAssociation(State state, String txIdentity) {
         Association association = state.jdbcTransactions.get(txIdentity);
         if (association == null) {
-            throw new IllegalStateException("Unknown local JDBC transaction identity: " + txIdentity);
+            throw new IllegalStateException("The local JDBC transaction identity is not recognized.");
         }
         return association;
     }
@@ -518,8 +521,9 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             if (actual != null) {
                 state.foreignStates.put(txIdentity, AssociationState.FAILED);
             }
-            throw new IllegalStateException("Cannot " + operation + " foreign transaction " + txIdentity
-                                                    + " while it is " + actual);
+            throw new IllegalStateException("The provider cannot " + operation
+                                                    + " the transaction from another provider while its state is '"
+                                                    + actual + "'.");
         }
         state.foreignStates.put(txIdentity, next);
     }
@@ -534,8 +538,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         AssociationState associationState = state.foreignStates.get(txIdentity);
         if (associationState != AssociationState.ACTIVE && associationState != AssociationState.FAILED) {
             state.failedForeign = txIdentity;
-            throw new IllegalStateException("Cannot complete foreign transaction " + txIdentity
-                                                    + " while it is " + associationState);
+            throw new IllegalStateException("The transaction from another provider cannot be completed while its "
+                                                    + "state is '" + associationState + "'.");
         }
         // Apply the same terminal state sequence used for local associations before
         // discarding the foreign association.
@@ -561,7 +565,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     private State requireState(String operation) {
         State state = local.get();
         if (state == null) {
-            throw new IllegalStateException("Cannot " + operation + " without a matching transaction lifecycle start");
+            throw new IllegalStateException("The provider cannot " + operation
+                                                    + " without a matching transaction lifecycle start.");
         }
         return state;
     }
@@ -651,7 +656,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      */
     private static final class Association {
 
-        private final String txIdentity;
         private AssociationState state = AssociationState.ACTIVE;
 
         // The first operation fixes the only data source identity allowed in the transaction.
@@ -665,11 +669,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
         /**
          * Creates an active association.
-         *
-         * @param txIdentity transaction identity
          */
-        private Association(String txIdentity) {
-            this.txIdentity = txIdentity;
+        private Association() {
         }
 
         /**
@@ -680,8 +681,9 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
          */
         private void require(AssociationState expected, String operation) {
             if (state != expected) {
-                throw new IllegalStateException("Cannot " + operation + " for local JDBC transaction "
-                                                        + txIdentity + " while its association is " + state);
+                throw new IllegalStateException("The provider cannot " + operation
+                                                        + " while the local JDBC transaction association is in state '"
+                                                        + state + "'.");
             }
         }
 
@@ -724,8 +726,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
          */
         private void failed(CompletionOutcome completionOutcome) {
             if (state != AssociationState.COMPLETING && state != AssociationState.COMPLETED) {
-                throw new IllegalStateException("Cannot fail local JDBC transaction " + txIdentity
-                                                        + " while its association is " + state);
+                throw new IllegalStateException("The local JDBC transaction cannot be marked as failed while its "
+                                                        + "association is in state '" + state + "'.");
             }
             state = AssociationState.FAILED;
             outcome = completionOutcome;
@@ -760,7 +762,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         @Override
         public Connection connection() {
             if (closed) {
-                throw new IllegalStateException("Connection lease is closed");
+                throw new IllegalStateException("The connection lease is closed.");
             }
             return connection;
         }

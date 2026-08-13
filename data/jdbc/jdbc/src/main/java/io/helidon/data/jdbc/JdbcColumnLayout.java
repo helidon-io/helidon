@@ -102,10 +102,10 @@ final class JdbcColumnLayout {
     int index(String label) {
         Integer index = indexes().get(label.toLowerCase(Locale.ROOT));
         if (index == null) {
-            throw new DataException("Result column label not found: " + label);
+            throw new DataException("The result does not contain a column labeled '" + label + "'.");
         }
         if (index == AMBIGUOUS_INDEX) {
-            throw new DataException("Ambiguous result column label: " + label);
+            throw new DataException("The result contains more than one column labeled '" + label + "'.");
         }
         return index;
     }
@@ -141,7 +141,7 @@ final class JdbcColumnLayout {
                 }
                 if (label == null || label.isBlank()) {
                     throw new DataException("Result column " + index
-                                                    + " has neither a usable label nor column name");
+                                                    + " has neither a usable label nor a column name.");
                 }
                 // Keep duplicate labels unusable without rejecting unrelated unique labels.
                 resolved.merge(label.toLowerCase(Locale.ROOT),

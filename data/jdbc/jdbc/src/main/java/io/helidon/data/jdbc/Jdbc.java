@@ -38,7 +38,7 @@ public final class Jdbc {
      * Prevents construction.
      */
     private Jdbc() {
-        throw new UnsupportedOperationException("No instances of Jdbc are allowed");
+        throw new UnsupportedOperationException("The Jdbc class cannot be instantiated.");
     }
 
     /**

@@ -107,7 +107,8 @@ final class JdbcScalarTypes {
     static String nullJdbcTypeConstant(TypeName type) {
         String constant = NULL_TYPE_CONSTANTS.get(normalized(type));
         if (constant == null) {
-            throw new IllegalArgumentException("Unsupported JDBC scalar type: " + type.resolvedName());
+            throw new IllegalArgumentException("JDBC does not support the scalar type '"
+                                                       + type.resolvedName() + "'.");
         }
         return constant;
     }

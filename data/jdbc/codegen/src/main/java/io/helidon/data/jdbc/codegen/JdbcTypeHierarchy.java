@@ -243,8 +243,8 @@ final class JdbcTypeHierarchy {
         for (int index = 1; index < candidates.size(); index++) {
             MethodCandidate candidate = candidates.get(index);
             if (!sameMethodAnnotations(first.method(), candidate.method())) {
-                throw new CodegenException("Inherited repository methods have conflicting JDBC or transaction annotations: "
-                                                   + signature.text(),
+                throw new CodegenException("Inherited repository method '" + signature.text()
+                                                   + "' has conflicting JDBC or transaction annotations.",
                                            first.method().originatingElementValue(),
                                            candidate.method().originatingElementValue());
             }
@@ -263,7 +263,8 @@ final class JdbcTypeHierarchy {
         }
         if (selected == null) {
             MethodCandidate second = candidates.size() == 1 ? first : candidates.get(1);
-            throw new CodegenException("Inherited repository methods have incompatible return types: " + signature.text(),
+            throw new CodegenException("Inherited repository method '" + signature.text()
+                                               + "' has incompatible return types.",
                                        first.method().originatingElementValue(),
                                        second.method().originatingElementValue());
         }
@@ -291,8 +292,8 @@ final class JdbcTypeHierarchy {
             MethodCandidate candidate = candidates.get(index);
             ParameterBindingContract candidateContract = parameterBindingContract(candidate.method(), sql.get());
             if (!firstContract.equals(candidateContract)) {
-                throw new CodegenException("Inherited repository methods have incompatible named SQL parameter bindings: "
-                                                   + signature.text(),
+                throw new CodegenException("Inherited repository method '" + signature.text()
+                                                   + "' has incompatible named SQL parameter bindings.",
                                            first.method().originatingElementValue(),
                                            candidate.method().originatingElementValue());
             }
@@ -317,7 +318,7 @@ final class JdbcTypeHierarchy {
                 return index;
             }
         }
-        throw new IllegalStateException("JDBC parameter plan contains an unknown repository parameter");
+        throw new IllegalStateException("The JDBC parameter plan contains a repository parameter that is not recognized.");
     }
 
     private static boolean isSubtype(TypeInfo candidate, TypeInfo existing) {

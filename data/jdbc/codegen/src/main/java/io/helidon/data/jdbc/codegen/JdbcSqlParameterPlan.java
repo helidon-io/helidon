@@ -75,11 +75,11 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
         Set<String> names = new HashSet<>();
         for (TypedElementInfo parameter : parameters) {
             if (!names.add(parameter.elementName())) {
-                throw failure(method, "Duplicate repository parameter name: " + parameter.elementName());
+                throw failure(method, "The repository parameter name '" + parameter.elementName() + "' is duplicated.");
             }
             if (!JdbcScalarTypes.isScalar(parameter.typeName())) {
-                throw failure(method, "Unsupported declarative SQL parameter type: "
-                        + parameter.typeName().resolvedName());
+                throw failure(method, "Declarative SQL does not support the parameter type '"
+                        + parameter.typeName().resolvedName() + "'.");
             }
         }
     }
@@ -93,7 +93,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
      */
     private static List<Bind> noMarkers(List<TypedElementInfo> parameters, TypedElementInfo method) {
         if (!parameters.isEmpty()) {
-            throw failure(method, "Repository parameters are not used by SQL");
+            throw failure(method, "The repository parameters are not used by the SQL statement.");
         }
         return List.of();
     }
@@ -117,14 +117,15 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
             String marker = markers.get(index);
             TypedElementInfo parameter = byName.get(marker);
             if (parameter == null) {
-                throw failure(method, "SQL marker ':" + marker + "' has no matching repository parameter");
+                throw failure(method, "SQL marker ':" + marker + "' has no matching repository parameter.");
             }
             used.add(marker);
             binds.add(binding(index + 1, parameter));
         }
         for (TypedElementInfo parameter : parameters) {
             if (!used.contains(parameter.elementName())) {
-                throw failure(method, "Repository parameter is not used by SQL: " + parameter.elementName());
+                throw failure(method, "Repository parameter '" + parameter.elementName()
+                                              + "' is not used by the SQL statement.");
             }
         }
         return binds;
@@ -142,14 +143,26 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                                                  List<TypedElementInfo> parameters,
                                                  TypedElementInfo method) {
         if (markerCount != parameters.size()) {
-            throw failure(method, "Positional SQL marker count " + markerCount
-                    + " does not match repository parameter count " + parameters.size());
+            throw failure(method, "The SQL statement contains " + markerCount + " positional "
+                    + countNoun(markerCount, "marker") + ", but the repository method declares " + parameters.size()
+                    + " " + countNoun(parameters.size(), "parameter") + ".");
         }
         List<Bind> binds = new ArrayList<>(markerCount);
         for (int index = 0; index < markerCount; index++) {
             binds.add(binding(index + 1, parameters.get(index)));
         }
         return binds;
+    }
+
+    /**
+     * Returns a singular or plural count noun.
+     *
+     * @param count item count
+     * @param noun singular noun
+     * @return noun matching the count
+     */
+    private static String countNoun(int count, String noun) {
+        return count == 1 ? noun : noun + "s";
     }
 
     /**

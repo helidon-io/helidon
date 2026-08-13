@@ -47,12 +47,12 @@ final class JdbcConnectionInvalidator {
         try {
             connection.abort(ABORT_EXECUTOR);
         } catch (SQLException | RuntimeException | Error abortFailure) {
-            JdbcExceptionTranslator.suppress(primaryFailure, "connection abort", abortFailure);
+            JdbcExceptionTranslator.suppress(primaryFailure, "aborting a connection", abortFailure);
         }
         try {
             connection.close();
         } catch (SQLException | RuntimeException | Error closeFailure) {
-            JdbcExceptionTranslator.suppress(primaryFailure, "invalidated connection close", closeFailure);
+            JdbcExceptionTranslator.suppress(primaryFailure, "closing an invalidated connection", closeFailure);
         }
     }
 }

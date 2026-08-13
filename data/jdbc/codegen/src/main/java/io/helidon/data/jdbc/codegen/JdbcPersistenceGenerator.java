@@ -36,12 +36,12 @@ final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
 
     @Override
     public QueryBuilder queryBuilder(RepositoryInfo repositoryInfo) {
-        throw new UnsupportedOperationException("JDBC repositories do not use entity query generation");
+        throw new UnsupportedOperationException("JDBC repositories do not use entity query generation.");
     }
 
     @Override
     public StatementGenerator statementGenerator() {
-        throw new UnsupportedOperationException("JDBC repositories do not use entity statement generation");
+        throw new UnsupportedOperationException("JDBC repositories do not use entity statement generation.");
     }
 
     @Override
@@ -68,8 +68,8 @@ final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
         // Entity repository parents request derived persistence operations.
         // JDBC repositories support explicit SQL only.
         if (!repositoryInfo.interfacesInfo().isEmpty()) {
-            throw new CodegenException("JDBC repositories must use explicit annotated SQL methods and "
-                                               + "must not extend entity-oriented repository interfaces",
+            throw new CodegenException("JDBC repositories must use explicitly annotated SQL methods and must not "
+                                               + "extend entity repository interfaces.",
                                        repositoryInfo.interfaceInfo().originatingElementValue());
         }
         JdbcRepositoryClassGenerator.generate(roundContext,

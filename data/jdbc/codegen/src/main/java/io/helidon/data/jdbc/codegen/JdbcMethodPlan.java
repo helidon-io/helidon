@@ -99,11 +99,12 @@ final class JdbcMethodPlan {
     static JdbcMethodPlan create(TypedElementInfo method,
                                  RoundContext roundContext) {
         Annotation statement = method.findAnnotation(JdbcPersistenceTypes.JDBC_STATEMENT)
-                .orElseThrow(() -> failure(method, "An abstract JDBC repository method requires @Jdbc.Statement"));
+                .orElseThrow(() -> failure(method,
+                                           "An abstract JDBC repository method must declare @Jdbc.Statement."));
         String sql = statement.stringValue()
-                .orElseThrow(() -> failure(method, "@Jdbc.Statement value is missing"));
+                .orElseThrow(() -> failure(method, "The @Jdbc.Statement annotation must declare SQL statement."));
         if (sql.isBlank()) {
-            throw failure(method, "@Jdbc.Statement SQL must not be blank");
+            throw failure(method, "The SQL statement declared by @Jdbc.Statement must not be blank.");
         }
 
         Return result = returnPlan(method);
@@ -118,7 +119,7 @@ final class JdbcMethodPlan {
         Operation operation = operation(method, result, generatedKeys, rowMapperRequested);
         if (generatedKeys) {
             if (operation == Operation.QUERY) {
-                throw failure(method, "@Jdbc.GeneratedKeys requires UPDATE execution");
+                throw failure(method, "@Jdbc.GeneratedKeys can be used only with UPDATE execution.");
             }
             // Generated keys use UPDATE semantics but need a separate plan for preparation and result mapping.
             operation = Operation.GENERATED_KEYS;
@@ -253,9 +254,9 @@ final class JdbcMethodPlan {
             return Operation.UPDATE;
         }
         if (returnType.equals(TypeNames.PRIMITIVE_INT) || returnType.equals(TypeNames.PRIMITIVE_LONG)) {
-            throw failure(method, "Cannot infer JDBC execution from primitive " + returnType.fqName()
-                    + " return type; add @Jdbc.Execution(Jdbc.ExecutionType.QUERY) or "
-                    + "@Jdbc.Execution(Jdbc.ExecutionType.UPDATE)");
+            throw failure(method, "JDBC execution cannot be inferred from the primitive '" + returnType.fqName()
+                    + "' return type. Declare @Jdbc.Execution(Jdbc.ExecutionType.QUERY) or "
+                    + "@Jdbc.Execution(Jdbc.ExecutionType.UPDATE).");
         }
         return Operation.QUERY;
     }
@@ -273,7 +274,7 @@ final class JdbcMethodPlan {
         try {
             return ExecutionSelection.valueOf(value);
         } catch (IllegalArgumentException e) {
-            throw failure(method, "Unsupported @Jdbc.Execution value: " + value);
+            throw failure(method, "@Jdbc.Execution does not support the value '" + value + "'.");
         }
     }
 
@@ -303,7 +304,8 @@ final class JdbcMethodPlan {
      */
     private static TypeName singleTypeArgument(TypedElementInfo method, TypeName type) {
         if (type.typeArguments().size() != 1 || type.typeArguments().getFirst().wildcard()) {
-            throw failure(method, "Repository result requires one concrete generic argument: " + type.resolvedName());
+            throw failure(method, "Repository result type '" + type.resolvedName()
+                    + "' must have one concrete generic argument.");
         }
         return type.typeArguments().getFirst();
     }
@@ -321,17 +323,18 @@ final class JdbcMethodPlan {
             if (!type.equals(TypeNames.PRIMITIVE_VOID)
                     && !type.equals(TypeNames.PRIMITIVE_INT)
                     && !type.equals(TypeNames.PRIMITIVE_LONG)) {
-                throw failure(method, "UPDATE execution must return void, primitive int, or primitive long");
+                throw failure(method, "UPDATE execution must return void, primitive int, or primitive long.");
             }
             return;
         }
         if (method.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
-            throw failure(method, "QUERY and generated-key methods require a materialized result");
+            throw failure(method, "QUERY and generated keys operations must return a materialized result.");
         }
         TypeName rawType = result.mappedType().genericTypeName();
         if (UNSUPPORTED_RESULT_TYPES.contains(rawType)
                 || (result.mappedType().array() && !JdbcScalarTypes.isScalar(result.mappedType()))) {
-            throw failure(method, "Unsupported JDBC repository return type: " + result.mappedType().resolvedName());
+            throw failure(method, "JDBC repositories do not support the return type '"
+                    + result.mappedType().resolvedName() + "'.");
         }
     }
 
@@ -356,7 +359,8 @@ final class JdbcMethodPlan {
         for (TypeName typeParameter : method.typeParameters()) {
             String parameterName = typeParameter.className();
             if (usesTypeParameter(mappedType, parameterName)) {
-                throw failure(method, "JDBC mapped result cannot use method type parameter " + parameterName);
+                throw failure(method, "A JDBC mapped result cannot use the method type parameter '"
+                        + parameterName + "'.");
             }
         }
     }
@@ -398,10 +402,10 @@ final class JdbcMethodPlan {
         // case-distinct database identifiers remain representable, while preserving spelling and declaration order.
         for (String column : columns) {
             if (column.isBlank()) {
-                throw failure(method, "@Jdbc.GeneratedKeys column names must not be blank");
+                throw failure(method, "@Jdbc.GeneratedKeys column names must not be blank.");
             }
             if (!unique.add(column)) {
-                throw failure(method, "Duplicate @Jdbc.GeneratedKeys column name: " + column);
+                throw failure(method, "The @Jdbc.GeneratedKeys column name '" + column + "' is duplicated.");
             }
         }
         return List.copyOf(columns);
@@ -426,14 +430,14 @@ final class JdbcMethodPlan {
                                    TypeName explicitMapper) {
         if (operation == Operation.UPDATE) {
             if (rowMapperRequested) {
-                throw failure(method, "@Jdbc.RowMapper is not valid on an update-count method");
+                throw failure(method, "@Jdbc.RowMapper is not valid on an update count method.");
             }
             return Mapping.of(MappingKind.NONE);
         }
         if (rowMapperRequested) {
             if (mappedType.primitive()) {
-                throw failure(method, "@Jdbc.RowMapper does not support primitive result type "
-                        + mappedType.resolvedName());
+                throw failure(method, "@Jdbc.RowMapper does not support the primitive result type '"
+                        + mappedType.resolvedName() + "'.");
             }
             if (explicitMapper == null) {
                 return Mapping.of(MappingKind.SERVICE);
@@ -450,8 +454,8 @@ final class JdbcMethodPlan {
         // RoundContext presents records known to javac and records generated earlier in this processing run
         // through the same TypeInfo contract.
         TypeInfo typeInfo = roundContext.typeInfo(mappedType.genericTypeName())
-                .orElseThrow(() -> failure(method, "Mapped result type information is unavailable: "
-                        + mappedType.resolvedName()));
+                .orElseThrow(() -> failure(method, "Type information is unavailable for mapped result '"
+                        + mappedType.resolvedName() + "'."));
         if (typeInfo.kind() == ElementKind.RECORD) {
             List<TypedElementInfo> components = typeInfo.elementInfo()
                     .stream()
@@ -460,8 +464,8 @@ final class JdbcMethodPlan {
             validateRecordComponents(method, components);
             return new Mapping(MappingKind.RECORD, components);
         }
-        throw failure(method, "Non-scalar JDBC result must be a record or declare @Jdbc.RowMapper: "
-                + mappedType.resolvedName());
+        throw failure(method, "The JDBC result type '" + mappedType.resolvedName()
+                + "' must be scalar, be a record, or declare @Jdbc.RowMapper.");
     }
 
     /**
@@ -479,13 +483,15 @@ final class JdbcMethodPlan {
                                                TypeName mapperType) {
         TypeInfo mapperInfo = roundContext.typeInfo(mapperType)
                 .orElseThrow(() -> failure(method,
-                                           "Mapper type information is unavailable: " + mapperType.resolvedName()));
+                                           "Type information is unavailable for mapper '"
+                                                   + mapperType.resolvedName() + "'."));
         if (mapperInfo.kind() != ElementKind.CLASS
                 || mapperInfo.elementModifiers().contains(Modifier.ABSTRACT)) {
-            throw failure(method, "Mapper must be a concrete class: " + mapperType.resolvedName());
+            throw failure(method, "Mapper '" + mapperType.resolvedName() + "' must be a concrete class.");
         }
         if (!mapperType.enclosingNames().isEmpty() && !mapperInfo.elementModifiers().contains(Modifier.STATIC)) {
-            throw failure(method, "Mapper must not be a non-static nested class: " + mapperType.resolvedName());
+            throw failure(method, "Mapper '" + mapperType.resolvedName()
+                    + "' must not be a nonstatic nested class.");
         }
         TypeName mapperInterface = findImplementedInterface(mapperInfo,
                                                             JdbcPersistenceTypes.ROW_MAPPER,
@@ -493,7 +499,8 @@ final class JdbcMethodPlan {
         if (mapperInterface == null
                 || mapperInterface.typeArguments().size() != 1
                 || !mapperInterface.typeArguments().getFirst().equals(mappedType)) {
-            throw failure(method, "Mapper must implement JdbcClient.RowMapper<" + mappedType.resolvedName() + ">");
+            throw failure(method, "The mapper must implement JdbcClient.RowMapper<"
+                    + mappedType.resolvedName() + ">.");
         }
     }
 
@@ -508,8 +515,8 @@ final class JdbcMethodPlan {
             if (!JdbcScalarTypes.isScalar(component.typeName())
                     && JdbcScalarTypes.optionalScalarType(component.typeName()).isEmpty()) {
                 throw failure(method,
-                              "Unsupported record component type " + component.typeName().resolvedName()
-                                      + " for " + component.elementName());
+                              "Record component '" + component.elementName() + "' uses the unsupported type '"
+                                      + component.typeName().resolvedName() + "'.");
             }
         }
     }
