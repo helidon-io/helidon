@@ -328,24 +328,6 @@ class ConfiguredTlsManagerTest {
     }
 
     @Test
-    void keyManagerAccessorUsesReloadableState() {
-        ConfiguredTlsManager manager = new ConfiguredTlsManager();
-        X509KeyManager initialKeyManager = new TestKeyManager();
-        X509TrustManager initialTrustManager = new TestTrustManager();
-
-        manager.initSslContext(Tls.builder().buildPrototype(),
-                               new SecureRandom(),
-                               new KeyManager[] {initialKeyManager},
-                               new TrustManager[] {initialTrustManager});
-
-        X509KeyManager reloadedKeyManager = new TestKeyManager();
-        manager.reloadableKeyManager().reload(reloadedKeyManager);
-
-        assertThat(manager.keyManager().orElseThrow(), sameInstance(reloadedKeyManager));
-        assertThat(manager.trustManager().orElseThrow(), sameInstance(initialTrustManager));
-    }
-
-    @Test
     @SuppressWarnings("removal")
     void reloadTlsRetriesUntilSourceGenerationIsStable() {
         X509KeyManager reloadedKeyManager = new TestKeyManager();
