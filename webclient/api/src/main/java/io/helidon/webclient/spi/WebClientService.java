@@ -23,7 +23,6 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 
 /**
  * Extension that can modify web client behavior.
- * This is now only designed for HTTP/1
  */
 @FunctionalInterface
 public interface WebClientService extends NamedService {
