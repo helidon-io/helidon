@@ -148,32 +148,40 @@ public interface HttpTransportObserver {
 
     /**
      * Connection termination outcome.
+     *
+     * <p>Publishers must classify a timeout as {@link #TIMEOUT} and any other failure as {@link #ERROR}. Otherwise,
+     * an endpoint-directed close is {@link #LOCAL_CLOSE} or {@link #REMOTE_CLOSE}, including when the close is graceful.
+     * {@link #NORMAL} is reserved for graceful completion without an applicable endpoint-directed close.
      */
     enum ConnectionOutcome {
         /**
-         * Connection completed normally.
+         * Connection completed gracefully without an applicable endpoint-directed close.
          */
         NORMAL,
         /**
-         * Local endpoint closed the connection.
+         * Local endpoint initiated the connection close.
          */
         LOCAL_CLOSE,
         /**
-         * Remote endpoint closed the connection.
+         * Remote endpoint initiated the connection close.
          */
         REMOTE_CLOSE,
         /**
-         * Connection timed out.
+         * Connection termination was caused by a timeout.
          */
         TIMEOUT,
         /**
-         * Connection ended because of an error.
+         * Connection termination was caused by an error other than a timeout.
          */
         ERROR
     }
 
     /**
      * Stream termination outcome.
+     *
+     * <p>{@link #REJECTED} takes precedence over {@link #RESET} when a stream is refused before application processing,
+     * including when the refusal is conveyed using reset signaling. {@link #RESET} applies to other explicit resets,
+     * and {@link #CANCELLED} applies when the stream lifecycle is cancelled without a reset or stream failure.
      */
     enum StreamOutcome {
         /**
@@ -185,15 +193,15 @@ public interface HttpTransportObserver {
          */
         REJECTED,
         /**
-         * Stream was reset.
+         * Stream was explicitly reset without known rejection semantics.
          */
         RESET,
         /**
-         * Stream was cancelled without an explicit reset event.
+         * Stream lifecycle was cancelled without an explicit reset or stream failure.
          */
         CANCELLED,
         /**
-         * Stream ended because of an error.
+         * Stream ended because of a non-reset error.
          */
         ERROR
     }
