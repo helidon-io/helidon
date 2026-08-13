@@ -627,6 +627,36 @@ class OpenApiFeatureTest {
     }
 
     @Test
+    void initializeBeforeSetupUsesConfiguredSockets(@TempDir Path tempDir) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
+        OpenApiVersion staticVersion = new ListenerOpenApiVersion("3.1", "3.1.0");
+        Path staticFile = tempDir.resolve("static-3.1.yaml");
+        Files.writeString(staticFile, OPENAPI_31_DOCUMENT);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .staticFile(staticFile.toString())
+                .generatedMode(OpenApiGeneratedMode.MERGE)
+                .openApiVersion(renderVersion)
+                .manager(manager)
+                .sockets(Set.of("admin"))
+                .buildPrototype();
+        OpenApiFeature feature = testFeature(config,
+                                             List.of(generatedPathSource()),
+                                             List.of(provider("3.1", staticVersion)));
+
+        feature.initialize();
+
+        assertThat(manager.contents().size(), is(1));
+        assertThat(map(parse(manager.contents().getFirst()), "info").get("title"), is("admin"));
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        assertThat(manager.contents().size(), is(1));
+    }
+
+    @Test
     void mergeStaticDocumentParsesStaticDocumentWithListenerContext(@TempDir Path tempDir) throws IOException {
         RecordingOpenApiManager manager = new RecordingOpenApiManager();
         OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);

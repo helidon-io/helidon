@@ -291,7 +291,12 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         initialized.set(true);
         List<LazyValue<Object>> currentListenerModels = listenerModels;
         if (currentListenerModels.isEmpty()) {
-            listenerModel(WebServer.DEFAULT_SOCKET_NAME).get();
+            Set<String> configuredSockets = config.sockets();
+            if (configuredSockets.isEmpty()) {
+                listenerModel(WebServer.DEFAULT_SOCKET_NAME).get();
+            } else {
+                configuredSockets.forEach(socket -> listenerModel(socket).get());
+            }
         } else {
             currentListenerModels.forEach(LazyValue::get);
         }
