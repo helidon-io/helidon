@@ -316,7 +316,7 @@ final class OpenApiAnnotationValidator {
             String name = stringValue(header, "name")
                     .filter(not(String::isBlank))
                     .orElseThrow(() -> new CodegenException("@OpenApi.Header name is required"));
-            if (isContentTypeHeader(name)) {
+            if ("content-type".equals(name.toLowerCase(Locale.ROOT))) {
                 throw new CodegenException("@OpenApi.Response on " + restMethodDescription
                                                    + " cannot define response header " + name
                                                    + "; use @OpenApi.Content to define response media types");
@@ -394,7 +394,7 @@ final class OpenApiAnnotationValidator {
         return stringValue(content, "value")
                 .filter(not(String::isBlank))
                 .map(List::of)
-                .orElseGet(() -> mediaTypes(inferredMediaTypes));
+                .orElseGet(() -> inferredMediaTypes.isEmpty() ? List.of(DEFAULT_MEDIA_TYPE) : inferredMediaTypes);
     }
 
     String exampleName(Annotation example, int index) {
@@ -613,10 +613,6 @@ final class OpenApiAnnotationValidator {
         return in + "\n" + name;
     }
 
-    private boolean isContentTypeHeader(String name) {
-        return "content-type".equals(name.toLowerCase(Locale.ROOT));
-    }
-
     private void validateUnique(String owner, String valueDescription, String value, Set<String> values) {
         if (!values.add(value)) {
             throw new CodegenException(owner + " cannot define " + valueDescription + " " + value + " more than once");
@@ -634,7 +630,4 @@ final class OpenApiAnnotationValidator {
         }
     }
 
-    private List<String> mediaTypes(List<String> mediaTypes) {
-        return mediaTypes.isEmpty() ? List.of(DEFAULT_MEDIA_TYPE) : mediaTypes;
-    }
 }

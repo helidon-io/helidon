@@ -341,7 +341,7 @@ public final class OpenApiDocument {
                                (Map<String, Object>) valueMap,
                                childPath,
                                templateIndex(childPath, pathTemplates));
-            } else if (mergeableTopLevelArray(childPath)
+            } else if (("tags".equals(childPath) || "security".equals(childPath))
                     && existing instanceof List<?> existingList
                     && value instanceof List<?> valueList) {
                 mergeArray((List<Object>) existingList, valueList, childPath, tagsByName);
@@ -355,10 +355,6 @@ public final class OpenApiDocument {
                 throw new IllegalStateException("Conflicting OpenAPI document value at " + childPath);
             }
         });
-    }
-
-    private static boolean mergeableTopLevelArray(String path) {
-        return "tags".equals(path) || "security".equals(path);
     }
 
     private static void mergeArray(List<Object> target,

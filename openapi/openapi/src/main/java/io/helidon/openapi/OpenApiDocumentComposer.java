@@ -90,7 +90,7 @@ final class OpenApiDocumentComposer {
 
         if (mode == OpenApiGeneratedMode.GENERATED_ONLY || !hasStaticContent) {
             validateComposedDocument(context, generated);
-            return renderGenerated(context, generated);
+            return context.openApiVersion().render(context, generated);
         }
 
         if (mode == OpenApiGeneratedMode.MERGE) {
@@ -548,10 +548,6 @@ final class OpenApiDocumentComposer {
                 ? Optional.of(new SchemaReference(fragment.substring(prefix.length()), ""))
                 : Optional.of(new SchemaReference(fragment.substring(prefix.length(), suffixStart),
                                                   fragment.substring(suffixStart)));
-    }
-
-    private static String renderGenerated(OpenApiDocumentContext context, OpenApiDocument generated) {
-        return context.openApiVersion().render(context, generated);
     }
 
     private static void validateComposedDocument(OpenApiDocumentContext context, OpenApiDocument document) {

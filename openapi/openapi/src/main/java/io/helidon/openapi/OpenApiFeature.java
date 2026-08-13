@@ -140,7 +140,10 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         this.config = config;
         this.sourceConfig = sourceConfig;
         this.documentSources = LazyValue.create(documentSources);
-        this.openApiVersions = LazyValue.create(() -> openApiVersions(openApiVersionProviders.get()));
+        this.openApiVersions = LazyValue.create(() -> openApiVersionProviders.get()
+                .stream()
+                .map(provider -> provider.create(Config.empty(), provider.configKey()))
+                .toList());
         String defaultContent = "";
         MediaType defaultContentMediaType = MediaTypes.APPLICATION_OCTET_STREAM;
         OpenApiFormat defaultContentFormat = OpenApiFormat.UNSUPPORTED;
@@ -543,7 +546,10 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         selected.addAll(unqualified);
 
         return selected.stream()
-                .map(serviceInfo -> documentSource(registry, serviceInfo))
+                .map(serviceInfo -> registry.<OpenApiDocumentSource>get(serviceInfo)
+                        .orElseThrow(() -> new IllegalStateException("OpenAPI document source "
+                                                                           + serviceInfo.serviceType().fqName()
+                                                                           + " is not available.")))
                 .toList();
     }
 
@@ -591,13 +597,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
                 .findFirst();
     }
 
-    private static OpenApiDocumentSource documentSource(ServiceRegistry registry, ServiceInfo serviceInfo) {
-        return registry.<OpenApiDocumentSource>get(serviceInfo)
-                .orElseThrow(() -> new IllegalStateException("OpenAPI document source "
-                                                                     + serviceInfo.serviceType().fqName()
-                                                                     + " is not available."));
-    }
-
     private static String namedDocumentSources(Map<String, List<ServiceInfo>> named) {
         List<String> values = new ArrayList<>();
         named.forEach((name, sources) -> values.add(name + "=" + serviceTypes(sources)));
@@ -608,12 +607,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         return sources.stream()
                 .map(serviceInfo -> serviceInfo.serviceType().fqName())
                 .sorted()
-                .toList();
-    }
-
-    private static List<OpenApiVersion> openApiVersions(List<OpenApiVersionProvider> providers) {
-        return providers.stream()
-                .map(provider -> provider.create(Config.empty(), provider.configKey()))
                 .toList();
     }
 

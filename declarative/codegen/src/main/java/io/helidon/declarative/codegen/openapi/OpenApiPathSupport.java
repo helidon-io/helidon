@@ -46,7 +46,9 @@ final class OpenApiPathSupport {
         PathTemplate pathTemplate = operation.flatMap(it -> it.stringValue("path"))
                 .filter(not(String::isBlank))
                 .map(override -> validateOpenApiPathOverride(method, override))
-                .orElseGet(() -> normalizeOpenApiPath(method, path));
+                .orElseGet(() -> validateOpenApiPathTemplate(method,
+                                                             ensureLeadingSlash(path),
+                                                             PathValidationMode.HTTP_PATH));
         validatePathParameters(method, pathTemplate, pathParameters);
         return pathTemplate.path();
     }
@@ -56,10 +58,6 @@ final class OpenApiPathSupport {
             throw invalidOpenApiPathOverride(method, path, "paths must start with '/'");
         }
         return validateOpenApiPathTemplate(method, path, PathValidationMode.OPENAPI_OVERRIDE);
-    }
-
-    private static PathTemplate normalizeOpenApiPath(RestMethod method, String path) {
-        return validateOpenApiPathTemplate(method, ensureLeadingSlash(path), PathValidationMode.HTTP_PATH);
     }
 
     private static PathTemplate validateOpenApiPathTemplate(RestMethod method, String path, PathValidationMode mode) {
