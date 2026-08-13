@@ -50,6 +50,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 
 /**
@@ -65,6 +66,8 @@ public class ConfiguredTlsManager implements TlsManager {
     private final ReentrantLock stateLock = new ReentrantLock();
 
     private volatile TlsManagerState state = new TlsManagerState();
+    // Even values are stable. An odd value exists only while stateLock is held for material publication.
+    private volatile long generationState;
 
     ConfiguredTlsManager() {
         this("@default", "tls-manager");
@@ -99,7 +102,15 @@ public class ConfiguredTlsManager implements TlsManager {
 
     @Override // TlsManager
     public void init(TlsConfig tlsConfig) {
-        sslContext(tlsConfig);
+        Objects.requireNonNull(tlsConfig, "tlsConfig");
+        stateLock.lock();
+        try {
+            if (state.sslContext == null) {
+                sslContext(tlsConfig);
+            }
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     @Override // TlsManager
@@ -107,7 +118,15 @@ public class ConfiguredTlsManager implements TlsManager {
     @SuppressWarnings("removal")
     public void reload(Tls tls) {
         Tls.validateReloadSource(tls);
-        reload(tls.keyManager(), tls.trustManager());
+        long sourceGeneration;
+        Optional<X509KeyManager> keyManager;
+        Optional<X509TrustManager> trustManager;
+        do {
+            sourceGeneration = tls.generation();
+            keyManager = tls.keyManager();
+            trustManager = tls.trustManager();
+        } while (sourceGeneration != tls.generation());
+        reload(keyManager, trustManager);
     }
 
     @Override // TlsManager
@@ -122,17 +141,37 @@ public class ConfiguredTlsManager implements TlsManager {
     }
 
     @Override // TlsManager
+    @Api.Internal
+    public long generation() {
+        long current = generationState;
+        if ((current & 1L) == 0L) {
+            return current >>> 1;
+        }
+
+        stateLock.lock();
+        try {
+            return generationState >>> 1;
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    @Override // TlsManager
     public Optional<X509KeyManager> keyManager() {
-        return Optional.ofNullable(state.keyManager);
+        return Optional.ofNullable(state.reloadableKeyManager.current());
     }
 
     @Override // TlsManager
     public Optional<X509TrustManager> trustManager() {
-        return Optional.ofNullable(state.trustManager);
+        return Optional.ofNullable(state.reloadableTrustManager.current());
     }
 
     /**
      * Reload the current SSL context with the provided key manager and trust manager (if defined).
+     * <p>
+     * Subclasses must route every key and trust material publication through this method to retain the inherited
+     * {@link io.helidon.common.tls.TlsManager#generation()} tracking. A subclass that bypasses this method owns the
+     * generation contract.
      *
      * @param keyManager   key manager to use
      * @param trustManager trust manager to use
@@ -153,19 +192,19 @@ public class ConfiguredTlsManager implements TlsManager {
                 validateReload(current.reloadableTrustManager, trustManagerToReload);
             }
 
-            if (keyManagerToReload != null) {
-                current.reloadableKeyManager.reload(keyManagerToReload);
-            }
-            if (trustManagerToReload != null) {
-                current.reloadableTrustManager.reload(trustManagerToReload);
-            }
-
             if (keyManagerToReload != null || trustManagerToReload != null) {
-                state = new TlsManagerState(current.sslContext,
-                                            keyManagerToReload == null ? current.keyManager : keyManagerToReload,
-                                            current.reloadableKeyManager,
-                                            trustManagerToReload == null ? current.trustManager : trustManagerToReload,
-                                            current.reloadableTrustManager);
+                long publishingGeneration = generationState + 1;
+                generationState = publishingGeneration;
+                try {
+                    if (keyManagerToReload != null) {
+                        current.reloadableKeyManager.reload(keyManagerToReload);
+                    }
+                    if (trustManagerToReload != null) {
+                        current.reloadableTrustManager.reload(trustManagerToReload);
+                    }
+                } finally {
+                    generationState = publishingGeneration + 1;
+                }
             }
         } finally {
             stateLock.unlock();
@@ -174,6 +213,8 @@ public class ConfiguredTlsManager implements TlsManager {
 
     /**
      * Initialize and set the {@link javax.net.ssl.SSLContext} on this manager instance.
+     * The first successful initialization retains generation {@code 0}; later calls are ignored. Use
+     * {@link io.helidon.common.tls.TlsManager#reload(io.helidon.common.tls.TlsMaterial)} for later material changes.
      *
      * @param tlsConfig     the tls configuration
      * @param secureRandom  the secure random
@@ -184,9 +225,14 @@ public class ConfiguredTlsManager implements TlsManager {
                                   SecureRandom secureRandom,
                                   KeyManager[] keyManagers,
                                   TrustManager[] trustManagers) {
+        Objects.requireNonNull(tlsConfig, "tlsConfig");
+        Objects.requireNonNull(keyManagers, "keyManagers");
+        Objects.requireNonNull(trustManagers, "trustManagers");
         stateLock.lock();
         try {
-            initSslContextLocked(tlsConfig, secureRandom, keyManagers, trustManagers);
+            if (state.sslContext == null) {
+                initSslContextLocked(tlsConfig, secureRandom, keyManagers, trustManagers);
+            }
         } catch (GeneralSecurityException e) {
             throw new IllegalArgumentException("Failed to create SSLContext", e);
         } finally {
@@ -730,7 +776,7 @@ public class ConfiguredTlsManager implements TlsManager {
             if (keyManager instanceof X509KeyManager x509KeyManager) {
                 TlsReloadableX509KeyManager reloadableKeyManager = TlsReloadableX509KeyManager.create(x509KeyManager);
                 toReturn[i] = reloadableKeyManager;
-                return new KeyManagerState(toReturn, x509KeyManager, reloadableKeyManager);
+                return new KeyManagerState(toReturn, reloadableKeyManager);
             }
         }
         return noReloadableKeyManagerState(toReturn);
@@ -750,82 +796,66 @@ public class ConfiguredTlsManager implements TlsManager {
             if (trustManager instanceof X509TrustManager x509TrustManager) {
                 TlsReloadableX509TrustManager reloadableTrustManager = TlsReloadableX509TrustManager.create(x509TrustManager);
                 toReturn[i] = reloadableTrustManager;
-                return new TrustManagerState(toReturn, x509TrustManager, reloadableTrustManager);
+                return new TrustManagerState(toReturn, reloadableTrustManager);
             }
         }
         return noReloadableTrustManagerState(toReturn);
     }
 
     private KeyManagerState noReloadableKeyManagerState(KeyManager[] keyManagers) {
-        return new KeyManagerState(keyManagers, null, new TlsReloadableX509KeyManager.NotReloadableKeyManager());
+        return new KeyManagerState(keyManagers, new TlsReloadableX509KeyManager.NotReloadableKeyManager());
     }
 
     private TrustManagerState noReloadableTrustManagerState(TrustManager[] trustManagers) {
-        return new TrustManagerState(trustManagers, null, new TlsReloadableX509TrustManager.NotReloadableTrustManager());
+        return new TrustManagerState(trustManagers, new TlsReloadableX509TrustManager.NotReloadableTrustManager());
     }
 
     private void setSslContext(SSLContext sslContext,
                                KeyManagerState keyManagerState,
                                TrustManagerState trustManagerState) {
         this.state = new TlsManagerState(sslContext,
-                                         keyManagerState.keyManager,
                                          keyManagerState.reloadableKeyManager,
-                                         trustManagerState.trustManager,
                                          trustManagerState.reloadableTrustManager);
     }
 
     private static final class TlsManagerState {
         private final SSLContext sslContext;
-        private final X509KeyManager keyManager;
         private final TlsReloadableX509KeyManager reloadableKeyManager;
-        private final X509TrustManager trustManager;
         private final TlsReloadableX509TrustManager reloadableTrustManager;
 
         private TlsManagerState() {
             this(null,
-                 null,
                  new TlsReloadableX509KeyManager.NotReloadableKeyManager(),
-                 null,
                  new TlsReloadableX509TrustManager.NotReloadableTrustManager());
         }
 
         private TlsManagerState(SSLContext sslContext,
-                                X509KeyManager keyManager,
                                 TlsReloadableX509KeyManager reloadableKeyManager,
-                                X509TrustManager trustManager,
                                 TlsReloadableX509TrustManager reloadableTrustManager) {
             this.sslContext = sslContext;
-            this.keyManager = keyManager;
             this.reloadableKeyManager = reloadableKeyManager;
-            this.trustManager = trustManager;
             this.reloadableTrustManager = reloadableTrustManager;
         }
     }
 
     private static final class KeyManagerState {
         private final KeyManager[] keyManagers;
-        private final X509KeyManager keyManager;
         private final TlsReloadableX509KeyManager reloadableKeyManager;
 
         private KeyManagerState(KeyManager[] keyManagers,
-                                X509KeyManager keyManager,
                                 TlsReloadableX509KeyManager reloadableKeyManager) {
             this.keyManagers = keyManagers;
-            this.keyManager = keyManager;
             this.reloadableKeyManager = reloadableKeyManager;
         }
     }
 
     private static final class TrustManagerState {
         private final TrustManager[] trustManagers;
-        private final X509TrustManager trustManager;
         private final TlsReloadableX509TrustManager reloadableTrustManager;
 
         private TrustManagerState(TrustManager[] trustManagers,
-                                  X509TrustManager trustManager,
                                   TlsReloadableX509TrustManager reloadableTrustManager) {
             this.trustManagers = trustManagers;
-            this.trustManager = trustManager;
             this.reloadableTrustManager = reloadableTrustManager;
         }
     }

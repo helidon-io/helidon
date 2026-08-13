@@ -54,11 +54,36 @@ class TlsConfiguredProviderReloadTest {
         Tls tls = Tls.create(config("configured"));
         SSLContext sslContext = tls.sslContext();
 
+        assertThat(tls.generation(), is(0L));
         StaticReloadTlsManagerProvider.reload(MANAGER_NAME, "reloaded");
 
         assertThat(tls.sslContext(), sameInstance(sslContext));
         assertThat(issuer(tls), is("reloaded"));
         assertThat(tls.newEngine(), notNullValue());
+        assertThat(tls.generation(), is(1L));
+    }
+
+    @Test
+    void repeatedInitializationKeepsReloadedState() {
+        Tls first = Tls.create(config("configured"));
+        SSLContext sslContext = first.sslContext();
+
+        StaticReloadTlsManagerProvider.reload(MANAGER_NAME, "reloaded");
+        Tls second = Tls.create(config("configured"));
+
+        assertThat(first.sslContext(), sameInstance(sslContext));
+        assertThat(second.sslContext(), sameInstance(sslContext));
+        assertThat(issuer(first), is("reloaded"));
+        assertThat(issuer(second), is("reloaded"));
+        assertThat(first.generation(), is(1L));
+        assertThat(second.generation(), is(1L));
+
+        StaticReloadTlsManagerProvider.reload(MANAGER_NAME, "again");
+
+        assertThat(issuer(first), is("again"));
+        assertThat(issuer(second), is("again"));
+        assertThat(first.generation(), is(2L));
+        assertThat(second.generation(), is(2L));
     }
 
     private static Config config(String initialIssuer) {

@@ -46,10 +46,13 @@ interface TlsConfigBlueprint extends TlsMaterialBlueprint, Prototype.Factory<Tls
     Optional<SSLContext> sslContext();
 
     /**
-     * The Tls manager. If one is not explicitly defined in the config then a default manager will be created.
+     * The configured TLS manager. If one is not explicitly defined in the config then a default manager will be created.
      * Default is either a configuration based TLS manager, or an explicit manager when {@link #sslContext()} is provided.
+     * A {@link Tls} instance backed by the default {@link ConfiguredTlsManager} uses an isolated runtime manager, so this
+     * method returns its configured prototype rather than its runtime manager. Use {@link Tls#generation()} to obtain the
+     * runtime manager's material generation.
      *
-     * @return the tls manager of the tls instance
+     * @return the configured TLS manager
      * @see ConfiguredTlsManager
      */
     @Option.Configured

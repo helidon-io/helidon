@@ -53,20 +53,37 @@ class TlsManagerCompatibilityTest {
         assertThat(manager.reloadedTls.prototype().trustAll(), is(true));
     }
 
+    @Test
+    void defaultGenerationDoesNotReportReloads() {
+        MaterialReloadManager manager = new MaterialReloadManager();
+        TlsMaterial material = TlsMaterial.builder()
+                .trustAll(true)
+                .build();
+
+        assertThat(manager.generation(), is(0L));
+        manager.reload(material);
+        assertThat(manager.generation(), is(0L));
+    }
+
     private abstract static class TestTlsManager implements TlsManager {
+        private final SSLContext sslContext;
+
+        private TestTlsManager() {
+            try {
+                sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, null, null);
+            } catch (GeneralSecurityException e) {
+                throw new AssertionError(e);
+            }
+        }
+
         @Override
         public void init(TlsConfig tls) {
         }
 
         @Override
         public SSLContext sslContext() {
-            try {
-                SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, null, null);
-                return sslContext;
-            } catch (GeneralSecurityException e) {
-                throw new AssertionError(e);
-            }
+            return sslContext;
         }
 
         @Override

@@ -101,6 +101,10 @@ class TlsReloadableX509KeyManager extends X509ExtendedKeyManager implements TlsR
         this.state = new KeyManagerState(keyManager);
     }
 
+    final X509KeyManager current() {
+        return state.keyManager;
+    }
+
     private static X509ExtendedKeyManager extended(X509KeyManager keyManager) {
         if (keyManager instanceof X509ExtendedKeyManager ekm) {
             return ekm;
