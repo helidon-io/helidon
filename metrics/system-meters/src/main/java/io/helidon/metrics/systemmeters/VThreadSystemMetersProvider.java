@@ -308,25 +308,35 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
         RecordingStream streamToStop = recordingStream;
         recordingStream = null;
         Throwable stopFailure = null;
+        // RecordingStream cleanup can clear the caller's interrupt status.
+        boolean restoreInterrupt = Thread.currentThread().isInterrupted();
         try {
             LOGGER.log(System.Logger.Level.INFO, "Stopping recording stream");
         } catch (Throwable e) {
             stopFailure = recordCloseFailure(stopFailure, e);
         }
+        restoreInterrupt |= Thread.currentThread().isInterrupted();
         try {
             streamToStop.close();
         } catch (Throwable e) {
             stopFailure = recordCloseFailure(stopFailure, e);
         }
+        restoreInterrupt |= Thread.currentThread().isInterrupted();
+        if (restoreInterrupt) {
+            Thread.currentThread().interrupt();
+        }
         try {
             streamToStop.awaitTermination(Duration.ofSeconds(10));
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            restoreInterrupt = true;
             stopFailure = recordCloseFailure(
                     stopFailure,
                     new IllegalStateException("Interrupted while stopping virtual thread metrics recording", e));
         } catch (Throwable e) {
             stopFailure = recordCloseFailure(stopFailure, e);
+        }
+        if (restoreInterrupt) {
+            Thread.currentThread().interrupt();
         }
         if (stopFailure != null) {
             VThreadSystemMetersProvider.<RuntimeException>rethrow(stopFailure);
