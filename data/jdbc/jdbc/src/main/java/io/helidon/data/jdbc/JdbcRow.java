@@ -182,6 +182,10 @@ final class JdbcRow implements JdbcClient.Row {
             return result;
         } catch (SQLException e) {
             throw JdbcExceptionTranslator.translate(operation, e);
+        } catch (RuntimeException ignored) {
+            // Some drivers report conversion or protocol failures as runtime exceptions. Sanitize them here,
+            // while their JDBC origin is known, so exceptions thrown by application row mappers remain unchanged.
+            throw JdbcExceptionTranslator.resultValueFailure();
         }
     }
 

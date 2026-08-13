@@ -184,19 +184,9 @@ final class JdbcRunner {
                                    statement,
                                    resultSet,
                                    warningDiagnostics);
-        Throwable cleanupFailure = closeAll(resultSet, statement, lease);
-        if (cleanupFailure != null) {
-            if (failure == null) {
-                failure = cleanupFailure;
-            } else if (failure instanceof SQLException) {
-                JdbcExceptionTranslator.suppress(failure, "resource cleanup", cleanupFailure);
-            } else {
-                // cleanupException returns a provider-owned diagnostic safe to attach to application code.
-                failure.addSuppressed(cleanupException(operation, cleanupFailure));
-            }
-        }
+        failure = closeAll(operation, resultSet, statement, lease, failure);
         if (failure != null) {
-            addWarningDiagnostics(failure, warningDiagnostics);
+            failure = addWarningDiagnostics(failure, warningDiagnostics);
             rethrow(operation, failure);
         }
         // The current policy discards warnings collected during a successful operation. A future warning policy
@@ -462,28 +452,45 @@ final class JdbcRunner {
      * @param primary receiving failure
      * @param diagnostics sanitized warning diagnostics
      */
-    private static void addWarningDiagnostics(Throwable primary, List<Throwable> diagnostics) {
+    private static Throwable addWarningDiagnostics(Throwable primary, List<Throwable> diagnostics) {
         for (Throwable diagnostic : diagnostics) {
             if (primary != diagnostic) {
-                primary.addSuppressed(diagnostic);
+                primary = JdbcExceptionTranslator.suppress(primary, "processing a JDBC warning", diagnostic);
             }
         }
+        return primary;
     }
 
     /**
      * Closes resources in the supplied ownership order.
      *
+     * @param operation operation metadata used to translate a grouped cleanup failure
      * @param resultSet result set to close first
      * @param statement statement to close second
      * @param lease connection lease to close last
-     * @return first cleanup failure, or {@code null}
+     * @param previousFailure earlier operation or cleanup failure
+     * @return first failure, or {@code null}
      */
-    private static Throwable closeAll(ResultSet resultSet,
+    private static Throwable closeAll(JdbcOperation operation,
+                                      ResultSet resultSet,
                                       PreparedStatement statement,
-                                      JdbcConnectionLease lease) {
+                                      JdbcConnectionLease lease,
+                                      Throwable previousFailure) {
+        if (previousFailure instanceof SQLException) {
+            Throwable failure = close(resultSet, "closing a result set", previousFailure);
+            failure = close(statement, "closing a statement", failure);
+            return close(lease, "closing a connection lease", failure);
+        }
         Throwable failure = close(resultSet, "closing a result set", null);
         failure = close(statement, "closing a statement", failure);
-        return close(lease, "closing a connection lease", failure);
+        failure = close(lease, "closing a connection lease", failure);
+        if (previousFailure == null) {
+            return failure;
+        }
+        if (failure != null) {
+            previousFailure.addSuppressed(cleanupException(operation, failure));
+        }
+        return previousFailure;
     }
 
     /**
@@ -505,18 +512,17 @@ final class JdbcRunner {
             if (previousFailure == null && closeFailure instanceof Error) {
                 return closeFailure;
             }
-            Throwable sanitized = JdbcExceptionTranslator.sanitize(operation, closeFailure);
             if (previousFailure == null) {
-                return sanitized;
+                return JdbcExceptionTranslator.prepare(operation, closeFailure);
             }
-            JdbcExceptionTranslator.suppress(previousFailure, operation, sanitized);
+            previousFailure = JdbcExceptionTranslator.suppress(previousFailure, operation, closeFailure);
         }
         return previousFailure;
     }
 
     /**
-     * Translates a cleanup failure before attaching it to an application
-     * failure.
+     * Translates a grouped cleanup failure before attaching it to an
+     * application failure.
      *
      * @param operation operation metadata
      * @param failure cleanup failure

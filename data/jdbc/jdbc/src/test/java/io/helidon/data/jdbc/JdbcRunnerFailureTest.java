@@ -173,8 +173,11 @@ class JdbcRunnerFailureTest {
         assertThat(failure.getCause(), instanceOf(SQLException.class));
         assertThat(failure.getCause().getMessage(),
                    is("Datasources used for JDBC operations must provide connections with auto-commit enabled."));
-        assertThat(failure.getCause().getSuppressed().length, is(1));
+        assertThat(failure.getCause().getSuppressed().length, is(2));
         assertSafeSqlCause(failure.getCause().getSuppressed()[0], closeFailure);
+        assertThat(failure.getCause().getSuppressed()[1].getMessage(),
+                   is("Some JDBC failure relationships were not inspected or were omitted "
+                              + "to keep diagnostics bounded."));
         verify(connection, never()).prepareStatement("UPDATE TEST_VALUE SET VALUE = 1");
         verify(statement, never()).execute();
     }
@@ -329,9 +332,12 @@ class JdbcRunnerFailureTest {
         assertThat(failure.getSuppressed()[0], instanceOf(DataException.class));
         Throwable cleanup = failure.getSuppressed()[0].getCause();
         assertSafeSqlCause(cleanup, resultClose);
-        assertThat(cleanup.getSuppressed().length, is(2));
+        assertThat(cleanup.getSuppressed().length, is(3));
         assertSafeSqlCause(cleanup.getSuppressed()[0], statementClose);
         assertSafeSqlCause(cleanup.getSuppressed()[1], connectionClose);
+        assertThat(cleanup.getSuppressed()[2].getMessage(),
+                   is("Some JDBC failure relationships were not inspected or were omitted "
+                              + "to keep diagnostics bounded."));
         InOrder order = inOrder(resultSet, statement, connection);
         order.verify(resultSet).close();
         order.verify(statement).close();
@@ -649,6 +655,47 @@ class JdbcRunnerFailureTest {
         verify(connection).close();
     }
 
+    @Test
+    void sanitizesRuntimeFailureWhileReadingAnObjectResultValue() throws Exception {
+        ResultSet resultSet = prepareSuccessfulQuery();
+        IllegalStateException driverFailure = new IllegalStateException("secret result value",
+                                                                         new RuntimeException("secret cause"));
+        driverFailure.addSuppressed(new RuntimeException("secret suppressed"));
+        when(resultSet.getObject(1, String.class)).thenThrow(driverFailure);
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                     .map(String.class)
+                                                     .one());
+
+        assertSanitizedResultValueFailure(failure);
+        assertThat(failure, not(sameInstance(driverFailure)));
+        InOrder order = inOrder(resultSet, statement, connection);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    @Test
+    void sanitizesRuntimeFailureWhileReadingABinaryResultValue() throws Exception {
+        ResultSet resultSet = prepareSuccessfulQuery();
+        UnsupportedOperationException driverFailure =
+                new UnsupportedOperationException("secret binary result value");
+        when(resultSet.getBytes(1)).thenThrow(driverFailure);
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                     .map(byte[].class)
+                                                     .one());
+
+        assertSanitizedResultValueFailure(failure);
+        assertThat(failure, not(sameInstance(driverFailure)));
+        InOrder order = inOrder(resultSet, statement, connection);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
     private void prepareSuccessfulUpdate() throws Exception {
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(1L, -1L);
@@ -747,6 +794,12 @@ class JdbcRunnerFailureTest {
         assertThat(warning.getErrorCode(), is(vendorCode));
         assertThat(warning.getCause(), nullValue());
         assertThat(warning.getSuppressed().length, is(0));
+    }
+
+    private static void assertSanitizedResultValueFailure(DataException failure) {
+        assertThat(failure.getMessage(), is("The JDBC provider could not read a result value."));
+        assertThat(failure.getCause(), nullValue());
+        assertThat(failure.getSuppressed().length, is(0));
     }
 
     @FunctionalInterface

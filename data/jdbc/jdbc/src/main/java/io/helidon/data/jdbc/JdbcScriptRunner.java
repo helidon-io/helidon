@@ -149,14 +149,16 @@ final class JdbcScriptRunner {
                     outcome = BootstrapOutcome.ROLLED_BACK;
                 }
             } catch (Throwable rollbackFailure) {
-                JdbcExceptionTranslator.suppress(failure, "rolling back a bootstrap transaction", rollbackFailure);
+                failure = JdbcExceptionTranslator.suppress(failure,
+                                                           "rolling back a bootstrap transaction",
+                                                           rollbackFailure);
                 outcome = BootstrapOutcome.UNKNOWN;
             }
         }
         failure = close(statement, "closing a bootstrap statement", failure);
         if (outcome == BootstrapOutcome.UNKNOWN) {
             // Never restore or ordinarily close a connection whose transaction outcome is unknown.
-            JdbcConnectionInvalidator.invalidate(connection, failure);
+            failure = JdbcConnectionInvalidator.invalidate(connection, failure);
         } else {
             failure = close(connection, "closing a bootstrap connection", failure);
         }
@@ -251,7 +253,11 @@ final class JdbcScriptRunner {
                     current.append(character);
                     executableContent = true;
                     state = State.BACKTICK_QUOTE;
-                } else if (character == '-' && next(content, index) == '-') {
+                } else if (character == '-'
+                        && next(content, index) == '-'
+                        && JdbcSqlLexicalRules.lineComment(content, index)) {
+                    // Use the same conservative delimiter as runtime marker recognition. In particular,
+                    // balance--1 remains SQL, so a following semicolon remains an active statement boundary.
                     current.append("--");
                     index++;
                     state = State.LINE_COMMENT;
@@ -360,6 +366,25 @@ final class JdbcScriptRunner {
             onlyWhitespaceOnLine = updateLineState(content, firstConsumed, index, onlyWhitespaceOnLine);
         }
         // A line comment may end at the end of the file without a newline.
+        validateTermination(unitName, descriptor, content, state, profile);
+        addStatement(unitName, descriptor, statements, current, executableContent, budget);
+        return List.copyOf(statements);
+    }
+
+    /**
+     * Validates the parser state after consuming a complete script.
+     *
+     * @param unitName persistence-unit name
+     * @param descriptor safe script descriptor
+     * @param content script content
+     * @param state final parser state
+     * @param profile statement-boundary profile
+     */
+    private static void validateTermination(String unitName,
+                                            JdbcBootstrapResource.Descriptor descriptor,
+                                            String content,
+                                            State state,
+                                            ScriptBoundaryProfile profile) {
         if (state != State.NORMAL && state != State.LINE_COMMENT) {
             throw scriptFailure(unitName,
                                 descriptor,
@@ -367,8 +392,6 @@ final class JdbcScriptRunner {
                                 "has an unterminated " + state.description(),
                                 content.length());
         }
-        addStatement(unitName, descriptor, statements, current, executableContent, budget);
-        return List.copyOf(statements);
     }
 
     /**
@@ -812,11 +835,10 @@ final class JdbcScriptRunner {
             if (failure == null && closeFailure instanceof Error) {
                 return closeFailure;
             }
-            Throwable sanitized = JdbcExceptionTranslator.sanitize(operation, closeFailure);
             if (failure == null) {
-                return sanitized;
+                return JdbcExceptionTranslator.prepare(operation, closeFailure);
             }
-            JdbcExceptionTranslator.suppress(failure, operation, sanitized);
+            failure = JdbcExceptionTranslator.suppress(failure, operation, closeFailure);
         }
         return failure;
     }

@@ -123,9 +123,9 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                 // Publish the connection only after it is ready for transaction use.
                 association.connection = connection;
             } catch (SQLException | RuntimeException | Error failure) {
-                JdbcConnectionInvalidator.invalidate(connection, failure);
+                Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, failure);
                 failJdbcAssociation(state, state.activeJdbc, association);
-                throw failure;
+                throw rethrowConnectionFailure(reportedFailure);
             }
         }
         return new TransactionLease(association.connection);
@@ -334,9 +334,10 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                 try {
                     connection.rollback();
                 } catch (SQLException | RuntimeException | Error rollbackFailure) {
-                    JdbcExceptionTranslator.suppress(completionFailure,
-                                                     "rolling back after a failed transaction commit",
-                                                     rollbackFailure);
+                    completionFailure = JdbcExceptionTranslator.suppress(
+                            completionFailure,
+                            "rolling back after a failed transaction commit",
+                            rollbackFailure);
                 }
             }
         }
@@ -344,7 +345,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         if (completionFailure != null) {
             association.failed(CompletionOutcome.UNKNOWN);
             // Restoring auto commit after an unknown outcome could commit pending work.
-            JdbcConnectionInvalidator.invalidate(connection, completionFailure);
+            completionFailure = JdbcConnectionInvalidator.invalidate(connection, completionFailure);
             throwTransactionFailure(commit
                                             ? "The local JDBC transaction commit failed, and the outcome is unknown."
                                             : "The local JDBC transaction rollback failed, and the outcome is unknown.",
@@ -359,9 +360,9 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             connection.setAutoCommit(true);
         } catch (SQLException | RuntimeException | Error restoreFailure) {
             association.failed(outcome);
-            JdbcConnectionInvalidator.invalidate(connection, restoreFailure);
+            Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, restoreFailure);
             throwTransactionFailure(completionCleanupMessage(association.outcome, "restore automatic commit mode"),
-                                    restoreFailure);
+                                    reportedFailure);
             return;
         }
 
@@ -369,9 +370,27 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             connection.close();
         } catch (SQLException | RuntimeException | Error closeFailure) {
             association.failed(outcome);
-            JdbcConnectionInvalidator.invalidate(connection, closeFailure);
-            throwTransactionFailure(completionCleanupMessage(association.outcome, "close the connection"), closeFailure);
+            Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, closeFailure);
+            throwTransactionFailure(completionCleanupMessage(association.outcome, "close the connection"),
+                                    reportedFailure);
         }
+    }
+
+    /**
+     * Restores the declared or unchecked category of a connection failure.
+     *
+     * @param failure failure to throw
+     * @return never returns
+     * @throws SQLException when the failure is an SQL exception
+     */
+    private static SQLException rethrowConnectionFailure(Throwable failure) throws SQLException {
+        if (failure instanceof SQLException sqlException) {
+            throw sqlException;
+        }
+        if (failure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        throw (Error) failure;
     }
 
     /**

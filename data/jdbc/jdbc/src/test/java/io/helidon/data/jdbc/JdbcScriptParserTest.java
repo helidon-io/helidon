@@ -65,6 +65,15 @@ class JdbcScriptParserTest {
     }
 
     @Test
+    void appliesThePortableLineCommentDelimiter() {
+        assertThat(parse("UPDATE account SET balance = balance--1;SELECT 2;"),
+                   is(List.of("UPDATE account SET balance = balance--1", "SELECT 2")));
+
+        String commented = "SELECT 1 -- comment; retained\n";
+        assertThat(parse(commented + ";SELECT 2;"), is(List.of(commented, "SELECT 2")));
+    }
+
+    @Test
     void retainsExecutableCommentsAsStatements() {
         String executableComment = "/*!40101 SET @saved = 1 */";
 
