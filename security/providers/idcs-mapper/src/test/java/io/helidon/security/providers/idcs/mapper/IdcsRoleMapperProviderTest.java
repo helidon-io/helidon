@@ -279,6 +279,68 @@ class IdcsRoleMapperProviderTest {
         }
     }
 
+    @Test
+    void testSingleTenantMetadataLoadsOnFirstTokenRequest() {
+        AtomicInteger metadataRequests = new AtomicInteger();
+        AtomicReference<String> authorization = new AtomicReference<>();
+        JsonObject[] metadata = new JsonObject[1];
+        String accessToken = signedToken();
+
+        WebServer server = WebServer.builder()
+                .host(InetAddress.getLoopbackAddress().getHostAddress())
+                .routing(routing -> routing
+                        .get("/.well-known/openid-configuration", (req, res) -> {
+                            metadataRequests.incrementAndGet();
+                            res.send(metadata[0]);
+                        })
+                        .post("/oauth2/v1/token", (req, res) -> {
+                            authorization.set(req.headers()
+                                                      .first(HeaderNames.AUTHORIZATION)
+                                                      .orElse(null));
+                            res.header(HeaderValues.CONTENT_TYPE_JSON)
+                                    .send("{\"access_token\":\"" + accessToken + "\"}");
+                        }))
+                .build()
+                .start();
+
+        try {
+            String tokenHost = "idcs-lazy.example.test";
+            String baseUri = "http://" + tokenHost + ":" + server.port();
+            metadata[0] = JsonObject.builder()
+                    .set("token_endpoint", baseUri + "/oauth2/v1/token")
+                    .set("authorization_endpoint", baseUri + "/oauth2/v1/authorize")
+                    .set("end_session_endpoint", baseUri + "/oauth2/v1/userlogout")
+                    .set("introspection_endpoint", baseUri + "/oauth2/v1/introspect")
+                    .set("issuer", baseUri)
+                    .build();
+
+            IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
+            builder.oidcConfig(OidcConfig.builder()
+                                       .clientId("client-id")
+                                       .clientSecret("client-secret")
+                                       .identityUri(URI.create(baseUri))
+                                       .serverType("idcs")
+                                       .validateJwtWithJwk(false)
+                                       .webclient(webClient -> webClient.dnsResolver((hostname, dnsAddressLookup) ->
+                                                                                              InetAddress.getLoopbackAddress()))
+                                       .build());
+
+            IdcsRoleMapperProvider provider = builder.build();
+
+            assertThat(metadataRequests.get(), is(0));
+
+            Optional<String> token = provider.getAppToken(SecurityTracing.get().roleMapTracing("idcs"));
+            String expectedAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString("client-id:client-secret".getBytes(StandardCharsets.UTF_8));
+
+            assertThat(token.orElseThrow(), is(accessToken));
+            assertThat(metadataRequests.get(), is(1));
+            assertThat(authorization.get(), is(expectedAuthorization));
+        } finally {
+            server.stop();
+        }
+    }
+
     private static IdcsRoleMapperProvider.Builder<?> roleMapperBuilder() {
         IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
         builder.oidcConfig(OidcConfig.builder()

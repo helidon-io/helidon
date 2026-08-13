@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -48,10 +49,9 @@ import io.helidon.webclient.api.HttpClientRequest;
 public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implements SubjectMappingProvider {
     private final EvictableCache<String, List<Grant>> roleCache;
     private final String asserterUri;
-    private final URI tokenEndpointUri;
 
     // caching application token (as that can be re-used for group requests)
-    private final AppToken appToken;
+    private final LazyValue<AppToken> appToken;
 
     /**
      * Constructor that accepts any {@link IdcsRoleMapperProvider.Builder} descendant.
@@ -65,17 +65,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         OidcConfig oidcConfig = builder.oidcConfig();
 
         this.asserterUri = oidcConfig.identityUri() + "/admin/v1/Asserter";
-        this.tokenEndpointUri = oidcConfig.tokenEndpointUri();
-
-        if (oidcConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
-            this.appToken = new AppToken(oidcConfig.appWebClient(),
-                                         tokenEndpointUri,
-                                         oidcConfig.tokenRefreshSkew(),
-                                         oidcConfig.clientId(),
-                                         oidcConfig.clientSecret());
-        } else {
-            this.appToken = new AppToken(oidcConfig.appWebClient(), tokenEndpointUri, oidcConfig.tokenRefreshSkew());
-        }
+        this.appToken = LazyValue.create(() -> createAppToken(oidcConfig));
     }
 
     /**
@@ -189,7 +179,19 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
 
     // Added for testing purposes
     Optional<String> getAppToken(RoleMapTracing tracing) {
-        return appToken.getToken(tracing);
+        return appToken.get().getToken(tracing);
+    }
+
+    private static AppToken createAppToken(OidcConfig oidcConfig) {
+        URI tokenEndpointUri = oidcConfig.tokenEndpointUri();
+        if (oidcConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
+            return new AppToken(oidcConfig.appWebClient(),
+                                tokenEndpointUri,
+                                oidcConfig.tokenRefreshSkew(),
+                                oidcConfig.clientId(),
+                                oidcConfig.clientSecret());
+        }
+        return new AppToken(oidcConfig.appWebClient(), tokenEndpointUri, oidcConfig.tokenRefreshSkew());
     }
 
     private List<? extends Grant> obtainGrantsFromServer(String subjectName,

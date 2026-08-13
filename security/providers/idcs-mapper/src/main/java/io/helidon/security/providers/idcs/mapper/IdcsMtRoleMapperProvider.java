@@ -45,7 +45,6 @@ import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.api.HttpClientRequest;
-import io.helidon.webclient.api.WebClient;
 
 /**
  * {@link io.helidon.security.spi.SubjectMappingProvider} to obtain roles from IDCS server for a user.
@@ -472,8 +471,6 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         private final String urlPrefix;
         private final String assertUrlSuffix;
         private final String tokenUrlSuffix;
-        private final WebClient appClient;
-        private final WebClient generalClient;
 
         // we want to cache endpoints for each tenant
         private final ConcurrentHashMap<String, URI> assertEndpointCache = new ConcurrentHashMap<>();
@@ -503,8 +500,6 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
             urlPrefix = config.identityUri().getScheme() + "://";
             this.assertUrlSuffix = "/admin/v1/Asserter";
             this.tokenUrlSuffix = "/oauth2/v1/token?IDCS_CLIENT_TENANT=";
-            this.generalClient = config.generalWebClient();
-            this.appClient = config.appWebClient();
         }
 
         @Override
