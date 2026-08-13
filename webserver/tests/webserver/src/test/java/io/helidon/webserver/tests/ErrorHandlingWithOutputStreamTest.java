@@ -18,6 +18,7 @@ package io.helidon.webserver.tests;
 
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.HeaderName;
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
@@ -51,6 +53,7 @@ class ErrorHandlingWithOutputStreamTest {
     private static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
     private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
     private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
+    private static final HeaderName CSP_HEADER_NAME = HeaderNames.create("Content-Security-Policy");
 
     private final Http1Client client;
 
@@ -61,6 +64,19 @@ class ErrorHandlingWithOutputStreamTest {
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
         router.error(CustomException.class, new CustomRoutingHandler())
+                .addFilter((chain, req, res) -> {
+                    if (req.path().path().equals("/get-cross-cutting-error")) {
+                        res.beforeSend(() -> res.header(CSP_HEADER_NAME, "default-src 'none'"));
+                        res.streamFilter(Base64.getEncoder()::wrap);
+                    } else if (req.path().path().equals("/get-outputStream")) {
+                        res.entityStreamFilter(_ -> OutputStream.nullOutputStream());
+                        res.entityBeforeSend(() -> res.header(HeaderNames.CONTENT_ENCODING, "stale"));
+                    }
+                    chain.proceed();
+                })
+                .get("get-cross-cutting-error", (_, _) -> {
+                    throw new CustomException();
+                })
                 .get("get-outputStream", (req, res) -> {
                     res.header(MAIN_HEADER_NAME, "x");
                     res.header(HeaderNames.CONTENT_LENGTH, "1");
@@ -79,8 +95,6 @@ class ErrorHandlingWithOutputStreamTest {
                     res.header(HeaderNames.ACCEPT_RANGES, "bytes");
                     res.header(HeaderNames.CACHE_CONTROL, "no-store");
                     res.header(HeaderNames.VARY, "Origin");
-                    res.streamFilter(_ -> OutputStream.nullOutputStream());
-                    res.beforeSend(() -> res.header(HeaderNames.CONTENT_ENCODING, "stale"));
                     res.outputStream();
                     throw new CustomException();
                 })
@@ -126,6 +140,18 @@ class ErrorHandlingWithOutputStreamTest {
         try (var response = client.get().request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.entity().as(String.class), is("ok"));
+        }
+    }
+
+    @Test
+    void testCrossCuttingResponseHooksSurviveErrorReplacement() {
+        try (var response = client.get("/get-cross-cutting-error").request()) {
+            assertAll(
+                    () -> assertThat(response.headers().get(CSP_HEADER_NAME).get(), is("default-src 'none'")),
+                    () -> assertThat(response.entity().as(String.class),
+                                     is(Base64.getEncoder()
+                                                .encodeToString("CustomErrorContent".getBytes(StandardCharsets.UTF_8))))
+            );
         }
     }
 

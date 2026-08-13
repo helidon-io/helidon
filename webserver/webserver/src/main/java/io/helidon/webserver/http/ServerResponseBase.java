@@ -86,8 +86,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private UriQuery rerouteQuery;
     private String reroutePath;
     private Consumer<ServerResponseTrailers> beforeTrailers;
-    private Runnable persistentBeforeSend;
-    private UnaryOperator<OutputStream> persistentStreamFilter;
+    private Runnable responseBeforeSend;
+    private UnaryOperator<OutputStream> responseStreamFilter;
     private UnaryOperator<OutputStream> streamFilter;
 
     /**
@@ -142,19 +142,19 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
     @Override
     public ServerResponse beforeSend(Runnable listener) {
-        beforeSend.add(Objects.requireNonNull(listener));
-        return (T) this;
-    }
-
-    @Override
-    public void persistentBeforeSend(Runnable listener) {
         Objects.requireNonNull(listener);
-        Runnable current = persistentBeforeSend;
-        persistentBeforeSend = current == null ? listener : () -> {
+        Runnable current = responseBeforeSend;
+        responseBeforeSend = current == null ? listener : () -> {
             current.run();
             listener.run();
         };
         beforeSend.add(listener);
+        return (T) this;
+    }
+
+    @Override
+    public void entityBeforeSend(Runnable listener) {
+        beforeSend.add(Objects.requireNonNull(listener));
     }
 
     @Override
@@ -252,24 +252,24 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         headers.remove(HeaderNames.LAST_MODIFIED);
         headers.remove(HeaderNames.ACCEPT_RANGES);
         beforeSend.clear();
-        if (persistentBeforeSend != null) {
-            beforeSend.add(persistentBeforeSend);
+        if (responseBeforeSend != null) {
+            beforeSend.add(responseBeforeSend);
         }
         beforeTrailers = null;
-        streamFilter = persistentStreamFilter;
+        streamFilter = responseStreamFilter;
         return true;
     }
 
     @Override
     public void streamFilter(UnaryOperator<OutputStream> filterFunction) {
         checkStreamFilter(filterFunction);
+        responseStreamFilter = addStreamFilter(responseStreamFilter, filterFunction);
         streamFilter = addStreamFilter(streamFilter, filterFunction);
     }
 
     @Override
-    public void persistentStreamFilter(UnaryOperator<OutputStream> filterFunction) {
+    public void entityStreamFilter(UnaryOperator<OutputStream> filterFunction) {
         checkStreamFilter(filterFunction);
-        persistentStreamFilter = addStreamFilter(persistentStreamFilter, filterFunction);
         streamFilter = addStreamFilter(streamFilter, filterFunction);
     }
 

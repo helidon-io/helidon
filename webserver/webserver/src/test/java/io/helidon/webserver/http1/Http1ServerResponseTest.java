@@ -55,46 +55,46 @@ import static org.mockito.Mockito.when;
 class Http1ServerResponseTest {
 
     @Test
-    void resetEntityPreservesPersistentBeforeSendListeners() {
+    void resetEntityPreservesPublicBeforeSendListeners() {
         Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
         List<String> invokedListeners = new ArrayList<>();
 
-        response.persistentBeforeSend(() -> invokedListeners.add("persistent-1"));
-        response.persistentBeforeSend(() -> invokedListeners.add("persistent-2"));
-        response.beforeSend(() -> invokedListeners.add("entity"));
+        response.beforeSend(() -> invokedListeners.add("public-1"));
+        response.beforeSend(() -> invokedListeners.add("public-2"));
+        response.entityBeforeSend(() -> invokedListeners.add("entity"));
 
         response.outputStream();
-        assertThat(invokedListeners, is(List.of("persistent-1", "persistent-2", "entity")));
+        assertThat(invokedListeners, is(List.of("public-1", "public-2", "entity")));
 
         assertThat(response.resetEntity(), is(true));
         invokedListeners.clear();
         response.outputStream();
 
-        assertThat(invokedListeners, is(List.of("persistent-1", "persistent-2")));
+        assertThat(invokedListeners, is(List.of("public-1", "public-2")));
     }
 
     @Test
-    void resetEntityPreservesPersistentStreamFilters() {
+    void resetEntityPreservesPublicStreamFilters() {
         Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
         List<String> appliedFilters = new ArrayList<>();
 
-        response.persistentStreamFilter(outputStream -> {
-            appliedFilters.add("persistent");
+        response.streamFilter(outputStream -> {
+            appliedFilters.add("public");
             return outputStream;
         });
-        response.streamFilter(outputStream -> {
+        response.entityStreamFilter(outputStream -> {
             appliedFilters.add("entity");
             return outputStream;
         });
 
         response.outputStream();
-        assertThat(appliedFilters, is(List.of("persistent", "entity")));
+        assertThat(appliedFilters, is(List.of("public", "entity")));
 
         assertThat(response.resetEntity(), is(true));
         appliedFilters.clear();
         response.outputStream();
 
-        assertThat(appliedFilters, is(List.of("persistent")));
+        assertThat(appliedFilters, is(List.of("public")));
     }
 
     @Test

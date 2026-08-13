@@ -237,7 +237,7 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
             Register an output stream filter to correctly handle content write span
              */
             if (spanConfig.logEnabled(CONTENT_WRITE_SPAN_NAME, true)) {
-                res.persistentStreamFilter(os -> {
+                res.streamFilter(os -> {
                     // this is invoked when the user requests output stream, we just replace it with our own delegate
                     return new TracingStreamOutputDelegate(tracer, span, os);
                 });

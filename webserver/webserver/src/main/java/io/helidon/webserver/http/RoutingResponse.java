@@ -112,28 +112,30 @@ public interface RoutingResponse extends ServerResponse {
     }
 
     /**
-     * Configure an infrastructure output stream filter that remains registered when an unsent response entity is reset.
+     * Configure an infrastructure output stream filter associated with the current response entity.
      * <p>
-     * This method is intended for Helidon features that must observe or transform both the original response entity and any
-     * replacement entity produced by error handling. Application filters should use {@link #streamFilter(UnaryOperator)}.
+     * Implementations which distinguish entity-scoped filters remove the filter if error handling replaces the unsent
+     * entity. Application filters should use {@link #streamFilter(UnaryOperator)} so they also apply to a replacement
+     * error response. The default fallback registers the filter through the public method and therefore retains it.
      *
      * @param filterFunction function that wraps the response output stream
      */
     @Api.Internal
-    default void persistentStreamFilter(UnaryOperator<OutputStream> filterFunction) {
+    default void entityStreamFilter(UnaryOperator<OutputStream> filterFunction) {
         streamFilter(Objects.requireNonNull(filterFunction));
     }
 
     /**
-     * Register an infrastructure listener that remains registered when an unsent response entity is reset.
+     * Register an infrastructure listener associated with the current response entity.
      * <p>
-     * This method is intended for Helidon features that must prepare both the original response entity and any replacement
-     * entity produced by error handling. Application listeners should use {@link #beforeSend(Runnable)}.
+     * Implementations which distinguish entity-scoped listeners remove the listener if error handling replaces the
+     * unsent entity. Application listeners should use {@link #beforeSend(Runnable)} so they also apply to a replacement
+     * error response. The default fallback registers the listener through the public method and therefore retains it.
      *
      * @param listener listener invoked before the response is sent
      */
     @Api.Internal
-    default void persistentBeforeSend(Runnable listener) {
+    default void entityBeforeSend(Runnable listener) {
         beforeSend(Objects.requireNonNull(listener));
     }
 }

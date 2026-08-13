@@ -24,6 +24,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -58,6 +59,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
@@ -69,6 +71,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
     private static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
     private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
     private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
+    private static final HeaderName CSP_HEADER_NAME = HeaderNames.create("Content-Security-Policy");
     private static final HeaderName REENTRY_RESULT_HEADER_NAME = HeaderNames.create("reentry-result");
     private static final HeaderName CALLBACK_COUNT_HEADER_NAME = HeaderNames.create("callback-count");
     private static HttpClient httpClient;
@@ -106,6 +109,19 @@ class Http2ErrorHandlingWithOutputStreamTest {
     static void router(HttpRouting.Builder router) {
         // explicitly on HTTP/2 only, to make sure we do upgrade
         router.error(CustomException.class, new CustomRoutingHandler())
+                .addFilter((chain, req, res) -> {
+                    if (req.path().path().equals("/get-cross-cutting-error")) {
+                        res.beforeSend(() -> res.header(CSP_HEADER_NAME, "default-src 'none'"));
+                        res.streamFilter(Base64.getEncoder()::wrap);
+                    } else if (req.path().path().equals("/get-outputStream")) {
+                        res.entityStreamFilter(_ -> OutputStream.nullOutputStream());
+                        res.entityBeforeSend(() -> res.header(HeaderNames.CONTENT_ENCODING, "stale"));
+                    }
+                    chain.proceed();
+                })
+                .route(Http2Route.route(GET, "get-cross-cutting-error", (_, _) -> {
+                    throw new CustomException();
+                }))
                 .route(Http2Route.route(GET, "get-outputStream", (req, res) -> {
                     res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
@@ -124,8 +140,6 @@ class Http2ErrorHandlingWithOutputStreamTest {
                     res.header(HeaderNames.ACCEPT_RANGES, "bytes");
                     res.header(HeaderNames.CACHE_CONTROL, "no-store");
                     res.header(HeaderNames.VARY, "Origin");
-                    res.streamFilter(_ -> OutputStream.nullOutputStream());
-                    res.beforeSend(() -> res.header(HeaderNames.CONTENT_ENCODING, "stale"));
                     res.outputStream();
                     throw new CustomException();
                 }))
@@ -232,6 +246,18 @@ class Http2ErrorHandlingWithOutputStreamTest {
     }
 
     @Test
+    void testCrossCuttingResponseHooksSurviveErrorReplacement() {
+        var response = request("/get-cross-cutting-error");
+
+        assertAll(
+                () -> assertThat(response.headers().firstValue(CSP_HEADER_NAME.lowerCase()),
+                                 is(Optional.of("default-src 'none'"))),
+                () -> assertThat(response.body(),
+                                 is(Base64.getEncoder().encodeToString("TeaPotIAm".getBytes(StandardCharsets.UTF_8))))
+        );
+    }
+
+    @Test
     void testGetOutputStreamThenError_expect_CustomErrorHandlerMessage() {
         var response = request("/get-outputStream");
 
@@ -255,7 +281,8 @@ class Http2ErrorHandlingWithOutputStreamTest {
         assertThat(response.headers().firstValue(HeaderNames.LAST_MODIFIED.lowerCase()), is(emptyOptional()));
         assertThat(response.headers().firstValue(HeaderNames.ACCEPT_RANGES.lowerCase()), is(emptyOptional()));
         assertThat(response.headers().firstValue(HeaderNames.CACHE_CONTROL.lowerCase()), is(Optional.of("no-store")));
-        assertThat(response.headers().firstValue(HeaderNames.VARY.lowerCase()), is(Optional.of("Origin")));
+        assertThat(response.headers().firstValue(HeaderNames.VARY.lowerCase()),
+                   is(Optional.of("Origin, Accept-Encoding")));
     }
 
     @Test

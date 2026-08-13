@@ -42,4 +42,4 @@ server:
 - When TLS is terminated by a trusted proxy, this relies on requested-URI discovery being correctly configured so Helidon resolves the external scheme as `https`.
 - Existing `Strict-Transport-Security` headers set by application code are preserved.
 - The feature applies to normal responses, redirects, and framework-generated error responses because the header is
-  added through a persistent response-preparation listener.
+  added through `beforeSend(...)`.
