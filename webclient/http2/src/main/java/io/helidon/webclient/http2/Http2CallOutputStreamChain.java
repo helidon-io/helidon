@@ -84,6 +84,11 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
     }
 
     @Override
+    public String protocolId() {
+        return redirectedResponse == null ? super.protocolId() : redirectedResponse.protocolId();
+    }
+
+    @Override
     protected WebClientServiceResponse doProceed(WebClientServiceRequest serviceRequest,
                                                  ClientRequestHeaders headers,
                                                  Http2ClientStream stream) {
@@ -108,6 +113,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             //If cos is marked as interrupted, we know that our interrupted exception has been thrown, but
             //it was intercepted by the user OutputStreamHandler and not rethrown.
             //This is a fallback mechanism to correctly handle such a situations.
+            redirectedResponse = outputStream.response;
             stream(outputStream.stream);
             return outputStream.serviceResponse();
         } else if (!outputStream.closed()) {
@@ -392,16 +398,10 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         }
 
         WebClientServiceResponse serviceResponse() {
-            if (serviceResponse != null) {
-                return serviceResponse;
+            if (response != null) {
+                return response.toServiceResponse(request, whenComplete);
             }
-
-            return createServiceResponse(request,
-                                         clientConfig,
-                                         stream,
-                                         whenComplete,
-                                         response.status(),
-                                         response.headers());
+            return serviceResponse;
         }
 
         boolean closed() {
@@ -526,7 +526,9 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                     }
                     lastRequest = clientRequest;
 
-                    stream = response.stream();
+                    if (Http2Client.PROTOCOL_ID.equals(response.protocolId())) {
+                        stream = response.stream();
+                    }
 
                     if (RedirectionProcessor.redirectionStatusCode(response.status())) {
                         try (response) {

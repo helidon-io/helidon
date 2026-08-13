@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,12 @@ import java.util.concurrent.CompletionStage;
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Method;
+import io.helidon.webclient.spi.WebClientService;
 
 class ServiceRequestImpl implements WebClientServiceRequest {
     private final Map<String, String> properties;
     private final String protocolId;
+    private final WebClientService.WireProtocolChain wireProtocolChain;
     private final ClientUri uri;
     private final Method method;
     private final ClientRequestHeaders headers;
@@ -39,6 +41,7 @@ class ServiceRequestImpl implements WebClientServiceRequest {
     ServiceRequestImpl(ClientUri uri,
                        Method method,
                        String protocolId,
+                       WebClientService.WireProtocolChain wireProtocolChain,
                        ClientRequestHeaders headers,
                        Context context,
                        String requestId,
@@ -48,6 +51,7 @@ class ServiceRequestImpl implements WebClientServiceRequest {
         this.uri = uri;
         this.method = method;
         this.protocolId = protocolId;
+        this.wireProtocolChain = wireProtocolChain;
         this.headers = headers;
         this.context = context;
         this.requestId = requestId;
@@ -68,7 +72,7 @@ class ServiceRequestImpl implements WebClientServiceRequest {
 
     @Override
     public String protocolId() {
-        return protocolId;
+        return wireProtocolChain == null ? protocolId : wireProtocolChain.protocolId();
     }
 
     @Override

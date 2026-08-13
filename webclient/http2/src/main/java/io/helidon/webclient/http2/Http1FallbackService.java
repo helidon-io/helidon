@@ -16,8 +16,6 @@
 
 package io.helidon.webclient.http2;
 
-import java.util.concurrent.CompletableFuture;
-
 import io.helidon.common.context.Context;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -33,9 +31,9 @@ final class Http1FallbackService implements WebClientService {
                 .ifPresent(fallback -> clientRequest.whenSent()
                         .whenComplete((ignored, throwable) -> {
                             if (throwable == null) {
-                                fallback.whenSent().complete(fallback.serviceRequest());
+                                fallback.fallbackHandler().completeSent(fallback.serviceRequest());
                             } else {
-                                fallback.whenSent().completeExceptionally(throwable);
+                                fallback.fallbackHandler().completeSentExceptionally(throwable);
                             }
                         }));
 
@@ -43,13 +41,13 @@ final class Http1FallbackService implements WebClientService {
     }
 
     static Context context(WebClientServiceRequest serviceRequest,
-                           CompletableFuture<WebClientServiceRequest> whenSent) {
+                           Http1FallbackHandler fallbackHandler) {
         Context context = Context.create(serviceRequest.context());
-        context.register(CONTEXT_KEY, new FallbackContext(serviceRequest, whenSent));
+        context.register(CONTEXT_KEY, new FallbackContext(serviceRequest, fallbackHandler));
         return context;
     }
 
     private record FallbackContext(WebClientServiceRequest serviceRequest,
-                                   CompletableFuture<WebClientServiceRequest> whenSent) {
+                                   Http1FallbackHandler fallbackHandler) {
     }
 }
