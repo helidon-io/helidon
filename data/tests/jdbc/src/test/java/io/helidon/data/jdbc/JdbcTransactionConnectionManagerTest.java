@@ -379,9 +379,12 @@ class JdbcTransactionConnectionManagerTest {
         manager.end();
 
         assertThat(failure.getCause().getMessage(), is("The JDBC driver reported a failure."));
-        assertThat(failure.getCause().getSuppressed().length, is(2));
+        // The two invalidation failures and the marker for omitted driver-owned relationships are all retained.
+        assertThat(failure.getCause().getSuppressed().length, is(3));
         assertThat(failure.getCause().getSuppressed()[0].getMessage(), not(containsString("abort failed")));
         assertThat(failure.getCause().getSuppressed()[1].getMessage(), not(containsString("close failed")));
+        assertThat(failure.getCause().getSuppressed()[2].getMessage(),
+                   is("Some JDBC failure relationships were not inspected or were omitted to keep diagnostics bounded."));
         assertThat(fixture.connection().calls("setAutoCommit:true"), is(0L));
         fixture.connection().forceClose();
     }
