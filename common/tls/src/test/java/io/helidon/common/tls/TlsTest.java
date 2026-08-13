@@ -192,14 +192,15 @@ public class TlsTest {
         Tls first = builder.build();
         Tls second = builder.trustAll(false).build();
 
-        assertThat(second.prototype().manager(), not(sameInstance(first.prototype().manager())));
+        assertThat(second.prototype().manager(), sameInstance(first.prototype().manager()));
         assertThat(second.sslContext(), not(sameInstance(first.sslContext())));
 
         TlsConfig prototype = Tls.builder().buildPrototype();
         Tls fromPrototype = prototype.build();
         Tls repeatedFromPrototype = prototype.build();
 
-        assertThat(repeatedFromPrototype.prototype().manager(), not(sameInstance(fromPrototype.prototype().manager())));
+        assertThat(fromPrototype.prototype(), sameInstance(prototype));
+        assertThat(repeatedFromPrototype.prototype(), sameInstance(prototype));
         assertThat(repeatedFromPrototype.sslContext(), not(sameInstance(fromPrototype.sslContext())));
     }
 

@@ -80,9 +80,6 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
                 TlsManager configuredManager = config.manager();
                 if (configuredManager.getClass() == ConfiguredTlsManager.class) {
                     configuredManager = new ConfiguredTlsManager();
-                    configuredTls = TlsConfig.builder(config)
-                            .manager(configuredManager)
-                            .buildPrototype();
                 }
                 this.tlsManager = configuredManager;
             } else {
