@@ -96,7 +96,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private volatile List<LazyValue<Object>> listenerModels = List.of();
 
     OpenApiFeature(OpenApiFeatureConfig config) {
-        this(GlobalServiceRegistry.registry(), Config.empty(), config);
+        this(GlobalServiceRegistry::registry, Config.empty(), config);
     }
 
     @Service.Inject
@@ -112,6 +112,13 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
 
     OpenApiFeature(ServiceRegistry registry, OpenApiFeatureConfig config) {
         this(registry, Config.empty(), config);
+    }
+
+    OpenApiFeature(Supplier<ServiceRegistry> registrySupplier, Config sourceConfig, OpenApiFeatureConfig config) {
+        this(sourceConfig,
+             config,
+             () -> documentSources(registrySupplier.get(), config.generatedDocumentSources()),
+             () -> registrySupplier.get().all(OpenApiVersionProvider.class));
     }
 
     private OpenApiFeature(ServiceRegistry registry,
@@ -205,7 +212,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         Config rootConfig = config.root();
         OpenApiFeatureConfig featureConfig = configureFeatureBuilder(OpenApiFeature.builder(), config)
                 .buildPrototype();
-        return new OpenApiFeature(GlobalServiceRegistry.registry(), rootConfig, featureConfig);
+        return new OpenApiFeature(GlobalServiceRegistry::registry, rootConfig, featureConfig);
     }
 
     /**

@@ -47,6 +47,6 @@ public class OpenApiFeatureProvider implements ServerFeatureProvider<OpenApiFeat
         OpenApiFeatureConfig.Builder builder = OpenApiFeature.configureFeatureBuilder(OpenApiFeature.builder(), resolvedConfig);
         builder.name(Objects.requireNonNull(name));
         OpenApiFeatureConfig featureConfig = builder.buildPrototype();
-        return new OpenApiFeature(GlobalServiceRegistry.registry(), resolvedConfig.root(), featureConfig);
+        return new OpenApiFeature(GlobalServiceRegistry::registry, resolvedConfig.root(), featureConfig);
     }
 }

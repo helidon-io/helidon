@@ -16,6 +16,8 @@
 
 package io.helidon.openapi;
 
+import java.util.function.Supplier;
+
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
 import io.helidon.service.registry.GlobalServiceRegistry;
@@ -27,12 +29,12 @@ final class OpenApiFeatureConfigSupport {
 
     @Prototype.RuntimeTypeFactoryMethod
     static OpenApiFeature create(OpenApiFeatureConfig config) {
-        ServiceRegistry registry = config.runtimeServiceRegistry()
+        Supplier<ServiceRegistry> registrySupplier = () -> config.runtimeServiceRegistry()
                 .orElseGet(GlobalServiceRegistry::registry);
         Config sourceConfig = config.sourceRoot()
                 .map(Config.class::cast)
                 .orElseGet(Config::empty);
-        return new OpenApiFeature(registry, sourceConfig, config);
+        return new OpenApiFeature(registrySupplier, sourceConfig, config);
     }
 
     static final class BuilderDecorator implements Prototype.BuilderDecorator<OpenApiFeatureConfig.BuilderBase<?, ?>> {
