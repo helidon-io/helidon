@@ -73,10 +73,7 @@ final class HttpTransportObservers {
         return new CompositeObserver(List.copyOf(unique));
     }
 
-    private static void observerFailed(String event, Throwable failure) {
-        if (failure instanceof VirtualMachineError fatal) {
-            throw fatal;
-        }
+    private static void observerFailed(String event, RuntimeException failure) {
         LOGGER.log(WARNING, "HTTP transport observer failed while processing " + event, failure);
     }
 
@@ -109,8 +106,10 @@ final class HttpTransportObservers {
                     if (observation != NOOP_CONNECTION) {
                         observations.add(observation);
                     }
-                } catch (Throwable failure) {
+                } catch (RuntimeException failure) {
                     observerFailed("connection open", failure);
+                } catch (Throwable failure) {
+                    throw failure;
                 }
             }
             if (observations.isEmpty()) {
@@ -176,12 +175,16 @@ final class HttpTransportObservers {
                                 }
                                 try {
                                     candidate.close(closedOutcome);
-                                } catch (Throwable failure) {
+                                } catch (RuntimeException failure) {
                                     observerFailed("handshake close", failure);
+                                } catch (Throwable failure) {
+                                    throw failure;
                                 }
                             }
-                        } catch (Throwable failure) {
+                        } catch (RuntimeException failure) {
                             observerFailed("handshake start", failure);
+                        } catch (Throwable failure) {
+                            throw failure;
                         }
                     }
                 } finally {
@@ -205,8 +208,10 @@ final class HttpTransportObservers {
                     for (ConnectionObservation observation : observations) {
                         try {
                             observation.protocolSelected(selectedProtocol);
-                        } catch (Throwable failure) {
+                        } catch (RuntimeException failure) {
                             observerFailed("protocol selection", failure);
+                        } catch (Throwable failure) {
+                            throw failure;
                         }
                     }
                 });
@@ -255,12 +260,16 @@ final class HttpTransportObservers {
                             }
                             try {
                                 candidate.close(closedOutcome);
-                            } catch (Throwable failure) {
+                            } catch (RuntimeException failure) {
                                 observerFailed("stream close", failure);
+                            } catch (Throwable failure) {
+                                throw failure;
                             }
                         }
-                    } catch (Throwable failure) {
+                    } catch (RuntimeException failure) {
                         observerFailed("stream open", failure);
+                    } catch (Throwable failure) {
+                        throw failure;
                     }
                 }
             } finally {
@@ -377,8 +386,10 @@ final class HttpTransportObservers {
                 }
                 try {
                     transition.run();
-                } catch (Throwable failure) {
+                } catch (RuntimeException failure) {
                     observerFailed("connection transition", failure);
+                } catch (Throwable failure) {
+                    throw failure;
                 }
             }
         }
@@ -395,8 +406,10 @@ final class HttpTransportObservers {
                         for (ConnectionObservation observation : observations) {
                             try {
                                 observation.close(outcome);
-                            } catch (Throwable failure) {
+                            } catch (RuntimeException failure) {
                                 observerFailed("connection close", failure);
+                            } catch (Throwable failure) {
+                                throw failure;
                             }
                         }
                     });
@@ -448,8 +461,10 @@ final class HttpTransportObservers {
             for (HandshakeObservation observation : observations) {
                 try {
                     observation.close(outcome);
-                } catch (Throwable failure) {
+                } catch (RuntimeException failure) {
                     observerFailed("handshake close", failure);
+                } catch (Throwable failure) {
+                    throw failure;
                 }
             }
         }
@@ -490,8 +505,10 @@ final class HttpTransportObservers {
             for (StreamObservation observation : observations) {
                 try {
                     observation.close(outcome);
-                } catch (Throwable failure) {
+                } catch (RuntimeException failure) {
                     observerFailed("stream close", failure);
+                } catch (Throwable failure) {
+                    throw failure;
                 }
             }
         }

@@ -210,8 +210,8 @@ class HttpTransportObserverTest {
     }
 
     @Test
-    void virtualMachineErrorFromConnectionOpenPropagates() {
-        OutOfMemoryError failure = new OutOfMemoryError("probe");
+    void errorFromConnectionOpenPropagates() {
+        AssertionError failure = new AssertionError("probe");
         AtomicInteger connectionOpened = new AtomicInteger();
         HttpTransportObserver failing = (role, transport, handshake) -> {
             throw failure;
@@ -221,17 +221,17 @@ class HttpTransportObserverTest {
             return ConnectionObservation.noop();
         };
 
-        OutOfMemoryError thrown = assertThrows(OutOfMemoryError.class,
-                                                () -> HttpTransportObserver.compose(List.of(failing, recording))
-                                                        .connectionOpened(SERVER, TRANSPORT_TCP, TLS));
+        AssertionError thrown = assertThrows(AssertionError.class,
+                                             () -> HttpTransportObserver.compose(List.of(failing, recording))
+                                                     .connectionOpened(SERVER, TRANSPORT_TCP, TLS));
 
         assertThat(thrown, sameInstance(failure));
         assertThat(connectionOpened.get(), is(0));
     }
 
     @Test
-    void virtualMachineErrorFromProtocolSelectionPropagates() {
-        OutOfMemoryError failure = new OutOfMemoryError("probe");
+    void errorFromProtocolSelectionPropagates() {
+        AssertionError failure = new AssertionError("probe");
         AtomicInteger protocolSelected = new AtomicInteger();
         HttpTransportObserver failing = (role, transport, handshake) -> new ConnectionObservation() {
             @Override
@@ -276,8 +276,8 @@ class HttpTransportObserverTest {
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(failing, recording))
                 .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
 
-        OutOfMemoryError thrown = assertThrows(OutOfMemoryError.class,
-                                                () -> connection.protocolSelected(PROTOCOL_HTTP_2));
+        AssertionError thrown = assertThrows(AssertionError.class,
+                                             () -> connection.protocolSelected(PROTOCOL_HTTP_2));
 
         assertThat(thrown, sameInstance(failure));
         assertThat(protocolSelected.get(), is(0));

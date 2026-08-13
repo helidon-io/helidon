@@ -68,8 +68,8 @@ public interface HttpTransportObserver {
     /**
      * Combines observers into one failure-isolating observer.
      *
-     * <p>Duplicate observer instances are included only once. A non-fatal failure from one observer is logged and does
-     * not prevent the remaining observers from receiving the event. A {@link VirtualMachineError} is propagated
+     * <p>Duplicate observer instances are included only once. A {@link RuntimeException} from one observer is logged and
+     * does not prevent the remaining observers from receiving the event. Any other {@link Throwable} is rethrown
      * immediately.
      *
      * @param observers observers to combine
