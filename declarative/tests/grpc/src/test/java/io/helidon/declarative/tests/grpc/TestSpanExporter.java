@@ -16,10 +16,10 @@
 
 package io.helidon.declarative.tests.grpc;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.testing.junit5.MatcherWithRetry;
 
@@ -56,10 +56,15 @@ class TestSpanExporter implements SpanExporter {
         return CompletableResultCode.ofSuccess();
     }
 
-    List<SpanData> spanData(int expectedCount) {
+    List<SpanData> spanData(long startEpochMillis, String... spanNames) {
+        List<String> expectedSpanNames = List.of(spanNames);
         return MatcherWithRetry.assertThatWithRetry("Expected span count",
-                                                    () -> new ArrayList<>(spanData),
-                                                    iterableWithSize(expectedCount),
+                                                    () -> spanData.stream()
+                                                            .filter(span -> span.getStartEpochNanos()
+                                                                    >= TimeUnit.MILLISECONDS.toNanos(startEpochMillis))
+                                                            .filter(span -> expectedSpanNames.contains(span.getName()))
+                                                            .toList(),
+                                                    iterableWithSize(spanNames.length),
                                                     retryCount,
                                                     retryDelayMs);
     }

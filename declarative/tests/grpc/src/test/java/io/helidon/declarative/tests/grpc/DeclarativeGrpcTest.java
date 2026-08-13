@@ -229,11 +229,12 @@ class DeclarativeGrpcTest {
     @Test
     void testUnaryMethodTracing() {
         exporter.clear();
+        long startEpochMillis = System.currentTimeMillis();
 
         var response = blockingStub.greet(request("Tracing"));
 
         assertThat(response.getMessage(), is("Hello Tracing"));
-        var spans = exporter.spanData(2);
+        var spans = exporter.spanData(startEpochMillis, grpcGreetMethod(), "grpc-greet-method");
         exporter.clear();
         SpanData grpcSpan = span(spans, grpcGreetMethod());
         SpanData methodSpan = span(spans, "grpc-greet-method");

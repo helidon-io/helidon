@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -331,6 +332,35 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void upgradedConnectionClearsSocketReadTimeoutAfterInitialSettings() throws InterruptedException {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            AtomicReference<Duration> socketReadTimeout = new AtomicReference<>(Duration.ofSeconds(30));
+            LinkedBlockingQueue<Duration> http2ReadTimeouts = new LinkedBlockingQueue<>();
+            doAnswer(invocation -> {
+                socketReadTimeout.set(invocation.getArgument(0));
+                return null;
+            }).when(test.clientConnection).readTimeout(any(Duration.class));
+            when(test.clientConnection.reader()).thenReturn(DataReader.create(() -> {
+                http2ReadTimeouts.add(socketReadTimeout.get());
+                return test.nextInboundFrame();
+            }));
+            test.offerInbound(settingsFrame(10));
+
+            Http2ClientConnection connection = Http2ClientConnection.createUpgraded(test.client,
+                                                                                     test.clientConnection,
+                                                                                     _ -> { },
+                                                                                     ignored -> { });
+
+            assertThat(http2ReadTimeouts.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(Duration.ofSeconds(30)));
+            assertThat(http2ReadTimeouts.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(Duration.ZERO));
+            assertThat(socketReadTimeout.get(), is(Duration.ZERO));
+            connection.close();
+        }
+    }
+
+    @Test
     void initialSettingsFailureClosesConnection() {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.closeInbound();
@@ -449,6 +479,35 @@ class Http2ClientConnectionTest {
             }
             cancel.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             stream.close();
+        }
+    }
+
+    @Test
+    void closeBeforePrefaceDoesNotSendGoAway() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            AtomicReference<Http2ClientConnection> connectionRef = new AtomicReference<>();
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            CompletableFuture<Http2ClientConnection> connectionFuture = CompletableFuture.supplyAsync(
+                    () -> Http2ClientConnection.createUpgraded(test.client,
+                                                               test.clientConnection,
+                                                               _ -> { },
+                                                               connectionRef::set));
+
+            assertTrue(blockedWrite.awaitEntered());
+            Http2ClientConnection connection = connectionRef.get();
+            assertNotNull(connection);
+            try {
+                connection.close();
+                test.assertConnectionClosed();
+                verify(test.dataWriter).writeNow(any(BufferData.class));
+            } finally {
+                blockedWrite.release();
+            }
+            ExecutionException connectionFailure = assertThrows(ExecutionException.class,
+                                                                () -> connectionFuture.get(
+                                                                        TEST_WAIT_TIMEOUT.toMillis(),
+                                                                        TimeUnit.MILLISECONDS));
+            assertNotNull(connectionFailure.getCause());
         }
     }
 
