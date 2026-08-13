@@ -16,7 +16,6 @@
 
 package io.helidon.declarative.tests.graphql;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -27,7 +26,7 @@ import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 
-import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 
 public class TestSpanExporter implements SpanExporter {
     private final List<SpanData> spanData = new CopyOnWriteArrayList<>();
@@ -57,18 +56,29 @@ public class TestSpanExporter implements SpanExporter {
         return CompletableResultCode.ofSuccess();
     }
 
-    List<SpanData> spanData(String expectedName) {
-        MatcherWithRetry.assertThatWithRetry("Expected span named " + expectedName,
-                                             () -> spanData.stream()
+    List<SpanData> spanDataForTrace(String traceSpanName, String... expectedNames) {
+        MatcherWithRetry.assertThatWithRetry("Expected spans named " + String.join(", ", expectedNames)
+                                                     + " in the same trace as " + traceSpanName,
+                                             () -> spansInTrace(traceSpanName).stream()
                                                      .map(SpanData::getName)
                                                      .toList(),
-                                             hasItem(expectedName),
+                                             hasItems(expectedNames),
                                              120,
                                              500);
-        return new ArrayList<>(spanData);
+        return spansInTrace(traceSpanName);
     }
 
     void clear() {
         spanData.clear();
+    }
+
+    private List<SpanData> spansInTrace(String spanName) {
+        return spanData.stream()
+                .filter(it -> it.getName().equals(spanName))
+                .findFirst()
+                .map(it -> spanData.stream()
+                        .filter(candidate -> candidate.getTraceId().equals(it.getTraceId()))
+                        .toList())
+                .orElseGet(List::of);
     }
 }
