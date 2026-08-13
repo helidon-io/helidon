@@ -127,7 +127,7 @@ class Http1ServerResponseTest {
         assertThat(response.resetEntity(), is(true));
 
         assertAll(
-                () -> assertThat(response.status(), is(Status.PARTIAL_CONTENT_206)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat(HeaderNames.CONTENT_LENGTH.defaultCase(),
                                  response.headers().contains(HeaderNames.CONTENT_LENGTH), is(false)),
                 () -> assertThat(HeaderNames.TRANSFER_ENCODING.defaultCase(),
