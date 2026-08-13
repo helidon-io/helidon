@@ -79,11 +79,12 @@ class SharedHttp2CacheTest {
                     .baseUri("http://localhost:" + port + "/versionspecific")
                     .build();
             try {
-
                 Integer firstReqClientPort;
                 try (var res = webClient.post().submit("WHATEVER")) {
                     firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
                     assertThat(res.status(), is(Status.OK_200));
+                    // Wait for the empty DATA frame carrying END_STREAM before closing the response.
+                    res.entity().consume();
                 }
 
                 if (param.restart()) {
@@ -100,6 +101,7 @@ class SharedHttp2CacheTest {
                 try (var res = webClient.post().submit("WHATEVER")) {
                     secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
                     assertThat(res.status(), is(Status.OK_200));
+                    res.entity().consume();
                 }
 
                 if (!param.restart()) {
