@@ -108,7 +108,7 @@ include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 
 === Meter Registry
 Helidon stores all meters in a _meter registry_. Typically, applications use the global meter registry which is the registry where Helidon stores built-in meters.
-Application code refers to the global registry using `Metrics.globalRegistry()`.
+Application code refers to the global registry by injecting `MeterRegistry` or, for imperative code, using `Services.get(MeterRegistry.class)`.
 
 [[usage-publishing]]
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-retrieving]
@@ -132,11 +132,25 @@ include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_1, indent=0]
 == API
 To work with Helidon Metrics in your code, follow these steps:
 
-. Use the static `globalRegistry` method on the link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.html[`Metrics`] interface to get a reference to the global  link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MeterRegistry.html[`MeterRegistry`] instance.
+. Use injection or link:{service-registry-base-url}/io/helidon/service/registry/Services.html#get(java.lang.Class)[`Services.get(Class)`] to get a reference to the global link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MeterRegistry.html[`MeterRegistry`] instance.
 . Use the `MeterRegistry` instance to register new {metrics} and look up previously-registered {metrics}.
 . Use the {metric} reference returned from the `MeterRegistry` to update the {metric} or get its value.
 
 You can also use the `MeterRegistry` to remove an existing {metric}.
+
+Helidon 27 removes the former static convenience methods from `Metrics`.
+Use these replacements instead:
+
+* Replace `Metrics.globalRegistry()` with injection of `MeterRegistry` or `Services.get(MeterRegistry.class)`.
+* Replace `Metrics.createMeterRegistry()` with
+  `Services.get(MetricsFactory.class).createMeterRegistry(MetricsConfig.create())`.
+* Replace `Metrics.createMeterRegistry(metricsConfig)` with
+  `Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig)`.
+* Replace `Metrics.getOrCreate(builder)` with `meterRegistry.getOrCreate(builder)`.
+* Replace the `Metrics.getCounter`, `Metrics.getSummary`, `Metrics.getGauge`, `Metrics.getTimer`, and `Metrics.get`
+  lookup helpers with the corresponding `MeterRegistry` lookup methods.
+* Replace `Metrics.tag(key, value)` with `Services.get(MetricsFactory.class).tagCreate(key, value)`, and create multiple
+  tags using the same `MetricsFactory` instance.
 
 === Helidon Metrics API
 
@@ -168,7 +182,7 @@ Each {metric} type has its own set of methods for updating and retrieving the va
 
 === The `MeterRegistry` API
 To register or look up {meters} programmatically, your service code uses the global `MeterRegistry`.
-Simply invoke `Metrics.globalRegistry()` to get a reference to the global meter registry.
+Inject `MeterRegistry` into your service or invoke `Services.get(MeterRegistry.class)` to get a reference to the global meter registry.
 
 To locate an existing meter or register a new one, your code:
 
@@ -194,7 +208,7 @@ Sometimes you might want access to methods that are present in a particular metr
 
 Of course, using this technique binds your code to a particular metrics implementation.
 
-The link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Wrapper.html[`Wrapper`] interface declares the `unwrap` method which accepts a class parameter to which the delegate is cast. You can then invoke any method declared on the implementation-specific type.
+The link:{common-javadoc-base-url}/io/helidon/common/Wrapper.html[`Wrapper`] interface declares the `unwrap` method which accepts a class parameter to which the delegate is cast. You can then invoke any method declared on the implementation-specific type.
 
 // Here's Configuration.
 include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.helidon.webclient.metrics;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.helidon.metrics.api.Gauge;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
@@ -35,7 +34,7 @@ class WebClientGaugeInProgress extends WebClientMetric {
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
         Metadata metadata = createMetadata(request, null);
-        meterRegistry().getOrCreate(Gauge.builder(metadata.name(), holder::get)
+        meterRegistry().getOrCreate(metricsFactory().gaugeBuilder(metadata.name(), holder::get)
                                             .description(metadata.description()));
         boolean update = handlesMethod(request.method());
         try {

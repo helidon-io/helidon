@@ -17,12 +17,9 @@ package io.helidon.webserver.observe.metrics;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.context.Contexts;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderValues;
@@ -34,9 +31,8 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
-import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
@@ -66,12 +62,19 @@ class MetricsFeature {
     private final MetricsObserverConfig metricsObserverConfig;
     private final MetricsConfig metricsConfig;
     private final MeterRegistry meterRegistry;
+    private final List<MeterRegistryFormatterProvider> formatterProviders;
     private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     MetricsFeature(MetricsObserverConfig config) {
         this.metricsObserverConfig = config;
-        this.metricsConfig = config.metricsConfig();
-        this.meterRegistry = config.meterRegistry().orElseGet(() -> MetricsFactory.getInstance().globalRegistry(metricsConfig));
+        Optional<MeterRegistry> configuredMeterRegistry = config.meterRegistry();
+        this.meterRegistry = configuredMeterRegistry.orElseGet(() -> Services.get(MeterRegistry.class));
+        if (configuredMeterRegistry.isPresent()) {
+            this.metricsConfig = config.metricsConfig();
+        } else {
+            this.metricsConfig = meterRegistry.metricsFactory().metricsConfig();
+        }
+        this.formatterProviders = Services.all(MeterRegistryFormatterProvider.class);
     }
 
     /**
@@ -115,7 +118,7 @@ class MetricsFeature {
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
-                                                           SystemTagsManager.instance().scopeTagName(),
+                                                           metricsConfig.scoping().tagName(),
                                                            scopeSelection,
                                                            nameSelection);
 
@@ -132,7 +135,7 @@ class MetricsFeature {
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
-                                                           SystemTagsManager.instance().scopeTagName(),
+                                                           metricsConfig.scoping().tagName(),
                                                            scopeSelection,
                                                            nameSelection);
 
@@ -166,10 +169,7 @@ class MetricsFeature {
                                                    Optional<String> scopeTagName,
                                                    Iterable<String> scopeSelection,
                                                    Iterable<String> nameSelection) {
-        Optional<MeterRegistryFormatter> formatter = HelidonServiceLoader.builder(
-                        ServiceLoader.load(MeterRegistryFormatterProvider.class))
-                .build()
-                .stream()
+        Optional<MeterRegistryFormatter> formatter = formatterProviders.stream()
                 .map(provider -> provider.formatter(mediaType,
                                                     metricsConfig,
                                                     meterRegistry,
@@ -243,8 +243,9 @@ class MetricsFeature {
     }
 
     private void setUpEndpoints(HttpRules rules) {
-        if (!metricsConfig.permitAll()) {
-            rules.any(SecureHandler.authorize(metricsConfig.roles().toArray(new String[0])));
+        MetricsConfig observerMetricsConfig = metricsObserverConfig.metricsConfig();
+        if (!observerMetricsConfig.permitAll()) {
+            rules.any(SecureHandler.authorize(observerMetricsConfig.roles().toArray(new String[0])));
         }
         // routing to root of metrics
         // As of Helidon 4, this is the only path we should need because scope-based or metric-name-based
@@ -320,10 +321,16 @@ class MetricsFeature {
                 .options("/", DISABLED_ENDPOINT_HANDLER);
     }
 
-    private boolean enabled() {
-        return metricsConfig.enabled()
-                && Contexts.globalContext().get(MetricsFactory.PULL_PUBLISHERS_PRESENT, Boolean.class)
-                .orElse(true);
+    boolean enabled() {
+        return metricsObserverConfig.metricsConfig().enabled()
+                && formatterProviders.stream()
+                .map(provider -> provider.formatter(MediaTypes.TEXT_PLAIN,
+                                                    metricsConfig,
+                                                    meterRegistry,
+                                                    metricsConfig.scoping().tagName(),
+                                                    List.of(),
+                                                    List.of()))
+                .anyMatch(Optional::isPresent);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.docs.se;
 
+import io.helidon.common.Wrapper;
 import io.helidon.config.Config;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
@@ -99,11 +100,11 @@ class TracingSnippets {
         // end::snippet_5[]
     }
 
-    void snippet_6(io.helidon.tracing.Wrapper callbackEnabledSpan) {
+    void snippet_6(Wrapper callbackEnabledSpan) {
         // tag::snippet_6[]
         // Note that callbackEnabledSpan implements OpenTelemetry Span.
         io.opentelemetry.api.trace.Span nativeOtelSpan = callbackEnabledSpan.unwrap(io.opentelemetry.api.trace.Span.class);
-        if (nativeOtelSpan instanceof io.opentelemetry.sdk.trace.ReadableSpan readableSpan) {
+        if (nativeOtelSpan instanceof ReadableSpan readableSpan) {
             // Work with the span as a ReadableSpan
         }
         // end::snippet_6[]

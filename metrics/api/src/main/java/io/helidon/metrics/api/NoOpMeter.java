@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         private Id(String name, Map<String, String> tags) {
             this.name = name;
-            tags.forEach((k, v) -> this.tags.add(Tag.create(k, v)));
+            tags.forEach((k, v) -> this.tags.add(new NoOpTag(k, v)));
             this.tags.sort(Comparator.comparing(Tag::key));
         }
 
@@ -800,4 +800,3 @@ class NoOpMeter implements Meter, NoOpWrapper {
         }
     }
 }
-

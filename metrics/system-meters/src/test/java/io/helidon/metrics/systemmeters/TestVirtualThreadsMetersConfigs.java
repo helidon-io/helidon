@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,41 @@
  */
 package io.helidon.metrics.systemmeters;
 
+import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
+import io.helidon.metrics.spi.MetricsFactoryProvider;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.testing.junit5.Testing;
 
+import jdk.jfr.FlightRecorder;
+import jdk.jfr.Recording;
+import jdk.jfr.RecordingState;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static io.helidon.metrics.systemmeters.MeterBuilderMatcher.withName;
 import static io.helidon.metrics.systemmeters.VThreadSystemMetersProvider.COUNT;
@@ -37,62 +63,296 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Testing.Test(perMethod = true)
 class TestVirtualThreadsMetersConfigs {
+    @Test
+    void legacyMeterBuildersCapturesRegistryDuringSetup() {
+        ServiceRegistry originalRegistry = GlobalServiceRegistry.registry();
+        Config config = Config.just(ConfigSources.create(Map.of("metrics.virtual-threads.enabled", "true")));
+        ServiceRegistryConfig serviceRegistryConfig = ServiceRegistryConfig.builder()
+                .putContractInstance(Config.class, config)
+                .build();
+        ServiceRegistryManager firstManager = ServiceRegistryManager.create(serviceRegistryConfig);
+        ServiceRegistryManager secondManager = null;
+        VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
+        try {
+            ServiceRegistry firstServiceRegistry = firstManager.registry();
+            GlobalServiceRegistry.registry(firstServiceRegistry);
+            MetricsFactory metricsFactory = firstServiceRegistry.get(MetricsFactory.class);
+            Timer firstTimer = pinnedTimer(firstServiceRegistry.get(MeterRegistry.class));
+            provider.meterBuilders(metricsFactory);
+
+            secondManager = ServiceRegistryManager.create(serviceRegistryConfig);
+            ServiceRegistry secondServiceRegistry = secondManager.registry();
+            Timer secondTimer = pinnedTimer(secondServiceRegistry.get(MeterRegistry.class));
+            GlobalServiceRegistry.registry(secondServiceRegistry);
+            Timer capturedTimer = provider.findPinned();
+
+            assertThat("Pinned timer from captured registry", capturedTimer, sameInstance(firstTimer));
+            assertThat("Pinned timer not from ambient registry", capturedTimer, not(sameInstance(secondTimer)));
+        } finally {
+            provider.close();
+            if (secondManager != null) {
+                secondManager.shutdown();
+            }
+            firstManager.shutdown();
+            GlobalServiceRegistry.registry(originalRegistry);
+        }
+    }
 
     @Test
     void checkDefault() {
         Config config = Config.just(ConfigSources.create(Map.of()));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
-        VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        var meterBuilders = provider.meterBuilders(metricsFactory);
-        assertThat("Meter builders with default config", meterBuilders, empty());
+        MetricsFactory metricsFactory = configuredMetricsFactory(config);
+        try {
+            VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
+            var meterBuilders = provider.meterBuilders(metricsFactory);
+            assertThat("Meter builders with default config", meterBuilders, empty());
+        } finally {
+            metricsFactory.close();
+        }
     }
 
     @Test
     void checkVirtualThreadCountMetersEnabled() {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+        MetricsFactory metricsFactory = configuredMetricsFactory(config);
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        var meterBuilders = provider.meterBuilders(metricsFactory);
+        try {
+            var meterBuilders = provider.meterBuilders(metricsFactory);
 
-        assertThat("Default meter builders",
-                   meterBuilders,
-                   containsInAnyOrder(allOf(withName(equalTo(METER_NAME_PREFIX + PINNED)),
-                                            instanceOf(Gauge.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + SUBMIT_FAILURES)),
-                                            instanceOf(Gauge.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + RECENT_PINNED)),
-                                            instanceOf(Timer.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + COUNT)),
-                                            instanceOf(Gauge.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + STARTS)),
-                                            instanceOf(Gauge.Builder.class))));
-
+            assertThat("Default meter builders",
+                       meterBuilders,
+                       containsInAnyOrder(allOf(withName(equalTo(METER_NAME_PREFIX + PINNED)),
+                                                instanceOf(Gauge.Builder.class)),
+                                          allOf(withName(equalTo(METER_NAME_PREFIX + SUBMIT_FAILURES)),
+                                                instanceOf(Gauge.Builder.class)),
+                                          allOf(withName(equalTo(METER_NAME_PREFIX + RECENT_PINNED)),
+                                                instanceOf(Timer.Builder.class)),
+                                          allOf(withName(equalTo(METER_NAME_PREFIX + COUNT)),
+                                                instanceOf(Gauge.Builder.class)),
+                                          allOf(withName(equalTo(METER_NAME_PREFIX + STARTS)),
+                                                instanceOf(Gauge.Builder.class))));
+        } finally {
+            provider.close();
+            metricsFactory.close();
+        }
     }
 
     @Test
     void checkPinnedThreadThreshold() {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true",
                                                                 "virtual-threads.pinned.threshold", "PT0.040S")));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+        MetricsFactory metricsFactory = configuredMetricsFactory(config);
+        RecordingTracker recordingTracker = new RecordingTracker();
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        provider.meterBuilders(metricsFactory);
+        try {
+            provider.meterBuilders(metricsFactory);
 
-        assertThat("Pinned thread threshold", provider.pinnedVirtualThreadsThresholdMillis(), equalTo(40L));
-
+            Recording recording = recordingTracker.awaitNewRecording();
+            assertThat("Pinned thread threshold",
+                       recording.getSettings(),
+                       hasEntry("jdk.VirtualThreadPinned#threshold", "40 ms"));
+        } finally {
+            provider.close();
+            metricsFactory.close();
+        }
     }
 
     @Test
     void checkRecentPinnedTimerLookup() {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true",
                                                                 "virtual-threads.pinned.threshold", "PT0.040S")));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+        MetricsFactory metricsFactory = configuredMetricsFactory(config);
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        provider.meterBuilders(metricsFactory);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsFactory.metricsConfig());
+        try {
+            provider.meterBuilders(metricsFactory, meterRegistry).stream()
+                    .filter(builder -> builder.name().equals(METER_NAME_PREFIX + RECENT_PINNED))
+                    .map(Timer.Builder.class::cast)
+                    .forEach(meterRegistry::getOrCreate);
 
-        provider.findPinned();
+            provider.findPinned();
+        } finally {
+            meterRegistry.close();
+            provider.close();
+            metricsFactory.close();
+        }
+    }
+
+    @Test
+    void interruptedCloseStillClearsProviderState() {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
+        MetricsFactory metricsFactory = configuredMetricsFactory(config);
+        VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsFactory.metricsConfig());
+        RecordingTracker recordingTracker = new RecordingTracker();
+        IllegalStateException closeFailure = new IllegalStateException("Interrupted during recording stream close");
+        Logger logger = Logger.getLogger(VThreadSystemMetersProvider.class.getName());
+        Handler interruptingHandler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                if (record.getMessage().equals("Stopping recording stream")) {
+                    Thread.currentThread().interrupt();
+                    throw closeFailure;
+                }
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        Recording recording = null;
+        logger.addHandler(interruptingHandler);
+        try {
+            provider.meterBuilders(metricsFactory, meterRegistry).stream()
+                    .filter(builder -> builder.name().equals(METER_NAME_PREFIX + RECENT_PINNED))
+                    .map(Timer.Builder.class::cast)
+                    .forEach(meterRegistry::getOrCreate);
+            recording = recordingTracker.awaitNewRecording();
+
+            IllegalStateException failure = assertThrows(IllegalStateException.class, provider::close);
+
+            assertThat("Original close failure is reported", failure, sameInstance(closeFailure));
+            assertThat("Interrupt status is preserved", Thread.currentThread().isInterrupted(), is(true));
+            Thread.interrupted();
+            provider.resume();
+            recordingTracker.assertNoNewRecording("Recording after interrupted close");
+            IllegalStateException unavailable = assertThrows(IllegalStateException.class, provider::findPinned);
+            assertThat("Provider releases its meter registry", unavailable.getMessage(), is("Meter registry not available"));
+        } finally {
+            logger.removeHandler(interruptingHandler);
+            Thread.interrupted();
+            if (recording != null) {
+                recording.close();
+            }
+            provider.close();
+            meterRegistry.close();
+            metricsFactory.close();
+        }
+    }
+
+    @Test
+    @Timeout(10)
+    void closeWaitsForConcurrentResume() throws Exception {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
+        MetricsFactory metricsFactory = configuredMetricsFactory(config);
+        RecordingTracker recordingTracker = new RecordingTracker();
+        BlockingStartProvider provider = new BlockingStartProvider();
+        provider.meterBuilders(metricsFactory);
+        recordingTracker.awaitNewRecording();
+        provider.blockNextStart = true;
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            Future<?> resume = executor.submit(provider::resume);
+            try {
+                assertThat("Resume reached recording stream start",
+                           provider.startEntered.await(5, TimeUnit.SECONDS),
+                           is(true));
+
+                CountDownLatch closeStarted = new CountDownLatch(1);
+                Future<?> close = executor.submit(() -> {
+                    closeStarted.countDown();
+                    provider.close();
+                });
+                assertThat("Close invocation started", closeStarted.await(5, TimeUnit.SECONDS), is(true));
+                assertThrows(TimeoutException.class, () -> close.get(100, TimeUnit.MILLISECONDS));
+
+                provider.continueStart.countDown();
+                resume.get(5, TimeUnit.SECONDS);
+                close.get(5, TimeUnit.SECONDS);
+                recordingTracker.assertNoNewRecording("Recording after concurrent close");
+            } finally {
+                provider.continueStart.countDown();
+            }
+        } finally {
+            provider.close();
+            metricsFactory.close();
+        }
+    }
+
+    private static MetricsFactory configuredMetricsFactory(Config config) {
+        MetricsFactoryProvider provider = HelidonServiceLoader.create(ServiceLoader.load(MetricsFactoryProvider.class))
+                .iterator()
+                .next();
+        return provider.create(Config.empty(), MetricsConfig.create(config), List.of());
+    }
+
+    private static Timer pinnedTimer(MeterRegistry meterRegistry) {
+        return meterRegistry.meters()
+                .stream()
+                .filter(meter -> meter.id().name().equals(METER_NAME_PREFIX + RECENT_PINNED))
+                .map(Timer.class::cast)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private static final class RecordingTracker {
+        private final Set<Long> initialRecordingIds = FlightRecorder.getFlightRecorder()
+                .getRecordings()
+                .stream()
+                .map(Recording::getId)
+                .collect(Collectors.toSet());
+
+        private Recording awaitNewRecording() {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            List<Recording> recordings = newRecordings();
+            while (recordings.isEmpty() && System.nanoTime() < deadline) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while awaiting JFR recording", e);
+                }
+                recordings = newRecordings();
+            }
+            assertThat("Number of new JFR recordings", recordings.size(), is(1));
+            return recordings.getFirst();
+        }
+
+        private void assertNoNewRecording(String reason) {
+            assertThat(reason, newRecordings(), empty());
+        }
+
+        private List<Recording> newRecordings() {
+            return FlightRecorder.getFlightRecorder()
+                    .getRecordings()
+                    .stream()
+                    .filter(recording -> !initialRecordingIds.contains(recording.getId()))
+                    .filter(recording -> recording.getSettings().containsKey("jdk.VirtualThreadPinned#enabled"))
+                    .toList();
+        }
+    }
+
+    private static final class BlockingStartProvider extends VThreadSystemMetersProvider {
+        private final CountDownLatch startEntered = new CountDownLatch(1);
+        private final CountDownLatch continueStart = new CountDownLatch(1);
+        private volatile boolean blockNextStart;
+
+        @Override
+        void startRecordingStream() {
+            if (blockNextStart) {
+                startEntered.countDown();
+                try {
+                    continueStart.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while blocking recording stream start", e);
+                }
+            }
+            super.startRecordingStream();
+        }
     }
 
 }

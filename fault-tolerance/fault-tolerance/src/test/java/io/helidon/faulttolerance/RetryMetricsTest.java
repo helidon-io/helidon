@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +33,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Testing.Test
 class RetryMetricsTest {
+    private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
+
+    RetryMetricsTest(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+        this.metricsFactory = metricsFactory;
+        this.meterRegistry = meterRegistry;
+    }
+
     @BeforeAll
     static void activateConfig() {
         MetricsTestSupport.activateConfig();
@@ -50,9 +59,13 @@ class RetryMetricsTest {
                 .name("flaky")     // same name
                 .build();
         retry.invoke(new FlakySupplier(2));
-        callsCounter = MetricsUtils.counter(Retry.FT_RETRY_CALLS_TOTAL, Tag.create("name", "flaky"));
+        callsCounter = MetricsTestSupport.counter(meterRegistry,
+                                            Retry.FT_RETRY_CALLS_TOTAL,
+                                            MetricsUtils.tag(metricsFactory, "name", "flaky"));
         assertThat(callsCounter.count(), is(3L));
-        retryCounter = MetricsUtils.counter(Retry.FT_RETRY_RETRIES_TOTAL, Tag.create("name", "flaky"));
+        retryCounter = MetricsTestSupport.counter(meterRegistry,
+                                            Retry.FT_RETRY_RETRIES_TOTAL,
+                                            MetricsUtils.tag(metricsFactory, "name", "flaky"));
         assertThat(retryCounter.count(), is(2L));
 
         retry = Retry.builder()
@@ -78,9 +91,13 @@ class RetryMetricsTest {
                 .delay(Duration.ofMillis(0))
                 .build();
         retry.invoke(new FlakySupplier(1));
-        callsCounter = MetricsUtils.counter(Retry.FT_RETRY_CALLS_TOTAL, Tag.create("name", retry.name()));
+        callsCounter = MetricsTestSupport.counter(meterRegistry,
+                                            Retry.FT_RETRY_CALLS_TOTAL,
+                                            MetricsUtils.tag(metricsFactory, "name", retry.name()));
         assertThat(callsCounter.count(), is(2L));
-        retryCounter = MetricsUtils.counter(Retry.FT_RETRY_RETRIES_TOTAL, Tag.create("name", retry.name()));
+        retryCounter = MetricsTestSupport.counter(meterRegistry,
+                                            Retry.FT_RETRY_RETRIES_TOTAL,
+                                            MetricsUtils.tag(metricsFactory, "name", retry.name()));
         assertThat(retryCounter.count(), is(1L));
     }
 

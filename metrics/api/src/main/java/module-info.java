@@ -23,9 +23,9 @@ module io.helidon.metrics.api {
     requires transitive io.helidon.config;
 
     requires io.helidon.builder.api;
-    requires io.helidon.service.registry;
+    requires transitive io.helidon.service.registry;
     requires static io.helidon.config.metadata;
-    requires io.helidon.common;
+    requires transitive io.helidon.common;
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.spi;
@@ -35,9 +35,7 @@ module io.helidon.metrics.api {
     uses io.helidon.metrics.spi.MetricsFactoryProvider;
     uses io.helidon.metrics.spi.MeterRegistryFormatterProvider;
     uses io.helidon.metrics.api.MetricsFactory;
-
     uses io.helidon.metrics.spi.MetersProvider;
-
     uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 
     provides io.helidon.metrics.spi.MetricsProgrammaticConfig with io.helidon.metrics.api.SeMetricsProgrammaticConfig;

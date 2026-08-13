@@ -197,6 +197,11 @@ class AimdLimitImpl extends LimitBase {
 
     @Deprecated
     void init(String originName) {
+        this.originName = originName;
+
+        if (!metrics.enabled()) {
+            return;
+        }
         init(Limit.InitializationContext.create(originName, SemaphoreMetrics.legacySocketTags(originName)));
     }
 

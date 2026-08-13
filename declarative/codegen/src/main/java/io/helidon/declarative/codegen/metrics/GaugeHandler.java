@@ -122,6 +122,7 @@ class GaugeHandler {
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
         postConstruct.addContentLine("var meters = meterRegistrySupplier.get();")
+                .addContentLine("var metricsFactory = meters.metricsFactory();")
                 .addContentLine();
 
         for (int i = 0; i < gauges.size(); i++) {
@@ -134,7 +135,7 @@ class GaugeHandler {
 
     private void addRegisterGauge(Method.Builder postConstruct, MetricsExtension.Gauge gauge, int index) {
         /*
-        this.gauge_1 = meters.getOrCreate(Gauge.builder("TestEndpoint.gaugeValue",
+        this.gauge_1 = meters.getOrCreate(metricsFactory.gaugeBuilder("TestEndpoint.gaugeValue",
                                                                    () -> endpoint.get().gaugeValue())
                                                              .description("Gauge annotation on method gaugeValue()")
                                                              .tags(tags)
@@ -146,8 +147,7 @@ class GaugeHandler {
         postConstruct.addContent("this.")
                 .addContent("gauge_" + index)
                 .addContent(" = meters.getOrCreate(")
-                .addContent(GAUGE)
-                .addContent(".builder(")
+                .addContent("metricsFactory.gaugeBuilder(")
                 .addContentLiteral(gauge.name())
                 .addContent(", () -> serviceSupplier.get().")
                 .addContent(gauge.methodName())

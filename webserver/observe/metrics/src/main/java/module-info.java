@@ -25,9 +25,9 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor(HelidonFlavor.SE)
 module io.helidon.webserver.observe.metrics {
 
-    requires io.helidon.common.context;
     requires io.helidon.http.media.json;
     requires io.helidon.metrics.api;
+    requires io.helidon.service.registry;
     requires io.helidon.webserver;
     requires java.management;
 

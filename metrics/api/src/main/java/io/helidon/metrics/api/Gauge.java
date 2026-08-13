@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.metrics.api;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import io.helidon.service.registry.Services;
+
 /**
  * Exposes as a meter a value that can increase or decrease and is updated by external logic, not by explicit invocations
  * of methods on this type.
@@ -34,9 +36,13 @@ public interface Gauge<N extends Number> extends Meter {
      * @param fn          function which, when applied to the state object, returns the gauge value
      * @param <T>         type of the state object
      * @return new builder
+     * @deprecated this method uses service registry to get a {@code MetricsFactory} instance, which may be inefficient,
+     * use {@link io.helidon.metrics.api.MetricsFactory#gaugeBuilder(String, Object, java.util.function.ToDoubleFunction)}
+     * instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static <T> Builder<Double> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
-        return MetricsFactory.getInstance().gaugeBuilder(name, stateObject, fn);
+        return Services.get(MetricsFactory.class).gaugeBuilder(name, stateObject, fn);
     }
 
     /**
@@ -46,9 +52,12 @@ public interface Gauge<N extends Number> extends Meter {
      * @param numberSupplier {@link java.util.function.Supplier} for an instance of a type which extends {@link Number}
      * @param <N>            subtype of {@code Number} which the supplier provides
      * @return new builder
+     * @deprecated this method uses service registry to get a {@code MetricsFactory} instance, which may be inefficient,
+     * use {@link io.helidon.metrics.api.MetricsFactory#gaugeBuilder(String, java.util.function.Supplier)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static <N extends Number> Builder<N> builder(String name, Supplier<N> numberSupplier) {
-        return MetricsFactory.getInstance().gaugeBuilder(name, numberSupplier);
+        return Services.get(MetricsFactory.class).gaugeBuilder(name, numberSupplier);
     }
 
     /**

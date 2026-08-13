@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,11 +33,13 @@ import static org.hamcrest.Matchers.is;
 
 class TestTimer {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = Services.get(MeterRegistry.class);
     }
 
     @Test
@@ -46,7 +48,7 @@ class TestTimer {
         long incrA = 2L;
         long incrB = 7L;
 
-        Timer.Builder builder = Timer.builder("a");
+        Timer.Builder builder = metricsFactory.timerBuilder("a");
         io.micrometer.core.instrument.Timer.Builder mBuilder = builder.unwrap(io.micrometer.core.instrument.Timer.Builder.class);
         mBuilder.distributionStatisticExpiry(Duration.ofMinutes(10));
         Timer t = meterRegistry.getOrCreate(builder);
@@ -71,7 +73,7 @@ class TestTimer {
 
     @Test
     void testUnitsInToStringMicrometer() {
-        Timer defaultedUnitTimer = meterRegistry.getOrCreate(Timer.builder("defaultedUnitTimer"));
+        Timer defaultedUnitTimer = meterRegistry.getOrCreate(metricsFactory.timerBuilder("defaultedUnitTimer"));
 
         defaultedUnitTimer.record(Duration.ofMillis(4256));
 

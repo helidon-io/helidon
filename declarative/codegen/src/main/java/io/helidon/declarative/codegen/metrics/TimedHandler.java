@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,9 +90,9 @@ class TimedHandler {
                         .type(METER_REGISTRY)
                         .name("meterRegistry")
                 )
+                .addContentLine("var metricsFactory = meterRegistry.metricsFactory();")
                 .addContent("this.timer = meterRegistry.getOrCreate(")
-                .addContent(TIMER)
-                .addContent(".builder(")
+                .addContent("metricsFactory.timerBuilder(")
                 .addContentLiteral(name)
                 .addContentLine(")")
                 .increaseContentPadding()
