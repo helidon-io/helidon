@@ -184,6 +184,8 @@ provider renders OpenAPI 3.0 or 3.1.
 The configured `document` provider is used when Helidon renders generated or merged OpenAPI documents. In `MERGE` mode,
 Helidon parses the static document and renders the result with the configured provider, so the served document version
 can differ from the static file's declared `openapi` version.
+Helidon does not provide complete conversion between OpenAPI versions. A static document which uses version-specific
+features must use a `document` provider which renders a compatible OpenAPI version.
 When `STATIC_ONLY` serves a static document, or `STATIC_FIRST` finds a static document, Helidon serves that configured
 static resource as-is and does not rewrite it to the configured `document` version.
 

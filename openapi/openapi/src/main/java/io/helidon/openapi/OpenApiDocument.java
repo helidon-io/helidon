@@ -42,7 +42,9 @@ import io.helidon.json.JsonValue;
  * Version-neutral OpenAPI document model.
  * <p>
  * The model is based on the latest supported OpenAPI shape. Version implementations render this model to their target
- * OpenAPI version, omitting or translating fields that do not exist in that target version.
+ * OpenAPI version, omitting or translating some fields that do not exist in that target version. They do not provide
+ * complete conversion between OpenAPI versions. Callers must select a target version compatible with the features used
+ * in the document.
  */
 @Api.Preview
 public final class OpenApiDocument {
