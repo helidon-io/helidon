@@ -67,6 +67,7 @@ class OpenApiDocumentMapperSupportTest {
                                                                          leadingZero: 012
                                                                          uppercaseBoolean: TRUE
                                                                          012: numericKey
+                                                                         <<: mergeKey
                                                                        values:
                                                                          boolean: true
                                                                          null: null
@@ -85,7 +86,8 @@ class OpenApiDocumentMapperSupportTest {
                                       "date", "2026-08-13",
                                       "leadingZero", "012",
                                       "uppercaseBoolean", "TRUE",
-                                      "012", "numericKey")));
+                                      "012", "numericKey",
+                                      "<<", "mergeKey")));
         assertThat(values.get("boolean"), is(true));
         assertThat(values.get("null"), nullValue());
         assertThat(values.get("integer"), is(12));

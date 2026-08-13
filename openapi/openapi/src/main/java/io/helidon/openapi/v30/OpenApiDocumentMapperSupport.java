@@ -883,9 +883,6 @@ public final class OpenApiDocumentMapperSupport {
             if ("true".equals(value) || "false".equals(value)) {
                 return Tag.BOOL;
             }
-            if ("<<".equals(value)) {
-                return Tag.MERGE;
-            }
             Tag numberTag = jsonNumberTag(value);
             return numberTag == null ? Tag.STR : numberTag;
         }
@@ -954,7 +951,7 @@ public final class OpenApiDocumentMapperSupport {
         @Override
         protected void constructMapping2ndStep(MappingNode node, Map<Object, Object> mapping) {
             node.getValue().forEach(tuple -> {
-                if (tuple.getKeyNode() instanceof ScalarNode && !Tag.MERGE.equals(tuple.getKeyNode().getTag())) {
+                if (tuple.getKeyNode() instanceof ScalarNode) {
                     tuple.getKeyNode().setTag(Tag.STR);
                 }
             });
