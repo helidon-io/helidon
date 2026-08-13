@@ -72,6 +72,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
     private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
     private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
     private static final HeaderName CSP_HEADER_NAME = HeaderNames.create("Content-Security-Policy");
+    private static final HeaderName RESPONSE_SIGNATURE_NAME = HeaderNames.create("Response-Signature");
     private static final HeaderName REENTRY_RESULT_HEADER_NAME = HeaderNames.create("reentry-result");
     private static final HeaderName CALLBACK_COUNT_HEADER_NAME = HeaderNames.create("callback-count");
     private static HttpClient httpClient;
@@ -114,6 +115,8 @@ class Http2ErrorHandlingWithOutputStreamTest {
                         res.beforeSend(() -> {
                             res.header(CSP_HEADER_NAME, "default-src 'none'");
                             res.header(HeaderNames.CONTENT_ENCODING, "base64");
+                            res.header(HeaderNames.TRAILER, RESPONSE_SIGNATURE_NAME.defaultCase());
+                            res.beforeTrailers(trailers -> trailers.set(RESPONSE_SIGNATURE_NAME, "signed"));
                         });
                         res.streamFilter(Base64.getEncoder()::wrap);
                     } else if (req.path().path().equals("/get-outputStream")) {
@@ -249,16 +252,18 @@ class Http2ErrorHandlingWithOutputStreamTest {
     }
 
     @Test
-    void testCrossCuttingResponseHooksSurviveErrorReplacement() {
-        var response = request("/get-cross-cutting-error");
+    void testCrossCuttingResponseHooksSurviveErrorReplacement(WebClient webClient) {
+        Http2Client client = webClient.client(Http2Client.PROTOCOL);
+        ClientResponseTyped<String> response = client.get("/get-cross-cutting-error")
+                .header(HeaderValues.TE_TRAILERS)
+                .request(String.class);
 
         assertAll(
-                () -> assertThat(response.headers().firstValue(CSP_HEADER_NAME.lowerCase()),
-                                 is(Optional.of("default-src 'none'"))),
-                () -> assertThat(response.headers().firstValue(HeaderNames.CONTENT_ENCODING.lowerCase()),
-                                 is(Optional.of("base64"))),
-                () -> assertThat(response.body(),
-                                 is(Base64.getEncoder().encodeToString("TeaPotIAm".getBytes(StandardCharsets.UTF_8))))
+                () -> assertThat(response.headers().get(CSP_HEADER_NAME).get(), is("default-src 'none'")),
+                () -> assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).get(), is("base64")),
+                () -> assertThat(response.entity(),
+                                 is(Base64.getEncoder().encodeToString("TeaPotIAm".getBytes(StandardCharsets.UTF_8)))),
+                () -> assertThat(response.trailers().get(RESPONSE_SIGNATURE_NAME).get(), is("signed"))
         );
     }
 

@@ -54,6 +54,7 @@ class ErrorHandlingWithOutputStreamTest {
     private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
     private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
     private static final HeaderName CSP_HEADER_NAME = HeaderNames.create("Content-Security-Policy");
+    private static final HeaderName RESPONSE_SIGNATURE_NAME = HeaderNames.create("Response-Signature");
 
     private final Http1Client client;
 
@@ -69,6 +70,8 @@ class ErrorHandlingWithOutputStreamTest {
                         res.beforeSend(() -> {
                             res.header(CSP_HEADER_NAME, "default-src 'none'");
                             res.header(HeaderNames.CONTENT_ENCODING, "base64");
+                            res.header(HeaderNames.TRAILER, RESPONSE_SIGNATURE_NAME.defaultCase());
+                            res.beforeTrailers(trailers -> trailers.set(RESPONSE_SIGNATURE_NAME, "signed"));
                         });
                         res.streamFilter(Base64.getEncoder()::wrap);
                     } else if (req.path().path().equals("/get-outputStream")) {
@@ -147,16 +150,19 @@ class ErrorHandlingWithOutputStreamTest {
     }
 
     @Test
-    void testCrossCuttingResponseHooksSurviveErrorReplacement() {
-        try (var response = client.get("/get-cross-cutting-error").request()) {
-            assertAll(
-                    () -> assertThat(response.headers().get(CSP_HEADER_NAME).get(), is("default-src 'none'")),
-                    () -> assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).get(), is("base64")),
-                    () -> assertThat(response.entity().as(String.class),
-                                     is(Base64.getEncoder()
-                                                .encodeToString("CustomErrorContent".getBytes(StandardCharsets.UTF_8))))
-            );
-        }
+    void testCrossCuttingResponseHooksSurviveErrorReplacement(WebClient webClient) {
+        ClientResponseTyped<String> response = webClient.get("/get-cross-cutting-error")
+                .header(HeaderValues.TE_TRAILERS)
+                .request(String.class);
+
+        assertAll(
+                () -> assertThat(response.headers().get(CSP_HEADER_NAME).get(), is("default-src 'none'")),
+                () -> assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).get(), is("base64")),
+                () -> assertThat(response.entity(),
+                                 is(Base64.getEncoder()
+                                            .encodeToString("CustomErrorContent".getBytes(StandardCharsets.UTF_8)))),
+                () -> assertThat(response.trailers().get(RESPONSE_SIGNATURE_NAME).get(), is("signed"))
+        );
     }
 
     @Test

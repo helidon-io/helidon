@@ -277,6 +277,7 @@ public interface ServerResponse {
      * output stream.
      * The callback is associated with the current response entity and is cleared if error handling replaces that entity
      * before it is sent.
+     * A response-scoped policy should use {@link #beforeSend(Runnable)} to register a fresh callback for each entity.
      *
      * @param beforeTrailers consumer of mutable trailers
      * @return this instance
