@@ -219,10 +219,8 @@ final class OpenApiSecuritySchemeCodegen {
         Annotations.findFirst(containerType, annotations)
                 .flatMap(Annotation::annotationValues)
                 .ifPresent(result::addAll);
-        if (result.isEmpty()) {
-            Annotations.findFirst(annotationType, annotations)
-                    .ifPresent(result::add);
-        }
+        Annotations.findFirst(annotationType, annotations)
+                .ifPresent(result::add);
         return result;
     }
 

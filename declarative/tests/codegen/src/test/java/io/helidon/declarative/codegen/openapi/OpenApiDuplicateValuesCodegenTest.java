@@ -408,6 +408,35 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void securitySchemeContainerAndDirectAnnotationAreCombined() throws IOException {
+        var result = compile("openapi-combined-security-schemes", """
+                @OpenApi.SecuritySchemes({
+                        @OpenApi.SecurityScheme(name = "bearerAuth", type = "http", scheme = "bearer")
+                })
+                @OpenApi.SecurityScheme(name = "apiKeyAuth",
+                                        type = "apiKey",
+                                        in = "header",
+                                        apiKeyName = "Authorization")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+        """);
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".securityScheme(\"bearerAuth\""));
+        assertThat(generated, containsString(".securityScheme(\"apiKeyAuth\""));
+    }
+
+    @Test
     void securitySchemeCannotUseDuplicateNameAcrossTypedAndGenericAnnotations() {
         var result = compile("openapi-duplicate-typed-security-scheme", """
                 @OpenApi.SecurityScheme(name = "bearerAuth", type = "http", scheme = "bearer")
