@@ -541,15 +541,14 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 clientRequest.followRedirects(false);
                 Http1ClientResponseImpl response;
                 if (sendEntity && !sendEmptyEntity) {
-                    response = (Http1ClientResponseImpl) clientRequest
-                            .outputStreamRedirect(true)
-                            .header(HeaderValues.EXPECT_100)
+                    clientRequest.outputStreamRedirect(true);
+                    clientRequest.header(HeaderValues.EXPECT_100)
                             .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
-                            .readTimeout(originalRequest.readContinueTimeout())
-                            .request();
+                            .readTimeout(originalRequest.readContinueTimeout());
+                    response = clientRequest.redirectProbe();
                     response.connection().readTimeout(originalRequest.readTimeout());
                 } else {
-                    response = (Http1ClientResponseImpl) clientRequest.request();
+                    response = clientRequest.redirectProbe();
                 }
                 lastRequest = clientRequest;
 

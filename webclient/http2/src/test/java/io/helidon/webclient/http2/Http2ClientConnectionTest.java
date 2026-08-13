@@ -47,6 +47,7 @@ import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameListener;
 import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
+import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanEncoder;
 import io.helidon.http.http2.Http2RstStream;
@@ -57,6 +58,7 @@ import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClient;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -69,7 +71,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -918,6 +922,7 @@ class Http2ClientConnectionTest {
 
             Http2ClientConnection connection = connectionFuture.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             Http2ClientStream failingStream = connection.createStream(STREAM_CONFIG);
+            assertTrue(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
 
             test.failWrites();
             assertThrows(UncheckedIOException.class, () -> failingStream.writeHeaders(requestHeaders(), false));
@@ -927,6 +932,58 @@ class Http2ClientConnectionTest {
             assertNotNull(recoveredStream);
             recoveredStream.close();
             connection.close();
+        }
+    }
+
+    @Test
+    void retiredConnectionDrainsExistingStreamBeforeClosing() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream existingStream = connection.createStream(STREAM_CONFIG);
+            existingStream.writeHeaders(requestHeaders(), false);
+            assertThat(existingStream.streamId(), is(1));
+            verify(test.dataWriter, timeout(TEST_WAIT_TIMEOUT.toMillis()).times(3)).writeNow(any(BufferData.class));
+            clearInvocations(test.dataWriter);
+
+            connection.retire();
+
+            assertNull(connection.tryStream(STREAM_CONFIG));
+            verify(test.clientConnection, never()).closeResource();
+            verify(test.dataWriter, never()).writeNow(any(BufferData.class));
+
+            existingStream.close();
+
+            test.assertConnectionClosed();
+            ArgumentCaptor<BufferData> goAwayFrame = ArgumentCaptor.forClass(BufferData.class);
+            verify(test.dataWriter, times(1)).writeNow(goAwayFrame.capture());
+
+            BufferData frameData = goAwayFrame.getValue();
+            byte[] headerBytes = new byte[Http2FrameHeader.LENGTH];
+            frameData.read(headerBytes);
+            Http2FrameHeader frameHeader = Http2FrameHeader.create(BufferData.create(headerBytes));
+            assertThat(frameHeader.type(), is(Http2FrameType.GO_AWAY));
+            assertThat(frameHeader.streamId(), is(0));
+
+            byte[] payloadBytes = new byte[frameHeader.length()];
+            frameData.read(payloadBytes);
+            Http2GoAway goAway = Http2GoAway.create(BufferData.create(payloadBytes));
+            assertThat(goAway.lastStreamId(), is(0));
+        }
+    }
+
+    @Test
+    void retiredPreUpgradeConnectionClosesWithoutWritingGoAway() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            Http2ClientConnection connection = new Http2ClientConnection(test.client,
+                                                                          test.clientConnection,
+                                                                          _ -> { });
+            clearInvocations(test.dataWriter);
+
+            connection.retire();
+
+            test.assertConnectionClosed();
+            verify(test.dataWriter, never()).writeNow(any(BufferData.class));
         }
     }
 

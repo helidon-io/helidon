@@ -344,13 +344,18 @@ public class Http2ClientConnection {
      * successful exchanges and after failures during stream startup.
      */
     void releaseReservedStream() {
+        boolean finishRetirement;
         reservedStreamsLock.lock();
         try {
             if (reservedStreams > 0) {
                 reservedStreams--;
             }
+            finishRetirement = reservedStreams == 0 && state.get() == State.RETIRING;
         } finally {
             reservedStreamsLock.unlock();
+        }
+        if (finishRetirement) {
+            finishRetirement();
         }
     }
 
@@ -471,6 +476,27 @@ public class Http2ClientConnection {
         closeConnection();
     }
 
+    void retire() {
+        initialSettingsLatch.countDown();
+        if (!clientPrefaceSent) {
+            closeConnection();
+            return;
+        }
+        boolean finishRetirement;
+        reservedStreamsLock.lock();
+        try {
+            if (!state.compareAndSet(State.OPEN, State.RETIRING)) {
+                return;
+            }
+            finishRetirement = reservedStreams == 0;
+        } finally {
+            reservedStreamsLock.unlock();
+        }
+        if (finishRetirement) {
+            finishRetirement();
+        }
+    }
+
     /**
      * Immediately closes this connection without attempting to send an HTTP/2 GOAWAY frame.
      */
@@ -493,6 +519,23 @@ public class Http2ClientConnection {
             } finally {
                 closeListener.accept(this);
             }
+        }
+    }
+
+    private void finishRetirement() {
+        if (!state.compareAndSet(State.RETIRING, State.GO_AWAY)) {
+            return;
+        }
+        try {
+            Http2Settings http2Settings = Http2Settings.create();
+            Http2GoAway frame = new Http2GoAway(0,
+                                                Http2ErrorCode.NO_ERROR,
+                                                "Connection target retired");
+            writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
+        } catch (Throwable e) {
+            ctx.log(LOGGER, TRACE, "Failed to send HTTP/2 GOAWAY while retiring connection.", e);
+        } finally {
+            closeConnection();
         }
     }
 
@@ -594,7 +637,7 @@ public class Http2ClientConnection {
     private boolean reserveStream() {
         reservedStreamsLock.lock();
         try {
-            if (reservedStreams >= peerMaxConcurrentStreams) {
+            if (state.get() != State.OPEN || reservedStreams >= peerMaxConcurrentStreams) {
                 return false;
             }
             reservedStreams++;
@@ -1009,6 +1052,7 @@ public class Http2ClientConnection {
     private enum State {
         CLOSED(true),
         GO_AWAY(true),
+        RETIRING(true),
         OPEN(false);
 
         private final boolean closed;

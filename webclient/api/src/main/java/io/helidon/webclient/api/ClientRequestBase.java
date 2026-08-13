@@ -99,6 +99,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private Tls tls;
     private SniConfig sni;
     private Proxy proxy;
+    private ProxyRoute selectedProxyRoute;
     private boolean keepAlive;
     private ClientConnection connection;
     private Boolean sendExpectContinue;
@@ -383,6 +384,14 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         return identity();
     }
 
+    /**
+     * Clear an internally supplied connection without changing other request state.
+     */
+    @Api.Internal
+    public final void clearConnection() {
+        this.connection = null;
+    }
+
     @Override
     public T keepAlive(boolean keepAlive) {
         this.keepAlive = keepAlive;
@@ -404,30 +413,53 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T proxy(Proxy proxy) {
         this.proxy = Objects.requireNonNull(proxy);
+        clearSelectedProxyRoute();
         return identity();
     }
 
     @Override
     public R request() {
+        try {
+            return requestWithoutRouteCleanup();
+        } finally {
+            clearSelectedProxyRoute();
+        }
+    }
+
+    /**
+     * Submit an internal request that participates in the enclosing top-level request's selected route.
+     *
+     * @return response
+     */
+    @Api.Internal
+    protected final R requestWithoutRouteCleanup() {
         additionalHeaders();
         return validateAndSubmit(BufferData.EMPTY_BYTES);
     }
 
     @Override
     public R submit(Object entity) {
-        if (!(entity instanceof byte[] bytes && bytes.length == 0)) {
-            rejectHeadWithEntity();
+        try {
+            if (!(entity instanceof byte[] bytes && bytes.length == 0)) {
+                rejectHeadWithEntity();
+            }
+            additionalHeaders();
+            return validateAndSubmit(entity);
+        } finally {
+            clearSelectedProxyRoute();
         }
-        additionalHeaders();
-        return validateAndSubmit(entity);
     }
 
     @Override
     public R outputStream(OutputStreamHandler outputStreamConsumer) {
-        rejectHeadWithEntity();
-        additionalHeaders();
-        validateRequest();
-        return doOutputStream(outputStreamConsumer);
+        try {
+            rejectHeadWithEntity();
+            additionalHeaders();
+            validateRequest();
+            return doOutputStream(outputStreamConsumer);
+        } finally {
+            clearSelectedProxyRoute();
+        }
     }
 
     @Override
@@ -486,6 +518,24 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public Proxy proxy() {
         return proxy;
+    }
+
+    @Override
+    @Api.Internal
+    public Optional<ProxyRoute> selectedProxyRoute() {
+        return Optional.ofNullable(selectedProxyRoute);
+    }
+
+    @Override
+    @Api.Internal
+    public void selectedProxyRoute(ProxyRoute proxyRoute) {
+        this.selectedProxyRoute = Objects.requireNonNull(proxyRoute);
+    }
+
+    @Override
+    @Api.Internal
+    public void clearSelectedProxyRoute() {
+        this.selectedProxyRoute = null;
     }
 
     @Override

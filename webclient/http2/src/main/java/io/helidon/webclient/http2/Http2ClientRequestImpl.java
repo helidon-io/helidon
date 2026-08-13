@@ -23,9 +23,11 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Method;
+import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
+import io.helidon.webclient.api.ProxyRoute;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http1.Http1Client;
@@ -100,9 +102,11 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
         tls(request.tls());
+        proxy(request.proxy());
         request.sni().ifPresent(this::sni);
         if (sameOrigin(request.resolvedUri(), clientUri)) {
             request.address().ifPresent(this::address);
+            request.selectedProxyRoute().ifPresent(this::selectedProxyRoute);
         }
 
         this.priority(request.priority);
@@ -113,6 +117,22 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         this.readContinueTimeout(request.readContinueTimeout());
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         this.outputStreamRedirect(request.outputStreamRedirect);
+    }
+
+    @Override
+    public void selectedProxyRoute(ProxyRoute proxyRoute) {
+        super.selectedProxyRoute(proxyRoute);
+        if (delegate != null) {
+            delegate.selectedProxyRoute(proxyRoute);
+        }
+    }
+
+    @Override
+    public void clearSelectedProxyRoute() {
+        super.clearSelectedProxyRoute();
+        if (delegate != null) {
+            delegate.clearSelectedProxyRoute();
+        }
     }
 
     @Override
@@ -200,7 +220,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     }
 
     boolean ownsExplicitConnection() {
-        return delegate != null && delegate.connection().isEmpty() && connection().isPresent();
+        ClientConnection current = connection().orElse(null);
+        return delegate != null
+                && current != null
+                && delegate.connection().orElse(null) != current;
     }
 
     List<String> tcpProtocolIds() {
@@ -235,6 +258,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                                                entity);
 
         return invokeWithServices(httpCall, whenSent, whenComplete);
+    }
+
+    Http2ClientResponseImpl redirectProbe() {
+        return (Http2ClientResponseImpl) requestWithoutRouteCleanup();
     }
 
     private Http2ClientResponseImpl invokeWithServices(Http2CallChainBase callChain,

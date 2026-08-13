@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package io.helidon.webclient.tests;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientRequest;
@@ -38,9 +43,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.Method.GET;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ServerTest
@@ -51,7 +58,7 @@ class HttpProxyTest {
     private HttpProxy httpProxy;
 
     private final HttpClient<?> clientHttp1;
-    private final HttpClient<?> clientHttp2;
+    private final Http2Client clientHttp2;
 
     HttpProxyTest(WebServer server) {
         String uri = "http://localhost:" + server.port();
@@ -184,6 +191,63 @@ class HttpProxyTest {
             ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, proxyPort)));
             Proxy proxy = Proxy.create();
             successVerify(proxy, clientHttp2);
+        } finally {
+            ProxySelector.setDefault(original);
+        }
+    }
+
+    @Test
+    void priorKnowledgeHttp2RejectsForwardProxy() {
+        Proxy proxy = Proxy.builder()
+                .type(ProxyType.HTTP)
+                .host(PROXY_HOST)
+                .port(proxyPort)
+                .build();
+        var request = clientHttp2.get("/get")
+                .proxy(proxy)
+                .priorKnowledge(true);
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, request::request);
+
+        assertThat(failure.getMessage(), containsString("negotiated HTTP/1.1 fallback is not enabled"));
+        assertThat(httpProxy.counter(), is(0));
+    }
+
+    @Test
+    void reusedHttp2RequestReselectsSystemProxyPerInvocation() {
+        ProxySelector original = ProxySelector.getDefault();
+        AtomicInteger httpSelections = new AtomicInteger();
+        ProxySelector.setDefault(new ProxySelector() {
+            @Override
+            public List<java.net.Proxy> select(URI uri) {
+                if (!"http".equals(uri.getScheme())) {
+                    return List.of(java.net.Proxy.NO_PROXY);
+                }
+                if (httpSelections.getAndIncrement() == 0) {
+                    return List.of(java.net.Proxy.NO_PROXY);
+                }
+                return List.of(new java.net.Proxy(java.net.Proxy.Type.HTTP,
+                                                  InetSocketAddress.createUnresolved(PROXY_HOST, proxyPort)));
+            }
+
+            @Override
+            public void connectFailed(URI uri, SocketAddress address, IOException failure) {
+            }
+        });
+        try {
+            ClientRequest<?> request = clientHttp2.get("/get").proxy(Proxy.create());
+            try (HttpClientResponse response = request.request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
+            }
+            assertThat(httpSelections.get(), is(1));
+            assertThat(httpProxy.counter(), is(0));
+            try (HttpClientResponse response = request.request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
+            }
+            assertThat(httpSelections.get(), is(2));
+            assertThat(httpProxy.counter(), is(1));
         } finally {
             ProxySelector.setDefault(original);
         }

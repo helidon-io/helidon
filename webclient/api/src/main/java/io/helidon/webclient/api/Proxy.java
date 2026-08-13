@@ -38,10 +38,13 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
+import io.helidon.common.uri.UriAuthority;
+import io.helidon.common.uri.UriHost;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -50,6 +53,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.webclient.spi.DnsResolver;
 
 /**
  * A definition of a proxy server to use for outgoing requests.
@@ -58,10 +62,6 @@ public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
 
-    /**
-     * No proxy instance.
-     */
-    private static final Proxy NO_PROXY = new Proxy(builder().type(ProxyType.NONE));
     private static final Pattern PORT_PATTERN = Pattern.compile(".*:(\\d+)");
     private static final Pattern IP_V4 = Pattern.compile("^(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\."
                                                                  + "(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}$");
@@ -74,6 +74,10 @@ public class Proxy {
 
     private static final LruCache<String, Boolean> IVP6_HOST_MATCH_RESULTS = LruCache.create(100);
     private static final LruCache<String, Boolean> IVP6_IDENTIFIER_MATCH_RESULTS = LruCache.create(100);
+    /**
+     * No proxy instance.
+     */
+    private static final Proxy NO_PROXY = new Proxy(builder().type(ProxyType.NONE));
 
     private final ProxyType type;
     private final String host;
@@ -84,6 +88,7 @@ public class Proxy {
     private final ProxySelector systemProxySelector;
     private final Optional<Header> proxyAuthHeader;
     private final boolean forceHttpConnect;
+    private final boolean ipNoProxyConfigured;
 
     private Proxy(Proxy.Builder builder) {
         this.host = builder.host();
@@ -101,9 +106,24 @@ public class Proxy {
         if (type == ProxyType.SYSTEM) {
             this.noProxy = inetSocketAddress -> true;
             this.systemProxySelector = ProxySelector.getDefault();
+            this.ipNoProxyConfigured = false;
         } else {
-            this.noProxy = prepareNoProxy(builder.noProxyHosts());
+            Set<String> noProxyHosts = builder.noProxyHosts();
+            this.noProxy = prepareNoProxy(noProxyHosts);
             this.systemProxySelector = null;
+            boolean ipNoProxyConfigured = false;
+            for (String noProxyHost : noProxyHosts) {
+                String hostPart = noProxyHost;
+                Matcher portMatcher = PORT_PATTERN.matcher(noProxyHost);
+                if (portMatcher.matches()) {
+                    hostPart = noProxyHost.substring(0, noProxyHost.lastIndexOf(':'));
+                }
+                if (isIpV4(hostPart) || isIpV6Identifier(hostPart)) {
+                    ipNoProxyConfigured = true;
+                    break;
+                }
+            }
+            this.ipNoProxyConfigured = ipNoProxyConfigured;
         }
 
         if (username.isPresent()) {
@@ -181,8 +201,19 @@ public class Proxy {
         }
 
         if (simple) {
-            return address -> noProxyHosts.contains(address.getHostName())
-                    || noProxyHosts.contains(address.getHostName() + ":" + address.getPort());
+            return address -> {
+                String host = address.getHostString();
+                if (noProxyHosts.contains(host) || noProxyHosts.contains(host + ":" + address.getPort())) {
+                    return true;
+                }
+                InetAddress inetAddress = address.getAddress();
+                if (inetAddress == null) {
+                    return false;
+                }
+                String ipAddress = resolveHost(inetAddress.getHostAddress());
+                return noProxyHosts.contains(ipAddress)
+                        || noProxyHosts.contains(ipAddress + ":" + address.getPort());
+            };
         }
 
         List<BiFunction<String, Integer, Boolean>> hostMatchers = new LinkedList<>();
@@ -279,6 +310,34 @@ public class Proxy {
     }
 
     /**
+     * Create a TCP socket for one preselected and resolved route.
+     *
+     * @param webClient web client used for an HTTP CONNECT exchange
+     * @param target resolved physical target
+     * @param socketOptions socket options
+     * @return connected socket
+     */
+    @Api.Internal
+    public Socket tcpSocket(WebClient webClient,
+                            ResolvedClientTarget target,
+                            SocketOptions socketOptions) {
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(socketOptions, "socketOptions");
+        ProxyRoute route = target.proxyRoute();
+        if (!route.belongsTo(this)) {
+            throw new IllegalArgumentException("Resolved target belongs to a different proxy policy");
+        }
+        if (route.direct()) {
+            return connect(new Socket(), target.localAddress(), target.peerAddress(), socketOptions);
+        }
+        if (route.systemProxyType() != null) {
+            Socket socket = new Socket(new java.net.Proxy(route.systemProxyType(), target.peerAddress()));
+            return connect(socket, target.localAddress(), target.destinationAddress(), socketOptions);
+        }
+        return connectToProxy(webClient, target, this);
+    }
+
+    /**
      * Get proxy type.
      *
      * @return the proxy type
@@ -310,6 +369,97 @@ public class Proxy {
             return !proxies.isEmpty() && !proxies.get(0).equals(java.net.Proxy.NO_PROXY);
         }
         return false;
+    }
+
+    /**
+     * Resolve configured proxy policy to one effective route for a logical request target.
+     * A system selector is invoked exactly once and its selected route is retained by the returned value.
+     * Configured {@code no-proxy} rules that contain only host names are evaluated without DNS lookup. IP-based rules are
+     * evaluated against the supplied host string by this overload; WebClient's connection-target resolution also evaluates
+     * them against the concrete DNS address used for the connection.
+     *
+     * @param scheme logical request scheme
+     * @param host logical request host
+     * @param port logical request port
+     * @param tls whether the application connection uses TLS
+     * @return effective route
+     */
+    @Api.Internal
+    public ProxyRoute effectiveRoute(String scheme, String host, int port, boolean tls) {
+        return effectiveRoute(scheme, host, port, tls, null, null);
+    }
+
+    ProxyRoute effectiveRoute(String scheme,
+                              String host,
+                              int port,
+                              boolean tls,
+                              DnsResolver dnsResolver,
+                              DnsAddressLookup dnsAddressLookup) {
+        Objects.requireNonNull(scheme, "scheme");
+        Objects.requireNonNull(host, "host");
+        if (type == null || type == ProxyType.NONE) {
+            return ProxyRoute.direct(this, scheme, host, port, tls);
+        }
+        if (type == ProxyType.HTTP) {
+            if (isNoHosts(InetSocketAddress.createUnresolved(host, port))) {
+                if (isIpV4(host) || isIpV6Host(host) || isIpV6Identifier(host)) {
+                    return ProxyRoute.direct(this, scheme, host, port, tls, InetAddress.ofLiteral(resolveHost(host)));
+                }
+                return ProxyRoute.direct(this, scheme, host, port, tls);
+            }
+            if (ipNoProxyConfigured && dnsResolver != null) {
+                InetAddress address = dnsResolver.resolveAddress(host,
+                                                                 Objects.requireNonNull(dnsAddressLookup,
+                                                                                        "dnsAddressLookup"));
+                if (isNoHosts(new InetSocketAddress(address, port))) {
+                    return ProxyRoute.direct(this, scheme, host, port, tls, address);
+                }
+            }
+            ProxyRoute.Kind routeKind = forceHttpConnect || tls || username.isPresent()
+                    ? ProxyRoute.Kind.HTTP_TUNNEL
+                    : ProxyRoute.Kind.HTTP_FORWARD;
+            return ProxyRoute.configuredHttp(this,
+                                             routeKind,
+                                             InetSocketAddress.createUnresolved(this.host, this.port),
+                                             scheme,
+                                             host,
+                                             port,
+                                             tls);
+        }
+        if (systemProxySelector == null) {
+            return ProxyRoute.direct(this, scheme, host, port, tls);
+        }
+        UriAuthority authority = UriAuthority.create(UriHost.create(host), port);
+        List<java.net.Proxy> selected = systemProxySelector.select(URI.create(scheme + "://" + authority));
+        if (selected == null || selected.isEmpty()) {
+            return ProxyRoute.direct(this, scheme, host, port, tls);
+        }
+        java.net.Proxy systemProxy = selected.get(0);
+        if (systemProxy == null
+                || systemProxy == java.net.Proxy.NO_PROXY
+                || systemProxy.type() == java.net.Proxy.Type.DIRECT) {
+            return ProxyRoute.direct(this, scheme, host, port, tls);
+        }
+        if (!(systemProxy.address() instanceof InetSocketAddress)) {
+            throw new IllegalArgumentException("System proxy address must be an InetSocketAddress");
+        }
+        return switch (systemProxy.type()) {
+            case HTTP -> ProxyRoute.system(this,
+                                           ProxyRoute.Kind.HTTP_TUNNEL,
+                                           systemProxy,
+                                           scheme,
+                                           host,
+                                           port,
+                                           tls);
+            case SOCKS -> ProxyRoute.system(this,
+                                            ProxyRoute.Kind.SOCKS,
+                                            systemProxy,
+                                            scheme,
+                                            host,
+                                            port,
+                                            tls);
+            case DIRECT -> ProxyRoute.direct(this, scheme, host, port, tls);
+        };
     }
 
     /**
@@ -376,6 +526,7 @@ public class Proxy {
         Proxy proxy = (Proxy) o;
         return port == proxy.port
                 && type == proxy.type
+                && forceHttpConnect == proxy.forceHttpConnect
                 && Objects.equals(systemProxySelector, proxy.systemProxySelector)
                 && Objects.equals(host, proxy.host)
                 && Objects.equals(noProxy, proxy.noProxy)
@@ -385,7 +536,35 @@ public class Proxy {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, host, port, noProxy, username, password);
+        return Objects.hash(type, host, port, noProxy, username, password, forceHttpConnect);
+    }
+
+    private static Socket connect(Socket socket,
+                                  Optional<InetSocketAddress> localAddress,
+                                  InetSocketAddress destination,
+                                  SocketOptions socketOptions) {
+        try {
+            socketOptions.configureSocket(socket);
+            if (localAddress.isPresent()) {
+                socket.bind(localAddress.get());
+            }
+            socket.connect(destination, (int) socketOptions.connectTimeout().toMillis());
+            return socket;
+        } catch (IOException e) {
+            try {
+                socket.close();
+            } catch (IOException closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            throw new UncheckedIOException(e);
+        } catch (RuntimeException | Error e) {
+            try {
+                socket.close();
+            } catch (IOException closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            throw e;
+        }
     }
 
     private static String resolveHost(String host) {
@@ -477,6 +656,67 @@ public class Proxy {
             }
             proxy.proxyAuthHeader.ifPresent(request::header);
             // we cannot close the response, as that would close the connection
+            HttpClientResponse response = request.request();
+            if (response.status().family() != Status.Family.SUCCESSFUL) {
+                response.close();
+                throw new IllegalStateException("Proxy sent wrong HTTP response code: " + response.status());
+            }
+        }
+        return connection.socket();
+    }
+
+    private static Socket connectToProxy(WebClient webClient,
+                                         ResolvedClientTarget target,
+                                         Proxy proxy) {
+        WebClientConfig clientConfig = webClient.prototype();
+        InetSocketAddress configuredProxy = target.proxyRoute().proxyAddress().orElseThrow();
+        ConnectionKey proxyConnectionKey = ConnectionKey.create("http",
+                                                                configuredProxy.getHostString(),
+                                                                configuredProxy.getPort(),
+                                                                NO_TLS,
+                                                                clientConfig.dnsResolver(),
+                                                                clientConfig.dnsAddressLookup(),
+                                                                NO_PROXY);
+        UriAuthority proxyAuthority = UriAuthority.create(UriHost.create(proxyConnectionKey.host()),
+                                                          configuredProxy.getPort());
+        ProxyRoute directRoute = proxyConnectionKey.proxy()
+                .effectiveRoute("http", configuredProxy.getHostString(), configuredProxy.getPort(), false);
+        ClientConnectionTarget proxyTarget = target.localAddress()
+                .map(localAddress -> ClientConnectionTarget.create(proxyConnectionKey,
+                                                                   "http",
+                                                                   proxyAuthority,
+                                                                   directRoute,
+                                                                   localAddress,
+                                                                   proxyConnectionKey.tls().generation()))
+                .orElseGet(() -> ClientConnectionTarget.create(proxyConnectionKey,
+                                                               "http",
+                                                               proxyAuthority,
+                                                               directRoute,
+                                                               proxyConnectionKey.tls().generation()));
+        ResolvedClientTarget resolvedProxy = ResolvedClientTarget.direct(proxyTarget,
+                                                                         proxyAuthority,
+                                                                         target.peerAddress(),
+                                                                         target.networkGeneration());
+        TcpClientConnection connection = TcpClientConnection.create(webClient,
+                                                                    resolvedProxy,
+                                                                    List.of(),
+                                                                    it -> false,
+                                                                    it -> {
+                                                                    })
+                .connect();
+        if (target.proxyRoute().kind() == ProxyRoute.Kind.HTTP_TUNNEL) {
+            HttpClientRequest request = webClient.method(Method.CONNECT)
+                    .followRedirects(false)
+                    .connection(connection)
+                    .uri("http://" + proxyAuthority)
+                    .protocolId("http/1.1")
+                    .header(HeaderNames.HOST, target.routeAuthority().toString())
+                    .accept(MediaTypes.WILDCARD);
+            if (clientConfig.keepAlive()) {
+                request.header(HeaderValues.CONNECTION_KEEP_ALIVE)
+                    .header(ClientRequestBase.PROXY_CONNECTION);
+            }
+            proxy.proxyAuthHeader.ifPresent(request::header);
             HttpClientResponse response = request.request();
             if (response.status().family() != Status.Family.SUCCESSFUL) {
                 response.close();
@@ -635,7 +875,8 @@ public class Proxy {
          * <tr>
          *     <td>no-proxy</td>
          *     <td>{@code no default}</td>
-         *     <td>Contains list of the hosts which should be excluded from using proxy</td>
+         *     <td>Contains host or IP patterns which should be excluded from using proxy. IP patterns require local DNS
+         *     resolution of host names and bind a direct route to the matching address.</td>
          * </tr>
          * </table>
          *
@@ -743,6 +984,8 @@ public class Proxy {
          *     <li>Domain name and all sub-domains, such as {@code .helidon.io} (leading dot)</li>
          *     <li>Combination of all options from above with a port, such as {@code .helidon.io:80}</li>
          * </ul>
+         * An IP address pattern requires local DNS resolution of host-name targets. When the resolved address matches,
+         * WebClient selects a direct route and retains that address for the connection attempt.
          *
          * @param noProxyHost to exclude from proxying
          * @return updated builder instance

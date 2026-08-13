@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -49,9 +50,13 @@ import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.ProxyRoute;
+import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -156,8 +161,55 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         originalRequest.sanitizeRedirectHeaders(uri, headers);
         headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
 
+        var address = originalRequest.address();
+        UnixDomainSocketAddress udsAddress = address.filter(a -> a instanceof UnixDomainSocketAddress)
+                .map(UnixDomainSocketAddress.class::cast)
+                .orElse(null);
+        ClientConnectionTarget connectionTarget = null;
+        ClientConnection suppliedConnection = connection;
+        if (connection != null) {
+            ConnectionKey connectionKey = Http1ConnectionCache.connectionKey(originalRequest,
+                                                                              uri,
+                                                                              headers,
+                                                                              http1Client.clientConfig());
+            originalRequest.clearSelectedProxyRoute();
+            Optional<ProxyRoute> matchingRoute = ClientConnectionTarget.matchingRoute(connection,
+                                                                                      connectionKey,
+                                                                                      uri,
+                                                                                      headers);
+            matchingRoute.ifPresent(originalRequest::selectedProxyRoute);
+            if (originalRequest.ownsExplicitConnection() && matchingRoute.isEmpty()) {
+                originalRequest.clearConnection();
+                suppliedConnection.closeResource();
+                suppliedConnection = null;
+            }
+        }
+        if (suppliedConnection == null && udsAddress == null) {
+            ConnectionKey connectionKey = Http1ConnectionCache.connectionKey(originalRequest,
+                                                                              uri,
+                                                                              headers,
+                                                                              http1Client.clientConfig());
+            connectionTarget = originalRequest.selectedProxyRoute()
+                    .map(route -> ClientConnectionTarget.create(connectionKey, uri, headers, route))
+                    .orElseGet(() -> ClientConnectionTarget.create(connectionKey, uri, headers));
+            originalRequest.selectedProxyRoute(connectionTarget.proxyRoute());
+        } else if (suppliedConnection == null) {
+            ConnectionKey connectionKey = Http1ConnectionCache.unixConnectionKey(originalRequest,
+                                                                                  uri,
+                                                                                  headers,
+                                                                                  udsAddress,
+                                                                                  http1Client.clientConfig());
+            connectionTarget = ClientConnectionTarget.createUnixDomainSocket(connectionKey,
+                                                                               uri,
+                                                                               headers,
+                                                                               udsAddress);
+            originalRequest.clearSelectedProxyRoute();
+        }
+
         // either use the explicit connection, or obtain one (keep alive or one-off)
-        effectiveConnection = connection == null ? obtainConnection(serviceRequest) : connection;
+        effectiveConnection = suppliedConnection == null
+                ? obtainConnection(connectionTarget, headers, udsAddress)
+                : suppliedConnection;
         effectiveConnection.readTimeout(this.timeout);
 
         DataWriter writer = effectiveConnection.writer();
@@ -190,14 +242,15 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             // https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html which states: "The absoluteURI form is REQUIRED when the
             // request is being made to a proxy."
             String absoluteUri = uri.scheme() + "://" + uri.host() + ":" + uri.port();
-            String requestUri = proxy == Proxy.noProxy()
-                    || (
-                    proxy.type() == Proxy.ProxyType.HTTP
-                            && proxy.isNoHosts(new InetSocketAddress(uri.host(), uri.port())))
-                    || (proxy.type() == Proxy.ProxyType.SYSTEM && !proxy.isUsingSystemProxy(absoluteUri))
-                    || clientConfig.relativeUris()
-                    ? "" // don't set host details, so it becomes relative URI
-                    : absoluteUri;
+            boolean forwardProxy = effectiveConnection instanceof TcpClientConnection tcpConnection
+                    ? tcpConnection.resolvedTarget()
+                            .map(target -> target.proxyRoute().forwardProxy())
+                            .orElse(false)
+                    : proxy != Proxy.noProxy()
+                            && !(proxy.type() == Proxy.ProxyType.HTTP
+                                    && proxy.isNoHosts(new InetSocketAddress(uri.host(), uri.port())))
+                            && !(proxy.type() == Proxy.ProxyType.SYSTEM && !proxy.isUsingSystemProxy(absoluteUri));
+            String requestUri = forwardProxy && !clientConfig.relativeUris() ? absoluteUri : "";
             nonEntityData.writeAscii(request.method().text()
                                              + " "
                                              + requestUri
@@ -437,25 +490,20 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
     }
 
-    private ClientConnection obtainConnection(WebClientServiceRequest request) {
-        var address = originalRequest.address();
-        UnixDomainSocketAddress udsAddress = address.filter(a -> a instanceof UnixDomainSocketAddress)
-                .map(UnixDomainSocketAddress.class::cast)
-                .orElse(null);
-
+    private ClientConnection obtainConnection(ClientConnectionTarget connectionTarget,
+                                              ClientRequestHeaders headers,
+                                              UnixDomainSocketAddress udsAddress) {
         if (udsAddress == null) {
             return http1Client.connectionCache()
                     .connection(http1Client,
-                                originalRequest,
-                                request.uri(),
-                                request.headers(),
+                                connectionTarget,
+                                headers,
                                 keepAlive);
         } else {
             return http1Client.connectionCache()
                     .connection(http1Client,
-                                originalRequest,
-                                request.uri(),
-                                request.headers(),
+                                connectionTarget,
+                                headers,
                                 keepAlive,
                                 udsAddress);
         }

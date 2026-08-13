@@ -17,7 +17,10 @@
 package io.helidon.webclient.http2;
 
 import java.io.InputStream;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -37,11 +40,16 @@ import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.ProxyRoute;
 import io.helidon.webclient.api.ReleasableResource;
+import io.helidon.webclient.api.ResolvedClientTarget;
+import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -109,10 +117,49 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
         requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
-        ConnectionKey connectionKey = connectionKey(serviceRequest);
+        ConnectionKey connectionKey = Http2ConnectionKeys.create(uri, clientRequest, clientConfig, requestHeaders);
+        boolean ownsExplicitConnection = Http2ClientConnectionHandler.ownsExplicitConnection(clientRequest);
+        Optional<ClientConnection> explicitConnection = clientRequest.connection();
+        Optional<ClientConnectionTarget> explicitTarget = explicitConnection.flatMap(connection -> {
+            clientRequest.clearSelectedProxyRoute();
+            if (!(connection instanceof TcpClientConnection tcpConnection)) {
+                return Optional.empty();
+            }
+            Optional<ResolvedClientTarget> resolvedTarget = tcpConnection.resolvedTarget();
+            Optional<ProxyRoute> matchingRoute = ClientConnectionTarget.matchingRoute(connection,
+                                                                                       connectionKey,
+                                                                                       uri,
+                                                                                       requestHeaders);
+            matchingRoute.ifPresent(clientRequest::selectedProxyRoute);
+            return matchingRoute.flatMap(_ -> resolvedTarget.map(ResolvedClientTarget::logicalTarget));
+        });
+        if (ownsExplicitConnection && explicitConnection.isPresent() && explicitTarget.isEmpty()) {
+            clientRequest.clearConnection();
+            explicitConnection.get().closeResource();
+        }
+        ClientConnectionTarget connectionTarget;
+        if (explicitTarget.isPresent()) {
+            connectionTarget = explicitTarget.get();
+        } else {
+            SocketAddress address = clientRequest.address().orElse(null);
+            if (address instanceof UnixDomainSocketAddress udsAddress) {
+                clientRequest.clearSelectedProxyRoute();
+                connectionTarget = ClientConnectionTarget.createUnixDomainSocket(connectionKey,
+                                                                                   uri,
+                                                                                   requestHeaders,
+                                                                                   udsAddress);
+            } else {
+                connectionTarget = clientRequest.selectedProxyRoute()
+                        .map(route -> ClientConnectionTarget.create(connectionKey, uri, requestHeaders, route))
+                        .orElseGet(() -> ClientConnectionTarget.create(connectionKey, uri, requestHeaders));
+                if (clientRequest.connection().isEmpty() || clientRequest.selectedProxyRoute().isPresent()) {
+                    clientRequest.selectedProxyRoute(connectionTarget.proxyRoute());
+                }
+            }
+        }
 
         Http2ConnectionAttemptResult result = http2Client.connectionCache()
-                .newStream(http2Client, connectionKey, clientRequest, uri, serviceRequest, http1FallbackHandler);
+                .newStream(http2Client, connectionTarget, clientRequest, uri, serviceRequest, http1FallbackHandler);
 
         try {
             if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
@@ -130,7 +177,7 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
             if (!clientRequest().outputStreamRedirect()
                     && (clientRequest.connection().isEmpty()
                             || Http2ClientConnectionHandler.ownsExplicitConnection(clientRequest))) {
-                http2Client.connectionCache().remove(connectionKey);
+                http2Client.connectionCache().remove(connectionTarget);
                 closeFailedStream(result);
             }
             throw e;
@@ -329,10 +376,6 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
                 stream.close();
             }
         }
-    }
-
-    private ConnectionKey connectionKey(WebClientServiceRequest serviceRequest) {
-        return Http2ConnectionKeys.create(serviceRequest.uri(), clientRequest, clientConfig, serviceRequest.headers());
     }
 
     static void alignHostHeader(ClientUri uri, ClientRequestHeaders requestHeaders) {
