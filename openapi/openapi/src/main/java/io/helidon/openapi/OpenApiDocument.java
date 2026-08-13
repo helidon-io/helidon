@@ -280,10 +280,6 @@ public final class OpenApiDocument {
         return value instanceof String string ? Optional.of(string) : Optional.empty();
     }
 
-    private static Optional<Boolean> booleanValue(Object value) {
-        return value instanceof Boolean bool ? Optional.of(bool) : Optional.empty();
-    }
-
     private static List<String> stringList(Object value) {
         if (!(value instanceof List<?> list)) {
             return List.of();

@@ -528,14 +528,6 @@ final class OpenApiAnnotationValidator {
                 .orElseThrow(() -> new CodegenException(location + " requires " + property));
     }
 
-    private boolean hasStringValue(Annotation annotation, String property) {
-        return stringValue(annotation, property).filter(not(String::isBlank)).isPresent();
-    }
-
-    private boolean hasStringValue(OpenApiSecurityScheme annotation, String property) {
-        return stringValue(annotation, property).filter(not(String::isBlank)).isPresent();
-    }
-
     private boolean hasConfiguredStringValue(Annotation annotation, String property) {
         Optional<String> value = "value".equals(property)
                 ? annotation.stringValue()
