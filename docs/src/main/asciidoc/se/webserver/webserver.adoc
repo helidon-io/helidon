@@ -1115,10 +1115,14 @@ See xref:{rootdir}/config/io_helidon_webserver_staticcontent_StaticContentFeatur
 
 Static content is intended for resources that remain unchanged while the service is running. Helidon does not cache missing
 file-system resources, so files added under a configured directory or at a configured single-file location can be discovered
-by later requests. Once a resource has been resolved, however, Helidon can cache its location and metadata, including its
-content length and last-modified time. Replacing, modifying, deleting, or retargeting an already-resolved resource at runtime
-is not supported, even if its cached record is later evicted. Recreate the static-content service after deploying changes to
-existing resources; a normal application restart does this.
+by later requests. For disk-backed resources whose content is not cached in memory, Helidon also verifies that the source
+still exists before using its cached location and metadata. A removed resource is no longer served, and adding it again after
+the removal has been observed creates a new cache record with current metadata.
+
+Helidon does not detect modifications or replacements of an existing resource, including a resource deleted and recreated
+between requests without its absence being observed. Retargeting an already-resolved symbolic link at runtime is also not
+supported. Resources explicitly cached in memory are snapshots and continue to be served if their source file is removed.
+Recreate the static-content service after modifying or replacing existing resources; a normal application restart does this.
 
 ETags are derived from the last-modified time and, when available, content length rather than from a hash of the resource bytes.
 If content is replaced between service lifetimes, make sure its observed millisecond timestamp or known length changes;

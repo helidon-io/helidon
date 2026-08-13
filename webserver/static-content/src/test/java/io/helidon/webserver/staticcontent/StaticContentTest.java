@@ -201,6 +201,31 @@ class StaticContentTest {
     }
 
     @Test
+    void testFileSystemRemovalAndReaddition() throws IOException {
+        Path removable = staticRoot.resolve("removed-and-readded.txt");
+        Files.writeString(removable, "Initial content");
+
+        try (Http1ClientResponse response = testClient.get("/path/removed-and-readded.txt").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Initial content"));
+        }
+
+        Files.delete(removable);
+
+        try (Http1ClientResponse response = testClient.get("/path/removed-and-readded.txt").request()) {
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+
+        Files.writeString(removable, "Re-added content");
+
+        try (Http1ClientResponse response = testClient.get("/path/removed-and-readded.txt").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_LENGTH, "16"));
+            assertThat(response.as(String.class), is("Re-added content"));
+        }
+    }
+
+    @Test
     void testEtagIncludesContentLength() {
         String shortEtag;
         try (Http1ClientResponse response = testClient.get("/path/etag-short.txt").request()) {

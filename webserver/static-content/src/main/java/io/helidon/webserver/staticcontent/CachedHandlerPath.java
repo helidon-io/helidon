@@ -32,7 +32,8 @@ import io.helidon.webserver.http.ServerResponse;
 
 import static io.helidon.webserver.staticcontent.StaticContentHandler.processPreconditions;
 
-record CachedHandlerPath(Path path,
+record CachedHandlerPath(Path sourcePath,
+                         Path path,
                          StaticContentMetadata metadata,
                          boolean followLinks,
                          Path secureRoot) implements CachedHandler {
@@ -57,7 +58,8 @@ record CachedHandlerPath(Path path,
         }
 
         Instant modified = attributes.lastModifiedTime().toInstant();
-        return new CachedHandlerPath(resolvedPath,
+        return new CachedHandlerPath(path,
+                                     resolvedPath,
                                      StaticContentMetadata.create(mediaType, modified, attributes.size()),
                                      followLinks,
                                      secureRoot);
@@ -69,6 +71,11 @@ record CachedHandlerPath(Path path,
                           ServerRequest request,
                           ServerResponse response,
                           String requestedResource) throws IOException {
+
+        if (!Files.exists(sourcePath)) {
+            cache.remove(requestedResource);
+            return false;
+        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Sending static content from path: " + path);

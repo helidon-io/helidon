@@ -78,7 +78,8 @@ interface BaseHandlerConfigBlueprint {
      * Note that files cached through this method may use more than the max-bytes configured for the in-memory cache (i.e.
      * this option wins over the maximal size in bytes), so kindly be careful with what is pushed to the cache.
      * <p>
-     * <i>Files cached in memory will never be re-loaded, even if changed, until server restart!</i>
+     * <i>Files cached in memory are snapshots. They remain available and are never re-loaded, even if their source is changed
+     * or removed, until server restart!</i>
      *
      * @return set of file names (or directory names if not using classpath) to cache in memory on startup
      */

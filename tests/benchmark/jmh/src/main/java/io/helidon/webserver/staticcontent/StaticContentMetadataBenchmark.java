@@ -110,7 +110,7 @@ public class StaticContentMetadataBenchmark {
     @Benchmark
     public ServerResponseHeaders fileSystemAfterUnconditionalHead() {
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
-        metadataAfter(noConditionalHeader, responseHeaders);
+        fileSystemAfter(noConditionalHeader, responseHeaders);
         return responseHeaders;
     }
 
@@ -129,7 +129,7 @@ public class StaticContentMetadataBenchmark {
     public void fileSystemAfterMatchingIfNoneMatch(Blackhole blackhole) {
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         try {
-            metadataAfter(afterMatchingIfNoneMatch, responseHeaders);
+            fileSystemAfter(afterMatchingIfNoneMatch, responseHeaders);
             throw new AssertionError("Expected 304 response");
         } catch (HttpException e) {
             consumeNotModified(responseHeaders, e, blackhole);
@@ -211,6 +211,13 @@ public class StaticContentMetadataBenchmark {
                                                   setBeforeInMemoryLastModified);
         responseHeaders.contentType(MediaTypes.TEXT_PLAIN);
         responseHeaders.set(beforeInMemoryContentLength);
+    }
+
+    private void fileSystemAfter(ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {
+        if (!Files.exists(path)) {
+            throw new IllegalStateException("Benchmark file no longer exists");
+        }
+        metadataAfter(requestHeaders, responseHeaders);
     }
 
     private void metadataAfter(ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {

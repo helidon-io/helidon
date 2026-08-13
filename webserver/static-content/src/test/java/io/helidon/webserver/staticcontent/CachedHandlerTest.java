@@ -778,6 +778,81 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testSingleFileRemovalAndReaddition(@TempDir Path tempDir) throws IOException {
+        Path file = Files.writeString(tempDir.resolve("removed-and-readded.txt"), "Initial content");
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.create(file));
+        handler.beforeStart();
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ServerResponse initialResponse = mock(ServerResponse.class);
+        ServerResponseHeaders initialHeaders = ServerResponseHeaders.create();
+        when(initialResponse.headers()).thenReturn(initialHeaders);
+
+        assertThat("Initial single file should be served",
+                   handler.doHandle(Method.HEAD, "", req, initialResponse, false),
+                   is(true));
+        assertThat(initialHeaders, hasHeader(HeaderNames.CONTENT_LENGTH, "15"));
+
+        Files.delete(file);
+
+        ServerResponse removedResponse = mock(ServerResponse.class);
+        ServerResponseHeaders removedHeaders = ServerResponseHeaders.create();
+        when(removedResponse.headers()).thenReturn(removedHeaders);
+
+        assertThat("Removed single file should not be served",
+                   handler.doHandle(Method.HEAD, "", req, removedResponse, false),
+                   is(false));
+        assertThat("Removed single file handler should be evicted", handler.cacheHandler("."), optionalEmpty());
+        assertThat(removedHeaders.contains(HeaderNames.CONTENT_LENGTH), is(false));
+
+        Files.writeString(file, "Re-added content");
+
+        ServerResponse readdedResponse = mock(ServerResponse.class);
+        ServerResponseHeaders readdedHeaders = ServerResponseHeaders.create();
+        when(readdedResponse.headers()).thenReturn(readdedHeaders);
+
+        assertThat("Re-added single file should be served",
+                   handler.doHandle(Method.HEAD, "", req, readdedResponse, false),
+                   is(true));
+        assertThat(readdedHeaders, hasHeader(HeaderNames.CONTENT_LENGTH, "16"));
+    }
+
+    @Test
+    void testInMemoryFileRemainsAfterSourceRemoval(@TempDir Path tempDir) throws IOException {
+        Path root = Files.createDirectory(tempDir.resolve("root"));
+        Path file = Files.writeString(root.resolve("resource.txt"), "Content");
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .build());
+        handler.beforeStart();
+
+        Files.delete(file);
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
+                                                            "http",
+                                                            "1.1",
+                                                            Method.HEAD,
+                                                            "/resource.txt",
+                                                            false));
+
+        ServerResponse res = mock(ServerResponse.class);
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        when(res.headers()).thenReturn(responseHeaders);
+
+        assertThat("In-memory snapshot should remain available after source removal",
+                   handler.doHandle(Method.HEAD, "resource.txt", req, res, false),
+                   is(true));
+        assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
+    }
+
+    @Test
     void testSingleHiddenFileIsRequestScopedForbidden(@TempDir Path tempDir) throws IOException {
         Path file = Files.writeString(tempDir.resolve(".hidden.txt"), "Content");
         assumeTrue(Files.isHidden(file), "Hidden files are not supported on this file system");
