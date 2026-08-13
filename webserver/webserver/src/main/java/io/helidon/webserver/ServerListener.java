@@ -437,6 +437,9 @@ class ServerListener implements TransportBindingContext, ListenerContext {
             activeTypes.add(binding.type());
         }
         for (ProtocolConfig protocolConfig : protocolConfigs) {
+            if (!protocolConfig.enabled()) {
+                continue;
+            }
             Set<String> requiredTypes = protocolConfig.transportBindingTypes();
             if (requiredTypes.isEmpty()) {
                 continue;

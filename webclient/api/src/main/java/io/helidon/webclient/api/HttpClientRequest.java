@@ -106,11 +106,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
     private ClientRequest<?> discoverHttpImplementation() {
         ClientUri resolvedUri = resolvedUri();
         ClientRequestHeaderSupport.validate(headers());
-
         if (preferredProtocolId != null) {
-            /*
-            Explicit protocol id specified for this very request - we must honor it
-             */
             LoomClient.ProtocolSpi httpClientSpi = clients.get(preferredProtocolId);
             if (httpClientSpi == null) {
                 throw new IllegalArgumentException("Requested protocol with id \"" + preferredProtocolId + "\", which is not "
@@ -118,7 +114,6 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             }
             return httpClientSpi.spi().clientRequest(this, resolvedUri);
         }
-
         String transportKey = transportKey();
         HttpClientConfig clientConfig = clientConfig();
         Tls effectiveTls = effectiveTls(resolvedUri, tls());
@@ -126,7 +121,6 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         if (requiresFinalHeaders(resolvedUri, effectiveSni, effectiveTls)) {
             return firstTcpProtocol(resolvedUri);
         }
-
         SniSupport.Selection sni = sniSelection(resolvedUri, effectiveSni, effectiveTls, headers());
         LoomClient.EndpointKey endpointKey = new LoomClient.EndpointKey(resolvedUri.scheme(),
                                                                         resolvedUri.authority(),
@@ -136,18 +130,30 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                                         transportKey == null ? proxy() : Proxy.noProxy());
         Optional<HttpClientSpi> spi = clientSpiCache.get(endpointKey);
         if (spi.isPresent()) {
-            /*
-            We already know this is handled by a specific protocol version, handle it again
-             */
-            return spi.get().clientRequest(this, resolvedUri);
+            HttpClientSpi cached = spi.get();
+            if (cached.isTcp()) {
+                for (LoomClient.ProtocolSpi protocol : protocols) {
+                    HttpClientSpi candidate = protocol.spi();
+                    if (candidate == cached) {
+                        break;
+                    }
+                    if (candidate.supports(this, resolvedUri) == HttpClientSpi.SupportLevel.SUPPORTED) {
+                        clientSpiCache.put(endpointKey, candidate);
+                        return candidate.clientRequest(this, resolvedUri);
+                    }
+                }
+            }
+            HttpClientSpi.SupportLevel support = cached.supports(this, resolvedUri);
+            if (support == HttpClientSpi.SupportLevel.SUPPORTED
+                    || support == HttpClientSpi.SupportLevel.COMPATIBLE) {
+                return cached.clientRequest(this, resolvedUri);
+            }
+            clientSpiCache.remove(endpointKey);
         }
-
         // now use the first protocol that supports the request without condition, store first compatible
         HttpClientSpi compatible = null;
         HttpClientSpi unknown = null;
         for (LoomClient.ProtocolSpi protocol : protocols) {
-            // must iterate through list, to maintain weighted ordering
-
             HttpClientSpi client = protocol.spi();
             HttpClientSpi.SupportLevel supports = client.supports(this, resolvedUri);
             if (supports == HttpClientSpi.SupportLevel.SUPPORTED) {
@@ -163,9 +169,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                 unknown = client;
             }
         }
-
         if ("https".equals(resolvedUri.scheme()) && effectiveTls.enabled() && !tcpProtocols.isEmpty()) {
-            // we may use UNIX domain socket here
             UnixDomainSocketAddress unixSocketAddress = null;
             if (address().isPresent()) {
                 var address = address().get();
@@ -174,16 +178,13 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                 }
             }
             ClientConnection connection;
-
             if (unixSocketAddress == null) {
-                // use ALPN
                 ConnectionKey connectionKey = connectionKey(resolvedUri,
                                                             effectiveSni,
                                                             effectiveTls,
                                                             clientConfig,
                                                             proxy(),
                                                             headers());
-
                 // this is a temporary connection, used to determine which protocol is supported, next
                 // call to the same remote location will be obtained from cache
                 connection = TcpClientConnection.create(webClient,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,19 @@
 package io.helidon.webserver.http1;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
+import io.helidon.http.Header;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.http.AltSvc;
+import io.helidon.webserver.http.AltSvcConfig;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
@@ -38,11 +44,17 @@ public class Http1ConnectionSelector implements ServerConnectionSelector, Runtim
     // HTTP/1.1 connection upgrade providers
     private final Http1ConnectionSelectorConfig config;
     private final Map<String, Http1Upgrader> upgradeProviderMap;
+    private final Optional<AltSvcConfig> altSvcConfig;
+    private final Map<ListenerContext, Header> altSvcByListener;
 
     // Creates an instance of HTTP/1.1 server connection selector.
     Http1ConnectionSelector(Http1ConnectionSelectorConfig config) {
         this.config = config;
         this.upgradeProviderMap = config.upgraders();
+        this.altSvcConfig = config.config().altSvc()
+                .filter(it -> it.prototype().enabled())
+                .map(AltSvc::prototype);
+        this.altSvcByListener = altSvcConfig.isPresent() ? new ConcurrentHashMap<>() : Map.of();
     }
 
     /**
@@ -111,7 +123,19 @@ public class Http1ConnectionSelector implements ServerConnectionSelector, Runtim
 
     @Override
     public ServerConnection connection(ConnectionContext ctx) {
-        return new Http1Connection(ctx, config.config(), upgradeProviderMap);
+        if (altSvcConfig.isEmpty()) {
+            return new Http1Connection(ctx, config.config(), upgradeProviderMap);
+        }
+
+        AltSvcConfig altSvcPrototype = altSvcConfig.get();
+        int listenerPort = ctx.localPeer().port();
+        if (altSvcPrototype.port().isEmpty() && (listenerPort < 1 || listenerPort > 65_535)) {
+            return new Http1Connection(ctx, config.config(), upgradeProviderMap);
+        }
+
+        Header header = altSvcByListener.computeIfAbsent(ctx.listenerContext(),
+                                                         _ -> AltSvc.create(altSvcPrototype).header(listenerPort));
+        return new Http1Connection(ctx, config.config(), upgradeProviderMap, header);
     }
 
     @Override

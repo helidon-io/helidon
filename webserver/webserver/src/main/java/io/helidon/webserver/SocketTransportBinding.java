@@ -129,6 +129,9 @@ abstract class SocketTransportBinding implements TransportBinding {
     }
 
     private static boolean supportsTransportBinding(String type, ProtocolConfig config) {
+        if (!config.enabled()) {
+            return false;
+        }
         Set<String> transportBindingTypes = config.transportBindingTypes();
         return transportBindingTypes.isEmpty() || transportBindingTypes.contains(type);
     }

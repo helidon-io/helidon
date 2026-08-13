@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,17 @@ package io.helidon.webserver.http2;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Header;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.http.AltSvc;
+import io.helidon.webserver.http.AltSvcConfig;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
@@ -36,11 +43,17 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
 
     private final Http2Config http2Config;
     private final List<Http2SubProtocolSelector> subProviders;
+    private final Optional<AltSvcConfig> altSvcConfig;
+    private final Map<ListenerContext, Header> altSvcByListener;
 
     // Creates an instance of HTTP/2 server connection selector.
     Http2ConnectionSelector(Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
         this.http2Config = http2Config;
         this.subProviders = subProviders;
+        this.altSvcConfig = http2Config.altSvc()
+                .filter(it -> it.prototype().enabled())
+                .map(AltSvc::prototype);
+        this.altSvcByListener = altSvcConfig.isPresent() ? new ConcurrentHashMap<>() : Map.of();
     }
 
     /**
@@ -78,7 +91,20 @@ public class Http2ConnectionSelector implements ServerConnectionSelector {
 
     @Override
     public ServerConnection connection(ConnectionContext ctx) {
-        Http2Connection result = new Http2Connection(ctx, http2Config, subProviders);
+        Http2Connection result;
+        if (altSvcConfig.isEmpty()) {
+            result = new Http2Connection(ctx, http2Config, subProviders);
+        } else {
+            AltSvcConfig altSvcPrototype = altSvcConfig.get();
+            int listenerPort = ctx.localPeer().port();
+            if (altSvcPrototype.port().isEmpty() && (listenerPort < 1 || listenerPort > 65_535)) {
+                result = new Http2Connection(ctx, http2Config, subProviders);
+            } else {
+                Header header = altSvcByListener.computeIfAbsent(ctx.listenerContext(),
+                                                                 _ -> AltSvc.create(altSvcPrototype).header(listenerPort));
+                result = new Http2Connection(ctx, http2Config, subProviders, header);
+            }
+        }
         result.expectPreface();
 
         return result;

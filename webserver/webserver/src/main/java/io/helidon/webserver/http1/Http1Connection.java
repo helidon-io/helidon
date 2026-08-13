@@ -43,6 +43,7 @@ import io.helidon.http.BadRequestException;
 import io.helidon.http.DateTime;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HtmlEncoder;
@@ -101,6 +102,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private final long maxPayloadSize;
     private final Http1ConnectionListener recvListener;
     private final Http1ConnectionListener sendListener;
+    private final Header altSvcHeader;
 
     // overall connection
     private int requestId;
@@ -123,6 +125,21 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     Http1Connection(ConnectionContext ctx,
                     Http1Config http1Config,
                     Map<String, Http1Upgrader> upgradeProviderMap) {
+        this(ctx, http1Config, upgradeProviderMap, null);
+    }
+
+    /**
+     * Create a new connection with an alternative service advertisement.
+     *
+     * @param ctx                connection context
+     * @param http1Config        connection provider configuration
+     * @param upgradeProviderMap map of upgrade providers (protocol id to provider)
+     * @param altSvcHeader       alternative service header
+     */
+    Http1Connection(ConnectionContext ctx,
+                    Http1Config http1Config,
+                    Map<String, Http1Upgrader> upgradeProviderMap,
+                    Header altSvcHeader) {
         this.ctx = ctx;
         this.writer = ctx.dataWriter();
         this.reader = ctx.dataReader();
@@ -137,6 +154,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
+        this.altSvcHeader = altSvcHeader;
         this.lastRequestTimestamp = DateTime.timestamp();
     }
 
@@ -698,6 +716,15 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private Http1ServerResponse createResponse(Http1ServerRequest request, boolean keepAlive) {
+        if (altSvcHeader != null) {
+            return new Http1AltSvcServerResponse(ctx,
+                                                 sendListener,
+                                                 writer,
+                                                 request,
+                                                 keepAlive,
+                                                 http1Config.validateResponseHeaders(),
+                                                 altSvcHeader);
+        }
         return new Http1ServerResponse(ctx,
                                        sendListener,
                                        writer,

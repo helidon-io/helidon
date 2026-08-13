@@ -25,6 +25,7 @@ import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.AltSvcConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,6 +49,7 @@ class ConnectionConfigTest {
         assertThat(http2Configs, hasKey("@default"));
 
         Http2Config http2Config = http2Configs.get("@default");
+        AltSvcConfig altSvc = http2Config.altSvc().orElseThrow().prototype();
 
         assertAll(
                 () -> assertThat("maxFrameSize", http2Config.maxFrameSize(), is(8192)),
@@ -56,7 +58,11 @@ class ConnectionConfigTest {
                 () -> assertThat("validatePath", http2Config.validatePath(), is(false)),
                 () -> assertThat("initialWindowSize", http2Config.initialWindowSize(), is(8192)),
                 () -> assertThat("flowControlTimeout", http2Config.flowControlTimeout(), is(Duration.ofMillis(700))),
-                () -> assertThat("unsafeLogRawData", http2Config.log().unsafeRawData(), is(false))
+                () -> assertThat("unsafeLogRawData", http2Config.log().unsafeRawData(), is(false)),
+                () -> assertThat("altSvcProtocol", altSvc.protocol(), is("h3")),
+                () -> assertThat("altSvcPort", altSvc.port().orElseThrow(), is(8443)),
+                () -> assertThat("altSvcMaxAge", altSvc.maxAge().orElseThrow(), is(Duration.ofHours(1))),
+                () -> assertThat("altSvcPersist", altSvc.persist(), is(true))
         );
     }
 

@@ -19,6 +19,7 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
@@ -68,9 +69,11 @@ class StaticContentTest {
         Files.createDirectories(alternateRoot);
 
         Path resource = staticRoot.resolve("resource.txt");
+        Path empty = staticRoot.resolve("empty.txt");
         Path favicon = staticRoot.resolve("favicon.ico");
 
         Files.writeString(resource, "Content");
+        Files.writeString(empty, "");
         Files.writeString(favicon, "Wrong icon text");
         Files.writeString(nested.resolve("resource.txt"), "Nested content");
         Files.writeString(staticRoot.resolve("alias-one.txt"), "Alias one");
@@ -79,8 +82,16 @@ class StaticContentTest {
         Files.writeString(alternateRoot.resolve("resource.txt"), "Alternate content");
 
         builder.register("/classpath", createService(ClasspathHandlerConfig.create("web")))
+                .register("/classpath-memory", createService(ClasspathHandlerConfig.builder()
+                                                                      .location("web")
+                                                                      .cachedFiles(Set.of("resource.txt"))
+                                                                      .build()))
                 .register("/singleclasspath", createService(ClasspathHandlerConfig.create("web/resource.txt")))
                 .register("/path", createService(FileSystemHandlerConfig.create(staticRoot)))
+                .register("/path-memory", createService(FileSystemHandlerConfig.builder()
+                                                                .location(staticRoot)
+                                                                .cachedFiles(Set.of("empty.txt"))
+                                                                .build()))
                 .register("/singlepath", createService(FileSystemHandlerConfig.create(resource)));
 
         builder.register("/welcome-path", createService(FileSystemHandlerConfig.builder()
@@ -165,6 +176,117 @@ class StaticContentTest {
     }
 
     @Test
+    void testIfNoneMatchTakesPrecedenceOverIfModifiedSince() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_NONE_MATCH, "\"different\"")
+                .header(HeaderNames.IF_MODIFIED_SINCE, "Wed, 21 Oct 2099 07:28:00 GMT")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testMalformedIfNoneMatchIsIgnored() {
+        for (String value : List.of("\"", "W/\"")) {
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_NONE_MATCH, value)
+                    .request()) {
+
+                assertThat("If-None-Match: " + value, response.status(), is(Status.OK_200));
+                assertThat("If-None-Match body for: " + value, response.as(String.class), is("Content"));
+            }
+        }
+    }
+
+    @Test
+    void testMalformedIfMatchFailsPrecondition() {
+        for (String value : List.of("\"", "W/\"")) {
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_MATCH, value)
+                    .request()) {
+
+                assertThat("If-Match: " + value, response.status(), is(Status.PRECONDITION_FAILED_412));
+            }
+        }
+    }
+
+    @Test
+    void testWildcardMustBeSoleConditionalEntityTagValue() {
+        String etag;
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .request()) {
+            etag = response.headers().get(HeaderNames.ETAG).get();
+        }
+
+        for (String value : List.of(etag + ", *", "*, " + etag)) {
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_NONE_MATCH, value)
+                    .request()) {
+
+                assertThat("If-None-Match: " + value, response.status(), is(Status.OK_200));
+                assertThat("If-None-Match body for: " + value, response.as(String.class), is("Content"));
+            }
+
+            try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                    .header(HeaderNames.IF_MATCH, value)
+                    .request()) {
+
+                assertThat("If-Match: " + value, response.status(), is(Status.PRECONDITION_FAILED_412));
+            }
+        }
+    }
+
+    @Test
+    void testInvalidIfModifiedSinceIsIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_MODIFIED_SINCE, "nope")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testMultipleIfModifiedSinceValuesAreIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_MODIFIED_SINCE,
+                        "Wed, 21 Oct 2099 07:28:00 GMT",
+                        "Wed, 21 Oct 2015 07:28:00 GMT")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testInvalidIfUnmodifiedSinceIsIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_UNMODIFIED_SINCE, "nope")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testMultipleIfUnmodifiedSinceValuesAreIgnored() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.IF_UNMODIFIED_SINCE,
+                        "Wed, 21 Oct 2015 07:28:00 GMT",
+                        "Wed, 21 Oct 2099 07:28:00 GMT")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
     void testFileSystemSymlinkOutsideRoot() throws Exception {
         Path link = staticRoot.resolve("external");
         assumeTrue(createSymbolicLink(link, externalDir), "Symbolic links cannot be created");
@@ -228,6 +350,52 @@ class StaticContentTest {
 
             assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
+    }
+
+    @Test
+    void testClasspathRangeWithNonZeroOffset() {
+        try (Http1ClientResponse response = testClient.get("/classpath-memory/resource.txt")
+                .header(HeaderNames.RANGE, "bytes=2-4")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-4/7"));
+            assertThat(response.as(String.class), is("nte"));
+        }
+    }
+
+    @Test
+    void testFileSystemRangeEndBeyondContent() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.RANGE, "bytes=2-999")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-6/7"));
+            assertThat(response.as(String.class), is("ntent"));
+        }
+    }
+
+    @Test
+    void testFileSystemSuffixRangeBeyondContent() {
+        try (Http1ClientResponse response = testClient.get("/path/resource.txt")
+                .header(HeaderNames.RANGE, "bytes=-999")
+                .request()) {
+
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 0-6/7"));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testFileSystemEmptyRange() {
+        assertEmptyRanges("/path/empty.txt");
+    }
+
+    @Test
+    void testCachedEmptyRange() {
+        assertEmptyRanges("/path-memory/empty.txt");
     }
 
     @Test
@@ -310,6 +478,42 @@ class StaticContentTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    private void assertEmptyRanges(String path) {
+        assertEmptyRangeIgnored(path, "bytes=-1");
+        assertEmptyRangeIgnored(path, "bytes=-1, 9223372036854775808-");
+
+        try (Http1ClientResponse response = testClient.get(path)
+                .header(HeaderNames.RANGE, "bytes=-0")
+                .request()) {
+
+            assertThat(path + " status for bytes=-0",
+                       response.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+        }
+
+        try (Http1ClientResponse response = testClient.get(path)
+                .header(HeaderNames.RANGE, "bytes=0-")
+                .request()) {
+
+            assertThat(path + " status for bytes=0-",
+                       response.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+        }
+    }
+
+    private void assertEmptyRangeIgnored(String path, String range) {
+        try (Http1ClientResponse response = testClient.get(path)
+                .header(HeaderNames.RANGE, range)
+                .request()) {
+
+            String description = path + " with " + range;
+            assertThat(description + " status", response.status(), is(Status.OK_200));
+            assertThat(description + " content length",
+                       response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_LENGTH, "0"));
+            assertThat(description + " content range",
+                       response.headers().contains(HeaderNames.CONTENT_RANGE), is(false));
+            assertThat(description + " entity", response.entity().hasEntity(), is(false));
         }
     }
 

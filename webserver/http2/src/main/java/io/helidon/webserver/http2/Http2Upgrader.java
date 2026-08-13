@@ -20,10 +20,14 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
@@ -31,7 +35,10 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.AltSvc;
+import io.helidon.webserver.http.AltSvcConfig;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
@@ -49,6 +56,8 @@ public class Http2Upgrader implements Http1Upgrader {
 
     private final Http2Config config;
     private final List<Http2SubProtocolSelector> subProtocolProviders;
+    private final Optional<AltSvcConfig> altSvcConfig;
+    private final Map<ListenerContext, Header> altSvcByListener;
 
     /**
      * Creates an instance of HTTP/1.1 to HTTP/2 protocol upgrade.
@@ -56,6 +65,10 @@ public class Http2Upgrader implements Http1Upgrader {
     Http2Upgrader(Http2Config config, List<Http2SubProtocolSelector> subProtocolProviders) {
         this.config = config;
         this.subProtocolProviders = subProtocolProviders;
+        this.altSvcConfig = config.altSvc()
+                .filter(it -> it.prototype().enabled())
+                .map(AltSvc::prototype);
+        this.altSvcByListener = altSvcConfig.isPresent() ? new ConcurrentHashMap<>() : Map.of();
     }
 
     /**
@@ -77,7 +90,20 @@ public class Http2Upgrader implements Http1Upgrader {
     public ServerConnection upgrade(ConnectionContext ctx,
                                     HttpPrologue prologue,
                                     WritableHeaders<?> headers) {
-        Http2Connection connection = new Http2Connection(ctx, config, subProtocolProviders);
+        Http2Connection connection;
+        if (altSvcConfig.isEmpty()) {
+            connection = new Http2Connection(ctx, config, subProtocolProviders);
+        } else {
+            AltSvcConfig altSvcPrototype = altSvcConfig.get();
+            int listenerPort = ctx.localPeer().port();
+            if (altSvcPrototype.port().isEmpty() && (listenerPort < 1 || listenerPort > 65_535)) {
+                connection = new Http2Connection(ctx, config, subProtocolProviders);
+            } else {
+                Header header = altSvcByListener.computeIfAbsent(ctx.listenerContext(),
+                                                                 _ -> AltSvc.create(altSvcPrototype).header(listenerPort));
+                connection = new Http2Connection(ctx, config, subProtocolProviders, header);
+            }
+        }
         if (headers.contains(HTTP2_SETTINGS_HEADER_NAME)) {
             connection.clientSettings(token68ToHttp2Settings(headers.get(HTTP2_SETTINGS_HEADER_NAME).valueBytes()));
         } else {

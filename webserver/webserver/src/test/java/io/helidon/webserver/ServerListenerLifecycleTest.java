@@ -1833,6 +1833,31 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void disabledProtocolsDoNotParticipateInListenerBinding() {
+        TestRequiredTransportConnectionSelectorProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .port(0)
+                .protocolsDiscoverServices(false)
+                .addConnectionSelectorProvider(new TestRequiredTransportConnectionSelectorProvider())
+                .addProtocol(new TestRequiredTransportProtocolConfig("disabled-required-transport",
+                                                                     Set.of(TestTransportBindingConfig.TYPE),
+                                                                     false))
+                .addProtocol(new TestRequiredTransportProtocolConfig("disabled-transport-neutral",
+                                                                     Set.of(),
+                                                                     false))
+                .build()
+                .start();
+
+        try {
+            assertThat(server.port(), greaterThan(0));
+            assertThat(TestRequiredTransportConnectionSelectorProvider.creates(), is(0));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void tcpTransportSkipsProtocolsForOtherTransports() {
         TestRequiredTransportConnectionSelectorProvider.reset();
         WebServer server = WebServer.builder()

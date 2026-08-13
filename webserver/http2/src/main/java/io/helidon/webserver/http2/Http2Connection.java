@@ -37,6 +37,7 @@ import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.DateTime;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -126,6 +127,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final int maxEmptyFrames;
     private final long maxClientConcurrentStreams;
     private final Http2ConnectionChecks connectionChecks;
+    private final Header altSvcHeader;
     private int emptyFrames = 0;
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
@@ -146,8 +148,16 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private volatile boolean closing;
 
     Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
+        this(ctx, http2Config, subProviders, null);
+    }
+
+    Http2Connection(ConnectionContext ctx,
+                    Http2Config http2Config,
+                    List<Http2SubProtocolSelector> subProviders,
+                    Header altSvcHeader) {
         this.ctx = ctx;
         this.http2Config = http2Config;
+        this.altSvcHeader = altSvcHeader;
         this.maxEmptyFrames = http2Config.maxEmptyFrames();
         this.serverSettings = Http2Settings.builder()
                 .update(builder -> settingsUpdate(http2Config, builder))
@@ -1136,7 +1146,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                                     connectionWriter,
                                                                     flowControl,
                                                                     inboundDataBudget,
-                                                                    connectionChecks));
+                                                                    connectionChecks,
+                                                                    altSvcHeader));
             streams.put(streamContext);
             streams.doMaintenance();
             // any request for a specific stream is now considered a valid update of connection (ignoring management messages

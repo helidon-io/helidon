@@ -23,7 +23,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoZonedDateTime;
-import java.util.List;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -34,6 +35,7 @@ import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -71,97 +73,166 @@ abstract class StaticContentHandler implements HttpService {
         this.memoryCache = config.memoryCache().orElseGet(MemoryCache::create);
     }
 
-    /**
-     * Put {@code etag} parameter (if provided ) into the response headers, than validates {@code If-Match} and
-     * {@code If-None-Match} headers and react accordingly.
-     *
-     * @param etag            the proposed ETag. If {@code null} then method returns false
-     * @param requestHeaders  an HTTP request headers
-     * @param responseHeaders an HTTP response headers
-     * @throws io.helidon.http.RequestException if ETag is checked
-     */
-    static void processEtag(String etag, ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {
-        if (etag == null || etag.isEmpty()) {
-            return;
-        }
-        etag = unquoteETag(etag);
-
-        Header newEtag = HeaderValues.create(HeaderNames.ETAG, true, false, '"' + etag + '"');
-        // Put ETag into the response
-        responseHeaders.set(newEtag);
-
-        // Process If-None-Match header
-        if (requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
-            List<String> ifNoneMatches = requestHeaders.get(HeaderNames.IF_NONE_MATCH).allValues();
-            for (String ifNoneMatch : ifNoneMatches) {
-                ifNoneMatch = unquoteETag(ifNoneMatch);
-                if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
-                    // using exception to handle normal flow (same as in reactive static content)
-                    throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true)
-                            .header(newEtag);
-                }
-            }
-        }
-
-        if (requestHeaders.contains(HeaderNames.IF_MATCH)) {
-            // Process If-Match header
-            List<String> ifMatches = requestHeaders.get(HeaderNames.IF_MATCH).allValues();
-            if (!ifMatches.isEmpty()) {
-                boolean ifMatchChecked = false;
-                for (String ifMatch : ifMatches) {
-                    ifMatch = unquoteETag(ifMatch);
-                    if ("*".equals(ifMatch) || ifMatch.equals(etag)) {
-                        ifMatchChecked = true;
-                        break;
-                    }
-                }
-                if (!ifMatchChecked) {
-                    throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true)
-                            .header(newEtag);
-                }
-            }
-        }
+    static void processPreconditions(String etag,
+                                     Instant modified,
+                                     ServerRequestHeaders requestHeaders,
+                                     ServerResponseHeaders responseHeaders) {
+        processPreconditions(etag, modified, requestHeaders, responseHeaders, ServerResponseHeaders::lastModified);
     }
 
-    static void processModifyHeaders(Instant modified,
+    static void processPreconditions(String etag,
+                                     Instant modified,
                                      ServerRequestHeaders requestHeaders,
                                      ServerResponseHeaders responseHeaders,
                                      BiConsumer<ServerResponseHeaders, Instant> setModified) {
-        if (modified == null) {
-            return;
+        Header newEtag = null;
+        if (etag != null && !etag.isEmpty()) {
+            etag = unquoteETag(etag);
+            newEtag = HeaderValues.create(HeaderNames.ETAG, true, false, '"' + etag + '"');
+            responseHeaders.set(newEtag);
         }
 
-        // Last-Modified
-        setModified.accept(responseHeaders, modified);
-        // If-Modified-Since
-        Optional<Instant> ifModSince = requestHeaders
-                .ifModifiedSince()
-                .map(ChronoZonedDateTime::toInstant);
-        if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
-            throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
+        boolean ifMatchPresent = requestHeaders.contains(HeaderNames.IF_MATCH);
+        if (ifMatchPresent) {
+            // Process If-Match header
+            if (!matchesEntityTag(requestHeaders.get(HeaderNames.IF_MATCH), etag, true)) {
+                HttpException exception = new HttpException("Not accepted by If-Match header",
+                                                            Status.PRECONDITION_FAILED_412,
+                                                            true);
+                if (newEtag != null) {
+                    exception.header(newEtag);
+                }
+                throw exception;
+            }
         }
-        // If-Unmodified-Since
-        Optional<Instant> ifUnmodSince = requestHeaders
-                .ifUnmodifiedSince()
-                .map(ChronoZonedDateTime::toInstant);
-        if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
-            throw new HttpException("Not valid for If-Unmodified-Since header", Status.PRECONDITION_FAILED_412, true);
+
+        if (modified != null) {
+            modified = modified.truncatedTo(ChronoUnit.SECONDS);
+            // Last-Modified
+            setModified.accept(responseHeaders, modified);
+            // If-Unmodified-Since
+            if (!ifMatchPresent) {
+                Optional<Instant> ifUnmodSince = conditionalDate(requestHeaders,
+                                                                 HeaderNames.IF_UNMODIFIED_SINCE,
+                                                                 requestHeaders::ifUnmodifiedSince);
+                if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
+                    throw new HttpException("Not valid for If-Unmodified-Since header",
+                                            Status.PRECONDITION_FAILED_412,
+                                            true);
+                }
+            }
+        }
+
+        // Process If-None-Match header
+        boolean ifNoneMatchPresent = requestHeaders.contains(HeaderNames.IF_NONE_MATCH);
+        if (ifNoneMatchPresent) {
+            if (matchesEntityTag(requestHeaders.get(HeaderNames.IF_NONE_MATCH), etag, false)) {
+                // using exception to handle normal flow (same as in reactive static content)
+                HttpException exception = new HttpException("Accepted by If-None-Match header",
+                                                            Status.NOT_MODIFIED_304,
+                                                            true);
+                if (newEtag != null) {
+                    exception.header(newEtag);
+                }
+                throw exception;
+            }
+        }
+
+        if (modified != null && !ifNoneMatchPresent) {
+            // If-Modified-Since
+            Optional<Instant> ifModSince = conditionalDate(requestHeaders,
+                                                           HeaderNames.IF_MODIFIED_SINCE,
+                                                           requestHeaders::ifModifiedSince);
+            if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
+                throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
+            }
         }
     }
 
-    /**
-     * Validates {@code If-Modify-Since} and {@code If-Unmodify-Since} headers and react accordingly.
-     * Returns {@code true} only if response was sent.
-     *
-     * @param modified        the last modification instance. If {@code null} then method just returns {@code false}.
-     * @param requestHeaders  an HTTP request headers
-     * @param responseHeaders an HTTP response headers
-     * @throws io.helidon.http.RequestException if (un)modify since header is checked
-     */
-    static void processModifyHeaders(Instant modified,
-                                     ServerRequestHeaders requestHeaders,
-                                     ServerResponseHeaders responseHeaders) {
-        processModifyHeaders(modified, requestHeaders, responseHeaders, ServerResponseHeaders::lastModified);
+    private static boolean matchesEntityTag(Header header, String etag, boolean strongComparison) {
+        boolean matched = false;
+        boolean singleValue = header.valueCount() == 1;
+        for (String fieldValue : header.allValues()) {
+            int tokenStart = 0;
+            int fieldLength = fieldValue.length();
+            while (tokenStart <= fieldLength) {
+                int start = tokenStart;
+                while (start < fieldLength && fieldValue.charAt(start) <= ' ') {
+                    start++;
+                }
+
+                boolean weak = fieldLength - start >= 2
+                        && (fieldValue.charAt(start) == 'W' || fieldValue.charAt(start) == 'w')
+                        && fieldValue.charAt(start + 1) == '/';
+                int entityStart = weak ? start + 2 : start;
+                if (entityStart < fieldLength && fieldValue.charAt(entityStart) == '"') {
+                    int entityEnd = fieldValue.indexOf('"', entityStart + 1);
+                    if (entityEnd < 0) {
+                        break;
+                    }
+
+                    int separator = entityEnd + 1;
+                    while (separator < fieldLength && fieldValue.charAt(separator) <= ' ') {
+                        separator++;
+                    }
+                    if (separator == fieldLength || fieldValue.charAt(separator) == ',') {
+                        int length = entityEnd - entityStart - 1;
+                        if (etag != null
+                                && (!strongComparison || !weak)
+                                && length == etag.length()
+                                && fieldValue.regionMatches(entityStart + 1, etag, 0, length)) {
+                            matched = true;
+                        }
+                    } else {
+                        separator = fieldValue.indexOf(',', separator);
+                        if (separator < 0) {
+                            break;
+                        }
+                    }
+                    if (separator == fieldLength) {
+                        break;
+                    }
+                    tokenStart = separator + 1;
+                } else {
+                    int separator = fieldValue.indexOf(',', start);
+                    int end = separator < 0 ? fieldLength : separator;
+                    while (start < end && fieldValue.charAt(end - 1) <= ' ') {
+                        end--;
+                    }
+                    if (end - start == 1 && fieldValue.charAt(start) == '*') {
+                        return singleValue && tokenStart == 0 && separator < 0;
+                    }
+                    if (weak) {
+                        start += 2;
+                    }
+                    int length = end - start;
+                    if (etag != null
+                            && (!strongComparison || !weak)
+                            && length == etag.length()
+                            && fieldValue.regionMatches(start, etag, 0, length)) {
+                        matched = true;
+                    }
+                    if (separator < 0) {
+                        break;
+                    }
+                    tokenStart = separator + 1;
+                }
+            }
+        }
+        return matched;
+    }
+
+    private static Optional<Instant> conditionalDate(ServerRequestHeaders requestHeaders,
+                                                     HeaderName headerName,
+                                                     Supplier<Optional<ZonedDateTime>> dateSupplier) {
+        if (requestHeaders.contains(headerName) && requestHeaders.get(headerName).valueCount() != 1) {
+            return Optional.empty();
+        }
+        try {
+            return dateSupplier.get().map(ChronoZonedDateTime::toInstant);
+        } catch (DateTimeParseException _) {
+            return Optional.empty();
+        }
     }
 
     /**

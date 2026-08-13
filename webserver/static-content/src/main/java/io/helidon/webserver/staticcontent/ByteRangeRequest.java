@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
 
         List<ByteRangeRequest> parts = new ArrayList<>();
         boolean found = false;
+        boolean satisfiableEmptyRange = false;
         while (matcher.find()) {
             found = true;
             //"bytes=0-1023" - 0 to 1023 (included both)
@@ -46,6 +47,17 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             // a-b, b-c (multipart)
             String firstGroup = matcher.group(1);
             String secondGroup = matcher.group(2);
+            if (fileLength == 0) {
+                if (firstGroup == null && secondGroup != null) {
+                    for (int i = 0; i < secondGroup.length(); i++) {
+                        if (secondGroup.charAt(i) != '0') {
+                            satisfiableEmptyRange = true;
+                            break;
+                        }
+                    }
+                }
+                continue;
+            }
             long from = 0;
             long last = fileLength - 1;
             if (firstGroup != null) {
@@ -54,16 +66,20 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             if (secondGroup != null) {
                 long second = Long.parseLong(secondGroup);
                 if (firstGroup == null) {
-                    from = fileLength - second;
+                    from = Math.max(0, fileLength - second);
                     last = fileLength - 1;
                 } else {
-                    last = second;
+                    last = Math.min(second, fileLength - 1);
                 }
             }
             parts.add(ByteRangeRequest.create(req, res, from, last, fileLength));
         }
         if (!found) {
             throw new BadRequestException("Invalid range header");
+        }
+        if (fileLength == 0 && !satisfiableEmptyRange) {
+            res.header(HeaderNames.CONTENT_RANGE, "*/0");
+            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
         }
 
         return parts;

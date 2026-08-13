@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -354,39 +355,52 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
+        return createSink(findSinkProvider(sinkType));
+    }
+
+    final SinkProvider<?> findSinkProvider(GenericType<? extends Sink<?>> sinkType) {
         for (SinkProvider<?> p : SINK_PROVIDERS) {
             if (p.supports(sinkType, request)) {
-                return (X) p.create(new SinkProviderContext() {
-                    @Override
-                    public ServerResponse serverResponse() {
-                        return Http1ServerResponse.this;
-                    }
-
-                    @Override
-                    public ServerRequest serverRequest() {
-                        return Http1ServerResponse.this.request;
-                    }
-
-                    @Override
-                    public ConnectionContext connectionContext() {
-                        return Http1ServerResponse.this.ctx;
-                    }
-
-                    @Override
-                    public Runnable closeRunnable() {
-                        return () -> {
-                            Http1ServerResponse.this.isSent = true;
-                            afterSend();
-                            request.reset();
-                        };
-                    }
-                });
+                return p;
             }
         }
         // Request not acceptable if provider not found
         throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
+    }
+
+    @SuppressWarnings("unchecked")
+    final <X extends Sink<?>> X createSink(SinkProvider<?> provider) {
+        return (X) provider.create(new SinkProviderContext() {
+            @Override
+            public ServerResponse serverResponse() {
+                return Http1ServerResponse.this;
+            }
+
+            @Override
+            public ServerRequest serverRequest() {
+                return Http1ServerResponse.this.request;
+            }
+
+            @Override
+            public ConnectionContext connectionContext() {
+                return Http1ServerResponse.this.ctx;
+            }
+
+            @Override
+            public Optional<OutputStream> entityOutputStream(Runnable responsePreparation) {
+                return Http1ServerResponse.this.sinkEntityOutputStream(responsePreparation);
+            }
+
+            @Override
+            public Runnable closeRunnable() {
+                return () -> {
+                    Http1ServerResponse.this.isSent = true;
+                    afterSend();
+                    request.reset();
+                };
+            }
+        });
     }
 
     @Override
@@ -404,6 +418,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         } else {
             this.outputStreamFilter = it -> filterFunction.apply(current.apply(it));
         }
+    }
+
+    protected Optional<OutputStream> sinkEntityOutputStream(Runnable responsePreparation) {
+        Objects.requireNonNull(responsePreparation);
+        beforeSend();
+        return Optional.empty();
     }
 
     private void handleSinkData(Object data, MediaType mediaType) {

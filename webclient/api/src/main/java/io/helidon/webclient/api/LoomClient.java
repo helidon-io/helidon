@@ -157,6 +157,15 @@ class LoomClient implements WebClient {
     }
 
     @Override
+    public List<String> tcpProtocolIds() {
+        List<String> protocolIds = tcpProtocolIds;
+        if (protocolIds == null) {
+            throw new IllegalStateException("TCP protocol IDs are not available during WebClient construction");
+        }
+        return protocolIds;
+    }
+
+    @Override
     public <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol, C protocolConfig) {
         return protocol.provider().protocol(this, protocolConfig);
     }
