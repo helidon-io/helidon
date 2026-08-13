@@ -66,7 +66,10 @@ class ErrorHandlingWithOutputStreamTest {
         router.error(CustomException.class, new CustomRoutingHandler())
                 .addFilter((chain, req, res) -> {
                     if (req.path().path().equals("/get-cross-cutting-error")) {
-                        res.beforeSend(() -> res.header(CSP_HEADER_NAME, "default-src 'none'"));
+                        res.beforeSend(() -> {
+                            res.header(CSP_HEADER_NAME, "default-src 'none'");
+                            res.header(HeaderNames.CONTENT_ENCODING, "base64");
+                        });
                         res.streamFilter(Base64.getEncoder()::wrap);
                     } else if (req.path().path().equals("/get-outputStream")) {
                         res.entityStreamFilter(_ -> OutputStream.nullOutputStream());
@@ -148,6 +151,7 @@ class ErrorHandlingWithOutputStreamTest {
         try (var response = client.get("/get-cross-cutting-error").request()) {
             assertAll(
                     () -> assertThat(response.headers().get(CSP_HEADER_NAME).get(), is("default-src 'none'")),
+                    () -> assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).get(), is("base64")),
                     () -> assertThat(response.entity().as(String.class),
                                      is(Base64.getEncoder()
                                                 .encodeToString("CustomErrorContent".getBytes(StandardCharsets.UTF_8))))

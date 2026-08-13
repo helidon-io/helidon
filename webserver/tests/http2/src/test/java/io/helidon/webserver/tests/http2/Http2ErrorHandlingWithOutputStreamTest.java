@@ -111,7 +111,10 @@ class Http2ErrorHandlingWithOutputStreamTest {
         router.error(CustomException.class, new CustomRoutingHandler())
                 .addFilter((chain, req, res) -> {
                     if (req.path().path().equals("/get-cross-cutting-error")) {
-                        res.beforeSend(() -> res.header(CSP_HEADER_NAME, "default-src 'none'"));
+                        res.beforeSend(() -> {
+                            res.header(CSP_HEADER_NAME, "default-src 'none'");
+                            res.header(HeaderNames.CONTENT_ENCODING, "base64");
+                        });
                         res.streamFilter(Base64.getEncoder()::wrap);
                     } else if (req.path().path().equals("/get-outputStream")) {
                         res.entityStreamFilter(_ -> OutputStream.nullOutputStream());
@@ -252,6 +255,8 @@ class Http2ErrorHandlingWithOutputStreamTest {
         assertAll(
                 () -> assertThat(response.headers().firstValue(CSP_HEADER_NAME.lowerCase()),
                                  is(Optional.of("default-src 'none'"))),
+                () -> assertThat(response.headers().firstValue(HeaderNames.CONTENT_ENCODING.lowerCase()),
+                                 is(Optional.of("base64"))),
                 () -> assertThat(response.body(),
                                  is(Base64.getEncoder().encodeToString("TeaPotIAm".getBytes(StandardCharsets.UTF_8))))
         );

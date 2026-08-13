@@ -320,6 +320,8 @@ public interface ServerResponse {
     /**
      * Configure a custom output stream to wrap the output stream of the response.
      * The filter remains registered if error handling replaces the unsent response entity.
+     * A filter that changes representation metadata, such as {@code Content-Encoding}, must use
+     * {@link #beforeSend(Runnable)} to configure the matching headers for each entity that is sent.
      *
      * @param filterFunction the function to replace output stream of this response with a user provided one
      */

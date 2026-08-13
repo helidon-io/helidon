@@ -544,9 +544,11 @@ If a handler throws an exception while its response can still be reset, WebServe
 invoking error handling. It also removes entity-related framing, representation, validator, range, digest, and trailer
 metadata, together with response preparation callbacks and output stream filters explicitly registered by Helidon
 infrastructure for that entity. Public `beforeSend(...)` listeners and `streamFilter(...)` filters remain registered so
-cross-cutting application policies also apply to a replacement error response. Status and unrelated metadata, such as
-CORS, cookies, cache controls, `Vary`, and custom headers, remain available to the error handler. Once response metadata
-or entity bytes have been sent, the response cannot be replaced.
+cross-cutting application policies also apply to a replacement error response. A response-scoped stream filter that
+changes representation metadata must use a response-scoped `beforeSend(...)` listener to configure the matching headers
+for whichever entity is sent. An inherited `206` status is reset when its `Content-Range` is removed. Other status and
+unrelated metadata, such as CORS, cookies, cache controls, `Vary`, and custom headers, remain available to the error
+handler. Once response metadata or entity bytes have been sent, the response cannot be replaced.
 
 [[anchor-filtering]]
 === Filtering
