@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ class SimpleOpenApiManagerTest {
         SimpleOpenApiManager manager = new SimpleOpenApiManager();
         String raw = "plain-boolean: true\n"
                       + "quoted-boolean: \"true\"\n"
+                      + "yaml-boolean: on\n"
+                      + "date: 2026-08-13\n"
                       + "integer: 100\n"
                       + "float: 1.1\n"
                       + "binary: !!binary \"" + HELLO_BASE64 + "\"\n";
@@ -46,6 +48,8 @@ class SimpleOpenApiManagerTest {
         JsonObject jsonObject = reader.readObject();
         assertThat(jsonObject.getBoolean("plain-boolean"), is(true));
         assertThat(jsonObject.getString("quoted-boolean"), is("true"));
+        assertThat(jsonObject.getString("yaml-boolean"), is("on"));
+        assertThat(jsonObject.getString("date"), is("2026-08-13"));
         assertThat(jsonObject.getInt("integer"), is(100));
         assertThat(jsonObject.getJsonNumber("float").doubleValue(), is(1.1D));
         assertThat(jsonObject.getString("binary"), is(HELLO_BASE64));
