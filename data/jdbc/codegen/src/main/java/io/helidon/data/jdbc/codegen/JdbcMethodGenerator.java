@@ -250,7 +250,7 @@ final class JdbcMethodGenerator {
             method.addContentLine(";");
         }
         case LIST -> method.addContentLine(".list();");
-        default -> throw new AssertionError("Unknown JDBC return shape: " + plan.returnShape());
+        default -> throw new AssertionError("The JDBC return shape '" + plan.returnShape() + "' is not recognized.");
         }
     }
 
@@ -297,7 +297,8 @@ final class JdbcMethodGenerator {
                 || plan.mappingKind() == JdbcMethodPlan.MappingKind.EXPLICIT) {
             method.addContent(plan.mapperFieldName());
         } else {
-            throw new AssertionError("JDBC mapping does not use a mapper instance: " + plan.mappingKind());
+            throw new AssertionError("The JDBC mapping kind '" + plan.mappingKind()
+                                             + "' does not use a mapper instance.");
         }
     }
 

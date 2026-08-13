@@ -97,10 +97,12 @@ final class JdbcClientImpl implements JdbcClient {
                    JdbcConnectionLease.Provider leaseProvider,
                    JdbcLexicalProfile lexicalProfile,
                    LruCache<String, Integer> parameterCounts) {
-        this.runner = new JdbcRunner(Objects.requireNonNull(dataSource, "DataSource must not be null"),
-                                     Objects.requireNonNull(leaseProvider, "Connection lease provider must not be null"));
-        this.lexicalProfile = Objects.requireNonNull(lexicalProfile, "JDBC lexical profile must not be null");
-        this.parameterCounts = Objects.requireNonNull(parameterCounts, "Parameter-count cache must not be null");
+        this.runner = new JdbcRunner(Objects.requireNonNull(dataSource, "The datasource must not be null."),
+                                     Objects.requireNonNull(leaseProvider,
+                                                            "The connection lease provider must not be null."));
+        this.lexicalProfile = Objects.requireNonNull(lexicalProfile, "The JDBC lexical profile must not be null.");
+        this.parameterCounts = Objects.requireNonNull(parameterCounts,
+                                                      "The parameter count cache must not be null.");
     }
 
     /**
@@ -119,7 +121,7 @@ final class JdbcClientImpl implements JdbcClient {
      */
     @Override
     public Statement create(String sql) {
-        Objects.requireNonNull(sql, "SQL must not be null");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
         int parameterCount = parameterCount(sql);
         return new JdbcStatement(runner, sql, parameterCount);
     }

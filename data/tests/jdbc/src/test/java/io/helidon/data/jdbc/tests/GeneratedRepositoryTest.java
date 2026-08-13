@@ -50,10 +50,11 @@ class GeneratedRepositoryTest {
 
             DataException ambiguousLabel = assertThrows(DataException.class,
                                                         () -> repository.ambiguousRecordLabels(1));
-            assertThat(ambiguousLabel.getMessage(), is("Ambiguous result column label: name"));
+            assertThat(ambiguousLabel.getMessage(),
+                       is("The result contains more than one column labeled 'name'."));
             DataException missingLabel = assertThrows(DataException.class,
                                                       () -> repository.missingRecordLabel(1));
-            assertThat(missingLabel.getMessage(), is("Result column label not found: name"));
+            assertThat(missingLabel.getMessage(), is("The result does not contain a column labeled 'name'."));
 
             assertThat(repository.mapped(1), is(new ContactLabel(1, "preferred:alpha")));
             assertThat(repository.singleMapped(1), is(new SingleMapperContact("single:alpha")));

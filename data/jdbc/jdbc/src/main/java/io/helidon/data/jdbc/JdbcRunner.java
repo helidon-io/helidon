@@ -61,8 +61,9 @@ final class JdbcRunner {
      * @param leaseProvider connection lease provider
      */
     JdbcRunner(DataSource dataSource, JdbcConnectionLease.Provider leaseProvider) {
-        this.dataSource = Objects.requireNonNull(dataSource, "DataSource must not be null");
-        this.leaseProvider = Objects.requireNonNull(leaseProvider, "Connection lease provider must not be null");
+        this.dataSource = Objects.requireNonNull(dataSource, "The datasource must not be null.");
+        this.leaseProvider = Objects.requireNonNull(leaseProvider,
+                                                   "The connection lease provider must not be null.");
         this.queryHandler = new JdbcQueryHandler();
         this.updateHandler = new JdbcUpdateHandler(queryHandler);
     }
@@ -122,7 +123,7 @@ final class JdbcRunner {
         return switch (operation.preparationPlan().resultKind()) {
         case QUERY -> run(operation, SINGULAR_QUERY, scope -> queryHandler.optionalScalar(scope, scalarType));
         case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.optionalScalar(scope, scalarType));
-        default -> throw new IllegalStateException("Optional scalar mapping requires a row-producing operation");
+        default -> throw new IllegalStateException("Optional scalar mapping requires an operation that produces rows.");
         };
     }
 
@@ -160,15 +161,16 @@ final class JdbcRunner {
         ExecutionScope scope = null;
         T result = null;
         Throwable failure = null;
+        List<Throwable> warningDiagnostics = new ArrayList<>();
         try {
             lease = leaseProvider.acquire(dataSource);
             Connection connection = lease.connection();
-            clearWarnings("connection warning reset", connection::clearWarnings);
+            resetWarnings("connection warning", connection::clearWarnings, warningDiagnostics);
             statement = prepare(connection, operation);
             applyOptions(statement, options);
             bind(statement, operation.binds());
-            clearWarnings("statement warning reset", statement::clearWarnings);
-            scope = new ExecutionScope(operation, statement);
+            resetWarnings("statement warning", statement::clearWarnings, warningDiagnostics);
+            scope = new ExecutionScope(operation, statement, warningDiagnostics);
             result = action.execute(scope);
         } catch (Throwable caught) {
             failure = caught;
@@ -177,7 +179,11 @@ final class JdbcRunner {
         Connection connection = lease == null ? null : lease.connection();
         ResultSet resultSet = scope == null ? null : scope.resultSet();
         // Some drivers discard warnings when their owning resource closes.
-        preserveWarnings(failure, connection, statement, resultSet);
+        failure = preserveWarnings(failure,
+                                   connection,
+                                   statement,
+                                   resultSet,
+                                   warningDiagnostics);
         Throwable cleanupFailure = closeAll(resultSet, statement, lease);
         if (cleanupFailure != null) {
             if (failure == null) {
@@ -189,12 +195,12 @@ final class JdbcRunner {
                 failure.addSuppressed(cleanupException(operation, cleanupFailure));
             }
         }
-        if (scope != null) {
-            scope.addCapturedWarnings(failure);
-        }
         if (failure != null) {
+            addWarningDiagnostics(failure, warningDiagnostics);
             rethrow(operation, failure);
         }
+        // The current policy discards warnings collected during a successful operation. A future warning policy
+        // can process them here without changing JDBC execution or resource ownership.
         return result;
     }
 
@@ -217,7 +223,8 @@ final class JdbcRunner {
         } catch (SQLFeatureNotSupportedException unsupported) {
             // The result cursor still reads at most two rows before reporting cardinality.
         } catch (RuntimeException runtimeException) {
-            throw (RuntimeException) JdbcExceptionTranslator.sanitize("query maximum rows", runtimeException);
+            throw (RuntimeException) JdbcExceptionTranslator.sanitize("setting the maximum row count for a query",
+                                                                       runtimeException);
         }
     }
 
@@ -279,8 +286,8 @@ final class JdbcRunner {
             scope.clearCurrentResultSet();
         }
         if (drainFromCurrent(scope, nextIsResultSet)) {
-            throw new DataException("JDBC " + scope.operation().preparationPlan().resultKind()
-                                            + " returned unexpected additional results");
+            throw new DataException("The " + JdbcExceptionTranslator.operationDescription(scope.operation())
+                                            + " returned unexpected additional results.");
         }
     }
 
@@ -324,7 +331,8 @@ final class JdbcRunner {
      */
     private static DataException unexpectedResult(JdbcOperation operation, boolean resultPresent) {
         String detail = resultPresent ? "an incompatible result" : "no expected result";
-        return new DataException("JDBC " + operation.preparationPlan().resultKind() + " returned " + detail);
+        return new DataException("The " + JdbcExceptionTranslator.operationDescription(operation)
+                                         + " returned " + detail + ".");
     }
 
     /**
@@ -336,29 +344,36 @@ final class JdbcRunner {
      * @param connection current connection
      * @param statement current statement
      * @param resultSet current result set
+     * @param diagnostics sanitized warning diagnostics
+     * @return primary failure after warning processing
      */
-    private static void preserveWarnings(Throwable primary,
-                                         Connection connection,
-                                         PreparedStatement statement,
-                                         ResultSet resultSet) {
+    private static Throwable preserveWarnings(Throwable primary,
+                                              Connection connection,
+                                              PreparedStatement statement,
+                                              ResultSet resultSet,
+                                              List<Throwable> diagnostics) {
         if (resultSet != null) {
-            preserveWarnings(primary,
-                             "result-set warning",
-                             resultSet::getWarnings,
-                             resultSet::clearWarnings);
+            primary = preserveWarnings(primary,
+                                       "result set warning",
+                                       resultSet::getWarnings,
+                                       resultSet::clearWarnings,
+                                       diagnostics);
         }
         if (statement != null) {
-            preserveWarnings(primary,
-                             "statement warning",
-                             statement::getWarnings,
-                             statement::clearWarnings);
+            primary = preserveWarnings(primary,
+                                       "statement warning",
+                                       statement::getWarnings,
+                                       statement::clearWarnings,
+                                       diagnostics);
         }
         if (connection != null) {
-            preserveWarnings(primary,
-                             "connection warning",
-                             connection::getWarnings,
-                             connection::clearWarnings);
+            primary = preserveWarnings(primary,
+                                       "connection warning",
+                                       connection::getWarnings,
+                                       connection::clearWarnings,
+                                       diagnostics);
         }
+        return primary;
     }
 
     /**
@@ -370,73 +385,88 @@ final class JdbcRunner {
      * @param owner stable warning-owner label
      * @param source warning accessor
      * @param clearAction warning clear action
+     * @param diagnostics sanitized warning diagnostics
+     * @return primary failure after warning processing
      */
-    private static void preserveWarnings(Throwable primary,
-                                         String owner,
-                                         WarningSource source,
-                                         WarningClearAction clearAction) {
+    private static Throwable preserveWarnings(Throwable primary,
+                                              String owner,
+                                              WarningSource source,
+                                              WarningClearAction clearAction,
+                                              List<Throwable> diagnostics) {
         SQLWarning first = null;
         try {
             first = source.getWarnings();
-        } catch (Throwable warningFailure) {
-            suppressWarningFailure(primary, owner + " read", warningFailure);
+        } catch (SQLException | RuntimeException warningFailure) {
+            diagnostics.add(JdbcExceptionTranslator.warningFailure(owner, warningFailure));
+        } catch (Error warningFailure) {
+            primary = warningError(primary, owner, warningFailure, diagnostics);
         }
-        addWarnings(primary, owner, first);
+        try {
+            diagnostics.addAll(JdbcExceptionTranslator.sanitizeWarnings(owner, first));
+        } catch (Error warningFailure) {
+            primary = warningError(primary, owner, warningFailure, diagnostics);
+        }
         try {
             clearAction.clearWarnings();
-        } catch (Throwable warningFailure) {
-            suppressWarningFailure(primary, owner + " clear", warningFailure);
+        } catch (SQLException | RuntimeException warningFailure) {
+            diagnostics.add(JdbcExceptionTranslator.warningFailure(owner, warningFailure));
+        } catch (Error warningFailure) {
+            primary = warningError(primary, owner, warningFailure, diagnostics);
         }
+        return primary;
     }
 
     /**
-     * Attaches a sanitized warning-access failure when a primary failure is
-     * already present.
+     * Preserves a fatal warning-processing error without replacing an earlier
+     * operation failure.
      *
      * @param primary primary failure, or {@code null} on success
-     * @param operation stable warning operation label
-     * @param warningFailure JDBC-owned warning-access failure
-     */
-    private static void suppressWarningFailure(Throwable primary, String operation, Throwable warningFailure) {
-        // Warning access must not turn successful work into a failure.
-        if (primary != null) {
-            JdbcExceptionTranslator.suppress(primary, operation, warningFailure);
-        }
-    }
-
-    /**
-     * Adds a JDBC warning chain to an existing failure.
-     *
-     * @param primary receiving failure
      * @param owner stable warning-owner label
-     * @param warning first warning
+     * @param warningFailure fatal warning-processing failure
+     * @param diagnostics sanitized warning diagnostics
+     * @return primary failure after recording the error
      */
-    private static void addWarnings(Throwable primary, String owner, SQLWarning warning) {
+    private static Throwable warningError(Throwable primary,
+                                          String owner,
+                                          Error warningFailure,
+                                          List<Throwable> diagnostics) {
         if (primary == null) {
-            // Warnings remain diagnostic and are not promoted on successful work.
-            return;
+            return warningFailure;
         }
-        for (Throwable sanitized : JdbcExceptionTranslator.sanitizeWarnings(owner, warning)) {
-            JdbcExceptionTranslator.suppress(primary, owner, sanitized);
-        }
+        diagnostics.add(JdbcExceptionTranslator.warningFailure(owner, warningFailure));
+        return primary;
     }
 
     /**
-     * Clears warnings before execution. SQL exceptions continue through normal
-     * JDBC translation; unexpected driver runtime failures are rebuilt here so
-     * their messages and cause trees cannot escape.
+     * Clears warnings without making an ordinary warning-processing failure
+     * fatal to the JDBC operation.
      *
-     * @param operation stable warning operation label
+     * @param owner stable warning-owner label
      * @param clearAction warning clear action
-     * @throws SQLException when the driver reports an SQL failure
+     * @param diagnostics sanitized warning diagnostics
      */
-    private static void clearWarnings(String operation, WarningClearAction clearAction) throws SQLException {
+    private static void resetWarnings(String owner,
+                                      WarningClearAction clearAction,
+                                      List<Throwable> diagnostics) {
         try {
             clearAction.clearWarnings();
-        } catch (SQLException sqlException) {
-            throw sqlException;
-        } catch (RuntimeException runtimeException) {
-            throw (RuntimeException) JdbcExceptionTranslator.sanitize(operation, runtimeException);
+        } catch (SQLException | RuntimeException warningFailure) {
+            diagnostics.add(JdbcExceptionTranslator.warningFailure(owner, warningFailure));
+        }
+    }
+
+    /**
+     * Attaches sanitized warning diagnostics after the terminal outcome is
+     * known. Successful operations intentionally discard these diagnostics.
+     *
+     * @param primary receiving failure
+     * @param diagnostics sanitized warning diagnostics
+     */
+    private static void addWarningDiagnostics(Throwable primary, List<Throwable> diagnostics) {
+        for (Throwable diagnostic : diagnostics) {
+            if (primary != diagnostic) {
+                primary.addSuppressed(diagnostic);
+            }
         }
     }
 
@@ -451,9 +481,9 @@ final class JdbcRunner {
     private static Throwable closeAll(ResultSet resultSet,
                                       PreparedStatement statement,
                                       JdbcConnectionLease lease) {
-        Throwable failure = close(resultSet, "result-set close", null);
-        failure = close(statement, "statement close", failure);
-        return close(lease, "connection lease close", failure);
+        Throwable failure = close(resultSet, "closing a result set", null);
+        failure = close(statement, "closing a statement", failure);
+        return close(lease, "closing a connection lease", failure);
     }
 
     /**
@@ -515,7 +545,7 @@ final class JdbcRunner {
         if (failure instanceof Error error) {
             throw error;
         }
-        throw new DataException("JDBC operation failed", failure);
+        throw new DataException("The JDBC operation failed.", failure);
     }
 
     /**
@@ -526,8 +556,8 @@ final class JdbcRunner {
      * @return state exception
      */
     private static IllegalStateException incompatibleTerminal(JdbcOperation operation, String terminal) {
-        return new IllegalStateException("JDBC " + operation.preparationPlan().resultKind()
-                                                 + " operation cannot use the " + terminal + " terminal");
+        return new IllegalStateException("The " + JdbcExceptionTranslator.operationDescription(operation)
+                                                 + " cannot use the '" + terminal + "' terminal operation.");
     }
 
     /**
@@ -540,7 +570,7 @@ final class JdbcRunner {
 
         ExecutionOptions {
             if (maxRows < 0) {
-                throw new IllegalArgumentException("Maximum rows must not be negative");
+                throw new IllegalArgumentException("The maximum row count must not be negative.");
             }
         }
     }
@@ -599,9 +629,7 @@ final class JdbcRunner {
 
         private final JdbcOperation operation;
         private final PreparedStatement statement;
-
-        // Some drivers discard warnings when a result is exhausted. This list contains sanitized provider copies only.
-        private final List<Throwable> capturedWarnings = new ArrayList<>();
+        private final List<Throwable> warningDiagnostics;
 
         // Registered here so the runner closes it on every exit path.
         private ResultSet resultSet;
@@ -614,10 +642,14 @@ final class JdbcRunner {
          *
          * @param operation immutable operation
          * @param statement prepared statement
+         * @param warningDiagnostics operation warning diagnostics
          */
-        private ExecutionScope(JdbcOperation operation, PreparedStatement statement) {
+        private ExecutionScope(JdbcOperation operation,
+                               PreparedStatement statement,
+                               List<Throwable> warningDiagnostics) {
             this.operation = operation;
             this.statement = statement;
+            this.warningDiagnostics = warningDiagnostics;
         }
 
         /**
@@ -646,7 +678,8 @@ final class JdbcRunner {
         void require(JdbcPreparationPlan.ResultKind expected) {
             JdbcPreparationPlan.ResultKind actual = operation.preparationPlan().resultKind();
             if (actual != expected) {
-                throw new IllegalStateException("JDBC handler expected " + expected + " but received " + actual);
+                throw new IllegalStateException("The JDBC handler expected result kind '" + expected
+                                                        + "' but received '" + actual + "'.");
             }
         }
 
@@ -657,7 +690,7 @@ final class JdbcRunner {
          */
         void resultSet(ResultSet resultSet) {
             if (this.resultSet != null && this.resultSet != resultSet) {
-                throw new IllegalStateException("A JDBC operation cannot own two live result sets");
+                throw new IllegalStateException("A JDBC operation cannot own two live result sets.");
             }
             this.resultSet = resultSet;
         }
@@ -729,8 +762,9 @@ final class JdbcRunner {
 
         /**
          * Captures warnings before JDBC closes an exhausted query result set.
-         * Every warning and warning-access failure is sanitized before it enters
-         * {@link #capturedWarnings}.
+         * Every warning and ordinary warning-processing failure is sanitized
+         * before it enters the operation diagnostic list. Fatal errors remain
+         * fatal and return through the runner's resource-cleanup path.
          */
         private void captureCurrentResultWarnings() {
             if (resultSet == null) {
@@ -739,14 +773,14 @@ final class JdbcRunner {
             SQLWarning first = null;
             try {
                 first = resultSet.getWarnings();
-            } catch (Throwable warningFailure) {
-                capturedWarnings.add(JdbcExceptionTranslator.sanitize("result-set warning read", warningFailure));
+            } catch (SQLException | RuntimeException warningFailure) {
+                warningDiagnostics.add(JdbcExceptionTranslator.warningFailure("result set warning", warningFailure));
             }
-            capturedWarnings.addAll(JdbcExceptionTranslator.sanitizeWarnings("result-set warning", first));
+            warningDiagnostics.addAll(JdbcExceptionTranslator.sanitizeWarnings("result set warning", first));
             try {
                 resultSet.clearWarnings();
-            } catch (Throwable warningFailure) {
-                capturedWarnings.add(JdbcExceptionTranslator.sanitize("result-set warning clear", warningFailure));
+            } catch (SQLException | RuntimeException warningFailure) {
+                warningDiagnostics.add(JdbcExceptionTranslator.warningFailure("result set warning", warningFailure));
             }
         }
 
@@ -758,20 +792,6 @@ final class JdbcRunner {
             resultSet = null;
         }
 
-        /**
-         * Adds previously captured warnings to a terminal failure.
-         * Sanitization is repeated at the suppression boundary so this method
-         * remains safe if the capture implementation changes.
-         *
-         * @param failure terminal failure, or {@code null}
-         */
-        private void addCapturedWarnings(Throwable failure) {
-            if (failure == null) {
-                return;
-            }
-            for (Throwable warning : capturedWarnings) {
-                JdbcExceptionTranslator.suppress(failure, "captured result-set warning", warning);
-            }
-        }
     }
+
 }

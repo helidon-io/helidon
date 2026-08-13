@@ -267,7 +267,8 @@ class JdbcTransactionConnectionManagerTest {
         TxException failure = assertThrows(TxException.class, () -> manager.commit("commit-failure"));
         manager.end();
 
-        assertThat(failure.getMessage(), containsString("unknown outcome"));
+        assertThat(failure.getMessage(),
+                   is("The local JDBC transaction commit failed, and the outcome is unknown."));
         assertThat(fixture.connection().calls("commit"), is(1L));
         assertThat(fixture.connection().calls("rollback"), is(1L));
         assertThat(fixture.connection().calls("setAutoCommit:true"), is(0L));
@@ -286,7 +287,8 @@ class JdbcTransactionConnectionManagerTest {
         TxException failure = assertThrows(TxException.class, () -> manager.rollback("rollback-failure"));
         manager.end();
 
-        assertThat(failure.getMessage(), containsString("unknown outcome"));
+        assertThat(failure.getMessage(),
+                   is("The local JDBC transaction rollback failed, and the outcome is unknown."));
         assertThat(fixture.connection().calls("setAutoCommit:true"), is(0L));
         assertThat(fixture.connection().calls("abort"), is(1L));
         fixture.connection().forceClose();
@@ -304,7 +306,7 @@ class JdbcTransactionConnectionManagerTest {
         manager.end();
 
         assertThat(failure.getMessage(), containsString("was committed"));
-        assertThat(failure.getMessage(), containsString("restore auto-commit"));
+        assertThat(failure.getMessage(), containsString("restore automatic commit mode"));
         assertThat(fixture.connection().calls("commit"), is(1L));
         assertThat(fixture.connection().calls("abort"), is(1L));
         fixture.connection().forceClose();
@@ -376,7 +378,7 @@ class JdbcTransactionConnectionManagerTest {
         TxException failure = assertThrows(TxException.class, () -> manager.commit("invalidation-failure"));
         manager.end();
 
-        assertThat(failure.getCause().getMessage(), is("JDBC driver failure"));
+        assertThat(failure.getCause().getMessage(), is("The JDBC driver reported a failure."));
         assertThat(failure.getCause().getSuppressed().length, is(2));
         assertThat(failure.getCause().getSuppressed()[0].getMessage(), not(containsString("abort failed")));
         assertThat(failure.getCause().getSuppressed()[1].getMessage(), not(containsString("close failed")));

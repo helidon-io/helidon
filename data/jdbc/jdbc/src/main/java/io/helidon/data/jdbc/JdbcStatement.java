@@ -58,10 +58,10 @@ final class JdbcStatement implements JdbcClient.Statement {
      */
     @Override
     public JdbcClient.Statement bind(int index, Object value) {
-        Objects.requireNonNull(value, "Bind value must not be null. Use bindNull for SQL NULL.");
+        Objects.requireNonNull(value, "The bind value must not be null. Use bindNull for SQL NULL.");
         if (!JdbcRow.supportedScalar(value.getClass())) {
-            throw new IllegalArgumentException("JDBC does not support bind values of type: "
-                                                       + value.getClass().getTypeName());
+            throw new IllegalArgumentException("JDBC does not support bind values of type '"
+                                                       + value.getClass().getTypeName() + "'.");
         }
         return bind(index, new JdbcOperation.Bind(value, null));
     }
@@ -75,9 +75,9 @@ final class JdbcStatement implements JdbcClient.Statement {
      */
     @Override
     public JdbcClient.Statement bindNull(int index, JDBCType type) {
-        Objects.requireNonNull(type, "JDBC null type must not be null");
+        Objects.requireNonNull(type, "The JDBC null type must not be null.");
         if (type == JDBCType.NULL || type == JDBCType.REF_CURSOR) {
-            throw new IllegalArgumentException("JDBC does not support null values of type: " + type);
+            throw new IllegalArgumentException("JDBC does not support null values of type '" + type + "'.");
         }
         return bind(index, new JdbcOperation.Bind(null, type));
     }
@@ -103,7 +103,7 @@ final class JdbcStatement implements JdbcClient.Statement {
     public <T> JdbcClient.Rows<T> map(JdbcClient.RowMapper<T> mapper) {
         ensureMutable();
         return new JdbcRows<>(this,
-                              Objects.requireNonNull(mapper, "Row mapper must not be null"),
+                              Objects.requireNonNull(mapper, "The row mapper must not be null."),
                               JdbcPreparationPlan.query());
     }
 
@@ -117,10 +117,10 @@ final class JdbcStatement implements JdbcClient.Statement {
     @Override
     public <T> JdbcClient.Rows<T> map(Class<T> scalarType) {
         ensureMutable();
-        Objects.requireNonNull(scalarType, "Scalar type must not be null");
+        Objects.requireNonNull(scalarType, "The scalar type must not be null.");
         if (!JdbcRow.supportedScalar(scalarType)) {
-            throw new IllegalArgumentException("JDBC does not support scalar values of type: "
-                                                       + scalarType.getTypeName());
+            throw new IllegalArgumentException("JDBC does not support scalar values of type '"
+                                                       + scalarType.getTypeName() + "'.");
         }
         return new JdbcRows<>(this,
                               row -> row.required(1, scalarType),
@@ -197,10 +197,11 @@ final class JdbcStatement implements JdbcClient.Statement {
     private JdbcClient.Statement bind(int index, JdbcOperation.Bind value) {
         ensureMutable();
         if (index < 1 || index > binds.length) {
-            throw new IllegalArgumentException("The bind index must be between 1 and " + binds.length + ": " + index);
+            throw new IllegalArgumentException("The bind index must be between 1 and " + binds.length
+                                                       + ". The requested index was " + index + ".");
         }
         if (binds[index - 1] != null) {
-            throw new IllegalArgumentException("Bind position " + index + " was already assigned");
+            throw new IllegalArgumentException("Bind position " + index + " has already been assigned.");
         }
         binds[index - 1] = value;
         return this;
@@ -216,7 +217,7 @@ final class JdbcStatement implements JdbcClient.Statement {
         ensureMutable();
         for (int index = 0; index < binds.length; index++) {
             if (binds[index] == null) {
-                throw new IllegalStateException("Missing bind value at JDBC position " + (index + 1));
+                throw new IllegalStateException("A bind value is missing at JDBC position " + (index + 1) + ".");
             }
         }
         terminalStarted = true;
@@ -228,7 +229,7 @@ final class JdbcStatement implements JdbcClient.Statement {
      */
     void ensureMutable() {
         if (terminalStarted) {
-            throw new IllegalStateException("A JDBC statement stage allows exactly one terminal operation");
+            throw new IllegalStateException("A JDBC statement can perform only one terminal operation.");
         }
     }
 }

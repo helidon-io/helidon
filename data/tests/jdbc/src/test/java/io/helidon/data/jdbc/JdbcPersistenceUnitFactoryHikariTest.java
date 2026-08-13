@@ -58,7 +58,7 @@ class JdbcPersistenceUnitFactoryHikariTest {
 
             DataException failure = assertThrows(DataException.class, factory::services);
 
-            assertThat(failure.getMessage(), containsString("init bootstrap resource #1 (classpath)"));
+            assertThat(failure.getMessage(), containsString("classpath init script"));
             assertThat(failure.getMessage(), not(containsString("jdbc-bootstrap-invalid.sql")));
             assertThat(failure.getMessage(), containsString("statement 2"));
             assertThat(failure.getCause(), instanceOf(java.sql.SQLException.class));

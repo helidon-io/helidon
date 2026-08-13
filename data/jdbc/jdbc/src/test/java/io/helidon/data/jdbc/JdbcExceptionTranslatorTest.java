@@ -52,14 +52,14 @@ class JdbcExceptionTranslatorTest {
             DataException failure = JdbcExceptionTranslator.translate("QUERY", sql, cause);
             String messages = messages(failure);
 
-            assertThat(failure.getMessage(), containsString("SQLState=42000"));
-            assertThat(failure.getMessage(), containsString("vendorCode=91"));
+            assertThat(failure.getMessage(), containsString("SQL state is '42000'"));
+            assertThat(failure.getMessage(), containsString("vendor code is 91"));
             assertThat(failure.getMessage(),
-                       containsString("sqlFingerprint=" + JdbcExceptionTranslator.fingerprint(sql)));
+                       containsString("SQL fingerprint is '" + JdbcExceptionTranslator.fingerprint(sql) + "'"));
             assertThat(messages, not(containsString(sql)));
             assertThat(messages, not(containsString("private-token")));
             assertThat(messages, not(containsString("user:password")));
-            assertThat(failure.getCause().getMessage(), is("JDBC driver failure"));
+            assertThat(failure.getCause().getMessage(), is("The JDBC driver reported a failure."));
             SQLException safeCause = (SQLException) failure.getCause();
             assertThat(safeCause.getSQLState(), is("42000"));
             assertThat(safeCause.getErrorCode(), is(91));
@@ -106,11 +106,12 @@ class JdbcExceptionTranslatorTest {
             }
         };
 
-        List<Throwable> cycle = JdbcExceptionTranslator.sanitizeWarnings("result-set warning", cyclic);
+        List<Throwable> cycle = JdbcExceptionTranslator.sanitizeWarnings("result set warning", cyclic);
 
         assertThat(cycle.size(), is(2));
         assertSafeWarning(cycle.get(0), "01000", 1);
-        assertThat(cycle.get(1).getMessage(), is("JDBC result-set warning chain truncated"));
+        assertThat(cycle.get(1).getMessage(),
+                   is("The JDBC provider could not process result set warnings."));
 
         SQLWarning first = new SQLWarning("secret warning 0", "01000", 0);
         SQLWarning current = first;
@@ -123,7 +124,8 @@ class JdbcExceptionTranslatorTest {
         List<Throwable> bounded = JdbcExceptionTranslator.sanitizeWarnings("connection warning", first);
 
         assertThat(bounded.size(), is(65));
-        assertThat(bounded.get(64).getMessage(), is("JDBC connection warning chain truncated"));
+        assertThat(bounded.get(64).getMessage(),
+                   is("The JDBC provider could not process connection warnings."));
     }
 
     @Test
@@ -140,17 +142,18 @@ class JdbcExceptionTranslatorTest {
 
         assertThat(warnings.size(), is(2));
         assertThat(traversal.getMessage(),
-                   is("JDBC statement warning traversal failure [java.lang.IllegalArgumentException]"));
+                   is("The JDBC provider could not process statement warnings."));
         assertThat(traversal.getCause(), nullValue());
         assertThat(traversal.getSuppressed().length, is(0));
 
         IllegalStateException driverFailure = new IllegalStateException("secret driver detail",
                                                                          new RuntimeException("secret cause"));
         driverFailure.addSuppressed(new RuntimeException("secret suppressed"));
-        Throwable sanitized = JdbcExceptionTranslator.sanitize("connection warning read", driverFailure);
+        Throwable sanitized = JdbcExceptionTranslator.sanitize("closing a connection", driverFailure);
 
         assertThat(sanitized.getMessage(),
-                   is("JDBC connection warning read failure [java.lang.IllegalStateException]"));
+                   is("The JDBC provider encountered an exception of type 'java.lang.IllegalStateException' "
+                              + "while closing a connection."));
         assertThat(sanitized.getCause(), nullValue());
         assertThat(sanitized.getSuppressed().length, is(0));
         assertThat(messages(sanitized), not(containsString("secret")));
@@ -159,7 +162,7 @@ class JdbcExceptionTranslatorTest {
     private static void assertSafeWarning(Throwable actual, String sqlState, int vendorCode) {
         assertThat(actual, instanceOf(SQLWarning.class));
         SQLWarning warning = (SQLWarning) actual;
-        assertThat(warning.getMessage(), is("JDBC driver warning"));
+        assertThat(warning.getMessage(), is("The JDBC driver reported a warning."));
         assertThat(warning.getSQLState(), is(sqlState));
         assertThat(warning.getErrorCode(), is(vendorCode));
         assertThat(warning.getCause(), nullValue());

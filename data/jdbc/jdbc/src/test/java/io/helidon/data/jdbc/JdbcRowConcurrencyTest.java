@@ -55,7 +55,7 @@ class JdbcRowConcurrencyTest {
                                                           () -> result.get(5, TimeUnit.SECONDS));
                 assertThat(failure.getCause(), instanceOf(IllegalStateException.class));
                 assertThat(failure.getCause().getMessage(),
-                           is("JDBC row may be read only by its mapper callback thread"));
+                           is("A JDBC row may be read only by its mapper callback thread."));
             }
 
             row.expire();
@@ -81,7 +81,7 @@ class JdbcRowConcurrencyTest {
                                                       () -> read.get(5, TimeUnit.SECONDS));
             assertThat(failure.getCause(), instanceOf(IllegalStateException.class));
             assertThat(failure.getCause().getMessage(),
-                       is("JDBC row is valid only during its mapper callback"));
+                       is("A JDBC row is valid only during its mapper callback."));
             verify(resultSet, never()).getObject(1, String.class);
         } finally {
             executor.shutdownNow();
