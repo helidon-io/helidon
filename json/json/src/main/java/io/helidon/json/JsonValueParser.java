@@ -57,38 +57,46 @@ class JsonValueParser implements JsonParser {
                 // object)
                 int size = (keys.size() * 4) - 1;
                 ensureCapacity(size + 1);
-                if (index > 0) {
+                if (index > 0 || values[index] != JsonNoopValue.INSTANCE) {
                     //We are having some values before this one. index need to be raised to prevet overwriting.
                     index++;
                 }
-                values[index++] = JsonControlValue.OBJECT_END;
-                for (JsonString key : keys) {
-                    values[index + --size] = key;
-                    values[index + --size] = JsonControlValue.COLON;
-                    values[index + --size] = object.value(key.value(), JsonNull.instance());
-                    if (size > 0) {
-                        values[index + --size] = JsonControlValue.COMMA;
+                if (keys.isEmpty()) {
+                    values[index] = JsonControlValue.OBJECT_END;
+                } else {
+                    values[index++] = JsonControlValue.OBJECT_END;
+                    for (JsonString key : keys) {
+                        values[index + --size] = key;
+                        values[index + --size] = JsonControlValue.COLON;
+                        values[index + --size] = object.value(key.value(), JsonNull.instance());
+                        if (size > 0) {
+                            values[index + --size] = JsonControlValue.COMMA;
+                        }
                     }
+                    index += (keys.size() * 4) - 2;
                 }
-                index += (keys.size() * 4) - 2;
             } else if (current.type() == JsonValueType.ARRAY) {
                 JsonArray array = current.asArray();
                 //We need to calculate how many values we need to add + how many commas
                 //value size needs to be multiplied by 2, because for every value we will add , (-1 for the last object)
                 int size = (array.values().size() * 2) - 1;
                 ensureCapacity(size + 1);
-                if (index > 0) {
+                if (index > 0 || values[index] != JsonNoopValue.INSTANCE) {
                     //We are having some values before this one. index need to be raised to prevet overwriting.
                     index++;
                 }
-                values[++index] = JsonControlValue.ARRAY_END;
-                for (JsonValue value : array.values()) {
-                    values[index + --size] = value;
-                    if (size > 0) {
-                        values[index + --size] = JsonControlValue.COMMA;
+                if (array.values().isEmpty()) {
+                    values[index] = JsonControlValue.ARRAY_END;
+                } else {
+                    values[index++] = JsonControlValue.ARRAY_END;
+                    for (JsonValue value : array.values()) {
+                        values[index + --size] = value;
+                        if (size > 0) {
+                            values[index + --size] = JsonControlValue.COMMA;
+                        }
                     }
+                    index += (array.values().size() * 2) - 2;
                 }
-                index += (array.values().size() * 2) - 2;
             }
         }
         if (index >= 0) {

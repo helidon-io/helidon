@@ -16,20 +16,28 @@
 
 package io.helidon.json.tests;
 
+import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.common.GenericType;
+import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValue;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 @Testing.Test
 public class ListTest {
@@ -49,6 +57,41 @@ public class ListTest {
 
         String json = bindingMethod.serialize(jsonBinding, list);
         assertThat(json, is(expected));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testListHelpers(BindingMethod bindingMethod) {
+        List<String> list = List.of("a", "b", "c");
+        String expected = "[\"a\",\"b\",\"c\"]";
+
+        String json = bindingMethod.serializeList(jsonBinding, list, String.class);
+        assertThat(json, is(expected));
+        assertThat(bindingMethod.deserializeList(jsonBinding, json, String.class), is(list));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testListHelpersDeserializeJsonNull(BindingMethod bindingMethod) {
+        assertThat(bindingMethod.deserializeList(jsonBinding, "null", String.class), is(nullValue()));
+    }
+
+    @Test
+    public void testAdditionalListHelpers() {
+        List<String> list = List.of("a", "b", "c");
+        String json = "[\"a\",\"b\",\"c\"]";
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+        StringWriter writer = new StringWriter();
+        JsonValue jsonValue = JsonParser.create(json).readJsonValue();
+
+        try (JsonGenerator generator = JsonGenerator.create(writer)) {
+            jsonBinding.serializeList(generator, list, String.class);
+        }
+
+        assertThat(writer.toString(), is(json));
+        assertThat(jsonBinding.deserializeList(new ByteArrayInputStream(bytes), 6, String.class), is(list));
+        assertThat(jsonBinding.deserializeList(jsonValue, String.class), is(list));
+        assertThat(jsonBinding.deserializeList(JsonParser.create(json), String.class), is(list));
     }
 
     @ParameterizedTest

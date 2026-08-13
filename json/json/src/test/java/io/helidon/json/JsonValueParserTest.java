@@ -282,6 +282,42 @@ class JsonValueParserTest {
     }
 
     @Test
+    public void testJsonValueParserNextTokenAdvancesArrayCorrectly() {
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of(JsonString.create("first"),
+                                                                       JsonString.create("second"))));
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("first"));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("second"));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserNextTokenAdvancesEmptyStructuresCorrectly() {
+        JsonParser arrayParser = JsonParser.create(JsonArray.EMPTY_ARRAY);
+        assertThat(arrayParser.nextToken(), is((byte) ']'));
+        assertThat(arrayParser.hasNext(), is(false));
+
+        JsonParser objectParser = JsonParser.create(JsonObject.EMPTY_OBJECT);
+        assertThat(objectParser.nextToken(), is((byte) '}'));
+        assertThat(objectParser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserPreservesNestedEndTokens() {
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of(JsonObject.EMPTY_OBJECT)));
+
+        assertThat(parser.nextToken(), is((byte) '{'));
+        assertThat(parser.nextToken(), is((byte) '}'));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
     public void testJsonValueParserComplexObject() {
         JsonValue original = JsonObject.create(
                 Map.of("users", JsonArray.create(
