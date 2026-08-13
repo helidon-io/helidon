@@ -48,6 +48,7 @@ import io.helidon.json.JsonParser;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
 import io.helidon.openapi.spi.OpenApiVersion;
 import io.helidon.openapi.spi.OpenApiVersionProvider;
+import io.helidon.openapi.v30.OpenApiDocumentMapperSupport;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
@@ -55,8 +56,6 @@ import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.ServerFeature;
-
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * Helidon Support for OpenAPI.
@@ -641,7 +640,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     }
 
     private static Optional<String> yamlOpenApiVersion(String content) {
-        Object loaded = new Yaml().load(content);
+        Object loaded = OpenApiDocumentMapperSupport.parseYaml(content);
         if (!(loaded instanceof Map<?, ?> map)) {
             return Optional.empty();
         }
