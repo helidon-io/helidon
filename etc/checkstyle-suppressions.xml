@@ -36,8 +36,8 @@ record here.
     - File exclusions (exceptions)
     - FileLength cannot be excluded using a @SuppressWarnings
     -->
-    <!-- the huffman constants are long, but this is not actual code, just a set of constants -->
-    <suppress files="http/http2/src/main/java/io/helidon/http/http2/Http2HuffmanConstants\.java"
+    <!-- the Huffman tables are long, but this is not actual code, just the tables from RFC 7541 -->
+    <suppress files="common/buffers/src/main/java/io/helidon/common/buffers/HuffmanTables\.java"
             checks="FileLength"/>
 
     <!-- Once the proper abstraction structure is found for the parsers, this can be removed-->
