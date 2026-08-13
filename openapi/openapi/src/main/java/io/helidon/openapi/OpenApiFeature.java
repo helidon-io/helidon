@@ -89,6 +89,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private final Config sourceConfig;
     private final OpenApiManager<?> manager;
     private final OpenApiLockCoordinator.CoordinationLock managerLock;
+    private final LazyValue<Object> sharedStaticModel;
     private final ConcurrentMap<String, LazyValue<Object>> modelsByListener;
     private final LazyValue<List<OpenApiDocumentSource>> documentSources;
     private final LazyValue<List<OpenApiVersion>> openApiVersions;
@@ -180,6 +181,11 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         });
         manager = config.manager().orElseGet(SimpleOpenApiManager::new);
         managerLock = OpenApiLockCoordinator.coordinationLock(manager);
+        sharedStaticModel = LazyValue.create(() -> {
+            try (var ignored = OpenApiLockCoordinator.lock(List.of(managerLock))) {
+                return manager.load(content);
+            }
+        });
         modelsByListener = new ConcurrentHashMap<>();
         initialized = new AtomicBoolean();
     }
@@ -336,6 +342,11 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     }
 
     private LazyValue<Object> listenerModel(String listener) {
+        OpenApiGeneratedMode mode = config.generatedMode();
+        if (mode == OpenApiGeneratedMode.STATIC_ONLY
+                || (mode == OpenApiGeneratedMode.STATIC_FIRST && !content.isBlank())) {
+            return sharedStaticModel;
+        }
         return modelsByListener.computeIfAbsent(listener, this::model);
     }
 

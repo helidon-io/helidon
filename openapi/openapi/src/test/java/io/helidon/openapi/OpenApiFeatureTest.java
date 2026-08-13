@@ -756,6 +756,27 @@ class OpenApiFeatureTest {
         staticModeServesStaticDocumentAsIs(tempDir, OpenApiGeneratedMode.STATIC_FIRST);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"STATIC_ONLY", "STATIC_FIRST"})
+    void sharesStaticModelAcrossListeners(OpenApiGeneratedMode mode,
+                                          @TempDir Path tempDir) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        Path staticFile = tempDir.resolve("static-3.1.yaml");
+        Files.writeString(staticFile, OPENAPI_31_DOCUMENT);
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .staticFile(staticFile.toString())
+                .generatedMode(mode)
+                .manager(manager)
+                .buildPrototype();
+        OpenApiFeature feature = testFeature(config, List.of(), List.of());
+
+        feature.setup(new TestFeatureContext("admin"));
+        feature.initialize();
+
+        assertThat(manager.contents().size(), is(1));
+    }
+
     @Test
     void generatedFallbackWithoutStaticDocumentUsesGeneratedSources() {
         RecordingOpenApiManager manager = new RecordingOpenApiManager();
