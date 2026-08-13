@@ -53,6 +53,7 @@ import org.yaml.snakeyaml.resolver.Resolver;
  */
 @Api.Internal
 public final class OpenApiDocumentMapperSupport {
+    private static final int MAX_YAML_ALIASES = 20;
     private static final Set<String> REFERENCE_FIELDS = Set.of("$ref",
                                                                "summary",
                                                                "description");
@@ -69,6 +70,7 @@ public final class OpenApiDocumentMapperSupport {
     public static Object parseYaml(String source) {
         Objects.requireNonNull(source);
         LoaderOptions loaderOptions = new LoaderOptions();
+        loaderOptions.setMaxAliasesForCollections(MAX_YAML_ALIASES);
         DumperOptions dumperOptions = new DumperOptions();
         return new Yaml(new JsonSafeConstructor(loaderOptions),
                         new Representer(dumperOptions),

@@ -26,6 +26,7 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValueType;
 
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -90,6 +91,26 @@ class OpenApiDocumentMapperSupportTest {
         assertThat(values.get("integer"), is(12));
         assertThat(values.get("decimal"), is(1.25));
         assertThat(values.get("exponent"), is(100.0));
+    }
+
+    @Test
+    void rejectsExcessiveCollectionAliases() {
+        String yaml = """
+                value: &value [value]
+                level01: &level01 [*value, *value]
+                level02: &level02 [*level01, *level01]
+                level03: &level03 [*level02, *level02]
+                level04: &level04 [*level03, *level03]
+                level05: &level05 [*level04, *level04]
+                level06: &level06 [*level05, *level05]
+                level07: &level07 [*level06, *level06]
+                level08: &level08 [*level07, *level07]
+                level09: &level09 [*level08, *level08]
+                level10: &level10 [*level09, *level09]
+                level11: [*level10, *level10]
+                """;
+
+        assertThrows(YAMLException.class, () -> OpenApiDocumentMapperSupport.parseYaml(yaml));
     }
 
     @Test
