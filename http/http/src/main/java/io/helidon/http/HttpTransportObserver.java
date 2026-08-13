@@ -24,7 +24,9 @@ import io.helidon.common.Api;
  * Protocol-neutral observation of HTTP transport lifecycle.
  *
  * <p>Callbacks must not block. They may be invoked concurrently, so implementations must be thread safe.
- * Observation must not affect protocol or transport behavior.
+ * Observation must not affect protocol or transport behavior. Observer callbacks are passive and must not directly or
+ * indirectly invoke lifecycle methods on a {@link ConnectionObservation}, {@link HandshakeObservation}, or
+ * {@link StreamObservation}; callback reentry is not supported.
  */
 @Api.Internal
 @FunctionalInterface
