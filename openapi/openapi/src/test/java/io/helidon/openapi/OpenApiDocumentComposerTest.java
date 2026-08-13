@@ -1031,7 +1031,7 @@ class OpenApiDocumentComposerTest {
         assertThat(embeddedMapping.get("byName"), is("Item2"));
         assertThat(embeddedDiscriminator.get("defaultMapping"),
                    is(nestedItemRef));
-        assertThat(map(schemas, "CustomDialect").get("$dynamicRef"), is("#/components/schemas/Item"));
+        assertThat(map(schemas, "CustomDialect").get("$dynamicRef"), is("#/components/schemas/Item2"));
         assertThat(map(schemas, "Draft2020Dialect").get("$dynamicRef"),
                    is("#/components/schemas/Item2"));
         assertThat(map(schemas, "OasDialect").get("$dynamicRef"), is("#/components/schemas/Item2"));
@@ -1112,7 +1112,7 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
-    void generatedDocumentPreservesDynamicRefsForCustomDocumentDialect() {
+    void generatedDocumentRewritesDynamicRefsForCustomDocumentDialect() {
         OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.GENERATED_ONLY,
                                                     RawOpenApiVersion.OPEN_API_32);
         OpenApiDocumentSource first = (documentContext, document) -> document
@@ -1125,7 +1125,6 @@ class OpenApiDocumentComposerTest {
                         .schema("Item", JsonObject.builder().set("type", "integer").build())
                         .schema("Envelope",
                                 JsonObject.builder()
-                                        .set("$ref", "#/components/schemas/Item")
                                         .set("$dynamicRef", "#/components/schemas/Item")
                                         .build())
                         .schema("Draft2020Envelope",
@@ -1150,8 +1149,7 @@ class OpenApiDocumentComposerTest {
         Map<String, Object> schemas = map(map(document, "components"), "schemas");
         Map<String, Object> envelope = map(schemas, "Envelope");
 
-        assertThat(envelope.get("$ref"), is("#/components/schemas/Item2"));
-        assertThat(envelope.get("$dynamicRef"), is("#/components/schemas/Item"));
+        assertThat(envelope.get("$dynamicRef"), is("#/components/schemas/Item2"));
         assertThat(map(schemas, "Draft2020Envelope").get("$dynamicRef"),
                    is("#/components/schemas/Item2"));
         assertThat(map(schemas, "OasEnvelope").get("$dynamicRef"),
@@ -1188,7 +1186,7 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
-    void mergePreservesGeneratedDynamicRefsForCustomDocumentDialect() {
+    void mergeRewritesGeneratedDynamicRefsForCustomDocumentDialect() {
         OpenApiDocumentContext context = rawContext(OpenApiGeneratedMode.MERGE,
                                                     RawOpenApiVersion.OPEN_API_32);
         OpenApiDocument staticDocument = OpenApiDocument.builder()
@@ -1215,7 +1213,7 @@ class OpenApiDocumentComposerTest {
         Map<String, Object> envelope = map(map(map(parse(content), "components"), "schemas"), "Envelope");
 
         assertThat(envelope.get("$ref"), is("#/components/schemas/Item2"));
-        assertThat(envelope.get("$dynamicRef"), is("#/components/schemas/Item"));
+        assertThat(envelope.get("$dynamicRef"), is("#/components/schemas/Item2"));
     }
 
     @Test
