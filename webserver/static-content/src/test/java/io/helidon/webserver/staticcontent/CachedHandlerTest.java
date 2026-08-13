@@ -16,8 +16,10 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,6 +38,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -114,7 +117,7 @@ class CachedHandlerTest {
         assertThat("Cached bytes must not be empty", cached.bytes(), not(BufferData.EMPTY_BYTES));
         assertThat("Content length", cached.contentLength(), is(1230));
         assertThat("Last modified", cached.lastModified(), notNullValue());
-        assertThat("Media type", cached.mediaType(), is(MEDIA_TYPE_ICON));
+        assertThat("Media type", cached.metadata().mediaType(), is(MEDIA_TYPE_ICON));
     }
 
     @Test
@@ -168,9 +171,9 @@ class CachedHandlerTest {
         assertThat("During tests, classpath should be loaded from file system", cached, instanceOf(CachedHandlerPath.class));
         CachedHandlerPath pathHandler = (CachedHandlerPath) cached;
         assertThat("Path", pathHandler.path(), notNullValue());
-        assertThat("Last modified function", pathHandler.lastModified(), notNullValue());
-        assertThat("Last modified", pathHandler.lastModified().apply(pathHandler.path()), notNullValue());
-        assertThat("Media type", pathHandler.mediaType(), is(MediaTypes.TEXT_PLAIN));
+        assertThat("Last modified", pathHandler.metadata().lastModified(), notNullValue());
+        assertThat("Content length", pathHandler.metadata().contentLength(), is(7L));
+        assertThat("Media type", pathHandler.metadata().mediaType(), is(MediaTypes.TEXT_PLAIN));
     }
 
     @Test
@@ -202,7 +205,7 @@ class CachedHandlerTest {
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         when(response.headers()).thenReturn(responseHeaders);
 
-        CachedHandlerUrlStream handler = new CachedHandlerUrlStream(MediaTypes.TEXT_PLAIN, url);
+        CachedHandlerUrlStream handler = CachedHandlerUrlStream.create(MediaTypes.TEXT_PLAIN, url);
         HttpException exception = assertThrows(HttpException.class,
                                                () -> handler.handle(LruCache.create(),
                                                                     Method.HEAD,
@@ -213,6 +216,140 @@ class CachedHandlerTest {
         assertThat(exception.status(), is(Status.NOT_MODIFIED_304));
         assertThat(responseHeaders.contains(HeaderNames.ETAG), is(false));
         assertThat(exception.headers().contains(HeaderNames.ETAG), is(false));
+    }
+
+    @Test
+    void testUrlStreamMetadataIsResolvedOnce() throws IOException {
+        AtomicInteger connectionCount = new AtomicInteger();
+        URL url = URL.of(URI.create("test:/resource.txt"), new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL url) {
+                connectionCount.incrementAndGet();
+                return new URLConnection(url) {
+                    @Override
+                    public void connect() {
+                    }
+
+                    @Override
+                    public long getLastModified() {
+                        return 1234;
+                    }
+
+                    @Override
+                    public long getContentLengthLong() {
+                        return 7;
+                    }
+                };
+            }
+        });
+
+        ServerRequest request = mock(ServerRequest.class);
+        when(request.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ServerResponse response = mock(ServerResponse.class);
+        when(response.headers()).thenReturn(ServerResponseHeaders.create());
+
+        CachedHandlerUrlStream handler = CachedHandlerUrlStream.create(MediaTypes.TEXT_PLAIN, url);
+        handler.handle(LruCache.create(), Method.HEAD, request, response, "resource.txt");
+        handler.handle(LruCache.create(), Method.HEAD, request, response, "resource.txt");
+
+        assertThat("URL metadata should be resolved only when the handler is created",
+                   connectionCount.get(),
+                   is(1));
+    }
+
+    @Test
+    void testJarExtractionFailureUsesUrlStream(@TempDir Path tempDir) throws IOException {
+        byte[] content = "Content".getBytes(StandardCharsets.UTF_8);
+        AtomicInteger streamCount = new AtomicInteger();
+        URL url = URL.of(URI.create("test:/resource.txt"), new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL url) {
+                return new URLConnection(url) {
+                    @Override
+                    public void connect() {
+                    }
+
+                    @Override
+                    public InputStream getInputStream() {
+                        if (streamCount.getAndIncrement() != 0) {
+                            return new ByteArrayInputStream(content);
+                        }
+                        return new InputStream() {
+                            private boolean firstRead = true;
+
+                            @Override
+                            public int read() throws IOException {
+                                throw new IOException("Extraction failed");
+                            }
+
+                            @Override
+                            public int read(byte[] bytes, int offset, int length) throws IOException {
+                                if (!firstRead) {
+                                    throw new IOException("Extraction failed");
+                                }
+                                firstRead = false;
+                                int copied = Math.min(3, length);
+                                System.arraycopy(content, 0, bytes, offset, copied);
+                                return copied;
+                            }
+                        };
+                    }
+                };
+            }
+        });
+        TemporaryStorage storage = mock(TemporaryStorage.class);
+        when(storage.createFile()).thenReturn(Optional.of(tempDir.resolve("resource.txt")));
+
+        CachedHandlerJar handler = CachedHandlerJar.create(storage, url, null, MediaTypes.TEXT_PLAIN, content.length);
+        ServerRequest request = mock(ServerRequest.class);
+        when(request.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ServerResponse response = mock(ServerResponse.class);
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        when(response.headers()).thenReturn(responseHeaders);
+        when(response.outputStream()).thenReturn(output);
+
+        handler.handle(LruCache.create(), Method.GET, request, response, "resource.txt");
+
+        assertThat("Failed extraction should fall back to the URL stream", output.toByteArray(), is(content));
+        assertThat("The URL should be opened again after extraction fails", streamCount.get(), is(2));
+        assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
+    }
+
+    @Test
+    void testJarExtractionResolvesUnknownContentLength(@TempDir Path tempDir) throws IOException {
+        byte[] content = "Content".getBytes(StandardCharsets.UTF_8);
+        URL url = URL.of(URI.create("test:/resource.txt"), new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL url) {
+                return new URLConnection(url) {
+                    @Override
+                    public void connect() {
+                    }
+
+                    @Override
+                    public InputStream getInputStream() {
+                        return new ByteArrayInputStream(content);
+                    }
+                };
+            }
+        });
+        TemporaryStorage storage = mock(TemporaryStorage.class);
+        when(storage.createFile()).thenReturn(Optional.of(tempDir.resolve("resource.txt")));
+
+        CachedHandlerJar handler = CachedHandlerJar.create(storage, url, null, MediaTypes.TEXT_PLAIN, -1);
+        ServerRequest request = mock(ServerRequest.class);
+        when(request.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ServerResponse response = mock(ServerResponse.class);
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        when(response.headers()).thenReturn(responseHeaders);
+
+        handler.handle(LruCache.create(), Method.HEAD, request, response, "resource.txt");
+
+        assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
     }
 
     @Test
@@ -252,7 +389,7 @@ class CachedHandlerTest {
         // content is: "Nested content"
         assertThat("Content length", cached.contentLength(), is(14));
         assertThat("Last modified", cached.lastModified(), notNullValue());
-        assertThat("Media type", cached.mediaType(), is(MediaTypes.TEXT_PLAIN));
+        assertThat("Media type", cached.metadata().mediaType(), is(MediaTypes.TEXT_PLAIN));
     }
 
     @Test
@@ -341,16 +478,11 @@ class CachedHandlerTest {
     }
 
     @Test
-    void testFileSystemSymlinkRootRetargetingAfterStart(@TempDir Path tempDir) throws IOException {
+    void testFileSystemSymlinkRoot(@TempDir Path tempDir) throws IOException {
         Path root = tempDir.resolve("root");
-        Path nestedRoot = root.resolve("nested");
-        Path alternateRoot = tempDir.resolve("alternate-root");
         Path linkRoot = tempDir.resolve("link-root");
-        Files.createDirectories(nestedRoot);
-        Files.createDirectories(alternateRoot);
+        Files.createDirectories(root);
         Files.writeString(root.resolve("resource.txt"), "Content");
-        Files.writeString(nestedRoot.resolve("resource.txt"), "Nested content");
-        Files.writeString(alternateRoot.resolve("resource.txt"), "Alternate content");
         createSymbolicLink(linkRoot, root);
 
         FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
@@ -371,22 +503,9 @@ class CachedHandlerTest {
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(ServerResponseHeaders.create());
 
-        createSymbolicLink(linkRoot, nestedRoot);
-
-        assertThat("Retargeted symlink root should not remap the visible resource tree",
-                   handler.doHandle(Method.HEAD, "resource.txt", req, res, false),
-                   is(false));
-
-        createSymbolicLink(linkRoot, root);
-        assertThat("Original symlink root should still serve the pinned resource tree",
+        assertThat("Symlink root should serve its resource tree",
                    handler.doHandle(Method.HEAD, "resource.txt", req, res, false),
                    is(true));
-
-        createSymbolicLink(linkRoot, alternateRoot);
-
-        assertThat("Out-of-root symlink root should not be served",
-                   handler.doHandle(Method.HEAD, "resource.txt", req, res, false),
-                   is(false));
     }
 
     @Test
@@ -576,13 +695,10 @@ class CachedHandlerTest {
                    is(false));
 
         byte[] replacementBytes = "1".getBytes(StandardCharsets.UTF_8);
-        CachedHandlerInMemory replacement = new CachedHandlerInMemory(MediaTypes.TEXT_PLAIN,
-                                                                       null,
-                                                                       null,
-                                                                       replacementBytes,
-                                                                       replacementBytes.length,
-                                                                       HeaderValues.create(HeaderNames.CONTENT_LENGTH,
-                                                                                           replacementBytes.length));
+        CachedHandlerInMemory replacement = new CachedHandlerInMemory(StaticContentMetadata.create(MediaTypes.TEXT_PLAIN,
+                                                                                                    null,
+                                                                                                    replacementBytes.length),
+                                                                       replacementBytes);
         handler.cacheInMemory("alias.txt", replacement);
 
         assertThat("Replacing one alias should retain both distinct payloads",
@@ -606,7 +722,7 @@ class CachedHandlerTest {
     }
 
     @Test
-    void testSingleFileSymlinkRetargetingAfterStart(@TempDir Path tempDir) throws IOException {
+    void testSingleFileSymlink(@TempDir Path tempDir) throws IOException {
         Path root = tempDir.resolve("root");
         Path externalDir = tempDir.resolve("external");
         Files.createDirectories(root);
@@ -622,7 +738,54 @@ class CachedHandlerTest {
                         .location(link)
                         .build());
         handler.beforeStart();
-        createSymbolicLink(link, externalDir.resolve("resource.txt"));
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
+
+        assertThat("Initial single-file symlink target should be served",
+                   handler.doHandle(Method.HEAD, "", req, res, false),
+                   is(true));
+    }
+
+    @Test
+    void testSingleFileAdditionAfterMiss(@TempDir Path tempDir) throws IOException {
+        Path file = tempDir.resolve("added-after-miss.txt");
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.create(file));
+        handler.beforeStart();
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(responseHeaders);
+
+        assertThat("Missing single file should not be cached",
+                   handler.doHandle(Method.HEAD, "", req, res, false),
+                   is(false));
+
+        Files.writeString(file, "Content");
+
+        assertThat("New single file should be discovered after an earlier miss",
+                   handler.doHandle(Method.HEAD, "", req, res, false),
+                   is(true));
+        assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
+        assertThat(responseHeaders, hasHeader(HeaderNames.ETAG));
+        assertThat(responseHeaders, hasHeader(HeaderNames.LAST_MODIFIED));
+    }
+
+    @Test
+    void testSingleHiddenFileIsRequestScopedForbidden(@TempDir Path tempDir) throws IOException {
+        Path file = Files.writeString(tempDir.resolve(".hidden.txt"), "Content");
+        assumeTrue(Files.isHidden(file), "Hidden files are not supported on this file system");
+
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.create(file));
+
+        handler.beforeStart();
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
@@ -630,9 +793,8 @@ class CachedHandlerTest {
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(ServerResponseHeaders.create());
 
-        assertThat("Retargeted single-file symlink should not become the trusted file",
-                   handler.doHandle(Method.HEAD, "", req, res, false),
-                   is(false));
+        assertThrows(ForbiddenException.class, () -> handler.doHandle(Method.HEAD, "", req, res, false));
+        assertThat("Forbidden single file should not be cached", handler.cacheHandler("."), optionalEmpty());
     }
 
     @Test
@@ -666,12 +828,6 @@ class CachedHandlerTest {
 
         assertThat("Initial symlink target should be served", handler.doHandle(Method.HEAD, "", req, res, false), is(true));
 
-        createSymbolicLink(link, externalDir.resolve("resource.txt"));
-
-        assertThat("Retargeted symlink should not be served", handler.doHandle(Method.HEAD, "", req, res, false), is(false));
-        assertThat("Retargeted symlink handler should be evicted",
-                   handler.cacheHandler("."),
-                   optionalEmpty());
     }
 
     @Test
@@ -774,9 +930,9 @@ class CachedHandlerTest {
         assertThat("During tests, fs should be loaded from file system", cached, instanceOf(CachedHandlerPath.class));
         CachedHandlerPath pathHandler = (CachedHandlerPath) cached;
         assertThat("Path", pathHandler.path(), notNullValue());
-        assertThat("Last modified function", pathHandler.lastModified(), notNullValue());
-        assertThat("Last modified", pathHandler.lastModified().apply(pathHandler.path()), notNullValue());
-        assertThat("Media type", pathHandler.mediaType(), is(MediaTypes.TEXT_PLAIN));
+        assertThat("Last modified", pathHandler.metadata().lastModified(), notNullValue());
+        assertThat("Content length", pathHandler.metadata().contentLength(), is(7L));
+        assertThat("Media type", pathHandler.metadata().mediaType(), is(MediaTypes.TEXT_PLAIN));
     }
 
     @Test

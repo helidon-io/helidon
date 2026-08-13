@@ -1111,6 +1111,18 @@ server:
 
 See xref:{rootdir}/config/io_helidon_webserver_staticcontent_StaticContentFeature.adoc[Static Content Feature Configuration Reference] for details of configuration options.
 
+=== Resource Lifecycle
+
+Static content is intended for resources that remain unchanged while the service is running. Helidon does not cache missing
+file-system resources, so files added under a configured directory or at a configured single-file location can be discovered
+by later requests. Once a resource has been resolved, however, Helidon can cache its location and metadata, including its
+content length and last-modified time. Replacing, modifying, deleting, or retargeting an already-resolved resource at runtime
+is not supported, even if its cached record is later evicted. Recreate the static-content service after deploying changes to
+existing resources; a normal application restart does this.
+
+ETags are derived from the last-modified time and, when available, content length rather than from a hash of the resource bytes.
+If content is replaced between service lifetimes, make sure its observed millisecond timestamp or known length changes;
+otherwise the replacement can reuse the same ETag.
 
 == Media types support
 WebServer and WebClient share the HTTP media support of Helidon, and any supported media type can be used in both.

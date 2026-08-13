@@ -19,6 +19,7 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
 import java.util.Set;
 
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import static io.helidon.webserver.staticcontent.StaticContentFeature.createService;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -45,7 +47,6 @@ class StaticContentTest {
     static Path tempDir;
     private static Path staticRoot;
     private static Path externalDir;
-    private static Path alternateRoot;
     private static Path rootLink;
     private static Path singleLink;
     private static Path singleParentLink;
@@ -60,13 +61,11 @@ class StaticContentTest {
     static void setupRouting(HttpRouting.Builder builder) throws Exception {
         staticRoot = tempDir.resolve("static-root");
         externalDir = tempDir.resolve("outside-root");
-        alternateRoot = tempDir.resolve("alternate-root");
         Path nested = staticRoot.resolve("nested");
         Path welcome = staticRoot.resolve("welcome");
         Files.createDirectories(nested);
         Files.createDirectories(welcome);
         Files.createDirectories(externalDir);
-        Files.createDirectories(alternateRoot);
 
         Path resource = staticRoot.resolve("resource.txt");
         Path empty = staticRoot.resolve("empty.txt");
@@ -78,8 +77,14 @@ class StaticContentTest {
         Files.writeString(nested.resolve("resource.txt"), "Nested content");
         Files.writeString(staticRoot.resolve("alias-one.txt"), "Alias one");
         Files.writeString(staticRoot.resolve("alias-two.txt"), "Alias two");
+        Path shortEtag = staticRoot.resolve("etag-short.txt");
+        Path longEtag = staticRoot.resolve("etag-long.txt");
+        Files.writeString(shortEtag, "short");
+        Files.writeString(longEtag, "longer content");
+        FileTime commonLastModified = FileTime.fromMillis(System.currentTimeMillis() - 10_000);
+        Files.setLastModifiedTime(shortEtag, commonLastModified);
+        Files.setLastModifiedTime(longEtag, commonLastModified);
         Files.writeString(externalDir.resolve("resource.txt"), "External content");
-        Files.writeString(alternateRoot.resolve("resource.txt"), "Alternate content");
 
         builder.register("/classpath", createService(ClasspathHandlerConfig.create("web")))
                 .register("/classpath-memory", createService(ClasspathHandlerConfig.builder()
@@ -173,6 +178,41 @@ class StaticContentTest {
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Nested content"));
         }
+    }
+
+    @Test
+    void testFileSystemAdditionAfterMiss() throws IOException {
+        Path added = staticRoot.resolve("added-after-miss.txt");
+        Files.deleteIfExists(added);
+
+        try (Http1ClientResponse response = testClient.get("/path/added-after-miss.txt").request()) {
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+
+        Files.writeString(added, "Added content");
+
+        try (Http1ClientResponse response = testClient.get("/path/added-after-miss.txt").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_LENGTH, "13"));
+            assertThat(response.headers().contains(HeaderNames.ETAG), is(true));
+            assertThat(response.headers().contains(HeaderNames.LAST_MODIFIED), is(true));
+            assertThat(response.as(String.class), is("Added content"));
+        }
+    }
+
+    @Test
+    void testEtagIncludesContentLength() {
+        String shortEtag;
+        try (Http1ClientResponse response = testClient.get("/path/etag-short.txt").request()) {
+            shortEtag = response.headers().get(HeaderNames.ETAG).get();
+        }
+
+        String longEtag;
+        try (Http1ClientResponse response = testClient.get("/path/etag-long.txt").request()) {
+            longEtag = response.headers().get(HeaderNames.ETAG).get();
+        }
+
+        assertThat(longEtag, not(is(shortEtag)));
     }
 
     @Test
@@ -299,7 +339,20 @@ class StaticContentTest {
     }
 
     @Test
-    void testFileSystemSymlinkRetargeting() throws Exception {
+    void testFileSystemDirectorySymlinkOutsideRootDoesNotRedirect() throws Exception {
+        Path link = staticRoot.resolve("external-directory");
+        assumeTrue(createSymbolicLink(link, externalDir), "Symbolic links cannot be created");
+
+        try (Http1ClientResponse response = testClient.get("/welcome-path/external-directory")
+                .followRedirects(false)
+                .request()) {
+
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
+        }
+    }
+
+    @Test
+    void testFileSystemSymlinkInsideRoot() throws Exception {
         Path link = staticRoot.resolve("alias.txt");
         assumeTrue(createSymbolicLink(link, staticRoot.resolve("alias-one.txt")), "Symbolic links cannot be created");
 
@@ -310,26 +363,10 @@ class StaticContentTest {
             assertThat(response.as(String.class), is("Alias one"));
         }
 
-        assumeTrue(createSymbolicLink(link, staticRoot.resolve("alias-two.txt")), "Symbolic links cannot be retargeted");
-
-        try (Http1ClientResponse response = testClient.get("/path/alias.txt")
-                .request()) {
-
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(String.class), is("Alias two"));
-        }
-
-        assumeTrue(createSymbolicLink(link, externalDir.resolve("resource.txt")), "Symbolic links cannot be retargeted");
-
-        try (Http1ClientResponse response = testClient.get("/path/alias.txt")
-                .request()) {
-
-            assertThat(response.status(), is(Status.NOT_FOUND_404));
-        }
     }
 
     @Test
-    void testFileSystemSymlinkRangeRetargeting() throws Exception {
+    void testFileSystemSymlinkRange() throws Exception {
         Path link = staticRoot.resolve("range-alias.txt");
         assumeTrue(createSymbolicLink(link, staticRoot.resolve("alias-one.txt")), "Symbolic links cannot be created");
 
@@ -342,14 +379,6 @@ class StaticContentTest {
             assertThat(response.as(String.class), is("Alias"));
         }
 
-        assumeTrue(createSymbolicLink(link, externalDir.resolve("resource.txt")), "Symbolic links cannot be retargeted");
-
-        try (Http1ClientResponse response = testClient.get("/path/range-alias.txt")
-                .header(HeaderNames.RANGE, "bytes=0-4")
-                .request()) {
-
-            assertThat(response.status(), is(Status.NOT_FOUND_404));
-        }
     }
 
     @Test
@@ -411,7 +440,7 @@ class StaticContentTest {
     }
 
     @Test
-    void testFileSystemSymlinkRootRetargeting() throws Exception {
+    void testFileSystemSymlinkRoot() {
         assumeTrue(rootLink != null, "Symbolic links cannot be created");
 
         try (Http1ClientResponse response = testClient.get("/linkroot/resource.txt")
@@ -421,17 +450,10 @@ class StaticContentTest {
             assertThat(response.as(String.class), is("Content"));
         }
 
-        assumeTrue(createSymbolicLink(rootLink, alternateRoot), "Symbolic links cannot be retargeted");
-
-        try (Http1ClientResponse response = testClient.get("/linkroot/resource.txt")
-                .request()) {
-
-            assertThat(response.status(), is(Status.NOT_FOUND_404));
-        }
     }
 
     @Test
-    void testFileSystemSingleFileSymlinkRetargeting() throws Exception {
+    void testFileSystemSingleFileSymlink() {
         assumeTrue(singleLink != null, "Symbolic links cannot be created");
 
         try (Http1ClientResponse response = testClient.get("/singlelink")
@@ -441,17 +463,10 @@ class StaticContentTest {
             assertThat(response.as(String.class), is("Content"));
         }
 
-        assumeTrue(createSymbolicLink(singleLink, externalDir.resolve("resource.txt")), "Symbolic links cannot be retargeted");
-
-        try (Http1ClientResponse response = testClient.get("/singlelink")
-                .request()) {
-
-            assertThat(response.status(), is(Status.NOT_FOUND_404));
-        }
     }
 
     @Test
-    void testFileSystemSingleFileCachedParentSymlinkRetargeting() throws Exception {
+    void testFileSystemSingleFileCachedParentSymlink() {
         assumeTrue(singleParentLink != null, "Symbolic links cannot be created");
 
         try (Http1ClientResponse response = testClient.get("/singleparentlink")
@@ -461,13 +476,6 @@ class StaticContentTest {
             assertThat(response.as(String.class), is("Content"));
         }
 
-        assumeTrue(createSymbolicLink(singleParentLink, alternateRoot), "Symbolic links cannot be retargeted");
-
-        try (Http1ClientResponse response = testClient.get("/singleparentlink")
-                .request()) {
-
-            assertThat(response.status(), is(Status.NOT_FOUND_404));
-        }
     }
 
     @Test

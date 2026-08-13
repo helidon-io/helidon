@@ -73,6 +73,11 @@ abstract class StaticContentHandler implements HttpService {
         this.memoryCache = config.memoryCache().orElseGet(MemoryCache::create);
     }
 
+    static String etag(Instant lastModified, long contentLength) {
+        String timestamp = String.valueOf(lastModified.toEpochMilli());
+        return contentLength < 0 ? timestamp : timestamp + ";length=" + contentLength;
+    }
+
     static void processPreconditions(String etag,
                                      Instant modified,
                                      ServerRequestHeaders requestHeaders,
@@ -85,10 +90,40 @@ abstract class StaticContentHandler implements HttpService {
                                      ServerRequestHeaders requestHeaders,
                                      ServerResponseHeaders responseHeaders,
                                      BiConsumer<ServerResponseHeaders, Instant> setModified) {
+        etag = unquoteETag(etag);
         Header newEtag = null;
         if (etag != null && !etag.isEmpty()) {
-            etag = unquoteETag(etag);
             newEtag = HeaderValues.create(HeaderNames.ETAG, true, false, '"' + etag + '"');
+        }
+        processPreconditions(etag,
+                             newEtag,
+                             modified,
+                             null,
+                             requestHeaders,
+                             responseHeaders,
+                             setModified);
+    }
+
+    static void processPreconditions(StaticContentMetadata metadata,
+                                     ServerRequestHeaders requestHeaders,
+                                     ServerResponseHeaders responseHeaders) {
+        processPreconditions(metadata.etag(),
+                             metadata.etagHeader(),
+                             metadata.lastModified(),
+                             metadata.lastModifiedHeader(),
+                             requestHeaders,
+                             responseHeaders,
+                             ServerResponseHeaders::lastModified);
+    }
+
+    private static void processPreconditions(String etag,
+                                             Header newEtag,
+                                             Instant modified,
+                                             Header lastModifiedHeader,
+                                             ServerRequestHeaders requestHeaders,
+                                             ServerResponseHeaders responseHeaders,
+                                             BiConsumer<ServerResponseHeaders, Instant> setModified) {
+        if (newEtag != null) {
             responseHeaders.set(newEtag);
         }
 
@@ -109,7 +144,11 @@ abstract class StaticContentHandler implements HttpService {
         if (modified != null) {
             modified = modified.truncatedTo(ChronoUnit.SECONDS);
             // Last-Modified
-            setModified.accept(responseHeaders, modified);
+            if (lastModifiedHeader == null) {
+                setModified.accept(responseHeaders, modified);
+            } else {
+                responseHeaders.set(lastModifiedHeader);
+            }
             // If-Unmodified-Since
             if (!ifMatchPresent) {
                 Optional<Instant> ifUnmodSince = conditionalDate(requestHeaders,
@@ -398,30 +437,11 @@ abstract class StaticContentHandler implements HttpService {
 
     void cacheInMemory(String resource, MediaType contentType, byte[] bytes, Optional<Instant> lastModified) {
         int contentLength = bytes.length;
-        Header contentLengthHeader = HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength);
-
-        CachedHandlerInMemory inMemoryResource;
-        if (lastModified.isEmpty()) {
-            inMemoryResource = new CachedHandlerInMemory(contentType,
-                                                         null,
-                                                         null,
-                                                         bytes,
-                                                         contentLength,
-                                                         contentLengthHeader);
-        } else {
-            // we can cache this, as this is a jar record
-            Header lastModifiedHeader = HeaderValues.create(HeaderNames.LAST_MODIFIED,
-                                                            true,
-                                                            false,
-                                                            formatLastModified(lastModified.get()));
-
-            inMemoryResource = new CachedHandlerInMemory(contentType,
-                                                         lastModified.get(),
-                                                         (headers, instant) -> headers.set(lastModifiedHeader),
-                                                         bytes,
-                                                         contentLength,
-                                                         contentLengthHeader);
-        }
+        CachedHandlerInMemory inMemoryResource =
+                new CachedHandlerInMemory(StaticContentMetadata.create(contentType,
+                                                                       lastModified.orElse(null),
+                                                                       contentLength),
+                                          bytes);
 
         cacheInMemory(resource, inMemoryResource);
     }

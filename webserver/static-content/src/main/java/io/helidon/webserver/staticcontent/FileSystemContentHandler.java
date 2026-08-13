@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.Method;
-import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -121,20 +120,18 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                      String rawPath,
                      Path path) throws IOException {
 
-        // Check existence
-        if (!Files.exists(path)) {
-            // not caching 404
+        Optional<Path> maybeResolvedPath = contentPath(path);
+        if (maybeResolvedPath.isEmpty()) {
+            // not caching misses or paths outside of the configured root
             return false;
         }
-        if (contentPath(path).isEmpty()) {
-            return false;
-        }
+        Path resolvedPath = maybeResolvedPath.get();
 
-        // we know the file exists, though it may be a directory
+        // we know the path is confined to the configured root, though it may be a directory
         // First doHandle a directory case
         String welcomeFileName = welcomePageName();
         if (welcomeFileName != null) {
-            if (Files.isDirectory(path)) {
+            if (Files.isDirectory(resolvedPath)) {
                 String welcomeFileResource = requestedResource
                         + (requestedResource.endsWith("/") ? "" : "/")
                         + welcomeFileName;
@@ -153,6 +150,11 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
                     // Try to find welcome file
                     path = resolveWelcomeFile(path, welcomePageName());
+                    maybeResolvedPath = contentPath(path);
+                    if (maybeResolvedPath.isEmpty()) {
+                        return false;
+                    }
+                    resolvedPath = maybeResolvedPath.get();
                 } else {
                     // Or redirect to slash ended
                     String redirectLocation = rawPath + "/";
@@ -162,13 +164,11 @@ class FileSystemContentHandler extends FileBasedContentHandler {
             }
         }
 
-        CachedHandler handler = new CachedHandlerPath(path,
-                                                      detectType(fileName(path)),
-                                                      FileBasedContentHandler::lastModified,
-                                                      ServerResponseHeaders::lastModified,
-                                                      this::contentPath,
-                                                      false,
-                                                      it -> Optional.ofNullable(realRoot.get()));
+        CachedHandler handler = CachedHandlerPath.create(path,
+                                                         resolvedPath,
+                                                         detectType(fileName(path)),
+                                                         false,
+                                                         realRoot.get());
         cacheHandler(requestedResource, handler);
         return handler.handle(handlerCache(), method, req, res, requestedResource);
     }

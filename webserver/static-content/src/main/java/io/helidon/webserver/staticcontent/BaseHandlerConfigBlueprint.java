@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,12 +125,12 @@ interface BaseHandlerConfigBlueprint {
     Function<String, String> pathMapper();
 
     /**
-     * Configure capacity of cache used for resources. This cache will make sure the media type and location is discovered
-     * faster.
+     * Configure capacity of cache used for resources. This cache stores the resolved media type, location, content length,
+     * and last-modified metadata.
      * <p>
      * To cache content (bytes) in memory, use {@link io.helidon.webserver.staticcontent.BaseHandlerConfig#memoryCache()}
      *
-     * @return maximal number of cached records, only caches media type and Path, not the content
+     * @return maximal number of cached records; records do not contain the content bytes
      */
     @Option.Configured
     Optional<Integer> recordCacheCapacity();

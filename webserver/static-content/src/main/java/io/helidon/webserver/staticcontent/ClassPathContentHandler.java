@@ -30,18 +30,13 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import io.helidon.common.media.type.MediaType;
-import io.helidon.http.Header;
-import io.helidon.http.HeaderNames;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.Method;
-import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -270,9 +265,6 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 jarFile.close();
             }
         }
-
-        var lastModifiedHandler = lastModifiedHandler(lastModified);
-
         /*
         We have all the information we need to process a jar file
         Now we have two options:
@@ -285,7 +277,6 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                        (int) contentLength,
                                        inMemorySupplier(url,
                                                         lastModified.orElse(null),
-                                                        lastModifiedHandler,
                                                         contentType,
                                                         contentLength));
             if (cached.isPresent()) {
@@ -304,27 +295,11 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return Optional.of(jarHandler);
     }
 
-    private BiConsumer<ServerResponseHeaders, Instant> lastModifiedHandler(Optional<Instant> lastModified) {
-        if (lastModified.isPresent()) {
-            Header lastModifiedHeader = HeaderValues.create(HeaderNames.LAST_MODIFIED,
-                                                            true,
-                                                            false,
-                                                            formatLastModified(lastModified.get()));
-            return (headers, instant) -> headers.set(lastModifiedHeader);
-        } else {
-            return (headers, instant) -> {
-            };
-        }
-    }
-
     private Supplier<CachedHandlerInMemory> inMemorySupplier(URL url,
                                                              Instant lastModified,
-                                                             BiConsumer<ServerResponseHeaders, Instant> lastModifiedHandler,
                                                              MediaType contentType,
                                                              long contentLength) {
 
-        Header contentLengthHeader = HeaderValues.create(HeaderNames.CONTENT_LENGTH,
-                                                         contentLength);
         return () -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (InputStream in = url.openStream()) {
@@ -333,17 +308,15 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 throw new InternalServerException("Cannot load resource", e);
             }
             byte[] bytes = baos.toByteArray();
-            return new CachedHandlerInMemory(contentType,
-                                             lastModified,
-                                             lastModifiedHandler,
-                                             bytes,
-                                             bytes.length,
-                                             contentLengthHeader);
+            return new CachedHandlerInMemory(StaticContentMetadata.create(contentType,
+                                                                           lastModified,
+                                                                           contentLength),
+                                             bytes);
         };
     }
 
-    private Optional<CachedHandler> urlStreamHandler(URL url) {
-        return Optional.of(new CachedHandlerUrlStream(detectType(fileName(url)), url));
+    private Optional<CachedHandler> urlStreamHandler(URL url) throws IOException {
+        return Optional.of(CachedHandlerUrlStream.create(detectType(fileName(url)), url));
     }
 
     private void addToInMemoryCache(String resource) throws IOException {
