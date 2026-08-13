@@ -1345,12 +1345,12 @@ final class OpenApiSourceGenerator {
                                                boolean hasInferredSchema) {
         Optional<TypeName> explicitSchema = content.typeValue("schema")
                 .filter(Predicate.not(VOID::equals));
-        if (explicitSchema.isPresent() || hasInferredSchema) {
+        Optional<TypeName> explicitItemSchema = content.typeValue("itemSchema")
+                .filter(Predicate.not(VOID::equals));
+        if (explicitSchema.isPresent() || (explicitItemSchema.isEmpty() && hasInferredSchema)) {
             schemas.collectSchemaComponent(schemaTypes, explicitSchema.orElse(inferredSchemaType));
         }
-        content.typeValue("itemSchema")
-                .filter(Predicate.not(VOID::equals))
-                .ifPresent(itemSchema -> schemas.collectSchemaComponent(schemaTypes, itemSchema));
+        explicitItemSchema.ifPresent(itemSchema -> schemas.collectSchemaComponent(schemaTypes, itemSchema));
     }
 
     private List<RestMethodParameter> pathParameters(RestMethod restMethod) {

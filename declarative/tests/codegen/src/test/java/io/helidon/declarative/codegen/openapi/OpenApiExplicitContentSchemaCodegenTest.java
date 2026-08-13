@@ -161,6 +161,68 @@ class OpenApiExplicitContentSchemaCodegenTest {
         assertThat(generated, containsString("content -> content.schema(schemaRef(\"MessageRequest\"))"));
     }
 
+    @Test
+    void itemSchemaSuppressesInferredResponseSchema() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-item-schema"))
+                .addSource("ItemSchemaEndpoint.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/items")
+                        class ItemSchemaEndpoint {
+                            @Http.GET
+                            @OpenApi.Response(status = 200,
+                                              description = "OK",
+                                              content = @OpenApi.Content(value = "application/json-seq",
+                                                                         itemSchema = Item.class))
+                            Envelope get() {
+                                return new Envelope(List.of());
+                            }
+                        }
+
+                        record Envelope(List<Item> items) {
+                        }
+
+                        record Item(String value) {
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString("content -> content.itemSchema(schemaRef(\"Item\"))"));
+        assertThat(generated, not(containsString(".schema(schemaRef(\"Envelope\"))")));
+        assertThat(generated, containsString("@Service.NamedByType(Item.class)"));
+        assertThat(generated, not(containsString("@Service.NamedByType(Envelope.class)")));
+    }
+
     private static String generatedSource(TestCompiler.Result result) throws IOException {
         StringBuilder generatedContent = new StringBuilder();
         var generatedSources = Files.walk(result.sourceOutput())

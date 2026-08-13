@@ -68,14 +68,19 @@ final class OpenApiSchemaCodegen {
                              Map<TypeName, String> componentNames) {
         Optional<TypeName> explicitSchema = content.typeValue("schema")
                 .filter(Predicate.not(VOID::equals));
+        Optional<TypeName> explicitItemSchema = content.typeValue("itemSchema")
+                .filter(Predicate.not(VOID::equals));
         TypeName schemaType = explicitSchema.orElse(inferredSchemaType);
         boolean hasSchema = explicitSchema.isPresent() || hasInferredSchema;
-        StringBuilder result = new StringBuilder("content -> content.schema(")
-                .append(hasSchema ? schemaExpression(schemaType, componentNames) : JSON_OBJECT.fqName() + ".builder().build()")
-                .append(")");
-        content.typeValue("itemSchema")
-                .filter(Predicate.not(VOID::equals))
-                .ifPresent(itemSchema -> result.append(".itemSchema(")
+        StringBuilder result = new StringBuilder("content -> content");
+        if (explicitSchema.isPresent() || explicitItemSchema.isEmpty()) {
+            result.append(".schema(")
+                    .append(hasSchema
+                                    ? schemaExpression(schemaType, componentNames)
+                                    : JSON_OBJECT.fqName() + ".builder().build()")
+                    .append(")");
+        }
+        explicitItemSchema.ifPresent(itemSchema -> result.append(".itemSchema(")
                         .append(schemaExpression(itemSchema, componentNames))
                         .append(")"));
         result.append(examplesExpression.apply(content.annotationValues("examples").orElseGet(List::of)));
