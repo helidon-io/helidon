@@ -114,7 +114,7 @@ public final class OpenApi31Version implements OpenApiVersion,
         if (OpenApiFormat.valueOf(mediaType) == OpenApiFormat.UNSUPPORTED) {
             throw new IllegalStateException("Unsupported static OpenAPI content type: " + mediaType.text());
         }
-        Object loaded = new Yaml().load(content);
+        Object loaded = OpenApiDocumentMapperSupport.parseYaml(content);
         if (loaded == null) {
             return OpenApiDocument.builder().build();
         }

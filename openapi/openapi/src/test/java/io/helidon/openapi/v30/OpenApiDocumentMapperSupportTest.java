@@ -28,6 +28,7 @@ import io.helidon.json.JsonValueType;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,6 +37,7 @@ class OpenApiDocumentMapperSupportTest {
 
     @Test
     void rejectsNullInputs() {
+        assertThrows(NullPointerException.class, () -> OpenApiDocumentMapperSupport.parseYaml(null));
         assertThrows(NullPointerException.class, () -> OpenApiDocumentMapperSupport.jsonObject(null));
         assertThrows(NullPointerException.class, () -> OpenApiDocumentMapperSupport.jsonValue(null));
         assertThrows(NullPointerException.class, () -> OpenApiDocumentMapperSupport.jsonNumber(null));
@@ -50,6 +52,44 @@ class OpenApiDocumentMapperSupportTest {
         assertThrows(NullPointerException.class, () -> OpenApiDocumentMapperSupport.object(Map.of(), null));
         assertThrows(NullPointerException.class, () -> OpenApiDocumentMapperSupport.objectList(null, object -> object));
         assertThrows(NullPointerException.class, () -> OpenApiDocumentMapperSupport.objectList(List.of(), null));
+    }
+
+    @Test
+    void parsesJsonCompatibleYamlScalars() {
+        Object loaded = OpenApiDocumentMapperSupport.parseYaml("""
+                                                                       strings:
+                                                                         on: on
+                                                                         off: off
+                                                                         yes: yes
+                                                                         no: no
+                                                                         date: 2026-08-13
+                                                                         leadingZero: 012
+                                                                         uppercaseBoolean: TRUE
+                                                                         012: numericKey
+                                                                       values:
+                                                                         boolean: true
+                                                                         null: null
+                                                                         integer: 12
+                                                                         decimal: 1.25
+                                                                         exponent: 1e2
+                                                                       """);
+        Map<String, Object> root = OpenApiDocumentMapperSupport.objectMap((Map<?, ?>) loaded);
+        Map<String, Object> strings = OpenApiDocumentMapperSupport.objectMap((Map<?, ?>) root.get("strings"));
+        Map<String, Object> values = OpenApiDocumentMapperSupport.objectMap((Map<?, ?>) root.get("values"));
+
+        assertThat(strings, is(Map.of("on", "on",
+                                      "off", "off",
+                                      "yes", "yes",
+                                      "no", "no",
+                                      "date", "2026-08-13",
+                                      "leadingZero", "012",
+                                      "uppercaseBoolean", "TRUE",
+                                      "012", "numericKey")));
+        assertThat(values.get("boolean"), is(true));
+        assertThat(values.get("null"), nullValue());
+        assertThat(values.get("integer"), is(12));
+        assertThat(values.get("decimal"), is(1.25));
+        assertThat(values.get("exponent"), is(100.0));
     }
 
     @Test
