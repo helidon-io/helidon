@@ -118,7 +118,7 @@ class JdbcResourceOwnershipTest {
                                                          .map(String.class)
                                                          .one());
 
-            assertThat(failure.getCause().getMessage(), is("JDBC driver failure"));
+            assertThat(failure.getCause().getMessage(), is("The JDBC driver reported a failure."));
             assertThat(client.create("SELECT COUNT(*) FROM TEST_VALUE").map(Long.class).one(), is(1L));
             assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
             assertThat(pool.getHikariPoolMXBean().getTotalConnections(), is(1));

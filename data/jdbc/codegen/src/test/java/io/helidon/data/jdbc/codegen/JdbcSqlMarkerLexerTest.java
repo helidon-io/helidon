@@ -157,9 +157,20 @@ class JdbcSqlMarkerLexerTest {
 
     @Test
     void rejectsMixedMarkersAndMalformedRegions() {
-        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select :id, ?"));
-        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select :user.id"));
-        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select 'unterminated"));
+        IllegalArgumentException mixed = assertThrows(IllegalArgumentException.class,
+                                                      () -> JdbcSqlMarkerLexer.parse("select :id, ?"));
+        assertThat(mixed.getMessage(),
+                   is("Declarative SQL cannot mix named and positional markers. The lexical profile is PORTABLE, "
+                              + "and the SQL offset is 13."));
+        IllegalArgumentException dotted = assertThrows(IllegalArgumentException.class,
+                                                       () -> JdbcSqlMarkerLexer.parse("select :user.id"));
+        assertThat(dotted.getMessage(),
+                   is("Dotted named parameters are not supported. The lexical profile is PORTABLE, and the SQL "
+                              + "offset is 7."));
+        IllegalArgumentException quoted = assertThrows(IllegalArgumentException.class,
+                                                       () -> JdbcSqlMarkerLexer.parse("select 'unterminated"));
+        assertThat(quoted.getMessage(),
+                   is("Unterminated quoted SQL region. The lexical profile is PORTABLE, and the SQL offset is 20."));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select \"unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select /* unterminated"));
         assertThrows(IllegalArgumentException.class,
@@ -176,7 +187,7 @@ class JdbcSqlMarkerLexerTest {
                                                          () -> JdbcSqlMarkerLexer.parse(sql));
 
         assertThat(failure.getMessage(), containsString("PORTABLE"));
-        assertThat(failure.getMessage(), endsWith("offset 16"));
+        assertThat(failure.getMessage(), endsWith("offset is 16."));
         assertThat(failure.getMessage(), not(containsString(sql)));
     }
 }

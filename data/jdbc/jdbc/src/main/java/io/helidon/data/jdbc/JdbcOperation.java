@@ -52,7 +52,7 @@ final class JdbcOperation {
                   JdbcPreparationPlan preparationPlan) {
         this.sql = sql;
         this.binds = binds;
-        this.preparationPlan = Objects.requireNonNull(preparationPlan, "Preparation plan must not be null");
+        this.preparationPlan = Objects.requireNonNull(preparationPlan, "The preparation plan must not be null.");
     }
 
     /**
@@ -80,10 +80,10 @@ final class JdbcOperation {
      * @return number of positional bind markers
      */
     static int parameterCount(String sql, JdbcLexicalProfile profile) {
-        Objects.requireNonNull(sql, "SQL must not be null");
-        Objects.requireNonNull(profile, "JDBC lexical profile must not be null");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(profile, "The JDBC lexical profile must not be null.");
         if (sql.isBlank()) {
-            throw new IllegalArgumentException("SQL must not be blank");
+            throw new IllegalArgumentException("The SQL statement must not be blank.");
         }
         return MarkerScanner.count(sql, profile);
     }
@@ -302,8 +302,8 @@ final class JdbcOperation {
             }
             if (Character.isJavaIdentifierStart(next)) {
                 throw new IllegalArgumentException(
-                        "JdbcClient SQL accepts positional '?' markers only; named marker found for lexical profile "
-                                + profile + " at offset " + index);
+                        "JdbcClient SQL accepts only positional '?' markers. A named marker was found for lexical "
+                                + "profile " + profile + " at offset " + index + ".");
             }
             index++;
         }
@@ -421,9 +421,8 @@ final class JdbcOperation {
          * @return exception to throw
          */
         private IllegalArgumentException malformed(String message) {
-            return new IllegalArgumentException(message
-                                                        + " for lexical profile " + profile
-                                                        + " near offset " + index);
+            return new IllegalArgumentException(message + ". The lexical profile is " + profile
+                                                        + ", and the SQL offset is " + index + ".");
         }
     }
 }

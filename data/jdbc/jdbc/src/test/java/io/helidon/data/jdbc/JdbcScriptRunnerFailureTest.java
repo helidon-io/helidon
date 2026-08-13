@@ -79,7 +79,7 @@ class JdbcScriptRunnerFailureTest {
                                                                                     "jdbc-bootstrap-init.sql"))));
 
         assertSafeSqlCause(failure.getCause(), statementClose);
-        assertThat(failure.getMessage(), containsString("SQLState=08003"));
+        assertThat(failure.getMessage(), containsString("SQL state is '08003'"));
         verify(statement, times(1)).close();
         verify(connection).close();
     }
@@ -129,7 +129,7 @@ class JdbcScriptRunnerFailureTest {
                                                                             List.of(Resource.create(
                                                                                     "jdbc-bootstrap-init.sql"))));
 
-        assertThat(failure.getMessage(), containsString("bootstrap commit failed with unknown outcome"));
+        assertThat(failure.getMessage(), containsString("could not commit the bootstrap transaction"));
         assertSafeSqlCause(failure.getCause(), commitFailure);
         InOrder order = inOrder(statement, connection);
         order.verify(statement).close();
@@ -153,9 +153,10 @@ class JdbcScriptRunnerFailureTest {
                                                                             List.of(Resource.create(
                                                                                     "jdbc-bootstrap-init.sql"))));
 
-        assertThat(failure.getMessage(), containsString("bootstrap commit failed with unknown outcome"));
+        assertThat(failure.getMessage(), containsString("could not commit the bootstrap transaction"));
         assertThat(failure.getCause().getMessage(),
-                   is("JDBC bootstrap commit failure [java.lang.IllegalStateException]"));
+                   is("The JDBC provider encountered an exception of type 'java.lang.IllegalStateException' while "
+                              + "committing a bootstrap transaction."));
         assertThat(failure.getCause().getMessage(), not(containsString("commit failed")));
         assertThat(failure.getCause().getCause(), nullValue());
         assertThat(failure.getSuppressed().length, is(1));
@@ -233,8 +234,8 @@ class JdbcScriptRunnerFailureTest {
                                                                                 dataSource,
                                                                                 List.of(Resource.create(resource))));
 
-            assertThat(failure.getMessage(), containsString("init bootstrap resource #1 (classpath)"));
-            assertThat(failure.getMessage(), containsString("failed during close"));
+            assertThat(failure.getMessage(),
+                       is("JDBC persistence unit 'test' could not close the classpath init script."));
             assertThat(failure.getMessage(), not(containsString(resource)));
             assertSafeResourceCause(failure.getCause(), "close", IOException.class);
             verify(dataSource, never()).getConnection();
@@ -266,8 +267,8 @@ class JdbcScriptRunnerFailureTest {
                                                                             dataSource,
                                                                             List.of(Resource.create("unreadable", input))));
 
-        assertThat(failure.getMessage(), containsString("init bootstrap resource #1 (supplied stream)"));
-        assertThat(failure.getMessage(), containsString("failed during read"));
+        assertThat(failure.getMessage(),
+                   is("JDBC persistence unit 'test' could not read the supplied stream init script."));
         assertSafeResourceCause(failure.getCause(), "read", IOException.class);
         assertThat(input.closed(), is(true));
         verify(dataSource, never()).getConnection();
@@ -317,8 +318,8 @@ class JdbcScriptRunnerFailureTest {
 
         assertThat(failure.getSuppressed().length, is(1));
         assertThat(failure.getSuppressed()[0].getMessage(),
-                   containsString("init bootstrap resource #2 (supplied stream) failed during release close"));
-        assertSafeResourceCause(failure.getSuppressed()[0].getCause(), "release close", IOException.class);
+                   is("JDBC persistence unit 'test' could not close the supplied stream init script."));
+        assertSafeResourceCause(failure.getSuppressed()[0].getCause(), "close", IOException.class);
         assertThat(unreadable.closed(), is(true));
         assertThat(remaining.closed(), is(true));
         verify(dataSource, never()).getConnection();
@@ -336,7 +337,7 @@ class JdbcScriptRunnerFailureTest {
                                                      dataSource,
                                                      List.of(Resource.create("private description", sql))));
 
-        assertThat(failure.getMessage(), containsString("init bootstrap resource #1 (configured text)"));
+        assertThat(failure.getMessage(), containsString("configured text init script"));
         assertThat(failure.getMessage(), not(containsString(sql)));
         assertThat(failure.getMessage(), not(containsString("private description")));
         assertSafeSqlCause(failure.getCause(), executeFailure);
@@ -353,7 +354,8 @@ class JdbcScriptRunnerFailureTest {
                                              () -> JdbcScriptRunner.execute("test", dataSource, List.of(resource)));
 
         assertThat(failure.getMessage(),
-                   containsString("does not support URI-backed init bootstrap resource #1 (URI)"));
+                   is("JDBC persistence unit 'test' does not support a URI value for the 'init-script' "
+                              + "configuration key."));
         verify(input).close();
         verify(resource, never()).location();
         verify(dataSource, never()).getConnection();
@@ -369,8 +371,8 @@ class JdbcScriptRunnerFailureTest {
                                                      dataSource,
                                                      List.of(Resource.create("malformed", malformed))));
 
-        assertThat(failure.getMessage(), containsString("configured binary"));
-        assertThat(failure.getMessage(), containsString("failed during UTF-8 decoding"));
+        assertThat(failure.getMessage(),
+                   is("JDBC persistence unit 'test' could not decode the configured binary init script."));
         assertThat(failure.getCause().getMessage(), not(containsString("malformed")));
         assertThat(failure.getCause().getCause(), nullValue());
         verify(dataSource, never()).getConnection();
@@ -409,16 +411,22 @@ class JdbcScriptRunnerFailureTest {
     private static void assertSafeSqlCause(Throwable actual, SQLException expected) {
         assertThat(actual, instanceOf(SQLException.class));
         SQLException safe = (SQLException) actual;
-        assertThat(safe.getMessage(), is("JDBC driver failure"));
+        assertThat(safe.getMessage(), is("The JDBC driver reported a failure."));
         assertThat(safe.getSQLState(), is(expected.getSQLState()));
         assertThat(safe.getErrorCode(), is(expected.getErrorCode()));
     }
 
     private static void assertSafeResourceCause(Throwable actual,
-                                                String phase,
+                                                String action,
                                                 Class<? extends Throwable> failureType) {
+        String operation = switch (action) {
+        case "close" -> "closing";
+        case "read" -> "reading";
+        default -> throw new AssertionError("Unexpected test resource action: " + action);
+        };
         assertThat(actual.getMessage(),
-                   is("JDBC bootstrap resource " + phase + " failure [" + failureType.getName() + "]"));
+                   is("The JDBC provider encountered an exception of type '" + failureType.getName()
+                              + "' while " + operation + " a bootstrap resource."));
         assertThat(actual.getCause(), nullValue());
         assertThat(actual.getSuppressed().length, is(0));
     }

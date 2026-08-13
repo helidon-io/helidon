@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc;
 
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.configurable.Resource;
@@ -32,6 +33,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcPersistenceUnitConfigTest {
+
+    @Test
+    void acceptsDirectConnectionWithoutCredentials() {
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "connection.url", "jdbc:mysql://localhost/test",
+                "connection.jdbc-driver-class-name", "com.mysql.cj.jdbc.Driver")));
+
+        JdbcPersistenceUnitConfig unit = JdbcPersistenceUnitConfig.create(config);
+
+        assertThat(unit.connection().orElseThrow().username().isEmpty(), is(true));
+        assertThat(unit.connection().orElseThrow().password().isEmpty(), is(true));
+    }
 
     @Test
     void mapsConfiguredResourceAndAcceptsProgrammaticResource() {
@@ -67,8 +80,28 @@ class JdbcPersistenceUnitConfigTest {
         DataException failure = assertThrows(DataException.class, factory::services);
 
         assertThat(failure.getMessage(),
-                   containsString("does not support URI-backed init bootstrap resource #1 (URI)"));
+                   is("JDBC persistence unit configuration does not support a URI value for 'init-script'."));
         assertThat(failure.getMessage(), not(containsString(secret)));
         assertThat(failure.getCause(), nullValue());
+    }
+
+    @Test
+    void reportsScalarBootstrapScriptConfigurationWithoutInternalDescriptors() {
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.connection.url", "jdbc:mysql://localhost/test",
+                "data.persistence-units.jdbc.0.connection.jdbc-driver-class-name", "com.mysql.cj.jdbc.Driver",
+                "data.persistence-units.jdbc.0.drop-script", "drop.sql",
+                "data.persistence-units.jdbc.0.init-script", "init.sql")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(List::of,
+                                                                            () -> config,
+                                                                            new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(),
+                   is("JDBC persistence unit configuration has invalid values for 'drop-script' and 'init-script'. "
+                              + "Each script must use a supported resource configuration."));
+        assertThat(failure.getMessage(), not(containsString("unspecified")));
+        assertThat(failure.getMessage(), not(containsString("#1")));
     }
 }

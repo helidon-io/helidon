@@ -45,8 +45,8 @@ final class JdbcExceptionTranslator {
 
     // Limits both work and the number of suppressed diagnostics accepted from one JDBC owner.
     private static final int MAX_WARNINGS_PER_OWNER = 64;
-    private static final String DRIVER_FAILURE = "JDBC driver failure";
-    private static final String DRIVER_WARNING = "JDBC driver warning";
+    private static final String DRIVER_FAILURE = "The JDBC driver reported a failure.";
+    private static final String DRIVER_WARNING = "The JDBC driver reported a warning.";
 
     private JdbcExceptionTranslator() {
     }
@@ -59,7 +59,17 @@ final class JdbcExceptionTranslator {
      * @return data-layer failure
      */
     static DataException translate(JdbcOperation operation, SQLException cause) {
-        return translate(operation.preparationPlan().resultKind().name(), operation.sql(), cause);
+        return translate(operationName(operation), operation.sql(), cause);
+    }
+
+    /**
+     * Describes an operation for use in application-visible diagnostics.
+     *
+     * @param operation JDBC operation
+     * @return safe operation description
+     */
+    static String operationDescription(JdbcOperation operation) {
+        return "JDBC " + operationName(operation);
     }
 
     /**
@@ -71,9 +81,10 @@ final class JdbcExceptionTranslator {
      * @return data-layer failure
      */
     static DataException translate(String operation, String sql, SQLException cause) {
-        String state = cause.getSQLState() == null ? "unknown" : cause.getSQLState();
-        String message = "JDBC " + operation + " failed [SQLState=" + state
-                + ", vendorCode=" + cause.getErrorCode() + ", sqlFingerprint=" + fingerprint(sql) + "]";
+        String state = cause.getSQLState() == null ? "not provided" : "'" + cause.getSQLState() + "'";
+        String message = "The JDBC " + operation + " failed. The SQL state is " + state
+                + ", the vendor code is " + cause.getErrorCode() + ", and the SQL fingerprint is '"
+                + fingerprint(sql) + "'.";
         return new DataException(message, safeCause(cause));
     }
 
@@ -90,7 +101,7 @@ final class JdbcExceptionTranslator {
             return HexFormat.of().formatHex(digest, 0, FINGERPRINT_BYTES);
         } catch (NoSuchAlgorithmException e) {
             // SHA-256 is required by every Java implementation.
-            throw new IllegalStateException("SHA-256 is unavailable", e);
+            throw new IllegalStateException("The SHA-256 message digest is unavailable.", e);
         }
     }
 
@@ -146,6 +157,22 @@ final class JdbcExceptionTranslator {
     }
 
     /**
+     * Rebuilds a warning-processing failure using stable provider text.
+     * Driver messages, causes, and suppressed failures are not retained.
+     *
+     * @param owner stable warning owner
+     * @param failure warning-processing failure
+     * @return sanitized provider-owned diagnostic
+     */
+    static Throwable warningFailure(String owner, Throwable failure) {
+        String message = warningFailureMessage(owner);
+        if (failure instanceof SQLException sqlException) {
+            return new SafeSQLException(message, sqlException.getSQLState(), sqlException.getErrorCode());
+        }
+        return new SafeDiagnosticException(message);
+    }
+
+    /**
      * Copies one JDBC warning chain in encounter order. The returned failures
      * have no driver-owned causes, suppressed failures, next-exception links,
      * or messages. Broken and cyclic chains terminate with one provider-owned
@@ -167,7 +194,7 @@ final class JdbcExceptionTranslator {
         while (current != null) {
             // A driver can return an overlong or cyclic warning chain.
             if (sanitized.size() == MAX_WARNINGS_PER_OWNER || visited.put(current, Boolean.TRUE) != null) {
-                sanitized.add(new SafeDiagnosticException("JDBC " + operation + " chain truncated"));
+                sanitized.add(new SafeDiagnosticException(warningFailureMessage(operation)));
                 break;
             }
             try {
@@ -176,12 +203,36 @@ final class JdbcExceptionTranslator {
                                                  current.getSQLState(),
                                                  current.getErrorCode()));
                 current = current.getNextWarning();
-            } catch (Throwable traversalFailure) {
-                sanitized.add(diagnostic(operation + " traversal", traversalFailure));
+            } catch (RuntimeException traversalFailure) {
+                sanitized.add(warningFailure(operation, traversalFailure));
                 break;
             }
         }
         return List.copyOf(sanitized);
+    }
+
+    /**
+     * Returns the stable message for a warning owner.
+     *
+     * @param owner stable warning owner
+     * @return safe warning-processing message
+     */
+    private static String warningFailureMessage(String owner) {
+        return "The JDBC provider could not process " + owner + "s.";
+    }
+
+    /**
+     * Returns the operation name without exposing SQL or bound values.
+     *
+     * @param operation JDBC operation
+     * @return safe operation name
+     */
+    private static String operationName(JdbcOperation operation) {
+        return switch (operation.preparationPlan().resultKind()) {
+        case QUERY -> "query";
+        case UPDATE -> "update";
+        case GENERATED_KEYS -> "generated keys operation";
+        };
     }
 
     /**
@@ -220,7 +271,7 @@ final class JdbcExceptionTranslator {
                     copy.addSuppressed(safe);
                 }
             } else {
-                copy.addSuppressed(sanitize("related", suppressed));
+                copy.addSuppressed(sanitize("processing a related JDBC failure", suppressed));
             }
         }
         Throwable nested = cause.getCause();
@@ -230,7 +281,7 @@ final class JdbcExceptionTranslator {
                 copy.initCause(safe);
             }
         } else if (nested != null) {
-            copy.initCause(sanitize("related", nested));
+            copy.initCause(sanitize("processing a related JDBC failure", nested));
         }
         SQLException next = cause.getNextException();
         if (next != null) {
@@ -251,8 +302,8 @@ final class JdbcExceptionTranslator {
      * @return safe diagnostic without a cause
      */
     private static SafeDiagnosticException diagnostic(String operation, Throwable failure) {
-        return new SafeDiagnosticException("JDBC " + operation + " failure ["
-                                                   + failure.getClass().getName() + "]");
+        return new SafeDiagnosticException("The JDBC provider encountered an exception of type '"
+                                                   + failure.getClass().getName() + "' while " + operation + ".");
     }
 
     /**

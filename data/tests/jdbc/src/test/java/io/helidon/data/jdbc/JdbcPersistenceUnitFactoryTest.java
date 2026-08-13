@@ -114,6 +114,21 @@ class JdbcPersistenceUnitFactoryTest {
     }
 
     @Test
+    void rejectsDuplicateUnnamedPersistenceUnitsWithoutExposingTheDefaultQualifier() {
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.data-source", "source",
+                "data.persistence-units.jdbc.1.data-source", "source")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(List::of,
+                                                                            () -> config,
+                                                                            new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), is("Each JDBC persistence unit must have a unique name. "
+                                                   + "More than one configured persistence unit is unnamed."));
+    }
+
+    @Test
     void validatesEveryUnitBeforeActivatingTheFirstDatasource() {
         Config duplicate = Config.just(ConfigSources.create(Map.of(
                 "data.persistence-units.jdbc.0.name", "same",
@@ -129,7 +144,7 @@ class JdbcPersistenceUnitFactoryTest {
 
         DataException failure = assertThrows(DataException.class, factory::services);
 
-        assertThat(failure.getMessage(), containsString("Duplicate JDBC persistence-unit name: same"));
+        assertThat(failure.getMessage(), is("More than one JDBC persistence unit is named 'same'."));
     }
 
     @Test
@@ -279,8 +294,9 @@ class JdbcPersistenceUnitFactoryTest {
         DataException failure = assertThrows(DataException.class, factory::services);
 
         assertThat(failure.getMessage(), containsString("missing-source"));
-        assertThat(failure.getMessage(), containsString("exactly one connection source"));
-        assertThat(failure.getMessage(), containsString("data-source or connection"));
+        assertThat(failure.getMessage(), is("JDBC persistence unit 'missing-source' must specify exactly one "
+                                                   + "connection source. Configure either 'data-source' or "
+                                                   + "'connection'."));
     }
 
     @Test
@@ -300,9 +316,29 @@ class JdbcPersistenceUnitFactoryTest {
 
         DataException failure = assertThrows(DataException.class, factory::services);
 
-        assertThat(failure.getMessage(), containsString("ambiguous-source"));
-        assertThat(failure.getMessage(), containsString("exactly one connection source"));
-        assertThat(failure.getMessage(), containsString("data-source or connection"));
+        assertThat(failure.getMessage(), is("JDBC persistence unit 'ambiguous-source' must specify exactly one "
+                                                   + "connection source. Configure either 'data-source' or "
+                                                   + "'connection'."));
+    }
+
+    @Test
+    void rejectsAmbiguousUnnamedConnectionSourceWithoutExposingTheDefaultQualifier() {
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.data-source", "must-not-resolve",
+                "data.persistence-units.jdbc.0.connection.url", "jdbc:must-not-connect",
+                "data.persistence-units.jdbc.0.connection.jdbc-driver-class-name", "missing.Driver")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> {
+                    throw new AssertionError("Ambiguous configuration activated datasource services");
+                },
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), is("JDBC persistence unit configuration must specify exactly one "
+                                                   + "connection source. Configure either 'data-source' or "
+                                                   + "'connection'."));
     }
 
     @Test
@@ -319,8 +355,7 @@ class JdbcPersistenceUnitFactoryTest {
 
         DataException failure = assertThrows(DataException.class, factory::services);
 
-        assertThat(failure.getMessage(), containsString("blank-source"));
-        assertThat(failure.getMessage(), containsString("data-source must not be blank"));
+        assertThat(failure.getMessage(), is("JDBC persistence unit 'blank-source' has a blank 'data-source' name."));
     }
 
     @Test
@@ -384,8 +419,8 @@ class JdbcPersistenceUnitFactoryTest {
 
         DataException failure = assertThrows(DataException.class, factory::services);
 
-        assertThat(failure.getMessage(), containsString("missing-script"));
-        assertThat(failure.getMessage(), containsString("init bootstrap resource #1 (classpath)"));
+        assertThat(failure.getMessage(),
+                   is("The configuration for JDBC persistence unit 'missing-script' is invalid."));
         assertThat(failure.getMessage(), not(containsString("does-not-exist.sql")));
     }
 
@@ -403,7 +438,7 @@ class JdbcPersistenceUnitFactoryTest {
         DataException failure = assertThrows(DataException.class, factory::services);
 
         assertThat(failure.getMessage(),
-                   containsString("does not support URI-backed init bootstrap resource #1 (URI)"));
+                   is("JDBC persistence unit 'private-uri' does not support a URI value for 'init-script'."));
         assertThat(failure.getMessage(), not(containsString(secret)));
         assertThat(failure.getCause(), nullValue());
     }
@@ -425,7 +460,7 @@ class JdbcPersistenceUnitFactoryTest {
             DataException failure = assertThrows(DataException.class, factory::services);
 
             assertThat(failure.getMessage(), containsString("unterminated"));
-            assertThat(failure.getMessage(), containsString("init bootstrap resource #1 (classpath)"));
+            assertThat(failure.getMessage(), containsString("classpath init script"));
             assertThat(failure.getMessage(), not(containsString(resource)));
         }
     }
@@ -482,7 +517,7 @@ class JdbcPersistenceUnitFactoryTest {
 
         SQLException failure = assertThrows(SQLException.class, dataSource::getConnection);
 
-        assertThat(failure.getMessage(), is("Configured JDBC driver does not accept the configured URL"));
+        assertThat(failure.getMessage(), is("The configured JDBC driver does not accept the configured URL."));
         assertThat(failure.getMessage(), not(containsString(url)));
         assertThat(failure.getMessage(), not(containsString("private-password")));
         assertThat(failure.getMessage(), not(containsString("private-token")));

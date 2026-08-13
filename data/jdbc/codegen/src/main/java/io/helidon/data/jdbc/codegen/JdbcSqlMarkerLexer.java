@@ -74,10 +74,10 @@ final class JdbcSqlMarkerLexer {
      * @return marker plan
      */
     private static Result parse(String sql, JdbcLexicalProfile profile) {
-        Objects.requireNonNull(sql, "SQL must not be null");
-        Objects.requireNonNull(profile, "JDBC lexical profile must not be null");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(profile, "The JDBC lexical profile must not be null.");
         if (sql.isBlank()) {
-            throw new IllegalArgumentException("SQL must not be blank");
+            throw new IllegalArgumentException("The SQL statement must not be blank.");
         }
         JdbcSqlMarkerLexer lexer = new JdbcSqlMarkerLexer(sql, profile);
         lexer.scan();
@@ -328,9 +328,8 @@ final class JdbcSqlMarkerLexer {
      * @return malformed SQL exception
      */
     private IllegalArgumentException malformed(String message) {
-        return new IllegalArgumentException(message
-                                                    + " for lexical profile " + profile
-                                                    + " near SQL offset " + index);
+        return new IllegalArgumentException(message + ". The lexical profile is " + profile
+                                                    + ", and the SQL offset is " + index + ".");
     }
 
     /**

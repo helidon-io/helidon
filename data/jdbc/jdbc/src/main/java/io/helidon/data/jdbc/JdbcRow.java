@@ -122,9 +122,9 @@ final class JdbcRow implements JdbcClient.Row {
     @Override
     public <T> Optional<T> optional(String label, Class<T> type) {
         ensureReadable();
-        Objects.requireNonNull(label, "Column label must not be null");
+        Objects.requireNonNull(label, "The column label must not be null.");
         if (label.isBlank()) {
-            throw new IllegalArgumentException("Column label must not be blank");
+            throw new IllegalArgumentException("The column label must not be blank.");
         }
         return Optional.ofNullable(read(columns.index(label), type));
     }
@@ -135,7 +135,7 @@ final class JdbcRow implements JdbcClient.Row {
         validateIndex(index);
         T value = read(index, type);
         if (value == null) {
-            throw new DataException("Required result column " + index + " contains SQL NULL");
+            throw new DataException("Required result column " + index + " contains SQL NULL.");
         }
         return value;
     }
@@ -143,13 +143,13 @@ final class JdbcRow implements JdbcClient.Row {
     @Override
     public <T> T required(String label, Class<T> type) {
         ensureReadable();
-        Objects.requireNonNull(label, "Column label must not be null");
+        Objects.requireNonNull(label, "The column label must not be null.");
         if (label.isBlank()) {
-            throw new IllegalArgumentException("Column label must not be blank");
+            throw new IllegalArgumentException("The column label must not be blank.");
         }
         T value = read(columns.index(label), type);
         if (value == null) {
-            throw new DataException("Required result column '" + label + "' contains SQL NULL");
+            throw new DataException("Required result column '" + label + "' contains SQL NULL.");
         }
         return value;
     }
@@ -163,10 +163,11 @@ final class JdbcRow implements JdbcClient.Row {
      * @return database value, possibly {@code null}
      */
     private <T> T read(int index, Class<T> requestedType) {
-        Objects.requireNonNull(requestedType, "Target type must not be null");
+        Objects.requireNonNull(requestedType, "The target type must not be null.");
         Class<?> targetType = normalized(requestedType);
         if (!SUPPORTED_TYPES.contains(targetType)) {
-            throw new IllegalArgumentException("Unsupported JDBC scalar type: " + requestedType.getTypeName());
+            throw new IllegalArgumentException("JDBC does not support the scalar type '"
+                                                       + requestedType.getTypeName() + "'.");
         }
         try {
             Object value;
@@ -191,8 +192,9 @@ final class JdbcRow implements JdbcClient.Row {
      */
     private void validateIndex(int index) {
         if (index < 1 || index > columns.columnCount()) {
-            throw new IllegalArgumentException("Result column index must be between 1 and "
-                                                       + columns.columnCount() + ": " + index);
+            throw new IllegalArgumentException("The result column index must be between 1 and "
+                                                       + columns.columnCount() + ". The requested index was "
+                                                       + index + ".");
         }
     }
 
@@ -201,10 +203,10 @@ final class JdbcRow implements JdbcClient.Row {
      */
     private void ensureReadable() {
         if (!active) {
-            throw new IllegalStateException("JDBC row is valid only during its mapper callback");
+            throw new IllegalStateException("A JDBC row is valid only during its mapper callback.");
         }
         if (Thread.currentThread() != callbackThread) {
-            throw new IllegalStateException("JDBC row may be read only by its mapper callback thread");
+            throw new IllegalStateException("A JDBC row may be read only by its mapper callback thread.");
         }
     }
 
@@ -215,7 +217,7 @@ final class JdbcRow implements JdbcClient.Row {
      * @return normalized type
      */
     private static Class<?> normalized(Class<?> type) {
-        Objects.requireNonNull(type, "Target type must not be null");
+        Objects.requireNonNull(type, "The target type must not be null.");
         return type.isPrimitive() ? PRIMITIVE_WRAPPERS.getOrDefault(type, type) : type;
     }
 }

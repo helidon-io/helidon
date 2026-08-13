@@ -71,7 +71,7 @@ interface JdbcConnectionLease extends AutoCloseable {
     final class Owned implements JdbcConnectionLease {
 
         private static final String AUTO_COMMIT_REQUIRED =
-                "Data sources used for JDBC operations must provide connections with auto-commit enabled.";
+                "Datasources used for JDBC operations must provide connections with auto-commit enabled.";
 
         private final Connection connection;
         private boolean closed;
@@ -108,7 +108,7 @@ interface JdbcConnectionLease extends AutoCloseable {
                     connection.close();
                 } catch (SQLException | RuntimeException | Error closeFailure) {
                     // Preserve the acquisition failure and prevent driver cleanup details from escaping.
-                    JdbcExceptionTranslator.suppress(failure, "rejected connection close", closeFailure);
+                    JdbcExceptionTranslator.suppress(failure, "closing a rejected connection", closeFailure);
                 }
                 throw failure;
             }
@@ -117,7 +117,7 @@ interface JdbcConnectionLease extends AutoCloseable {
         @Override
         public Connection connection() {
             if (closed) {
-                throw new IllegalStateException("Connection lease is closed");
+                throw new IllegalStateException("The connection lease is closed.");
             }
             return connection;
         }

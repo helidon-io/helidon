@@ -77,8 +77,8 @@ final class JdbcTxSupport implements TxSupport {
 
     @Override
     public <T> T transaction(Tx.Type type, Callable<T> task) {
-        Objects.requireNonNull(type, "Missing transaction type");
-        Objects.requireNonNull(task, "Missing task to run in transaction");
+        Objects.requireNonNull(type, "The transaction type must not be null.");
+        Objects.requireNonNull(task, "The transaction task must not be null.");
         // Bracket every propagation call so listeners can associate later lifecycle
         // events with this transaction provider.
         try {
@@ -115,7 +115,7 @@ final class JdbcTxSupport implements TxSupport {
     private <T> T mandatory(Callable<T> task) {
         Transaction current = current();
         if (current == null) {
-            throw new TxException("Starting @Tx.Mandatory outside a local JDBC transaction");
+            throw new TxException("@Tx.Mandatory requires an active local JDBC transaction.");
         }
         return callJoined(current, task);
     }
@@ -149,7 +149,7 @@ final class JdbcTxSupport implements TxSupport {
      */
     private <T> T never(Callable<T> task) {
         if (current() != null) {
-            throw new TxException("Starting @Tx.Never inside a local JDBC transaction");
+            throw new TxException("@Tx.Never cannot run inside an active local JDBC transaction.");
         }
         return callOutside(task);
     }
@@ -212,9 +212,9 @@ final class JdbcTxSupport implements TxSupport {
             throw e;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new TxException("Local JDBC transaction task was interrupted", e);
+            throw new TxException("The local JDBC transaction task was interrupted.", e);
         } catch (Exception e) {
-            throw new TxException("Local JDBC transaction task failed", e);
+            throw new TxException("The local JDBC transaction task failed.", e);
         }
     }
 
@@ -236,10 +236,10 @@ final class JdbcTxSupport implements TxSupport {
         } catch (InterruptedException e) {
             transaction.markRollbackOnly();
             Thread.currentThread().interrupt();
-            throw new TxException("Local JDBC transaction task was interrupted", e);
+            throw new TxException("The local JDBC transaction task was interrupted.", e);
         } catch (Exception e) {
             transaction.markRollbackOnly();
-            throw new TxException("Local JDBC transaction task failed", e);
+            throw new TxException("The local JDBC transaction task failed.", e);
         } catch (Error e) {
             transaction.markRollbackOnly();
             throw e;
@@ -265,12 +265,12 @@ final class JdbcTxSupport implements TxSupport {
         } catch (InterruptedException e) {
             transaction.markRollbackOnly();
             Thread.currentThread().interrupt();
-            TxException failure = new TxException("Local JDBC transaction task was interrupted", e);
+            TxException failure = new TxException("The local JDBC transaction task was interrupted.", e);
             rollback(transaction, failure);
             throw failure;
         } catch (Exception e) {
             transaction.markRollbackOnly();
-            TxException failure = new TxException("Local JDBC transaction task failed", e);
+            TxException failure = new TxException("The local JDBC transaction task failed.", e);
             rollback(transaction, failure);
             throw failure;
         } catch (Error e) {
@@ -280,7 +280,7 @@ final class JdbcTxSupport implements TxSupport {
         }
 
         if (transaction.rollbackOnly()) {
-            TxException failure = new TxException("Local JDBC transaction was marked rollback-only");
+            TxException failure = new TxException("The local JDBC transaction was marked for rollback.");
             rollback(transaction, failure);
             throw failure;
         }
@@ -452,11 +452,11 @@ final class JdbcTxSupport implements TxSupport {
     private Throwable removeCurrent(Transaction expected) {
         ArrayDeque<Transaction> stack = transactions.get();
         if (stack == null) {
-            return new IllegalStateException("Local JDBC transaction stack is missing");
+            return new IllegalStateException("The local JDBC transaction stack is missing.");
         }
         Transaction actual = stack.poll();
         if (actual != expected) {
-            return new IllegalStateException("Local JDBC transaction stack is inconsistent");
+            return new IllegalStateException("The local JDBC transaction stack is inconsistent.");
         }
         removeThreadStateIfEmpty();
         return null;
@@ -513,7 +513,8 @@ final class JdbcTxSupport implements TxSupport {
             throw txException;
         }
         if (failure != null) {
-            throw new TxException("Local JDBC transaction " + event + " notification failed", failure);
+            throw new TxException("A local JDBC transaction lifecycle notification failed during " + event + ".",
+                                  failure);
         }
     }
 
@@ -752,8 +753,8 @@ final class JdbcTxSupport implements TxSupport {
          * @return state exception
          */
         private IllegalStateException invalidTransition(String operation) {
-            return new IllegalStateException("Cannot " + operation + " local JDBC transaction "
-                                                     + identity + " while it is " + state);
+            return new IllegalStateException("The local JDBC transaction cannot " + operation
+                                                     + " while its state is '" + state + "'.");
         }
     }
 }

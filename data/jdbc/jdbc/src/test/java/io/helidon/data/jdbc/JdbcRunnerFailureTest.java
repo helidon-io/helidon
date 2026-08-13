@@ -43,6 +43,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -102,8 +103,8 @@ class JdbcRunnerFailureTest {
                                              () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
 
         assertSafeSqlCause(failure.getCause(), prepareFailure);
-        assertThat(failure.getMessage(), containsString("SQLState=42000"));
-        assertThat(failure.getMessage(), containsString("vendorCode=91"));
+        assertThat(failure.getMessage(), containsString("SQL state is '42000'"));
+        assertThat(failure.getMessage(), containsString("vendor code is 91"));
         verify(connection).close();
     }
 
@@ -171,7 +172,7 @@ class JdbcRunnerFailureTest {
 
         assertThat(failure.getCause(), instanceOf(SQLException.class));
         assertThat(failure.getCause().getMessage(),
-                   is("Data sources used for JDBC operations must provide connections with auto-commit enabled."));
+                   is("Datasources used for JDBC operations must provide connections with auto-commit enabled."));
         assertThat(failure.getCause().getSuppressed().length, is(1));
         assertSafeSqlCause(failure.getCause().getSuppressed()[0], closeFailure);
         verify(connection, never()).prepareStatement("UPDATE TEST_VALUE SET VALUE = 1");
@@ -524,13 +525,13 @@ class JdbcRunnerFailureTest {
         assertThat(failure.getSuppressed().length, is(2));
         Throwable diagnostic = failure.getSuppressed()[0];
         assertThat(diagnostic.getMessage(),
-                   is("JDBC result-set warning read failure [java.lang.IllegalStateException]"));
+                   is("The JDBC provider could not process result set warnings."));
         assertThat(diagnostic.getMessage(), not(containsString("secret")));
         assertThat(diagnostic.getCause(), nullValue());
         assertThat(diagnostic.getSuppressed().length, is(0));
         Throwable clearDiagnostic = failure.getSuppressed()[1];
         assertThat(clearDiagnostic.getMessage(),
-                   is("JDBC result-set warning clear failure [java.lang.UnsupportedOperationException]"));
+                   is("The JDBC provider could not process result set warnings."));
         assertThat(clearDiagnostic.getMessage(), not(containsString("secret")));
         assertThat(clearDiagnostic.getCause(), nullValue());
     }
@@ -544,6 +545,39 @@ class JdbcRunnerFailureTest {
 
         assertThat(count, is(1L));
         verify(statement).getWarnings();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void keepsWarningProcessingFailuresNonFatalAfterSuccessfulWork() throws Exception {
+        prepareSuccessfulUpdate();
+        doThrow(new SQLException("secret connection warning failure", "01007", 17))
+                .when(connection)
+                .clearWarnings();
+        doThrow(new UnsupportedOperationException("secret statement warning failure"))
+                .when(statement)
+                .clearWarnings();
+
+        long count = client.create("UPDATE TEST_VALUE SET VALUE = 1").execute();
+
+        assertThat(count, is(1L));
+        verify(statement).execute();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void preservesFatalWarningProcessingErrorsAndClosesResources() throws Exception {
+        prepareSuccessfulUpdate();
+        AssertionError warningError = new AssertionError("fatal warning failure");
+        doNothing().doThrow(warningError).when(statement).clearWarnings();
+
+        AssertionError failure = assertThrows(AssertionError.class,
+                                              () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
+
+        assertThat(failure, sameInstance(warningError));
+        verify(statement).execute();
         verify(statement).close();
         verify(connection).close();
     }
@@ -606,7 +640,9 @@ class JdbcRunnerFailureTest {
                                                              .map(String.class)
                                                              .one());
 
-        assertThat(failure.getMessage(), is("JDBC query maximum rows failure [java.lang.IllegalStateException]"));
+        assertThat(failure.getMessage(),
+                   is("The JDBC provider encountered an exception of type 'java.lang.IllegalStateException' while "
+                              + "setting the maximum row count for a query."));
         assertThat(failure.getCause(), nullValue());
         verify(statement, never()).execute();
         verify(statement).close();
@@ -666,7 +702,7 @@ class JdbcRunnerFailureTest {
 
         assertThat(failure.getCause(), instanceOf(SQLException.class));
         assertThat(failure.getCause().getMessage(),
-                   is("Data sources used for JDBC operations must provide connections with auto-commit enabled."));
+                   is("Datasources used for JDBC operations must provide connections with auto-commit enabled."));
         verify(connection).getAutoCommit();
         verify(connection).close();
         verify(connection, never()).clearWarnings();
@@ -698,7 +734,7 @@ class JdbcRunnerFailureTest {
     private static void assertSafeSqlCause(Throwable actual, SQLException expected) {
         assertThat(actual, instanceOf(SQLException.class));
         SQLException safe = (SQLException) actual;
-        assertThat(safe.getMessage(), is("JDBC driver failure"));
+        assertThat(safe.getMessage(), is("The JDBC driver reported a failure."));
         assertThat(safe.getSQLState(), is(expected.getSQLState()));
         assertThat(safe.getErrorCode(), is(expected.getErrorCode()));
     }
@@ -706,7 +742,7 @@ class JdbcRunnerFailureTest {
     private static void assertSafeWarning(Throwable actual, String sqlState, int vendorCode) {
         assertThat(actual, instanceOf(SQLWarning.class));
         SQLWarning warning = (SQLWarning) actual;
-        assertThat(warning.getMessage(), is("JDBC driver warning"));
+        assertThat(warning.getMessage(), is("The JDBC driver reported a warning."));
         assertThat(warning.getSQLState(), is(sqlState));
         assertThat(warning.getErrorCode(), is(vendorCode));
         assertThat(warning.getCause(), nullValue());

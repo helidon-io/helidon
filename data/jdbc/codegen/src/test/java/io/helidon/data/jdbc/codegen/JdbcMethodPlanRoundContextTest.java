@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.types.AccessModifier;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcMethodPlanRoundContextTest {
 
@@ -77,7 +79,35 @@ class JdbcMethodPlanRoundContextTest {
         assertThat(plan.explicitMapper(), is(mapperType));
     }
 
+    @Test
+    void reportsMissingAndBlankStatementAnnotationsAsCompleteSentences() {
+        TypedElementInfo missingStatement = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("missingStatement")
+                .typeName(TypeNames.STRING)
+                .enclosingType(TypeName.create("example.Repository"))
+                .build();
+        CodegenException missing = assertThrows(
+                CodegenException.class,
+                () -> JdbcMethodPlan.create(missingStatement, new TypesRoundContext(Map.of())));
+        assertThat(missing.getMessage(),
+                   is("An abstract JDBC repository method must declare @Jdbc.Statement."));
+
+        CodegenException blank = assertThrows(
+                CodegenException.class,
+                () -> JdbcMethodPlan.create(repositoryMethod("blankStatement", TypeNames.STRING, null, "  "),
+                                            new TypesRoundContext(Map.of())));
+        assertThat(blank.getMessage(), is("The SQL statement declared by @Jdbc.Statement must not be blank."));
+    }
+
     private static TypedElementInfo repositoryMethod(String name, TypeName returnType, TypeName mapperType) {
+        return repositoryMethod(name, returnType, mapperType, "select VALUE from TEST_VALUE");
+    }
+
+    private static TypedElementInfo repositoryMethod(String name,
+                                                     TypeName returnType,
+                                                     TypeName mapperType,
+                                                     String sql) {
         TypedElementInfo.Builder builder = TypedElementInfo.builder()
                 .kind(ElementKind.METHOD)
                 .elementName(name)
@@ -85,7 +115,7 @@ class JdbcMethodPlanRoundContextTest {
                 .enclosingType(TypeName.create("example.Repository"))
                 .addAnnotation(Annotation.builder()
                                        .typeName(JdbcPersistenceTypes.JDBC_STATEMENT)
-                                       .value("select VALUE from TEST_VALUE")
+                                       .value(sql)
                                        .build());
         if (mapperType != null) {
             builder.addAnnotation(Annotation.builder()

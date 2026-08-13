@@ -100,20 +100,30 @@ class JdbcRunnerTest {
         JdbcClient.GeneratedKeys keys = client.create("INSERT INTO POKEMON(NAME) VALUES ('Pichu')")
                 .generatedKeys();
 
-        assertThrows(NullPointerException.class, () -> keys.addColumn(null));
-        assertThrows(IllegalArgumentException.class, () -> keys.addColumn(" "));
+        NullPointerException nullColumn = assertThrows(NullPointerException.class, () -> keys.addColumn(null));
+        assertThat(nullColumn.getMessage(), is("The generated column name must not be null."));
+        IllegalArgumentException blankColumn = assertThrows(IllegalArgumentException.class,
+                                                            () -> keys.addColumn(" "));
+        assertThat(blankColumn.getMessage(), is("A generated column name must not be blank."));
         keys.addColumn("ID");
         keys.addColumn("id");
-        assertThrows(IllegalArgumentException.class, () -> keys.addColumn("ID"));
-        assertThrows(NullPointerException.class, () -> keys.map(null));
+        IllegalArgumentException duplicateColumn = assertThrows(IllegalArgumentException.class,
+                                                                () -> keys.addColumn("ID"));
+        assertThat(duplicateColumn.getMessage(), is("The generated column name 'ID' is duplicated."));
+        NullPointerException nullMapper = assertThrows(NullPointerException.class, () -> keys.map(null));
+        assertThat(nullMapper.getMessage(), is("The generated key mapper must not be null."));
 
         JdbcClient.GeneratedKeys executableKeys = client.create("INSERT INTO POKEMON(NAME) VALUES ('Pichu')")
                 .generatedKeys()
                 .addColumn("ID");
         JdbcClient.Rows<Long> rows = executableKeys.map(row -> row.required(1, Long.class));
 
-        assertThrows(IllegalStateException.class, () -> executableKeys.addColumn("NAME"));
-        assertThrows(IllegalStateException.class, () -> executableKeys.map(row -> row.required(1, Long.class)));
+        IllegalStateException finalized = assertThrows(IllegalStateException.class,
+                                                       () -> executableKeys.addColumn("NAME"));
+        assertThat(finalized.getMessage(), is("Generated key mapping has already been selected."));
+        IllegalStateException remapped = assertThrows(IllegalStateException.class,
+                                                      () -> executableKeys.map(row -> row.required(1, Long.class)));
+        assertThat(remapped.getMessage(), is("Generated key mapping has already been selected."));
         assertThat(rows.one(), is(1L));
     }
 
@@ -122,8 +132,9 @@ class JdbcRunnerTest {
         JdbcPreparationPlan plan = JdbcPreparationPlan.generatedKeys(List.of("ID", "id"));
 
         assertThat(plan.generatedColumns(), is(List.of("ID", "id")));
-        assertThrows(IllegalArgumentException.class,
-                     () -> JdbcPreparationPlan.generatedKeys(List.of("ID", "ID")));
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                        () -> JdbcPreparationPlan.generatedKeys(List.of("ID", "ID")));
+        assertThat(failure.getMessage(), is("The generated column name 'ID' is duplicated."));
     }
 
     @Test
@@ -150,11 +161,14 @@ class JdbcRunnerTest {
                            .map(Long.class)
                            .one(),
                    is(1L));
-        assertThrows(NullPointerException.class,
-                     () -> client.create("INSERT INTO POKEMON(NAME) VALUES (?)").bind(1, null));
-        assertThrows(IllegalArgumentException.class,
-                     () -> client.create("INSERT INTO POKEMON(NAME) VALUES (?)")
-                             .bindNull(1, JDBCType.NULL));
+        NullPointerException nullValue = assertThrows(NullPointerException.class,
+                                                      () -> client.create("INSERT INTO POKEMON(NAME) VALUES (?)")
+                                                              .bind(1, null));
+        assertThat(nullValue.getMessage(), is("The bind value must not be null. Use bindNull for SQL NULL."));
+        IllegalArgumentException unsupportedNull = assertThrows(
+                IllegalArgumentException.class,
+                () -> client.create("INSERT INTO POKEMON(NAME) VALUES (?)").bindNull(1, JDBCType.NULL));
+        assertThat(unsupportedNull.getMessage(), is("JDBC does not support null values of type 'NULL'."));
     }
 
     private record CaseDistinctKeys(long upperCaseId, String lowerCaseId) {
@@ -163,19 +177,23 @@ class JdbcRunnerTest {
     @Test
     void enforcesCardinalityAndSingleUseStages() {
         JdbcClient.Rows<String> empty = client.create("SELECT NAME FROM POKEMON").map(String.class);
-        assertThrows(NoResultException.class, empty::one);
+        NoResultException emptyFailure = assertThrows(NoResultException.class, empty::one);
+        assertThat(emptyFailure.getMessage(), is("The JDBC operation returned no rows."));
 
         client.create("INSERT INTO POKEMON(NAME) VALUES (?)").bind(1, "one").execute();
         client.create("INSERT INTO POKEMON(NAME) VALUES (?)").bind(1, "two").execute();
-        assertThrows(NonUniqueResultException.class,
-                     () -> client.create("SELECT NAME FROM POKEMON").map(String.class).one());
+        NonUniqueResultException nonUnique = assertThrows(
+                NonUniqueResultException.class,
+                () -> client.create("SELECT NAME FROM POKEMON").map(String.class).one());
+        assertThat(nonUnique.getMessage(), is("The JDBC operation returned more than one row."));
         assertThrows(NonUniqueResultException.class,
                      () -> client.create("SELECT NAME FROM POKEMON").map(String.class).optional());
 
         JdbcClient.Statement statement = client.create("DELETE FROM POKEMON WHERE ID = ?");
         statement.bind(1, 1L);
         statement.execute();
-        assertThrows(IllegalStateException.class, statement::execute);
+        IllegalStateException reused = assertThrows(IllegalStateException.class, statement::execute);
+        assertThat(reused.getMessage(), is("A JDBC statement can perform only one terminal operation."));
     }
 
     @Test
@@ -235,9 +253,12 @@ class JdbcRunnerTest {
                            })
                            .one(),
                    is("value"));
-        assertThrows(IllegalStateException.class, () -> escaped.get().required(1, String.class));
-        assertThrows(DataException.class,
-                     () -> client.create("SELECT 'value'").map(row -> null).one());
+        IllegalStateException expired = assertThrows(IllegalStateException.class,
+                                                     () -> escaped.get().required(1, String.class));
+        assertThat(expired.getMessage(), is("A JDBC row is valid only during its mapper callback."));
+        DataException nullResult = assertThrows(DataException.class,
+                                                () -> client.create("SELECT 'value'").map(row -> null).one());
+        assertThat(nullResult.getMessage(), is("The JDBC row mapper returned null."));
     }
 
     @Test

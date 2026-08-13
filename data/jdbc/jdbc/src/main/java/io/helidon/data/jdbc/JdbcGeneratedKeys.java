@@ -39,7 +39,7 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
      * @param statement owning statement
      */
     JdbcGeneratedKeys(JdbcStatement statement) {
-        this.statement = Objects.requireNonNull(statement, "Generated key statement must not be null");
+        this.statement = Objects.requireNonNull(statement, "The generated key statement must not be null.");
     }
 
     /**
@@ -55,7 +55,7 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
         statement.ensureMutable();
         String validated = JdbcPreparationPlan.validateGeneratedColumn(columnName, columns.size());
         if (!uniqueColumns.add(validated)) {
-            throw new IllegalArgumentException("Duplicate generated column name: " + columnName);
+            throw new IllegalArgumentException("The generated column name '" + columnName + "' is duplicated.");
         }
         columns.add(columnName);
         return this;
@@ -72,7 +72,7 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
     public <T> JdbcClient.Rows<T> map(JdbcClient.RowMapper<T> mapper) {
         ensureConfiguring();
         statement.ensureMutable();
-        Objects.requireNonNull(mapper, "Generated key mapper must not be null");
+        Objects.requireNonNull(mapper, "The generated key mapper must not be null.");
         JdbcPreparationPlan plan = JdbcPreparationPlan.generatedKeys(columns);
         mapped = true;
         return new JdbcRows<>(statement, mapper, plan);
@@ -83,7 +83,7 @@ final class JdbcGeneratedKeys implements JdbcClient.GeneratedKeys {
      */
     private void ensureConfiguring() {
         if (mapped) {
-            throw new IllegalStateException("Generated key mapping has already been selected");
+            throw new IllegalStateException("Generated key mapping has already been selected.");
         }
     }
 }

@@ -93,10 +93,10 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             String unitName = unitConfig.get(NAME_CONFIG_KEY).asString().orElse(Service.Named.DEFAULT_NAME);
             validateBootstrapResources(unitName, bootstrapDescriptors(unitConfig));
             if (unitName.isBlank()) {
-                throw new DataException("JDBC persistence-unit name must not be blank");
+                throw new DataException("A JDBC persistence unit name must not be blank.");
             }
             if (!names.add(unitName)) {
-                throw new DataException("Duplicate JDBC persistence-unit name: " + unitName);
+                throw new DataException(duplicatePersistenceUnitNameMessage(unitName));
             }
         }
 
@@ -108,10 +108,8 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             try {
                 unit = JdbcPersistenceUnitConfig.create(unitConfig);
             } catch (RuntimeException e) {
-                throw new DataException("JDBC persistence unit '" + unitName
-                                                + "' configuration could not be created"
-                                                + bootstrapDescription(descriptors),
-                                        JdbcExceptionTranslator.sanitize("persistence-unit configuration", e));
+                throw new DataException(invalidPersistenceUnitConfigurationMessage(unitName, descriptors),
+                                        JdbcExceptionTranslator.sanitize("creating a persistence unit configuration", e));
             }
             List<JdbcBootstrapResource> resources = new ArrayList<>(2);
             // Drop is both loaded and executed before initialization.
@@ -145,13 +143,13 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         boolean hasDataSource = dataSource.exists();
         boolean hasConnection = unitConfig.get(CONNECTION_CONFIG_KEY).exists();
         if (hasDataSource == hasConnection) {
-            throw new DataException("JDBC persistence unit '" + unitName
-                                            + "' must configure exactly one connection source: "
-                                            + "data-source or connection");
+            throw new DataException(persistenceUnitDescription(unitName)
+                                            + " must specify exactly one connection source. Configure either "
+                                            + "'data-source' or 'connection'.");
         }
         if (hasDataSource && dataSource.asString().orElse("").isBlank()) {
-            throw new DataException("JDBC persistence unit '" + unitName
-                                            + "' data-source must not be blank");
+            throw new DataException(persistenceUnitDescription(unitName)
+                                            + " has a blank 'data-source' name.");
         }
     }
 
@@ -169,9 +167,49 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                 .filter(descriptor -> descriptor.sourceType() == JdbcBootstrapResource.SourceType.URI)
                 .findFirst()
                 .ifPresent(descriptor -> {
-                    throw new DataException("JDBC persistence unit '" + unitName
-                                                    + "' does not support URI-backed " + descriptor);
+                    throw new DataException(persistenceUnitDescription(unitName)
+                                                    + " does not support a URI value for '"
+                                                    + scriptConfigKey(descriptor.role()) + "'.");
                 });
+
+    }
+
+    private static String persistenceUnitDescription(String name) {
+        return Service.Named.DEFAULT_NAME.equals(name)
+                ? "JDBC persistence unit configuration"
+                : "JDBC persistence unit '" + name + "'";
+    }
+
+    private static String duplicatePersistenceUnitNameMessage(String name) {
+        return Service.Named.DEFAULT_NAME.equals(name)
+                ? "Each JDBC persistence unit must have a unique name. "
+                        + "More than one configured persistence unit is unnamed."
+                : "More than one JDBC persistence unit is named '" + name + "'.";
+    }
+
+    private static String invalidPersistenceUnitConfigurationMessage(
+            String name,
+            List<JdbcBootstrapResource.Descriptor> descriptors) {
+        List<String> invalidSettings = descriptors.stream()
+                .filter(descriptor -> descriptor.sourceType() == JdbcBootstrapResource.SourceType.UNSPECIFIED)
+                .map(descriptor -> "'" + scriptConfigKey(descriptor.role()) + "'")
+                .toList();
+        if (!invalidSettings.isEmpty()) {
+            String subject = invalidSettings.size() == 1 ? "value" : "values";
+            return persistenceUnitDescription(name) + " has invalid " + subject + " for "
+                    + String.join(" and ", invalidSettings)
+                    + ". Each script must use a supported resource configuration.";
+        }
+        return Service.Named.DEFAULT_NAME.equals(name)
+                ? "The JDBC persistence unit configuration is invalid."
+                : "The configuration for JDBC persistence unit '" + name + "' is invalid.";
+    }
+
+    private static String scriptConfigKey(JdbcBootstrapResource.Role role) {
+        return switch (role) {
+        case INIT -> INIT_SCRIPT_CONFIG_KEY;
+        case DROP -> DROP_SCRIPT_CONFIG_KEY;
+        };
     }
 
     /**
@@ -238,18 +276,6 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     }
 
     /**
-     * Formats configured bootstrap descriptors without exposing their values.
-     *
-     * @param descriptors configured descriptors
-     * @return diagnostic suffix
-     */
-    private static String bootstrapDescription(List<JdbcBootstrapResource.Descriptor> descriptors) {
-        return descriptors.isEmpty()
-                ? ""
-                : "; bootstrap resources: " + String.join(", ", descriptors.stream().map(Object::toString).toList());
-    }
-
-    /**
      * Resolves one unit's datasource and creates its client.
      *
      * @param configuredUnit persistence-unit configuration and detached scripts
@@ -276,15 +302,15 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         boolean hasDataSource = unit.dataSource().isPresent();
         boolean hasConnection = unit.connection().isPresent();
         if (hasDataSource == hasConnection) {
-            throw new DataException("JDBC persistence unit '" + unit.name()
-                                            + "' must configure exactly one connection source: "
-                                            + "data-source or connection");
+            throw new DataException(persistenceUnitDescription(unit.name())
+                                            + " must specify exactly one connection source. Configure either "
+                                            + "'data-source' or 'connection'.");
         }
         if (hasDataSource) {
             String name = unit.dataSource().orElseThrow();
             if (name.isBlank()) {
-                throw new DataException("JDBC persistence unit '" + unit.name()
-                                                + "' data-source must not be blank");
+                throw new DataException(persistenceUnitDescription(unit.name())
+                                                + " has a blank 'data-source' name.");
             }
             return namedDataSource(name);
         }
@@ -304,10 +330,10 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                 .filter(instance -> instance.qualifiers().contains(named))
                 .toList();
         if (matches.isEmpty()) {
-            throw new DataException("No SQL datasource service is named '" + name + "'");
+            throw new DataException("No SQL datasource service is named '" + name + "'.");
         }
         if (matches.size() > 1) {
-            throw new DataException("Multiple SQL datasource services are named '" + name + "'");
+            throw new DataException("More than one SQL datasource service is named '" + name + "'.");
         }
         return matches.getFirst().get();
     }
@@ -332,8 +358,8 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
      * @return datasource adapter
      */
     static DataSource directDataSource(ConnectionConfig config, Driver driver) {
-        return new DirectDataSource(Objects.requireNonNull(config, "Connection configuration must not be null"),
-                                    Objects.requireNonNull(driver, "JDBC driver must not be null"));
+        return new DirectDataSource(Objects.requireNonNull(config, "The connection configuration must not be null."),
+                                    Objects.requireNonNull(driver, "The JDBC driver must not be null."));
     }
 
     /**
@@ -425,10 +451,10 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         @Override
         public void setLoginTimeout(int seconds) throws SQLException {
             if (seconds < 0) {
-                throw new IllegalArgumentException("Login timeout must not be negative");
+                throw new IllegalArgumentException("The login timeout must not be negative.");
             }
             if (seconds != 0) {
-                throw new SQLFeatureNotSupportedException("The direct JDBC datasource does not support login timeouts");
+                throw new SQLFeatureNotSupportedException("The direct JDBC datasource does not support login timeouts.");
             }
         }
 
@@ -444,19 +470,19 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
 
         @Override
         public <T> T unwrap(Class<T> iface) throws SQLException {
-            Objects.requireNonNull(iface, "Unwrap type must not be null");
+            Objects.requireNonNull(iface, "The unwrap type must not be null.");
             if (iface.isInstance(this)) {
                 return iface.cast(this);
             }
             if (iface.isInstance(driver)) {
                 return iface.cast(driver);
             }
-            throw new SQLException("Direct JDBC datasource cannot unwrap to " + iface.getName());
+            throw new SQLException("The direct JDBC datasource cannot be unwrapped as '" + iface.getName() + "'.");
         }
 
         @Override
         public boolean isWrapperFor(Class<?> iface) {
-            Objects.requireNonNull(iface, "Wrapper type must not be null");
+            Objects.requireNonNull(iface, "The wrapper type must not be null.");
             return iface.isInstance(this) || iface.isInstance(driver);
         }
 
@@ -475,7 +501,7 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         private Connection connect(Properties properties) throws SQLException {
             Connection connection = driver.connect(url, properties);
             if (connection == null) {
-                throw new SQLException("Configured JDBC driver does not accept the configured URL");
+                throw new SQLException("The configured JDBC driver does not accept the configured URL.");
             }
             return connection;
         }

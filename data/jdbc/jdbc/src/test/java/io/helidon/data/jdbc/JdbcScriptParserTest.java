@@ -23,6 +23,7 @@ import javax.sql.DataSource;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.data.DataException;
+import io.helidon.service.registry.Service;
 
 import org.junit.jupiter.api.Test;
 
@@ -88,7 +89,7 @@ class JdbcScriptParserTest {
         DataException failure = assertThrows(DataException.class, () -> parse(privateSql));
 
         assertThat(failure.getMessage(), containsString("contains a nested block comment"));
-        assertThat(failure.getMessage(), containsString("profile PORTABLE"));
+        assertThat(failure.getMessage(), containsString("profile is PORTABLE"));
         assertThat(failure.getMessage(), containsString("source offset"));
         assertThat(failure.getMessage(), not(containsString("PRIVATE_VALUE")));
     }
@@ -101,7 +102,7 @@ class JdbcScriptParserTest {
             DataException failure = assertThrows(DataException.class, () -> parse(content));
 
             assertThat(failure.getMessage(), containsString("unterminated"));
-            assertThat(failure.getMessage(), containsString("profile PORTABLE"));
+            assertThat(failure.getMessage(), containsString("profile is PORTABLE"));
             assertThat(failure.getMessage(), containsString("source offset"));
             assertThat(failure.getMessage(), not(containsString("PRIVATE_VALUE")));
         }
@@ -118,7 +119,7 @@ class JdbcScriptParserTest {
 
             assertThat(failure.getMessage(),
                        containsString("unsupported database-client statement boundary"));
-            assertThat(failure.getMessage(), containsString("profile PORTABLE"));
+            assertThat(failure.getMessage(), containsString("profile is PORTABLE"));
             assertThat(failure.getMessage(), containsString("source offset"));
             assertThat(failure.getMessage(), not(containsString(content)));
         }
@@ -138,6 +139,24 @@ class JdbcScriptParserTest {
         assertThat(failure.getMessage(), not(containsString("PRIVATE_VALUE")));
         assertThat(failure.getMessage(), not(containsString("private description")));
         verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void describesAnUnnamedPersistenceUnitWithoutInternalIdentifiers() {
+        String privateSql = "SELECT PRIVATE_VALUE /* unterminated";
+
+        DataException failure = assertThrows(
+                DataException.class,
+                () -> JdbcScriptRunner.statements(Service.Named.DEFAULT_NAME, privateSql));
+
+        assertThat(failure.getMessage(),
+                   is("The JDBC persistence unit configuration cannot load the configured text init script because it "
+                              + "has an unterminated block comment. The statement boundary profile is PORTABLE, and "
+                              + "the source offset is 36."));
+        assertThat(failure.getMessage(), not(containsString("@default")));
+        assertThat(failure.getMessage(), not(containsString("#1")));
+        assertThat(failure.getMessage(), not(containsString("unspecified")));
+        assertThat(failure.getMessage(), not(containsString("PRIVATE_VALUE")));
     }
 
     @Test

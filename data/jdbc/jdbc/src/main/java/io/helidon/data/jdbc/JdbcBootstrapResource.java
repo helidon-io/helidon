@@ -47,7 +47,7 @@ final class JdbcBootstrapResource {
      * @return described resource
      */
     static JdbcBootstrapResource create(Role role, int position, Resource resource) {
-        Objects.requireNonNull(resource, "Bootstrap resource must not be null");
+        Objects.requireNonNull(resource, "The bootstrap resource must not be null.");
         return new JdbcBootstrapResource(new Descriptor(role,
                                                         SourceType.create(resource.sourceType()),
                                                         position),
@@ -147,7 +147,7 @@ final class JdbcBootstrapResource {
         /**
          * Invalid or incomplete configured-resource definition.
          */
-        UNSPECIFIED("unspecified");
+        UNSPECIFIED("configured");
 
         private final String text;
 
@@ -192,16 +192,16 @@ final class JdbcBootstrapResource {
     record Descriptor(Role role, SourceType sourceType, int position) {
 
         Descriptor {
-            Objects.requireNonNull(role, "Bootstrap resource role must not be null");
-            Objects.requireNonNull(sourceType, "Bootstrap resource source type must not be null");
+            Objects.requireNonNull(role, "The bootstrap resource role must not be null.");
+            Objects.requireNonNull(sourceType, "The bootstrap resource source type must not be null.");
             if (position < 1) {
-                throw new IllegalArgumentException("Bootstrap resource position must be positive");
+                throw new IllegalArgumentException("The bootstrap resource position must be positive.");
             }
         }
 
         @Override
         public String toString() {
-            return role.text() + " bootstrap resource #" + position + " (" + sourceType.text() + ")";
+            return sourceType.text() + " " + role.text() + " script";
         }
     }
 }

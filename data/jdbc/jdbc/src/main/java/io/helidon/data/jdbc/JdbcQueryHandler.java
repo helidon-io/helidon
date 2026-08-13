@@ -62,11 +62,11 @@ final class JdbcQueryHandler {
               ResultSet resultSet) throws SQLException {
         JdbcResultCursor<T> cursor = cursor(scope, mapper, resultSet);
         if (!cursor.hasNext()) {
-            throw new NoResultException("JDBC operation returned no rows");
+            throw new NoResultException("The JDBC operation returned no rows.");
         }
         T value = cursor.next();
         if (cursor.hasNext()) {
-            throw new NonUniqueResultException("JDBC operation returned more than one row");
+            throw new NonUniqueResultException("The JDBC operation returned more than one row.");
         }
         return value;
     }
@@ -138,7 +138,7 @@ final class JdbcQueryHandler {
         }
         T value = cursor.next();
         if (cursor.hasNext()) {
-            throw new NonUniqueResultException("JDBC operation returned more than one row");
+            throw new NonUniqueResultException("The JDBC operation returned more than one row.");
         }
         return Optional.of(value);
     }
@@ -210,8 +210,8 @@ final class JdbcQueryHandler {
                                                   JdbcClient.RowMapper<T> mapper,
                                                   ResultSet resultSet) throws SQLException {
         if (resultSet == null) {
-            throw new DataException("JDBC " + scope.operation().preparationPlan().resultKind()
-                                            + " did not provide an expected result set");
+            throw new DataException("The " + JdbcExceptionTranslator.operationDescription(scope.operation())
+                                            + " did not provide the expected result set.");
         }
         // Register ownership before metadata access so setup failures still close the result set.
         scope.resultSet(resultSet);
@@ -287,7 +287,7 @@ final class JdbcQueryHandler {
          */
         private T next() throws SQLException {
             if (!hasNext()) {
-                throw new NoSuchElementException("No more JDBC rows");
+                throw new NoSuchElementException("There are no more JDBC rows.");
             }
             ready = false;
             // Each callback gets a distinct view so an expired reference can never expose a later row.
@@ -295,7 +295,7 @@ final class JdbcQueryHandler {
             try {
                 T value = mapper.map(row);
                 if (value == null) {
-                    throw new DataException("JDBC row mapper returned null");
+                    throw new DataException("The JDBC row mapper returned null.");
                 }
                 return value;
             } finally {
@@ -304,4 +304,5 @@ final class JdbcQueryHandler {
             }
         }
     }
+
 }

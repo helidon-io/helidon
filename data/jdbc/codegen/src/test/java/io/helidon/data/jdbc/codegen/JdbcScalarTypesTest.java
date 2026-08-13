@@ -90,7 +90,10 @@ class JdbcScalarTypesTest {
         TypeName bigInteger = TypeName.create(BigInteger.class);
         assertThat(JdbcScalarTypes.isScalar(bigInteger), is(false));
         assertThat(JdbcScalarTypes.isScalar(TypeName.create(String[].class)), is(false));
-        assertThrows(IllegalArgumentException.class, () -> JdbcScalarTypes.nullJdbcTypeConstant(bigInteger));
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                        () -> JdbcScalarTypes.nullJdbcTypeConstant(bigInteger));
+        assertThat(failure.getMessage(),
+                   is("JDBC does not support the scalar type 'java.math.BigInteger'."));
     }
 
     @Test

@@ -74,14 +74,14 @@ record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns)
      * @return generated-key plan
      */
     static JdbcPreparationPlan generatedKeys(List<String> columnNames) {
-        Objects.requireNonNull(columnNames, "Generated column names must not be null");
+        Objects.requireNonNull(columnNames, "The generated column names must not be null.");
         // Revalidate at the immutable boundary instead of relying on the mutable builder.
         List<String> copy = new ArrayList<>(columnNames);
         Set<String> unique = new HashSet<>(copy.size());
         for (int index = 0; index < copy.size(); index++) {
             String name = copy.get(index);
             if (!unique.add(validateGeneratedColumn(name, index))) {
-                throw new IllegalArgumentException("Duplicate generated column name: " + name);
+                throw new IllegalArgumentException("The generated column name '" + name + "' is duplicated.");
             }
         }
         return new JdbcPreparationPlan(ResultKind.GENERATED_KEYS, List.copyOf(copy));
@@ -95,9 +95,9 @@ record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns)
      * @return validated name for exact duplicate detection
      */
     static String validateGeneratedColumn(String name, int index) {
-        Objects.requireNonNull(name, "Generated column name must not be null");
+        Objects.requireNonNull(name, "The generated column name must not be null.");
         if (name.isBlank()) {
-            throw new IllegalArgumentException("Generated column name must not be blank at index " + index);
+            throw new IllegalArgumentException("A generated column name must not be blank.");
         }
         return name;
     }

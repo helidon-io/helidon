@@ -105,7 +105,7 @@ class JdbcColumnLayoutTest {
                                                      .map(row -> row.required("DeTaIl", String.class))
                                                      .one());
 
-        assertThat(failure.getMessage(), is("Ambiguous result column label: DeTaIl"));
+        assertThat(failure.getMessage(), is("The result contains more than one column labeled 'DeTaIl'."));
     }
 
     @Test
@@ -115,7 +115,7 @@ class JdbcColumnLayoutTest {
                                                      .map(row -> row.required("name", String.class))
                                                      .one());
 
-        assertThat(failure.getMessage(), is("Result column label not found: name"));
+        assertThat(failure.getMessage(), is("The result does not contain a column labeled 'name'."));
     }
 
     @Test
@@ -160,7 +160,7 @@ class JdbcColumnLayoutTest {
 
         DataException failure = assertThrows(DataException.class, () -> layout.index("value"));
 
-        assertThat(failure.getCause().getMessage(), is("JDBC driver failure"));
+        assertThat(failure.getCause().getMessage(), is("The JDBC driver reported a failure."));
     }
 
     /**
@@ -192,7 +192,7 @@ class JdbcColumnLayoutTest {
         DataException failure = assertThrows(DataException.class, () -> layout.index("value"));
 
         assertThat(failure.getMessage(),
-                   is("Result column 1 has neither a usable label nor column name"));
+                   is("Result column 1 has neither a usable label nor a column name."));
     }
 
     /**

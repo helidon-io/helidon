@@ -30,6 +30,7 @@ import javax.sql.DataSource;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.data.DataException;
+import io.helidon.service.registry.Service;
 
 /**
  * Executes persistence-unit bootstrap scripts while retaining ownership of all
@@ -120,7 +121,7 @@ final class JdbcScriptRunner {
                 throw sqlException;
             } catch (RuntimeException closeFailure) {
                 // This close occurs before the shared cleanup path, so sanitize its runtime failure here.
-                throw (RuntimeException) JdbcExceptionTranslator.sanitize("bootstrap statement close", closeFailure);
+                throw (RuntimeException) JdbcExceptionTranslator.sanitize("closing a bootstrap statement", closeFailure);
             }
             if (manualCommit) {
                 try {
@@ -148,16 +149,16 @@ final class JdbcScriptRunner {
                     outcome = BootstrapOutcome.ROLLED_BACK;
                 }
             } catch (Throwable rollbackFailure) {
-                JdbcExceptionTranslator.suppress(failure, "bootstrap rollback", rollbackFailure);
+                JdbcExceptionTranslator.suppress(failure, "rolling back a bootstrap transaction", rollbackFailure);
                 outcome = BootstrapOutcome.UNKNOWN;
             }
         }
-        failure = close(statement, "bootstrap statement close", failure);
+        failure = close(statement, "closing a bootstrap statement", failure);
         if (outcome == BootstrapOutcome.UNKNOWN) {
             // Never restore or ordinarily close a connection whose transaction outcome is unknown.
             JdbcConnectionInvalidator.invalidate(connection, failure);
         } else {
-            failure = close(connection, "bootstrap connection close", failure);
+            failure = close(connection, "closing a bootstrap connection", failure);
         }
         if (failure != null) {
             rethrow(unitName, failure);
@@ -184,7 +185,7 @@ final class JdbcScriptRunner {
                     release(unitName, resources.get(remaining), failure);
                 }
                 rethrow(unitName, failure);
-                throw new AssertionError("Unreachable bootstrap resource failure");
+                throw new AssertionError("The bootstrap resource failure should already have been rethrown.");
             }
         }
         return new PreparedScripts(List.copyOf(scripts));
@@ -354,7 +355,7 @@ final class JdbcScriptRunner {
                     state = State.NORMAL;
                 }
             }
-            default -> throw new IllegalStateException("Unexpected script parser state: " + state);
+            default -> throw new IllegalStateException("The script parser entered the unexpected state '" + state + "'.");
             }
             onlyWhitespaceOnLine = updateLineState(content, firstConsumed, index, onlyWhitespaceOnLine);
         }
@@ -404,8 +405,10 @@ final class JdbcScriptRunner {
                                BootstrapBudget budget) {
         JdbcBootstrapResource.Descriptor descriptor = bootstrapResource.descriptor();
         if (descriptor.sourceType() == JdbcBootstrapResource.SourceType.URI) {
-            DataException failure = new DataException("JDBC persistence unit '" + unitName
-                                                              + "' does not support URI-backed " + descriptor);
+            DataException failure = new DataException(persistenceUnitDescription(unitName)
+                                                              + " does not support a URI value for the '"
+                                                              + scriptConfigKey(descriptor.role())
+                                                              + "' configuration key.");
             // A programmatic caller may have already caused Resource to open the URI stream.
             release(unitName, bootstrapResource, failure);
             throw failure;
@@ -417,7 +420,7 @@ final class JdbcScriptRunner {
         } catch (Error error) {
             throw error;
         } catch (Throwable failure) {
-            throw resourceFailure(unitName, descriptor, "acquisition", failure);
+            throw resourceFailure(unitName, descriptor, "open", failure);
         }
 
         Script script = null;
@@ -439,7 +442,7 @@ final class JdbcScriptRunner {
         } catch (DataException dataException) {
             failure = dataException;
         } catch (Throwable caught) {
-            failure = resourceFailure(unitName, descriptor, "processing", caught);
+            failure = resourceFailure(unitName, descriptor, "process", caught);
         }
         failure = closeInput(unitName, descriptor, input, failure);
         if (failure != null) {
@@ -464,7 +467,7 @@ final class JdbcScriptRunner {
         } catch (Error error) {
             throw error;
         } catch (Throwable closeFailure) {
-            failure.addSuppressed(resourceFailure(unitName, descriptor, "release acquisition", closeFailure));
+            failure.addSuppressed(resourceFailure(unitName, descriptor, "open", closeFailure));
             return;
         }
         try {
@@ -473,7 +476,7 @@ final class JdbcScriptRunner {
         } catch (Error error) {
             throw error;
         } catch (Throwable closeFailure) {
-            failure.addSuppressed(resourceFailure(unitName, descriptor, "release close", closeFailure));
+            failure.addSuppressed(resourceFailure(unitName, descriptor, "close", closeFailure));
         }
     }
 
@@ -540,8 +543,8 @@ final class JdbcScriptRunner {
             String limitDescription = remainingTotal < POLICY.maxResourceBytes()
                     ? "aggregate bootstrap byte limit of " + POLICY.maxTotalBytes()
                     : "per-resource bootstrap byte limit of " + POLICY.maxResourceBytes();
-            throw new DataException("JDBC persistence unit '" + unitName + "' " + descriptor
-                                            + " exceeds the " + limitDescription);
+            throw new DataException(persistenceUnitDescription(unitName) + " cannot load the " + descriptor
+                                            + " because it exceeds the " + limitDescription + ".");
         }
         budget.addBytes(bytes.length);
         return bytes;
@@ -567,7 +570,7 @@ final class JdbcScriptRunner {
                     .decode(ByteBuffer.wrap(bytes))
                     .toString();
         } catch (CharacterCodingException failure) {
-            throw resourceFailure(unitName, descriptor, "UTF-8 decoding", failure);
+            throw resourceFailure(unitName, descriptor, "decode", failure);
         }
     }
 
@@ -592,9 +595,9 @@ final class JdbcScriptRunner {
                                      BootstrapBudget budget) {
         if (executableContent) {
             if (!budget.addStatement()) {
-                throw new DataException("JDBC persistence unit '" + unitName + "' " + descriptor
-                                                + " exceeds the bootstrap statement limit of "
-                                                + POLICY.maxStatements());
+                throw new DataException(persistenceUnitDescription(unitName) + " cannot load the " + descriptor
+                                                + " because it exceeds the bootstrap statement limit of "
+                                                + POLICY.maxStatements() + ".");
             }
             statements.add(current.toString());
         }
@@ -712,10 +715,9 @@ final class JdbcScriptRunner {
                                                ScriptBoundaryProfile profile,
                                                String problem,
                                                int offset) {
-        return new DataException("JDBC persistence unit '" + unitName + "' " + descriptor
-                                         + " bootstrap script " + problem
-                                         + " under profile " + profile
-                                         + " at source offset " + offset);
+        return new DataException(persistenceUnitDescription(unitName) + " cannot load the " + descriptor
+                                         + " because it " + problem + ". The statement boundary profile is " + profile
+                                         + ", and the source offset is " + offset + ".");
     }
 
     /**
@@ -731,10 +733,8 @@ final class JdbcScriptRunner {
                                                   JdbcBootstrapResource.Descriptor descriptor,
                                                   int position,
                                                   SQLException cause) {
-        return new DataException("JDBC persistence unit '" + unitName
-                                         + "' " + descriptor
-                                         + " failed at statement " + position
-                                         + sqlDiagnostic(cause),
+        return new DataException(persistenceUnitDescription(unitName) + " could not execute statement " + position
+                                         + " from the " + descriptor + "." + sqlDiagnostic(cause),
                                  JdbcExceptionTranslator.sanitize("bootstrap statement", cause));
     }
 
@@ -746,8 +746,8 @@ final class JdbcScriptRunner {
      * @return translated failure
      */
     private static DataException resourceFailure(String unitName, SQLException cause) {
-        return new DataException("JDBC persistence unit '" + unitName
-                                         + "' bootstrap script resource handling failed"
+        return new DataException(persistenceUnitDescription(unitName)
+                                         + " could not complete bootstrap resource handling."
                                          + sqlDiagnostic(cause),
                                  JdbcExceptionTranslator.sanitize("bootstrap resource", cause));
     }
@@ -759,17 +759,17 @@ final class JdbcScriptRunner {
      *
      * @param unitName persistence-unit name
      * @param descriptor safe resource descriptor
-     * @param phase stable failure phase
+     * @param action stable resource action
      * @param cause original resource failure
      * @return safe data-layer failure
      */
     private static DataException resourceFailure(String unitName,
                                                  JdbcBootstrapResource.Descriptor descriptor,
-                                                 String phase,
+                                                 String action,
                                                  Throwable cause) {
-        return new DataException("JDBC persistence unit '" + unitName + "' " + descriptor
-                                         + " failed during " + phase,
-                                 JdbcExceptionTranslator.sanitize("bootstrap resource " + phase, cause));
+        return new DataException(persistenceUnitDescription(unitName) + " could not " + action
+                                         + " the " + descriptor + ".",
+                                 JdbcExceptionTranslator.sanitize(resourceDiagnosticOperation(action), cause));
     }
 
     /**
@@ -782,12 +782,13 @@ final class JdbcScriptRunner {
      * @return data-layer failure
      */
     private static DataException bootstrapCommitFailure(String unitName, Throwable cause) {
-        String message = "JDBC persistence unit '" + unitName + "' bootstrap commit failed with unknown outcome";
+        String message = persistenceUnitDescription(unitName)
+                + " could not commit the bootstrap transaction, and the outcome is unknown.";
         if (cause instanceof SQLException sqlException) {
             return new DataException(message + sqlDiagnostic(sqlException),
-                                     JdbcExceptionTranslator.sanitize("bootstrap commit", sqlException));
+                                     JdbcExceptionTranslator.sanitize("committing a bootstrap transaction", sqlException));
         }
-        return new DataException(message, JdbcExceptionTranslator.sanitize("bootstrap commit", cause));
+        return new DataException(message, JdbcExceptionTranslator.sanitize("committing a bootstrap transaction", cause));
     }
 
     /**
@@ -839,8 +840,8 @@ final class JdbcScriptRunner {
         if (failure instanceof Error error) {
             throw error;
         }
-        throw new DataException("JDBC persistence unit '" + unitName + "' bootstrap script failed",
-                                JdbcExceptionTranslator.sanitize("bootstrap script", failure));
+        throw new DataException(persistenceUnitDescription(unitName) + " could not execute its bootstrap scripts.",
+                                JdbcExceptionTranslator.sanitize("executing bootstrap scripts", failure));
     }
 
     /**
@@ -850,8 +851,38 @@ final class JdbcScriptRunner {
      * @return diagnostic suffix
      */
     private static String sqlDiagnostic(SQLException cause) {
-        String state = cause.getSQLState() == null ? "unknown" : cause.getSQLState();
-        return " [SQLState=" + state + ", vendorCode=" + cause.getErrorCode() + "]";
+        String state = cause.getSQLState() == null ? "not provided" : "'" + cause.getSQLState() + "'";
+        return " The SQL state is " + state + ", and the vendor code is " + cause.getErrorCode() + ".";
+    }
+
+    private static String persistenceUnitDescription(String unitName) {
+        return Service.Named.DEFAULT_NAME.equals(unitName)
+                ? "The JDBC persistence unit configuration"
+                : "JDBC persistence unit '" + unitName + "'";
+    }
+
+    private static String scriptConfigKey(JdbcBootstrapResource.Role role) {
+        return switch (role) {
+        case INIT -> "init-script";
+        case DROP -> "drop-script";
+        };
+    }
+
+    /**
+     * Returns a natural description of a safe bootstrap resource action.
+     *
+     * @param action resource action
+     * @return diagnostic operation
+     */
+    private static String resourceDiagnosticOperation(String action) {
+        return switch (action) {
+        case "open" -> "opening a bootstrap resource";
+        case "process" -> "processing a bootstrap resource";
+        case "close" -> "closing a bootstrap resource";
+        case "read" -> "reading a bootstrap resource";
+        case "decode" -> "decoding a bootstrap resource";
+        default -> throw new IllegalArgumentException("The bootstrap resource action is not recognized.");
+        };
     }
 
     /**
@@ -887,7 +918,7 @@ final class JdbcScriptRunner {
 
         BootstrapPolicy {
             if (maxResourceBytes < 1 || maxTotalBytes < maxResourceBytes || maxStatements < 1) {
-                throw new IllegalArgumentException("Invalid JDBC bootstrap safety policy");
+                throw new IllegalArgumentException("The JDBC bootstrap safety policy is invalid.");
             }
         }
 
