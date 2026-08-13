@@ -71,7 +71,6 @@ final class JdbcMethodGenerator {
         JdbcRepositoryClassGenerator.generateConstructor(classModel, repositoryInfo, mapperDependencies);
         for (JdbcMethodPlan plan : plans) {
             classModel.addField(field -> field.name(plan.sqlFieldName())
-                    .description("SQL declared by {@code " + plan.method().elementName() + "}.")
                     .type(TypeNames.STRING)
                     .isStatic(true)
                     .isFinal(true)
@@ -119,7 +118,6 @@ final class JdbcMethodGenerator {
                     + (key.explicit() ? "" : JdbcCodegenConstants.ROW_MAPPER_SUFFIX);
             String fieldName = uniqueVariable(baseName, fieldNames);
             classModel.addField(field -> field.name(fieldName)
-                    .description("Row mapper selected for generated repository methods.")
                     .type(mapperContract)
                     .isFinal(true));
             mappedPlans.forEach(plan -> plan.mapperFieldName(fieldName));
@@ -142,7 +140,6 @@ final class JdbcMethodGenerator {
      */
     private static void generateMethod(JdbcMethodPlan plan, Method.Builder method) {
         method.name(plan.method().elementName())
-                .description("Executes the JDBC statement declared by the repository method.")
                 .returnType(plan.method().typeName())
                 .addAnnotation(Annotation.create(Override.class));
         plan.method().typeParameters()
