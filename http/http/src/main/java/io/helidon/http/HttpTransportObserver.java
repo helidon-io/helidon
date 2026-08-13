@@ -265,6 +265,10 @@ public interface HttpTransportObserver {
         /**
          * Observes an opened HTTP stream.
          *
+         * <p>The publisher must report the initial protocol selection before invoking this method. For a secured
+         * transport, this means after the required security handshake has succeeded. This lifecycle model does not
+         * represent HTTP streams accepted as TLS or QUIC early data.
+         *
          * <p>The caller owns the returned observation and closes it when the stream terminates.
          * The returned observation must not be {@code null}.
          *
