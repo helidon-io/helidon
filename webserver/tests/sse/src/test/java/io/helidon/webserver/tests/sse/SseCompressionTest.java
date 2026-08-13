@@ -16,14 +16,25 @@
 
 package io.helidon.webserver.tests.sse;
 
+import java.time.Duration;
 import java.util.List;
 
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
+
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeaderValue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
+import static org.hamcrest.Matchers.hasItem;
 
 @ServerTest
 class SseCompressionTest extends SseBaseTest {
@@ -45,7 +56,22 @@ class SseCompressionTest extends SseBaseTest {
 
     @Test
     void testSseString1() throws Exception {
-        testSse("/sseString1", GZIP_HEADER, "data:hello", "data:world");
+        try (SimpleSseClient sseClient = SimpleSseClient.create("localhost",
+                                                                webServer().port(),
+                                                                "/sseString1",
+                                                                GZIP_HEADER,
+                                                                Duration.ofSeconds(10))) {
+            Headers responseHeaders = sseClient.responseHeaders();
+
+            assertThat(sseClient.nextEvent(), is("data:hello"));
+            assertThat(sseClient.nextEvent(), is("data:world"));
+            assertThat(sseClient.nextEvent(), is(nullValue()));
+            assertThat(responseHeaders,
+                       hasHeaderValue(HeaderNames.CONTENT_ENCODING, equalToIgnoringCase("gzip")));
+            assertThat(responseHeaders, hasHeader(HeaderNames.VARY));
+            assertThat(responseHeaders.values(HeaderNames.VARY),
+                       hasItem(equalToIgnoringCase(HeaderNames.ACCEPT_ENCODING.defaultCase())));
+        }
     }
 
     @Test

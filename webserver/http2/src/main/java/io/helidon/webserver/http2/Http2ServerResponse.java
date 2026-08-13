@@ -41,6 +41,8 @@ import io.helidon.webserver.http.ServerResponseBase;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
+    private static final Header VARY_ACCEPT_ENCODING =
+            HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
 
     private final ConnectionContext ctx;
     private final ServerResponseHeaders headers;
@@ -123,7 +125,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             int actualLength = length;
             int actualPosition = position;
             byte[] actualBytes = entityBytes(entityBytes, position, length);
-            if (entityBytes != actualBytes) {       // encoding happened, new byte array
+            boolean automaticContentEncoding = entityBytes != actualBytes;
+            if (automaticContentEncoding) {       // encoding happened, new byte array
                 actualPosition = 0;
                 actualLength = actualBytes.length;
             }
@@ -138,6 +141,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
             int initialStatusCode = status().code();
             prepareResponse();
+            if (automaticContentEncoding && !headers.containsToken(VARY_ACCEPT_ENCODING)) {
+                headers.add(VARY_ACCEPT_ENCODING);
+            }
 
             Status responseStatus = status();
             int statusCode = responseStatus.code();

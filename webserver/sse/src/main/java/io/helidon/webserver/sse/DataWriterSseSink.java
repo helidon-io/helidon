@@ -47,6 +47,7 @@ import io.helidon.webserver.http.spi.SinkProviderContext;
 
 import static io.helidon.http.HeaderValues.CONTENT_TYPE_EVENT_STREAM;
 import static io.helidon.http.HeaderValues.create;
+import static io.helidon.http.HeaderValues.createCached;
 
 /**
  * Implementation of an SSE sink. Emits {@link SseEvent}s.
@@ -59,6 +60,8 @@ class DataWriterSseSink implements SseSink {
     public static final GenericType<DataWriterSseSink> TYPE = GenericType.create(DataWriterSseSink.class);
 
     private static final Header CACHE_NO_CACHE_ONLY = create(HeaderNames.CACHE_CONTROL, "no-cache");
+    private static final Header VARY_ACCEPT_ENCODING =
+            createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
     private static final byte[] SSE_NL = "\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_ID = "id:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
@@ -94,9 +97,12 @@ class DataWriterSseSink implements SseSink {
             ContentEncoder encoder = null;
             ServerRequestHeaders requestHeaders = context.serverRequest().headers();
             ContentEncodingContext encodingContext = ctx.listenerContext().contentEncodingContext();
-            if (encodingContext.contentEncodingEnabled() && requestHeaders.contains(HeaderNames.ACCEPT_ENCODING)) {
-                encoder = encodingContext.encoder(requestHeaders);
-                encoder.headers(response.headers());        // adds Content-Encoding
+            if (encodingContext.contentEncodingEnabled()) {
+                response.headers().add(VARY_ACCEPT_ENCODING);
+                if (requestHeaders.contains(HeaderNames.ACCEPT_ENCODING)) {
+                    encoder = encodingContext.encoder(requestHeaders);
+                    encoder.headers(response.headers());        // adds Content-Encoding
+                }
             }
 
             // output stream to write headers
