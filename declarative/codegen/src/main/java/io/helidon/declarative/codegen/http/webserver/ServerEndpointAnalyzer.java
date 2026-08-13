@@ -39,11 +39,15 @@ import io.helidon.declarative.codegen.model.http.ServerEndpoint;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_CONSUMES_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_FORM_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PRODUCES_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_QUERY_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_REQUEST_PARAMS_ANNOTATION;
 import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_COMPUTED_HEADER;
 import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_COMPUTED_HEADERS;
 import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenTypes.REST_SERVER_ENDPOINT;
@@ -162,12 +166,6 @@ public final class ServerEndpointAnalyzer extends RestExtensionBase {
         headers(annotations, builder, REST_SERVER_HEADERS, REST_SERVER_HEADER);
         computedHeaders(annotations, builder, REST_SERVER_COMPUTED_HEADERS, REST_SERVER_COMPUTED_HEADER);
 
-        if (builder.consumes().isEmpty()) {
-            builder.consumes(endpointBuilder.consumes());
-        }
-        if (builder.produces().isEmpty()) {
-            builder.produces(endpointBuilder.produces());
-        }
         builder.addHeaders(endpointBuilder.headers());
         builder.addComputedHeaders(endpointBuilder.computedHeaders());
 
@@ -180,20 +178,28 @@ public final class ServerEndpointAnalyzer extends RestExtensionBase {
                     builder.status(new HttpStatus(code, reason));
                 });
 
+        boolean hasBodyParameters = false;
         int index = 0;
         for (TypedElementInfo parameterInfo : method.parameterArguments()) {
-            parameter(endpoint, method, parameterInfo, builder, index);
+            hasBodyParameters |= parameter(endpoint, method, parameterInfo, builder, index);
             index++;
+        }
+
+        if (Annotations.findFirst(HTTP_CONSUMES_ANNOTATION, annotations).isEmpty() && hasBodyParameters) {
+            builder.consumes(endpointBuilder.consumes());
+        }
+        if (Annotations.findFirst(HTTP_PRODUCES_ANNOTATION, annotations).isEmpty()) {
+            builder.produces(endpointBuilder.produces());
         }
 
         endpointBuilder.addMethod(builder.build());
     }
 
-    private void parameter(TypeInfo typeInfo,
-                           TypedElementInfo methodInfo,
-                           TypedElementInfo parameterInfo,
-                           RestMethod.Builder method,
-                           int index) {
+    private boolean parameter(TypeInfo typeInfo,
+                              TypedElementInfo methodInfo,
+                              TypedElementInfo parameterInfo,
+                              RestMethod.Builder method,
+                              int index) {
         Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx,
                                                                                        typeInfo,
                                                                                        methodInfo,
@@ -228,5 +234,25 @@ public final class ServerEndpointAnalyzer extends RestExtensionBase {
         if (Annotations.findFirst(HTTP_ENTITY_ANNOTATION, annotations).isPresent()) {
             method.entityParameter(parameter);
         }
+
+        if (HttpCodegenValidation.hasAnnotation(annotations, HTTP_ENTITY_ANNOTATION)
+                || HttpCodegenValidation.hasAnnotation(annotations, HTTP_FORM_PARAM_ANNOTATION)) {
+            return true;
+        }
+        if (HttpCodegenValidation.hasAnnotation(annotations, HTTP_REQUEST_PARAMS_ANNOTATION)) {
+            TypeInfo requestParamsType = HttpCodegenValidation.requestParamsRecordType(
+                    ctx::typeInfo,
+                    parameterInfo.typeName(),
+                    parameterInfo.originatingElementValue());
+            HttpCodegenValidation.validateRequestParamsBodyComponents(requestParamsType);
+            return HttpCodegenValidation.requestParamsComponents(requestParamsType)
+                    .stream()
+                    .anyMatch(component -> {
+                        List<Annotation> componentAnnotations = component.annotations();
+                        return HttpCodegenValidation.hasAnnotation(componentAnnotations, HTTP_ENTITY_ANNOTATION)
+                                || HttpCodegenValidation.hasAnnotation(componentAnnotations, HTTP_FORM_PARAM_ANNOTATION);
+                    });
+        }
+        return false;
     }
 }
