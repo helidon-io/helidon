@@ -104,14 +104,34 @@ interface JdbcConnectionLease extends AutoCloseable {
                 }
                 return new Owned(connection);
             } catch (SQLException | RuntimeException | Error failure) {
+                Throwable reportedFailure = failure;
                 try {
                     connection.close();
                 } catch (SQLException | RuntimeException | Error closeFailure) {
                     // Preserve the acquisition failure and prevent driver cleanup details from escaping.
-                    JdbcExceptionTranslator.suppress(failure, "closing a rejected connection", closeFailure);
+                    reportedFailure = JdbcExceptionTranslator.suppress(failure,
+                                                                       "closing a rejected connection",
+                                                                       closeFailure);
                 }
-                throw failure;
+                throw rethrow(reportedFailure);
             }
+        }
+
+        /**
+         * Restores the declared or unchecked category of an acquisition failure.
+         *
+         * @param failure failure to throw
+         * @return never returns
+         * @throws SQLException when the failure is an SQL exception
+         */
+        private static SQLException rethrow(Throwable failure) throws SQLException {
+            if (failure instanceof SQLException sqlException) {
+                throw sqlException;
+            }
+            if (failure instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            throw (Error) failure;
         }
 
         @Override

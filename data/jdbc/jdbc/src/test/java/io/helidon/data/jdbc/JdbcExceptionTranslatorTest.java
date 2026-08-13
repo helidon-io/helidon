@@ -17,7 +17,11 @@ package io.helidon.data.jdbc;
 
 import java.sql.SQLException;
 import java.sql.SQLWarning;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.data.DataException;
 
@@ -28,6 +32,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class JdbcExceptionTranslatorTest {
@@ -159,6 +164,95 @@ class JdbcExceptionTranslatorTest {
         assertThat(messages(sanitized), not(containsString("secret")));
     }
 
+    @Test
+    void boundsSqlExceptionCauseChains() {
+        SQLException first = new SQLException("secret cause 0", "42000", 0);
+        SQLException current = first;
+        for (int index = 1; index < 17; index++) {
+            SQLException next = new SQLException("secret cause " + index, "42000", index);
+            current.initCause(next);
+            current = next;
+        }
+
+        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        List<Throwable> graph = exceptionGraph(failure.getCause());
+
+        assertThat(graph.size(), is(16));
+        assertThat(truncationMarkers(graph), is(1L));
+        assertThat(graphMessages(graph), not(containsString("secret")));
+    }
+
+    @Test
+    void boundsNextExceptionChains() {
+        SQLException first = new SQLException("secret next 0", "42000", 0);
+        SQLException current = first;
+        for (int index = 1; index < 17; index++) {
+            SQLException next = new SQLException("secret next " + index, "42000", index);
+            current.setNextException(next);
+            current = next;
+        }
+
+        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        List<Throwable> graph = exceptionGraph(failure.getCause());
+
+        assertThat(graph.size(), is(16));
+        assertThat(truncationMarkers(graph), is(1L));
+        assertThat(graphMessages(graph), not(containsString("secret")));
+    }
+
+    @Test
+    void preservesSharedCauseAndNextExceptionRelationships() {
+        SQLException first = new SQLException("secret root", "42000", 1);
+        SQLException shared = new SQLException("secret shared", "42001", 2);
+        first.initCause(shared);
+        first.setNextException(shared);
+
+        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        SQLException sanitized = (SQLException) failure.getCause();
+        SQLException sanitizedShared = (SQLException) sanitized.getCause();
+        List<Throwable> graph = exceptionGraph(sanitized);
+
+        assertThat(sanitized.getNextException(), sameInstance(sanitizedShared));
+        assertThat(sanitizedShared.getSQLState(), is("42001"));
+        assertThat(sanitizedShared.getErrorCode(), is(2));
+        assertThat(graph.size(), is(3));
+        assertThat(truncationMarkers(graph), is(1L));
+        assertThat(graphMessages(graph), not(containsString("secret")));
+    }
+
+    @Test
+    void boundsWideSuppressedExceptionGraphs() {
+        SQLException first = new SQLException("secret root", "42000", 1);
+        for (int index = 0; index < 16; index++) {
+            first.addSuppressed(new SQLException("secret suppressed " + index, "42001", index));
+        }
+
+        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        List<Throwable> graph = exceptionGraph(failure.getCause());
+
+        assertThat(graph.size(), is(2));
+        assertThat(truncationMarkers(graph), is(1L));
+        assertThat(graphMessages(graph), not(containsString("secret")));
+    }
+
+    @Test
+    void removesCyclesFromSanitizedExceptionGraphs() {
+        SQLException first = new SQLException("secret first", "42000", 1);
+        SQLException second = new SQLException("secret second", "42001", 2);
+        first.initCause(second);
+        second.setNextException(first);
+
+        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        SQLException sanitized = (SQLException) failure.getCause();
+        SQLException sanitizedSecond = (SQLException) sanitized.getCause();
+        List<Throwable> graph = exceptionGraph(sanitized);
+
+        assertThat(sanitizedSecond.getNextException(), nullValue());
+        assertThat(graph.size(), is(3));
+        assertThat(truncationMarkers(graph), is(1L));
+        assertThat(graphMessages(graph), not(containsString("secret")));
+    }
+
     private static void assertSafeWarning(Throwable actual, String sqlState, int vendorCode) {
         assertThat(actual, instanceOf(SQLWarning.class));
         SQLWarning warning = (SQLWarning) actual;
@@ -184,6 +278,49 @@ class JdbcExceptionTranslatorTest {
                 }
             }
             current = current.getCause();
+        }
+        return result.toString();
+    }
+
+    private static List<Throwable> exceptionGraph(Throwable root) {
+        List<Throwable> result = new ArrayList<>();
+        Map<Throwable, Boolean> visited = new IdentityHashMap<>();
+        ArrayDeque<Throwable> pending = new ArrayDeque<>();
+        pending.addLast(root);
+        while (!pending.isEmpty()) {
+            Throwable current = pending.removeFirst();
+            if (visited.put(current, Boolean.TRUE) != null) {
+                continue;
+            }
+            result.add(current);
+            for (Throwable suppressed : current.getSuppressed()) {
+                pending.addLast(suppressed);
+            }
+            Throwable cause = current.getCause();
+            if (cause != null) {
+                pending.addLast(cause);
+            }
+            if (current instanceof SQLException sqlException) {
+                SQLException next = sqlException.getNextException();
+                if (next != null) {
+                    pending.addLast(next);
+                }
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private static long truncationMarkers(List<Throwable> graph) {
+        return graph.stream()
+                .filter(node -> ("Some JDBC failure relationships were not inspected or were omitted "
+                        + "to keep diagnostics bounded.").equals(node.getMessage()))
+                .count();
+    }
+
+    private static String graphMessages(List<Throwable> graph) {
+        StringBuilder result = new StringBuilder();
+        for (Throwable node : graph) {
+            result.append(node.getMessage()).append('\n');
         }
         return result.toString();
     }

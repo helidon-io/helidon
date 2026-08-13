@@ -24,6 +24,26 @@ final class JdbcSqlLexicalRules {
     }
 
     /**
+     * Tests whether two dashes begin a portable line comment.
+     * <p>
+     * The delimiter is recognized only when the second dash is followed by
+     * whitespace, a control character, or the end of the SQL source. This
+     * avoids treating expressions such as {@code balance--1} as comments.
+     *
+     * @param source SQL source
+     * @param start first dash offset
+     * @return whether the dashes begin a portable line comment
+     */
+    static boolean lineComment(String source, int start) {
+        int contentStart = start + 2;
+        if (contentStart == source.length()) {
+            return true;
+        }
+        char next = source.charAt(contentStart);
+        return Character.isWhitespace(next) || Character.isISOControl(next);
+    }
+
+    /**
      * Recognizes a PostgreSQL dollar-quote delimiter at a token boundary.
      *
      * <p>An empty tag is valid. A named tag starts with a letter or underscore
