@@ -93,102 +93,6 @@ public final class OpenApiDocumentMapperSupport {
         }
     }
 
-    private static final class JsonScalarResolver extends Resolver {
-        @Override
-        protected void addImplicitResolvers() {
-            // JSON scalar resolution is implemented without regular expressions in resolve.
-        }
-
-        @Override
-        public Tag resolve(NodeId kind, String value, boolean implicit) {
-            if (kind != NodeId.scalar || !implicit) {
-                return super.resolve(kind, value, implicit);
-            }
-            if (value.isEmpty() || "null".equals(value)) {
-                return Tag.NULL;
-            }
-            if ("true".equals(value) || "false".equals(value)) {
-                return Tag.BOOL;
-            }
-            if ("<<".equals(value)) {
-                return Tag.MERGE;
-            }
-            Tag numberTag = jsonNumberTag(value);
-            return numberTag == null ? Tag.STR : numberTag;
-        }
-
-        private Tag jsonNumberTag(String value) {
-            int length = value.length();
-            int index = value.charAt(0) == '-' ? 1 : 0;
-            if (index == length) {
-                return null;
-            }
-
-            char first = value.charAt(index);
-            if (first == '0') {
-                index++;
-            } else if (first >= '1' && first <= '9') {
-                index++;
-                while (index < length && isDigit(value.charAt(index))) {
-                    index++;
-                }
-            } else {
-                return null;
-            }
-
-            boolean floatingPoint = false;
-            if (index < length && value.charAt(index) == '.') {
-                floatingPoint = true;
-                index++;
-                int fractionStart = index;
-                while (index < length && isDigit(value.charAt(index))) {
-                    index++;
-                }
-                if (fractionStart == index) {
-                    return null;
-                }
-            }
-            if (index < length && (value.charAt(index) == 'e' || value.charAt(index) == 'E')) {
-                floatingPoint = true;
-                index++;
-                if (index < length && (value.charAt(index) == '-' || value.charAt(index) == '+')) {
-                    index++;
-                }
-                int exponentStart = index;
-                while (index < length && isDigit(value.charAt(index))) {
-                    index++;
-                }
-                if (exponentStart == index) {
-                    return null;
-                }
-            }
-            if (index != length) {
-                return null;
-            }
-            return floatingPoint ? Tag.FLOAT : Tag.INT;
-        }
-
-        private static boolean isDigit(char value) {
-            return value >= '0' && value <= '9';
-        }
-    }
-
-    private static final class JsonSafeConstructor extends SafeConstructor {
-        private JsonSafeConstructor(LoaderOptions loadingConfig) {
-            super(loadingConfig);
-        }
-
-        @Override
-        protected void constructMapping2ndStep(MappingNode node, Map<Object, Object> mapping) {
-            node.getValue().forEach(tuple -> {
-                if (tuple.getKeyNode() instanceof ScalarNode && !Tag.MERGE.equals(tuple.getKeyNode().getTag())) {
-                    tuple.getKeyNode().setTag(Tag.STR);
-                }
-            });
-            super.constructMapping2ndStep(node, mapping);
-        }
-    }
-
     /**
      * Convert key-to-value data into a JSON object.
      *
@@ -960,5 +864,101 @@ public final class OpenApiDocumentMapperSupport {
 
     private static Map<String, Object> reference(Map<String, ?> source) {
         return copyReferenceFields(source, REFERENCE_FIELDS);
+    }
+
+    private static final class JsonScalarResolver extends Resolver {
+        @Override
+        protected void addImplicitResolvers() {
+            // JSON scalar resolution is implemented without regular expressions in resolve.
+        }
+
+        @Override
+        public Tag resolve(NodeId kind, String value, boolean implicit) {
+            if (kind != NodeId.scalar || !implicit) {
+                return super.resolve(kind, value, implicit);
+            }
+            if (value.isEmpty() || "null".equals(value)) {
+                return Tag.NULL;
+            }
+            if ("true".equals(value) || "false".equals(value)) {
+                return Tag.BOOL;
+            }
+            if ("<<".equals(value)) {
+                return Tag.MERGE;
+            }
+            Tag numberTag = jsonNumberTag(value);
+            return numberTag == null ? Tag.STR : numberTag;
+        }
+
+        private Tag jsonNumberTag(String value) {
+            int length = value.length();
+            int index = value.charAt(0) == '-' ? 1 : 0;
+            if (index == length) {
+                return null;
+            }
+
+            char first = value.charAt(index);
+            if (first == '0') {
+                index++;
+            } else if (first >= '1' && first <= '9') {
+                index++;
+                while (index < length && isDigit(value.charAt(index))) {
+                    index++;
+                }
+            } else {
+                return null;
+            }
+
+            boolean floatingPoint = false;
+            if (index < length && value.charAt(index) == '.') {
+                floatingPoint = true;
+                index++;
+                int fractionStart = index;
+                while (index < length && isDigit(value.charAt(index))) {
+                    index++;
+                }
+                if (fractionStart == index) {
+                    return null;
+                }
+            }
+            if (index < length && (value.charAt(index) == 'e' || value.charAt(index) == 'E')) {
+                floatingPoint = true;
+                index++;
+                if (index < length && (value.charAt(index) == '-' || value.charAt(index) == '+')) {
+                    index++;
+                }
+                int exponentStart = index;
+                while (index < length && isDigit(value.charAt(index))) {
+                    index++;
+                }
+                if (exponentStart == index) {
+                    return null;
+                }
+            }
+            if (index != length) {
+                return null;
+            }
+            return floatingPoint ? Tag.FLOAT : Tag.INT;
+        }
+
+        private static boolean isDigit(char value) {
+            return value >= '0' && value <= '9';
+        }
+    }
+
+    private static final class JsonSafeConstructor extends SafeConstructor {
+        private JsonSafeConstructor(LoaderOptions loadingConfig) {
+            super(loadingConfig);
+        }
+
+        @Override
+        protected void constructMapping2ndStep(MappingNode node, Map<Object, Object> mapping) {
+            node.getValue().forEach(tuple -> {
+                if (tuple.getKeyNode() instanceof ScalarNode && !Tag.MERGE.equals(tuple.getKeyNode().getTag())) {
+                    tuple.getKeyNode().setTag(Tag.STR);
+                }
+            });
+            super.constructMapping2ndStep(node, mapping);
+        }
     }
 }
