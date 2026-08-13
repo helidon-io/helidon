@@ -181,6 +181,10 @@ Declarative `@OpenApi.OAuthFlows` metadata which configures `deviceAuthorization
 `helidon-openapi-32` or another configured document provider which renders OpenAPI 3.2. Generation fails if the selected
 provider renders OpenAPI 3.0 or 3.1.
 
+Declarative `@OpenApi.Content` metadata which configures `itemSchema` requires OpenAPI 3.2 output. When `itemSchema` is
+set without an explicit `schema`, it replaces the inferred request or response entity schema. Earlier output versions
+omit `itemSchema`.
+
 The configured `document` provider is used when Helidon renders generated or merged OpenAPI documents. In `MERGE` mode,
 Helidon parses the static document and renders the result with the configured provider, so the served document version
 can differ from the static file's declared `openapi` version.

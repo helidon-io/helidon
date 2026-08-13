@@ -989,16 +989,18 @@ public final class OpenApi {
         String value() default "";
 
         /**
-         * Schema class. Defaults to the effective request or response entity type.
+         * Schema class. Defaults to the effective request or response entity type unless {@link #itemSchema()} is set.
+         * If {@code itemSchema} is set without an explicit {@code schema}, the inferred entity schema is omitted.
          *
          * @return schema class
          */
         Class<?> schema() default Void.class;
 
         /**
-         * Item schema class for OpenAPI 3.2 sequential media types.
+         * Item schema class for OpenAPI 3.2 sequential media types. This is an alternative to {@link #schema()}.
          * <p>
-         * Rendered only for OpenAPI 3.2 output.
+         * If set without an explicit {@code schema}, this suppresses the inferred entity schema. Applications that use
+         * this attribute must select OpenAPI 3.2 output; earlier output versions omit it.
          *
          * @return item schema class
          */
