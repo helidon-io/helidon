@@ -42,17 +42,21 @@ final class JdbcConnectionInvalidator {
      *
      * @param connection unsafe connection
      * @param primaryFailure failure which required invalidation
+     * @return primary failure, possibly replaced by a bounded SQL diagnostic
      */
-    static void invalidate(Connection connection, Throwable primaryFailure) {
+    static Throwable invalidate(Connection connection, Throwable primaryFailure) {
         try {
             connection.abort(ABORT_EXECUTOR);
         } catch (SQLException | RuntimeException | Error abortFailure) {
-            JdbcExceptionTranslator.suppress(primaryFailure, "aborting a connection", abortFailure);
+            primaryFailure = JdbcExceptionTranslator.suppress(primaryFailure, "aborting a connection", abortFailure);
         }
         try {
             connection.close();
         } catch (SQLException | RuntimeException | Error closeFailure) {
-            JdbcExceptionTranslator.suppress(primaryFailure, "closing an invalidated connection", closeFailure);
+            primaryFailure = JdbcExceptionTranslator.suppress(primaryFailure,
+                                                               "closing an invalidated connection",
+                                                               closeFailure);
         }
+        return primaryFailure;
     }
 }

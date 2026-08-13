@@ -122,11 +122,6 @@ enum JdbcLexicalProfile {
      * @return whether the two dashes begin a protected line comment
      */
     boolean lineComment(String source, int start) {
-        int contentStart = start + 2;
-        if (contentStart == source.length()) {
-            return true;
-        }
-        char next = source.charAt(contentStart);
-        return Character.isWhitespace(next) || Character.isISOControl(next);
+        return JdbcSqlLexicalRules.lineComment(source, start);
     }
 }
