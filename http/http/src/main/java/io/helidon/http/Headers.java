@@ -76,32 +76,97 @@ public interface Headers extends Iterable<Header> {
      * @return {@code true} if all expected tokens are present, ignoring case and surrounding whitespace
      */
     default boolean containsToken(Header value) {
-        List<String> actualValues = values(value.headerName());
+        List<String> actualValues = all(value.headerName(), List::of);
         if (actualValues.isEmpty()) {
             return false;
         }
 
         for (String expectedValue : value.allValues()) {
-            for (String expectedToken : Utils.tokenize(',', "\"", true, expectedValue)) {
-                String trimmedExpected = expectedToken.trim();
-                if (trimmedExpected.isEmpty()) {
-                    continue;
-                }
-
-                boolean matched = false;
-                for (String actualValue : actualValues) {
-                    if (actualValue.trim().equalsIgnoreCase(trimmedExpected)) {
-                        matched = true;
-                        break;
-                    }
-                }
-                if (!matched) {
-                    return false;
-                }
+            if (!containsTokens(actualValues, expectedValue)) {
+                return false;
             }
         }
 
         return true;
+    }
+
+    private static boolean containsTokens(List<String> actualValues, String expectedValue) {
+        int tokenStart = 0;
+        boolean quoted = false;
+        int length = expectedValue.length();
+        for (int i = 0; i < length; i++) {
+            char ch = expectedValue.charAt(i);
+            if (ch == '"') {
+                quoted = !quoted;
+            } else if (ch == ',' && !quoted) {
+                if (!containsToken(actualValues, expectedValue, tokenStart, i)) {
+                    return false;
+                }
+                tokenStart = i + 1;
+            }
+        }
+        return containsToken(actualValues, expectedValue, tokenStart, length);
+    }
+
+    private static boolean containsToken(List<String> actualValues,
+                                         String expectedValue,
+                                         int expectedStart,
+                                         int expectedEnd) {
+        while (expectedStart < expectedEnd && expectedValue.charAt(expectedStart) <= ' ') {
+            expectedStart++;
+        }
+        while (expectedEnd > expectedStart && expectedValue.charAt(expectedEnd - 1) <= ' ') {
+            expectedEnd--;
+        }
+        if (expectedStart == expectedEnd) {
+            return true;
+        }
+
+        for (String actualValue : actualValues) {
+            if (containsToken(actualValue, expectedValue, expectedStart, expectedEnd)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsToken(String actualValue,
+                                         String expectedValue,
+                                         int expectedStart,
+                                         int expectedEnd) {
+        int tokenStart = 0;
+        boolean quoted = false;
+        int length = actualValue.length();
+        for (int i = 0; i < length; i++) {
+            char ch = actualValue.charAt(i);
+            if (ch == '"') {
+                quoted = !quoted;
+            } else if (ch == ',' && !quoted) {
+                if (tokenEquals(actualValue, tokenStart, i, expectedValue, expectedStart, expectedEnd)) {
+                    return true;
+                }
+                tokenStart = i + 1;
+            }
+        }
+        return tokenEquals(actualValue, tokenStart, length, expectedValue, expectedStart, expectedEnd);
+    }
+
+    private static boolean tokenEquals(String actualValue,
+                                       int actualStart,
+                                       int actualEnd,
+                                       String expectedValue,
+                                       int expectedStart,
+                                       int expectedEnd) {
+        while (actualStart < actualEnd && actualValue.charAt(actualStart) <= ' ') {
+            actualStart++;
+        }
+        while (actualEnd > actualStart && actualValue.charAt(actualEnd - 1) <= ' ') {
+            actualEnd--;
+        }
+
+        int length = actualEnd - actualStart;
+        return length == expectedEnd - expectedStart
+                && actualValue.regionMatches(true, actualStart, expectedValue, expectedStart, length);
     }
 
     /**
