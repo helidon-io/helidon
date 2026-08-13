@@ -34,14 +34,6 @@ import static io.helidon.webserver.staticcontent.StaticContentHandler.processPre
 record CachedHandlerInMemory(StaticContentMetadata metadata,
                              byte[] bytes) implements CachedHandler {
 
-    int contentLength() {
-        return bytes.length;
-    }
-
-    Instant lastModified() {
-        return metadata.lastModified();
-    }
-
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
                           Method method,
@@ -61,6 +53,14 @@ record CachedHandlerInMemory(StaticContentMetadata metadata,
         }
 
         return true;
+    }
+
+    int contentLength() {
+        return bytes.length;
+    }
+
+    Instant lastModified() {
+        return metadata.lastModified();
     }
 
     private void send(ServerRequest request, ServerResponse response) {
