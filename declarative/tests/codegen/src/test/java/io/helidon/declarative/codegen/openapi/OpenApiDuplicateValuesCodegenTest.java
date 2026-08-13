@@ -1146,7 +1146,7 @@ class OpenApiDuplicateValuesCodegenTest {
 
         String generated = generatedSource(result);
         assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
-        assertThat(generated.contains(".scheme(\"oauth2\", java.util.List.of())"), is(false));
+        assertThat(generated, not(containsString(".scheme(\"oauth2\", java.util.List.of())")));
     }
 
     @Test
