@@ -74,6 +74,9 @@ final class HttpTransportObservers {
     }
 
     private static void observerFailed(String event, Throwable failure) {
+        if (failure instanceof VirtualMachineError fatal) {
+            throw fatal;
+        }
         LOGGER.log(WARNING, "HTTP transport observer failed while processing " + event, failure);
     }
 

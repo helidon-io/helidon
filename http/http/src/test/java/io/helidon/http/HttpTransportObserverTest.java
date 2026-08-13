@@ -209,6 +209,80 @@ class HttpTransportObserverTest {
         assertThat(connectionClosed.get(), is(1));
     }
 
+    @Test
+    void virtualMachineErrorFromConnectionOpenPropagates() {
+        OutOfMemoryError failure = new OutOfMemoryError("probe");
+        AtomicInteger connectionOpened = new AtomicInteger();
+        HttpTransportObserver failing = (role, transport, handshake) -> {
+            throw failure;
+        };
+        HttpTransportObserver recording = (role, transport, handshake) -> {
+            connectionOpened.incrementAndGet();
+            return ConnectionObservation.noop();
+        };
+
+        OutOfMemoryError thrown = assertThrows(OutOfMemoryError.class,
+                                                () -> HttpTransportObserver.compose(List.of(failing, recording))
+                                                        .connectionOpened(SERVER, TRANSPORT_TCP, TLS));
+
+        assertThat(thrown, sameInstance(failure));
+        assertThat(connectionOpened.get(), is(0));
+    }
+
+    @Test
+    void virtualMachineErrorFromProtocolSelectionPropagates() {
+        OutOfMemoryError failure = new OutOfMemoryError("probe");
+        AtomicInteger protocolSelected = new AtomicInteger();
+        HttpTransportObserver failing = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(String protocol) {
+                throw failure;
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return StreamObservation.noop();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+            }
+        };
+        HttpTransportObserver recording = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(String protocol) {
+                protocolSelected.incrementAndGet();
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return StreamObservation.noop();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(failing, recording))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+
+        OutOfMemoryError thrown = assertThrows(OutOfMemoryError.class,
+                                                () -> connection.protocolSelected(PROTOCOL_HTTP_2));
+
+        assertThat(thrown, sameInstance(failure));
+        assertThat(protocolSelected.get(), is(0));
+    }
+
     @ParameterizedTest
     @EnumSource(ConnectionOutcome.class)
     void connectionCloseCompletesOpenChildrenExactlyOnce(ConnectionOutcome outcome) {
