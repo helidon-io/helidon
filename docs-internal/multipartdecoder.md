@@ -67,12 +67,14 @@ see it in this order, the goals from high level to low level:
   - additionally, the demand of the outer `Subscriber` can become zero only after the next part is done ; this means
     that the demand of the outer `Subscriber` is essentially unable to issue upstream request until after the inner
     `Subscriber` is done
+  - after `END_MESSAGE`, upstream requests may continue without part demand only to drain epilogue `DataChunk`
 - `DataChunk` are not requested, nor any errors are signalled, while the parser iterator is able to
   produce more ParserEvents
   - all `onError` events are totally ordered after all possible `onNext` that can be emitted without
     requesting more `DataChunk` from upstream
 - parser iterator does not produce more events, unless there is evidence of demand from inner or
   outer `Subscriber`
+  - `END_MESSAGE` is processed without demand so completion does not require an additional part request
   - outer `Subscriber` demand is ignored while there is a `bodyPartPublisher` responsible for dealing with
     the demand of an inner `Subscriber`
   - cancellation or error state of inner `Subscriber` appears to `drainBoth()` as a demand for infinite number

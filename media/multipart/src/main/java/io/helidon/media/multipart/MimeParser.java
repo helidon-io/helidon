@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.IntConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -252,8 +253,10 @@ final class MimeParser {
     private static final Logger LOGGER = Logger.getLogger(MimeParser.class.getName());
     private static final Charset HEADER_ENCODING = StandardCharsets.UTF_8;
     private static final int MAX_HEADER_LINE_LENGTH = 8192;
+    private static final int MAX_BOUNDARY_PADDING_LENGTH = 8192;
     private static final int MAX_HEADERS_PER_PART = 100;
     private static final int MAX_PARTS = 1000;
+    private static final int IGNORED_DATA_ID = -1;
 
     /**
      * All states.
@@ -338,6 +341,16 @@ final class MimeParser {
     private boolean closed;
 
     /**
+     * Indicates if no more data will be offered.
+     */
+    private boolean endOfInput;
+
+    /**
+     * Whether the end message event was emitted.
+     */
+    private boolean endMessageEmitted;
+
+    /**
      * Number of body parts emitted for this message.
      */
     private int partCount;
@@ -353,13 +366,38 @@ final class MimeParser {
     private int headerLineLength;
 
     /**
+     * Number of bytes already scanned in the current incomplete opening or inter-part boundary padding.
+     */
+    private int boundaryPaddingLength;
+
+    /**
+     * Number of bytes already scanned in the current incomplete closing boundary padding.
+     */
+    private int closingBoundaryPaddingLength;
+
+    /**
+     * Start position of the current incomplete closing boundary, or {@code -1} if none.
+     */
+    private int pendingClosingBoundaryStart = -1;
+
+    /**
      * Parses the MIME content.
      */
     MimeParser(String boundary) {
+        this(boundary, id -> { });
+    }
+
+    /**
+     * Parses the MIME content.
+     *
+     * @param boundary boundary delimiter
+     * @param discardedBufferConsumer consumer notified when an input buffer is discarded
+     */
+    MimeParser(String boundary, IntConsumer discardedBufferConsumer) {
         bndbytes = getBytes("--" + boundary);
         bl = bndbytes.length;
         gss = new int[bl];
-        buf = new VirtualBuffer();
+        buf = new VirtualBuffer(discardedBufferConsumer);
         compileBoundaryPattern();
     }
 
@@ -367,7 +405,7 @@ final class MimeParser {
      * Push new data to the parsing buffer.
      *
      * @param data new data add to the parsing buffer
-     * @return buffer id
+     * @return buffer id, or a negative value if the data was ignored
      * @throws ParsingException if the parser state is not consistent
      */
     int offer(ByteBuffer data) throws ParsingException {
@@ -386,13 +424,34 @@ final class MimeParser {
                 }
                 state = resumeState;
                 resumeState = null;
-                id = buf.offer(data, position);
+                int previousPosition = position;
+                id = buf.offer(data, previousPosition);
+                if (pendingClosingBoundaryStart >= 0) {
+                    pendingClosingBoundaryStart -= previousPosition;
+                }
                 position = 0;
                 break;
+            case END_MESSAGE:
+                return IGNORED_DATA_ID;
             default:
                 throw new ParsingException("Invalid state: " + state);
         }
         return id;
+    }
+
+    /**
+     * Indicate that no more data will be offered.
+     *
+     * @return {@code true} if parsing can resume with the buffered data
+     */
+    boolean endOfInput() {
+        endOfInput = true;
+        if (state == STATE.DATA_REQUIRED && resumeState == STATE.BODY) {
+            state = resumeState;
+            resumeState = null;
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -434,6 +493,13 @@ final class MimeParser {
     }
 
     /**
+     * Discard buffered input that is no longer needed.
+     */
+    void discardBuffers() {
+        buf.discard();
+    }
+
+    /**
      * Testing seam for parser buffer retention assertions.
      *
      * @return current virtual buffer length
@@ -461,6 +527,7 @@ final class MimeParser {
                 ParserEvent ne = nextEvent;
                 nextEvent = null;
                 done = ne == END_MESSAGE_EVENT;
+                endMessageEmitted |= done;
                 return ne;
             }
 
@@ -544,7 +611,7 @@ final class MimeParser {
                                     LOGGER.log(Level.FINER, "state={0}", STATE.BODY);
                                 }
                                 List<VirtualBuffer.BufferEntry> bodyContent = readBody();
-                                if (bndStart == -1 || bodyContent.isEmpty()) {
+                                if (bndStart == -1 || (bodyContent.isEmpty() && state != STATE.END_PART)) {
                                     if (LOGGER.isLoggable(Level.FINER)) {
                                         LOGGER.log(Level.FINER, "state={0}", STATE.DATA_REQUIRED);
                                     }
@@ -575,7 +642,7 @@ final class MimeParser {
                                 if (LOGGER.isLoggable(Level.FINER)) {
                                     LOGGER.log(Level.FINER, "state={0}", STATE.END_MESSAGE);
                                 }
-                                if (done) {
+                                if (done || endMessageEmitted) {
                                     return false;
                                 }
                                 nextEvent = END_MESSAGE_EVENT;
@@ -605,9 +672,14 @@ final class MimeParser {
      */
     private List<VirtualBuffer.BufferEntry> readBody() {
         // matches boundary
-        bndStart = match();
+        if (pendingClosingBoundaryStart >= 0) {
+            bndStart = pendingClosingBoundaryStart;
+        } else {
+            bndStart = match();
+        }
         int bufLen = buf.length();
         if (bndStart == -1) {
+            boundaryPaddingLength = 0;
             // No boundary is found
             if (position + bl + 1 < bufLen) {
                 // there may be an incomplete boundary at the end of the buffer
@@ -639,6 +711,7 @@ final class MimeParser {
                 --bodyEnd;
             }
         } else {
+            boundaryPaddingLength = 0;
             // boundary is not at beginning of a line
             int bodyBegin = position;
             position = bodyEnd + 1;
@@ -649,29 +722,61 @@ final class MimeParser {
         if (bndStart + bl + 1 < bufLen
                 && buf.getByte(bndStart + bl) == '-'
                 && buf.getByte(bndStart + bl + 1) == '-') {
-
-            state = STATE.END_PART;
-            done = true;
-            int bodyBegin = position;
-            position = bndStart + bl + 2;
-            return buf.slice(bodyBegin, bodyEnd);
+            int closingEnd = bndStart + bl + 2 + closingBoundaryPaddingLength;
+            while (closingEnd < bufLen
+                    && (buf.getByte(closingEnd) == ' ' || buf.getByte(closingEnd) == '\t')) {
+                if (++closingBoundaryPaddingLength > MAX_BOUNDARY_PADDING_LENGTH) {
+                    throw new ParsingException("MIME closing boundary padding is too long");
+                }
+                ++closingEnd;
+            }
+            if ((closingEnd == bufLen
+                    || (closingEnd < bufLen
+                            && buf.getByte(closingEnd) == '\r'
+                            && closingEnd + 1 == bufLen))
+                    && !endOfInput) {
+                if (pendingClosingBoundaryStart < 0) {
+                    pendingClosingBoundaryStart = bndStart;
+                }
+                return Collections.emptyList();
+            }
+            pendingClosingBoundaryStart = -1;
+            closingBoundaryPaddingLength = 0;
+            if ((closingEnd == bufLen && endOfInput)
+                    || buf.getByte(closingEnd) == '\n'
+                    || (buf.getByte(closingEnd) == '\r'
+                            && ((closingEnd + 1 == bufLen && endOfInput)
+                                    || buf.getByte(closingEnd + 1) == '\n'))) {
+                state = STATE.END_PART;
+                done = true;
+                int bodyBegin = position;
+                position = bndStart + bl + 2;
+                return buf.slice(bodyBegin, bodyEnd);
+            }
+        } else {
+            pendingClosingBoundaryStart = -1;
+            closingBoundaryPaddingLength = 0;
         }
 
         // Consider all the linear whitespace in boundary+whitespace+"\r\n"
-        int lwsp = 0;
-        for (int i = bndStart + bl; i < bufLen
+        int lwsp = boundaryPaddingLength;
+        for (int i = bndStart + bl + lwsp; i < bufLen
                 && (buf.getByte(i) == ' ' || buf.getByte(i) == '\t'); i++) {
-            ++lwsp;
+            if (++lwsp > MAX_BOUNDARY_PADDING_LENGTH) {
+                throw new ParsingException("MIME boundary padding is too long");
+            }
         }
+        boundaryPaddingLength = lwsp;
 
         // Check boundary+whitespace+"\n"
         if (bndStart + bl + lwsp < bufLen
                 && buf.getByte(bndStart + bl + lwsp) == '\n') {
 
             state = STATE.END_PART;
+            boundaryPaddingLength = 0;
             int bodyBegin = position;
             position = bndStart + bl + lwsp + 1;
-            return buf.slice(bodyBegin, bodyEnd);
+            return bodyEnd == 0 ? Collections.emptyList() : buf.slice(bodyBegin, bodyEnd);
         }
 
         // Check for boundary+whitespace+"\r\n"
@@ -680,24 +785,26 @@ final class MimeParser {
                 && buf.getByte(bndStart + bl + lwsp + 1) == '\n') {
 
             state = STATE.END_PART;
+            boundaryPaddingLength = 0;
             int bodyBegin = position;
             position = bndStart + bl + lwsp + 2;
-            return buf.slice(bodyBegin, bodyEnd);
+            return bodyEnd == 0 ? Collections.emptyList() : buf.slice(bodyBegin, bodyEnd);
         }
 
         if (bndStart + bl + lwsp + 1 < bufLen) {
+            boundaryPaddingLength = 0;
             // boundary string in a part data
             int bodyBegin = position;
-            position = bodyEnd + 1;
-            return buf.slice(bodyBegin, bodyEnd + 1);
+            position = bndStart + bl + lwsp + 1;
+            return buf.slice(bodyBegin, position);
         }
 
         // A boundary is found but it's not a "closing" boundary
         // return everything before that boundary as the "closing" characters
         // might be available next iteration
         int bodyBegin = position;
-        position = bndStart;
-        return buf.slice(bodyBegin, bodyEnd);
+        position = bodyEnd;
+        return bodyBegin == bodyEnd ? Collections.emptyList() : buf.slice(bodyBegin, bodyEnd);
     }
 
     /**
@@ -707,6 +814,7 @@ final class MimeParser {
         // matches boundary
         bndStart = match();
         if (bndStart == -1) {
+            boundaryPaddingLength = 0;
             // No boundary is found
             int bufLen = buf.length();
             int retainedBoundaryPrefix = bl - 1;
@@ -717,11 +825,14 @@ final class MimeParser {
         int bufLen = buf.length();
 
         // Consider all the whitespace boundary+whitespace+"\r\n"
-        int lwsp = 0;
-        for (int i = bndStart + bl; i < bufLen
+        int lwsp = boundaryPaddingLength;
+        for (int i = bndStart + bl + lwsp; i < bufLen
                 && (buf.getByte(i) == ' ' || buf.getByte(i) == '\t'); i++) {
-            ++lwsp;
+            if (++lwsp > MAX_BOUNDARY_PADDING_LENGTH) {
+                throw new ParsingException("MIME boundary padding is too long");
+            }
         }
+        boundaryPaddingLength = lwsp;
 
         // Check for \n or \r\n
         if (bndStart + bl + lwsp < bufLen
@@ -729,6 +840,7 @@ final class MimeParser {
                 || buf.getByte(bndStart + bl + lwsp) == '\r')) {
 
             if (buf.getByte(bndStart + bl + lwsp) == '\n') {
+                boundaryPaddingLength = 0;
                 position = bndStart + bl + lwsp + 1;
                 return;
             } else if (bndStart + bl + lwsp + 1 >= bufLen) {
@@ -736,6 +848,7 @@ final class MimeParser {
                 bndStart = -1;
                 return;
             } else if (buf.getByte(bndStart + bl + lwsp + 1) == '\n') {
+                boundaryPaddingLength = 0;
                 position = bndStart + bl + lwsp + 2;
                 return;
             }
@@ -745,6 +858,7 @@ final class MimeParser {
             bndStart = -1;
             return;
         }
+        boundaryPaddingLength = 0;
         position = bndStart + 1;
     }
 

@@ -16,6 +16,7 @@
 package io.helidon.media.multipart;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -540,6 +542,56 @@ public class MimeParserTest {
     }
 
     @Test
+    public void testClosingBoundarySuffixAcrossChunks() {
+        String boundary = "boundary";
+        byte[] chunk1 = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n").getBytes(StandardCharsets.US_ASCII);
+        byte[] chunk2 = ("--" + boundary).getBytes(StandardCharsets.US_ASCII);
+        byte[] chunk3 = "--\r\n".getBytes(StandardCharsets.US_ASCII);
+
+        List<MimePart> parts = parse(boundary, List.of(chunk1, chunk2, chunk3)).parts;
+
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(parts.get(0).headers.get("Content-Id"), hasItems("part1"));
+        assertThat(parts.get(0).content, is(notNullValue()));
+        assertThat(parts.get(0).content.length, is(equalTo(0)));
+    }
+
+    @Test
+    public void testClosingBoundaryLineEndingAcrossChunks() {
+        String boundary = "boundary";
+        byte[] chunk1 = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "part-one\r\n"
+                + "--" + boundary + "--").getBytes(StandardCharsets.US_ASCII);
+        byte[] chunk2 = "\r\n".getBytes(StandardCharsets.US_ASCII);
+        MimeParser parser = new MimeParser(boundary);
+        StringBuilder body = new StringBuilder();
+        int endMessageCount = 0;
+
+        for (byte[] chunk : List.of(chunk1, chunk2)) {
+            parser.offer(ByteBuffer.wrap(chunk));
+            Iterator<MimeParser.ParserEvent> events = parser.parseIterator();
+            while (events.hasNext()) {
+                MimeParser.ParserEvent event = events.next();
+                if (event.type() == MimeParser.EventType.BODY) {
+                    for (VirtualBuffer.BufferEntry entry : event.asBodyEvent().body()) {
+                        body.append(new String(Utils.toByteArray(entry.buffer()), StandardCharsets.US_ASCII));
+                    }
+                } else if (event.type() == MimeParser.EventType.END_MESSAGE) {
+                    endMessageCount++;
+                }
+            }
+        }
+        parser.close();
+
+        assertThat(body.toString(), is(equalTo("part-one")));
+        assertThat(endMessageCount, is(equalTo(1)));
+    }
+
+    @Test
     public void testPreamble() {
         String boundary = "boundary";
         final byte[] chunk1 = ("\n\n\n\r\r\r\n\n\n\n\r\n"
@@ -880,6 +932,252 @@ public class MimeParserTest {
     }
 
     @Test
+    public void testCrLfPrefixedPseudoBoundaryDoesNotCreateBodyEventLoop() {
+        String boundary = "boundary";
+        byte[] request = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "safe-prefix\r\n"
+                + "--" + boundary + "X-not-a-boundary\r\n"
+                + "safe-suffix\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+
+        MimeParser parser = new MimeParser(boundary);
+        parser.offer(ByteBuffer.wrap(request));
+
+        Iterator<MimeParser.ParserEvent> events = parser.parseIterator();
+        StringBuilder body = new StringBuilder();
+        int eventCount = 0;
+        int bodyEventCount = 0;
+        int zeroLengthBodyEventCount = 0;
+        boolean reachedEndMessage = false;
+
+        while (eventCount++ < 40 && events.hasNext()) {
+            MimeParser.ParserEvent event = events.next();
+            if (event.type() == MimeParser.EventType.BODY) {
+                bodyEventCount++;
+                int bytesInEvent = 0;
+                for (VirtualBuffer.BufferEntry entry : event.asBodyEvent().body()) {
+                    ByteBuffer buffer = entry.buffer();
+                    bytesInEvent += buffer.remaining();
+                    body.append(new String(Utils.toByteArray(buffer), StandardCharsets.US_ASCII));
+                }
+                if (bytesInEvent == 0) {
+                    zeroLengthBodyEventCount++;
+                }
+            } else if (event.type() == MimeParser.EventType.END_MESSAGE) {
+                reachedEndMessage = true;
+                break;
+            }
+        }
+
+        if (!reachedEndMessage) {
+            fail("Parser did not reach END_MESSAGE within 40 parser events after a CRLF-prefixed pseudo-boundary. "
+                    + "BODY events=" + bodyEventCount
+                    + ", zero-length BODY events=" + zeroLengthBodyEventCount);
+        }
+
+        String parsedBody = body.toString();
+        assertThat(parsedBody, containsString("--" + boundary + "X-not-a-boundary"));
+        assertThat(parsedBody, not(containsString("--" + boundary + "--")));
+        parser.close();
+    }
+
+    @Test
+    public void testCrLfPrefixedPseudoClosingBoundaryIsBodyData() {
+        String boundary = "boundary";
+        String body = "safe-prefix\r\n--" + boundary + "--X-not-a-boundary\r\nsafe-suffix";
+        byte[] request = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + body + "\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+
+        List<MimePart> parts = parse(boundary, request).parts;
+
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(new String(parts.get(0).content, StandardCharsets.US_ASCII), is(equalTo(body)));
+    }
+
+    @Test
+    public void testPseudoClosingBoundarySuffixAcrossChunksIsBodyData() {
+        String boundary = "boundary";
+        for (String pseudoClosingBoundary : List.of("--" + boundary + "--",
+                                                    "--" + boundary + "-- \t",
+                                                    "--" + boundary + "--\r")) {
+            String body = "safe-prefix\r\n" + pseudoClosingBoundary + "X-not-a-boundary\r\nsafe-suffix";
+            byte[] chunk1 = ("--" + boundary + "\r\n"
+                    + "Content-Id: part1\r\n"
+                    + "\r\n"
+                    + "safe-prefix\r\n"
+                    + pseudoClosingBoundary).getBytes(StandardCharsets.US_ASCII);
+            byte[] chunk2 = ("X-not-a-boundary\r\n"
+                    + "safe-suffix\r\n"
+                    + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+
+            List<MimePart> parts = parse(boundary, List.of(chunk1, chunk2)).parts;
+
+            assertThat("pseudo closing boundary ending " + pseudoClosingBoundary,
+                    parts.size(), is(equalTo(1)));
+            assertThat("pseudo closing boundary ending " + pseudoClosingBoundary,
+                    new String(parts.get(0).content, StandardCharsets.US_ASCII), is(equalTo(body)));
+        }
+    }
+
+    @Test
+    public void testClosingBoundaryPaddingLimitAllowsExactLimitAcrossChunks() {
+        String boundary = "boundary";
+        List<byte[]> chunks = new ArrayList<>();
+        chunks.add(("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "content\r\n"
+                + "--" + boundary + "--").getBytes(StandardCharsets.US_ASCII));
+        for (int i = 0; i < 128; i++) {
+            chunks.add(" \t".repeat(32).getBytes(StandardCharsets.US_ASCII));
+        }
+        chunks.add("\r\n".getBytes(StandardCharsets.US_ASCII));
+
+        List<MimePart> parts = parse(boundary, chunks).parts;
+
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(new String(parts.get(0).content, StandardCharsets.US_ASCII), is(equalTo("content")));
+    }
+
+    @Test
+    public void testMaximumLengthClosingBoundaryAcrossSingleByteChunks() {
+        String boundary = "b".repeat(70);
+        List<byte[]> chunks = new ArrayList<>();
+        chunks.add(("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "content\r\n").getBytes(StandardCharsets.US_ASCII));
+        for (byte value : ("--" + boundary + "--").getBytes(StandardCharsets.US_ASCII)) {
+            chunks.add(new byte[] {value});
+        }
+        chunks.add("\r\n".getBytes(StandardCharsets.US_ASCII));
+
+        List<MimePart> parts = parse(boundary, chunks).parts;
+
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(new String(parts.get(0).content, StandardCharsets.US_ASCII), is(equalTo("content")));
+    }
+
+    @Test
+    public void testClosingBoundaryPaddingLimit() {
+        String boundary = "boundary";
+        byte[] request = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "content\r\n"
+                + "--" + boundary + "--"
+                + " ".repeat(8193)).getBytes(StandardCharsets.US_ASCII);
+
+        MimeParser.ParsingException ex = assertThrows(MimeParser.ParsingException.class,
+                () -> parse(boundary, request));
+        assertThat(ex.getMessage(), is(equalTo("MIME closing boundary padding is too long")));
+    }
+
+    @Test
+    public void testOpeningBoundaryPaddingLimitAcrossChunks() {
+        String boundary = "boundary";
+        List<byte[]> chunks = new ArrayList<>();
+        chunks.add(("--" + boundary).getBytes(StandardCharsets.US_ASCII));
+        for (int i = 0; i < 8; i++) {
+            chunks.add(" ".repeat(1024).getBytes(StandardCharsets.US_ASCII));
+        }
+        chunks.add(new byte[] {' '});
+
+        MimeParser.ParsingException ex = assertThrows(MimeParser.ParsingException.class,
+                () -> parse(boundary, chunks));
+        assertThat(ex.getMessage(), is(equalTo("MIME boundary padding is too long")));
+    }
+
+    @Test
+    public void testBoundaryPaddingLimitAllowsExactLimitAcrossChunks() {
+        String boundary = "boundary";
+        String padding = " ".repeat(8192);
+        byte[] chunk1 = ("--" + boundary + padding).getBytes(StandardCharsets.US_ASCII);
+        byte[] chunk2 = ("\r\n"
+                + "Content-Id: one\r\n"
+                + "\r\n"
+                + "part-one\r\n"
+                + "--" + boundary + padding).getBytes(StandardCharsets.US_ASCII);
+        byte[] chunk3 = ("\r\n"
+                + "Content-Id: two\r\n"
+                + "\r\n"
+                + "part-two\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+
+        List<MimePart> parts = parse(boundary, List.of(chunk1, chunk2, chunk3)).parts;
+
+        assertThat(parts.size(), is(equalTo(2)));
+        assertThat(new String(parts.get(0).content, StandardCharsets.US_ASCII), is(equalTo("part-one")));
+        assertThat(new String(parts.get(1).content, StandardCharsets.US_ASCII), is(equalTo("part-two")));
+    }
+
+    @Test
+    public void testClosingBoundaryPaddingAcrossManyChunks() {
+        String boundary = "boundary";
+        List<byte[]> chunks = new ArrayList<>();
+        chunks.add(("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "content\r\n"
+                + "--" + boundary + "--").getBytes(StandardCharsets.US_ASCII));
+        for (int i = 0; i < 65; i++) {
+            chunks.add(new byte[] {' '});
+        }
+
+        List<MimePart> parts = parse(boundary, chunks).parts;
+
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(new String(parts.get(0).content, StandardCharsets.US_ASCII), is(equalTo("content")));
+    }
+
+    @Test
+    public void testPseudoBoundaryWithPaddingAcrossChunksIsBodyData() {
+        String boundary = "boundary";
+        String body = "safe-prefix\r\n--" + boundary + " \tX-not-a-boundary\r\nsafe-suffix";
+        byte[] chunk1 = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "safe-prefix\r\n"
+                + "--" + boundary + " \t").getBytes(StandardCharsets.US_ASCII);
+        byte[] chunk2 = ("X-not-a-boundary\r\n"
+                + "safe-suffix\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+
+        List<MimePart> parts = parse(boundary, List.of(chunk1, chunk2)).parts;
+
+        assertThat(parts.size(), is(equalTo(1)));
+        assertThat(new String(parts.get(0).content, StandardCharsets.US_ASCII), is(equalTo(body)));
+    }
+
+    @Test
+    public void testBoundaryWithPaddingAcrossChunksStartsNextPart() {
+        String boundary = "boundary";
+        byte[] chunk1 = ("--" + boundary + "\r\n"
+                + "Content-Id: one\r\n"
+                + "\r\n"
+                + "part-one\r\n"
+                + "--" + boundary + " \t").getBytes(StandardCharsets.US_ASCII);
+        byte[] chunk2 = ("\r\n"
+                + "Content-Id: two\r\n"
+                + "\r\n"
+                + "part-two\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+
+        List<MimePart> parts = parse(boundary, List.of(chunk1, chunk2)).parts;
+
+        assertThat(parts.size(), is(equalTo(2)));
+        assertThat(parts.get(0).headers.get("Content-Id"), hasItems("one"));
+        assertThat(new String(parts.get(0).content, StandardCharsets.US_ASCII), is(equalTo("part-one")));
+        assertThat(parts.get(1).headers.get("Content-Id"), hasItems("two"));
+        assertThat(new String(parts.get(1).content, StandardCharsets.US_ASCII), is(equalTo("part-two")));
+    }
+
+    @Test
     public void testParserClosed() {
         try {
             MimeParser parser = new MimeParser("boundary");
@@ -935,8 +1233,12 @@ public class MimeParserTest {
         Map<String, List<String>> partHeaders = new HashMap<>();
         byte[] partContent = null;
         MimeParser.ParserEvent lastEvent = null;
-        for (byte[] bytes : data) {
-            parser.offer(ByteBuffer.wrap(bytes));
+        for (int i = 0; i <= data.size(); i++) {
+            if (i < data.size()) {
+                parser.offer(ByteBuffer.wrap(data.get(i)));
+            } else if (!parser.endOfInput()) {
+                break;
+            }
             Iterator<MimeParser.ParserEvent> it = parser.parseIterator();
             while(it.hasNext()) {
                 MimeParser.ParserEvent event = it.next();

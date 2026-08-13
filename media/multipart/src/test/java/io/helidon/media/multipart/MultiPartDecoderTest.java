@@ -15,6 +15,8 @@
  */
 package io.helidon.media.multipart;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -26,6 +28,7 @@ import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import io.helidon.common.http.DataChunk;
@@ -323,6 +326,33 @@ public class MultiPartDecoderTest {
     }
 
     @Test
+    public void testSubscriberCancelAfterOnePartWithFragmentedBody() {
+        String boundary = "boundary";
+        byte[] headers = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n").getBytes(StandardCharsets.US_ASCII);
+        byte[] body = ("body 1\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+        CompletableFuture<String> content = new CompletableFuture<>();
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.CANCEL_AFTER_ONE, part -> {
+            DataChunkSubscriber subscriber = new DataChunkSubscriber();
+            part.content().subscribe(subscriber);
+            subscriber.content().whenComplete((value, failure) -> {
+                if (failure == null) {
+                    content.complete(value);
+                } else {
+                    content.completeExceptionally(failure);
+                }
+            });
+        });
+
+        partsPublisher(boundary, List.of(headers, body)).subscribe(testSubscriber);
+
+        testSubscriber.cancelled.orTimeout(5, TimeUnit.SECONDS).join();
+        assertThat(content.orTimeout(5, TimeUnit.SECONDS).join(), is(equalTo("body 1")));
+    }
+
+    @Test
     public void testNoClosingBoundary(){
         String boundary = "boundary";
         final byte[] chunk1 = ("--" + boundary + "\n"
@@ -494,6 +524,411 @@ public class MultiPartDecoderTest {
     }
 
     @Test
+    public void testEpilogueChunksReleasedBeforeUpstreamCompletion() {
+        String boundary = "boundary";
+        byte[] message = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "body 1\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+        MultiPartDecoder decoder = decoder(boundary);
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(
+                SUBSCRIBER_TYPE.INFINITE, ReadableBodyPart::drain);
+        AtomicInteger releasedMessageChunks = new AtomicInteger();
+        AtomicInteger releasedEpilogueChunks = new AtomicInteger();
+
+        decoder.subscribe(testSubscriber);
+        decoder.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+            }
+
+            @Override
+            public void cancel() {
+            }
+        });
+        decoder.onNext(DataChunk.create(false,
+                releasedMessageChunks::incrementAndGet,
+                ByteBuffer.wrap(message)));
+
+        assertThat(releasedMessageChunks.get(), is(equalTo(1)));
+        for (int i = 0; i < 16; i++) {
+            decoder.onNext(DataChunk.create(false,
+                    releasedEpilogueChunks::incrementAndGet,
+                    ByteBuffer.wrap(("epilogue-" + i).getBytes(StandardCharsets.US_ASCII))));
+        }
+
+        assertThat(releasedEpilogueChunks.get(), is(equalTo(16)));
+        decoder.onComplete();
+        assertThat(testSubscriber.complete.orTimeout(5, TimeUnit.SECONDS).join(), is(equalTo(true)));
+    }
+
+    @Test
+    public void testLateEpilogueChunkReleasedAfterCancellation() {
+        String boundary = "boundary";
+        byte[] message = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "body 1\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+        MultiPartDecoder decoder = decoder(boundary);
+        CompletableFuture<Subscription> downstreamSubscription = new CompletableFuture<>();
+        CountDownLatch epilogueRequestStarted = new CountDownLatch(1);
+        CountDownLatch resumeEpilogueRequest = new CountDownLatch(1);
+        CountDownLatch upstreamCancelled = new CountDownLatch(1);
+        AtomicInteger requestCount = new AtomicInteger();
+
+        decoder.subscribe(new Subscriber<>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                downstreamSubscription.complete(subscription);
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(ReadableBodyPart item) {
+                item.drain();
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        });
+        decoder.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+                if (requestCount.incrementAndGet() == 2) {
+                    epilogueRequestStarted.countDown();
+                    waitOnLatch(resumeEpilogueRequest);
+                }
+            }
+
+            @Override
+            public void cancel() {
+                upstreamCancelled.countDown();
+            }
+        });
+
+        CompletableFuture<Void> decoding = new CompletableFuture<>();
+        Thread decodingThread = new Thread(() -> {
+            try {
+                decoder.onNext(DataChunk.create(message));
+                decoding.complete(null);
+            } catch (Throwable ex) {
+                decoding.completeExceptionally(ex);
+            }
+        }, "multipart-epilogue-request");
+        decodingThread.start();
+        try {
+            waitOnLatch(epilogueRequestStarted);
+            downstreamSubscription.join().cancel();
+        } finally {
+            resumeEpilogueRequest.countDown();
+        }
+        decoding.orTimeout(5, TimeUnit.SECONDS).join();
+        waitOnLatch(upstreamCancelled);
+
+        AtomicInteger releasedLateChunks = new AtomicInteger();
+        decoder.onNext(DataChunk.create(false,
+                releasedLateChunks::incrementAndGet,
+                ByteBuffer.wrap("late epilogue".getBytes(StandardCharsets.US_ASCII))));
+
+        assertThat(releasedLateChunks.get(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testLateChunkAfterCancellationCancelsUpstream() {
+        MultiPartDecoder decoder = decoder("boundary");
+        CompletableFuture<Subscription> downstreamSubscription = new CompletableFuture<>();
+        AtomicInteger upstreamCancellations = new AtomicInteger();
+
+        decoder.subscribe(new Subscriber<>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                downstreamSubscription.complete(subscription);
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(ReadableBodyPart item) {
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        });
+        decoder.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+            }
+
+            @Override
+            public void cancel() {
+                upstreamCancellations.incrementAndGet();
+            }
+        });
+
+        downstreamSubscription.join().cancel();
+
+        AtomicInteger releasedLateChunks = new AtomicInteger();
+        decoder.onNext(DataChunk.create(false,
+                releasedLateChunks::incrementAndGet,
+                ByteBuffer.wrap("late chunk".getBytes(StandardCharsets.US_ASCII))));
+
+        assertThat(releasedLateChunks.get(), is(equalTo(1)));
+        assertThat(upstreamCancellations.get(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testTrailingEmptyBufferReleasedBeforeUpstreamCompletion() {
+        String boundary = "boundary";
+        byte[] headers = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n").getBytes(StandardCharsets.US_ASCII);
+        MultiPartDecoder decoder = decoder(boundary);
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(
+                SUBSCRIBER_TYPE.INFINITE, ReadableBodyPart::drain);
+        AtomicInteger releasedChunks = new AtomicInteger();
+
+        decoder.subscribe(testSubscriber);
+        decoder.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+            }
+
+            @Override
+            public void cancel() {
+            }
+        });
+        decoder.onNext(DataChunk.create(headers));
+        decoder.onNext(DataChunk.create(false,
+                releasedChunks::incrementAndGet,
+                ByteBuffer.wrap("a".repeat(64).getBytes(StandardCharsets.US_ASCII)),
+                ByteBuffer.allocate(0)));
+        decoder.onNext(DataChunk.create("b".repeat(64).getBytes(StandardCharsets.US_ASCII)));
+
+        assertThat(releasedChunks.get(), is(equalTo(1)));
+        decoder.onNext(DataChunk.create(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII)));
+        decoder.onComplete();
+        assertThat(testSubscriber.complete.orTimeout(5, TimeUnit.SECONDS).join(), is(equalTo(true)));
+        assertThat(releasedChunks.get(), is(equalTo(1)));
+    }
+
+    @Test
+    public void testCompletionDoesNotRequireAdditionalPartDemand() {
+        String boundary = "boundary";
+        byte[] firstChunk = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "body 1\r\n"
+                + "--" + boundary).getBytes(StandardCharsets.US_ASCII);
+        MultiPartDecoder decoder = decoder(boundary);
+        AtomicInteger receivedParts = new AtomicInteger();
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(
+                SUBSCRIBER_TYPE.ONE, part -> {
+                    receivedParts.incrementAndGet();
+                    part.drain();
+                });
+        AtomicInteger releasedChunks = new AtomicInteger();
+
+        decoder.subscribe(testSubscriber);
+        decoder.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+            }
+
+            @Override
+            public void cancel() {
+            }
+        });
+        decoder.onNext(DataChunk.create(false,
+                releasedChunks::incrementAndGet,
+                ByteBuffer.wrap(firstChunk)));
+        decoder.onNext(DataChunk.create(false,
+                releasedChunks::incrementAndGet,
+                ByteBuffer.wrap("--".getBytes(StandardCharsets.US_ASCII))));
+        decoder.onComplete();
+
+        assertThat(testSubscriber.complete.orTimeout(5, TimeUnit.SECONDS).join(), is(equalTo(true)));
+        assertThat(receivedParts.get(), is(equalTo(1)));
+        assertThat(releasedChunks.get(), is(equalTo(2)));
+    }
+
+    @Test
+    public void testEpilogueDoesNotRequireAdditionalPartDemand() {
+        String boundary = "boundary";
+        byte[] message = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "body 1\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+        MultiPartDecoder decoder = decoder(boundary);
+        AtomicInteger receivedParts = new AtomicInteger();
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(
+                SUBSCRIBER_TYPE.ONE, part -> {
+                    receivedParts.incrementAndGet();
+                    part.drain();
+                });
+        AtomicInteger releasedChunks = new AtomicInteger();
+
+        Multi.just(DataChunk.create(false,
+                           releasedChunks::incrementAndGet,
+                           ByteBuffer.wrap(message)),
+                   DataChunk.create(false,
+                           releasedChunks::incrementAndGet,
+                           ByteBuffer.wrap("epilogue".getBytes(StandardCharsets.US_ASCII))))
+                .subscribe(decoder);
+        decoder.subscribe(testSubscriber);
+
+        assertThat(testSubscriber.complete.orTimeout(5, TimeUnit.SECONDS).join(), is(equalTo(true)));
+        assertThat(receivedParts.get(), is(equalTo(1)));
+        assertThat(releasedChunks.get(), is(equalTo(2)));
+    }
+
+    @Test
+    public void testInterPartBoundaryPaddingLimitReleasesChunks() {
+        String boundary = "boundary";
+        byte[] firstChunk = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "body 1\r\n"
+                + "--" + boundary).getBytes(StandardCharsets.US_ASCII);
+        AtomicInteger releasedChunks = new AtomicInteger();
+        List<DataChunk> chunks = new ArrayList<>();
+        chunks.add(DataChunk.create(false,
+                releasedChunks::incrementAndGet,
+                ByteBuffer.wrap(firstChunk)));
+        for (int i = 0; i < 8; i++) {
+            chunks.add(DataChunk.create(false,
+                    releasedChunks::incrementAndGet,
+                    ByteBuffer.wrap(" ".repeat(1024).getBytes(StandardCharsets.US_ASCII))));
+        }
+        chunks.add(DataChunk.create(false,
+                releasedChunks::incrementAndGet,
+                ByteBuffer.wrap(new byte[] {' '})));
+
+        MultiPartDecoder decoder = decoder(boundary);
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(
+                SUBSCRIBER_TYPE.INFINITE, ReadableBodyPart::drain);
+        Multi.just(chunks.toArray(DataChunk[]::new)).subscribe(decoder);
+        decoder.subscribe(testSubscriber);
+
+        CompletionException ex = assertThrows(CompletionException.class,
+                () -> testSubscriber.complete.orTimeout(5, TimeUnit.SECONDS).join());
+        assertThat(ex.getCause().getMessage(), is(equalTo("MIME boundary padding is too long")));
+        assertThat(releasedChunks.get(), is(equalTo(chunks.size())));
+    }
+
+    @Test
+    public void testValidFragmentedBoundaryPaddingReleasesChunksBeforeCompletion() {
+        String boundary = "boundary";
+        byte[] firstChunk = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "body 1\r\n"
+                + "--" + boundary).getBytes(StandardCharsets.US_ASCII);
+        MultiPartDecoder decoder = decoder(boundary);
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(
+                SUBSCRIBER_TYPE.INFINITE, ReadableBodyPart::drain);
+        AtomicInteger releasedPaddingChunks = new AtomicInteger();
+
+        decoder.subscribe(testSubscriber);
+        decoder.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+            }
+
+            @Override
+            public void cancel() {
+            }
+        });
+        decoder.onNext(DataChunk.create(firstChunk));
+        for (int i = 0; i < 65; i++) {
+            decoder.onNext(DataChunk.create(false,
+                    releasedPaddingChunks::incrementAndGet,
+                    ByteBuffer.wrap(new byte[] {' '})));
+        }
+        decoder.onNext(DataChunk.create(("\r\n"
+                + "Content-Id: part2\r\n"
+                + "\r\n").getBytes(StandardCharsets.US_ASCII)));
+        decoder.onNext(DataChunk.create("body 2".getBytes(StandardCharsets.US_ASCII)));
+
+        assertThat(releasedPaddingChunks.get(), is(equalTo(65)));
+        decoder.onNext(DataChunk.create(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII)));
+        decoder.onComplete();
+        assertThat(testSubscriber.complete.orTimeout(5, TimeUnit.SECONDS).join(), is(equalTo(true)));
+        assertThat(releasedPaddingChunks.get(), is(equalTo(65)));
+    }
+
+    @Test
+    public void testOnCompleteDefersCompletionToActiveDrain() {
+        String boundary = "boundary";
+        byte[] message = ("--" + boundary + "\r\n"
+                + "Content-Id: part1\r\n"
+                + "\r\n"
+                + "body 1\r\n"
+                + "--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII);
+        MultiPartDecoder decoder = decoder(boundary);
+        CountDownLatch partReceived = new CountDownLatch(1);
+        CountDownLatch resumePart = new CountDownLatch(1);
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(
+                SUBSCRIBER_TYPE.INFINITE, part -> {
+                    partReceived.countDown();
+                    try {
+                        if (!resumePart.await(5, TimeUnit.SECONDS)) {
+                            fail("timeout waiting to resume part delivery");
+                        }
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        fail(ex);
+                    }
+                    part.drain();
+                });
+
+        decoder.subscribe(testSubscriber);
+        decoder.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+            }
+
+            @Override
+            public void cancel() {
+            }
+        });
+        CompletableFuture<Void> draining = new CompletableFuture<>();
+        Thread drainThread = new Thread(() -> {
+            try {
+                decoder.onNext(DataChunk.create(message));
+                draining.complete(null);
+            } catch (Throwable ex) {
+                draining.completeExceptionally(ex);
+            }
+        }, "multipart-decoder-drain");
+        drainThread.start();
+        try {
+            assertThat(partReceived.await(5, TimeUnit.SECONDS), is(true));
+            decoder.onComplete();
+            assertThat(testSubscriber.complete.isDone(), is(false));
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            fail(ex);
+        } finally {
+            resumePart.countDown();
+        }
+
+        draining.orTimeout(5, TimeUnit.SECONDS).join();
+        assertThat(testSubscriber.complete.orTimeout(5, TimeUnit.SECONDS).join(), is(equalTo(true)));
+    }
+
+    @Test
     public void testFilenameWithDirectoryPathUsesOnlyTerminalComponent() {
         String boundary = "boundary";
         final byte[] chunk1 = ("--" + boundary + "\n"
@@ -559,66 +994,6 @@ public class MultiPartDecoderTest {
             assertThat(b, is(equalTo(true)));
         } catch (CompletionException error) {
             assertThat(error, is(nullValue()));
-        }
-    }
-
-    /**
-     * Types of test subscribers.
-     */
-    enum SUBSCRIBER_TYPE {
-        INFINITE,
-        ONE_BY_ONE,
-        CANCEL_AFTER_ONE,
-    }
-
-    /**
-     * A part test subscriber.
-     */
-    static class BodyPartSubscriber implements Subscriber<ReadableBodyPart>{
-
-        private final SUBSCRIBER_TYPE subscriberType;
-        private final Consumer<ReadableBodyPart> consumer;
-        private Subscription subscription;
-        public CompletableFuture<Boolean> complete = new CompletableFuture<>();
-        public CompletableFuture<Void> cancelled = new CompletableFuture<>();
-
-        BodyPartSubscriber(SUBSCRIBER_TYPE subscriberType, Consumer<ReadableBodyPart> consumer) {
-            this.subscriberType = subscriberType;
-            this.consumer = consumer;
-        }
-
-        @Override
-        public void onSubscribe(Subscription subscription) {
-            this.subscription = subscription;
-            if (subscriberType == SUBSCRIBER_TYPE.INFINITE) {
-                subscription.request(Long.MAX_VALUE);
-            } else {
-                subscription.request(1);
-            }
-        }
-
-        @Override
-        public void onNext(ReadableBodyPart item) {
-            if (consumer == null){
-                return;
-            }
-            consumer.accept(item);
-            if (subscriberType == SUBSCRIBER_TYPE.ONE_BY_ONE) {
-                subscription.request(1);
-            } else if (subscriberType == SUBSCRIBER_TYPE.CANCEL_AFTER_ONE) {
-                subscription.cancel();
-                cancelled.complete(null);
-            }
-        }
-
-        @Override
-        public void onError(Throwable ex) {
-            complete.completeExceptionally(ex);
-        }
-
-        @Override
-        public void onComplete() {
-            complete.complete(true);
         }
     }
 
@@ -711,6 +1086,67 @@ public class MultiPartDecoderTest {
     }
 
     /**
+     * Types of test subscribers.
+     */
+    enum SUBSCRIBER_TYPE {
+        INFINITE,
+        ONE,
+        ONE_BY_ONE,
+        CANCEL_AFTER_ONE,
+    }
+
+    /**
+     * A part test subscriber.
+     */
+    static class BodyPartSubscriber implements Subscriber<ReadableBodyPart>{
+
+        private final SUBSCRIBER_TYPE subscriberType;
+        private final Consumer<ReadableBodyPart> consumer;
+        private Subscription subscription;
+        public CompletableFuture<Boolean> complete = new CompletableFuture<>();
+        public CompletableFuture<Void> cancelled = new CompletableFuture<>();
+
+        BodyPartSubscriber(SUBSCRIBER_TYPE subscriberType, Consumer<ReadableBodyPart> consumer) {
+            this.subscriberType = subscriberType;
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            this.subscription = subscription;
+            if (subscriberType == SUBSCRIBER_TYPE.INFINITE) {
+                subscription.request(Long.MAX_VALUE);
+            } else {
+                subscription.request(1);
+            }
+        }
+
+        @Override
+        public void onNext(ReadableBodyPart item) {
+            if (consumer == null){
+                return;
+            }
+            consumer.accept(item);
+            if (subscriberType == SUBSCRIBER_TYPE.ONE_BY_ONE) {
+                subscription.request(1);
+            } else if (subscriberType == SUBSCRIBER_TYPE.CANCEL_AFTER_ONE) {
+                subscription.cancel();
+                cancelled.complete(null);
+            }
+        }
+
+        @Override
+        public void onError(Throwable ex) {
+            complete.completeExceptionally(ex);
+        }
+
+        @Override
+        public void onComplete() {
+            complete.complete(true);
+        }
+    }
+
+    /**
      * A subscriber of data chunk that accumulates bytes to a single String.
      */
     static class DataChunkSubscriber implements Subscriber<DataChunk> {
@@ -753,4 +1189,5 @@ public class MultiPartDecoderTest {
             return future;
         }
     }
+
 }

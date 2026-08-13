@@ -19,6 +19,8 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Objects;
+import java.util.function.IntConsumer;
 
 /**
  * A virtual buffer to work against multiple consecutive {@link ByteBuffer}.
@@ -36,6 +38,7 @@ final class VirtualBuffer {
 
     private static final int DEFAULT_CAPACITY = 8;
 
+    private final IntConsumer discardedBufferConsumer;
     private ByteBuffer[] buffers;
     private int[] bufferIds;
     private int count;
@@ -52,7 +55,8 @@ final class VirtualBuffer {
      * Create a new virtual buffer.
      * @param initialCapacity initial capacity
      */
-    private VirtualBuffer(int initialCapacity) {
+    private VirtualBuffer(int initialCapacity, IntConsumer discardedBufferConsumer) {
+        this.discardedBufferConsumer = Objects.requireNonNull(discardedBufferConsumer);
         bufferIds = new int[initialCapacity];
         buffers = new ByteBuffer[initialCapacity];
         voffset = 0;
@@ -68,7 +72,16 @@ final class VirtualBuffer {
      * Create a new virtual buffer.
      */
     VirtualBuffer() {
-        this(DEFAULT_CAPACITY);
+        this(id -> { });
+    }
+
+    /**
+     * Create a new virtual buffer.
+     *
+     * @param discardedBufferConsumer consumer notified when a buffer is discarded
+     */
+    VirtualBuffer(IntConsumer discardedBufferConsumer) {
+        this(DEFAULT_CAPACITY, discardedBufferConsumer);
     }
 
     /**
@@ -100,6 +113,18 @@ final class VirtualBuffer {
         startIndex = 0;
         endIndex = 0;
         cachedBufferIndex = -1;
+    }
+
+    /**
+     * Discard all the underlying {@link ByteBuffer} instances and notify the discard consumer.
+     */
+    void discard() {
+        int bufferIndex = startIndex;
+        for (int i = 0; i < count; i++) {
+            discardedBufferConsumer.accept(bufferIds[bufferIndex]);
+            bufferIndex = nextBufferIndex(bufferIndex);
+        }
+        clear();
     }
 
     /**
@@ -139,6 +164,7 @@ final class VirtualBuffer {
             }
             pos = nextPosition;
             // remove
+            discardedBufferConsumer.accept(bufferIds[i]);
             buffers[i] = null;
             bufferIds[i] = 0;
             count--;
@@ -356,7 +382,7 @@ final class VirtualBuffer {
      */
     private void checkBounds(int begin, int end) {
         if (!(begin >= 0 && begin < vlength)
-                || !(end > 0 && end <= vlength)
+                || !(end >= 0 && end <= vlength)
                 || begin > end) {
             throw new IndexOutOfBoundsException("Invalid range, begin=" + begin + ", end=" + end);
         }

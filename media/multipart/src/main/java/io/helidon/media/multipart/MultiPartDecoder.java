@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,13 +48,16 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     private static final Iterator<MimeParser.ParserEvent> EMPTY_PARSER_ITERATOR = new EmptyIterator<>();
 
     private volatile Subscription upstream;
+    private volatile boolean upstreamCompleted;
     private Subscriber<? super ReadableBodyPart> downstream;
     private ReadableBodyPart.Builder bodyPartBuilder;
     private ReadableBodyPartHeaders.Builder bodyPartHeaderBuilder;
     private DataChunkPublisher bodyPartPublisher;
     private Iterator<MimeParser.ParserEvent> parserIterator = EMPTY_PARSER_ITERATOR;
+    private MimeParser.ParserEvent pendingParserEvent;
     private volatile Throwable error;
-    private boolean cancelled;
+    private volatile boolean cancelled;
+    private boolean messageComplete;
     private final AtomicInteger contenders = new AtomicInteger(Integer.MIN_VALUE);
     private final AtomicLong partsRequested = new AtomicLong();
     private final HashMap<Integer, DataChunk> chunksByIds;
@@ -71,8 +74,8 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         Objects.requireNonNull(boundary, "boundary cannot be null!");
         Objects.requireNonNull(context, "context cannot be null!");
         this.context = context;
-        parser = new MimeParser(boundary);
         chunksByIds = new HashMap<>();
+        parser = new MimeParser(boundary, this::releaseChunk);
     }
 
     /**
@@ -138,22 +141,24 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     public void onNext(DataChunk chunk) {
         try {
             ByteBuffer[] byteBuffers = chunk.data();
-            for (int i = 0; i < byteBuffers.length; i++) {
-                ByteBuffer byteBuffer = byteBuffers[i];
+            int id = -1;
+            for (ByteBuffer byteBuffer : byteBuffers) {
                 if (!byteBuffer.hasRemaining()) {
                     // skip if empty
                     continue;
                 }
-                int id = parser.offer(byteBuffer);
-                // record the chunk using the id of the last buffer
-                if (i == byteBuffers.length - 1) {
-                    // drain() cannot be invoked concurrently, it is safe to use HashMap
-                    chunksByIds.put(id, chunk);
-                }
+                id = parser.offer(byteBuffer);
+            }
+            if (id < 0) {
+                chunk.release();
+            } else {
+                // drain() cannot be invoked concurrently, it is safe to use HashMap
+                chunksByIds.put(id, chunk);
             }
             parserIterator = parser.parseIterator();
             drain();
         } catch (MimeParser.ParsingException ex) {
+            chunk.release();
             drain(ex);
         }
     }
@@ -171,6 +176,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     @Override
     public void onComplete() {
         if (upstream != SubscriptionHelper.CANCELED) {
+            upstreamCompleted = true;
             upstream = SubscriptionHelper.CANCELED;
             drain();
         }
@@ -205,10 +211,13 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     private void cleanup() {
         // drop the reference to parserIterator, but keep it safe for any later invocation of parserIterator
         parserIterator = EMPTY_PARSER_ITERATOR;
+        pendingParserEvent = null;
         error = null;
+        upstreamCompleted = false;
         upstream = SubscriptionHelper.CANCELED;
         downstream = null; // after cleanup no uses of downstream are reachable
         cancelled = true; // after cleanup the processor appears as cancelled
+        messageComplete = false;
         bodyPartHeaderBuilder = null;
         bodyPartBuilder = null;
         partsRequested.set(-1);
@@ -265,14 +274,16 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         }
 
         try {
-            // Proceed to drain parserIterator only if parts or body part chunks were requested
-            // ie. bodyPartPublisher != null && partsRequested > 0
-            // if bodyPartPublisher != null, then we are here when inner Subscriber has unsatisfied demand
+            // Parser events that can produce another part require outer demand. END_MESSAGE is terminal and can be
+            // handled without demand. Inner body demand is handled above.
             long requested = partsRequested();
-            while (requested >= 0 && parserIterator.hasNext()) {
-                // It is safe to consume next ParserEvent only the right Subscriber is ready to receive onNext
-                // i.e partsRequested > 0
-                if (requested == 0) {
+            while (requested >= 0 && (pendingParserEvent != null || parserIterator.hasNext())) {
+                if (pendingParserEvent == null) {
+                    pendingParserEvent = parserIterator.next();
+                }
+                // It is safe to handle the next ParserEvent only if the right Subscriber is ready to receive onNext.
+                // END_MESSAGE is a terminal event and does not require demand.
+                if (requested == 0 && pendingParserEvent.type() != MimeParser.EventType.END_MESSAGE) {
                     // This means there was an attempt to deliver onError or onComplete from upstream
                     // which are allowed to be issued without request from outer Subscriber.
                     // - partsRequested > 0 for valid requests
@@ -281,7 +292,8 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                     return;
                 }
 
-                MimeParser.ParserEvent event = parserIterator.next();
+                MimeParser.ParserEvent event = pendingParserEvent;
+                pendingParserEvent = null;
                 switch (event.type()) {
                     case START_PART:
                         bodyPartHeaderBuilder = ReadableBodyPartHeaders.builder();
@@ -313,13 +325,16 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                         bodyPartPublisher = null;
                         requested = partsRequested.updateAndGet(v -> v == Long.MAX_VALUE || v < 0 ? v : v - 1);
                         break;
+                    case END_MESSAGE:
+                        messageComplete = true;
+                        parser.discardBuffers();
+                        break;
                     default:
                 }
             }
 
-            // we allow requested <= 0 to reach here, because we want to allow delivery of termination signals
-            // without requests or cancellations, but ultimately need to make sure we do not request from
-            // upstream, unless actual demand is observed (requested > 0)
+            // Allow requested <= 0 to reach here so termination signals and cancellations do not require demand.
+            // Upstream reads normally require part demand; after END_MESSAGE they continue only to drain epilogue data.
             if (requested < 0) {
                 if (cancelled) {
                     upstream.cancel();
@@ -334,6 +349,14 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
             // ordering the delivery of errors after the delivery of all signals that precede it
             // in the order of events emitted by the parser
             if (upstream == SubscriptionHelper.CANCELED || error != null) {
+                if (error == null && upstreamCompleted) {
+                    upstreamCompleted = false;
+                    if (parser.endOfInput()) {
+                        parserIterator = parser.parseIterator();
+                        drain();
+                        return;
+                    }
+                }
                 if (error != null) {
                     if (bodyPartPublisher != null) {
                         bodyPartPublisher.complete(error);
@@ -354,7 +377,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
             // parserIterator is drained, drop the reference to it, but keep it safe for any later invocations
             parserIterator = EMPTY_PARSER_ITERATOR;
 
-            if (requested > 0) {
+            if (requested > 0 || messageComplete) {
                 upstream.request(1);
             }
 
@@ -372,6 +395,13 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
             DataChunk next = it.next();
             next.release();
             it.remove();
+        }
+    }
+
+    private void releaseChunk(int id) {
+        DataChunk chunk = chunksByIds.remove(id);
+        if (chunk != null) {
+            chunk.release();
         }
     }
 
@@ -401,7 +431,11 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         }
         ByteBuffer[] originalBuffers = chunk.data();
         // FIXME: the current resource management is not implemented properly and needs to be fixed
-        boolean release = data.limit() == originalBuffers[originalBuffers.length - 1].limit();
+        int lastBufferIndex = originalBuffers.length - 1;
+        while (!originalBuffers[lastBufferIndex].hasRemaining()) {
+            --lastBufferIndex;
+        }
+        boolean release = data.limit() == originalBuffers[lastBufferIndex].limit();
         if (release) {
             chunksByIds.remove(id);
         }

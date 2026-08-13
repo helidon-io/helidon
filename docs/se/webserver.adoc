@@ -635,7 +635,8 @@ module.
 
 The multipart parser protects applications from oversized multipart structure.
 It rejects messages with more than 1000 parts, more than 100 headers in one
-part, or a part header line longer than 8192 bytes.
+part, a part header line longer than 8192 bytes, or boundary transport padding
+longer than 8192 bytes.
 
 When reading the `filename` parameter from a `Content-Disposition` header,
 Helidon percent-decodes the value, ignores any directory path information, and
