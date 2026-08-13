@@ -23,7 +23,8 @@ import io.helidon.common.Api;
 /**
  * Protocol-neutral observation of HTTP transport lifecycle.
  *
- * <p>Callbacks must not block. They may be invoked concurrently, so implementations must be thread safe.
+ * <p>Callbacks must not block. Unless a lifecycle method specifies stricter publisher ordering, callbacks may be invoked
+ * concurrently, so implementations must be thread safe.
  * Observation must not affect protocol or transport behavior. Observer callbacks are passive and must not directly or
  * indirectly invoke lifecycle methods on a {@link ConnectionObservation}, {@link HandshakeObservation}, or
  * {@link StreamObservation}; callback reentry is not supported.
@@ -250,7 +251,8 @@ public interface HttpTransportObserver {
         /**
          * Observes the start of the configured handshake.
          *
-         * <p>The same observation is returned if this method is invoked more than once.
+         * <p>The publisher must not invoke this method concurrently for the same connection; concurrent invocation is
+         * unsupported. The same observation is returned if this method is invoked more than once sequentially.
          * The returned observation must not be {@code null}. Implementations that do not observe handshakes should
          * return {@link HandshakeObservation#noop()}.
          *
@@ -262,9 +264,10 @@ public interface HttpTransportObserver {
          * Reports the currently selected HTTP protocol.
          *
          * <p>The first selection marks the physical connection as established and usable for that protocol. A publisher
-         * must therefore report the first selection only after any required transport security handshake has succeeded.
-         * The selected protocol may later change, for example after a successful HTTP/1.1 upgrade to HTTP/2. Repeated
-         * selection of an equal protocol identifier has no effect.
+         * must therefore report the first selection only after any required transport security handshake has succeeded
+         * and its {@link HandshakeObservation#close(HandshakeOutcome)} call has returned. The selected protocol may later
+         * change, for example after a successful HTTP/1.1 upgrade to HTTP/2. Repeated selection of an equal protocol
+         * identifier has no effect.
          *
          * @param protocol non-blank selected protocol identifier
          */
