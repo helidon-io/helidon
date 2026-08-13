@@ -16,6 +16,8 @@
 
 package io.helidon.openapi;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -426,7 +428,7 @@ final class OpenApiDocumentComposer {
             Object ref = map.get("$ref");
             if (currentOpenApiDocumentResource
                     && ref instanceof String refValue
-                    && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
+                    && schemaReference(refValue).isPresent()) {
                 String rewrittenRef = rewriteSchemaRef(refValue, schemaNames);
                 ((Map<String, Object>) map).put("$ref", rewrittenRef);
                 if (referencedSchemaNames != null) {
@@ -437,7 +439,7 @@ final class OpenApiDocumentComposer {
             if (supportsDynamicRef
                     && currentOpenApiDocumentResource
                     && dynamicRef instanceof String refValue
-                    && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
+                    && schemaReference(refValue).isPresent()) {
                 String rewrittenRef = rewriteSchemaRef(refValue, schemaNames);
                 ((Map<String, Object>) map).put("$dynamicRef", rewrittenRef);
                 if (referencedSchemaNames != null) {
@@ -451,7 +453,7 @@ final class OpenApiDocumentComposer {
                     ((Map<String, Object>) mappingMap).replaceAll((_, mappingValue) -> {
                         if (mappingValue instanceof String mappingRef
                                 && (currentOpenApiDocumentResource
-                                        || !mappingRef.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX))) {
+                                        || schemaReference(mappingRef).isEmpty())) {
                             String rewrittenRef = rewriteSchemaRef(mappingRef, schemaNames);
                             if (referencedSchemaNames != null) {
                                 referencedSchemaNames.add(schemaRefName(rewrittenRef));
@@ -464,7 +466,7 @@ final class OpenApiDocumentComposer {
                 Object defaultMapping = discriminatorMap.get("defaultMapping");
                 if (defaultMapping instanceof String mappingRef
                         && (currentOpenApiDocumentResource
-                                || !mappingRef.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX))) {
+                                || schemaReference(mappingRef).isEmpty())) {
                     String rewrittenRef = rewriteSchemaRef(mappingRef, schemaNames);
                     ((Map<String, Object>) discriminatorMap).put("defaultMapping", rewrittenRef);
                     if (referencedSchemaNames != null) {
@@ -500,28 +502,52 @@ final class OpenApiDocumentComposer {
     }
 
     private static String schemaRefName(String refValue) {
-        if (!refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
-            return refValue;
-        }
-        int suffixStart = refValue.indexOf('/', OpenApiSourceBase.SCHEMA_REF_PREFIX.length());
-        return suffixStart < 0
-                ? refValue.substring(OpenApiSourceBase.SCHEMA_REF_PREFIX.length())
-                : refValue.substring(OpenApiSourceBase.SCHEMA_REF_PREFIX.length(), suffixStart);
+        return schemaReference(refValue)
+                .map(SchemaReference::sourceName)
+                .orElse(refValue);
     }
 
     private static String rewriteSchemaRef(String refValue, Map<String, String> schemaNames) {
-        String prefix = "";
-        String sourceName = schemaRefName(refValue);
-        String suffix = "";
-        if (refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
-            prefix = OpenApiSourceBase.SCHEMA_REF_PREFIX;
-            int suffixStart = refValue.indexOf('/', prefix.length());
-            if (suffixStart >= 0) {
-                suffix = refValue.substring(suffixStart);
-            }
-        }
+        Optional<SchemaReference> schemaReference = schemaReference(refValue);
+        String sourceName = schemaReference
+                .map(SchemaReference::sourceName)
+                .orElse(refValue);
         String targetName = schemaNames.get(sourceName);
-        return targetName == null ? refValue : prefix + targetName + suffix;
+        if (targetName == null) {
+            return refValue;
+        }
+        if (schemaReference.isEmpty()) {
+            return targetName;
+        }
+        try {
+            String fragment = OpenApiSourceBase.SCHEMA_REF_PREFIX.substring(1)
+                    + targetName
+                    + schemaReference.get().suffix();
+            return new URI(null, null, fragment).toASCIIString();
+        } catch (URISyntaxException e) {
+            return refValue;
+        }
+    }
+
+    private static Optional<SchemaReference> schemaReference(String refValue) {
+        if (!refValue.startsWith("#")) {
+            return Optional.empty();
+        }
+        String fragment;
+        try {
+            fragment = URI.create(refValue).getFragment();
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
+        String prefix = OpenApiSourceBase.SCHEMA_REF_PREFIX.substring(1);
+        if (fragment == null || !fragment.startsWith(prefix)) {
+            return Optional.empty();
+        }
+        int suffixStart = fragment.indexOf('/', prefix.length());
+        return suffixStart < 0
+                ? Optional.of(new SchemaReference(fragment.substring(prefix.length()), ""))
+                : Optional.of(new SchemaReference(fragment.substring(prefix.length(), suffixStart),
+                                                  fragment.substring(suffixStart)));
     }
 
     private static String renderGenerated(OpenApiDocumentContext context, OpenApiDocument generated) {
@@ -625,6 +651,9 @@ final class OpenApiDocumentComposer {
                                                                                    + expression,
                                                                            pathItem,
                                                                            operationIds)));
+    }
+
+    private record SchemaReference(String sourceName, String suffix) {
     }
 
     private enum InlineSchemaContext {

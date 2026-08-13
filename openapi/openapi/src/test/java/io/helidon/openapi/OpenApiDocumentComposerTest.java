@@ -867,6 +867,10 @@ class OpenApiDocumentComposerTest {
                                                           JsonObject.builder()
                                                                   .set("$ref", "#/components/schemas/Item")
                                                                   .build())
+                                                     .set("encodedItem",
+                                                          JsonObject.builder()
+                                                                  .set("$ref", "#/%63omponents/schemas/%49tem")
+                                                                  .build())
                                                      .set("nestedItem",
                                                           JsonObject.builder()
                                                                   .set("$ref", nestedItemRef)
@@ -874,6 +878,10 @@ class OpenApiDocumentComposerTest {
                                                      .set("dynamicItem",
                                                           JsonObject.builder()
                                                                   .set("$dynamicRef", "#/components/schemas/Item")
+                                                                  .build())
+                                                     .set("encodedDynamicItem",
+                                                          JsonObject.builder()
+                                                                  .set("$dynamicRef", "#/%63omponents/schemas/%49tem")
                                                                   .build())
                                                      .set("dynamicNestedItem",
                                                           JsonObject.builder()
@@ -951,11 +959,12 @@ class OpenApiDocumentComposerTest {
                                                      .set("mapping",
                                                           JsonObject.builder()
                                                                   .set("second", "#/components/schemas/Item")
+                                                                  .set("encodedSecond", "#/%63omponents/schemas/%49tem")
                                                                   .set("secondByName", "Item")
                                                                   .set("external",
                                                                        "https://example.com/schemas/Item")
                                                                   .build())
-                                                     .set("defaultMapping", "#/components/schemas/Item")
+                                                     .set("defaultMapping", "#/%63omponents/schemas/%49tem")
                                                      .build())
                                         .set("example", literalDiscriminator)
                                         .set("default", literalDiscriminator)
@@ -1008,9 +1017,12 @@ class OpenApiDocumentComposerTest {
         assertThat(map(schemas, "Item").get("type"), is("string"));
         assertThat(map(schemas, "Item2").get("type"), is("integer"));
         assertThat(map(properties, "item").get("$ref"), is("#/components/schemas/Item2"));
+        assertThat(map(properties, "encodedItem").get("$ref"), is("#/components/schemas/Item2"));
         assertThat(map(properties, "nestedItem").get("$ref"),
                    is(renamedNestedItemRef));
         assertThat(map(properties, "dynamicItem").get("$dynamicRef"), is("#/components/schemas/Item2"));
+        assertThat(map(properties, "encodedDynamicItem").get("$dynamicRef"),
+                   is("#/components/schemas/Item2"));
         assertThat(map(properties, "dynamicNestedItem").get("$dynamicRef"),
                    is(renamedNestedItemRef));
         assertThat(map(properties, "dynamicAnchor").get("$dynamicRef"), is("#item"));
@@ -1036,6 +1048,7 @@ class OpenApiDocumentComposerTest {
                    is("#/components/schemas/Item2"));
         assertThat(map(schemas, "OasDialect").get("$dynamicRef"), is("#/components/schemas/Item2"));
         assertThat(mapping.get("second"), is("#/components/schemas/Item2"));
+        assertThat(mapping.get("encodedSecond"), is("#/components/schemas/Item2"));
         assertThat(mapping.get("secondByName"), is("Item2"));
         assertThat(mapping.get("external"), is("https://example.com/schemas/Item"));
         assertThat(map(envelope, "discriminator").get("defaultMapping"), is("#/components/schemas/Item2"));
