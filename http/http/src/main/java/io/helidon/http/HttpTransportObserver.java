@@ -70,8 +70,8 @@ public interface HttpTransportObserver {
      * Combines observers into one failure-isolating observer.
      *
      * <p>Duplicate observer instances are included only once. A {@link RuntimeException} from one observer is logged and
-     * does not prevent the remaining observers from receiving the event. Any other {@link Throwable} is rethrown
-     * immediately.
+     * does not prevent the remaining observers from receiving the event. Any other {@link Throwable} is rethrown;
+     * a connection transition failure is rethrown after transitions already queued for that connection complete.
      *
      * @param observers observers to combine
      * @return combined observer

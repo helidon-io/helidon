@@ -230,9 +230,11 @@ class HttpTransportObserverTest {
     }
 
     @Test
-    void errorFromProtocolSelectionPropagates() {
+    void errorFromProtocolSelectionPropagatesAndDrainerRecovers() {
         AssertionError failure = new AssertionError("probe");
+        AtomicInteger attempts = new AtomicInteger();
         AtomicInteger protocolSelected = new AtomicInteger();
+        AtomicInteger connectionClosed = new AtomicInteger();
         HttpTransportObserver failing = (role, transport, handshake) -> new ConnectionObservation() {
             @Override
             public HandshakeObservation handshakeStarted() {
@@ -241,7 +243,9 @@ class HttpTransportObserverTest {
 
             @Override
             public void protocolSelected(String protocol) {
-                throw failure;
+                if (attempts.getAndIncrement() == 0) {
+                    throw failure;
+                }
             }
 
             @Override
@@ -271,6 +275,7 @@ class HttpTransportObserverTest {
 
             @Override
             public void close(ConnectionOutcome outcome) {
+                connectionClosed.incrementAndGet();
             }
         };
         ConnectionObservation connection = HttpTransportObserver.compose(List.of(failing, recording))
@@ -281,6 +286,84 @@ class HttpTransportObserverTest {
 
         assertThat(thrown, sameInstance(failure));
         assertThat(protocolSelected.get(), is(0));
+        connection.protocolSelected(PROTOCOL_HTTP_3);
+        connection.close(ConnectionOutcome.NORMAL);
+
+        assertThat(protocolSelected.get(), is(1));
+        assertThat(connectionClosed.get(), is(1));
+    }
+
+    @Test
+    void queuedConnectionCloseCompletesBeforeProtocolErrorPropagates() throws Exception {
+        AssertionError failure = new AssertionError("probe");
+        CountDownLatch protocolStarted = new CountDownLatch(1);
+        CountDownLatch failProtocol = new CountDownLatch(1);
+        AtomicInteger connectionClosed = new AtomicInteger();
+        HttpTransportObserver failing = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(String protocol) {
+                protocolStarted.countDown();
+                try {
+                    if (!failProtocol.await(5, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Timed out waiting to fail protocol selection");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while selecting protocol", e);
+                }
+                throw failure;
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return StreamObservation.noop();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+            }
+        };
+        HttpTransportObserver recording = (role, transport, handshake) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(String protocol) {
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return StreamObservation.noop();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                connectionClosed.incrementAndGet();
+            }
+        };
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(failing, recording))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+        CompletableFuture<AssertionError> protocolSelection = CompletableFuture.supplyAsync(
+                () -> assertThrows(AssertionError.class,
+                                   () -> connection.protocolSelected(PROTOCOL_HTTP_1_1)));
+
+        try {
+            assertThat(protocolStarted.await(5, TimeUnit.SECONDS), is(true));
+            connection.close(ConnectionOutcome.ERROR);
+        } finally {
+            failProtocol.countDown();
+        }
+        AssertionError thrown = protocolSelection.get(5, TimeUnit.SECONDS);
+
+        assertThat(thrown, sameInstance(failure));
+        assertThat(connectionClosed.get(), is(1));
     }
 
     @ParameterizedTest

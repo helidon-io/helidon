@@ -372,6 +372,7 @@ final class HttpTransportObservers {
         }
 
         private void drainTransitions() {
+            Error fatalFailure = null;
             while (true) {
                 Runnable transition;
                 lifecycleLock.lock();
@@ -379,7 +380,7 @@ final class HttpTransportObservers {
                     transition = transitions.pollFirst();
                     if (transition == null) {
                         transitionDraining = false;
-                        return;
+                        break;
                     }
                 } finally {
                     lifecycleLock.unlock();
@@ -388,9 +389,16 @@ final class HttpTransportObservers {
                     transition.run();
                 } catch (RuntimeException failure) {
                     observerFailed("connection transition", failure);
-                } catch (Throwable failure) {
-                    throw failure;
+                } catch (Error failure) {
+                    if (fatalFailure == null) {
+                        fatalFailure = failure;
+                    } else if (failure != fatalFailure) {
+                        fatalFailure.addSuppressed(failure);
+                    }
                 }
+            }
+            if (fatalFailure != null) {
+                throw fatalFailure;
             }
         }
 
