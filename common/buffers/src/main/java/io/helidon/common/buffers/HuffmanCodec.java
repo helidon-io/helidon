@@ -72,7 +72,8 @@ public final class HuffmanCodec {
     /**
      * Encode a value into a destination byte array.
      * <p>
-     * If the destination is too small, its contents are undefined and must be discarded.
+     * If encoding is unsuccessful, the destination contents are undefined and must be discarded. A destination that
+     * is too small can be detected before all characters have been validated.
      *
      * @param value octet-valued characters to encode
      * @param destination destination byte array
