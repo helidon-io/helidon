@@ -106,11 +106,11 @@ dotted canonical type name. Custom `OpenApiDocumentSource` services must be qual
 selected by name. Unqualified sources always participate when they support the document context and cannot be filtered
 with `generated.document-sources`.
 
-When multiple generated sources contribute component schemas, Helidon renames conflicting component names and rewrites
-references in standard JSON Schema applicator locations. Custom JSON Schema vocabularies can define other applicator
-keywords whose values are schemas, but Helidon cannot identify those locations from the document alone. Generated
-sources that refer to component schemas from custom applicator keywords must therefore use component names that are
-unique across the contributing sources.
+When static and generated content or multiple generated sources contribute component schemas, Helidon renames conflicting
+component names in generated documents and rewrites references in standard JSON Schema applicator locations. Custom JSON
+Schema vocabularies can define other applicator keywords whose values are schemas, but Helidon cannot identify those
+locations from the document alone. Generated sources that refer to component schemas from custom applicator keywords must
+therefore use component names that are unique across the static and generated documents being combined.
 
 .Select generated document metadata sources
 [source,yaml]
