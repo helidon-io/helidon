@@ -155,29 +155,87 @@ final class OpenApiDocumentComposer {
                                                boolean dynamicRefDialect) {
         Map<String, Object> targetNode = targetBuilder.node();
         Map<String, Object> sourceNode = source.mutableNode();
+        Map<String, String> originalNamesByRenamedName = new HashMap<>();
         Map<String, String> schemaNames = rewriteSchemaNames(targetNode,
                                                              sourceNode,
                                                              reuseEquivalentSchemas,
-                                                             schemaNamesByValue);
+                                                             schemaNamesByValue,
+                                                             originalNamesByRenamedName);
         boolean supportsDynamicRef = "3.1".equals(context.openApiVersion().type())
                 || "3.2".equals(context.openApiVersion().type());
-        rewriteSchemaRefs(sourceNode, schemaNames, supportsDynamicRef, dynamicRefDialect);
-        if (reuseEquivalentSchemas) {
-            while (true) {
-                Map<String, Object> sourceSchemas = schemas(sourceNode);
-                Map<String, String> equivalentSchemaNames = new LinkedHashMap<>();
-                sourceSchemas.forEach((name, schema) -> {
-                    String matchingName = schemaNamesByValue.get(schema);
+        if (reuseEquivalentSchemas && !schemaNamesByValue.isEmpty()) {
+            Map<String, Object> sourceSchemas = schemas(sourceNode);
+            Map<String, Set<String>> dependentSchemasByName = new HashMap<>();
+            sourceSchemas.forEach((name, schema) -> {
+                Set<String> referencedSchemaNames = new HashSet<>();
+                rewriteSchemaValueRefs(schema,
+                                       schemaNames,
+                                       supportsDynamicRef,
+                                       dynamicRefDialect,
+                                       true,
+                                       true,
+                                       referencedSchemaNames);
+                referencedSchemaNames.forEach(referencedName -> dependentSchemasByName
+                        .computeIfAbsent(referencedName, _ -> new LinkedHashSet<>())
+                        .add(name));
+            });
+
+            Map<String, String> rewrittenSchemaNames = new LinkedHashMap<>(schemaNames);
+            List<String> resolvedSchemaNames = new ArrayList<>();
+            for (Map.Entry<String, Object> entry : List.copyOf(sourceSchemas.entrySet())) {
+                String matchingName = schemaNamesByValue.get(entry.getValue());
+                if (matchingName != null) {
+                    sourceSchemas.remove(entry.getKey());
+                    rewrittenSchemaNames.put(entry.getKey(), matchingName);
+                    String originalName = originalNamesByRenamedName.get(entry.getKey());
+                    if (originalName != null) {
+                        rewrittenSchemaNames.put(originalName, matchingName);
+                    }
+                    resolvedSchemaNames.add(entry.getKey());
+                }
+            }
+
+            while (!resolvedSchemaNames.isEmpty()) {
+                Map<String, Map<String, String>> rewritesByDependentSchema = new LinkedHashMap<>();
+                for (String resolvedSchemaName : resolvedSchemaNames) {
+                    String matchingName = rewrittenSchemaNames.get(resolvedSchemaName);
+                    for (String dependentSchemaName : dependentSchemasByName.getOrDefault(resolvedSchemaName,
+                                                                                           Set.of())) {
+                        if (sourceSchemas.containsKey(dependentSchemaName)) {
+                            rewritesByDependentSchema
+                                    .computeIfAbsent(dependentSchemaName, _ -> new LinkedHashMap<>())
+                                    .put(resolvedSchemaName, matchingName);
+                        }
+                    }
+                }
+                resolvedSchemaNames.clear();
+                rewritesByDependentSchema.forEach((dependentSchemaName, dependentRewrites) -> {
+                    Object dependentSchema = sourceSchemas.get(dependentSchemaName);
+                    rewriteSchemaValueRefs(dependentSchema,
+                                           dependentRewrites,
+                                           supportsDynamicRef,
+                                           dynamicRefDialect,
+                                           true,
+                                           true);
+                    String matchingName = schemaNamesByValue.get(dependentSchema);
                     if (matchingName != null) {
-                        equivalentSchemaNames.put(name, matchingName);
+                        sourceSchemas.remove(dependentSchemaName);
+                        rewrittenSchemaNames.put(dependentSchemaName, matchingName);
+                        String originalName = originalNamesByRenamedName.get(dependentSchemaName);
+                        if (originalName != null) {
+                            rewrittenSchemaNames.put(originalName, matchingName);
+                        }
+                        resolvedSchemaNames.add(dependentSchemaName);
                     }
                 });
-                if (equivalentSchemaNames.isEmpty()) {
-                    break;
-                }
-                equivalentSchemaNames.keySet().forEach(sourceSchemas::remove);
-                rewriteSchemaRefs(sourceNode, equivalentSchemaNames, supportsDynamicRef, dynamicRefDialect);
             }
+            rewriteOpenApiSchemaRefs(sourceNode,
+                                     rewrittenSchemaNames,
+                                     InlineSchemaContext.OPEN_API_OBJECT,
+                                     supportsDynamicRef,
+                                     dynamicRefDialect);
+        } else {
+            rewriteSchemaRefs(sourceNode, schemaNames, supportsDynamicRef, dynamicRefDialect);
         }
         targetBuilder.mergeNode(sourceNode);
         if (reuseEquivalentSchemas) {
@@ -189,7 +247,8 @@ final class OpenApiDocumentComposer {
     private static Map<String, String> rewriteSchemaNames(Map<String, Object> targetNode,
                                                           Map<String, Object> sourceNode,
                                                           boolean reuseEquivalentSchemas,
-                                                          Map<Object, String> schemaNamesByValue) {
+                                                          Map<Object, String> schemaNamesByValue,
+                                                          Map<String, String> originalNamesByRenamedName) {
         Map<String, Object> targetSchemas = schemas(targetNode);
         Map<String, Object> sourceSchemas = schemas(sourceNode);
         if (targetSchemas.isEmpty() || sourceSchemas.isEmpty()) {
@@ -214,6 +273,7 @@ final class OpenApiDocumentComposer {
                 result.put(sourceName, targetName);
                 if (!targetSchemas.containsKey(targetName)) {
                     renamedSchemas.put(targetName, sourceSchema);
+                    originalNamesByRenamedName.put(targetName, sourceName);
                 }
                 usedNames.add(targetName);
             } else if (matchingName != null) {
@@ -388,6 +448,23 @@ final class OpenApiDocumentComposer {
                                                boolean dynamicRefDialect,
                                                boolean openApiDocumentResource,
                                                boolean schemaResourceRoot) {
+        rewriteSchemaValueRefs(value,
+                               schemaNames,
+                               supportsDynamicRef,
+                               dynamicRefDialect,
+                               openApiDocumentResource,
+                               schemaResourceRoot,
+                               null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void rewriteSchemaValueRefs(Object value,
+                                               Map<String, String> schemaNames,
+                                               boolean supportsDynamicRef,
+                                               boolean dynamicRefDialect,
+                                               boolean openApiDocumentResource,
+                                               boolean schemaResourceRoot,
+                                               Set<String> referencedSchemaNames) {
         if (value instanceof Map<?, ?> map) {
             boolean currentSchemaResourceRoot = schemaResourceRoot || map.containsKey("$id");
             boolean currentDynamicRefDialect = currentSchemaResourceRoot && map.containsKey("$schema")
@@ -398,7 +475,11 @@ final class OpenApiDocumentComposer {
             if (currentOpenApiDocumentResource
                     && ref instanceof String refValue
                     && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
-                ((Map<String, Object>) map).put("$ref", rewriteSchemaRef(refValue, schemaNames));
+                String rewrittenRef = rewriteSchemaRef(refValue, schemaNames);
+                ((Map<String, Object>) map).put("$ref", rewrittenRef);
+                if (referencedSchemaNames != null) {
+                    referencedSchemaNames.add(schemaRefName(rewrittenRef));
+                }
             }
             Object dynamicRef = map.get("$dynamicRef");
             if (supportsDynamicRef
@@ -406,7 +487,11 @@ final class OpenApiDocumentComposer {
                     && currentOpenApiDocumentResource
                     && dynamicRef instanceof String refValue
                     && refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
-                ((Map<String, Object>) map).put("$dynamicRef", rewriteSchemaRef(refValue, schemaNames));
+                String rewrittenRef = rewriteSchemaRef(refValue, schemaNames);
+                ((Map<String, Object>) map).put("$dynamicRef", rewrittenRef);
+                if (referencedSchemaNames != null) {
+                    referencedSchemaNames.add(schemaRefName(rewrittenRef));
+                }
             }
             Object discriminator = map.get("discriminator");
             if (discriminator instanceof Map<?, ?> discriminatorMap) {
@@ -416,7 +501,11 @@ final class OpenApiDocumentComposer {
                         if (mappingValue instanceof String mappingRef
                                 && (currentOpenApiDocumentResource
                                         || !mappingRef.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX))) {
-                            return rewriteSchemaRef(mappingRef, schemaNames);
+                            String rewrittenRef = rewriteSchemaRef(mappingRef, schemaNames);
+                            if (referencedSchemaNames != null) {
+                                referencedSchemaNames.add(schemaRefName(rewrittenRef));
+                            }
+                            return rewrittenRef;
                         }
                         return mappingValue;
                     });
@@ -425,8 +514,11 @@ final class OpenApiDocumentComposer {
                 if (defaultMapping instanceof String mappingRef
                         && (currentOpenApiDocumentResource
                                 || !mappingRef.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX))) {
-                    ((Map<String, Object>) discriminatorMap).put("defaultMapping",
-                                                                 rewriteSchemaRef(mappingRef, schemaNames));
+                    String rewrittenRef = rewriteSchemaRef(mappingRef, schemaNames);
+                    ((Map<String, Object>) discriminatorMap).put("defaultMapping", rewrittenRef);
+                    if (referencedSchemaNames != null) {
+                        referencedSchemaNames.add(schemaRefName(rewrittenRef));
+                    }
                 }
             }
             map.forEach((key, item) -> {
@@ -439,14 +531,16 @@ final class OpenApiDocumentComposer {
                                            supportsDynamicRef,
                                            currentDynamicRefDialect,
                                            currentOpenApiDocumentResource,
-                                           false);
+                                           false,
+                                           referencedSchemaNames);
                 } else if (SCHEMA_MAP_FIELDS.contains(field) && item instanceof Map<?, ?> schemaMap) {
                     schemaMap.values().forEach(schema -> rewriteSchemaValueRefs(schema,
                                                                                 schemaNames,
                                                                                 supportsDynamicRef,
                                                                                 currentDynamicRefDialect,
                                                                                 currentOpenApiDocumentResource,
-                                                                                false));
+                                                                                false,
+                                                                                referencedSchemaNames));
                 }
             });
         } else if (value instanceof List<?> list) {
@@ -455,21 +549,29 @@ final class OpenApiDocumentComposer {
                                                       supportsDynamicRef,
                                                       dynamicRefDialect,
                                                       openApiDocumentResource,
-                                                      schemaResourceRoot));
+                                                      schemaResourceRoot,
+                                                      referencedSchemaNames));
         }
+    }
+
+    private static String schemaRefName(String refValue) {
+        if (!refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
+            return refValue;
+        }
+        int suffixStart = refValue.indexOf('/', OpenApiSourceBase.SCHEMA_REF_PREFIX.length());
+        return suffixStart < 0
+                ? refValue.substring(OpenApiSourceBase.SCHEMA_REF_PREFIX.length())
+                : refValue.substring(OpenApiSourceBase.SCHEMA_REF_PREFIX.length(), suffixStart);
     }
 
     private static String rewriteSchemaRef(String refValue, Map<String, String> schemaNames) {
         String prefix = "";
-        String sourceName = refValue;
+        String sourceName = schemaRefName(refValue);
         String suffix = "";
         if (refValue.startsWith(OpenApiSourceBase.SCHEMA_REF_PREFIX)) {
             prefix = OpenApiSourceBase.SCHEMA_REF_PREFIX;
             int suffixStart = refValue.indexOf('/', prefix.length());
-            if (suffixStart < 0) {
-                sourceName = refValue.substring(prefix.length());
-            } else {
-                sourceName = refValue.substring(prefix.length(), suffixStart);
+            if (suffixStart >= 0) {
                 suffix = refValue.substring(suffixStart);
             }
         }

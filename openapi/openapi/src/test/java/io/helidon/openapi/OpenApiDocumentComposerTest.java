@@ -642,6 +642,109 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void generatedDocumentReusesLongEquivalentSchemaChains() {
+        int schemaDepth = 128;
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentSource first = (documentContext, document) -> {
+            document.info("Generated API", "1.0.0");
+            document.components(components -> {
+                components.schema("First0", JsonObject.builder().set("type", "string").build());
+                for (int i = 1; i <= schemaDepth; i++) {
+                    components.schema("First" + i,
+                                      JsonObject.builder()
+                                              .set("$ref", "#/components/schemas/First" + (i - 1))
+                                              .build());
+                }
+            });
+        };
+        OpenApiDocumentSource second = (documentContext, document) -> {
+            document.components(components -> {
+                components.schema("Second0", JsonObject.builder().set("type", "string").build());
+                for (int i = 1; i <= schemaDepth; i++) {
+                    components.schema("Second" + i,
+                                      JsonObject.builder()
+                                              .set("$ref", "#/components/schemas/Second" + (i - 1))
+                                              .build());
+                }
+            });
+            document.path("/second",
+                          path -> path.operation(
+                                  "GET",
+                                  operation -> operation.operationId("secondGet")
+                                          .response("200",
+                                                    response -> response.description("OK")
+                                                            .content(MediaTypes.APPLICATION_JSON_VALUE,
+                                                                     media -> media.schema(JsonObject.builder()
+                                                                                                    .set("$ref",
+                                                                                                         "#/components/schemas/Second"
+                                                                                                                 + schemaDepth)
+                                                                                                    .build())))));
+        };
+
+        Map<String, Object> document = parse(compose(
+                context,
+                context.openApiVersion(),
+                "",
+                MediaTypes.APPLICATION_OPENAPI_YAML,
+                List.of(first, second)));
+        Map<String, Object> schemas = map(map(document, "components"), "schemas");
+        Map<String, Object> operation = map(map(map(document, "paths"), "/second"), "get");
+        Map<String, Object> response = map(map(operation, "responses"), "200");
+        Map<String, Object> content = map(map(response, "content"), MediaTypes.APPLICATION_JSON_VALUE);
+
+        assertThat(schemas.size(), is(schemaDepth + 1));
+        assertThat(schemas.containsKey("Second" + schemaDepth), is(false));
+        assertThat(map(content, "schema").get("$ref"), is("#/components/schemas/First" + schemaDepth));
+    }
+
+    @Test
+    void generatedDocumentRewritesRenamedSchemaAliasesAfterReuse() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentSource first = (documentContext, document) -> document
+                .info("Generated API", "1.0.0")
+                .components(components -> components
+                        .schema("Base", JsonObject.builder().set("type", "string").build())
+                        .schema("B", JsonObject.builder().set("type", "integer").build())
+                        .schema("Canonical",
+                                JsonObject.builder()
+                                        .set("$ref", "#/components/schemas/Base")
+                                        .build()));
+        OpenApiDocumentSource second = (documentContext, document) -> document
+                .components(components -> components
+                        .schema("EquivalentBase", JsonObject.builder().set("type", "string").build())
+                        .schema("B",
+                                JsonObject.builder()
+                                        .set("$ref", "#/components/schemas/EquivalentBase")
+                                        .build()))
+                .path("/second",
+                      path -> path.operation(
+                              "GET",
+                              operation -> operation.operationId("secondGet")
+                                      .response("200",
+                                                response -> response.description("OK")
+                                                        .content(MediaTypes.APPLICATION_JSON_VALUE,
+                                                                 media -> media.schema(JsonObject.builder()
+                                                                                                .set("$ref",
+                                                                                                     "#/components/schemas/B")
+                                                                                                .build())))));
+
+        Map<String, Object> document = parse(compose(
+                context,
+                context.openApiVersion(),
+                "",
+                MediaTypes.APPLICATION_OPENAPI_YAML,
+                List.of(first, second)));
+        Map<String, Object> schemas = map(map(document, "components"), "schemas");
+        Map<String, Object> operation = map(map(map(document, "paths"), "/second"), "get");
+        Map<String, Object> response = map(map(operation, "responses"), "200");
+        Map<String, Object> content = map(map(response, "content"), MediaTypes.APPLICATION_JSON_VALUE);
+
+        assertThat(schemas.size(), is(3));
+        assertThat(schemas.containsKey("B2"), is(false));
+        assertThat(map(content, "schema").get("$ref"), is("#/components/schemas/Canonical"));
+    }
+
+    @Test
     void generatedDocumentDoesNotRewriteRenamedSchemasTwice() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
         OpenApiDocumentSource first = (documentContext, document) -> document
