@@ -563,7 +563,8 @@ final class OpenApiSourceGenerator {
                               Map<TypeName, String> componentNames,
                               List<OpenApiSecurityRequirement> endpointSecurityRequirements,
                               boolean endpointClearsSecurity) {
-        Optional<Annotation> operation = operationAnnotation(restMethod);
+        Optional<Annotation> operation = Annotations.findFirst(OPENAPI_OPERATION_ANNOTATION,
+                                                               restMethod.annotations());
         List<RestMethodParameter> pathParameters = pathParameters(restMethod);
         method.addContent("document.path(")
                 .addContent(expressions.stringLiteral(OpenApiPathSupport.openApiPath(endpoint,
@@ -727,7 +728,9 @@ final class OpenApiSourceGenerator {
         method.addContent(".operationId(")
                 .addContent(OPENAPI_DOCUMENT_CONTEXT_SUPPORT)
                 .addContent(".operationId(context, ")
-                .addContent(expressions.stringLiteral(operationSignature(restMethod)))
+                .addContent(expressions.stringLiteral(restMethod.type().typeName().fqName()
+                                                              + "#"
+                                                              + restMethod.method().signature().text()))
                 .addContent(", ")
                 .addContent(expressions.stringExpression(operationId))
                 .addContentLine("))");
@@ -737,10 +740,6 @@ final class OpenApiSourceGenerator {
         return endpointTag
                 + CodegenUtil.capitalize(restMethod.httpMethod().name().toLowerCase(Locale.ROOT))
                 + CodegenUtil.capitalize(restMethod.uniqueName());
-    }
-
-    private String operationSignature(RestMethod restMethod) {
-        return restMethod.type().typeName().fqName() + "#" + restMethod.method().signature().text();
     }
 
     private void addParameters(Method.Builder method, RestMethod restMethod, Map<TypeName, String> componentNames) {
@@ -855,7 +854,7 @@ final class OpenApiSourceGenerator {
                     .addContentLine(")");
         }
 
-        explicitStringValue(annotations)
+        explicitStringValue(annotations, "value")
                 .ifPresent(description -> method.addContent(".description(")
                         .addContent(expressions.stringExpression(description))
                         .addContentLine(")"));
@@ -1412,25 +1411,19 @@ final class OpenApiSourceGenerator {
             HttpCodegenValidation.validateRequestParamsBodyComponents(requestParamsType);
             for (TypedElementInfo component : HttpCodegenValidation.requestParamsComponents(requestParamsType)) {
                 if (Annotations.findFirst(annotation, component.annotations()).isPresent()) {
-                    result.add(componentParameter(restMethod, parameter, component));
+                    result.add(RestMethodParameter.builder()
+                                       .annotations(new HashSet<>(component.annotations()))
+                                       .name(component.elementName())
+                                       .typeName(component.typeName())
+                                       .index(parameter.index())
+                                       .method(restMethod.method())
+                                       .type(restMethod.type())
+                                       .parameter(component)
+                                       .build());
                 }
             }
         }
         return result;
-    }
-
-    private RestMethodParameter componentParameter(RestMethod restMethod,
-                                                  RestMethodParameter requestParamsParameter,
-                                                  TypedElementInfo component) {
-        return RestMethodParameter.builder()
-                .annotations(new HashSet<>(component.annotations()))
-                .name(component.elementName())
-                .typeName(component.typeName())
-                .index(requestParamsParameter.index())
-                .method(restMethod.method())
-                .type(restMethod.type())
-                .parameter(component)
-                .build();
     }
 
     private void addSchemaInjection(ClassModel.Builder classModel, List<OpenApiSchemaBinding> schemaBindings) {
@@ -1574,7 +1567,7 @@ final class OpenApiSourceGenerator {
                                                + " cannot use explode=true for a header parameter");
         }
         if ("query".equals(in)
-                && style.filter(OpenApiSourceGenerator::isDelimitedQueryStyle).isPresent()
+                && style.filter(it -> "pipeDelimited".equals(it) || "spaceDelimited".equals(it)).isPresent()
                 && explode.filter(Boolean::booleanValue).isPresent()) {
             throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
                                                + " cannot use explode=true with " + style.orElseThrow()
@@ -1626,10 +1619,6 @@ final class OpenApiSourceGenerator {
                                             + " cannot use " + style + " style for a " + in + " parameter");
     }
 
-    private static boolean isDelimitedQueryStyle(String style) {
-        return "pipeDelimited".equals(style) || "spaceDelimited".equals(style);
-    }
-
     private List<String> mediaTypes(List<String> mediaTypes) {
         return mediaTypes.isEmpty() ? List.of(DEFAULT_MEDIA_TYPE) : mediaTypes;
     }
@@ -1643,10 +1632,6 @@ final class OpenApiSourceGenerator {
 
     private boolean isContentTypeHeader(String name) {
         return "content-type".equals(name.toLowerCase(Locale.ROOT));
-    }
-
-    private Optional<Annotation> operationAnnotation(RestMethod method) {
-        return Annotations.findFirst(OPENAPI_OPERATION_ANNOTATION, method.annotations());
     }
 
     private Optional<Annotation> requestBodyAnnotation(RestMethod method) {
@@ -1696,10 +1681,6 @@ final class OpenApiSourceGenerator {
 
     private String restMethodDescription(RestMethod restMethod) {
         return restMethod.type().typeName().fqName() + "." + restMethod.name();
-    }
-
-    private Optional<String> explicitStringValue(List<Annotation> annotations) {
-        return explicitStringValue(annotations, "value");
     }
 
     private Optional<String> explicitStringValue(List<Annotation> annotations, String property) {
