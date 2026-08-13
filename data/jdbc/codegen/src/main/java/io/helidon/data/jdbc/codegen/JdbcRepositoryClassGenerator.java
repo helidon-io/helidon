@@ -53,7 +53,6 @@ final class JdbcRepositoryClassGenerator {
                          ClassModel.Builder classModel) {
         TypeName repositoryType = repositoryInfo.interfaceInfo().typeName();
         classModel.type(className)
-                .description("Generated JDBC implementation of {@link " + repositoryType.fqName() + "}.")
                 .copyright(CodegenUtil.copyright(JdbcPersistenceGenerator.GENERATOR,
                                                  repositoryType,
                                                  className))
@@ -69,7 +68,6 @@ final class JdbcRepositoryClassGenerator {
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addInterface(repositoryType)
                 .addField(field -> field.name(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                        .description("JDBC client for the selected persistence unit.")
                         .isFinal(true)
                         .type(JdbcPersistenceTypes.JDBC_CLIENT));
 
@@ -89,7 +87,6 @@ final class JdbcRepositoryClassGenerator {
                                     RepositoryInfo repositoryInfo,
                                     Iterable<JdbcMethodGenerator.MapperDependency> mapperDependencies) {
         Constructor.Builder constructor = Constructor.builder()
-                .description("Creates the generated repository with its selected JDBC client and row mappers.")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
         Annotation provider = Annotation.builder()
                 .typeName(JdbcPersistenceTypes.DATA_PROVIDER_TYPE)

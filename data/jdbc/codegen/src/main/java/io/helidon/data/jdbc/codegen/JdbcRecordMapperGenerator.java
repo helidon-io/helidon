@@ -49,7 +49,6 @@ final class JdbcRecordMapperGenerator {
                 .build();
         classModel.addField(field -> {
             field.name(fieldName)
-                    .description("Maps one JDBC row to " + plan.mappedType().className() + ".")
                     .type(mapperType)
                     .isStatic(true)
                     .isFinal(true)
