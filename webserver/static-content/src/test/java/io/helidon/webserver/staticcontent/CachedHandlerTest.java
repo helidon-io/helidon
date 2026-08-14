@@ -273,6 +273,59 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testSingleFileClasspathCachesAreReleasedOnRestart(@TempDir Path tempDir) throws IOException {
+        Path resource = Files.writeString(tempDir.resolve("single.txt"), "Initial");
+
+        try (var classLoader = new URLClassLoader(new URL[] {tempDir.toUri().toURL()}, null)) {
+            SingleFileClassPathContentHandler handler =
+                    (SingleFileClassPathContentHandler) StaticContentFeature.createService(
+                            ClasspathHandlerConfig.builder()
+                                    .location("/single.txt")
+                                    .classLoader(classLoader)
+                                    .singleFile(true)
+                                    .cachedFiles(Set.of("."))
+                                    .build());
+            handler.beforeStart();
+
+            assertThat("Single-file classpath resource should be cached in memory",
+                       handler.cacheInMemory("single.txt"),
+                       optionalPresent());
+
+            ServerRequest request = mock(ServerRequest.class);
+            when(request.headers()).thenReturn(ServerRequestHeaders.create());
+
+            ServerResponse initialResponse = mock(ServerResponse.class);
+            when(initialResponse.headers()).thenReturn(ServerResponseHeaders.create());
+
+            assertThat("Initial single-file classpath resource should be served",
+                       handler.doHandle(Method.GET, "", request, initialResponse, false),
+                       is(true));
+            ArgumentCaptor<byte[]> initialOutput = ArgumentCaptor.forClass(byte[].class);
+            verify(initialResponse).send(initialOutput.capture());
+            assertThat("Initial single-file classpath resource content",
+                       initialOutput.getValue(),
+                       is("Initial".getBytes(StandardCharsets.UTF_8)));
+
+            handler.afterStop();
+            Files.delete(resource);
+            handler.beforeStart();
+
+            assertThat("Stopped single-file classpath handler must clear its memory cache",
+                       handler.cacheInMemory("single.txt"),
+                       optionalEmpty());
+            assertThat("Stopped single-file classpath handler must clear its handler cache",
+                       handler.cacheHandler("single.txt"),
+                       optionalEmpty());
+
+            ServerResponse removedResponse = mock(ServerResponse.class);
+            when(removedResponse.headers()).thenReturn(ServerResponseHeaders.create());
+
+            assertThrows(IllegalStateException.class,
+                         () -> handler.doHandle(Method.GET, "", request, removedResponse, false));
+        }
+    }
+
+    @Test
     void testUrlStreamPreconditionsWithoutLastModified() throws IOException {
         URL url = URL.of(URI.create("test:/resource.txt"), new URLStreamHandler() {
             @Override

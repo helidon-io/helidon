@@ -76,6 +76,7 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        super.releaseCache();
     }
 
     @Override
