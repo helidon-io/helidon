@@ -56,6 +56,7 @@ public class StaticContentMetadataBenchmark {
     private static final Instant REQUESTED_LAST_MODIFIED = Instant.parse("2026-08-13T08:00:00.123Z");
 
     private Path root;
+    private Path sourcePath;
     private Path path;
     private Path realRoot;
     private Instant lastModified;
@@ -72,9 +73,10 @@ public class StaticContentMetadataBenchmark {
         Path target = Path.of("target");
         Files.createDirectories(target);
         root = Files.createTempDirectory(target, "static-content-metadata-").toAbsolutePath().normalize();
-        path = Files.write(root.resolve("resource.txt"), new byte[FILE_SIZE]);
-        Files.setLastModifiedTime(path, FileTime.from(REQUESTED_LAST_MODIFIED));
+        sourcePath = Files.write(root.resolve("resource.txt"), new byte[FILE_SIZE]);
+        Files.setLastModifiedTime(sourcePath, FileTime.from(REQUESTED_LAST_MODIFIED));
         realRoot = root.toRealPath();
+        path = sourcePath.toRealPath();
 
         BasicFileAttributes attributes = FileBasedContentHandler.attributes(path, false, realRoot);
         lastModified = attributes.lastModifiedTime().toInstant();
@@ -96,7 +98,7 @@ public class StaticContentMetadataBenchmark {
 
     @TearDown(Level.Trial)
     public void tearDown() throws IOException {
-        Files.deleteIfExists(path);
+        Files.deleteIfExists(sourcePath);
         Files.deleteIfExists(root);
     }
 
@@ -108,7 +110,7 @@ public class StaticContentMetadataBenchmark {
     }
 
     @Benchmark
-    public ServerResponseHeaders fileSystemAfterUnconditionalHead() {
+    public ServerResponseHeaders fileSystemAfterUnconditionalHead() throws IOException {
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         fileSystemAfter(noConditionalHeader, responseHeaders);
         return responseHeaders;
@@ -126,7 +128,7 @@ public class StaticContentMetadataBenchmark {
     }
 
     @Benchmark
-    public void fileSystemAfterMatchingIfNoneMatch(Blackhole blackhole) {
+    public void fileSystemAfterMatchingIfNoneMatch(Blackhole blackhole) throws IOException {
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         try {
             fileSystemAfter(afterMatchingIfNoneMatch, responseHeaders);
@@ -174,11 +176,11 @@ public class StaticContentMetadataBenchmark {
 
     private void fileSystemBefore(ServerRequestHeaders requestHeaders,
                                   ServerResponseHeaders responseHeaders) throws IOException {
-        Path expectedPath = realRoot.resolve(root.relativize(path)).normalize();
+        Path expectedPath = realRoot.resolve(root.relativize(sourcePath)).normalize();
         Path expectedRealPath = expectedPath.toRealPath();
-        Path resolvedPath = path.toRealPath();
-        if (!path.startsWith(root)
-                || !Files.exists(path)
+        Path resolvedPath = sourcePath.toRealPath();
+        if (!sourcePath.startsWith(root)
+                || !Files.exists(sourcePath)
                 || !expectedRealPath.startsWith(realRoot)
                 || !resolvedPath.equals(expectedRealPath)) {
             throw new IllegalStateException("Benchmark file is not within its configured root");
@@ -187,7 +189,7 @@ public class StaticContentMetadataBenchmark {
         BasicFileAttributes attributes = FileBasedContentHandler.attributes(resolvedPath, false, realRoot);
         if (!attributes.isRegularFile()
                 || !Files.isReadable(resolvedPath)
-                || Files.isHidden(path)
+                || Files.isHidden(sourcePath)
                 || Files.isHidden(resolvedPath)) {
             throw new IllegalStateException("Benchmark file is not accessible");
         }
@@ -213,11 +215,23 @@ public class StaticContentMetadataBenchmark {
         responseHeaders.set(beforeInMemoryContentLength);
     }
 
-    private void fileSystemAfter(ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {
-        if (!Files.exists(path)) {
+    private void fileSystemAfter(ServerRequestHeaders requestHeaders,
+                                 ServerResponseHeaders responseHeaders) throws IOException {
+        if (!Files.exists(sourcePath)) {
             throw new IllegalStateException("Benchmark file no longer exists");
         }
-        metadataAfter(requestHeaders, responseHeaders);
+
+        BasicFileAttributes attributes = FileBasedContentHandler.attributes(path, false, realRoot);
+        if (!attributes.isRegularFile()
+                || !Files.isReadable(path)
+                || Files.isHidden(sourcePath)
+                || Files.isHidden(path)) {
+            throw new IllegalStateException("Benchmark file is not accessible");
+        }
+
+        try (SeekableByteChannel channel = FileBasedContentHandler.newByteChannel(path, false, realRoot)) {
+            metadataAfter(requestHeaders, responseHeaders);
+        }
     }
 
     private void metadataAfter(ServerRequestHeaders requestHeaders, ServerResponseHeaders responseHeaders) {
