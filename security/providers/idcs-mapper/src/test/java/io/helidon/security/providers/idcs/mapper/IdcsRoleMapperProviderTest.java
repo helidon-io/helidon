@@ -341,6 +341,75 @@ class IdcsRoleMapperProviderTest {
         }
     }
 
+    @Test
+    void testMultitenantMetadataLoadsOnFirstTokenRequest() {
+        AtomicInteger metadataRequests = new AtomicInteger();
+        AtomicReference<String> authorization = new AtomicReference<>();
+        JsonObject[] metadata = new JsonObject[1];
+        String accessToken = signedToken();
+
+        WebServer server = WebServer.builder()
+                .host(InetAddress.getLoopbackAddress().getHostAddress())
+                .routing(routing -> routing
+                        .get("/.well-known/openid-configuration", (req, res) -> {
+                            metadataRequests.incrementAndGet();
+                            res.send(metadata[0]);
+                        })
+                        .post("/oauth2/v1/token", (req, res) -> {
+                            authorization.set(req.headers()
+                                                      .first(HeaderNames.AUTHORIZATION)
+                                                      .orElse(null));
+                            res.header(HeaderValues.CONTENT_TYPE_JSON)
+                                    .send("{\"access_token\":\"" + accessToken + "\"}");
+                        }))
+                .build()
+                .start();
+
+        try {
+            String infraHost = "infra.example.test";
+            String tenantId = "tenant1";
+            String tenantHost = tenantId + ".example.test";
+            String baseUri = "http://" + infraHost + ":" + server.port();
+            metadata[0] = JsonObject.builder()
+                    .set("token_endpoint", baseUri + "/oauth2/v1/token")
+                    .set("authorization_endpoint", baseUri + "/oauth2/v1/authorize")
+                    .set("end_session_endpoint", baseUri + "/oauth2/v1/userlogout")
+                    .set("introspection_endpoint", baseUri + "/oauth2/v1/introspect")
+                    .set("issuer", baseUri)
+                    .build();
+
+            OidcConfig oidcConfig = OidcConfig.builder()
+                    .clientId("client-id")
+                    .clientSecret("client-secret")
+                    .identityUri(URI.create(baseUri))
+                    .serverType("idcs")
+                    .validateJwtWithJwk(false)
+                    .webclient(webClient -> webClient.dnsResolver((hostname, dnsAddressLookup) ->
+                                                                           InetAddress.getLoopbackAddress()))
+                    .build();
+            IdcsMtRoleMapperProvider.Builder<?> builder = IdcsMtRoleMapperProvider.builder();
+            builder.oidcConfig(oidcConfig)
+                    .multitenantEndpoints(new TestMultitenancyEndpoints(
+                            oidcConfig,
+                            URI.create("http://" + tenantHost + ":" + server.port()
+                                               + "/oauth2/v1/token?IDCS_CLIENT_TENANT=infra")));
+
+            IdcsMtRoleMapperProvider provider = builder.build();
+
+            assertThat(metadataRequests.get(), is(0));
+
+            Optional<String> token = provider.getAppToken(tenantId, SecurityTracing.get().roleMapTracing("idcs"));
+            String expectedAuthorization = "Basic " + Base64.getEncoder()
+                    .encodeToString("client-id:client-secret".getBytes(StandardCharsets.UTF_8));
+
+            assertThat(token.orElseThrow(), is(accessToken));
+            assertThat(metadataRequests.get(), is(1));
+            assertThat(authorization.get(), is(expectedAuthorization));
+        } finally {
+            server.stop();
+        }
+    }
+
     private static IdcsRoleMapperProvider.Builder<?> roleMapperBuilder() {
         IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
         builder.oidcConfig(OidcConfig.builder()
@@ -408,6 +477,21 @@ class IdcsRoleMapperProviderTest {
         protected List<? extends Grant> addAdditionalGrants(Subject subject, List<Grant> idcsGrants) {
             return List.of(Role.create("additional_" + COUNTER.incrementAndGet()),
                            Role.create("additional-fixed"));
+        }
+    }
+
+    private static final class TestMultitenancyEndpoints
+            extends IdcsMtRoleMapperProvider.DefaultMultitenancyEndpoints {
+        private final URI tokenEndpoint;
+
+        private TestMultitenancyEndpoints(OidcConfig config, URI tokenEndpoint) {
+            super(config);
+            this.tokenEndpoint = tokenEndpoint;
+        }
+
+        @Override
+        public URI tokenEndpoint(String tenantId) {
+            return tokenEndpoint;
         }
     }
 
