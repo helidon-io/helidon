@@ -27,6 +27,7 @@ import io.helidon.openapi.spi.OpenApiVersion;
 
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -86,6 +87,41 @@ class OpenApi30VersionTest {
             assertThat(invalidVersion, ex.getMessage(), containsString("3.0"));
             assertThat(invalidVersion, ex.getMessage(), containsString(invalidVersion));
         }
+    }
+
+    @Test
+    void rejectsRecursiveYamlCollectionAliases() {
+        OpenApi30Version version = OpenApi30Version.create();
+
+        YAMLException thrown = assertThrows(YAMLException.class,
+                                            () -> version.parse(context(version),
+                                                                """
+                                                                openapi: 3.0.4
+                                                                info: {title: API, version: 1}
+                                                                paths: {}
+                                                                x-cycle: &cycle {self: *cycle}
+                                                                """,
+                                                                MediaTypes.APPLICATION_OPENAPI_YAML));
+        assertThat(thrown.getMessage(), containsString("Recursive YAML collection alias"));
+    }
+
+    @Test
+    void acceptsSharedNonRecursiveYamlCollectionAliases() {
+        OpenApi30Version version = OpenApi30Version.create();
+        OpenApiDocument document = version.parse(context(version),
+                                                 """
+                                                 openapi: 3.0.4
+                                                 info: {title: API, version: "1"}
+                                                 paths: {}
+                                                 x-shared: &shared {value: shared}
+                                                 x-first: *shared
+                                                 x-second: *shared
+                                                 """,
+                                                 MediaTypes.APPLICATION_OPENAPI_YAML);
+
+        Map<?, ?> rendered = new Yaml().load(version.render(context(version), document));
+        assertThat(rendered.get("x-first"), is(Map.of("value", "shared")));
+        assertThat(rendered.get("x-second"), is(Map.of("value", "shared")));
     }
 
     private static OpenApiDocumentContext context(OpenApiVersion version) {

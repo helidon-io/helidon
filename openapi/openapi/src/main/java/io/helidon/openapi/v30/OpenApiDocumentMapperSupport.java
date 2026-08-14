@@ -19,6 +19,7 @@ package io.helidon.openapi.v30;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.NodeId;
 import org.yaml.snakeyaml.nodes.ScalarNode;
@@ -72,12 +74,35 @@ public final class OpenApiDocumentMapperSupport {
         LoaderOptions loaderOptions = new LoaderOptions();
         loaderOptions.setMaxAliasesForCollections(MAX_YAML_ALIASES);
         DumperOptions dumperOptions = new DumperOptions();
-        return new Yaml(new JsonSafeConstructor(loaderOptions),
-                        new Representer(dumperOptions),
-                        dumperOptions,
-                        loaderOptions,
-                        new JsonScalarResolver())
+        Object result = new Yaml(new JsonSafeConstructor(loaderOptions),
+                                 new Representer(dumperOptions),
+                                 dumperOptions,
+                                 loaderOptions,
+                                 new JsonScalarResolver())
                 .load(source);
+        validateYamlCollectionGraph(result, new IdentityHashMap<>(), new IdentityHashMap<>());
+        return result;
+    }
+
+    private static void validateYamlCollectionGraph(Object value,
+                                                    IdentityHashMap<Object, Boolean> visiting,
+                                                    IdentityHashMap<Object, Boolean> complete) {
+        if (!(value instanceof Map<?, ?>) && !(value instanceof List<?>)) {
+            return;
+        }
+        if (complete.containsKey(value)) {
+            return;
+        }
+        if (visiting.put(value, Boolean.TRUE) != null) {
+            throw new YAMLException("Recursive YAML collection aliases are not supported.");
+        }
+        if (value instanceof Map<?, ?> map) {
+            map.values().forEach(it -> validateYamlCollectionGraph(it, visiting, complete));
+        } else {
+            ((List<?>) value).forEach(it -> validateYamlCollectionGraph(it, visiting, complete));
+        }
+        visiting.remove(value);
+        complete.put(value, Boolean.TRUE);
     }
 
     /**
