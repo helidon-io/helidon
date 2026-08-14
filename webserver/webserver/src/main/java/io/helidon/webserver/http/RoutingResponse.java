@@ -99,6 +99,8 @@ public interface RoutingResponse extends ServerResponse {
      * Implementations that track entity metadata must override this method to reset entity buffers and remove framing,
      * representation, validator, range, and trailer headers. Implementations with separate trailer state must reset that
      * state as well.
+     * This method does not change the response status. An error handler that replaces the entity is responsible for
+     * configuring or deliberately retaining an appropriate status before sending the replacement response.
      * <p>
      * For compatibility with existing {@link RoutingResponse} implementations, the default implementation calls
      * {@link #resetStream()}.

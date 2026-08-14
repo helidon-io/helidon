@@ -29,6 +29,9 @@ public interface ErrorHandler<T extends Throwable> {
      * Error handling consumer.
      * Do not throw an exception from an error handler, it would make this error handler invalid and the exception would be
      * ignored.
+     * <p>
+     * The response retains the status configured before the failure. The error handler is responsible for configuring or
+     * deliberately retaining an appropriate status before sending a replacement response.
      *
      * @param req the server request
      * @param res the server response

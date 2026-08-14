@@ -246,9 +246,6 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         headers.remove(HeaderNames.TRANSFER_ENCODING);
         headers.remove(HeaderNames.TRAILER);
         headers.remove(HeaderNames.CONTENT_RANGE);
-        if (status != null && status.code() == Status.PARTIAL_CONTENT_206.code()) {
-            status = null;
-        }
         headers.remove(HeaderNames.CONTENT_TYPE);
         headers.remove(HeaderNames.CONTENT_ENCODING);
         headers.remove(HeaderNames.CONTENT_LANGUAGE);
@@ -304,6 +301,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      *
      * @return whether an output stream filter is configured
      */
+    @Api.Internal
     protected final boolean hasStreamFilter() {
         return streamFilter != null;
     }
@@ -314,6 +312,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * @param outputStream output stream to wrap
      * @return filtered output stream
      */
+    @Api.Internal
     protected final OutputStream applyStreamFilters(OutputStream outputStream) {
         UnaryOperator<OutputStream> filter = streamFilter;
         return filter == null ? outputStream : filter.apply(outputStream);
