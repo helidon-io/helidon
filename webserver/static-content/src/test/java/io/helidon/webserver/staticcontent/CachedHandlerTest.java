@@ -317,8 +317,73 @@ class CachedHandlerTest {
             ServerResponse removedResponse = mock(ServerResponse.class);
             when(removedResponse.headers()).thenReturn(ServerResponseHeaders.create());
 
-            assertThrows(IllegalStateException.class,
-                         () -> handler.doHandle(Method.GET, "", request, removedResponse, false));
+            assertThat("Removed single-file classpath resource should not be served",
+                       handler.doHandle(Method.GET, "", request, removedResponse, false),
+                       is(false));
+        }
+    }
+
+    @Test
+    void testSingleFileClasspathEvictsRemovedFileAndRecovers(@TempDir Path tempDir) throws IOException {
+        Path resource = Files.writeString(tempDir.resolve("single.txt"), "Initial");
+
+        try (var classLoader = new URLClassLoader(new URL[] {tempDir.toUri().toURL()}, null)) {
+            SingleFileClassPathContentHandler handler =
+                    (SingleFileClassPathContentHandler) StaticContentFeature.createService(
+                            ClasspathHandlerConfig.builder()
+                                    .location("/single.txt")
+                                    .classLoader(classLoader)
+                                    .singleFile(true)
+                                    .build());
+            handler.beforeStart();
+
+            ServerRequest request = mock(ServerRequest.class);
+            when(request.headers()).thenReturn(ServerRequestHeaders.create());
+
+            ByteArrayOutputStream initialOutput = new ByteArrayOutputStream();
+            ServerResponseHeaders initialHeaders = ServerResponseHeaders.create();
+            ServerResponse initialResponse = mock(ServerResponse.class);
+            when(initialResponse.headers()).thenReturn(initialHeaders);
+            when(initialResponse.outputStream()).thenReturn(initialOutput);
+
+            assertThat("Initial single-file classpath resource should be served",
+                       handler.doHandle(Method.GET, "", request, initialResponse, false),
+                       is(true));
+            assertThat(initialOutput.toString(StandardCharsets.UTF_8), is("Initial"));
+            String initialEtag = initialHeaders.get(HeaderNames.ETAG).get();
+
+            Files.delete(resource);
+
+            ServerResponse removedResponse = mock(ServerResponse.class);
+            when(removedResponse.headers()).thenReturn(ServerResponseHeaders.create());
+
+            assertThat("Removed single-file classpath resource should not be served",
+                       handler.doHandle(Method.GET, "", request, removedResponse, false),
+                       is(false));
+            assertThat("Removed single-file classpath resource should be evicted",
+                       handler.cacheHandler("single.txt"),
+                       optionalEmpty());
+
+            byte[] updatedBytes = "Updated content".getBytes(StandardCharsets.UTF_8);
+            Files.write(resource, updatedBytes);
+
+            ByteArrayOutputStream updatedOutput = new ByteArrayOutputStream();
+            ServerResponseHeaders updatedHeaders = ServerResponseHeaders.create();
+            ServerResponse updatedResponse = mock(ServerResponse.class);
+            when(updatedResponse.headers()).thenReturn(updatedHeaders);
+            when(updatedResponse.outputStream()).thenReturn(updatedOutput);
+
+            assertThat("Re-added single-file classpath resource should be served",
+                       handler.doHandle(Method.GET, "", request, updatedResponse, false),
+                       is(true));
+            assertThat("Re-added single-file classpath resource content",
+                       updatedOutput.toByteArray(),
+                       is(updatedBytes));
+            assertThat(updatedHeaders,
+                       hasHeader(HeaderNames.CONTENT_LENGTH, String.valueOf(updatedBytes.length)));
+            assertThat("Re-added single-file classpath resource ETag",
+                       updatedHeaders.get(HeaderNames.ETAG).get(),
+                       not(is(initialEtag)));
         }
     }
 
