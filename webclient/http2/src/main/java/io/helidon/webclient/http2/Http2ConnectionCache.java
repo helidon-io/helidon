@@ -89,20 +89,17 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         return http2Supported.get(ck).isPresent();
     }
 
-    void remove(ClientConnectionTarget connectionTarget) {
-        if (!closed.get()) {
-            Http2ClientConnectionHandler handler;
-            cacheLock.lock();
-            try {
-                handler = cache.remove(connectionTarget);
-            } finally {
-                cacheLock.unlock();
+    void remove(ClientConnectionTarget connectionTarget, Http2ClientConnectionHandler expectedHandler) {
+        cacheLock.lock();
+        try {
+            if (cache.remove(connectionTarget, expectedHandler)) {
+                http2Supported.remove(connectionTarget.connectionKey());
             }
-            if (handler != null) {
-                handler.close();
-            }
-            http2Supported.remove(connectionTarget.connectionKey());
+        } finally {
+            cacheLock.unlock();
         }
+        // The failed stream still owns this handler even when a successor is now mapped.
+        expectedHandler.close();
     }
 
     Http2ConnectionAttemptResult newStream(Http2ClientImpl http2Client,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import io.helidon.webclient.api.HttpClientResponse;
 
 record Http2ConnectionAttemptResult(Result result,
                                     Http2ClientStream stream,
-                                    HttpClientResponse response) {
+                                    HttpClientResponse response,
+                                    Http2ClientConnectionHandler handler) {
     enum Result {
         HTTP_1,
         HTTP_2,

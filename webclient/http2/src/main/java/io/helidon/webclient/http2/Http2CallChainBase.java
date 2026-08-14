@@ -191,7 +191,7 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
             if (!clientRequest().outputStreamRedirect()
                     && (clientRequest.connection().isEmpty()
                             || Http2ClientConnectionHandler.ownsExplicitConnection(clientRequest))) {
-                http2Client.connectionCache().remove(connectionTarget);
+                http2Client.connectionCache().remove(connectionTarget, result.handler());
                 closeFailedStream(result);
             }
             throw e;

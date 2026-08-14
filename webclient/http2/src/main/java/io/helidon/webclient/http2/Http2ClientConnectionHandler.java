@@ -228,7 +228,7 @@ class Http2ClientConnectionHandler {
                                             http1FallbackHandler);
                 } catch (Http1FallbackResponse e) {
                     http1FallbackHandler.completeSent(serviceRequest);
-                    return new Http2ConnectionAttemptResult(Result.HTTP_1, null, e.response());
+                    return new Http2ConnectionAttemptResult(Result.HTTP_1, null, e.response(), this);
                 }
                 // we must assume that a new connection can handle a new stream
                 stream = createStreamOnNewConnection(http2Client, conn, request);
@@ -248,13 +248,13 @@ class Http2ClientConnectionHandler {
                                                 http1FallbackHandler);
                     } catch (Http1FallbackResponse e) {
                         http1FallbackHandler.completeSent(serviceRequest);
-                        return new Http2ConnectionAttemptResult(Result.HTTP_1, null, e.response());
+                        return new Http2ConnectionAttemptResult(Result.HTTP_1, null, e.response(), this);
                     }
                     stream = createStreamOnNewConnection(http2Client, conn, request);
                 }
             }
 
-            return new Http2ConnectionAttemptResult(Result.HTTP_2, stream, null);
+            return new Http2ConnectionAttemptResult(Result.HTTP_2, stream, null, this);
         } finally {
             lock.unlock();
         }
@@ -376,7 +376,7 @@ class Http2ClientConnectionHandler {
                 if (request.followRedirects() && RedirectionProcessor.redirectionStatusCode(response.status())) {
                     // Surface redirect responses instead of treating them as unexpected upgrade failures.
                     http1FallbackHandler.completeSent(serviceRequest);
-                    return new Http2ConnectionAttemptResult(Result.UNKNOWN, null, response);
+                    return new Http2ConnectionAttemptResult(Result.UNKNOWN, null, response, this);
                 }
                 if (!http1FallbackHandler.upgradeFailureResponseAllowed()) {
                     try (response) {
@@ -387,7 +387,7 @@ class Http2ClientConnectionHandler {
                 }
                 result.set(Result.HTTP_1);
                 http1FallbackHandler.completeSent(serviceRequest);
-                return new Http2ConnectionAttemptResult(Result.HTTP_1, null, response);
+                return new Http2ConnectionAttemptResult(Result.HTTP_1, null, response, this);
             }
         } finally {
             lock.unlock();
@@ -492,7 +492,8 @@ class Http2ClientConnectionHandler {
                                                                             http2Client.clientConfig(),
                                                                             http2Client.sendListener(),
                                                                             http2Client.recvListener()),
-                                                    null);
+                                                    null,
+                                                    this);
         } finally {
             lock.unlock();
         }
@@ -524,7 +525,8 @@ class Http2ClientConnectionHandler {
                                                            initialUri);
             return new Http2ConnectionAttemptResult(Result.HTTP_1,
                                                     null,
-                                                    http1FallbackHandler.apply(http1Request, serviceRequest));
+                                                    http1FallbackHandler.apply(http1Request, serviceRequest),
+                                                    this);
         } catch (RuntimeException | Error e) {
             http1FallbackHandler.completeSentExceptionally(e);
             throw e;
