@@ -23,8 +23,9 @@ import io.helidon.common.Api;
 /**
  * Protocol-neutral observation of HTTP transport lifecycle.
  *
- * <p>Callbacks must not block. Unless a lifecycle method specifies stricter publisher ordering, callbacks may be invoked
- * concurrently, so implementations must be thread safe.
+ * <p>Callbacks must not block. Lifecycle events for one connection are published sequentially as specified by
+ * {@link ConnectionObservation}. Callbacks for different connections may be invoked concurrently, so implementations
+ * must be thread safe.
  * Observation must not affect protocol or transport behavior. Observer callbacks are passive and must not directly or
  * indirectly invoke lifecycle methods on a {@link ConnectionObservation}, {@link HandshakeObservation}, or
  * {@link StreamObservation}; callback reentry is not supported.
@@ -237,6 +238,11 @@ public interface HttpTransportObserver {
 
     /**
      * Observation of one physical connection.
+     *
+     * <p>The publisher must invoke all lifecycle methods for this connection sequentially. This includes methods on
+     * this observation and on any {@link HandshakeObservation} or {@link StreamObservation} it returns. Concurrent
+     * lifecycle calls for the same connection are unsupported. Events for different connections may be published
+     * concurrently.
      */
     interface ConnectionObservation {
         /**
@@ -251,8 +257,7 @@ public interface HttpTransportObserver {
         /**
          * Observes the start of the configured handshake.
          *
-         * <p>The publisher must not invoke this method concurrently for the same connection; concurrent invocation is
-         * unsupported. The same observation is returned if this method is invoked more than once sequentially.
+         * <p>The same observation is returned if this method is invoked more than once.
          * The returned observation must not be {@code null}. Implementations that do not observe handshakes should
          * return {@link HandshakeObservation#noop()}.
          *
