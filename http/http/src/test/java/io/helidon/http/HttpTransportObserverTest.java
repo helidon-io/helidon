@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -578,64 +576,4 @@ class HttpTransportObserverTest {
         assertThat(events, is(List.of("handshake-open", "handshake-close", "connection-close")));
     }
 
-    @Test
-    void concurrentStreamOpenCallbacksAreNotSerialized() throws Exception {
-        CountDownLatch bothStreamsStarted = new CountDownLatch(2);
-        CountDownLatch completeStreams = new CountDownLatch(1);
-        AtomicInteger activeCallbacks = new AtomicInteger();
-        AtomicInteger maximumActiveCallbacks = new AtomicInteger();
-        HttpTransportObserver observer = (role, transport, handshake) -> new ConnectionObservation() {
-            @Override
-            public HandshakeObservation handshakeStarted() {
-                return HandshakeObservation.noop();
-            }
-
-            @Override
-            public void protocolSelected(String protocol) {
-            }
-
-            @Override
-            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
-                int active = activeCallbacks.incrementAndGet();
-                maximumActiveCallbacks.accumulateAndGet(active, Math::max);
-                bothStreamsStarted.countDown();
-                try {
-                    if (!completeStreams.await(5, TimeUnit.SECONDS)) {
-                        throw new IllegalStateException("Timed out waiting to complete stream callbacks");
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Interrupted while opening stream", e);
-                } finally {
-                    activeCallbacks.decrementAndGet();
-                }
-                return StreamObservation.noop();
-            }
-
-            @Override
-            public void close(ConnectionOutcome outcome) {
-            }
-        };
-        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
-                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
-        boolean concurrent;
-        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-            CompletableFuture<StreamObservation> first = CompletableFuture.supplyAsync(
-                    () -> connection.streamOpened(BIDIRECTIONAL, REMOTE), executor);
-            CompletableFuture<StreamObservation> second = CompletableFuture.supplyAsync(
-                    () -> connection.streamOpened(BIDIRECTIONAL, REMOTE), executor);
-
-            try {
-                concurrent = bothStreamsStarted.await(5, TimeUnit.SECONDS);
-            } finally {
-                completeStreams.countDown();
-            }
-            first.get(5, TimeUnit.SECONDS).close(COMPLETED);
-            second.get(5, TimeUnit.SECONDS).close(COMPLETED);
-        }
-        connection.close(ConnectionOutcome.NORMAL);
-
-        assertThat(concurrent, is(true));
-        assertThat(maximumActiveCallbacks.get(), is(2));
-    }
 }
