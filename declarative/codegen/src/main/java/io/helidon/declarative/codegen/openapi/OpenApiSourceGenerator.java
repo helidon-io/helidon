@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenException;
@@ -101,6 +102,8 @@ final class OpenApiSourceGenerator {
     private static final TypeName GENERATOR = TypeName.create(OpenApiSourceGenerator.class);
     private static final TypeName VOID = TypeName.create(Void.class);
     private static final String DEFAULT_MEDIA_TYPE = "application/json";
+    private static final Set<TypeName> SECURITY_REQUIREMENT_ANNOTATIONS = Set.of(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
+            OPENAPI_SECURITY_REQUIREMENT_ANNOTATION, OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION);
 
     private final OpenApiAnnotationValidator validator = new OpenApiAnnotationValidator();
     private final OpenApiSourceExpressions expressions = new OpenApiSourceExpressions(validator);
@@ -678,18 +681,34 @@ final class OpenApiSourceGenerator {
         if (hasSecurityRequirementAnnotations(securityAnnotations)) {
             return securityAnnotations;
         }
-        TypeName annotationType = OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION;
         var inherited = restMethod.annotations();
-        if (!hasAnnotation(inherited, annotationType)) {
-            return inherited;
+        var candidates = TypeHierarchy.hierarchyAnnotationCandidatesForTypes(
+                ctx, restMethod.type(), restMethod.method(), SECURITY_REQUIREMENT_ANNOTATIONS);
+        boolean mixedSecurityForms = hasAnnotation(inherited, OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION)
+                && (hasAnnotation(inherited, OPENAPI_SECURITY_REQUIREMENT_ANNOTATION)
+                        || hasAnnotation(inherited, OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION));
+        if (!mixedSecurityForms && candidates.stream()
+                .map(it -> securityRequirementCounts(restMethodDescription(restMethod), it)).distinct().limit(2).count() > 1) {
+            boolean onlySchemes = candidates.stream().flatMap(List::stream)
+                    .allMatch(it -> OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION.equals(it.typeName()));
+            String message = onlySchemes ? "Conflicting inherited @OpenApi.SecuritySchemeRequirement annotations on "
+                    : "Conflicting inherited OpenAPI security requirements on ";
+            throw new CodegenException(message + restMethodDescription(restMethod));
         }
-        var candidates = TypeHierarchy.hierarchyAnnotationCandidates(ctx, restMethod.type(), restMethod.method(), annotationType);
-        if (candidates.size() > 1) {
-            throw new CodegenException("Conflicting inherited @OpenApi.SecuritySchemeRequirement annotations on "
-                                               + restMethodDescription(restMethod));
-        }
-        return candidates.isEmpty() ? inherited : Stream.concat(
-                inherited.stream().filter(it -> !annotationType.equals(it.typeName())), candidates.getFirst().stream()).toList();
+        return candidates.isEmpty() || mixedSecurityForms ? inherited : Stream.concat(
+                inherited.stream().filter(it -> !SECURITY_REQUIREMENT_ANNOTATIONS.contains(it.typeName())),
+                candidates.getFirst().stream()).toList();
+    }
+
+    private Map<Map<List<String>, Long>, Long> securityRequirementCounts(String owner, Collection<Annotation> annotations) {
+        return securityRequirements(owner, annotations).stream()
+                .map(requirement -> requirement.schemes().stream()
+                        .map(scheme -> Stream.concat(Stream.of(validator.expressionDefaultValue(
+                                                               scheme.stringValue().orElse(""))),
+                                                     scheme.stringValues("scopes").orElseGet(List::of).stream()
+                                                             .map(validator::expressionDefaultValue).sorted()).toList())
+                        .collect(Collectors.groupingBy(it -> it, Collectors.counting())))
+                .collect(Collectors.groupingBy(it -> it, Collectors.counting()));
     }
 
     private List<Annotation> annotationsWithMetaAnnotations(Collection<Annotation> annotations) {

@@ -196,10 +196,33 @@ public final class TypeHierarchy {
                                                                        TypeInfo type,
                                                                        TypedElementInfo method,
                                                                        TypeName annotationType) {
+        Objects.requireNonNull(annotationType, "annotationType is null");
+        return hierarchyAnnotationCandidatesForTypes(ctx, type, method, Set.of(annotationType));
+    }
+
+    /**
+     * Find all distinct occurrences of any of the annotation types on matching methods in a method's type hierarchy,
+     * grouped by the declaring method. Meta-annotations are included. Unlike
+     * {@link #hierarchyAnnotations(CodegenContext, TypeInfo, TypedElementInfo)}, this method does not apply
+     * annotation-type precedence between declarations.
+     * The provided method itself and declarations without matching candidates are excluded. The outer list contains
+     * distinct declaration multisets; each inner list preserves candidate order and multiplicity.
+     *
+     * @param ctx codegen context
+     * @param type type info owning the method
+     * @param method method element
+     * @param annotationTypes annotation types to find
+     * @return distinct annotation candidates grouped by declaring method
+     */
+    @Api.Internal
+    public static List<List<Annotation>> hierarchyAnnotationCandidatesForTypes(CodegenContext ctx,
+                                                                               TypeInfo type,
+                                                                               TypedElementInfo method,
+                                                                               Set<TypeName> annotationTypes) {
         Objects.requireNonNull(ctx, "ctx is null");
         Objects.requireNonNull(type, "type is null");
         Objects.requireNonNull(method, "method is null");
-        Objects.requireNonNull(annotationType, "annotationType is null");
+        Set<TypeName> candidateTypes = Set.copyOf(Objects.requireNonNull(annotationTypes, "annotationTypes is null"));
         if (method.kind() != ElementKind.METHOD) {
             throw new CodegenException("Only method elements have hierarchy annotation candidates: " + method.kind());
         }
@@ -226,7 +249,7 @@ public final class TypeHierarchy {
             List<Annotation> candidates = new ArrayList<>();
             prototype.annotations()
                     .forEach(it -> collectAnnotationCandidates(ctx,
-                                                               annotationType,
+                                                               candidateTypes,
                                                                candidates,
                                                                it,
                                                                new HashSet<>()));
@@ -619,14 +642,14 @@ public final class TypeHierarchy {
     }
 
     private static void collectAnnotationCandidates(CodegenContext ctx,
-                                                    TypeName annotationType,
+                                                    Set<TypeName> annotationTypes,
                                                     List<Annotation> result,
                                                     Annotation annotation,
                                                     Set<TypeName> path) {
         if (!path.add(annotation.typeName())) {
             return;
         }
-        if (annotationType.equals(annotation.typeName())) {
+        if (annotationTypes.contains(annotation.typeName())) {
             result.add(annotation);
         }
         List<Annotation> metaAnnotations = annotation.metaAnnotations();
@@ -636,7 +659,7 @@ public final class TypeHierarchy {
                     .orElseGet(List::of);
         }
         metaAnnotations.forEach(it -> collectAnnotationCandidates(ctx,
-                                                                   annotationType,
+                                                                   annotationTypes,
                                                                    result,
                                                                    it,
                                                                    new HashSet<>(path)));
