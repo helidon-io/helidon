@@ -270,16 +270,17 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     boolean sendExpectContinue();
 
     /**
-     * Maximal size of the connection cache for a single connection target.
+     * Maximum number of reusable physical connections each HTTP protocol retains for a single connection target.
      * A connection target identifies the logical HTTP authority, TLS configuration and generation, configured SNI, DNS
      * resolver and address lookup, selected proxy route, and physical transport. For UNIX domain socket transports, the
      * target includes the socket path and does not include proxy configuration.
      * <p>
-     * For most HTTP protocols, we may cache connections to various endpoints for keep alive (or stream reuse in case of HTTP/2).
-     * This option limits the size. Setting this number lower than the "usual" number of target services will cause connections
-     * to be closed and reopened frequently.
+     * Each configured HTTP protocol honors this common option independently; it is not an aggregate cache quota across
+     * protocol versions. This is a retention limit, not a limit on concurrent requests or streams and not a hard cap on
+     * live sockets. Active or draining connections may temporarily cause the number of live sockets for a target to
+     * exceed this value. Defaults to {@code 256}.
      *
-     * @return maximal size of the connection cache
+     * @return maximum number of reusable physical connections retained per target by each HTTP protocol
      */
     @Option.Configured
     @Option.DefaultInt(256)
@@ -304,9 +305,14 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     Duration readContinueTimeout();
 
     /**
-     * Whether to share connection cache between all the WebClient instances in JVM.
+     * Whether to use protocol-specific JVM-wide connection caches shared by compatible WebClient instances.
+     * <p>
+     * When {@code true}, each HTTP protocol uses its own JVM-wide cache. Closing an individual client does not close
+     * that shared cache. For each connection target, the first shared client to create the target entry establishes
+     * its capacity from {@link #connectionCacheSize()} for as long as that entry remains cached. When {@code false},
+     * each client owns its connection caches, which are closed when the client is closed. Defaults to {@code true}.
      *
-     * @return true if connection cache is shared
+     * @return whether to use protocol-specific JVM-wide shared connection caches
      */
     @Option.Configured
     @Option.DefaultBoolean(true)

@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -75,8 +76,10 @@ class H2cShutdownTest {
 
     private static final ConcurrentMap<Integer, CompletableFuture<Void>> connectionClosed = new ConcurrentHashMap<>();
 
-    private static volatile CompletableFuture<Integer> heldRequestReceived = new CompletableFuture<>();
-    private static volatile CompletableFuture<Void> releaseHeldRequest = new CompletableFuture<>();
+    private static volatile CompletableFuture<Integer> heldRequestAReceived = new CompletableFuture<>();
+    private static volatile CompletableFuture<Void> releaseHeldRequestA = new CompletableFuture<>();
+    private static volatile CompletableFuture<Integer> heldRequestBReceived = new CompletableFuture<>();
+    private static volatile CompletableFuture<Void> releaseHeldRequestB = new CompletableFuture<>();
 
     private final int serverPort;
 
@@ -101,16 +104,29 @@ class H2cShutdownTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder routing) {
-        routing.route(Http2Route.route(Method.GET, "/held", (req, res) -> {
+        routing.route(Http2Route.route(Method.GET, "/held-a", (req, res) -> {
             int clientPort = req.remotePeer().port();
-            heldRequestReceived.complete(clientPort);
+            heldRequestAReceived.complete(clientPort);
             try {
-                releaseHeldRequest.get(HOLD_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                releaseHeldRequestA.get(HOLD_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException("Interrupted while holding request A", e);
             } catch (ExecutionException | TimeoutException e) {
                 throw new IllegalStateException("Failed while holding request A", e);
+            }
+            res.send(String.valueOf(clientPort));
+        }));
+        routing.route(Http2Route.route(Method.GET, "/held-b", (req, res) -> {
+            int clientPort = req.remotePeer().port();
+            heldRequestBReceived.complete(clientPort);
+            try {
+                releaseHeldRequestB.get(HOLD_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while holding request B", e);
+            } catch (ExecutionException | TimeoutException e) {
+                throw new IllegalStateException("Failed while holding request B", e);
             }
             res.send(String.valueOf(clientPort));
         }));
@@ -122,28 +138,25 @@ class H2cShutdownTest {
     @BeforeEach
     void resetRequests() {
         connectionClosed.clear();
-        heldRequestReceived = new CompletableFuture<>();
-        releaseHeldRequest = new CompletableFuture<>();
+        heldRequestAReceived = new CompletableFuture<>();
+        releaseHeldRequestA = new CompletableFuture<>();
+        heldRequestBReceived = new CompletableFuture<>();
+        releaseHeldRequestB = new CompletableFuture<>();
     }
 
     @Test
     void closesDisplacedUpgradedConnection() {
         Http2Client http2Client = Http2Client.builder()
                 .shareConnectionCache(false)
+                .connectionCacheSize(1)
                 .protocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(false))
                 .connectTimeout(TIMEOUT)
                 .baseUri("http://127.0.0.1:" + serverPort)
                 .build();
         var executor = Executors.newVirtualThreadPerTaskExecutor();
-        CompletableFuture<Integer> heldResponse = CompletableFuture.supplyAsync(() -> {
-            try (var response = http2Client.get("/held")
-                    .readTimeout(TIMEOUT)
-                    .request()) {
-                return Integer.parseInt(response.entity().as(String.class));
-            }
-        }, executor);
+        CompletableFuture<Integer> heldResponse = requestAsync(http2Client, "/held-a", executor);
         try {
-            int heldClientPort = await(heldRequestReceived, "request A to reach the server");
+            int heldClientPort = await(heldRequestAReceived, "request A to reach the server");
             int secondClientPort;
             try (var response = http2Client.get("/second")
                     .readTimeout(TIMEOUT)
@@ -154,27 +167,99 @@ class H2cShutdownTest {
                        secondClientPort,
                        not(is(heldClientPort)));
 
-            releaseHeldRequest.complete(null);
-            assertThat(await(heldResponse, "request A to complete"), is(heldClientPort));
-
             CompletableFuture<Void> heldConnectionClosed =
                     connectionClosed.computeIfAbsent(heldClientPort, ignored -> new CompletableFuture<>());
             CompletableFuture<Void> secondConnectionClosed =
                     connectionClosed.computeIfAbsent(secondClientPort, ignored -> new CompletableFuture<>());
-            assertThat("request A connection should remain open before client shutdown",
+            assertThat("request A connection should remain open while its stream is held",
                        heldConnectionClosed.isDone(),
                        is(false));
+
+            releaseHeldRequestA.complete(null);
+            assertThat(await(heldResponse, "request A to complete"), is(heldClientPort));
+            await(heldConnectionClosed, "displaced connection from client port " + heldClientPort + " to close");
+
+            int reusedClientPort;
+            try (var response = http2Client.get("/second")
+                    .readTimeout(TIMEOUT)
+                    .request()) {
+                reusedClientPort = Integer.parseInt(response.entity().as(String.class));
+            }
+            assertThat("request B connection should remain reusable after request A connection is retired",
+                       reusedClientPort,
+                       is(secondClientPort));
             assertThat("request B connection should remain open before client shutdown",
                        secondConnectionClosed.isDone(),
                        is(false));
 
             http2Client.closeResource();
             await(secondConnectionClosed, "connection from client port " + secondClientPort + " to close");
-            await(heldConnectionClosed, "connection from client port " + heldClientPort + " to close");
         } finally {
-            releaseHeldRequest.complete(null);
+            releaseHeldRequestA.complete(null);
             http2Client.closeResource();
             heldResponse.cancel(true);
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void reusesAvailableConnectionWithinConfiguredCacheSize() {
+        Http2Client http2Client = Http2Client.builder()
+                .shareConnectionCache(false)
+                .connectionCacheSize(2)
+                .protocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(false))
+                .connectTimeout(TIMEOUT)
+                .baseUri("http://127.0.0.1:" + serverPort)
+                .build();
+        var executor = Executors.newVirtualThreadPerTaskExecutor();
+        CompletableFuture<Integer> heldResponseA = requestAsync(http2Client, "/held-a", executor);
+        CompletableFuture<Integer> heldResponseB = null;
+        try {
+            int clientPortA = await(heldRequestAReceived, "request A to reach the server");
+            heldResponseB = requestAsync(http2Client, "/held-b", executor);
+            int clientPortB = await(heldRequestBReceived, "request B to reach the server");
+            assertThat("request B should use a new connection while request A occupies the only stream",
+                       clientPortB,
+                       not(is(clientPortA)));
+
+            releaseHeldRequestA.complete(null);
+            assertThat(await(heldResponseA, "request A to complete"), is(clientPortA));
+
+            int clientPortC;
+            try (var response = http2Client.get("/second")
+                    .readTimeout(TIMEOUT)
+                    .request()) {
+                clientPortC = Integer.parseInt(response.entity().as(String.class));
+            }
+            assertThat("request C should reuse request A connection while request B occupies the other connection",
+                       clientPortC,
+                       is(clientPortA));
+
+            releaseHeldRequestB.complete(null);
+            assertThat(await(heldResponseB, "request B to complete"), is(clientPortB));
+
+            CompletableFuture<Void> connectionAClosed =
+                    connectionClosed.computeIfAbsent(clientPortA, ignored -> new CompletableFuture<>());
+            CompletableFuture<Void> connectionBClosed =
+                    connectionClosed.computeIfAbsent(clientPortB, ignored -> new CompletableFuture<>());
+            assertThat("request A connection should remain open before client shutdown",
+                       connectionAClosed.isDone(),
+                       is(false));
+            assertThat("request B connection should remain open before client shutdown",
+                       connectionBClosed.isDone(),
+                       is(false));
+
+            http2Client.closeResource();
+            await(connectionAClosed, "connection from client port " + clientPortA + " to close");
+            await(connectionBClosed, "connection from client port " + clientPortB + " to close");
+        } finally {
+            releaseHeldRequestA.complete(null);
+            releaseHeldRequestB.complete(null);
+            http2Client.closeResource();
+            heldResponseA.cancel(true);
+            if (heldResponseB != null) {
+                heldResponseB.cancel(true);
+            }
             executor.shutdownNow();
         }
     }
@@ -297,6 +382,16 @@ class H2cShutdownTest {
                 };
             }
         };
+    }
+
+    private static CompletableFuture<Integer> requestAsync(Http2Client client, String path, Executor executor) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (var response = client.get(path)
+                    .readTimeout(TIMEOUT)
+                    .request()) {
+                return Integer.parseInt(response.entity().as(String.class));
+            }
+        }, executor);
     }
 
     private static <T> T await(CompletableFuture<T> future, String description) {

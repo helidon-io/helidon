@@ -118,12 +118,13 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
             throw new IllegalStateException("Connection cache is closed");
         }
         if (request.connection().isPresent() && !Http2ClientConnectionHandler.ownsExplicitConnection(request)) {
-            return new Http2ClientConnectionHandler().newStream(http2Client,
-                                                               connectionTarget,
-                                                               request,
-                                                               initialUri,
-                                                               serviceRequest,
-                                                               http1FallbackHandler);
+            return new Http2ClientConnectionHandler(http2Client.clientConfig().connectionCacheSize())
+                    .newStream(http2Client,
+                               connectionTarget,
+                               request,
+                               initialUri,
+                               serviceRequest,
+                               http1FallbackHandler);
         }
 
         List<Http2ClientConnectionHandler> retiredHandlers = null;
@@ -187,7 +188,7 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                     }
                 }
 
-                handler = new Http2ClientConnectionHandler();
+                handler = new Http2ClientConnectionHandler(http2Client.clientConfig().connectionCacheSize());
                 if (!handler.acquire()) {
                     throw new IllegalStateException("New HTTP/2 connection target could not be acquired");
                 }

@@ -344,19 +344,15 @@ public class Http2ClientConnection {
      * successful exchanges and after failures during stream startup.
      */
     void releaseReservedStream() {
-        boolean finishRetirement;
         reservedStreamsLock.lock();
         try {
             if (reservedStreams > 0) {
                 reservedStreams--;
             }
-            finishRetirement = reservedStreams == 0 && state.get() == State.RETIRING;
         } finally {
             reservedStreamsLock.unlock();
         }
-        if (finishRetirement) {
-            finishRetirement();
-        }
+        finishRetirementIfDrained();
     }
 
     /**
@@ -388,7 +384,7 @@ public class Http2ClientConnection {
         } finally {
             lock.unlock();
         }
-
+        finishRetirementIfDrained();
     }
 
     Http2ClientStream tryStream(Http2StreamConfig config) {
@@ -482,19 +478,15 @@ public class Http2ClientConnection {
             closeConnection();
             return;
         }
-        boolean finishRetirement;
         reservedStreamsLock.lock();
         try {
             if (!state.compareAndSet(State.OPEN, State.RETIRING)) {
                 return;
             }
-            finishRetirement = reservedStreams == 0;
         } finally {
             reservedStreamsLock.unlock();
         }
-        if (finishRetirement) {
-            finishRetirement();
-        }
+        finishRetirementIfDrained();
     }
 
     /**
@@ -537,6 +529,32 @@ public class Http2ClientConnection {
         } finally {
             closeConnection();
         }
+    }
+
+    private void finishRetirementIfDrained() {
+        if (state.get() != State.RETIRING) {
+            return;
+        }
+
+        reservedStreamsLock.lock();
+        try {
+            if (reservedStreams != 0 || state.get() != State.RETIRING) {
+                return;
+            }
+        } finally {
+            reservedStreamsLock.unlock();
+        }
+
+        Lock lock = streamsLock.readLock();
+        lock.lock();
+        try {
+            if (!streams.isEmpty()) {
+                return;
+            }
+        } finally {
+            lock.unlock();
+        }
+        finishRetirement();
     }
 
     private void sendPreface(Http2ClientProtocolConfig config, boolean sendSettings) {

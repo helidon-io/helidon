@@ -48,10 +48,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionCacheTest {
+    @Test
+    void rejectsNonPositiveConnectionCacheSize() {
+        assertThrows(IllegalArgumentException.class, () -> new Http2ClientConnectionHandler(0));
+        assertThrows(IllegalArgumentException.class, () -> new Http2ClientConnectionHandler(-1));
+    }
+
     @Test
     void oldestHandlerEvictionDoesNotAllowRetiredHandlerToRemoveSuccessor() {
         Tls tls = Tls.builder().enabled(false).build();
@@ -77,6 +84,7 @@ class Http2ConnectionCacheTest {
         Http2ClientRequestImpl request = mock(Http2ClientRequestImpl.class);
         WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
 
+        when(http2Client.clientConfig()).thenReturn(Http2ClientConfig.create());
         when(http2Client.http1FallbackClient()).thenReturn(http1Client);
         when(http1Client.method(Method.GET)).thenReturn(fallbackRequest);
         when(fallbackRequest.headers()).thenReturn(fallbackHeaders);

@@ -973,6 +973,42 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void retiredConnectionWaitsForBufferedResponseEntityConsumption() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream existingStream = connection.createStream(STREAM_CONFIG);
+            existingStream.writeHeaders(requestHeaders(), true);
+            verify(test.dataWriter, timeout(TEST_WAIT_TIMEOUT.toMillis()).times(3)).writeNow(any(BufferData.class));
+            clearInvocations(test.dataWriter, test.clientConnection);
+
+            connection.retire();
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            byte[] expectedEntity = "entity".getBytes(StandardCharsets.UTF_8);
+            test.offerInbound(encodedHeaderFrame(existingStream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman),
+                              dataFrame(existingStream.streamId(), expectedEntity, true));
+
+            assertThat(existingStream.readHeaders().status(), is(Status.OK_200));
+            BufferData entity = existingStream.read();
+            byte[] actualEntity = new byte[entity.available()];
+            entity.read(actualEntity);
+            assertThat(actualEntity, is(expectedEntity));
+
+            verify(test.clientConnection, never()).closeResource();
+
+            existingStream.close();
+
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
     void retiredPreUpgradeConnectionClosesWithoutWritingGoAway() {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             Http2ClientConnection connection = new Http2ClientConnection(test.client,

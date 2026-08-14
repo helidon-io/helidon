@@ -17,6 +17,7 @@
 package io.helidon.webclient.http2;
 
 import java.net.UnixDomainSocketAddress;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
@@ -69,14 +70,24 @@ class Http2ClientConnectionHandler {
     private final Map<Http2ClientConnection, Boolean> allConnections = Collections.synchronizedMap(new IdentityHashMap<>());
     private final Set<Http2ClientConnection> pendingUpgradedConnections =
             Collections.newSetFromMap(new IdentityHashMap<>());
+    // Creation ordered and compared by identity. Mutated only while holding lifecycleLock.
+    private final List<Http2ClientConnection> selectableConnections = new ArrayList<>();
     private final AtomicReference<Http2ClientConnection> activeConnection = new AtomicReference<>();
     private final ReentrantLock lock = new ReentrantLock();
     private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final AtomicReference<Result> result = new AtomicReference<>(Result.UNKNOWN);
+    private final int connectionCacheSize;
     private boolean closed;
     private boolean retired;
     private boolean connectionsRetired;
     private int leases;
+
+    Http2ClientConnectionHandler(int connectionCacheSize) {
+        if (connectionCacheSize < 1) {
+            throw new IllegalArgumentException("Connection cache size must be greater than zero");
+        }
+        this.connectionCacheSize = connectionCacheSize;
+    }
 
     boolean acquire() {
         lifecycleLock.lock();
@@ -145,6 +156,7 @@ class Http2ClientConnectionHandler {
             pendingUpgradedConnections.clear();
             allConnections.clear();
             h2ConnByConn.clear();
+            selectableConnections.clear();
             Http2ClientConnection active = activeConnection.getAndSet(null);
             if (active != null) {
                 toClose.add(active);
@@ -214,11 +226,57 @@ class Http2ClientConnectionHandler {
         }
         try {
             // read/write lock to obtain a stream or create a new connection
-            Http2ClientConnection conn = activeConnection.updateAndGet(c -> c != null && c.closed(http2Client.protocolConfig())
-                    ? null
-                    : c);
-            Http2ClientStream stream;
-            if (conn == null) {
+            Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
+            Http2ClientConnection conn = activeConnection.get();
+            Http2ClientStream stream = null;
+            if (conn != null) {
+                if (conn.closed(protocolConfig)) {
+                    discardConnection(conn);
+                } else {
+                    stream = conn.tryStream(request,
+                                            http2Client.clientConfig(),
+                                            http2Client.sendListener(),
+                                            http2Client.recvListener());
+                }
+            }
+            if (stream == null) {
+                List<Http2ClientConnection> connections;
+                lifecycleLock.lock();
+                try {
+                    connections = List.copyOf(selectableConnections);
+                } finally {
+                    lifecycleLock.unlock();
+                }
+                for (Http2ClientConnection candidate : connections) {
+                    if (candidate == conn) {
+                        continue;
+                    }
+                    if (candidate.closed(protocolConfig)) {
+                        discardConnection(candidate);
+                        continue;
+                    }
+                    stream = candidate.tryStream(request,
+                                                 http2Client.clientConfig(),
+                                                 http2Client.sendListener(),
+                                                 http2Client.recvListener());
+                    if (stream != null) {
+                        conn = candidate;
+                        lifecycleLock.lock();
+                        try {
+                            for (Http2ClientConnection selectableConnection : selectableConnections) {
+                                if (selectableConnection == candidate) {
+                                    activeConnection.set(candidate);
+                                    break;
+                                }
+                            }
+                        } finally {
+                            lifecycleLock.unlock();
+                        }
+                        break;
+                    }
+                }
+            }
+            if (stream == null) {
                 try {
                     conn = createConnection(http2Client,
                                             requestTarget,
@@ -232,26 +290,6 @@ class Http2ClientConnectionHandler {
                 }
                 // we must assume that a new connection can handle a new stream
                 stream = createStreamOnNewConnection(http2Client, conn, request);
-            } else {
-                stream = conn.tryStream(request,
-                                        http2Client.clientConfig(),
-                                        http2Client.sendListener(),
-                                        http2Client.recvListener());
-                if (stream == null) {
-                    // either the connection is closed, or it ran out of streams
-                    try {
-                        conn = createConnection(http2Client,
-                                                requestTarget,
-                                                request,
-                                                initialUri,
-                                                serviceRequest,
-                                                http1FallbackHandler);
-                    } catch (Http1FallbackResponse e) {
-                        http1FallbackHandler.completeSent(serviceRequest);
-                        return new Http2ConnectionAttemptResult(Result.HTTP_1, null, e.response(), this);
-                    }
-                    stream = createStreamOnNewConnection(http2Client, conn, request);
-                }
             }
 
             return new Http2ConnectionAttemptResult(Result.HTTP_2, stream, null, this);
@@ -682,6 +720,7 @@ class Http2ClientConnectionHandler {
     }
 
     private void activateConnection(ClientConnection clientConnection, Http2ClientConnection connection) {
+        Http2ClientConnection displacedConnection = null;
         boolean closeConnection;
         lifecycleLock.lock();
         try {
@@ -690,7 +729,21 @@ class Http2ClientConnectionHandler {
             if (!closeConnection) {
                 allConnections.put(connection, true);
                 h2ConnByConn.put(clientConnection, connection);
+                boolean alreadySelectable = false;
+                for (Http2ClientConnection selectableConnection : selectableConnections) {
+                    if (selectableConnection == connection) {
+                        alreadySelectable = true;
+                        break;
+                    }
+                }
+                if (!alreadySelectable) {
+                    selectableConnections.add(connection);
+                }
                 activeConnection.set(connection);
+                if (selectableConnections.size() > connectionCacheSize) {
+                    displacedConnection = selectableConnections.getFirst();
+                    removeSelectableConnection(displacedConnection);
+                }
             }
         } finally {
             lifecycleLock.unlock();
@@ -699,18 +752,27 @@ class Http2ClientConnectionHandler {
             connection.close();
             throw new IllegalStateException("HTTP/2 connection handler is closed");
         }
+        if (displacedConnection != null) {
+            displacedConnection.retire();
+        }
     }
 
     private void removeConnection(Http2ClientConnection connection) {
         lifecycleLock.lock();
         try {
             pendingUpgradedConnections.remove(connection);
-            h2ConnByConn.values().removeIf(it -> it == connection);
             allConnections.remove(connection);
-            activeConnection.compareAndSet(connection, null);
+            removeSelectableConnection(connection);
         } finally {
             lifecycleLock.unlock();
         }
+    }
+
+    // Caller must hold lifecycleLock.
+    private void removeSelectableConnection(Http2ClientConnection connection) {
+        h2ConnByConn.values().removeIf(it -> it == connection);
+        selectableConnections.removeIf(it -> it == connection);
+        activeConnection.compareAndSet(connection, null);
     }
 
     private void retireConnections() {
@@ -796,7 +858,7 @@ class Http2ClientConnectionHandler {
             if (connection != null) {
                 pendingUpgradedConnections.remove(connection);
                 allConnections.remove(connection);
-                activeConnection.compareAndSet(connection, null);
+                removeSelectableConnection(connection);
             }
         } finally {
             lifecycleLock.unlock();
