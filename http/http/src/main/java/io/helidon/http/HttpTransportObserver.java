@@ -274,7 +274,13 @@ public interface HttpTransportObserver {
         void protocolSelected(String protocol);
 
         /**
-         * Observes an opened HTTP stream.
+         * Observes a started application request and response exchange.
+         *
+         * <p>An HTTP/1.1 publisher reports each exchange once as a {@link Direction#BIDIRECTIONAL} stream, with
+         * {@link Initiator} identifying the request sender relative to the observed endpoint. HTTP/2 and HTTP/3
+         * publishers apply the same mapping to request streams. Publishers must not report server-push streams,
+         * protocol control streams, compression-state streams such as HTTP/3 QPACK encoder or decoder streams, or
+         * underlying transport streams.
          *
          * <p>The publisher must report the initial protocol selection before invoking this method. For a secured
          * transport, this means after the required security handshake has succeeded. This lifecycle model does not
@@ -339,7 +345,7 @@ public interface HttpTransportObserver {
     }
 
     /**
-     * Observation of one multiplexed HTTP stream.
+     * Observation of one application request and response exchange.
      */
     @FunctionalInterface
     interface StreamObservation {
