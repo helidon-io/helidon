@@ -1236,30 +1236,6 @@ class CachedHandlerTest {
                 .toList();
     }
 
-    private static class TestClassLoader extends ClassLoader {
-        private final Path tmpJarFile;
-
-        public TestClassLoader(Path tmpJarFile) {
-            super(Thread.currentThread().getContextClassLoader());
-            this.tmpJarFile = tmpJarFile;
-        }
-
-        @Override
-        public URL getResource(String name) {
-            if ("web/resource.txt".equals(name)) {
-                try {
-                    var uri = tmpJarFile.toUri();
-                    var url = new URI("jar:file", null, uri.getPath() + "!/resource.txt", null).toURL();
-                    LOGGER.log(TRACE, () -> "Fake jar resource URL: " + url);
-                    return url;
-                } catch (MalformedURLException | URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            return super.getResource(name);
-        }
-    }
-
     private static Path createTmpJarFile() throws IOException {
         Path jarFile = Files.createTempFile("helidon-closed-zip-test-", "jar");
         try (var fos = Files.newOutputStream(jarFile);
@@ -1389,6 +1365,30 @@ class CachedHandlerTest {
             assumeTrue(false, "Symbolic links are not supported");
         } catch (IOException e) {
             assumeTrue(false, "Symbolic links cannot be created: " + e.getMessage());
+        }
+    }
+
+    private static class TestClassLoader extends ClassLoader {
+        private final Path tmpJarFile;
+
+        public TestClassLoader(Path tmpJarFile) {
+            super(Thread.currentThread().getContextClassLoader());
+            this.tmpJarFile = tmpJarFile;
+        }
+
+        @Override
+        public URL getResource(String name) {
+            if ("web/resource.txt".equals(name)) {
+                try {
+                    var uri = tmpJarFile.toUri();
+                    var url = new URI("jar:file", null, uri.getPath() + "!/resource.txt", null).toURL();
+                    LOGGER.log(TRACE, () -> "Fake jar resource URL: " + url);
+                    return url;
+                } catch (MalformedURLException | URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return super.getResource(name);
         }
     }
 }
