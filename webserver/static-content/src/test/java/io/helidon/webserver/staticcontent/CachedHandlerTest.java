@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLClassLoader;
 import java.net.URLStreamHandler;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -35,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SecureDirectoryStream;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.Map;
@@ -67,6 +69,7 @@ import io.helidon.webserver.http.ServerResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
@@ -80,6 +83,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class CachedHandlerTest {
@@ -176,6 +180,96 @@ class CachedHandlerTest {
         assertThat("Last modified", pathHandler.metadata().lastModified(), notNullValue());
         assertThat("Content length", pathHandler.metadata().contentLength(), is(7L));
         assertThat("Media type", pathHandler.metadata().mediaType(), is(MediaTypes.TEXT_PLAIN));
+    }
+
+    @Test
+    void testClasspathDynamicCacheIsReleasedOnRestart(@TempDir Path tempDir) throws IOException, URISyntaxException {
+        Path resource = Files.writeString(Files.createDirectories(tempDir.resolve("web")).resolve("dynamic.txt"),
+                                          "Initial");
+        FileTime initialLastModified = Files.getLastModifiedTime(resource);
+
+        try (var classLoader = new URLClassLoader(new URL[] {tempDir.toUri().toURL()}, null)) {
+            ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
+                    ClasspathHandlerConfig.builder()
+                            .location("/web")
+                            .classLoader(classLoader)
+                            .build());
+            handler.beforeStart();
+
+            ServerRequest request = mock(ServerRequest.class);
+            when(request.headers()).thenReturn(ServerRequestHeaders.create());
+            HttpPrologue prologue = HttpPrologue.create("http/1.1",
+                                                        "http",
+                                                        "1.1",
+                                                        Method.GET,
+                                                        "/dynamic.txt",
+                                                        false);
+            when(request.prologue()).thenReturn(prologue);
+
+            ByteArrayOutputStream initialOutput = new ByteArrayOutputStream();
+            ServerResponseHeaders initialHeaders = ServerResponseHeaders.create();
+            ServerResponse initialResponse = mock(ServerResponse.class);
+            when(initialResponse.headers()).thenReturn(initialHeaders);
+            when(initialResponse.outputStream()).thenReturn(initialOutput);
+
+            assertThat("Initial classpath resource should be served",
+                       handler.doHandle(Method.GET, "dynamic.txt", request, initialResponse, false),
+                       is(true));
+            assertThat(initialOutput.toString(StandardCharsets.UTF_8), is("Initial"));
+            String initialEtag = initialHeaders.get(HeaderNames.ETAG).get();
+            String initialLastModifiedHeader = initialHeaders.get(HeaderNames.LAST_MODIFIED).get();
+
+            handler.afterStop();
+            byte[] updatedBytes = "Updated content".getBytes(StandardCharsets.UTF_8);
+            Files.write(resource, updatedBytes);
+            Files.setLastModifiedTime(resource, FileTime.from(initialLastModified.toInstant().plusSeconds(2)));
+            assertThat("Updated resource must have a distinct last-modified time",
+                       Files.getLastModifiedTime(resource),
+                       not(is(initialLastModified)));
+            handler.beforeStart();
+
+            ByteArrayOutputStream updatedOutput = new ByteArrayOutputStream();
+            ServerResponseHeaders updatedHeaders = ServerResponseHeaders.create();
+            ServerResponse updatedResponse = mock(ServerResponse.class);
+            when(updatedResponse.headers()).thenReturn(updatedHeaders);
+            when(updatedResponse.outputStream()).thenReturn(updatedOutput);
+
+            assertThat("Updated classpath resource should be served",
+                       handler.doHandle(Method.GET, "dynamic.txt", request, updatedResponse, false),
+                       is(true));
+            assertThat("Updated classpath resource content", updatedOutput.toByteArray(), is(updatedBytes));
+            assertThat(updatedHeaders,
+                       hasHeader(HeaderNames.CONTENT_LENGTH, String.valueOf(updatedBytes.length)));
+            assertThat("Updated resource ETag", updatedHeaders.get(HeaderNames.ETAG).get(), not(is(initialEtag)));
+            assertThat("Updated resource last-modified header",
+                       updatedHeaders.get(HeaderNames.LAST_MODIFIED).get(),
+                       not(is(initialLastModifiedHeader)));
+
+            ServerRequestHeaders rangeRequestHeaders = mock(ServerRequestHeaders.class);
+            when(rangeRequestHeaders.contains(HeaderNames.RANGE)).thenReturn(true);
+            when(rangeRequestHeaders.get(HeaderNames.RANGE))
+                    .thenReturn(HeaderValues.create(HeaderNames.RANGE, "bytes=0-0"));
+            ServerRequest rangeRequest = mock(ServerRequest.class);
+            when(rangeRequest.headers()).thenReturn(rangeRequestHeaders);
+            when(rangeRequest.prologue()).thenReturn(prologue);
+
+            ByteArrayOutputStream rangeOutput = new ByteArrayOutputStream();
+            ServerResponse rangeResponse = mock(ServerResponse.class);
+            when(rangeResponse.headers()).thenReturn(ServerResponseHeaders.create());
+            when(rangeResponse.outputStream()).thenReturn(rangeOutput);
+
+            assertThat("Updated classpath resource range should be served",
+                       handler.doHandle(Method.GET, "dynamic.txt", rangeRequest, rangeResponse, false),
+                       is(true));
+            assertThat("Updated classpath resource range", rangeOutput.toString(StandardCharsets.UTF_8), is("U"));
+
+            ArgumentCaptor<Header> contentRange = ArgumentCaptor.forClass(Header.class);
+            verify(rangeResponse).header(contentRange.capture());
+            assertThat(contentRange.getValue().headerName(), is(HeaderNames.CONTENT_RANGE));
+            assertThat(contentRange.getValue().get(), is("bytes 0-0/" + updatedBytes.length));
+            verify(rangeResponse).contentLength(1);
+            verify(rangeResponse).status(Status.PARTIAL_CONTENT_206);
+        }
     }
 
     @Test

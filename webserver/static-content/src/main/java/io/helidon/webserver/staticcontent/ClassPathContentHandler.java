@@ -91,6 +91,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        super.releaseCache();
     }
 
     @Override
