@@ -126,8 +126,7 @@ interface BaseHandlerConfigBlueprint {
     Function<String, String> pathMapper();
 
     /**
-     * Configure capacity of cache used for resources. This cache stores the resolved media type, location, content length,
-     * and last-modified metadata.
+     * Configures the capacity of the cache used for resource metadata.
      * <p>
      * To cache content (bytes) in memory, use {@link io.helidon.webserver.staticcontent.BaseHandlerConfig#memoryCache()}
      *
