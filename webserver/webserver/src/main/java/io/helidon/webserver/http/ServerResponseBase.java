@@ -21,8 +21,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriPath;
@@ -67,6 +70,10 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected static final Header STREAM_TRAILERS =
             HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
+    private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
+    private static final HeaderName CONTENT_MD5_NAME = HeaderNames.create("Content-MD5");
+    private static final HeaderName DIGEST_NAME = HeaderNames.create("Digest");
+    private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
     private static final Header VARY_ACCEPT_ENCODING =
             HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
     private final ContentEncodingContext contentEncodingContext;
@@ -82,6 +89,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private UriQuery rerouteQuery;
     private String reroutePath;
     private Consumer<ServerResponseTrailers> beforeTrailers;
+    private Runnable responseBeforeSend;
+    private UnaryOperator<OutputStream> responseStreamFilter;
+    private UnaryOperator<OutputStream> streamFilter;
 
     /**
      * Create server response.
@@ -135,8 +145,20 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
 
     @Override
     public ServerResponse beforeSend(Runnable listener) {
+        Objects.requireNonNull(listener);
+        Runnable current = responseBeforeSend;
+        responseBeforeSend = current == null ? listener : () -> {
+            current.run();
+            listener.run();
+        };
         beforeSend.add(listener);
         return (T) this;
+    }
+
+    @Api.Internal
+    @Override
+    public void entityBeforeSend(Runnable listener) {
+        beforeSend.add(Objects.requireNonNull(listener));
     }
 
     @Override
@@ -213,6 +235,52 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         return hasEntity() || isNexted() || shouldReroute();
     }
 
+    @Api.Internal
+    @Override
+    public boolean resetEntity() {
+        if (!resetStream()) {
+            return false;
+        }
+        var headers = headers();
+        headers.remove(HeaderNames.CONTENT_LENGTH);
+        headers.remove(HeaderNames.TRANSFER_ENCODING);
+        headers.remove(HeaderNames.TRAILER);
+        headers.remove(HeaderNames.CONTENT_RANGE);
+        headers.remove(HeaderNames.CONTENT_TYPE);
+        headers.remove(HeaderNames.CONTENT_ENCODING);
+        headers.remove(HeaderNames.CONTENT_LANGUAGE);
+        headers.remove(HeaderNames.CONTENT_LOCATION);
+        headers.remove(HeaderNames.CONTENT_DISPOSITION);
+        headers.remove(CONTENT_DIGEST_NAME);
+        headers.remove(CONTENT_MD5_NAME);
+        headers.remove(DIGEST_NAME);
+        headers.remove(REPR_DIGEST_NAME);
+        headers.remove(HeaderNames.ETAG);
+        headers.remove(HeaderNames.LAST_MODIFIED);
+        headers.remove(HeaderNames.ACCEPT_RANGES);
+        beforeSend.clear();
+        if (responseBeforeSend != null) {
+            beforeSend.add(responseBeforeSend);
+        }
+        beforeTrailers = null;
+        streamFilter = responseStreamFilter;
+        return true;
+    }
+
+    @Override
+    public void streamFilter(UnaryOperator<OutputStream> filterFunction) {
+        checkStreamFilter(filterFunction);
+        responseStreamFilter = addStreamFilter(responseStreamFilter, filterFunction);
+        streamFilter = addStreamFilter(streamFilter, filterFunction);
+    }
+
+    @Api.Internal
+    @Override
+    public void entityStreamFilter(UnaryOperator<OutputStream> filterFunction) {
+        checkStreamFilter(filterFunction);
+        streamFilter = addStreamFilter(streamFilter, filterFunction);
+    }
+
     @Override
     public ServerResponse beforeTrailers(Consumer<ServerResponseTrailers> beforeTrailers) {
         this.beforeTrailers = beforeTrailers;
@@ -226,6 +294,28 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected Consumer<ServerResponseTrailers> beforeTrailers() {
         return beforeTrailers;
+    }
+
+    /**
+     * Whether this response has any output stream filters.
+     *
+     * @return whether an output stream filter is configured
+     */
+    @Api.Internal
+    protected final boolean hasStreamFilter() {
+        return streamFilter != null;
+    }
+
+    /**
+     * Apply configured output stream filters.
+     *
+     * @param outputStream output stream to wrap
+     * @return filtered output stream
+     */
+    @Api.Internal
+    protected final OutputStream applyStreamFilters(OutputStream outputStream) {
+        UnaryOperator<OutputStream> filter = streamFilter;
+        return filter == null ? outputStream : filter.apply(outputStream);
     }
 
     /**
@@ -316,6 +406,24 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         for (Runnable runnable : whenSent) {
             runnable.run();
         }
+    }
+
+    private void checkStreamFilter(UnaryOperator<OutputStream> filterFunction) {
+        if (isSent()) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (hasEntity()) {
+            throw new IllegalStateException("OutputStream already obtained");
+        }
+        Objects.requireNonNull(filterFunction);
+    }
+
+    private static UnaryOperator<OutputStream> addStreamFilter(UnaryOperator<OutputStream> current,
+                                                               UnaryOperator<OutputStream> filterFunction) {
+        if (current == null) {
+            return filterFunction;
+        }
+        return it -> filterFunction.apply(current.apply(it));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

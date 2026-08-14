@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ public interface ErrorHandler<T extends Throwable> {
      * Error handling consumer.
      * Do not throw an exception from an error handler, it would make this error handler invalid and the exception would be
      * ignored.
+     * <p>
+     * The response retains the status configured before the failure. The error handler is responsible for configuring or
+     * deliberately retaining an appropriate status before sending a replacement response.
      *
      * @param req the server request
      * @param res the server response

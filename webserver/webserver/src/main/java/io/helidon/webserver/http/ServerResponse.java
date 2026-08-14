@@ -103,8 +103,9 @@ public interface ServerResponse {
      * Set header with a value.
      * <p>
      * Headers are mutable response metadata. Once configured, they remain on this response unless later application
-     * code or error handling changes them. Calling {@link #next()}, calling {@link #reroute(String)}, or throwing an
-     * exception does not clear configured headers automatically.
+     * code or error handling changes them. Calling {@link #next()} or {@link #reroute(String)} does not clear configured
+     * headers automatically. If error handling replaces an unsent response entity, it removes entity-specific headers
+     * while preserving response metadata unrelated to the entity.
      * <p>
      * Headers cannot be set after {@link #outputStream()} method is called, or after the response was sent.
      *
@@ -199,6 +200,7 @@ public interface ServerResponse {
      * Executed right before the first byte is written to the socket (including response status and headers).
      * Response can be modified (i.e. headers, status) at this point, though modifying the entity may not be done, as
      * this method is most likely called from within one of the {@link #send()} methods.
+     * The listener remains registered if error handling replaces the unsent response entity.
      * <p>
      * Note: this method is implemented as a default method that does nothing, for backward compatibility.
      *
@@ -261,6 +263,9 @@ public interface ServerResponse {
 
     /**
      * Response trailers (mutable).
+     * Trailer state is associated with the current response entity and is cleared if error handling replaces that entity
+     * before it is sent.
+     *
      * @return trailers
      * @throws java.lang.IllegalStateException if client didn't ask for trailers with {@code TE: trailers} header in request
      * or response doesn't contain trailer declaration headers {@code Trailer: <trailer-name>}
@@ -270,6 +275,9 @@ public interface ServerResponse {
     /**
      * Callback to update any last minute trailers before they are written to the
      * output stream.
+     * The callback is associated with the current response entity and is cleared if error handling replaces that entity
+     * before it is sent.
+     * A response-scoped policy should use {@link #beforeSend(Runnable)} to register a fresh callback for each entity.
      *
      * @param beforeTrailers consumer of mutable trailers
      * @return this instance
@@ -283,6 +291,8 @@ public interface ServerResponse {
      * In case an output stream was used, calling this method will immediately close the stream and return this
      * message as the reason for closing the response.
      * In HTTP/1 this would be in a trailer header
+     * The result is associated with the current response entity and is cleared if error handling replaces that entity
+     * before it is sent.
      *
      * @param result result description
      */
@@ -310,6 +320,9 @@ public interface ServerResponse {
 
     /**
      * Configure a custom output stream to wrap the output stream of the response.
+     * The filter remains registered if error handling replaces the unsent response entity.
+     * A filter that changes representation metadata, such as {@code Content-Encoding}, must use
+     * {@link #beforeSend(Runnable)} to configure the matching headers for each entity that is sent.
      *
      * @param filterFunction the function to replace output stream of this response with a user provided one
      */

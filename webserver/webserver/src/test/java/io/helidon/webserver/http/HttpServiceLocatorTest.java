@@ -905,7 +905,7 @@ class HttpServiceLocatorTest {
             when(response.hasEntity()).thenAnswer(inv -> entity.get() != null);
             when(response.isSent()).thenAnswer(inv -> entity.get() != null);
             when(response.reset()).thenReturn(true);
-            when(response.resetStream()).thenReturn(true);
+            when(response.resetEntity()).thenReturn(true);
             when(response.status()).thenReturn(Status.OK_200);
             doAnswer(inv -> {
                 entity.set("");

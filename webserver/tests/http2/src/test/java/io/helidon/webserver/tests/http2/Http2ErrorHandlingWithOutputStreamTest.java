@@ -24,6 +24,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +33,11 @@ import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.ErrorHandler;
@@ -54,6 +59,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
@@ -61,6 +67,14 @@ class Http2ErrorHandlingWithOutputStreamTest {
 
     private static final HeaderName MAIN_HEADER_NAME = HeaderNames.create("main-handler");
     private static final HeaderName ERROR_HEADER_NAME = HeaderNames.create("error-handler");
+    private static final HeaderName STALE_TRAILER_NAME = HeaderNames.create("stale-trailer");
+    private static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
+    private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
+    private static final HeaderName CONTENT_MD5_NAME = HeaderNames.create("Content-MD5");
+    private static final HeaderName DIGEST_NAME = HeaderNames.create("Digest");
+    private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
+    private static final HeaderName CSP_HEADER_NAME = HeaderNames.create("Content-Security-Policy");
+    private static final HeaderName RESPONSE_SIGNATURE_NAME = HeaderNames.create("Response-Signature");
     private static final HeaderName REENTRY_RESULT_HEADER_NAME = HeaderNames.create("reentry-result");
     private static final HeaderName CALLBACK_COUNT_HEADER_NAME = HeaderNames.create("callback-count");
     private static HttpClient httpClient;
@@ -98,9 +112,50 @@ class Http2ErrorHandlingWithOutputStreamTest {
     static void router(HttpRouting.Builder router) {
         // explicitly on HTTP/2 only, to make sure we do upgrade
         router.error(CustomException.class, new CustomRoutingHandler())
+                .addFilter((chain, req, res) -> {
+                    if (req.path().path().equals("/get-cross-cutting-error")) {
+                        res.beforeSend(() -> {
+                            res.header(CSP_HEADER_NAME, "default-src 'none'");
+                            res.header(HeaderNames.CONTENT_ENCODING, "base64");
+                            res.header(HeaderNames.TRAILER, RESPONSE_SIGNATURE_NAME.defaultCase());
+                            res.beforeTrailers(trailers -> trailers.set(RESPONSE_SIGNATURE_NAME, "signed"));
+                        });
+                        res.streamFilter(Base64.getEncoder()::wrap);
+                    } else if (req.path().path().equals("/get-outputStream")) {
+                        res.entityStreamFilter(_ -> OutputStream.nullOutputStream());
+                        res.entityBeforeSend(() -> res.header(HeaderNames.CONTENT_ENCODING, "stale"));
+                    }
+                    chain.proceed();
+                })
+                .route(Http2Route.route(GET, "get-cross-cutting-error", (_, _) -> {
+                    throw new CustomException();
+                }))
                 .route(Http2Route.route(GET, "get-outputStream", (req, res) -> {
                     res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
+                    res.header(HeaderNames.CONTENT_LENGTH, "1");
+                    res.header(HeaderNames.TRAILER, "x-stale-trailer");
+                    res.header(HeaderNames.CONTENT_RANGE, "bytes 0-0/1");
+                    res.header(HeaderNames.CONTENT_TYPE, "application/stale");
+                    res.header(HeaderNames.CONTENT_ENCODING, "stale");
+                    res.header(HeaderNames.CONTENT_LANGUAGE, "en");
+                    res.header(HeaderNames.CONTENT_LOCATION, "/stale");
+                    res.header(HeaderNames.CONTENT_DISPOSITION, "attachment");
+                    res.header(CONTENT_DIGEST_NAME, "sha-256=:YWJjZA==:");
+                    res.header(CONTENT_MD5_NAME, "YWJjZA==");
+                    res.header(DIGEST_NAME, "SHA-256=YWJjZA==");
+                    res.header(REPR_DIGEST_NAME, "sha-256=:YWJjZA==:");
+                    res.header(HeaderNames.ETAG, "\"stale\"");
+                    res.header(HeaderNames.LAST_MODIFIED, "stale");
+                    res.header(HeaderNames.ACCEPT_RANGES, "bytes");
+                    res.header(HeaderNames.CACHE_CONTROL, "no-store");
+                    res.header(HeaderNames.VARY, "Origin");
+                    res.outputStream();
+                    throw new CustomException();
+                }))
+                .route(Http2Route.route(GET, "get-outputStream-stale-trailers", (_, res) -> {
+                    res.beforeTrailers(trailers -> trailers.set(STALE_TRAILER_NAME, "stale"));
+                    res.streamResult("stale-result");
                     res.outputStream();
                     throw new CustomException();
                 }))
@@ -201,6 +256,22 @@ class Http2ErrorHandlingWithOutputStreamTest {
     }
 
     @Test
+    void testCrossCuttingResponseHooksSurviveErrorReplacement(WebClient webClient) {
+        Http2Client client = webClient.client(Http2Client.PROTOCOL);
+        ClientResponseTyped<String> response = client.get("/get-cross-cutting-error")
+                .header(HeaderValues.TE_TRAILERS)
+                .request(String.class);
+
+        assertAll(
+                () -> assertThat(response.headers().get(CSP_HEADER_NAME).get(), is("default-src 'none'")),
+                () -> assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).get(), is("base64")),
+                () -> assertThat(response.entity(),
+                                 is(Base64.getEncoder().encodeToString("TeaPotIAm".getBytes(StandardCharsets.UTF_8)))),
+                () -> assertThat(response.trailers().get(RESPONSE_SIGNATURE_NAME).get(), is("signed"))
+        );
+    }
+
+    @Test
     void testGetOutputStreamThenError_expect_CustomErrorHandlerMessage() {
         var response = request("/get-outputStream");
 
@@ -208,6 +279,39 @@ class Http2ErrorHandlingWithOutputStreamTest {
         assertThat(response.body(), is("TeaPotIAm"));
         assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
         assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValueAsLong(HeaderNames.CONTENT_LENGTH.lowerCase()).orElse(-1),
+                   is((long) "TeaPotIAm".getBytes(StandardCharsets.UTF_8).length));
+        assertThat(response.headers().firstValue(HeaderNames.TRAILER.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_RANGE.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_TYPE.lowerCase()),
+                   is(Optional.of("text/plain; charset=UTF-8")));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_ENCODING.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_LANGUAGE.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_LOCATION.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CONTENT_DISPOSITION.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(CONTENT_DIGEST_NAME.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(CONTENT_MD5_NAME.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(DIGEST_NAME.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(REPR_DIGEST_NAME.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.ETAG.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.LAST_MODIFIED.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.ACCEPT_RANGES.lowerCase()), is(emptyOptional()));
+        assertThat(response.headers().firstValue(HeaderNames.CACHE_CONTROL.lowerCase()), is(Optional.of("no-store")));
+        assertThat(response.headers().firstValue(HeaderNames.VARY.lowerCase()),
+                   is(Optional.of("Origin, Accept-Encoding")));
+    }
+
+    @Test
+    void testGetOutputStreamThenErrorClearsStaleTrailerState(WebClient webClient) {
+        Http2Client client = webClient.client(Http2Client.PROTOCOL);
+        ClientResponseTyped<String> response = client.get("/get-outputStream-stale-trailers")
+                .header(HeaderValues.TE_TRAILERS)
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.I_AM_A_TEAPOT_418));
+        assertThat(response.entity(), is("TeaPotIAm"));
+        assertThat(response.trailers().contains(STALE_TRAILER_NAME), is(false));
+        assertThat(response.trailers().get(STREAM_RESULT_NAME).get(), is("OK"));
     }
 
     @Test
@@ -324,6 +428,10 @@ class Http2ErrorHandlingWithOutputStreamTest {
             res.header(ERROR_HEADER_NAME, "err");
             // this is now the responsibility of an error handler, as otherwise we may remove CORS headers etc.
             res.headers().remove(MAIN_HEADER_NAME);
+            if (req.path().path().equals("/get-outputStream-stale-trailers")) {
+                res.header(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
+                res.streamFilter(outputStream -> outputStream);
+            }
             res.send("TeaPotIAm");
         }
     }
