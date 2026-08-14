@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriPath;
@@ -154,6 +155,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         return (T) this;
     }
 
+    @Api.Internal
     @Override
     public void entityBeforeSend(Runnable listener) {
         beforeSend.add(Objects.requireNonNull(listener));
@@ -233,6 +235,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         return hasEntity() || isNexted() || shouldReroute();
     }
 
+    @Api.Internal
     @Override
     public boolean resetEntity() {
         if (!resetStream()) {
@@ -274,6 +277,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         streamFilter = addStreamFilter(streamFilter, filterFunction);
     }
 
+    @Api.Internal
     @Override
     public void entityStreamFilter(UnaryOperator<OutputStream> filterFunction) {
         checkStreamFilter(filterFunction);
