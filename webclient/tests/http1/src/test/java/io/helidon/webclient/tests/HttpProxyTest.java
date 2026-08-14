@@ -43,11 +43,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.Method.GET;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ServerTest
@@ -194,23 +192,6 @@ class HttpProxyTest {
         } finally {
             ProxySelector.setDefault(original);
         }
-    }
-
-    @Test
-    void priorKnowledgeHttp2RejectsForwardProxy() {
-        Proxy proxy = Proxy.builder()
-                .type(ProxyType.HTTP)
-                .host(PROXY_HOST)
-                .port(proxyPort)
-                .build();
-        var request = clientHttp2.get("/get")
-                .proxy(proxy)
-                .priorKnowledge(true);
-
-        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, request::request);
-
-        assertThat(failure.getMessage(), containsString("negotiated HTTP/1.1 fallback is not enabled"));
-        assertThat(httpProxy.counter(), is(0));
     }
 
     @Test

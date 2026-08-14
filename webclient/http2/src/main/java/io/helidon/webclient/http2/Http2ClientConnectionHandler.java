@@ -172,8 +172,8 @@ class Http2ClientConnectionHandler {
                                           http1FallbackHandler,
                                           maybeConnection.get());
             }
-            if (requestTarget.proxyRoute().forwardProxy()) {
-                if (request.priorKnowledge() || !http1FallbackAllowed(request)) {
+            if (requestTarget.proxyRoute().forwardProxy() && !request.priorKnowledge()) {
+                if (!http1FallbackAllowed(request)) {
                     throw unsupportedHttp1Fallback(initialUri, request, http1FallbackHandler);
                 }
                 result.set(Result.HTTP_1);

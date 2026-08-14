@@ -16,6 +16,7 @@
 package io.helidon.webclient.http2;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
@@ -33,6 +34,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.Proxy.ProxyType;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http1.Http1Client;
@@ -77,6 +79,12 @@ class Http2WireProtocolTest {
         Http2Config http2Config = Http2Config.create();
         HttpRouting.Builder http2Routing = HttpRouting.builder()
                 .route(Http2Route.route(GET, "/h2", (req, res) -> res.send("h2")))
+                .route(Http2Route.route(GET, "/forward-proxy", (req, res) -> {
+                    var requestedUri = req.requestedUri();
+                    res.send(requestedUri.scheme()
+                                     + "|" + requestedUri.authority()
+                                     + "|" + requestedUri.path().path());
+                }))
                 .route(Http2Route.route(POST, "/expect-redirect", (req, res) -> {
                     if (req.headers().containsToken(HeaderValues.EXPECT_100)) {
                         res.status(Status.SEE_OTHER_303)
@@ -159,6 +167,38 @@ class Http2WireProtocolTest {
             assertThat(response.protocolId(), is(Http2Client.PROTOCOL_ID));
             assertThat(observations.protocolsAfterProceed(), contains(Http2Client.PROTOCOL_ID));
             assertThat(observations.protocolsWhenSent(), contains(Http2Client.PROTOCOL_ID));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void priorKnowledgeHttp2UsesForwardProxyPeer() {
+        String proxyHost = "h2-forward-proxy.invalid";
+        Proxy proxy = Proxy.builder()
+                .type(ProxyType.HTTP)
+                .host(proxyHost)
+                .port(http2Port)
+                .build();
+        Http2Client client = Http2Client.builder()
+                .baseUri("http://unresolvable.invalid:8181")
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .dnsResolver((host, _) -> {
+                    if (!proxyHost.equals(host)) {
+                        throw new AssertionError("Logical origin must not be resolved: " + host);
+                    }
+                    return InetAddress.ofLiteral("127.0.0.1");
+                })
+                .proxy(proxy)
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .build();
+
+        try (Http2ClientResponse response = client.get("/forward-proxy").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.protocolId(), is(Http2Client.PROTOCOL_ID));
+            assertThat(response.as(String.class),
+                       is("http|unresolvable.invalid:8181|/forward-proxy"));
         } finally {
             client.closeResource();
         }
