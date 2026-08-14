@@ -24,8 +24,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerResponseHeaders;
 
-record StaticContentMetadata(MediaType mediaType,
-                             Header contentTypeHeader,
+record StaticContentMetadata(Header contentTypeHeader,
                              Instant lastModified,
                              Header lastModifiedHeader,
                              long contentLength,
@@ -38,8 +37,7 @@ record StaticContentMetadata(MediaType mediaType,
         Header contentLengthHeader = contentLength < 0
                 ? null
                 : HeaderValues.createCached(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(contentLength));
-        return new StaticContentMetadata(mediaType,
-                                         contentTypeHeader,
+        return new StaticContentMetadata(contentTypeHeader,
                                          null,
                                          null,
                                          contentLength,
@@ -62,8 +60,7 @@ record StaticContentMetadata(MediaType mediaType,
                                                               StaticContentHandler.formatLastModified(lastModified));
         String etag = StaticContentHandler.etag(lastModified, contentLength);
         Header etagHeader = HeaderValues.createCached(HeaderNames.ETAG, true, false, '"' + etag + '"');
-        return new StaticContentMetadata(mediaType,
-                                         contentTypeHeader,
+        return new StaticContentMetadata(contentTypeHeader,
                                          lastModified,
                                          lastModifiedHeader,
                                          contentLength,

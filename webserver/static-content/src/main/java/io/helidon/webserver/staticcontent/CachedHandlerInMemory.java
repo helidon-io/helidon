@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.staticcontent;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -57,10 +56,6 @@ record CachedHandlerInMemory(StaticContentMetadata metadata,
 
     int contentLength() {
         return bytes.length;
-    }
-
-    Instant lastModified() {
-        return metadata.lastModified();
     }
 
     private void send(ServerRequest request, ServerResponse response) {

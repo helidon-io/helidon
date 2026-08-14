@@ -122,8 +122,6 @@ class CachedHandlerTest {
         assertThat("Cached bytes must not be null", cached.bytes(), notNullValue());
         assertThat("Cached bytes must not be empty", cached.bytes(), not(BufferData.EMPTY_BYTES));
         assertThat("Content length", cached.contentLength(), is(1230));
-        assertThat("Last modified", cached.lastModified(), notNullValue());
-        assertThat("Media type", cached.metadata().mediaType(), is(MEDIA_TYPE_ICON));
     }
 
     @Test
@@ -179,7 +177,6 @@ class CachedHandlerTest {
         assertThat("Path", pathHandler.path(), notNullValue());
         assertThat("Last modified", pathHandler.metadata().lastModified(), notNullValue());
         assertThat("Content length", pathHandler.metadata().contentLength(), is(7L));
-        assertThat("Media type", pathHandler.metadata().mediaType(), is(MediaTypes.TEXT_PLAIN));
     }
 
     @Test
@@ -537,8 +534,6 @@ class CachedHandlerTest {
         assertThat("Cached bytes must not be empty", cached.bytes(), not(BufferData.EMPTY_BYTES));
         // content is: "Nested content"
         assertThat("Content length", cached.contentLength(), is(14));
-        assertThat("Last modified", cached.lastModified(), notNullValue());
-        assertThat("Media type", cached.metadata().mediaType(), is(MediaTypes.TEXT_PLAIN));
     }
 
     @Test
@@ -1170,7 +1165,6 @@ class CachedHandlerTest {
         assertThat("Path", pathHandler.path(), notNullValue());
         assertThat("Last modified", pathHandler.metadata().lastModified(), notNullValue());
         assertThat("Content length", pathHandler.metadata().contentLength(), is(7L));
-        assertThat("Media type", pathHandler.metadata().mediaType(), is(MediaTypes.TEXT_PLAIN));
     }
 
     @Test
