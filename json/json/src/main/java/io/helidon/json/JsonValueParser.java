@@ -18,6 +18,7 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Iterator;
@@ -144,22 +145,38 @@ class JsonValueParser implements JsonParser {
 
     @Override
     public byte readByte() {
-        return current.asNumber().byteValue();
+        try {
+            return readBigInteger().byteValueExact();
+        } catch (ArithmeticException e) {
+            throw createException("The number is too big for a byte value", e);
+        }
     }
 
     @Override
     public short readShort() {
-        return current.asNumber().shortValue();
+        try {
+            return readBigInteger().shortValueExact();
+        } catch (ArithmeticException e) {
+            throw createException("The number is too big for a short value", e);
+        }
     }
 
     @Override
     public int readInt() {
-        return current.asNumber().intValue();
+        try {
+            return readBigInteger().intValueExact();
+        } catch (ArithmeticException e) {
+            throw createException("The number is too big for an int value", e);
+        }
     }
 
     @Override
     public long readLong() {
-        return current.asNumber().longValue();
+        try {
+            return readBigInteger().longValueExact();
+        } catch (ArithmeticException e) {
+            throw createException("The number is too big for a long value", e);
+        }
     }
 
     @Override
@@ -294,6 +311,9 @@ class JsonValueParser implements JsonParser {
     }
 
     private void clearMarkedState() {
+        for (int i = 0; i < depth; i++) {
+            frames[i].clearMark();
+        }
         for (int i = 0; i < markedDepth; i++) {
             markedFrames[i].clear();
         }
@@ -317,6 +337,10 @@ class JsonValueParser implements JsonParser {
         private List<JsonValue> arrayValues;
         private Iterator<Map.Entry<String, JsonValue>> objectIterator;
         private Map.Entry<String, JsonValue> objectEntry;
+        private Map.Entry<String, JsonValue> replayEntry;
+        private List<Map.Entry<String, JsonValue>> replayEntries;
+        private int replayPosition;
+        private Frame markedFrame;
         private int position;
         private int phase = COMPLETE;
 
@@ -360,11 +384,11 @@ class JsonValueParser implements JsonParser {
         private JsonValue nextObject() {
             return switch (phase) {
             case OBJECT_KEY_OR_END -> {
-                if (!objectIterator.hasNext()) {
+                if (!hasNextObjectEntry()) {
                     phase = COMPLETE;
                     yield JsonControlValue.OBJECT_END;
                 }
-                objectEntry = objectIterator.next();
+                objectEntry = nextObjectEntry();
                 position++;
                 phase = OBJECT_COLON;
                 yield JsonString.create(objectEntry.getKey());
@@ -379,7 +403,7 @@ class JsonValueParser implements JsonParser {
             }
             case OBJECT_DELIMITER_OR_END -> {
                 objectEntry = null;
-                if (objectIterator.hasNext()) {
+                if (hasNextObjectEntry()) {
                     phase = OBJECT_KEY_OR_END;
                     yield JsonControlValue.COMMA;
                 }
@@ -397,28 +421,73 @@ class JsonValueParser implements JsonParser {
         private void copyStateFrom(Frame source) {
             clear();
             container = source.container;
+            arrayValues = source.arrayValues;
+            objectIterator = source.objectIterator;
+            objectEntry = source.objectEntry;
+            replayEntry = source.replayEntry;
+            replayEntries = source.replayEntries;
+            replayPosition = source.replayPosition;
             position = source.position;
             phase = source.phase;
+            if (container.type() == JsonValueType.OBJECT) {
+                source.markedFrame = this;
+            }
         }
 
         private void restore(Frame snapshot) {
             clear();
             container = snapshot.container;
+            arrayValues = snapshot.arrayValues;
+            objectIterator = snapshot.objectIterator;
+            objectEntry = snapshot.objectEntry;
+            replayEntry = snapshot.replayEntry;
+            replayEntries = snapshot.replayEntries;
+            replayPosition = snapshot.replayPosition;
             position = snapshot.position;
             phase = snapshot.phase;
-            if (container.type() == JsonValueType.ARRAY) {
-                arrayValues = container.asArray().values();
-                return;
+        }
+
+        private boolean hasNextObjectEntry() {
+            return replayEntries != null && replayPosition < replayEntries.size()
+                    || replayEntry != null && replayPosition == 0
+                    || objectIterator.hasNext();
+        }
+
+        private Map.Entry<String, JsonValue> nextObjectEntry() {
+            if (replayEntries != null && replayPosition < replayEntries.size()) {
+                return replayEntries.get(replayPosition++);
+            }
+            if (replayEntry != null && replayPosition == 0) {
+                replayPosition = 1;
+                return replayEntry;
             }
 
-            objectIterator = container.asObject().entryIterator();
-            Map.Entry<String, JsonValue> entry = null;
-            for (int i = 0; i < position; i++) {
-                entry = objectIterator.next();
+            Map.Entry<String, JsonValue> entry = objectIterator.next();
+            if (markedFrame != null) {
+                boolean sharedReplay = replayEntries != null && replayEntries == markedFrame.replayEntries;
+                markedFrame.recordObjectEntry(entry);
+                if (sharedReplay) {
+                    replayPosition++;
+                }
             }
-            if (phase != OBJECT_KEY_OR_END) {
-                objectEntry = entry;
+            return entry;
+        }
+
+        private void recordObjectEntry(Map.Entry<String, JsonValue> entry) {
+            if (replayEntries != null) {
+                replayEntries.add(entry);
+            } else if (replayEntry == null) {
+                replayEntry = entry;
+            } else {
+                replayEntries = new ArrayList<>();
+                replayEntries.add(replayEntry);
+                replayEntries.add(entry);
+                replayEntry = null;
             }
+        }
+
+        private void clearMark() {
+            markedFrame = null;
         }
 
         private void clear() {
@@ -426,6 +495,10 @@ class JsonValueParser implements JsonParser {
             arrayValues = null;
             objectIterator = null;
             objectEntry = null;
+            replayEntry = null;
+            replayEntries = null;
+            replayPosition = 0;
+            markedFrame = null;
             position = 0;
             phase = COMPLETE;
         }

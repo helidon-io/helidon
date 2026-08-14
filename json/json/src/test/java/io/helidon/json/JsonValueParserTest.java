@@ -68,6 +68,15 @@ class JsonValueParserTest {
     }
 
     @Test
+    void testJsonValueParserRejectsIntegralOverflow() {
+        assertThrows(JsonException.class, () -> JsonParser.create(JsonNumber.create(128)).readByte());
+        assertThrows(JsonException.class, () -> JsonParser.create(JsonNumber.create(32_768)).readShort());
+        assertThrows(JsonException.class, () -> JsonParser.create(JsonNumber.create(2_147_483_648L)).readInt());
+        assertThrows(JsonException.class,
+                     () -> JsonParser.create(JsonNumber.create(new BigDecimal("9223372036854775808"))).readLong());
+    }
+
+    @Test
     public void testJsonValueParserWithSpecialDoubleString() {
         JsonValue original = JsonString.create("NaN");
         JsonParser parser = JsonParser.create(original);

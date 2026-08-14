@@ -397,6 +397,38 @@ class JsonValueParserMarkingTest {
         assertThat(remainingTokens(parser), is(expected));
     }
 
+    @Test
+    void testRepeatedResetLateInWideObject() {
+        JsonObject.Builder builder = JsonObject.builder();
+        int markedProperty = 256;
+        for (int i = 0; i < 300; i++) {
+            builder.set("key" + i, i);
+        }
+        JsonParser parser = JsonParser.create(builder.build());
+
+        for (int i = 0; i < markedProperty; i++) {
+            assertThat(parser.nextToken(), is((byte) '"'));
+            assertThat(parser.readString(), is("key" + i));
+            assertThat(parser.nextToken(), is((byte) ':'));
+            assertThat(parser.nextToken(), is((byte) Integer.toString(i).charAt(0)));
+            assertThat(parser.readInt(), is(i));
+            assertThat(parser.nextToken(), is((byte) ','));
+        }
+
+        for (int i = 0; i < 3; i++) {
+            parser.mark();
+            assertThat(parser.nextToken(), is((byte) '"'));
+            assertThat(parser.readString(), is("key" + markedProperty));
+            parser.resetToMark();
+        }
+
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("key" + markedProperty));
+        assertThat(parser.nextToken(), is((byte) ':'));
+        assertThat(parser.nextToken(), is((byte) '2'));
+        assertThat(parser.readInt(), is(markedProperty));
+    }
+
     private static void assertMarkResetAndRepeatedlySkipNestedContainer(JsonValue nestedContainer, byte endToken) {
         JsonParser parser = JsonParser.create(JsonArray.create(nestedContainer, JsonString.create("after")));
 

@@ -26,6 +26,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -41,13 +42,13 @@ class JsonContainerTest {
         JsonObject swapped = JsonParser.create("{\"a\":\"two\",\"b\":\"one\"}").readJsonObject();
         JsonObject extra = JsonParser.create("{\"a\":\"one\",\"b\":\"two\",\"c\":\"three\"}").readJsonObject();
 
-        assertThat(constructed.equals(parsed), is(true));
-        assertThat(parsed.equals(constructed), is(true));
+        assertThat(constructed, is(parsed));
+        assertThat(parsed, is(constructed));
         assertThat(constructed.hashCode(), is(parsed.hashCode()));
-        assertThat(constructed.equals(swapped), is(false));
-        assertThat(swapped.equals(constructed), is(false));
-        assertThat(constructed.equals(extra), is(false));
-        assertThat(extra.equals(constructed), is(false));
+        assertThat(constructed, is(not(swapped)));
+        assertThat(swapped, is(not(constructed)));
+        assertThat(constructed, is(not(extra)));
+        assertThat(extra, is(not(constructed)));
     }
 
     @ParameterizedTest
@@ -84,11 +85,11 @@ class JsonContainerTest {
         source.set(0, JsonString.create("changed"));
 
         assertThat(constructed.get(0).orElseThrow().asString().value(), is("one"));
-        assertThat(constructed.equals(parsed), is(true));
-        assertThat(parsed.equals(constructed), is(true));
+        assertThat(constructed, is(parsed));
+        assertThat(parsed, is(constructed));
         assertThat(constructed.hashCode(), is(parsed.hashCode()));
-        assertThat(constructed.equals(reversed), is(false));
-        assertThat(reversed.equals(constructed), is(false));
+        assertThat(constructed, is(not(reversed)));
+        assertThat(reversed, is(not(constructed)));
         assertThrows(UnsupportedOperationException.class,
                      () -> constructed.values().add(JsonString.create("three")));
         assertThrows(UnsupportedOperationException.class,
@@ -109,8 +110,8 @@ class JsonContainerTest {
         JsonArray same = JsonArray.create(JsonNumber.create(1), JsonNumber.create(1.0));
         JsonArray differentScale = JsonParser.create("[1.0,1]").readJsonArray();
 
-        assertThat(first.equals(same), is(true));
+        assertThat(first, is(same));
         assertThat(first.hashCode(), is(same.hashCode()));
-        assertThat(first.equals(differentScale), is(false));
+        assertThat(first, is(not(differentScale)));
     }
 }
