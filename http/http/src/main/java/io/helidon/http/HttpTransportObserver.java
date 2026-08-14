@@ -263,13 +263,18 @@ public interface HttpTransportObserver {
         /**
          * Reports the currently selected HTTP protocol.
          *
+         * <p>Publishers must report a known HTTP version using the corresponding {@code PROTOCOL_HTTP_*} constant,
+         * rather than its negotiation identifier. For example, {@code h2} and {@code h2c} map to
+         * {@link #PROTOCOL_HTTP_2}, and {@code h3} maps to {@link #PROTOCOL_HTTP_3}. A protocol for which this observer
+         * defines no constant may use its own stable, non-blank identifier.
+         *
          * <p>The first selection marks the physical connection as established and usable for that protocol. A publisher
          * must therefore report the first selection only after any required transport security handshake has succeeded
          * and its {@link HandshakeObservation#close(HandshakeOutcome)} call has returned. The selected protocol may later
          * change, for example after a successful HTTP/1.1 upgrade to HTTP/2. Repeated selection of an equal protocol
          * identifier has no effect.
          *
-         * @param protocol non-blank selected protocol identifier
+         * @param protocol non-blank selected protocol identifier, normalized to a known constant when applicable
          */
         void protocolSelected(String protocol);
 
