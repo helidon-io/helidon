@@ -43,5 +43,6 @@ module io.helidon.integrations.oci.tls.certificates {
     exports io.helidon.integrations.oci.tls.certificates.spi;
 
     provides io.helidon.common.tls.spi.TlsManagerProvider
-            with io.helidon.integrations.oci.tls.certificates.DefaultOciCertificatesTlsManagerProvider;
+            with io.helidon.integrations.oci.tls.certificates.DefaultOciCertificatesTlsManagerProvider,
+                 io.helidon.integrations.oci.tls.certificates.DefaultOciCertificateBundleTlsManagerProvider;
 }
