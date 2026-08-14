@@ -70,6 +70,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     protected static final Header STREAM_TRAILERS =
             HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
     private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
+    private static final HeaderName CONTENT_MD5_NAME = HeaderNames.create("Content-MD5");
+    private static final HeaderName DIGEST_NAME = HeaderNames.create("Digest");
     private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
     private static final Header VARY_ACCEPT_ENCODING =
             HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
@@ -250,6 +252,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         headers.remove(HeaderNames.CONTENT_LOCATION);
         headers.remove(HeaderNames.CONTENT_DISPOSITION);
         headers.remove(CONTENT_DIGEST_NAME);
+        headers.remove(CONTENT_MD5_NAME);
+        headers.remove(DIGEST_NAME);
         headers.remove(REPR_DIGEST_NAME);
         headers.remove(HeaderNames.ETAG);
         headers.remove(HeaderNames.LAST_MODIFIED);

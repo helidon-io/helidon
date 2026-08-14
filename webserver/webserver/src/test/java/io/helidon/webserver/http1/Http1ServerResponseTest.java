@@ -102,6 +102,8 @@ class Http1ServerResponseTest {
         Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
         var staleTrailer = HeaderNames.create("x-stale-trailer");
         var contentDigest = HeaderNames.create("Content-Digest");
+        var contentMd5 = HeaderNames.create("Content-MD5");
+        var digest = HeaderNames.create("Digest");
         var reprDigest = HeaderNames.create("Repr-Digest");
 
         response.status(Status.PARTIAL_CONTENT_206);
@@ -115,6 +117,8 @@ class Http1ServerResponseTest {
         response.header(HeaderNames.CONTENT_LOCATION, "/stale");
         response.header(HeaderNames.CONTENT_DISPOSITION, "attachment");
         response.header(contentDigest, "sha-256=:YWJjZA==:");
+        response.header(contentMd5, "YWJjZA==");
+        response.header(digest, "SHA-256=YWJjZA==");
         response.header(reprDigest, "sha-256=:YWJjZA==:");
         response.header(HeaderNames.ETAG, "\"stale\"");
         response.header(HeaderNames.LAST_MODIFIED, "stale");
@@ -147,6 +151,8 @@ class Http1ServerResponseTest {
                 () -> assertThat(HeaderNames.CONTENT_DISPOSITION.defaultCase(),
                                  response.headers().contains(HeaderNames.CONTENT_DISPOSITION), is(false)),
                 () -> assertThat(contentDigest.defaultCase(), response.headers().contains(contentDigest), is(false)),
+                () -> assertThat(contentMd5.defaultCase(), response.headers().contains(contentMd5), is(false)),
+                () -> assertThat(digest.defaultCase(), response.headers().contains(digest), is(false)),
                 () -> assertThat(reprDigest.defaultCase(), response.headers().contains(reprDigest), is(false)),
                 () -> assertThat(HeaderNames.ETAG.defaultCase(),
                                  response.headers().contains(HeaderNames.ETAG), is(false)),
