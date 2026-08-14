@@ -97,7 +97,7 @@ public final class ClientConnectionTarget {
         String scheme = uri.scheme().toLowerCase(Locale.ROOT);
         UriAuthority originAuthority = originAuthority(key, uri, headers, scheme);
         ProxyRoute route = key.proxy().effectiveRoute(scheme,
-                                                      key.host(),
+                                                      key.routingHost(),
                                                       key.port(),
                                                       key.tls().enabled(),
                                                       key.dnsResolver(),
@@ -140,7 +140,7 @@ public final class ClientConnectionTarget {
                                                 UriAuthority originAuthority) {
         ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
         ProxyRoute route = key.proxy().effectiveRoute(scheme,
-                                                      key.host(),
+                                                      key.routingHost(),
                                                       key.port(),
                                                       key.tls().enabled(),
                                                       key.dnsResolver(),
@@ -164,7 +164,7 @@ public final class ClientConnectionTarget {
     public static ClientConnectionTarget create(ConnectionKey connectionKey, String scheme) {
         ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
         ProxyRoute route = key.proxy().effectiveRoute(scheme,
-                                                      key.host(),
+                                                      key.routingHost(),
                                                       key.port(),
                                                       key.tls().enabled(),
                                                       key.dnsResolver(),
@@ -376,7 +376,7 @@ public final class ClientConnectionTarget {
         ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
         ProxyRoute route = Objects.requireNonNull(proxyRoute, "proxyRoute");
         return route.belongsTo(key.proxy())
-                && route.selectedFor(scheme, key.host(), key.port(), key.tls().enabled());
+                && route.selectedFor(scheme, key.routingHost(), key.port(), key.tls().enabled());
     }
 
     /**
@@ -412,7 +412,7 @@ public final class ClientConnectionTarget {
      * @return resolved target
      */
     public ResolvedClientTarget resolve() {
-        return resolve(connectionKey.host(), connectionKey.port(), 0);
+        return resolve(connectionKey.routingHost(), connectionKey.port(), 0);
     }
 
     /**
@@ -509,25 +509,25 @@ public final class ClientConnectionTarget {
     }
 
     private static UriAuthority normalizedOriginAuthority(ConnectionKey connectionKey) {
-        return UriAuthority.create(UriHost.create(connectionKey.host()), connectionKey.port());
+        return UriAuthority.create(UriHost.create(connectionKey.routingHost()), connectionKey.port());
     }
 
     private static ProxyRoute routeFor(ConnectionKey connectionKey, String scheme, ProxyRoute proxyRoute) {
         ProxyRoute route = Objects.requireNonNull(proxyRoute, "proxyRoute");
         if (!route.belongsTo(connectionKey.proxy())) {
             return connectionKey.proxy().effectiveRoute(scheme,
-                                                        connectionKey.host(),
+                                                        connectionKey.routingHost(),
                                                         connectionKey.port(),
                                                         connectionKey.tls().enabled(),
                                                         connectionKey.dnsResolver(),
                                                         connectionKey.dnsAddressLookup());
         }
         if (!route.selectedFor(scheme,
-                               connectionKey.host(),
+                               connectionKey.routingHost(),
                                connectionKey.port(),
                                connectionKey.tls().enabled())) {
             return connectionKey.proxy().effectiveRoute(scheme,
-                                                        connectionKey.host(),
+                                                        connectionKey.routingHost(),
                                                         connectionKey.port(),
                                                         connectionKey.tls().enabled(),
                                                         connectionKey.dnsResolver(),

@@ -677,7 +677,7 @@ public class Proxy {
                                                                 clientConfig.dnsResolver(),
                                                                 clientConfig.dnsAddressLookup(),
                                                                 NO_PROXY);
-        UriAuthority proxyAuthority = UriAuthority.create(UriHost.create(proxyConnectionKey.host()),
+        UriAuthority proxyAuthority = UriAuthority.create(UriHost.create(proxyConnectionKey.routingHost()),
                                                           configuredProxy.getPort());
         ProxyRoute directRoute = proxyConnectionKey.proxy()
                 .effectiveRoute("http", configuredProxy.getHostString(), configuredProxy.getPort(), false);

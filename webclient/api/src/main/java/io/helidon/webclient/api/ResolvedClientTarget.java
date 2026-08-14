@@ -64,7 +64,7 @@ public final class ResolvedClientTarget {
         DnsResolver dnsResolver = connectionKey.dnsResolver();
         InetSocketAddress noProxyAddress = proxyRoute.noProxyAddress().orElse(null);
         if (noProxyAddress != null
-                && (!connectionKey.host().equalsIgnoreCase(routeHost) || connectionKey.port() != routePort)) {
+                && (!connectionKey.routingHost().equalsIgnoreCase(routeHost) || connectionKey.port() != routePort)) {
             throw new IllegalArgumentException("An address-bound no-proxy route cannot use an alternative authority");
         }
         InetAddress peer = noProxyAddress == null ? selectedAddress.getAddress() : noProxyAddress.getAddress();

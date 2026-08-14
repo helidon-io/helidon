@@ -35,6 +35,7 @@ import io.helidon.webclient.spi.DnsResolver;
 public final class ConnectionKey {
     private final String scheme;
     private final String host;
+    private final String routingHost;
     private final int port;
     private final Tls tls;
     private final DnsResolver dnsResolver;
@@ -84,7 +85,8 @@ public final class ConnectionKey {
                           Transport transport,
                           SniSupport.Selection sni) {
         this.scheme = scheme;
-        this.host = host.startsWith("[") && host.endsWith("]")
+        this.host = host;
+        this.routingHost = host.startsWith("[") && host.endsWith("]")
                 ? UriAuthority.create(host).host().value()
                 : host;
         this.port = port;
@@ -367,10 +369,6 @@ public final class ConnectionKey {
         return tlsPeerPort;
     }
 
-    List<SNIServerName> serverNamesOverride() {
-        return SniSupport.serverNamesOverride(sni);
-    }
-
     /**
      * Apply effective server names to SSL parameters when first-class SNI configuration overrides the TLS defaults.
      *
@@ -383,6 +381,14 @@ public final class ConnectionKey {
         if (serverNames != null) {
             parameters.setServerNames(serverNames);
         }
+    }
+
+    String routingHost() {
+        return routingHost;
+    }
+
+    List<SNIServerName> serverNamesOverride() {
+        return SniSupport.serverNamesOverride(sni);
     }
 
     @Override

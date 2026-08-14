@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
@@ -142,22 +143,67 @@ class ClientConnectionTargetTest {
     }
 
     @Test
-    void normalizesBracketedIpv6ConnectionHost() {
+    void preservesBracketedIpv6ConnectionHostWhileRoutingWithNormalizedHost() {
         ClientUri uri = ClientUri.create(URI.create("http://[::1]:8080/path"));
         ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
-        ConnectionKey connectionKey = ConnectionKey.create(uri,
+        DnsResolver resolver = (host, lookup) -> {
+            assertThat(host, is("::1"));
+            return InetAddress.ofLiteral("::1");
+        };
+        ConnectionKey connectionKey = ConnectionKey.create("http",
+                                                           "[0:0:0:0:0:0:0:1]",
+                                                           8080,
                                                            NO_TLS,
-                                                           (host, lookup) -> {
-                                                               assertThat(host, is("::1"));
-                                                               return InetAddress.ofLiteral("::1");
-                                                           },
+                                                           resolver,
                                                            DnsAddressLookup.IPV6,
                                                            Proxy.noProxy());
+        ConnectionKey unbracketed = ConnectionKey.create("http",
+                                                         "0:0:0:0:0:0:0:1",
+                                                         8080,
+                                                         NO_TLS,
+                                                         resolver,
+                                                         DnsAddressLookup.IPV6,
+                                                         Proxy.noProxy());
 
         ResolvedClientTarget target = ClientConnectionTarget.create(connectionKey, uri, headers).resolve();
 
-        assertThat(connectionKey.host(), is("::1"));
+        assertThat(connectionKey.host(), is("[0:0:0:0:0:0:0:1]"));
+        assertThat(connectionKey, not(unbracketed));
+        assertThat(connectionKey.toString(), containsString("host=[0:0:0:0:0:0:0:1]"));
         assertThat(target.routeAuthority().toString(), is("[::1]:8080"));
+    }
+
+    @Test
+    void retainedRouteUsesNormalizedBracketedIpv6Host() {
+        ClientUri uri = ClientUri.create(URI.create("http://[::1]:8080/path"));
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        DnsResolver resolver = (host, lookup) -> {
+            assertThat(host, is("::1"));
+            return InetAddress.ofLiteral("::1");
+        };
+        Proxy proxy = Proxy.builder()
+                .host("proxy.example")
+                .port(8181)
+                .addNoProxy("::1")
+                .build();
+        ConnectionKey connectionKey = ConnectionKey.create("http",
+                                                           "[::1]",
+                                                           8080,
+                                                           NO_TLS,
+                                                           resolver,
+                                                           DnsAddressLookup.IPV6,
+                                                           proxy);
+
+        ClientConnectionTarget target = ClientConnectionTarget.create(connectionKey, uri, headers);
+        ClientConnectionTarget retained = ClientConnectionTarget.create(connectionKey,
+                                                                         uri,
+                                                                         headers,
+                                                                         target.proxyRoute());
+
+        assertThat(target.proxyRoute().kind(), is(ProxyRoute.Kind.DIRECT));
+        assertThat(ClientConnectionTarget.routeMatches(connectionKey, "http", target.proxyRoute()), is(true));
+        assertThat(retained.proxyRoute(), sameInstance(target.proxyRoute()));
+        assertThat(retained.resolve().routeAuthority().toString(), is("[::1]:8080"));
     }
 
     @Test
