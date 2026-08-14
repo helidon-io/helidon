@@ -52,7 +52,13 @@ class SingleFileContentHandler extends FileBasedContentHandler {
                     if (path.equals(resolvedPath)) {
                         Path secureRoot = Optional.ofNullable(realPath.get()).map(Path::getParent).orElse(null);
                         byte[] fileBytes = FileBasedContentHandler.readAllBytes(resolvedPath, false, secureRoot);
-                        cacheInMemory(".", detectType(fileName(path)), fileBytes, lastModified(resolvedPath, false, secureRoot));
+                        var contentType = detectType(fileName(path));
+                        var lastModified = lastModified(resolvedPath, false, secureRoot);
+                        if (lastModified.isPresent()) {
+                            cacheInMemory(".", contentType, fileBytes, lastModified.get());
+                        } else {
+                            cacheInMemory(".", contentType, fileBytes);
+                        }
                     } else {
                         LOGGER.log(System.Logger.Level.WARNING, "File " + path + " cannot be added to in memory cache,"
                                 + " as it uses a symbolic link.");

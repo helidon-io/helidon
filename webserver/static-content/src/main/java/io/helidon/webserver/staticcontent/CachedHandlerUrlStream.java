@@ -35,10 +35,12 @@ record CachedHandlerUrlStream(URL url, StaticContentMetadata metadata) implement
     static CachedHandlerUrlStream create(MediaType mediaType, URL url) throws IOException {
         URLConnection urlConnection = url.openConnection();
         long lastModified = urlConnection.getLastModified();
-        Instant modified = lastModified == 0 ? null : Instant.ofEpochMilli(lastModified);
         long contentLength = urlConnection.getContentLengthLong();
+        StaticContentMetadata metadata = lastModified == 0
+                ? StaticContentMetadata.create(mediaType, contentLength)
+                : StaticContentMetadata.create(mediaType, Instant.ofEpochMilli(lastModified), contentLength);
         return new CachedHandlerUrlStream(url,
-                                          StaticContentMetadata.create(mediaType, modified, contentLength));
+                                          metadata);
     }
 
     @Override

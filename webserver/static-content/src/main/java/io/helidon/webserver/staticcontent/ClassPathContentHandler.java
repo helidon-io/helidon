@@ -214,7 +214,11 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         }
         byte[] entityBytes = baos.toByteArray();
 
-        cacheInMemory(requestedResource, contentType, entityBytes, lastModified);
+        if (lastModified.isPresent()) {
+            cacheInMemory(requestedResource, contentType, entityBytes, lastModified.get());
+        } else {
+            cacheInMemory(requestedResource, contentType, entityBytes);
+        }
     }
 
     private static String fileName(URL url) {

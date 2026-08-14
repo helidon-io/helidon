@@ -33,21 +33,35 @@ record StaticContentMetadata(MediaType mediaType,
                              String etag,
                              Header etagHeader) {
 
-    static StaticContentMetadata create(MediaType mediaType, Instant lastModified, long contentLength) {
+    static StaticContentMetadata create(MediaType mediaType, long contentLength) {
         Header contentTypeHeader = HeaderValues.createCached(HeaderNames.CONTENT_TYPE, mediaType.text());
         Header contentLengthHeader = contentLength < 0
                 ? null
                 : HeaderValues.createCached(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(contentLength));
-        Header lastModifiedHeader = lastModified == null
+        return new StaticContentMetadata(mediaType,
+                                         contentTypeHeader,
+                                         null,
+                                         null,
+                                         contentLength,
+                                         contentLengthHeader,
+                                         null,
+                                         null);
+    }
+
+    static StaticContentMetadata create(MediaType mediaType, Instant lastModified, long contentLength) {
+        if (lastModified == null) {
+            return create(mediaType, contentLength);
+        }
+        Header contentTypeHeader = HeaderValues.createCached(HeaderNames.CONTENT_TYPE, mediaType.text());
+        Header contentLengthHeader = contentLength < 0
                 ? null
-                : HeaderValues.createCached(HeaderNames.LAST_MODIFIED,
-                                            true,
-                                            false,
-                                            StaticContentHandler.formatLastModified(lastModified));
-        String etag = lastModified == null ? null : StaticContentHandler.etag(lastModified, contentLength);
-        Header etagHeader = etag == null
-                ? null
-                : HeaderValues.createCached(HeaderNames.ETAG, true, false, '"' + etag + '"');
+                : HeaderValues.createCached(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(contentLength));
+        Header lastModifiedHeader = HeaderValues.createCached(HeaderNames.LAST_MODIFIED,
+                                                              true,
+                                                              false,
+                                                              StaticContentHandler.formatLastModified(lastModified));
+        String etag = StaticContentHandler.etag(lastModified, contentLength);
+        Header etagHeader = HeaderValues.createCached(HeaderNames.ETAG, true, false, '"' + etag + '"');
         return new StaticContentMetadata(mediaType,
                                          contentTypeHeader,
                                          lastModified,

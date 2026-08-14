@@ -435,12 +435,19 @@ abstract class StaticContentHandler implements HttpService {
         return handlerCache;
     }
 
-    void cacheInMemory(String resource, MediaType contentType, byte[] bytes, Optional<Instant> lastModified) {
+    void cacheInMemory(String resource, MediaType contentType, byte[] bytes) {
         int contentLength = bytes.length;
         CachedHandlerInMemory inMemoryResource =
-                new CachedHandlerInMemory(StaticContentMetadata.create(contentType,
-                                                                       lastModified.orElse(null),
-                                                                       contentLength),
+                new CachedHandlerInMemory(StaticContentMetadata.create(contentType, contentLength),
+                                          bytes);
+
+        cacheInMemory(resource, inMemoryResource);
+    }
+
+    void cacheInMemory(String resource, MediaType contentType, byte[] bytes, Instant lastModified) {
+        int contentLength = bytes.length;
+        CachedHandlerInMemory inMemoryResource =
+                new CachedHandlerInMemory(StaticContentMetadata.create(contentType, lastModified, contentLength),
                                           bytes);
 
         cacheInMemory(resource, inMemoryResource);

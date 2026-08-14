@@ -214,10 +214,13 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                 return;
             }
             byte[] fileBytes = FileBasedContentHandler.readAllBytes(resolvedPath, false, currentRealRoot);
-            cacheInMemory(resource,
-                          detectType(fileName(path)),
-                          fileBytes,
-                          lastModified(resolvedPath, false, currentRealRoot));
+            var contentType = detectType(fileName(path));
+            var lastModified = lastModified(resolvedPath, false, currentRealRoot);
+            if (lastModified.isPresent()) {
+                cacheInMemory(resource, contentType, fileBytes, lastModified.get());
+            } else {
+                cacheInMemory(resource, contentType, fileBytes);
+            }
         }
     }
 

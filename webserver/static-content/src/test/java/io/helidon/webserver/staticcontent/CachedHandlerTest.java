@@ -736,16 +736,13 @@ class CachedHandlerTest {
 
         handler.cacheInMemory("resource.txt",
                               MediaTypes.TEXT_PLAIN,
-                              "Content".getBytes(StandardCharsets.UTF_8),
-                              Optional.empty());
+                              "Content".getBytes(StandardCharsets.UTF_8));
         handler.cacheInMemory("resource.txt",
                               MediaTypes.TEXT_PLAIN,
-                              "Content".getBytes(StandardCharsets.UTF_8),
-                              Optional.empty());
+                              "Content".getBytes(StandardCharsets.UTF_8));
         handler.cacheInMemory("resource.txt",
                               MediaTypes.TEXT_PLAIN,
-                              "X".getBytes(StandardCharsets.UTF_8),
-                              Optional.empty());
+                              "X".getBytes(StandardCharsets.UTF_8));
 
         assertThat("Replacing a cached resource with a smaller payload should release capacity",
                    memoryCache.available(7),
@@ -753,8 +750,7 @@ class CachedHandlerTest {
 
         handler.cacheInMemory("resource.txt",
                               MediaTypes.TEXT_PLAIN,
-                              "Content".getBytes(StandardCharsets.UTF_8),
-                              Optional.empty());
+                              "Content".getBytes(StandardCharsets.UTF_8));
 
         assertThat("Replacing a cached resource should not double-count its size",
                    memoryCache.available(1),
@@ -777,8 +773,7 @@ class CachedHandlerTest {
                         .build());
         handler.cacheInMemory("resource.txt",
                               MediaTypes.TEXT_PLAIN,
-                              "12345".getBytes(StandardCharsets.UTF_8),
-                              Optional.empty());
+                              "12345".getBytes(StandardCharsets.UTF_8));
         CachedHandlerInMemory cached = handler.cacheInMemory("resource.txt").orElseThrow();
 
         handler.cacheInMemory("alias.txt", cached);
@@ -792,7 +787,6 @@ class CachedHandlerTest {
 
         byte[] replacementBytes = "1".getBytes(StandardCharsets.UTF_8);
         CachedHandlerInMemory replacement = new CachedHandlerInMemory(StaticContentMetadata.create(MediaTypes.TEXT_PLAIN,
-                                                                                                    null,
                                                                                                     replacementBytes.length),
                                                                        replacementBytes);
         handler.cacheInMemory("alias.txt", replacement);
