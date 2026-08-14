@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import io.helidon.common.Api;
 import io.helidon.common.uri.UriAuthority;
+import io.helidon.common.uri.UriHost;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -42,7 +43,7 @@ public final class ClientConnectionTarget {
 
     private final ConnectionKey connectionKey;
     private final String scheme;
-    private final UriAuthority originAuthority;
+    private final UriAuthority originAuthorityOverride;
     private final ProxyRoute proxyRoute;
     private final SocketAddress transportAddress;
     private final InetSocketAddress localAddress;
@@ -72,7 +73,7 @@ public final class ClientConnectionTarget {
                                    long tlsGeneration) {
         this.connectionKey = Objects.requireNonNull(connectionKey, "connectionKey");
         this.scheme = Objects.requireNonNull(scheme, "scheme").toLowerCase(Locale.ROOT);
-        this.originAuthority = Objects.requireNonNull(originAuthority, "originAuthority");
+        this.originAuthorityOverride = originAuthority;
         this.proxyRoute = Objects.requireNonNull(proxyRoute, "proxyRoute");
         this.transportAddress = transportAddress;
         this.localAddress = localAddress;
@@ -94,11 +95,7 @@ public final class ClientConnectionTarget {
         Objects.requireNonNull(headers, "headers");
         ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
         String scheme = uri.scheme().toLowerCase(Locale.ROOT);
-        UriAuthority uriAuthority = normalizedAuthority(uri.authority(), scheme);
-        UriAuthority originAuthority = headers.first(AUTHORITY)
-                .or(() -> headers.first(HeaderNames.HOST))
-                .map(authority -> normalizedAuthority(authority, scheme, uriAuthority))
-                .orElse(uriAuthority);
+        UriAuthority originAuthority = originAuthority(key, uri, headers, scheme);
         ProxyRoute route = key.proxy().effectiveRoute(scheme,
                                                       key.host(),
                                                       key.port(),
@@ -125,11 +122,7 @@ public final class ClientConnectionTarget {
         Objects.requireNonNull(headers, "headers");
         ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
         String scheme = uri.scheme().toLowerCase(Locale.ROOT);
-        UriAuthority uriAuthority = normalizedAuthority(uri.authority(), scheme);
-        UriAuthority originAuthority = headers.first(AUTHORITY)
-                .or(() -> headers.first(HeaderNames.HOST))
-                .map(authority -> normalizedAuthority(authority, scheme, uriAuthority))
-                .orElse(uriAuthority);
+        UriAuthority originAuthority = originAuthority(key, uri, headers, scheme);
         ProxyRoute route = routeFor(key, scheme, selectedProxyRoute);
         return new ClientConnectionTarget(key, scheme, originAuthority, route, null, null);
     }
@@ -152,7 +145,75 @@ public final class ClientConnectionTarget {
                                                       key.tls().enabled(),
                                                       key.dnsResolver(),
                                                       key.dnsAddressLookup());
-        return new ClientConnectionTarget(key, scheme, originAuthority, route, null, null);
+        return new ClientConnectionTarget(key,
+                                          scheme,
+                                          canonicalOriginAuthority(key, originAuthority),
+                                          route,
+                                          null,
+                                          null);
+    }
+
+    /**
+     * Create a logical IP connection target using the connection-key origin.
+     *
+     * @param connectionKey connection policy and TLS identity
+     * @param scheme origin scheme
+     * @return logical connection target
+     */
+    @Api.Internal
+    public static ClientConnectionTarget create(ConnectionKey connectionKey, String scheme) {
+        ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
+        ProxyRoute route = key.proxy().effectiveRoute(scheme,
+                                                      key.host(),
+                                                      key.port(),
+                                                      key.tls().enabled(),
+                                                      key.dnsResolver(),
+                                                      key.dnsAddressLookup());
+        return new ClientConnectionTarget(key, scheme, null, route, null, null);
+    }
+
+    /**
+     * Create a logical target from an already-normalized origin and selected route.
+     *
+     * @param connectionKey connection policy and TLS identity
+     * @param scheme origin scheme
+     * @param originAuthority normalized effective origin authority
+     * @param proxyRoute previously selected proxy route
+     * @return logical connection target
+     */
+    @Api.Internal
+    public static ClientConnectionTarget create(ConnectionKey connectionKey,
+                                                String scheme,
+                                                UriAuthority originAuthority,
+                                                ProxyRoute proxyRoute) {
+        ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
+        return new ClientConnectionTarget(key,
+                                          scheme,
+                                          canonicalOriginAuthority(key, originAuthority),
+                                          routeFor(key, scheme, proxyRoute),
+                                          null,
+                                          null);
+    }
+
+    /**
+     * Create a logical target using the connection-key origin and a selected route.
+     *
+     * @param connectionKey connection policy and TLS identity
+     * @param scheme origin scheme
+     * @param proxyRoute previously selected proxy route
+     * @return logical connection target
+     */
+    @Api.Internal
+    public static ClientConnectionTarget create(ConnectionKey connectionKey,
+                                                String scheme,
+                                                ProxyRoute proxyRoute) {
+        ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
+        return new ClientConnectionTarget(key,
+                                          scheme,
+                                          null,
+                                          routeFor(key, scheme, proxyRoute),
+                                          null,
+                                          null);
     }
 
     /**
@@ -173,7 +234,7 @@ public final class ClientConnectionTarget {
         ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
         return new ClientConnectionTarget(key,
                                           scheme,
-                                          originAuthority,
+                                          canonicalOriginAuthority(key, originAuthority),
                                           routeFor(key, scheme, proxyRoute),
                                           null,
                                           null,
@@ -200,7 +261,7 @@ public final class ClientConnectionTarget {
         ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
         return new ClientConnectionTarget(key,
                                           scheme,
-                                          originAuthority,
+                                          canonicalOriginAuthority(key, originAuthority),
                                           routeFor(key, scheme, proxyRoute),
                                           null,
                                           Objects.requireNonNull(localAddress, "localAddress"),
@@ -223,7 +284,7 @@ public final class ClientConnectionTarget {
         ClientConnectionTarget target = create(connectionKey, uri, headers);
         return new ClientConnectionTarget(target.connectionKey,
                                           target.scheme,
-                                          target.originAuthority,
+                                          target.originAuthorityOverride,
                                           target.proxyRoute,
                                           Objects.requireNonNull(address, "address"),
                                           null);
@@ -253,7 +314,9 @@ public final class ClientConnectionTarget {
      * @return origin authority
      */
     public UriAuthority originAuthority() {
-        return originAuthority;
+        return originAuthorityOverride == null
+                ? normalizedOriginAuthority(connectionKey)
+                : originAuthorityOverride;
     }
 
     /**
@@ -381,7 +444,7 @@ public final class ClientConnectionTarget {
         return connectionKey.tls() == other.connectionKey.tls()
                 && connectionKey.equals(other.connectionKey)
                 && scheme.equals(other.scheme)
-                && originAuthority.equals(other.originAuthority)
+                && Objects.equals(originAuthorityOverride, other.originAuthorityOverride)
                 && proxyRoute.equals(other.proxyRoute)
                 && Objects.equals(transportAddress, other.transportAddress)
                 && Objects.equals(localAddress, other.localAddress)
@@ -393,7 +456,7 @@ public final class ClientConnectionTarget {
         int result = connectionKey.hashCode();
         result = 31 * result + System.identityHashCode(connectionKey.tls());
         result = 31 * result + scheme.hashCode();
-        result = 31 * result + originAuthority.hashCode();
+        result = 31 * result + Objects.hashCode(originAuthorityOverride);
         result = 31 * result + proxyRoute.hashCode();
         result = 31 * result + Objects.hashCode(transportAddress);
         result = 31 * result + Objects.hashCode(localAddress);
@@ -403,7 +466,7 @@ public final class ClientConnectionTarget {
     @Override
     public String toString() {
         return "ClientConnectionTarget[scheme=" + scheme
-                + ", originAuthority=" + originAuthority
+                + ", originAuthority=" + originAuthority()
                 + ", proxyRoute=" + proxyRoute
                 + (transportAddress == null ? "" : ", transportAddress=" + transportAddress)
                 + (localAddress == null ? "" : ", localAddress=" + localAddress)
@@ -420,14 +483,33 @@ public final class ClientConnectionTarget {
         return UriAuthority.create(parsed.host(), port);
     }
 
-    private static UriAuthority normalizedAuthority(String authority,
-                                                    String scheme,
-                                                    UriAuthority fallback) {
+    private static UriAuthority originAuthority(ConnectionKey connectionKey,
+                                                ClientUri uri,
+                                                ClientRequestHeaders headers,
+                                                String scheme) {
+        UriAuthority fallback = canonicalOriginAuthority(connectionKey,
+                                                         normalizedAuthority(uri.authority(), scheme));
+        String authority = headers.contains(AUTHORITY)
+                ? headers.get(AUTHORITY).get()
+                : headers.contains(HeaderNames.HOST) ? headers.get(HeaderNames.HOST).get() : null;
+        if (authority == null) {
+            return fallback;
+        }
         try {
-            return normalizedAuthority(authority, scheme);
+            return canonicalOriginAuthority(connectionKey, normalizedAuthority(authority, scheme));
         } catch (IllegalArgumentException _) {
             return fallback;
         }
+    }
+
+    private static UriAuthority canonicalOriginAuthority(ConnectionKey connectionKey,
+                                                         UriAuthority originAuthority) {
+        UriAuthority authority = Objects.requireNonNull(originAuthority, "originAuthority");
+        return authority.equals(normalizedOriginAuthority(connectionKey)) ? null : authority;
+    }
+
+    private static UriAuthority normalizedOriginAuthority(ConnectionKey connectionKey) {
+        return UriAuthority.create(UriHost.create(connectionKey.host()), connectionKey.port());
     }
 
     private static ProxyRoute routeFor(ConnectionKey connectionKey, String scheme, ProxyRoute proxyRoute) {

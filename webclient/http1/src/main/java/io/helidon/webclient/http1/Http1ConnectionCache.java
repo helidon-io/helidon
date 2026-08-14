@@ -305,28 +305,31 @@ class Http1ConnectionCache extends ClientConnectionCache {
             if (!connectionTarget.currentTlsGeneration()) {
                 throw new IllegalStateException("TLS configuration was reloaded before connection-pool acquisition");
             }
-            var iterator = cache.entrySet().iterator();
-            while (iterator.hasNext()) {
-                var entry = iterator.next();
-                ClientConnectionTarget cachedTarget = entry.getKey();
-                if (!cachedTarget.equals(connectionTarget)
-                        && cachedTarget.connectionKey().tls() == connectionTarget.connectionKey().tls()
-                        && !cachedTarget.currentTlsGeneration()) {
-                    iterator.remove();
+            connectionPool = cache.get(connectionTarget);
+            if (connectionPool == null) {
+                var iterator = cache.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    var entry = iterator.next();
+                    ClientConnectionTarget cachedTarget = entry.getKey();
+                    if (cachedTarget.connectionKey().tls() == connectionTarget.connectionKey().tls()
+                            && !cachedTarget.currentTlsGeneration()) {
+                        iterator.remove();
+                        if (stale == null) {
+                            stale = new ArrayList<>();
+                        }
+                        stale.add(entry.getValue());
+                    }
+                }
+                connectionPool = new ConnectionPool(capacity);
+                cache.put(connectionTarget, connectionPool);
+                if (cache.size() > MAX_TARGETS) {
+                    var evictionIterator = cache.entrySet().iterator();
                     if (stale == null) {
                         stale = new ArrayList<>();
                     }
-                    stale.add(entry.getValue());
+                    stale.add(evictionIterator.next().getValue());
+                    evictionIterator.remove();
                 }
-            }
-            connectionPool = cache.computeIfAbsent(connectionTarget, _ -> new ConnectionPool(capacity));
-            if (cache.size() > MAX_TARGETS) {
-                var evictionIterator = cache.entrySet().iterator();
-                if (stale == null) {
-                    stale = new ArrayList<>();
-                }
-                stale.add(evictionIterator.next().getValue());
-                evictionIterator.remove();
             }
         } finally {
             cacheLock.unlock();

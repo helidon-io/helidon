@@ -31,7 +31,7 @@ class WebClientConnectionTargetJmhRunnerTest {
     @Test
     void runExactBenchmark() throws RunnerException {
         String benchmark = WebClientConnectionTargetBenchmark.class.getName();
-        Options options = new OptionsBuilder()
+        var optionsBuilder = new OptionsBuilder()
                 .include(System.getProperty("webclient.target.jmh.include",
                                             "^" + benchmark + "\\.(http1CacheHit|http2CacheHit)$"))
                 .param("prefilledTargetCount",
@@ -46,8 +46,12 @@ class WebClientConnectionTargetJmhRunnerTest {
                 .addProfiler(GCProfiler.class)
                 .shouldFailOnError(true)
                 .resultFormat(ResultFormatType.JSON)
-                .result(System.getProperty("webclient.target.jmh.result", "target/webclient-target-cache.json"))
-                .build();
+                .result(System.getProperty("webclient.target.jmh.result", "target/webclient-target-cache.json"));
+        String jvmArgument = System.getProperty("webclient.target.jmh.jvmArgument");
+        if (jvmArgument != null) {
+            optionsBuilder.jvmArgsAppend(jvmArgument);
+        }
+        Options options = optionsBuilder.build();
         new Runner(options).run();
     }
 }

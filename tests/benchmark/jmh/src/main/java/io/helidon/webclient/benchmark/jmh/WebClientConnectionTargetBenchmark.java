@@ -78,6 +78,14 @@ public class WebClientConnectionTargetBenchmark {
         }
     }
 
+    private static String[] targetUris(int targetCount, int serverPort) {
+        String[] result = new String[targetCount];
+        for (int i = 0; i < targetCount; i++) {
+            result[i] = "http://target-" + i + ".example:" + serverPort + PATH;
+        }
+        return result;
+    }
+
     @State(Scope.Benchmark)
     public static class ServerState {
         private WebServer server;
@@ -179,13 +187,5 @@ public class WebClientConnectionTargetBenchmark {
         private String targetUri(int index) {
             return targetUris[index];
         }
-    }
-
-    private static String[] targetUris(int targetCount, int serverPort) {
-        String[] result = new String[targetCount];
-        for (int i = 0; i < targetCount; i++) {
-            result[i] = "http://target-" + i + ".example:" + serverPort + PATH;
-        }
-        return result;
     }
 }

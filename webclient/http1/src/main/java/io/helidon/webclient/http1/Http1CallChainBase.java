@@ -159,6 +159,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         writeBuffer.clear();
         originalRequest.sanitizeRedirectHeaders(uri, headers);
+        boolean originAuthorityOverride = headers.contains(HeaderNames.HOST);
         headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
 
         var address = originalRequest.address();
@@ -189,9 +190,16 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                                               uri,
                                                                               headers,
                                                                               http1Client.clientConfig());
-            connectionTarget = originalRequest.selectedProxyRoute()
-                    .map(route -> ClientConnectionTarget.create(connectionKey, uri, headers, route))
-                    .orElseGet(() -> ClientConnectionTarget.create(connectionKey, uri, headers));
+            ProxyRoute selectedProxyRoute = originalRequest.selectedProxyRoute().orElse(null);
+            if (originAuthorityOverride) {
+                connectionTarget = selectedProxyRoute == null
+                        ? ClientConnectionTarget.create(connectionKey, uri, headers)
+                        : ClientConnectionTarget.create(connectionKey, uri, headers, selectedProxyRoute);
+            } else {
+                connectionTarget = selectedProxyRoute == null
+                        ? ClientConnectionTarget.create(connectionKey, uri.scheme())
+                        : ClientConnectionTarget.create(connectionKey, uri.scheme(), selectedProxyRoute);
+            }
             originalRequest.selectedProxyRoute(connectionTarget.proxyRoute());
         } else if (suppliedConnection == null) {
             ConnectionKey connectionKey = Http1ConnectionCache.unixConnectionKey(originalRequest,

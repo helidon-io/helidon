@@ -270,10 +270,10 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     boolean sendExpectContinue();
 
     /**
-     * Maximal size of the connection cache for a single connection key.
-     * A connection key is formed by the scheme, host, port, TLS configuration, DNS resolver, DNS address lookup, and proxy.
-     * For UNIX domain socket transports, the key also includes the socket path and does not include proxy configuration.
-     * For TLS connections, configured SNI can further split the cache by TLS peer host, TLS peer port, and SNI mode.
+     * Maximal size of the connection cache for a single connection target.
+     * A connection target identifies the logical HTTP authority, TLS configuration and generation, configured SNI, DNS
+     * resolver and address lookup, selected proxy route, and physical transport. For UNIX domain socket transports, the
+     * target includes the socket path and does not include proxy configuration.
      * <p>
      * For most HTTP protocols, we may cache connections to various endpoints for keep alive (or stream reuse in case of HTTP/2).
      * This option limits the size. Setting this number lower than the "usual" number of target services will cause connections

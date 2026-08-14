@@ -134,29 +134,32 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
             if (!connectionTarget.currentTlsGeneration()) {
                 throw new IllegalStateException("TLS configuration was reloaded before connection-pool acquisition");
             }
-            var iterator = cache.entrySet().iterator();
-            while (iterator.hasNext()) {
-                var entry = iterator.next();
-                ClientConnectionTarget cachedTarget = entry.getKey();
-                if (!cachedTarget.equals(connectionTarget)
-                        && cachedTarget.connectionKey().tls() == connectionTarget.connectionKey().tls()
-                        && !cachedTarget.currentTlsGeneration()) {
-                    iterator.remove();
+            handler = cache.get(connectionTarget);
+            if (handler == null) {
+                var iterator = cache.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    var entry = iterator.next();
+                    ClientConnectionTarget cachedTarget = entry.getKey();
+                    if (cachedTarget.connectionKey().tls() == connectionTarget.connectionKey().tls()
+                            && !cachedTarget.currentTlsGeneration()) {
+                        iterator.remove();
+                        if (stale == null) {
+                            stale = new ArrayList<>();
+                        }
+                        stale.add(entry.getValue());
+                    }
+                }
+                handler = new Http2ClientConnectionHandler();
+                cache.put(connectionTarget, handler);
+                if (cache.size() > MAX_TARGETS) {
+                    var evictionIterator = cache.entrySet().iterator();
+                    var evicted = evictionIterator.next();
+                    evictionIterator.remove();
                     if (stale == null) {
                         stale = new ArrayList<>();
                     }
-                    stale.add(entry.getValue());
+                    stale.add(evicted.getValue());
                 }
-            }
-            handler = cache.computeIfAbsent(connectionTarget, _ -> new Http2ClientConnectionHandler());
-            if (cache.size() > MAX_TARGETS) {
-                var evictionIterator = cache.entrySet().iterator();
-                var evicted = evictionIterator.next();
-                evictionIterator.remove();
-                if (stale == null) {
-                    stale = new ArrayList<>();
-                }
-                stale.add(evicted.getValue());
             }
             if (!handler.acquire()) {
                 throw new IllegalStateException("HTTP/2 connection target was retired during acquisition");

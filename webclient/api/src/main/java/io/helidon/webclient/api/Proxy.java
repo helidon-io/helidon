@@ -398,7 +398,7 @@ public class Proxy {
         Objects.requireNonNull(scheme, "scheme");
         Objects.requireNonNull(host, "host");
         if (type == null || type == ProxyType.NONE) {
-            return ProxyRoute.direct(this, scheme, host, port, tls);
+            return ProxyRoute.DIRECT;
         }
         if (type == ProxyType.HTTP) {
             if (isNoHosts(InetSocketAddress.createUnresolved(host, port))) {

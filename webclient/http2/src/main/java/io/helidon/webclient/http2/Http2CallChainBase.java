@@ -113,33 +113,40 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
         requestHeaders = serviceRequest.headers();
 
         clientRequest.sanitizeRedirectHeaders(uri, requestHeaders);
+        boolean originAuthorityOverride = requestHeaders.contains(Http2Headers.AUTHORITY_NAME)
+                || requestHeaders.contains(HeaderNames.HOST);
         alignHostHeader(uri, requestHeaders);
         requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
         ConnectionKey connectionKey = Http2ConnectionKeys.create(uri, clientRequest, clientConfig, requestHeaders);
         boolean ownsExplicitConnection = Http2ClientConnectionHandler.ownsExplicitConnection(clientRequest);
-        Optional<ClientConnection> explicitConnection = clientRequest.connection();
-        Optional<ClientConnectionTarget> explicitTarget = explicitConnection.flatMap(connection -> {
+        ClientConnection explicitConnection = clientRequest.connection().orElse(null);
+        ClientConnectionTarget explicitTarget = null;
+        if (explicitConnection != null) {
             clientRequest.clearSelectedProxyRoute();
-            if (!(connection instanceof TcpClientConnection tcpConnection)) {
-                return Optional.empty();
+            if (explicitConnection instanceof TcpClientConnection tcpConnection) {
+                ResolvedClientTarget resolvedTarget = tcpConnection.resolvedTarget().orElse(null);
+                Optional<ProxyRoute> matchingRoute = ClientConnectionTarget.matchingRoute(explicitConnection,
+                                                                                           connectionKey,
+                                                                                           uri,
+                                                                                           requestHeaders);
+                if (matchingRoute.isPresent()) {
+                    clientRequest.selectedProxyRoute(matchingRoute.get());
+                    if (resolvedTarget != null) {
+                        explicitTarget = resolvedTarget.logicalTarget();
+                    }
+                }
             }
-            Optional<ResolvedClientTarget> resolvedTarget = tcpConnection.resolvedTarget();
-            Optional<ProxyRoute> matchingRoute = ClientConnectionTarget.matchingRoute(connection,
-                                                                                       connectionKey,
-                                                                                       uri,
-                                                                                       requestHeaders);
-            matchingRoute.ifPresent(clientRequest::selectedProxyRoute);
-            return matchingRoute.flatMap(_ -> resolvedTarget.map(ResolvedClientTarget::logicalTarget));
-        });
-        if (ownsExplicitConnection && explicitConnection.isPresent() && explicitTarget.isEmpty()) {
+        }
+        if (ownsExplicitConnection && explicitConnection != null && explicitTarget == null) {
             clientRequest.clearConnection();
-            explicitConnection.get().closeResource();
+            explicitConnection.closeResource();
+            explicitConnection = null;
         }
         ClientConnectionTarget connectionTarget;
-        if (explicitTarget.isPresent()) {
-            connectionTarget = explicitTarget.get();
+        if (explicitTarget != null) {
+            connectionTarget = explicitTarget;
         } else {
             SocketAddress address = clientRequest.address().orElse(null);
             if (address instanceof UnixDomainSocketAddress udsAddress) {
@@ -149,10 +156,17 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
                                                                                    requestHeaders,
                                                                                    udsAddress);
             } else {
-                connectionTarget = clientRequest.selectedProxyRoute()
-                        .map(route -> ClientConnectionTarget.create(connectionKey, uri, requestHeaders, route))
-                        .orElseGet(() -> ClientConnectionTarget.create(connectionKey, uri, requestHeaders));
-                if (clientRequest.connection().isEmpty() || clientRequest.selectedProxyRoute().isPresent()) {
+                ProxyRoute selectedProxyRoute = clientRequest.selectedProxyRoute().orElse(null);
+                if (originAuthorityOverride) {
+                    connectionTarget = selectedProxyRoute == null
+                            ? ClientConnectionTarget.create(connectionKey, uri, requestHeaders)
+                            : ClientConnectionTarget.create(connectionKey, uri, requestHeaders, selectedProxyRoute);
+                } else {
+                    connectionTarget = selectedProxyRoute == null
+                            ? ClientConnectionTarget.create(connectionKey, uri.scheme())
+                            : ClientConnectionTarget.create(connectionKey, uri.scheme(), selectedProxyRoute);
+                }
+                if (explicitConnection == null || clientRequest.selectedProxyRoute().isPresent()) {
                     clientRequest.selectedProxyRoute(connectionTarget.proxyRoute());
                 }
             }

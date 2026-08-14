@@ -37,6 +37,8 @@ import org.junit.jupiter.api.parallel.Isolated;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Isolated
@@ -45,10 +47,11 @@ class ClientConnectionTargetTest {
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
 
     @Test
-    void keepsLogicalOriginAndTlsIdentitySeparateFromDnsPeer() {
+    void keepsLogicalOriginAndTlsIdentitySeparateFromAlternativeDnsPeer() {
         AtomicInteger resolutions = new AtomicInteger();
         DnsResolver resolver = (host, lookup) -> {
             resolutions.incrementAndGet();
+            assertThat(host, is("alternative.example"));
             return InetAddress.ofLiteral("127.0.0.7");
         };
         ClientUri uri = ClientUri.create(URI.create("https://route.example:8443/path"));
@@ -61,13 +64,41 @@ class ClientConnectionTargetTest {
                                                            Proxy.noProxy());
 
         ClientConnectionTarget target = ClientConnectionTarget.create(connectionKey, uri, headers);
-        ResolvedClientTarget resolved = target.resolve();
+        ResolvedClientTarget resolved = target.resolve("alternative.example", 7443, 17);
 
         assertThat(target.originAuthority().toString(), is("origin.example:9443"));
-        assertThat(resolved.routeAuthority().toString(), is("route.example:8443"));
+        assertThat(resolved.logicalTarget(), sameInstance(target));
+        assertThat(resolved.routeAuthority().toString(), is("alternative.example:7443"));
         assertThat(resolved.peerAddress().getAddress().getHostAddress(), is("127.0.0.7"));
+        assertThat(resolved.networkGeneration(), is(17L));
         assertThat(connectionKey.tlsPeerHost(), is("route.example"));
         assertThat(resolutions.get(), is(1));
+    }
+
+    @Test
+    void canonicalizesDefaultOriginAuthority() {
+        ClientUri uri = ClientUri.create(URI.create("https://origin.example/path"));
+        DnsResolver resolver = (_, _) -> InetAddress.getLoopbackAddress();
+        ConnectionKey connectionKey = ConnectionKey.create(uri,
+                                                           TLS,
+                                                           resolver,
+                                                           DnsAddressLookup.IPV4,
+                                                           Proxy.noProxy());
+        ClientRequestHeaders noHost = ClientRequestHeaders.create(WritableHeaders.create());
+        ClientRequestHeaders defaultHost = ClientRequestHeaders.create(WritableHeaders.create());
+        defaultHost.set(HeaderNames.HOST, uri.authority());
+
+        ClientConnectionTarget noHostTarget = ClientConnectionTarget.create(connectionKey, uri, noHost);
+        ClientConnectionTarget defaultHostTarget = ClientConnectionTarget.create(connectionKey, uri, defaultHost);
+        ClientConnectionTarget reconstructedTarget = ClientConnectionTarget.create(connectionKey,
+                                                                                    uri.scheme(),
+                                                                                    noHostTarget.originAuthority(),
+                                                                                    noHostTarget.proxyRoute(),
+                                                                                    noHostTarget.tlsGeneration());
+
+        assertThat(noHostTarget.originAuthority().toString(), is("origin.example:443"));
+        assertThat(defaultHostTarget, is(noHostTarget));
+        assertThat(reconstructedTarget, is(noHostTarget));
     }
 
     @Test
@@ -90,16 +121,22 @@ class ClientConnectionTargetTest {
     @Test
     void fallsBackToUriOriginForInvalidHost() {
         ClientUri uri = ClientUri.create(URI.create("http://route.example:8080/path"));
+        ClientUri keyUri = ClientUri.create(URI.create("http://connection.example:8181/path"));
         ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
         headers.set(HeaderNames.HOST, "route.example:808a");
-        ConnectionKey connectionKey = ConnectionKey.create(uri,
+        ConnectionKey connectionKey = ConnectionKey.create(keyUri,
                                                            NO_TLS,
                                                            (_, _) -> InetAddress.getLoopbackAddress(),
                                                            DnsAddressLookup.IPV4,
                                                            Proxy.noProxy());
 
         ClientConnectionTarget target = ClientConnectionTarget.create(connectionKey, uri, headers);
+        ClientConnectionTarget defaultTarget = ClientConnectionTarget.create(connectionKey,
+                                                                              uri,
+                                                                              ClientRequestHeaders.create(
+                                                                                      WritableHeaders.create()));
 
+        assertThat(target, is(defaultTarget));
         assertThat(target.originAuthority().toString(), is("route.example:8080"));
         assertThat(headers.get(HeaderNames.HOST).get(), is("route.example:808a"));
     }
@@ -227,6 +264,116 @@ class ClientConnectionTargetTest {
     }
 
     @Test
+    void sharesUnconditionalDirectRouteAcrossLogicalTargets() {
+        DnsResolver resolver = (_, _) -> InetAddress.getLoopbackAddress();
+        ClientUri firstUri = ClientUri.create(URI.create("https://first.example/path"));
+        ConnectionKey firstKey = ConnectionKey.create(firstUri,
+                                                       TLS,
+                                                       resolver,
+                                                       DnsAddressLookup.IPV4,
+                                                       Proxy.noProxy());
+        ClientUri secondUri = ClientUri.create(URI.create("http://second.example:8080/path"));
+        ConnectionKey secondKey = ConnectionKey.create(secondUri,
+                                                        NO_TLS,
+                                                        resolver,
+                                                        DnsAddressLookup.IPV4,
+                                                        Proxy.builder().type(Proxy.ProxyType.NONE).build());
+
+        ProxyRoute firstRoute = ClientConnectionTarget.create(
+                firstKey,
+                firstUri,
+                ClientRequestHeaders.create(WritableHeaders.create())).proxyRoute();
+        ProxyRoute secondRoute = ClientConnectionTarget.create(
+                secondKey,
+                secondUri,
+                ClientRequestHeaders.create(WritableHeaders.create())).proxyRoute();
+
+        assertThat(firstRoute.kind(), is(ProxyRoute.Kind.DIRECT));
+        assertThat(secondRoute, sameInstance(firstRoute));
+    }
+
+    @Test
+    void keepsConfiguredNoProxyRoutesTargetSpecific() {
+        ProxyRoute unconditionalRoute = Proxy.noProxy().effectiveRoute("https", "unconditional.example", 443, true);
+        Proxy proxy = Proxy.builder()
+                .host("proxy.example")
+                .port(8181)
+                .addNoProxy("first.example")
+                .addNoProxy("second.example")
+                .build();
+        DnsResolver resolver = (_, _) -> InetAddress.getLoopbackAddress();
+        ClientUri firstUri = ClientUri.create(URI.create("https://first.example/path"));
+        ConnectionKey firstKey = ConnectionKey.create(firstUri,
+                                                       TLS,
+                                                       resolver,
+                                                       DnsAddressLookup.IPV4,
+                                                       proxy);
+        ClientUri secondUri = ClientUri.create(URI.create("https://second.example/path"));
+        ConnectionKey secondKey = ConnectionKey.create(secondUri,
+                                                        TLS,
+                                                        resolver,
+                                                        DnsAddressLookup.IPV4,
+                                                        proxy);
+
+        ProxyRoute firstRoute = ClientConnectionTarget.create(
+                firstKey,
+                firstUri,
+                ClientRequestHeaders.create(WritableHeaders.create())).proxyRoute();
+        ProxyRoute secondRoute = ClientConnectionTarget.create(
+                secondKey,
+                secondUri,
+                ClientRequestHeaders.create(WritableHeaders.create())).proxyRoute();
+
+        assertThat(firstRoute.kind(), is(ProxyRoute.Kind.DIRECT));
+        assertThat(firstRoute, not(sameInstance(unconditionalRoute)));
+        assertThat(secondRoute, not(sameInstance(unconditionalRoute)));
+        assertThat(secondRoute, not(sameInstance(firstRoute)));
+        assertThat(ClientConnectionTarget.routeMatches(firstKey, firstUri.scheme(), firstRoute), is(true));
+        assertThat(ClientConnectionTarget.routeMatches(secondKey, secondUri.scheme(), firstRoute), is(false));
+    }
+
+    @Test
+    void keepsSystemDirectRoutesTargetSpecific() {
+        ProxySelector previous = ProxySelector.getDefault();
+        ProxySelector.setDefault(new FixedProxySelector(java.net.Proxy.Type.DIRECT));
+        try {
+            ProxyRoute unconditionalRoute = Proxy.noProxy().effectiveRoute("https", "unconditional.example", 443, true);
+            Proxy proxy = Proxy.create();
+            DnsResolver resolver = (_, _) -> InetAddress.getLoopbackAddress();
+            ClientUri firstUri = ClientUri.create(URI.create("https://first.example/path"));
+            ConnectionKey firstKey = ConnectionKey.create(firstUri,
+                                                           TLS,
+                                                           resolver,
+                                                           DnsAddressLookup.IPV4,
+                                                           proxy);
+            ClientUri secondUri = ClientUri.create(URI.create("https://second.example/path"));
+            ConnectionKey secondKey = ConnectionKey.create(secondUri,
+                                                            TLS,
+                                                            resolver,
+                                                            DnsAddressLookup.IPV4,
+                                                            proxy);
+
+            ProxyRoute firstRoute = ClientConnectionTarget.create(
+                    firstKey,
+                    firstUri,
+                    ClientRequestHeaders.create(WritableHeaders.create())).proxyRoute();
+            ProxyRoute secondRoute = ClientConnectionTarget.create(
+                    secondKey,
+                    secondUri,
+                    ClientRequestHeaders.create(WritableHeaders.create())).proxyRoute();
+
+            assertThat(firstRoute.kind(), is(ProxyRoute.Kind.DIRECT));
+            assertThat(firstRoute, not(sameInstance(unconditionalRoute)));
+            assertThat(secondRoute, not(sameInstance(unconditionalRoute)));
+            assertThat(secondRoute, not(sameInstance(firstRoute)));
+            assertThat(ClientConnectionTarget.routeMatches(firstKey, firstUri.scheme(), firstRoute), is(true));
+            assertThat(ClientConnectionTarget.routeMatches(secondKey, secondUri.scheme(), firstRoute), is(false));
+        } finally {
+            ProxySelector.setDefault(previous);
+        }
+    }
+
+    @Test
     void selectsSystemProxyExactlyOnceForTargetSnapshot() {
         ProxySelector previous = ProxySelector.getDefault();
         AtomicInteger selections = new AtomicInteger();
@@ -327,6 +474,7 @@ class ClientConnectionTargetTest {
                                                                                             unixAddress);
 
         assertThat(target.equals(otherAuthority), is(false));
+        assertThat(otherAuthority.originAuthority().toString(), is("other.example:443"));
         assertThat(target.equals(otherGeneration), is(false));
         assertThat(target.equals(localBind), is(false));
         assertThat(target.equals(unixTarget), is(false));
@@ -533,6 +681,9 @@ class ClientConnectionTargetTest {
 
         @Override
         public List<java.net.Proxy> select(URI uri) {
+            if (type == java.net.Proxy.Type.DIRECT) {
+                return List.of(java.net.Proxy.NO_PROXY);
+            }
             return List.of(new java.net.Proxy(type,
                                               InetSocketAddress.createUnresolved("proxy.example", 8181)));
         }

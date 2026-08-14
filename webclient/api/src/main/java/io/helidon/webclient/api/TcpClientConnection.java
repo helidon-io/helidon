@@ -44,8 +44,6 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.tls.Tls;
-import io.helidon.common.uri.UriAuthority;
-import io.helidon.common.uri.UriHost;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -176,10 +174,7 @@ public class TcpClientConnection implements ClientConnection {
         if (target == null) {
             ClientConnectionTarget logicalTarget = connectionTarget;
             if (logicalTarget == null) {
-                logicalTarget = ClientConnectionTarget.create(
-                        connectionKey,
-                        connectionKey.scheme(),
-                        UriAuthority.create(UriHost.create(connectionKey.host()), connectionKey.port()));
+                logicalTarget = ClientConnectionTarget.create(connectionKey, connectionKey.scheme());
             }
             target = logicalTarget.resolve();
             resolvedTarget = target;

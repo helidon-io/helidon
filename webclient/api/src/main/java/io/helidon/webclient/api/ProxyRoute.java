@@ -34,6 +34,8 @@ import io.helidon.common.Api;
  */
 @Api.Internal
 public final class ProxyRoute {
+    static final ProxyRoute DIRECT = new ProxyRoute();
+
     private final Proxy source;
     private final Kind kind;
     private final InetSocketAddress proxyAddress;
@@ -43,6 +45,18 @@ public final class ProxyRoute {
     private final String host;
     private final int port;
     private final boolean tls;
+
+    private ProxyRoute() {
+        this.source = null;
+        this.kind = Kind.DIRECT;
+        this.proxyAddress = null;
+        this.noProxyAddress = null;
+        this.systemProxyType = null;
+        this.scheme = "";
+        this.host = "";
+        this.port = 0;
+        this.tls = false;
+    }
 
     private ProxyRoute(Proxy source,
                        Kind kind,
@@ -200,10 +214,16 @@ public final class ProxyRoute {
     }
 
     boolean belongsTo(Proxy proxy) {
+        if (this == DIRECT) {
+            return proxy.type() == null || proxy.type() == Proxy.ProxyType.NONE;
+        }
         return source.equals(proxy);
     }
 
     boolean selectedFor(String scheme, String host, int port, boolean tls) {
+        if (this == DIRECT) {
+            return true;
+        }
         return this.scheme.equalsIgnoreCase(scheme)
                 && this.host.equalsIgnoreCase(host)
                 && this.port == port
@@ -218,6 +238,9 @@ public final class ProxyRoute {
         if (!(obj instanceof ProxyRoute other)) {
             return false;
         }
+        if (this == DIRECT || other == DIRECT) {
+            return false;
+        }
         return source.equals(other.source)
                 && kind == other.kind
                 && Objects.equals(proxyAddress, other.proxyAddress)
@@ -230,6 +253,9 @@ public final class ProxyRoute {
 
     @Override
     public int hashCode() {
+        if (this == DIRECT) {
+            return 1;
+        }
         int result = source.hashCode();
         result = 31 * result + kind.hashCode();
         result = 31 * result + Objects.hashCode(proxyAddress);
