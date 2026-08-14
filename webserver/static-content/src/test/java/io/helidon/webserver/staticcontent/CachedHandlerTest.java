@@ -35,6 +35,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SecureDirectoryStream;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -821,6 +823,26 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testCachedSingleFileGetEvictsUnopenablePathAndRecovers(@TempDir Path tempDir) throws IOException {
+        assertCachedSingleFileEvictsUnopenablePathAndRecovers(tempDir, Method.GET);
+    }
+
+    @Test
+    void testCachedSingleFileHeadEvictsUnopenablePathAndRecovers(@TempDir Path tempDir) throws IOException {
+        assertCachedSingleFileEvictsUnopenablePathAndRecovers(tempDir, Method.HEAD);
+    }
+
+    @Test
+    void testCachedSingleFileGetEvictsUnreadablePath(@TempDir Path tempDir) throws IOException {
+        assertCachedSingleFileEvictsUnreadablePath(tempDir, Method.GET);
+    }
+
+    @Test
+    void testCachedSingleFileHeadEvictsUnreadablePath(@TempDir Path tempDir) throws IOException {
+        assertCachedSingleFileEvictsUnreadablePath(tempDir, Method.HEAD);
+    }
+
+    @Test
     void testInMemoryFileRemainsAfterSourceRemoval(@TempDir Path tempDir) throws IOException {
         Path root = Files.createDirectory(tempDir.resolve("root"));
         Path file = Files.writeString(root.resolve("resource.txt"), "Content");
@@ -1107,6 +1129,115 @@ class CachedHandlerTest {
             zipOut.write(bytes, 0, bytes.length);
         }
         return jarFile;
+    }
+
+    private static void assertCachedSingleFileEvictsUnopenablePathAndRecovers(Path tempDir, Method method)
+            throws IOException {
+        Path file = Files.writeString(tempDir.resolve("resource.txt"), "Initial content");
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.create(file));
+        handler.beforeStart();
+
+        ServerRequest request = mock(ServerRequest.class);
+        when(request.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ByteArrayOutputStream initialOutput = new ByteArrayOutputStream();
+        ServerResponse initialResponse = mock(ServerResponse.class);
+        when(initialResponse.headers()).thenReturn(ServerResponseHeaders.create());
+        when(initialResponse.outputStream()).thenReturn(initialOutput);
+
+        assertThat("Initial single file should be served for " + method,
+                   handler.doHandle(method, "", request, initialResponse, false),
+                   is(true));
+        assertThat("Initial single file should be cached for " + method, handler.cacheHandler("."), optionalPresent());
+
+        Files.delete(file);
+        Files.createDirectory(file);
+
+        ByteArrayOutputStream unavailableOutput = new ByteArrayOutputStream();
+        ServerResponseHeaders unavailableHeaders = ServerResponseHeaders.create();
+        ServerResponse unavailableResponse = mock(ServerResponse.class);
+        when(unavailableResponse.headers()).thenReturn(unavailableHeaders);
+        when(unavailableResponse.outputStream()).thenReturn(unavailableOutput);
+
+        assertThrows(ForbiddenException.class,
+                     () -> handler.doHandle(method, "", request, unavailableResponse, false),
+                     method + " should reject a cached path that is no longer an openable file");
+        assertThat("Unopenable single file handler should be evicted for " + method,
+                   handler.cacheHandler("."),
+                   optionalEmpty());
+        assertThat("Unopenable single file should not publish stale content length for " + method,
+                   unavailableHeaders.contains(HeaderNames.CONTENT_LENGTH),
+                   is(false));
+
+        Files.delete(file);
+        Files.writeString(file, "Re-added content");
+
+        ByteArrayOutputStream readdedOutput = new ByteArrayOutputStream();
+        ServerResponseHeaders readdedHeaders = ServerResponseHeaders.create();
+        ServerResponse readdedResponse = mock(ServerResponse.class);
+        when(readdedResponse.headers()).thenReturn(readdedHeaders);
+        when(readdedResponse.outputStream()).thenReturn(readdedOutput);
+
+        assertThat("Re-added single file should be served for " + method,
+                   handler.doHandle(method, "", request, readdedResponse, false),
+                   is(true));
+        assertThat(readdedHeaders, hasHeader(HeaderNames.CONTENT_LENGTH, "16"));
+        if (method == Method.GET) {
+            assertThat("Re-added single file content",
+                       readdedOutput.toByteArray(),
+                       is("Re-added content".getBytes(StandardCharsets.UTF_8)));
+        }
+    }
+
+    private static void assertCachedSingleFileEvictsUnreadablePath(Path tempDir, Method method) throws IOException {
+        Path file = Files.writeString(tempDir.resolve("resource.txt"), "Content");
+        assumeTrue(Files.getFileStore(file).supportsFileAttributeView("posix"),
+                   "POSIX file permissions are not supported");
+
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.create(file));
+        handler.beforeStart();
+
+        ServerRequest request = mock(ServerRequest.class);
+        when(request.headers()).thenReturn(ServerRequestHeaders.create());
+
+        ServerResponse initialResponse = mock(ServerResponse.class);
+        when(initialResponse.headers()).thenReturn(ServerResponseHeaders.create());
+        when(initialResponse.outputStream()).thenReturn(new ByteArrayOutputStream());
+
+        assertThat("Initial single file should be served for " + method,
+                   handler.doHandle(method, "", request, initialResponse, false),
+                   is(true));
+        assertThat("Initial single file should be cached for " + method, handler.cacheHandler("."), optionalPresent());
+
+        Set<PosixFilePermission> originalPermissions = Files.getPosixFilePermissions(file);
+        Set<PosixFilePermission> unreadablePermissions = EnumSet.copyOf(originalPermissions);
+        unreadablePermissions.remove(PosixFilePermission.OWNER_READ);
+        unreadablePermissions.remove(PosixFilePermission.GROUP_READ);
+        unreadablePermissions.remove(PosixFilePermission.OTHERS_READ);
+
+        try {
+            Files.setPosixFilePermissions(file, unreadablePermissions);
+            assumeTrue(!Files.isReadable(file), "Read access cannot be revoked for this test process");
+
+            ServerResponseHeaders unavailableHeaders = ServerResponseHeaders.create();
+            ServerResponse unavailableResponse = mock(ServerResponse.class);
+            when(unavailableResponse.headers()).thenReturn(unavailableHeaders);
+            when(unavailableResponse.outputStream()).thenReturn(new ByteArrayOutputStream());
+
+            assertThrows(ForbiddenException.class,
+                         () -> handler.doHandle(method, "", request, unavailableResponse, false),
+                         method + " should reject a cached file after read access is revoked");
+            assertThat("Unreadable single file handler should be evicted for " + method,
+                       handler.cacheHandler("."),
+                       optionalEmpty());
+            assertThat("Unreadable single file should not publish stale content length for " + method,
+                       unavailableHeaders.contains(HeaderNames.CONTENT_LENGTH),
+                       is(false));
+        } finally {
+            Files.setPosixFilePermissions(file, originalPermissions);
+        }
     }
 
     private static void createSymbolicLink(Path link, Path target) throws IOException {

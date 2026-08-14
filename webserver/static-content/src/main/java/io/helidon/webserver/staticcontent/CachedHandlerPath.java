@@ -81,19 +81,40 @@ record CachedHandlerPath(Path sourcePath,
             LOGGER.log(System.Logger.Level.TRACE, "Sending static content from path: " + path);
         }
 
-        // etag etc.
-        processPreconditions(metadata, request.headers(), response.headers());
-
-        metadata.setContentType(response.headers());
-
-        if (method == Method.GET) {
-            SeekableByteChannel channel = FileBasedContentHandler.newByteChannel(path, followLinks, secureRoot);
-            try (SeekableByteChannel openChannel = channel) {
-                FileBasedContentHandler.send(request, response, openChannel, metadata);
+        try {
+            BasicFileAttributes attributes = FileBasedContentHandler.attributes(path, followLinks, secureRoot);
+            if (!attributes.isRegularFile()
+                    || !Files.isReadable(path)
+                    || Files.isHidden(sourcePath)
+                    || Files.isHidden(path)) {
+                cache.remove(requestedResource);
+                throw new ForbiddenException("File is not accessible");
             }
-        } else {
-            metadata.setContentLength(response.headers());
-            response.send();
+        } catch (IOException e) {
+            cache.remove(requestedResource);
+            throw new ForbiddenException("File is not accessible", e);
+        }
+
+        SeekableByteChannel channel;
+        try {
+            channel = FileBasedContentHandler.newByteChannel(path, followLinks, secureRoot);
+        } catch (IOException e) {
+            cache.remove(requestedResource);
+            throw new ForbiddenException("File is not accessible", e);
+        }
+
+        // etag etc.
+        try (SeekableByteChannel openChannel = channel) {
+            processPreconditions(metadata, request.headers(), response.headers());
+
+            metadata.setContentType(response.headers());
+
+            if (method == Method.GET) {
+                FileBasedContentHandler.send(request, response, openChannel, metadata);
+            } else {
+                metadata.setContentLength(response.headers());
+                response.send();
+            }
         }
 
         return true;
