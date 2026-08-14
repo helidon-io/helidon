@@ -210,6 +210,31 @@ class ResolvedTargetTest {
     }
 
     @Test
+    void cacheEvictionRetiresBorrowedConnection() {
+        Http1ClientImpl client = (Http1ClientImpl) Http1Client.builder()
+                .shareConnectionCache(false)
+                .baseUri("http://localhost:" + plainPort + "/connection-target")
+                .build();
+
+        try {
+            String retired;
+            try (Http1ClientResponse borrowed = client.get().request()) {
+                client.connectionCache().evict();
+                retired = borrowed.as(String.class);
+            }
+            String replacement = client.get().request().as(String.class);
+            String reused = client.get().request().as(String.class);
+
+            String retiredConnection = retired.substring(retired.indexOf('|'));
+            String replacementConnection = replacement.substring(replacement.indexOf('|'));
+            assertThat(replacementConnection, not(is(retiredConnection)));
+            assertThat(reused.substring(reused.indexOf('|')), is(replacementConnection));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
     void sameOriginExpectContinueRedirectProbesRetainSelectedProxyRoute() {
         AtomicInteger selectorInvocations = new AtomicInteger();
         ProxySelector countingSelector = new ProxySelector() {

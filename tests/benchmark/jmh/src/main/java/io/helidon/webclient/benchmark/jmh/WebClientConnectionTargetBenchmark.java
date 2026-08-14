@@ -41,11 +41,13 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.infra.ThreadParams;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class WebClientConnectionTargetBenchmark {
     private static final int REQUESTS_PER_INVOCATION = 16;
+    private static final int TARGETS_PER_THREAD = 4;
     private static final String PATH = "/target";
 
     @Benchmark
@@ -80,9 +82,75 @@ public class WebClientConnectionTargetBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1DistinctTargetPerThread(Http1State state, ThreadParams threadParams, Blackhole blackhole) {
+        int targetIndex = threadParams.getThreadIndex() * TARGETS_PER_THREAD;
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            try (var response = state.http1Client.get(state.targetUri(targetIndex)).request()) {
+                response.entity().consume();
+                int status = response.status().code();
+                if (status != 200) {
+                    throw new IllegalStateException("Unexpected HTTP/1.1 status: " + response.status());
+                }
+                blackhole.consume(status);
+            }
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1RotatingTargetsPerThread(Http1State state, ThreadParams threadParams, Blackhole blackhole) {
+        int firstTargetIndex = threadParams.getThreadIndex() * TARGETS_PER_THREAD;
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            int targetIndex = firstTargetIndex + i % TARGETS_PER_THREAD;
+            try (var response = state.http1Client.get(state.targetUri(targetIndex)).request()) {
+                response.entity().consume();
+                int status = response.status().code();
+                if (status != 200) {
+                    throw new IllegalStateException("Unexpected HTTP/1.1 status: " + response.status());
+                }
+                blackhole.consume(status);
+            }
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http2CacheHit(Http2State state, Blackhole blackhole) {
         for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
             try (var response = state.http2Client.get(state.targetUri(0)).request()) {
+                response.entity().consume();
+                int status = response.status().code();
+                if (status != 200) {
+                    throw new IllegalStateException("Unexpected HTTP/2 status: " + response.status());
+                }
+                blackhole.consume(status);
+            }
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2DistinctTargetPerThread(Http2State state, ThreadParams threadParams, Blackhole blackhole) {
+        int targetIndex = threadParams.getThreadIndex() * TARGETS_PER_THREAD;
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            try (var response = state.http2Client.get(state.targetUri(targetIndex)).request()) {
+                response.entity().consume();
+                int status = response.status().code();
+                if (status != 200) {
+                    throw new IllegalStateException("Unexpected HTTP/2 status: " + response.status());
+                }
+                blackhole.consume(status);
+            }
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2RotatingTargetsPerThread(Http2State state, ThreadParams threadParams, Blackhole blackhole) {
+        int firstTargetIndex = threadParams.getThreadIndex() * TARGETS_PER_THREAD;
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            int targetIndex = firstTargetIndex + i % TARGETS_PER_THREAD;
+            try (var response = state.http2Client.get(state.targetUri(targetIndex)).request()) {
                 response.entity().consume();
                 int status = response.status().code();
                 if (status != 200) {

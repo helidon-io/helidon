@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,8 +39,9 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
     private static final int MAX_TARGETS = 1_000;
     private static final Http2ConnectionCache SHARED = new Http2ConnectionCache(true);
     private final LruCache<ConnectionKey, Boolean> http2Supported = LruCache.create(1000);
-    private final Map<ClientConnectionTarget, Http2ClientConnectionHandler> cache =
-            new LinkedHashMap<>(16, 0.75F, true);
+    private final ConcurrentMap<ClientConnectionTarget, Http2ClientConnectionHandler> cache = new ConcurrentHashMap<>();
+    // Mutated only while holding cacheLock.
+    private final Map<ClientConnectionTarget, Http2ClientConnectionHandler> insertionOrder = new LinkedHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final ReentrantLock cacheLock = new ReentrantLock();
 
@@ -69,8 +72,9 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         List<Http2ClientConnectionHandler> handlers;
         cacheLock.lock();
         try {
-            handlers = List.copyOf(cache.values());
+            handlers = List.copyOf(insertionOrder.values());
             cache.clear();
+            insertionOrder.clear();
             http2Supported.clear();
         } finally {
             cacheLock.unlock();
@@ -93,6 +97,7 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         cacheLock.lock();
         try {
             if (cache.remove(connectionTarget, expectedHandler)) {
+                insertionOrder.remove(connectionTarget, expectedHandler);
                 http2Supported.remove(connectionTarget.connectionKey());
             }
         } finally {
@@ -121,10 +126,9 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                                                                http1FallbackHandler);
         }
 
-        List<Http2ClientConnectionHandler> stale = null;
+        List<Http2ClientConnectionHandler> retiredHandlers = null;
         Http2ClientConnectionHandler handler;
-        cacheLock.lock();
-        try {
+        while (true) {
             if (closed.get()) {
                 throw new IllegalStateException("Connection cache is closed");
             }
@@ -132,40 +136,70 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                 throw new IllegalStateException("TLS configuration was reloaded before connection-pool acquisition");
             }
             handler = cache.get(connectionTarget);
-            if (handler == null) {
-                var iterator = cache.entrySet().iterator();
+            if (handler != null) {
+                if (handler.acquire()) {
+                    break;
+                }
+                continue;
+            }
+
+            cacheLock.lock();
+            try {
+                if (closed.get()) {
+                    throw new IllegalStateException("Connection cache is closed");
+                }
+                if (!connectionTarget.currentTlsGeneration()) {
+                    throw new IllegalStateException("TLS configuration was reloaded before connection-pool acquisition");
+                }
+                handler = cache.get(connectionTarget);
+                if (handler != null) {
+                    if (handler.acquire()) {
+                        break;
+                    }
+                    continue;
+                }
+
+                var iterator = insertionOrder.entrySet().iterator();
                 while (iterator.hasNext()) {
                     var entry = iterator.next();
                     ClientConnectionTarget cachedTarget = entry.getKey();
                     if (cachedTarget.connectionKey().tls() == connectionTarget.connectionKey().tls()
                             && !cachedTarget.currentTlsGeneration()) {
                         iterator.remove();
-                        if (stale == null) {
-                            stale = new ArrayList<>();
+                        if (cache.remove(cachedTarget, entry.getValue())) {
+                            if (retiredHandlers == null) {
+                                retiredHandlers = new ArrayList<>();
+                            }
+                            retiredHandlers.add(entry.getValue());
                         }
-                        stale.add(entry.getValue());
                     }
                 }
-                handler = new Http2ClientConnectionHandler();
-                cache.put(connectionTarget, handler);
-                if (cache.size() > MAX_TARGETS) {
-                    var evictionIterator = cache.entrySet().iterator();
+
+                if (insertionOrder.size() >= MAX_TARGETS) {
+                    var evictionIterator = insertionOrder.entrySet().iterator();
                     var evicted = evictionIterator.next();
                     evictionIterator.remove();
-                    if (stale == null) {
-                        stale = new ArrayList<>();
+                    if (cache.remove(evicted.getKey(), evicted.getValue())) {
+                        if (retiredHandlers == null) {
+                            retiredHandlers = new ArrayList<>();
+                        }
+                        retiredHandlers.add(evicted.getValue());
                     }
-                    stale.add(evicted.getValue());
                 }
+
+                handler = new Http2ClientConnectionHandler();
+                if (!handler.acquire()) {
+                    throw new IllegalStateException("New HTTP/2 connection target could not be acquired");
+                }
+                insertionOrder.put(connectionTarget, handler);
+                cache.put(connectionTarget, handler);
+                break;
+            } finally {
+                cacheLock.unlock();
             }
-            if (!handler.acquire()) {
-                throw new IllegalStateException("HTTP/2 connection target was retired during acquisition");
-            }
-        } finally {
-            cacheLock.unlock();
         }
-        if (stale != null) {
-            stale.forEach(Http2ClientConnectionHandler::retire);
+        if (retiredHandlers != null) {
+            retiredHandlers.forEach(Http2ClientConnectionHandler::retire);
         }
 
         Http2ConnectionAttemptResult result;

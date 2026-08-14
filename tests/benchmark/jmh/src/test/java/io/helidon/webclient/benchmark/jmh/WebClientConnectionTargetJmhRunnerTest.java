@@ -31,27 +31,47 @@ class WebClientConnectionTargetJmhRunnerTest {
     @Test
     void runExactBenchmark() throws RunnerException {
         String benchmark = WebClientConnectionTargetBenchmark.class.getName();
-        var optionsBuilder = new OptionsBuilder()
-                .include(System.getProperty("webclient.target.jmh.include",
-                                            "^" + benchmark + "\\.(http1CacheHit|http1OneOff|http2CacheHit)$"))
-                .param("prefilledTargetCount",
-                       System.getProperty("webclient.target.jmh.targetCounts", "1,64").split(","))
-                .threads(Integer.getInteger("webclient.target.jmh.threads", 1))
-                .forks(Integer.getInteger("webclient.target.jmh.forks", 1))
-                .warmupIterations(Integer.getInteger("webclient.target.jmh.warmupIterations", 3))
-                .warmupTime(TimeValue.milliseconds(Long.getLong("webclient.target.jmh.warmupMillis", 500)))
-                .measurementIterations(Integer.getInteger("webclient.target.jmh.measurementIterations", 5))
-                .measurementTime(TimeValue.milliseconds(Long.getLong("webclient.target.jmh.measurementMillis", 1000)))
-                .timeUnit(TimeUnit.MICROSECONDS)
-                .addProfiler(GCProfiler.class)
-                .shouldFailOnError(true)
-                .resultFormat(ResultFormatType.JSON)
-                .result(System.getProperty("webclient.target.jmh.result", "target/webclient-target-cache.json"));
-        String jvmArgument = System.getProperty("webclient.target.jmh.jvmArgument");
-        if (jvmArgument != null) {
-            optionsBuilder.jvmArgsAppend(jvmArgument);
+        boolean contention = Boolean.getBoolean("webclient.target.jmh.contention");
+        String include = contention
+                ? "^" + benchmark
+                        + "\\.(http1DistinctTargetPerThread|http1RotatingTargetsPerThread"
+                        + "|http2DistinctTargetPerThread|http2RotatingTargetsPerThread)$"
+                : System.getProperty("webclient.target.jmh.include",
+                                     "^" + benchmark + "\\.(http1CacheHit|http1OneOff|http2CacheHit)$");
+        String[] targetCounts = contention
+                ? new String[] {"64"}
+                : System.getProperty("webclient.target.jmh.targetCounts", "1,64").split(",");
+        int[] threadCounts = contention
+                ? new int[] {1, 2, 4, 8, 16}
+                : new int[] {Integer.getInteger("webclient.target.jmh.threads", 1)};
+        int forks = contention ? 3 : Integer.getInteger("webclient.target.jmh.forks", 1);
+        String contentionResultPrefix = System.getProperty("webclient.target.jmh.contentionResultPrefix",
+                                                           "target/webclient-target-cache-contention");
+
+        for (int threadCount : threadCounts) {
+            String result = contention
+                    ? contentionResultPrefix + "-" + threadCount + "-threads.json"
+                    : System.getProperty("webclient.target.jmh.result", "target/webclient-target-cache.json");
+            var optionsBuilder = new OptionsBuilder()
+                    .include(include)
+                    .param("prefilledTargetCount", targetCounts)
+                    .threads(threadCount)
+                    .forks(forks)
+                    .warmupIterations(Integer.getInteger("webclient.target.jmh.warmupIterations", 3))
+                    .warmupTime(TimeValue.milliseconds(Long.getLong("webclient.target.jmh.warmupMillis", 500)))
+                    .measurementIterations(Integer.getInteger("webclient.target.jmh.measurementIterations", 5))
+                    .measurementTime(TimeValue.milliseconds(Long.getLong("webclient.target.jmh.measurementMillis", 1000)))
+                    .timeUnit(TimeUnit.MICROSECONDS)
+                    .addProfiler(GCProfiler.class)
+                    .shouldFailOnError(true)
+                    .resultFormat(ResultFormatType.JSON)
+                    .result(result);
+            String jvmArgument = System.getProperty("webclient.target.jmh.jvmArgument");
+            if (jvmArgument != null) {
+                optionsBuilder.jvmArgsAppend(jvmArgument);
+            }
+            Options options = optionsBuilder.build();
+            new Runner(options).run();
         }
-        Options options = optionsBuilder.build();
-        new Runner(options).run();
     }
 }

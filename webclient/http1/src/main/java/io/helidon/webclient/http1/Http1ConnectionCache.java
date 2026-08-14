@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -54,7 +56,9 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private static final Http1ConnectionCache SHARED = new Http1ConnectionCache(true);
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
 
-    private final Map<ClientConnectionTarget, ConnectionPool> cache = new LinkedHashMap<>(16, 0.75F, true);
+    private final ConcurrentMap<ClientConnectionTarget, ConnectionPool> cache = new ConcurrentHashMap<>();
+    // Mutated only while holding cacheLock.
+    private final Map<ClientConnectionTarget, ConnectionPool> insertionOrder = new LinkedHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final ReentrantLock cacheLock = new ReentrantLock();
 
@@ -123,8 +127,9 @@ class Http1ConnectionCache extends ClientConnectionCache {
         List<ConnectionPool> pools;
         cacheLock.lock();
         try {
-            pools = List.copyOf(cache.values());
+            pools = List.copyOf(insertionOrder.values());
             cache.clear();
+            insertionOrder.clear();
         } finally {
             cacheLock.unlock();
         }
@@ -293,8 +298,18 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     private ConnectionPool connectionPool(ClientConnectionTarget connectionTarget, int capacity) {
-        List<ConnectionPool> stale = null;
-        ConnectionPool connectionPool;
+        if (closed.get()) {
+            throw new IllegalStateException("Connection cache is closed");
+        }
+        if (!connectionTarget.currentTlsGeneration()) {
+            throw new IllegalStateException("TLS configuration was reloaded before connection-pool acquisition");
+        }
+        ConnectionPool connectionPool = cache.get(connectionTarget);
+        if (connectionPool != null) {
+            return connectionPool;
+        }
+
+        List<ConnectionPool> toRetire = null;
         cacheLock.lock();
         try {
             if (closed.get()) {
@@ -305,35 +320,41 @@ class Http1ConnectionCache extends ClientConnectionCache {
             }
             connectionPool = cache.get(connectionTarget);
             if (connectionPool == null) {
-                var iterator = cache.entrySet().iterator();
+                var iterator = insertionOrder.entrySet().iterator();
                 while (iterator.hasNext()) {
                     var entry = iterator.next();
                     ClientConnectionTarget cachedTarget = entry.getKey();
                     if (cachedTarget.connectionKey().tls() == connectionTarget.connectionKey().tls()
                             && !cachedTarget.currentTlsGeneration()) {
+                        ConnectionPool cachedPool = entry.getValue();
+                        cache.remove(cachedTarget, cachedPool);
                         iterator.remove();
-                        if (stale == null) {
-                            stale = new ArrayList<>();
+                        if (toRetire == null) {
+                            toRetire = new ArrayList<>();
                         }
-                        stale.add(entry.getValue());
+                        toRetire.add(cachedPool);
                     }
                 }
                 connectionPool = new ConnectionPool(capacity);
-                cache.put(connectionTarget, connectionPool);
-                if (cache.size() > MAX_TARGETS) {
-                    var evictionIterator = cache.entrySet().iterator();
-                    if (stale == null) {
-                        stale = new ArrayList<>();
-                    }
-                    stale.add(evictionIterator.next().getValue());
+                if (insertionOrder.size() == MAX_TARGETS) {
+                    var evictionIterator = insertionOrder.entrySet().iterator();
+                    var evicted = evictionIterator.next();
+                    ConnectionPool evictedPool = evicted.getValue();
+                    cache.remove(evicted.getKey(), evictedPool);
                     evictionIterator.remove();
+                    if (toRetire == null) {
+                        toRetire = new ArrayList<>();
+                    }
+                    toRetire.add(evictedPool);
                 }
+                insertionOrder.put(connectionTarget, connectionPool);
+                cache.put(connectionTarget, connectionPool);
             }
         } finally {
             cacheLock.unlock();
         }
-        if (stale != null) {
-            stale.forEach(ConnectionPool::retire);
+        if (toRetire != null) {
+            toRetire.forEach(ConnectionPool::retire);
         }
         return connectionPool;
     }

@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
 
 class Http2ConnectionCacheTest {
     @Test
-    void retiredHandlerTimeoutDoesNotRemoveSuccessor() {
+    void oldestHandlerEvictionDoesNotAllowRetiredHandlerToRemoveSuccessor() {
         Tls tls = Tls.builder().enabled(false).build();
         Proxy proxy = Proxy.builder().host("proxy.example").port(8080).build();
         DnsResolver dnsResolver = (_, _) -> InetAddress.getLoopbackAddress();
@@ -107,19 +107,54 @@ class Http2ConnectionCacheTest {
         try {
             ClientConnectionTarget firstTarget = target.apply(0);
             Http2ConnectionAttemptResult predecessor = newStream.apply(firstTarget);
-            for (int i = 1; i <= 1_000; i++) {
-                newStream.apply(target.apply(i));
-            }
+            Http2ClientConnectionHandler predecessorHandler = predecessor.handler();
+            boolean predecessorLease = predecessorHandler.acquire();
             ClientConnectionTarget equalTarget = target.apply(0);
+            try {
+                assertThat(predecessorLease, is(true));
+                for (int i = 1; i < 1_000; i++) {
+                    newStream.apply(target.apply(i));
+                }
+                Http2ConnectionAttemptResult cached = newStream.apply(equalTarget);
+
+                assertThat(cached.handler(), sameInstance(predecessorHandler));
+
+                newStream.apply(target.apply(1_000));
+                boolean acquiredAfterRetirement = predecessorHandler.acquire();
+                if (acquiredAfterRetirement) {
+                    predecessorHandler.release();
+                }
+                assertThat(acquiredAfterRetirement, is(false));
+            } finally {
+                if (predecessorLease) {
+                    predecessorHandler.release();
+                }
+            }
             Http2ConnectionAttemptResult successor = newStream.apply(equalTarget);
 
             assertThat(equalTarget, is(firstTarget));
-            assertThat(successor.handler(), not(sameInstance(predecessor.handler())));
+            assertThat(successor.handler(), not(sameInstance(predecessorHandler)));
 
-            cache.remove(firstTarget, predecessor.handler());
+            cache.remove(firstTarget, predecessorHandler);
             Http2ConnectionAttemptResult retained = newStream.apply(equalTarget);
 
             assertThat(retained.handler(), sameInstance(successor.handler()));
+
+            Http2ClientConnectionHandler retainedHandler = retained.handler();
+            boolean retainedLease = retainedHandler.acquire();
+            try {
+                assertThat(retainedLease, is(true));
+                cache.closeResource();
+                boolean acquiredAfterClose = retainedHandler.acquire();
+                if (acquiredAfterClose) {
+                    retainedHandler.release();
+                }
+                assertThat(acquiredAfterClose, is(false));
+            } finally {
+                if (retainedLease) {
+                    retainedHandler.release();
+                }
+            }
         } finally {
             cache.closeResource();
         }
