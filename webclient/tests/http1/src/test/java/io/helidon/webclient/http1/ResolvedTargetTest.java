@@ -182,6 +182,34 @@ class ResolvedTargetTest {
     }
 
     @Test
+    void oneOffRequestAfterTlsReloadCannotReuseStaleConnection() {
+        Tls tls = Tls.builder().trustAll(true).build();
+        Http1Client client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .baseUri("https://localhost:" + tlsPort + "/connection-target")
+                .tls(tls)
+                .build();
+
+        try {
+            String first = client.get().request().as(String.class);
+            tls.reload(TlsMaterial.builder().trustAll(true).build());
+            String oneOff = client.get().keepAlive(false).request().as(String.class);
+            String cached = client.get().request().as(String.class);
+            String reused = client.get().request().as(String.class);
+
+            String firstConnection = first.substring(first.indexOf('|'));
+            String oneOffConnection = oneOff.substring(oneOff.indexOf('|'));
+            String cachedConnection = cached.substring(cached.indexOf('|'));
+            assertThat(oneOffConnection, not(is(firstConnection)));
+            assertThat(cachedConnection, not(is(firstConnection)));
+            assertThat(cachedConnection, not(is(oneOffConnection)));
+            assertThat(reused.substring(reused.indexOf('|')), is(cachedConnection));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
     void sameOriginExpectContinueRedirectProbesRetainSelectedProxyRoute() {
         AtomicInteger selectorInvocations = new AtomicInteger();
         ProxySelector countingSelector = new ProxySelector() {

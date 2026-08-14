@@ -33,7 +33,7 @@ class WebClientConnectionTargetJmhRunnerTest {
         String benchmark = WebClientConnectionTargetBenchmark.class.getName();
         var optionsBuilder = new OptionsBuilder()
                 .include(System.getProperty("webclient.target.jmh.include",
-                                            "^" + benchmark + "\\.(http1CacheHit|http2CacheHit)$"))
+                                            "^" + benchmark + "\\.(http1CacheHit|http1OneOff|http2CacheHit)$"))
                 .param("prefilledTargetCount",
                        System.getProperty("webclient.target.jmh.targetCounts", "1,64").split(","))
                 .threads(Integer.getInteger("webclient.target.jmh.threads", 1))

@@ -84,7 +84,6 @@ class Http1ConnectionCache extends ClientConnectionCache {
         if (keepAlive) {
             return keepAliveUnixDomainConnection(http1Client, connectionTarget);
         } else {
-            observeTls(connectionTarget.connectionKey().tls());
             return UnixDomainSocketClientConnection.create(http1Client.webClient(),
                                                            connectionTarget,
                                                            ALPN_ID,
@@ -103,7 +102,6 @@ class Http1ConnectionCache extends ClientConnectionCache {
         if (keepAlive) {
             return keepAliveConnection(http1Client, connectionTarget);
         } else {
-            observeTls(connectionTarget.connectionKey().tls());
             return oneOffConnection(http1Client, connectionTarget);
         }
     }
@@ -338,26 +336,6 @@ class Http1ConnectionCache extends ClientConnectionCache {
             stale.forEach(ConnectionPool::retire);
         }
         return connectionPool;
-    }
-
-    private void observeTls(Tls tls) {
-        List<ConnectionPool> stale = new ArrayList<>();
-        cacheLock.lock();
-        try {
-            var iterator = cache.entrySet().iterator();
-            while (iterator.hasNext()) {
-                var entry = iterator.next();
-                ClientConnectionTarget target = entry.getKey();
-                if (target.connectionKey().tls() == tls
-                        && target.tlsGeneration() != tls.generation()) {
-                    iterator.remove();
-                    stale.add(entry.getValue());
-                }
-            }
-        } finally {
-            cacheLock.unlock();
-        }
-        stale.forEach(ConnectionPool::retire);
     }
 
     private static final class ConnectionPool {

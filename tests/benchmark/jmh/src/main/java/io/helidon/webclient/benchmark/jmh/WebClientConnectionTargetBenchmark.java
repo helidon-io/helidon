@@ -65,6 +65,21 @@ public class WebClientConnectionTargetBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1OneOff(Http1State state, Blackhole blackhole) {
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            try (var response = state.http1Client.get(state.targetUri(0)).keepAlive(false).request()) {
+                response.entity().consume();
+                int status = response.status().code();
+                if (status != 200) {
+                    throw new IllegalStateException("Unexpected HTTP/1.1 status: " + response.status());
+                }
+                blackhole.consume(status);
+            }
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http2CacheHit(Http2State state, Blackhole blackhole) {
         for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
             try (var response = state.http2Client.get(state.targetUri(0)).request()) {
