@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,8 +159,7 @@ class PostTest {
                 .submit("Hello");
 
         assertThat(response.status(), is(Status.NO_CONTENT_204));
-        String entity = response.entity().as(String.class);
-        assertThat(entity, is(""));
+        assertThat(response.entity().hasEntity(), is(false));
     }
 
     private static class Routes {

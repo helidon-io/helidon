@@ -26,6 +26,7 @@ import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
@@ -100,10 +101,13 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             throw new IllegalStateException("Response preparation already in progress");
         }
         try {
+            boolean headRequest = request.prologue().method() == Method.HEAD;
             if (hasStreamFilter()) {
                 // in this case we must honor user's request to filter the stream
                 try (OutputStream os = outputStream()) {
-                    os.write(entityBytes, position, length);
+                    if (!isNoEntityStatus(status())) {
+                        os.write(entityBytes, position, length);
+                    }
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -118,37 +122,21 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                         + ", do not call send().");
             }
 
-            // handle content encoding
-            int actualLength = length;
-            int actualPosition = position;
-            byte[] actualBytes = entityBytes(entityBytes, position, length);
-            boolean automaticContentEncoding = entityBytes != actualBytes;
-            if (automaticContentEncoding) {       // encoding happened, new byte array
-                actualPosition = 0;
-                actualLength = actualBytes.length;
-            }
-
-            headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
-                                                    true,
-                                                    false,
-                                                    String.valueOf(actualLength)));
             headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true,
                                                     false,
                                                     DateTime.rfc1123String()));
 
             int initialStatusCode = status().code();
             prepareResponse();
-            if (automaticContentEncoding && !headers.containsToken(VARY_ACCEPT_ENCODING)) {
-                headers.add(VARY_ACCEPT_ENCODING);
-            }
+
+            int actualLength = length;
+            int actualPosition = position;
+            byte[] actualBytes = entityBytes;
 
             Status responseStatus = status();
             int statusCode = responseStatus.code();
             boolean statusChanged = statusCode != initialStatusCode;
-            boolean noEntityResponse = statusChanged
-                    && (statusCode == Status.NO_CONTENT_204.code()
-                    || statusCode == Status.RESET_CONTENT_205.code()
-                    || statusCode == Status.NOT_MODIFIED_304.code());
+            boolean noEntityResponse = isNoEntityStatus(responseStatus);
             if (statusChanged && responseStatus.family() == Status.Family.INFORMATIONAL) {
                 LOGGER.log(System.Logger.Level.ERROR,
                            "Attempt to send a final informational response. "
@@ -158,12 +146,22 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 headers.remove(HeaderNames.TRAILER);
                 noEntityResponse = true;
             } else if (noEntityResponse) {
-                if (statusCode == Status.NO_CONTENT_204.code()) {
-                    headers.remove(HeaderNames.CONTENT_LENGTH);
-                } else if (statusCode == Status.RESET_CONTENT_205.code()) {
-                    headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+                normalizeNoEntityHeaders(headers, responseStatus);
+            } else {
+                // handle content encoding
+                actualBytes = entityBytes(entityBytes, position, length);
+                boolean automaticContentEncoding = entityBytes != actualBytes;
+                if (automaticContentEncoding) {       // encoding happened, new byte array
+                    actualPosition = 0;
+                    actualLength = actualBytes.length;
+                    if (!headers.containsToken(VARY_ACCEPT_ENCODING)) {
+                        headers.add(VARY_ACCEPT_ENCODING);
+                    }
                 }
-                headers.remove(HeaderNames.TRAILER);
+                headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                        true,
+                                                        false,
+                                                        String.valueOf(actualLength)));
             }
             isSent = true;
 
@@ -185,9 +183,13 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 afterSend();
                 return;
             }
-            bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
-                                                        BufferData.create(actualBytes, actualPosition, actualLength),
-                                                        !sendTrailers);
+            if (headRequest) {
+                bytesWritten += stream.writeHeaders(http2Headers, !sendTrailers);
+            } else {
+                bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
+                                                            BufferData.create(actualBytes, actualPosition, actualLength),
+                                                            !sendTrailers);
+            }
 
             if (sendTrailers) {
                 Consumer<ServerResponseTrailers> beforeTrailers = beforeTrailers();
@@ -229,11 +231,15 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         prepareResponse();
         streamingEntity = true;
 
-        outputStream = new BlockingOutputStream(request, this, () -> {
+        outputStream = new BlockingOutputStream(request, this, () -> this.isSent = true, () -> {
             this.isSent = true;
             afterSend();
         }, beforeTrailers());
-        return applyStreamFilters(contentEncode(outputStream));
+        if (isNoEntityStatus(status())) {
+            return new ApplicationOutputStream(outputStream, outputStream);
+        }
+        OutputStream encodedOutputStream = contentEncode(outputStream);
+        return new ApplicationOutputStream(applyStreamFilters(encodedOutputStream), outputStream);
     }
 
     private void prepareResponse() {
@@ -329,24 +335,47 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
     }
 
+    private static boolean isNoEntityStatus(Status status) {
+        int statusCode = status.code();
+        return statusCode == Status.NO_CONTENT_204.code()
+                || statusCode == Status.RESET_CONTENT_205.code()
+                || statusCode == Status.NOT_MODIFIED_304.code();
+    }
+
+    private static void normalizeNoEntityHeaders(ServerResponseHeaders headers, Status status) {
+        int statusCode = status.code();
+        if (statusCode == Status.NO_CONTENT_204.code()) {
+            headers.remove(HeaderNames.CONTENT_LENGTH);
+        } else if (statusCode == Status.RESET_CONTENT_205.code()) {
+            headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+        }
+        headers.remove(HeaderNames.TRANSFER_ENCODING);
+        headers.remove(HeaderNames.TRAILER);
+    }
+
     private static class BlockingOutputStream extends OutputStream {
 
         private final Http2ServerRequest request;
         private final ServerResponseHeaders headers;
         private final ServerResponseTrailers trailers;
         private final Status status;
+        private final Runnable responseSentRunnable;
         private final Runnable responseCloseRunnable;
         private final Http2ServerResponse response;
         private final Http2ServerStream stream;
+        private final boolean headRequest;
 
         private BufferData firstBuffer;
         private boolean closed;
         private boolean firstByte = true;
+        private boolean headResponseSent;
         private long bytesWritten;
+        private long headRepresentationLength;
         private final Consumer<ServerResponseTrailers> beforeTrailers;
 
         private BlockingOutputStream(Http2ServerRequest request,
                                      Http2ServerResponse response,
+                                     Runnable responseSentRunnable,
                                      Runnable responseCloseRunnable,
                                      Consumer<ServerResponseTrailers> beforeTrailers) {
             this.request = request;
@@ -355,8 +384,10 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             this.trailers = response.trailers;
             this.stream = response.stream;
             this.status = response.status();
+            this.responseSentRunnable = responseSentRunnable;
             this.responseCloseRunnable = responseCloseRunnable;
             this.beforeTrailers = beforeTrailers;
+            this.headRequest = request.prologue().method() == Method.HEAD;
         }
 
         @Override
@@ -376,6 +407,17 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
         @Override
         public void flush() throws IOException {
+            if (headRequest) {
+                if (!headResponseSent) {
+                    if (isNoEntityStatus(status)) {
+                        normalizeNoEntityHeaders(headers, status);
+                    }
+                    headers.remove(HeaderNames.TRAILER);
+                    sendHeadHeaders(true);
+                    responseSentRunnable.run();
+                }
+                return;
+            }
             if (firstByte && firstBuffer != null) {
                 write(BufferData.empty());
             }
@@ -391,9 +433,33 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 return;
             }
             this.closed = true;
+            boolean noEntityResponse = isNoEntityStatus(status);
+            if (noEntityResponse) {
+                normalizeNoEntityHeaders(headers, status);
+            }
             boolean sendTrailers = Http2ServerResponse.sendTrailers(headers);
 
-            if (firstByte) {
+            if (noEntityResponse) {
+                headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
+
+                Http2Headers http2Headers = Http2Headers.create(headers);
+                http2Headers.status(status);
+                response.validateResponse(http2Headers);
+                if (!headResponseSent) {
+                    bytesWritten += stream.writeHeaders(http2Headers, true);
+                }
+            } else if (headRequest) {
+                if (!headResponseSent) {
+                    headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                            true,
+                                                            false,
+                                                            String.valueOf(headRepresentationLength)));
+                    sendHeadHeaders(!sendTrailers);
+                    if (sendTrailers) {
+                        sendTrailers();
+                    }
+                }
+            } else if (firstByte) {
                 // if sendTrailers, will not send end-of-stream
                 sendFirstChunkOnly(sendTrailers);
                 if (sendTrailers) {
@@ -419,6 +485,20 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             if (closed) {
                 throw new IOException("Stream already closed");
             }
+            if (headResponseSent) {
+                // Encoder and filter finalization after an early HEAD flush must not produce content.
+                return;
+            }
+            if (isNoEntityStatus(status)) {
+                if (buffer.available() > 0) {
+                    throw new IllegalStateException("Attempting to write data on a response with status " + status);
+                }
+                return;
+            }
+            if (headRequest) {
+                headRepresentationLength += buffer.available();
+                return;
+            }
             if (firstByte && firstBuffer == null) {
                 // if somebody re-uses the byte buffer sent to us, we must copy it
                 firstBuffer = buffer.copy();
@@ -432,6 +512,16 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             } else {
                 bytesWritten += stream.writeData(buffer, false);
             }
+        }
+
+        private void sendHeadHeaders(boolean endStream) {
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
+
+            Http2Headers http2Headers = Http2Headers.create(headers);
+            http2Headers.status(status);
+            response.validateResponse(http2Headers);
+            bytesWritten += stream.writeHeaders(http2Headers, endStream);
+            headResponseSent = true;
         }
 
         private void sendFirstChunkOnly(boolean sendTrailers) {
@@ -488,5 +578,53 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             Http2Headers http2Headers = Http2Headers.create(trailers);
             bytesWritten += stream.writeTrailers(http2Headers);
         }
+
+        private void checkWriteAllowed(int length) throws IOException {
+            if (length > 0 && isNoEntityStatus(status)) {
+                throw new IllegalStateException("Attempting to write data on a response with status " + status);
+            }
+            if (length > 0 && headResponseSent) {
+                throw new IOException("HEAD response already sent");
+            }
+        }
     }
+
+    private static class ApplicationOutputStream extends OutputStream {
+        private final OutputStream delegate;
+        private final BlockingOutputStream blockingOutputStream;
+
+        private ApplicationOutputStream(OutputStream delegate, BlockingOutputStream blockingOutputStream) {
+            this.delegate = delegate;
+            this.blockingOutputStream = blockingOutputStream;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            blockingOutputStream.checkWriteAllowed(1);
+            delegate.write(b);
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            blockingOutputStream.checkWriteAllowed(b.length);
+            delegate.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            blockingOutputStream.checkWriteAllowed(len);
+            delegate.write(b, off, len);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
+    }
+
 }

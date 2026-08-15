@@ -698,13 +698,29 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                   exception.responseHeaders(),
                                                                   message);
 
+        Status responseStatus = response.status();
         ServerResponseHeaders headers = response.headers();
-        byte[] entity = response.entity().orElse(BufferData.EMPTY_BYTES);
-        if (entity.length != 0) {
+        int responseStatusCode = responseStatus.code();
+        boolean noContentResponse = responseStatusCode == Status.NO_CONTENT_204.code();
+        boolean noEntityResponse = noContentResponse
+                || responseStatusCode == Status.RESET_CONTENT_205.code()
+                || responseStatusCode == Status.NOT_MODIFIED_304.code();
+        byte[] entity;
+        if (noEntityResponse) {
+            entity = BufferData.EMPTY_BYTES;
+            if (noContentResponse) {
+                headers.remove(HeaderNames.CONTENT_LENGTH);
+            } else if (responseStatusCode == Status.RESET_CONTENT_205.code()) {
+                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+            }
+            headers.remove(HeaderNames.TRANSFER_ENCODING);
+            headers.remove(HeaderNames.TRAILER);
+        } else {
+            entity = response.entity().orElse(BufferData.EMPTY_BYTES);
             headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
         }
         Http2Headers http2Headers = Http2Headers.create(headers)
-                .status(exception.status());
+                .status(responseStatus);
         boolean resetRequestBody = prepareRejectedStream(false);
         AtomicBoolean rejectedStreamCompleted = new AtomicBoolean();
         Runnable completeRejectedStream = () -> {
@@ -735,14 +751,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     writer.writeHeaders(http2Headers,
                                         streamId,
                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                        new Http2FrameData(dataHeader, BufferData.create(message)),
+                                        new Http2FrameData(dataHeader, BufferData.create(entity)),
                                         flowControl.outbound());
                     completeRejectedStream.run();
                 } else {
                     connectionWriter.writeHeaders(http2Headers,
                                                   streamId,
                                                   Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                                  new Http2FrameData(dataHeader, BufferData.create(message)),
+                                                  new Http2FrameData(dataHeader, BufferData.create(entity)),
                                                   flowControl.outbound(),
                                                   completeRejectedStream);
                 }

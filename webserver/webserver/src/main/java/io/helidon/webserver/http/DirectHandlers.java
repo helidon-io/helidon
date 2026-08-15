@@ -21,7 +21,9 @@ import java.util.Map;
 
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 import io.helidon.webserver.CloseConnectionException;
@@ -83,10 +85,28 @@ public class DirectHandlers {
                 httpException.status(),
                 httpException.responseHeaders(),
                 httpException);
-
+        var entity = response.entity();
         Status status = response.status();
+        boolean preserveHeadContentLength = entity.isEmpty()
+                && Method.HEAD_NAME.equals(httpException.request().method());
+        boolean copyContentLength = preserveHeadContentLength
+                || status.code() == Status.NOT_MODIFIED_304.code();
+
+        if (!preserveHeadContentLength) {
+            res.headers().remove(HeaderNames.CONTENT_LENGTH);
+        }
         res.status(status);
-        response.headers().forEach(res::header);
+        response.headers().forEach(header -> {
+            if (HeaderNames.CONTENT_LENGTH.equals(header.headerName()) && !copyContentLength) {
+                // Derive the length from the bytes actually sent, as content encoding may change it.
+                return;
+            }
+            if (HeaderNames.VARY.equals(header.headerName())) {
+                res.headers().add(header);
+            } else {
+                res.header(header);
+            }
+        });
         if (!keepAlive && httpException.request().protocolVersion().startsWith("HTTP/1.")) {
             res.header(HeaderValues.CONNECTION_CLOSE);
         }
@@ -97,17 +117,19 @@ public class DirectHandlers {
         }
 
         try {
-            if (status.code() == Status.NO_CONTENT_204.code()
-                    || status.code() == Status.RESET_CONTENT_205.code()
-                    || status.code() == Status.NOT_MODIFIED_304.code()) {
-                // https://www.rfc-editor.org/rfc/rfc9110#status.204
-                // A 204 response is terminated by the end of the header section; it cannot contain content or trailers
-                // ditto for 205, and 304
+            if (status.code() == Status.NO_CONTENT_204.code()) {
+                res.headers().remove(HeaderNames.CONTENT_LENGTH);
+                res.send();
+            } else if (status.code() == Status.RESET_CONTENT_205.code()) {
+                // 205 does not carry an entity and has a known zero length
                 res.header(HeaderValues.CONTENT_LENGTH_ZERO)
                         .send();
+            } else if (status.code() == Status.NOT_MODIFIED_304.code()) {
+                // 304 does not carry an entity, but may describe the selected representation length
+                res.send();
             } else {
                 // otherwise send the entity if present
-                response.entity().ifPresentOrElse(res::send, res::send);
+                entity.ifPresentOrElse(res::send, res::send);
             }
         } catch (IllegalStateException ex) {
             // failed to send - probably output stream was already obtained and used, so status is written

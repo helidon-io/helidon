@@ -41,6 +41,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpException;
+import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
@@ -115,15 +116,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         status = status == null ? Status.OK_200 : status;
 
-        if (isNoEntityStatus(status)) {
-            // https://www.rfc-editor.org/rfc/rfc9110#status.204
-            // A 204 response is terminated by the end of the header section; it cannot contain content or trailers
-            // ditto for 205, and 304
-            if ((headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO))
-                         || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-                status = noEntityInternalError(status);
-            }
-        }
+        normalizeNoEntityHeaders(headers, status);
 
         // first write status
         if (status == Status.OK_200) {
@@ -165,18 +158,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
     @Override
     public Http1ServerResponse status(Status status) {
+        if (outputStream != null && outputStream.totalBytesWritten() > 0) {
+            throw new IllegalStateException("Cannot set response status after response was already sent.");
+        }
         // set internal state
         super.status(status);
         isNoEntityStatus = isNoEntityStatus(status);
 
         // check consistency if status code should not include entity
         if (isNoEntityStatus) {
-            if (!headers.contains(HeaderNames.CONTENT_LENGTH)) {
-                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
-            } else if (headers.contentLength().orElse(0) > 0L) {
-                throw new IllegalStateException("Cannot set status to " + status + " with header "
-                                                        + HeaderNames.CONTENT_LENGTH + " greater than zero");
-            }
+            normalizeNoEntityHeaders(headers, status);
         }
         return this;
     }
@@ -212,10 +203,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         // send bytes to writer
         beforeSend();
 
-        if (!hasStreamFilter() && !headers.contains(HeaderNames.TRAILER)) {
-            byte[] entity = entityBytes(bytes, position, length);
-            BufferData bufferData = (bytes != entity) ? responseBuffer(entity)
-                    : responseBuffer(entity, position, length);         // no encoding, same length
+        boolean noEntityResponse = isNoEntityStatus(status());
+        if (noEntityResponse) {
+            normalizeNoEntityHeaders(headers, status());
+        }
+        boolean headRequest = request.prologue().method() == Method.HEAD;
+        if (noEntityResponse || !hasStreamFilter() && !headers.contains(HeaderNames.TRAILER)) {
+            byte[] entity = noEntityResponse ? BufferData.EMPTY_BYTES : entityBytes(bytes, position, length);
+            int entityPosition = bytes == entity ? position : 0;
+            int entityLength = noEntityResponse ? 0 : bytes == entity ? length : entity.length;
+            BufferData bufferData = responseBuffer(entity, entityPosition, entityLength, headRequest);
             bytesWritten = bufferData.available();
             isSent = true;
             request.reset();
@@ -459,11 +456,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
     }
 
-    private BufferData responseBuffer(byte[] bytes) {
-        return responseBuffer(bytes, 0, bytes.length);
-    }
-
-    private BufferData responseBuffer(byte[] bytes, int position, int length) {
+    private BufferData responseBuffer(byte[] bytes, int position, int length, boolean headRequest) {
         if (isSent) {
             throw new IllegalStateException("Response already sent");
         }
@@ -473,8 +466,13 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         boolean forcedChunkedEncoding = false;
+        Status usedStatus = status();
+        boolean noContentResponse = usedStatus.code() == Status.NO_CONTENT_204.code();
 
-        if (headers.contains(HeaderNames.TRANSFER_ENCODING) && headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        if (noContentResponse) {
+            normalizeNoEntityHeaders(headers, usedStatus);
+        } else if (headers.contains(HeaderNames.TRANSFER_ENCODING)
+                && headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             headers.remove(HeaderNames.CONTENT_LENGTH);
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;
@@ -482,15 +480,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             headers.contentLength(length);
         }
 
-        Status usedStatus = status();
         sendListener.status(ctx, usedStatus);
         sendListener.headers(ctx, headers);
 
         // give some space for code and headers + entity
-        BufferData responseBuffer = BufferData.growing(256 + length);
+        BufferData responseBuffer = BufferData.growing(256 + (headRequest || noContentResponse ? 0 : length));
 
         nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, validateHeaders);
-        if (forcedChunkedEncoding) {
+        if (!headRequest && !noContentResponse && forcedChunkedEncoding) {
             byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
             responseBuffer.write(hex);
             responseBuffer.write('\r');
@@ -499,7 +496,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             responseBuffer.write('\r');
             responseBuffer.write('\n');
             responseBuffer.write(TERMINATING_CHUNK);
-        } else {
+        } else if (!headRequest && !noContentResponse) {
             responseBuffer.write(bytes, position, length);
         }
 
@@ -523,6 +520,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                                             this::status,
                                                             () -> streamResult,
                                                             dataWriter,
+                                                            () -> this.isSent = true,
                                                             () -> {
                                                                 this.isSent = true;
                                                                 afterSend();
@@ -532,8 +530,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                                             sendListener,
                                                             request,
                                                             keepAlive,
-                                                            validateHeaders,
-                                                            isNoEntityStatus);
+                                                            validateHeaders);
 
         int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
@@ -543,7 +540,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             encodedOutputStream = contentEncode(outputStream);
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
-        return applyStreamFilters(encodedOutputStream);
+        return new ApplicationOutputStream(applyStreamFilters(encodedOutputStream), bos);
     }
 
     boolean keepConnectionOpen() {
@@ -557,11 +554,24 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         return Status.INTERNAL_SERVER_ERROR_500;
     }
 
-    private static boolean isNoEntityStatus(Status status) {
+    static boolean isNoEntityStatus(Status status) {
         int code = status.code();
         return code == Status.NO_CONTENT_204.code()
                 || code == Status.RESET_CONTENT_205.code()
                 || code == Status.NOT_MODIFIED_304.code();
+    }
+
+    static void normalizeNoEntityHeaders(ServerResponseHeaders headers, Status status) {
+        int statusCode = status.code();
+        if (statusCode == Status.NO_CONTENT_204.code()) {
+            headers.remove(HeaderNames.CONTENT_LENGTH);
+        } else if (statusCode == Status.RESET_CONTENT_205.code()) {
+            headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+        }
+        if (isNoEntityStatus(status)) {
+            headers.remove(HeaderNames.TRANSFER_ENCODING);
+            headers.remove(HeaderNames.TRAILER);
+        }
     }
 
     static class BlockingOutputStream extends OutputStream {
@@ -569,12 +579,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private final WritableHeaders<?> trailers;
         private final Supplier<Status> status;
         private final DataWriter dataWriter;
+        private final Runnable responseSentRunnable;
         private final Runnable responseCloseRunnable;
         private final ConnectionContext ctx;
         private final Http1ConnectionListener sendListener;
         private final Http1ServerRequest request;
         private final boolean keepAlive;
         private final Supplier<String> streamResult;
+        private final boolean headRequest;
         private boolean forcedChunked;
 
         private BufferData firstBuffer;
@@ -583,10 +595,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private long contentLength;
         private boolean isChunked;
         private boolean firstByte = true;
+        private boolean headResponseSent;
         private long responseBytesTotal;
         private boolean closing = false;
+        private boolean committing;
         private final boolean validateHeaders;
-        private final boolean isNoEntityStatus;
         private final Consumer<ServerResponseTrailers> beforeTrailers;
 
         private BlockingOutputStream(ServerResponseHeaders headers,
@@ -595,19 +608,20 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                      Supplier<Status> status,
                                      Supplier<String> streamResult,
                                      DataWriter dataWriter,
+                                     Runnable responseSentRunnable,
                                      Runnable responseCloseRunnable,
                                      ConnectionContext ctx,
                                      Http1ConnectionListener sendListener,
                                      Http1ServerRequest request,
                                      boolean keepAlive,
-                                     boolean validateHeaders,
-                                     boolean isNoEntityStatus) {
+                                     boolean validateHeaders) {
             this.headers = headers;
             this.trailers = trailers;
             this.beforeTrailers = beforeTrailers;
             this.status = status;
             this.streamResult = streamResult;
             this.dataWriter = dataWriter;
+            this.responseSentRunnable = responseSentRunnable;
             this.responseCloseRunnable = responseCloseRunnable;
             this.ctx = ctx;
             this.sendListener = sendListener;
@@ -615,7 +629,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             this.request = request;
             this.keepAlive = keepAlive;
             this.validateHeaders = validateHeaders;
-            this.isNoEntityStatus = isNoEntityStatus;
+            this.headRequest = request.prologue().method() == Method.HEAD;
         }
 
         void checkResponseHeaders() {
@@ -627,6 +641,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
                 forcedChunked = headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             }
+            contentLength = headers.contentLength().orElse(-1);
         }
 
         @Override
@@ -652,8 +667,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
          */
         @Override
         public void flush() throws IOException {
-            if (closing) {
+            if (closing || committing) {
                 return;     // ignore final flush
+            }
+            if (headRequest) {
+                sendHeadResponse(false);
+                return;
             }
             if (firstByte && firstBuffer != null) {
                 write(BufferData.empty());
@@ -677,17 +696,45 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             closing = true;
         }
 
+        void committing() {
+            committing = headRequest;
+        }
+
         void commit() {
             if (closed) {
                 return;
             }
             this.closed = true;
+            Status usedStatus = status.get();
+            boolean noEntityResponse = isNoEntityStatus(usedStatus);
+            if (noEntityResponse) {
+                firstBuffer = null;
+                isChunked = false;
+                forcedChunked = false;
+            }
+            normalizeNoEntityHeaders(headers, usedStatus);
             boolean sendTrailers =
                     (isChunked || forcedChunked)
                     && (request.headers().containsToken(HeaderValues.TE_TRAILERS)
                                 || headers.contains(HeaderNames.TRAILER));
 
-            if (firstByte) {
+            if (noEntityResponse && !headResponseSent) {
+                sendListener.status(ctx, usedStatus);
+                sendListener.headers(ctx, headers);
+                BufferData bufferData = BufferData.growing(256);
+                nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
+                sendListener.data(ctx, bufferData);
+                responseBytesTotal += bufferData.available();
+                writeResponse(dataWriter, bufferData, "Failed to write response");
+            } else if (headRequest) {
+                if (!headResponseSent) {
+                    if (sendTrailers && beforeTrailers != null) {
+                        trailers.set(STREAM_RESULT_NAME, streamResult.get());
+                        beforeTrailers.accept(ServerResponseTrailers.wrap(trailers));
+                    }
+                    sendHeadResponse(true);
+                }
+            } else if (firstByte) {
                 if (forcedChunked && firstBuffer != null) {
                     // no sense in sending no data, only do this if chunked requested through a header
                     sendHeadersAndPrepare();
@@ -700,7 +747,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 terminatingChunk(sendTrailers);
             }
 
-            if (sendTrailers) {
+            if (sendTrailers && !headRequest) {
                 // not optimized, trailers enabled: we need to write trailers
                 trailers.set(STREAM_RESULT_NAME, streamResult.get());
                 if (beforeTrailers != null) {
@@ -753,8 +800,20 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             if (closed) {
                 throw new IOException("Stream already closed");
             }
-            if (isNoEntityStatus && buffer.available() > 0) {
-                throw new IllegalStateException("Attempting to write data on a response with status " + status);
+            if (headResponseSent) {
+                // Encoder and filter finalization after an early HEAD flush must not produce content.
+                return;
+            }
+            if (isNoEntityStatus(status.get())) {
+                // Discard entity data buffered before the status changed and ignore empty writes.
+                return;
+            }
+            if (headRequest) {
+                bytesWritten += buffer.available();
+                if (!isChunked) {
+                    checkContentLength(buffer);
+                }
+                return;
             }
 
             if (!isChunked) {
@@ -795,7 +854,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 }
                 // this is chunked encoding, if anybody managed to set content length, it would break everything
                 if (headers.contains(HeaderNames.CONTENT_LENGTH)
-                        && (isNoEntityStatus || buffer.available() > 0)) {
+                        && buffer.available() > 0) {
                     LOGGER.log(System.Logger.Level.WARNING, "Content length was set after stream was requested, "
                             + "the response is already chunked, cannot use content-length");
                     headers.remove(HeaderNames.CONTENT_LENGTH);
@@ -824,6 +883,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
             // at this moment, we must send headers
             Status usedStatus = status.get();
+            normalizeNoEntityHeaders(headers, usedStatus);
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(contentLength + 256);
@@ -864,6 +924,45 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             sendListener.data(ctx, bufferData);
             responseBytesTotal += bufferData.available();
             writeResponse(dataWriter, bufferData, "Failed to write response headers");
+        }
+
+        private void sendHeadResponse(boolean completeRepresentation) {
+            if (headResponseSent) {
+                return;
+            }
+            Status usedStatus = status.get();
+            normalizeNoEntityHeaders(headers, usedStatus);
+            if (!completeRepresentation) {
+                headers.remove(HeaderNames.TRAILER);
+            }
+            if (headers.contains(HeaderNames.TRANSFER_ENCODING) || headers.contains(HeaderNames.TRAILER)) {
+                headers.remove(HeaderNames.CONTENT_LENGTH);
+                if (!headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                    headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                }
+            } else if (completeRepresentation && !headers.contains(HeaderNames.CONTENT_LENGTH)) {
+                headers.contentLength(bytesWritten);
+            }
+
+            sendListener.status(ctx, usedStatus);
+            sendListener.headers(ctx, headers);
+            BufferData bufferData = BufferData.growing(256);
+            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
+            sendListener.data(ctx, bufferData);
+            responseBytesTotal += bufferData.available();
+            writeResponse(dataWriter, bufferData, "Failed to write response");
+            headResponseSent = true;
+            responseSentRunnable.run();
+        }
+
+        private void checkWriteAllowed(int length) throws IOException {
+            if (length > 0 && headResponseSent) {
+                throw new IOException("HEAD response already sent");
+            }
+            Status usedStatus = status.get();
+            if (length > 0 && isNoEntityStatus(usedStatus)) {
+                throw new IllegalStateException("Attempting to write data on a response with status " + usedStatus);
+            }
         }
 
         private void writeChunked(BufferData buffer) {
@@ -954,12 +1053,51 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         void commit() {
+            closingDelegate.committing();
             try {
                 flush();
                 closingDelegate.commit();
             } catch (IOException | UncheckedIOException | SocketWriterException e) {
                 throw new ServerConnectionException("Failed to flush server output stream", e);
             }
+        }
+    }
+
+    private static class ApplicationOutputStream extends OutputStream {
+        private final OutputStream delegate;
+        private final BlockingOutputStream blockingOutputStream;
+
+        private ApplicationOutputStream(OutputStream delegate, BlockingOutputStream blockingOutputStream) {
+            this.delegate = delegate;
+            this.blockingOutputStream = blockingOutputStream;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            blockingOutputStream.checkWriteAllowed(1);
+            delegate.write(b);
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            blockingOutputStream.checkWriteAllowed(b.length);
+            delegate.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            blockingOutputStream.checkWriteAllowed(len);
+            delegate.write(b, off, len);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
         }
     }
 }

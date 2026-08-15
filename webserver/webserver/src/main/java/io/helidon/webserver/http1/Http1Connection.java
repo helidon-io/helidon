@@ -849,16 +849,24 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         // we are escaping the connection loop, the connection will be closed
         headers.set(HeaderValues.CONNECTION_CLOSE);
 
-        byte[] entity = response.entity().orElse(BufferData.EMPTY_BYTES);
-        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
+        Status status = response.status();
+        boolean noEntityResponse = Http1ServerResponse.isNoEntityStatus(status);
+        byte[] entity = noEntityResponse
+                ? BufferData.EMPTY_BYTES
+                : response.entity().orElse(BufferData.EMPTY_BYTES);
+        if (noEntityResponse) {
+            Http1ServerResponse.normalizeNoEntityHeaders(headers, status);
+        } else {
+            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
+        }
 
-        Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive(),
+        Http1ServerResponse.nonEntityBytes(headers, status, buffer, response.keepAlive(),
                                            http1Config.validateResponseHeaders());
         if (entity.length != 0) {
             buffer.write(entity);
         }
 
-        sendListener.status(ctx, response.status());
+        sendListener.status(ctx, status);
         sendListener.headers(ctx, headers);
         sendListener.data(ctx, buffer);
         try {
@@ -867,7 +875,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             throw new ServerConnectionException("Failed to write request exception", writeException);
         }
 
-        if (response.status() == Status.INTERNAL_SERVER_ERROR_500) {
+        if (status == Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", e);
         }
     }

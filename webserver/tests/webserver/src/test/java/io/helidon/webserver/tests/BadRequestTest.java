@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.tests;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
@@ -41,6 +43,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -116,6 +119,33 @@ class BadRequestTest {
 
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
         assertThat(headers, hasHeader(LOCATION_ERROR_PAGE));
+    }
+
+    @Test
+    void testNoContentBadRequestDoesNotSendEntity() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "/no-content",
+                                                      null,
+                                                      List.of("Content-Length: 47a"));
+
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Status.NO_CONTENT_204));
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
+        assertThat(headers, noHeader(HeaderNames.CONTENT_LENGTH));
+        assertThat(headers, noHeader(HeaderNames.TRANSFER_ENCODING));
+        assertThat(headers, noHeader(HeaderNames.TRAILER));
+        assertThat(SocketHttpClient.entityFromResponse(response, true), is(""));
+    }
+
+    @Test
+    void testResetContentBadRequestDoesNotSendEntity() throws IOException {
+        assertNoEntityBadRequest("/reset-content", Status.RESET_CONTENT_205, HeaderValues.CONTENT_LENGTH_ZERO);
+    }
+
+    @Test
+    void testNotModifiedBadRequestDoesNotSendEntity() throws IOException {
+        assertNoEntityBadRequest("/not-modified",
+                                 Status.NOT_MODIFIED_304,
+                                 HeaderValues.create(HeaderNames.CONTENT_LENGTH, "23"));
     }
 
     @Test
@@ -342,6 +372,26 @@ class BadRequestTest {
                     .header(HeaderNames.LOCATION, "/errorPage")
                     .build();
         }
+        if (request.path().equals("/no-content")) {
+            return DirectHandler.TransportResponse.builder()
+                    .status(Status.NO_CONTENT_204)
+                    .entity(CUSTOM_ENTITY)
+                    .header(HeaderNames.CONTENT_LENGTH, "23")
+                    .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
+                    .header(HeaderNames.TRAILER, "test-trailer")
+                    .build();
+        }
+        if (request.path().equals("/reset-content") || request.path().equals("/not-modified")) {
+            return DirectHandler.TransportResponse.builder()
+                    .status(request.path().equals("/reset-content")
+                                    ? Status.RESET_CONTENT_205
+                                    : Status.NOT_MODIFIED_304)
+                    .entity(CUSTOM_ENTITY)
+                    .header(HeaderNames.CONTENT_LENGTH, "23")
+                    .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
+                    .header(HeaderNames.TRAILER, "test-trailer")
+                    .build();
+        }
         return DirectHandler.TransportResponse.builder()
                 .status(httpStatus.code() == Status.BAD_REQUEST_400.code()
                                 ? Status.create(Status.BAD_REQUEST_400.code(), CUSTOM_REASON_PHRASE)
@@ -349,6 +399,22 @@ class BadRequestTest {
                 .headers(responseHeaders)
                 .entity(CUSTOM_ENTITY)
                 .build();
+    }
+
+    private void assertNoEntityBadRequest(String path, Status status, Header contentLength) throws IOException {
+        socketClient.request(Method.GET,
+                             path,
+                             null,
+                             List.of("Content-Length: 47a"));
+        String response = new String(socketClient.socketInputStream().readAllBytes(), StandardCharsets.ISO_8859_1)
+                .replace("\r\n", "\n");
+
+        assertThat(SocketHttpClient.statusFromResponse(response), is(status));
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
+        assertThat(headers, hasHeader(contentLength));
+        assertThat(headers, noHeader(HeaderNames.TRANSFER_ENCODING));
+        assertThat(headers, noHeader(HeaderNames.TRAILER));
+        assertThat(SocketHttpClient.entityFromResponse(response, true), is(""));
     }
 
     private void assertRejectedSmugglingAttempt(String transferEncodingHeaders) {
