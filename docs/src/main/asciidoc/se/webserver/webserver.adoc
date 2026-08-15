@@ -1128,8 +1128,9 @@ To safely replace an existing disk-backed resource, use one of the following pro
 
 * Restart the service, replacing the resource while the service is stopped and before it accepts further static-content
   requests.
-* Drain traffic and wait for in-flight requests to complete, delete the resource, request it over HTTP on every service node
-  and verify that it is no longer served, recreate the resource, and then resume traffic.
+* Drain traffic and wait for in-flight requests to complete, delete the resource, request every static-content URL that can
+  resolve to the resource over HTTP on every service node and verify that none serves it, recreate the resource, and then
+  resume traffic.
 
 Retargeting an already-resolved symbolic link at runtime is not supported. Resources explicitly cached in memory are snapshots
 and continue to be served if their source file is removed.
