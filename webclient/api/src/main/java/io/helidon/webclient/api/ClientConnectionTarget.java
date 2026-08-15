@@ -81,6 +81,67 @@ public final class ClientConnectionTarget {
     }
 
     /**
+     * Create a DNS-free cache lookup key from a final request URI and headers.
+     *
+     * @param connectionKey connection policy and TLS identity
+     * @param uri final request URI
+     * @param headers final request headers
+     * @return target lookup key
+     */
+    @Api.Internal
+    public static LookupKey lookupKey(ConnectionKey connectionKey,
+                                      ClientUri uri,
+                                      ClientRequestHeaders headers) {
+        Objects.requireNonNull(uri, "uri");
+        Objects.requireNonNull(headers, "headers");
+        ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
+        String scheme = uri.scheme().toLowerCase(Locale.ROOT);
+        UriAuthority originAuthority = originAuthority(key, uri, headers, scheme);
+        return new LookupKey(key, scheme, originAuthority, null, null, key.tls().generation());
+    }
+
+    /**
+     * Create a DNS-free cache lookup key using the connection-key origin.
+     *
+     * @param connectionKey connection policy and TLS identity
+     * @param scheme origin scheme
+     * @return target lookup key
+     */
+    @Api.Internal
+    public static LookupKey lookupKey(ConnectionKey connectionKey, String scheme) {
+        ConnectionKey key = Objects.requireNonNull(connectionKey, "connectionKey");
+        return new LookupKey(key, scheme, null, null, null, key.tls().generation());
+    }
+
+    /**
+     * Create a logical connection target from a cache lookup key.
+     * <p>
+     * This selects the effective proxy route and may resolve DNS when configured IP-based {@code no-proxy} rules
+     * require it.
+     *
+     * @param lookupKey target lookup key
+     * @return logical connection target
+     */
+    @Api.Internal
+    public static ClientConnectionTarget create(LookupKey lookupKey) {
+        LookupKey key = Objects.requireNonNull(lookupKey, "lookupKey");
+        ConnectionKey connectionKey = key.connectionKey;
+        ProxyRoute route = connectionKey.proxy().effectiveRoute(key.scheme,
+                                                                connectionKey.routingHost(),
+                                                                connectionKey.port(),
+                                                                connectionKey.tls().enabled(),
+                                                                connectionKey.dnsResolver(),
+                                                                connectionKey.dnsAddressLookup());
+        return new ClientConnectionTarget(connectionKey,
+                                          key.scheme,
+                                          key.originAuthorityOverride,
+                                          route,
+                                          key.transportAddress,
+                                          key.localAddress,
+                                          key.tlsGeneration);
+    }
+
+    /**
      * Create a logical IP connection target from a final request URI and headers.
      *
      * @param connectionKey connection policy and TLS identity
@@ -356,6 +417,21 @@ public final class ClientConnectionTarget {
     }
 
     /**
+     * Create a cache lookup key for this target without retaining its selected proxy route.
+     *
+     * @return target lookup key
+     */
+    @Api.Internal
+    public LookupKey lookupKey() {
+        return new LookupKey(connectionKey,
+                             scheme,
+                             originAuthorityOverride,
+                             transportAddress,
+                             localAddress,
+                             tlsGeneration);
+    }
+
+    /**
      * Whether this target still represents the current TLS reload generation.
      *
      * @return whether the TLS generation is current
@@ -472,6 +548,82 @@ public final class ClientConnectionTarget {
                 + (localAddress == null ? "" : ", localAddress=" + localAddress)
                 + ", tlsGeneration=" + tlsGeneration
                 + ']';
+    }
+
+    /**
+     * DNS-free identity used to look up a logical WebClient connection target before selecting its proxy route.
+     */
+    @Api.Internal
+    public static final class LookupKey {
+        private final ConnectionKey connectionKey;
+        private final String scheme;
+        private final UriAuthority originAuthorityOverride;
+        private final SocketAddress transportAddress;
+        private final InetSocketAddress localAddress;
+        private final long tlsGeneration;
+
+        private LookupKey(ConnectionKey connectionKey,
+                          String scheme,
+                          UriAuthority originAuthorityOverride,
+                          SocketAddress transportAddress,
+                          InetSocketAddress localAddress,
+                          long tlsGeneration) {
+            this.connectionKey = Objects.requireNonNull(connectionKey, "connectionKey");
+            this.scheme = Objects.requireNonNull(scheme, "scheme").toLowerCase(Locale.ROOT);
+            this.originAuthorityOverride = originAuthorityOverride;
+            this.transportAddress = transportAddress;
+            this.localAddress = localAddress;
+            this.tlsGeneration = tlsGeneration;
+        }
+
+        /**
+         * Whether this key still represents the current TLS reload generation.
+         *
+         * @return whether the TLS generation is current
+         */
+        public boolean currentTlsGeneration() {
+            return tlsGeneration == connectionKey.tls().generation();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof LookupKey other)) {
+                return false;
+            }
+            return connectionKey.tls() == other.connectionKey.tls()
+                    && connectionKey.equals(other.connectionKey)
+                    && scheme.equals(other.scheme)
+                    && Objects.equals(originAuthorityOverride, other.originAuthorityOverride)
+                    && Objects.equals(transportAddress, other.transportAddress)
+                    && Objects.equals(localAddress, other.localAddress)
+                    && tlsGeneration == other.tlsGeneration;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = connectionKey.hashCode();
+            result = 31 * result + System.identityHashCode(connectionKey.tls());
+            result = 31 * result + scheme.hashCode();
+            result = 31 * result + Objects.hashCode(originAuthorityOverride);
+            result = 31 * result + Objects.hashCode(transportAddress);
+            result = 31 * result + Objects.hashCode(localAddress);
+            return 31 * result + Long.hashCode(tlsGeneration);
+        }
+
+        @Override
+        public String toString() {
+            return "ClientConnectionTarget.LookupKey[scheme=" + scheme
+                    + ", originAuthority=" + (originAuthorityOverride == null
+                            ? normalizedOriginAuthority(connectionKey)
+                            : originAuthorityOverride)
+                    + (transportAddress == null ? "" : ", transportAddress=" + transportAddress)
+                    + (localAddress == null ? "" : ", localAddress=" + localAddress)
+                    + ", tlsGeneration=" + tlsGeneration
+                    + ']';
+        }
     }
 
     private static UriAuthority normalizedAuthority(String authority, String scheme) {

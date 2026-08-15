@@ -162,6 +162,66 @@ class ResolvedTargetTest {
     }
 
     @Test
+    void configuredIpNoProxyReusesIdleConnectionWithoutDns() {
+        AtomicInteger resolutions = new AtomicInteger();
+        Proxy proxy = Proxy.builder()
+                .host("proxy.invalid")
+                .port(8181)
+                .addNoProxy("127.0.0.1")
+                .build();
+        Http1Client client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .servicesDiscoverServices(false)
+                .dnsResolver((_, _) -> {
+                    resolutions.incrementAndGet();
+                    return InetAddress.ofLiteral("127.0.0.1");
+                })
+                .baseUri("http://target.example:" + plainPort + "/connection-target")
+                .proxy(proxy)
+                .build();
+
+        try {
+            String first = client.get().request().as(String.class);
+            String reused = client.get().request().as(String.class);
+
+            assertThat(reused, is(first));
+            assertThat(resolutions.get(), is(1));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void borrowedIpNoProxyPoolResolvesDnsAndOpensAnotherConnection() {
+        AtomicInteger resolutions = new AtomicInteger();
+        Proxy proxy = Proxy.builder()
+                .host("proxy.invalid")
+                .port(8181)
+                .addNoProxy("127.0.0.1")
+                .build();
+        Http1Client client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .servicesDiscoverServices(false)
+                .dnsResolver((_, _) -> {
+                    resolutions.incrementAndGet();
+                    return InetAddress.ofLiteral("127.0.0.1");
+                })
+                .baseUri("http://target.example:" + plainPort + "/connection-target")
+                .proxy(proxy)
+                .build();
+
+        try (Http1ClientResponse borrowed = client.get().request()) {
+            String second = client.get().request().as(String.class);
+            String first = borrowed.as(String.class);
+
+            assertThat(second.substring(second.indexOf('|')), not(is(first.substring(first.indexOf('|')))));
+            assertThat(resolutions.get(), is(2));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
     void tlsReloadRetiresPreviousTargetConnection() {
         Tls tls = Tls.builder().trustAll(true).build();
         Http1Client client = Http1Client.builder()

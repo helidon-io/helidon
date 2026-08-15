@@ -16,12 +16,14 @@
 
 package io.helidon.webclient.http2;
 
+import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.HttpClientResponse;
 
 record Http2ConnectionAttemptResult(Result result,
                                     Http2ClientStream stream,
                                     HttpClientResponse response,
-                                    Http2ClientConnectionHandler handler) {
+                                    Http2ClientConnectionHandler handler,
+                                    ClientConnectionTarget connectionTarget) {
     enum Result {
         HTTP_1,
         HTTP_2,

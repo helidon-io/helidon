@@ -167,6 +167,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 .map(UnixDomainSocketAddress.class::cast)
                 .orElse(null);
         ClientConnectionTarget connectionTarget = null;
+        ClientConnectionTarget.LookupKey connectionLookupKey = null;
         ClientConnection suppliedConnection = connection;
         if (connection != null) {
             ConnectionKey connectionKey = Http1ConnectionCache.connectionKey(originalRequest,
@@ -191,16 +192,23 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                                               headers,
                                                                               http1Client.clientConfig());
             ProxyRoute selectedProxyRoute = originalRequest.selectedProxyRoute().orElse(null);
-            if (originAuthorityOverride) {
-                connectionTarget = selectedProxyRoute == null
-                        ? ClientConnectionTarget.create(connectionKey, uri, headers)
-                        : ClientConnectionTarget.create(connectionKey, uri, headers, selectedProxyRoute);
+            if (selectedProxyRoute == null && connectionKey.proxy().ipNoProxyConfigured()) {
+                connectionLookupKey = originAuthorityOverride
+                        ? ClientConnectionTarget.lookupKey(connectionKey, uri, headers)
+                        : ClientConnectionTarget.lookupKey(connectionKey, uri.scheme());
+                originalRequest.clearSelectedProxyRoute();
             } else {
-                connectionTarget = selectedProxyRoute == null
-                        ? ClientConnectionTarget.create(connectionKey, uri.scheme())
-                        : ClientConnectionTarget.create(connectionKey, uri.scheme(), selectedProxyRoute);
+                if (originAuthorityOverride) {
+                    connectionTarget = selectedProxyRoute == null
+                            ? ClientConnectionTarget.create(connectionKey, uri, headers)
+                            : ClientConnectionTarget.create(connectionKey, uri, headers, selectedProxyRoute);
+                } else {
+                    connectionTarget = selectedProxyRoute == null
+                            ? ClientConnectionTarget.create(connectionKey, uri.scheme())
+                            : ClientConnectionTarget.create(connectionKey, uri.scheme(), selectedProxyRoute);
+                }
+                originalRequest.selectedProxyRoute(connectionTarget.proxyRoute());
             }
-            originalRequest.selectedProxyRoute(connectionTarget.proxyRoute());
         } else if (suppliedConnection == null) {
             ConnectionKey connectionKey = Http1ConnectionCache.unixConnectionKey(originalRequest,
                                                                                   uri,
@@ -216,7 +224,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         // either use the explicit connection, or obtain one (keep alive or one-off)
         effectiveConnection = suppliedConnection == null
-                ? obtainConnection(connectionTarget, headers, udsAddress)
+                ? obtainConnection(connectionTarget, connectionLookupKey, headers, udsAddress)
                 : suppliedConnection;
         effectiveConnection.readTimeout(this.timeout);
 
@@ -499,9 +507,17 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     private ClientConnection obtainConnection(ClientConnectionTarget connectionTarget,
+                                              ClientConnectionTarget.LookupKey connectionLookupKey,
                                               ClientRequestHeaders headers,
                                               UnixDomainSocketAddress udsAddress) {
         if (udsAddress == null) {
+            if (connectionLookupKey != null) {
+                return http1Client.connectionCache()
+                        .connection(http1Client,
+                                    connectionLookupKey,
+                                    headers,
+                                    keepAlive);
+            }
             return http1Client.connectionCache()
                     .connection(http1Client,
                                 connectionTarget,

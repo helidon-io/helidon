@@ -40,6 +40,8 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
     private static final Http2ConnectionCache SHARED = new Http2ConnectionCache(true);
     private final LruCache<ConnectionKey, Boolean> http2Supported = LruCache.create(1000);
     private final ConcurrentMap<ClientConnectionTarget, Http2ClientConnectionHandler> cache = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ClientConnectionTarget.LookupKey, List<Http2ClientConnectionHandler>> lookupCache =
+            new ConcurrentHashMap<>();
     // Mutated only while holding cacheLock.
     private final Map<ClientConnectionTarget, Http2ClientConnectionHandler> insertionOrder = new LinkedHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -74,6 +76,7 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         try {
             handlers = List.copyOf(insertionOrder.values());
             cache.clear();
+            lookupCache.clear();
             insertionOrder.clear();
             http2Supported.clear();
         } finally {
@@ -98,6 +101,7 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         try {
             if (cache.remove(connectionTarget, expectedHandler)) {
                 insertionOrder.remove(connectionTarget, expectedHandler);
+                removeLookupHandler(connectionTarget, expectedHandler);
                 http2Supported.remove(connectionTarget.connectionKey());
             }
         } finally {
@@ -105,6 +109,49 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         }
         // The failed stream still owns this handler even when a successor is now mapped.
         expectedHandler.close();
+    }
+
+    Http2ConnectionAttemptResult newStream(Http2ClientImpl http2Client,
+                                           ClientConnectionTarget.LookupKey lookupKey,
+                                           Http2ClientRequestImpl request,
+                                           ClientUri initialUri,
+                                           WebClientServiceRequest serviceRequest,
+                                           Http1FallbackHandler http1FallbackHandler) {
+        if (closed.get()) {
+            throw new IllegalStateException("Connection cache is closed");
+        }
+        if (!lookupKey.currentTlsGeneration()) {
+            throw new IllegalStateException("TLS configuration was reloaded before connection-pool acquisition");
+        }
+
+        List<Http2ClientConnectionHandler> handlers = lookupCache.get(lookupKey);
+        if (handlers != null) {
+            for (Http2ClientConnectionHandler handler : handlers) {
+                if (!handler.acquire()) {
+                    continue;
+                }
+                Http2ConnectionAttemptResult result;
+                try {
+                    result = handler.reuseStream(http2Client, request);
+                } catch (RuntimeException | Error e) {
+                    http1FallbackHandler.completeSentExceptionally(e);
+                    throw e;
+                } finally {
+                    handler.release();
+                }
+                if (result != null) {
+                    http2Supported.put(result.connectionTarget().connectionKey(), true);
+                    return result;
+                }
+            }
+        }
+
+        return newStream(http2Client,
+                         ClientConnectionTarget.create(lookupKey),
+                         request,
+                         initialUri,
+                         serviceRequest,
+                         http1FallbackHandler);
     }
 
     Http2ConnectionAttemptResult newStream(Http2ClientImpl http2Client,
@@ -168,6 +215,7 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                             && !cachedTarget.currentTlsGeneration()) {
                         iterator.remove();
                         if (cache.remove(cachedTarget, entry.getValue())) {
+                            removeLookupHandler(cachedTarget, entry.getValue());
                             if (retiredHandlers == null) {
                                 retiredHandlers = new ArrayList<>();
                             }
@@ -181,6 +229,7 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                     var evicted = evictionIterator.next();
                     evictionIterator.remove();
                     if (cache.remove(evicted.getKey(), evicted.getValue())) {
+                        removeLookupHandler(evicted.getKey(), evicted.getValue());
                         if (retiredHandlers == null) {
                             retiredHandlers = new ArrayList<>();
                         }
@@ -194,6 +243,17 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                 }
                 insertionOrder.put(connectionTarget, handler);
                 cache.put(connectionTarget, handler);
+                if (connectionTarget.connectionKey().proxy().ipNoProxyConfigured()) {
+                    ClientConnectionTarget.LookupKey lookupKey = connectionTarget.lookupKey();
+                    List<Http2ClientConnectionHandler> handlers = lookupCache.get(lookupKey);
+                    if (handlers == null) {
+                        lookupCache.put(lookupKey, List.of(handler));
+                    } else {
+                        var updatedHandlers = new ArrayList<>(handlers);
+                        updatedHandlers.add(handler);
+                        lookupCache.put(lookupKey, List.copyOf(updatedHandlers));
+                    }
+                }
                 break;
             } finally {
                 cacheLock.unlock();
@@ -220,6 +280,25 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
             http2Supported.put(connectionTarget.connectionKey(), true);
         }
         return result;
+    }
+
+    private void removeLookupHandler(ClientConnectionTarget connectionTarget,
+                                     Http2ClientConnectionHandler expectedHandler) {
+        if (!connectionTarget.connectionKey().proxy().ipNoProxyConfigured()) {
+            return;
+        }
+        lookupCache.computeIfPresent(connectionTarget.lookupKey(), (_, handlers) -> {
+            var updatedHandlers = new ArrayList<Http2ClientConnectionHandler>(handlers.size());
+            for (Http2ClientConnectionHandler handler : handlers) {
+                if (handler != expectedHandler) {
+                    updatedHandlers.add(handler);
+                }
+            }
+            if (updatedHandlers.size() == handlers.size()) {
+                return handlers;
+            }
+            return updatedHandlers.isEmpty() ? null : List.copyOf(updatedHandlers);
+        });
     }
 
 }

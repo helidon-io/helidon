@@ -575,8 +575,14 @@ class Http2WebClientTest {
         try {
             assertThat(responseBody(client.get().queryParam("custQueryParam", "first")), is("HTTP/2 route"));
             assertThat(sockets.size(), is(1));
+            assertThat(resolutions.get(), is(1));
+            assertThat(responseBody(client.get().queryParam("custQueryParam", "reused")), is("HTTP/2 route"));
+            assertThat(sockets.size(), is(1));
+            assertThat(targets.size(), is(1));
+            assertThat(resolutions.get(), is(1));
+
             sockets.get(0).close();
-            assertThat(responseBody(client.get().queryParam("custQueryParam", "second")), is("HTTP/2 route"));
+            assertThat(responseBody(client.get().queryParam("custQueryParam", "reconnected")), is("HTTP/2 route"));
 
             assertThat(targets.size(), is(2));
             assertThat(resolutions.get(), is(2));

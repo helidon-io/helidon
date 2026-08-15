@@ -567,11 +567,13 @@ class ClientConnectionTargetTest {
                 connectionKey,
                 uri,
                 ClientRequestHeaders.create(WritableHeaders.create()));
+        ClientConnectionTarget.LookupKey lookupKey = target.lookupKey();
 
         tls.reload(TlsMaterial.builder().trustAll(true).build());
 
         IllegalStateException failure = assertThrows(IllegalStateException.class, target::resolve);
         assertThat(failure.getMessage(), is("TLS configuration was reloaded before target resolution"));
+        assertThat(lookupKey.currentTlsGeneration(), is(false));
         assertThat(resolutions.get(), is(0));
     }
 
@@ -605,6 +607,160 @@ class ClientConnectionTargetTest {
 
         assertThat(firstRoute.kind(), is(ProxyRoute.Kind.DIRECT));
         assertThat(secondTarget.proxyRoute().kind(), is(ProxyRoute.Kind.HTTP_TUNNEL));
+    }
+
+    @Test
+    void createsLookupKeyWithoutDns() {
+        AtomicInteger resolutions = new AtomicInteger();
+        Proxy proxy = Proxy.builder()
+                .host("proxy.example")
+                .port(8181)
+                .addNoProxy("127.0.0.1")
+                .build();
+        ClientUri uri = ClientUri.create(URI.create("https://hostname.example/path"));
+        ConnectionKey connectionKey = ConnectionKey.create(uri,
+                                                           TLS,
+                                                           (_, _) -> {
+                                                               resolutions.incrementAndGet();
+                                                               return InetAddress.ofLiteral("127.0.0.1");
+                                                           },
+                                                           DnsAddressLookup.IPV4,
+                                                           proxy);
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        headers.set(HeaderNames.HOST, "hostname.example");
+
+        ClientConnectionTarget.LookupKey uriKey = ClientConnectionTarget.lookupKey(connectionKey, uri, headers);
+        ClientConnectionTarget.LookupKey schemeKey = ClientConnectionTarget.lookupKey(connectionKey, "HTTPS");
+
+        assertThat(proxy.ipNoProxyConfigured(), is(true));
+        assertThat(Proxy.builder()
+                           .type(Proxy.ProxyType.NONE)
+                           .addNoProxy("127.0.0.1")
+                           .build()
+                           .ipNoProxyConfigured(), is(false));
+        assertThat(uriKey.currentTlsGeneration(), is(true));
+        assertThat(uriKey, is(schemeKey));
+        assertThat(uriKey.hashCode(), is(schemeKey.hashCode()));
+        assertThat(resolutions.get(), is(0));
+    }
+
+    @Test
+    void lookupKeyIgnoresSelectedProxyRoute() {
+        AtomicInteger resolutions = new AtomicInteger();
+        Proxy proxy = Proxy.builder()
+                .host("proxy.example")
+                .port(8181)
+                .addNoProxy("127.0.0.1")
+                .build();
+        ClientUri uri = ClientUri.create(URI.create("https://hostname.example/path"));
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        ConnectionKey connectionKey = ConnectionKey.create(uri,
+                                                           TLS,
+                                                           (_, _) -> resolutions.getAndIncrement() == 0
+                                                                   ? InetAddress.ofLiteral("127.0.0.1")
+                                                                   : InetAddress.ofLiteral("127.0.0.2"),
+                                                           DnsAddressLookup.IPV4,
+                                                           proxy);
+
+        ClientConnectionTarget direct = ClientConnectionTarget.create(connectionKey, uri, headers);
+        ClientConnectionTarget proxied = ClientConnectionTarget.create(connectionKey, uri, headers);
+
+        assertThat(direct.proxyRoute().kind(), is(ProxyRoute.Kind.DIRECT));
+        assertThat(proxied.proxyRoute().kind(), is(ProxyRoute.Kind.HTTP_TUNNEL));
+        assertThat(direct, not(proxied));
+        assertThat(direct.lookupKey(), is(proxied.lookupKey()));
+        assertThat(direct.lookupKey().hashCode(), is(proxied.lookupKey().hashCode()));
+        assertThat(resolutions.get(), is(2));
+    }
+
+    @Test
+    void partitionsLookupKeyIdentity() {
+        ClientUri uri = ClientUri.create(URI.create("http://origin.example/path"));
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        DnsResolver resolver = (_, _) -> InetAddress.getLoopbackAddress();
+        Tls firstTls = Tls.builder().enabled(false).build();
+        Tls secondTls = Tls.builder().enabled(false).build();
+        ConnectionKey connectionKey = ConnectionKey.create(uri,
+                                                           firstTls,
+                                                           resolver,
+                                                           DnsAddressLookup.IPV4,
+                                                           Proxy.noProxy());
+        ConnectionKey equivalentKey = ConnectionKey.create(uri,
+                                                           secondTls,
+                                                           resolver,
+                                                           DnsAddressLookup.IPV4,
+                                                           Proxy.noProxy());
+        ClientConnectionTarget target = ClientConnectionTarget.create(connectionKey, uri, headers);
+        ClientConnectionTarget.LookupKey lookupKey = target.lookupKey();
+
+        ClientRequestHeaders otherAuthorityHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        otherAuthorityHeaders.set(HeaderNames.HOST, "other.example");
+        ClientConnectionTarget.LookupKey otherAuthority = ClientConnectionTarget.lookupKey(connectionKey,
+                                                                                            uri,
+                                                                                            otherAuthorityHeaders);
+        ClientConnectionTarget.LookupKey otherScheme = ClientConnectionTarget.lookupKey(connectionKey, "https");
+        ClientConnectionTarget.LookupKey otherGeneration = ClientConnectionTarget.create(connectionKey,
+                                                                                           target.scheme(),
+                                                                                           target.originAuthority(),
+                                                                                           target.proxyRoute(),
+                                                                                           target.tlsGeneration() + 1)
+                .lookupKey();
+        ClientConnectionTarget.LookupKey localBind = ClientConnectionTarget.create(
+                connectionKey,
+                target.scheme(),
+                target.originAuthority(),
+                target.proxyRoute(),
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
+                target.tlsGeneration()).lookupKey();
+        UnixDomainSocketAddress unixAddress = UnixDomainSocketAddress.of("target.sock");
+        ClientConnectionTarget.LookupKey transportOverride = ClientConnectionTarget.createUnixDomainSocket(
+                connectionKey,
+                uri,
+                headers,
+                unixAddress)
+                .lookupKey();
+        ClientConnectionTarget.LookupKey otherTlsIdentity = ClientConnectionTarget.lookupKey(equivalentKey,
+                                                                                              uri,
+                                                                                              headers);
+
+        assertThat(connectionKey, is(equivalentKey));
+        assertThat(lookupKey, is(ClientConnectionTarget.lookupKey(connectionKey, "HTTP")));
+        assertThat(lookupKey, not(otherAuthority));
+        assertThat(lookupKey, not(otherScheme));
+        assertThat(lookupKey, not(otherGeneration));
+        assertThat(lookupKey, not(localBind));
+        assertThat(lookupKey, not(transportOverride));
+        assertThat(lookupKey, not(otherTlsIdentity));
+    }
+
+    @Test
+    void createsTargetFromLookupKeyOnCacheMiss() {
+        AtomicInteger resolutions = new AtomicInteger();
+        Proxy proxy = Proxy.builder()
+                .host("proxy.example")
+                .port(8181)
+                .addNoProxy("127.0.0.1")
+                .build();
+        ClientUri uri = ClientUri.create(URI.create("https://hostname.example/path"));
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        headers.set(HeaderNames.HOST, "origin.example:9443");
+        ConnectionKey connectionKey = ConnectionKey.create(uri,
+                                                           TLS,
+                                                           (_, _) -> {
+                                                               resolutions.incrementAndGet();
+                                                               return InetAddress.ofLiteral("127.0.0.1");
+                                                           },
+                                                           DnsAddressLookup.IPV4,
+                                                           proxy);
+        ClientConnectionTarget.LookupKey lookupKey = ClientConnectionTarget.lookupKey(connectionKey, uri, headers);
+
+        ClientConnectionTarget target = ClientConnectionTarget.create(lookupKey);
+
+        assertThat(target.lookupKey(), is(lookupKey));
+        assertThat(target.originAuthority().toString(), is("origin.example:9443"));
+        assertThat(target.proxyRoute().kind(), is(ProxyRoute.Kind.DIRECT));
+        assertThat(target.resolve().peerAddress().getAddress(), is(InetAddress.ofLiteral("127.0.0.1")));
+        assertThat(resolutions.get(), is(1));
     }
 
     @Test

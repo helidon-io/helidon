@@ -357,6 +357,16 @@ public class Proxy {
     }
 
     /**
+     * Whether this proxy can select routes using a configured IP-based {@code no-proxy} rule.
+     *
+     * @return whether IP-based no-proxy route selection is configured
+     */
+    @Api.Internal
+    public boolean ipNoProxyConfigured() {
+        return type == ProxyType.HTTP && ipNoProxyConfigured;
+    }
+
+    /**
      * Verifies whether the specified Uri is using system proxy.
      *
      * @param uri the uri

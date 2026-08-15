@@ -145,6 +145,7 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
             explicitConnection = null;
         }
         ClientConnectionTarget connectionTarget;
+        ClientConnectionTarget.LookupKey connectionLookupKey = null;
         if (explicitTarget != null) {
             connectionTarget = explicitTarget;
         } else {
@@ -157,23 +158,46 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
                                                                                    udsAddress);
             } else {
                 ProxyRoute selectedProxyRoute = clientRequest.selectedProxyRoute().orElse(null);
-                if (originAuthorityOverride) {
-                    connectionTarget = selectedProxyRoute == null
-                            ? ClientConnectionTarget.create(connectionKey, uri, requestHeaders)
-                            : ClientConnectionTarget.create(connectionKey, uri, requestHeaders, selectedProxyRoute);
+                if (explicitConnection == null
+                        && selectedProxyRoute == null
+                        && connectionKey.proxy().ipNoProxyConfigured()) {
+                    connectionLookupKey = originAuthorityOverride
+                            ? ClientConnectionTarget.lookupKey(connectionKey, uri, requestHeaders)
+                            : ClientConnectionTarget.lookupKey(connectionKey, uri.scheme());
+                    connectionTarget = null;
+                    clientRequest.clearSelectedProxyRoute();
                 } else {
-                    connectionTarget = selectedProxyRoute == null
-                            ? ClientConnectionTarget.create(connectionKey, uri.scheme())
-                            : ClientConnectionTarget.create(connectionKey, uri.scheme(), selectedProxyRoute);
-                }
-                if (explicitConnection == null || clientRequest.selectedProxyRoute().isPresent()) {
-                    clientRequest.selectedProxyRoute(connectionTarget.proxyRoute());
+                    if (originAuthorityOverride) {
+                        connectionTarget = selectedProxyRoute == null
+                                ? ClientConnectionTarget.create(connectionKey, uri, requestHeaders)
+                                : ClientConnectionTarget.create(connectionKey, uri, requestHeaders, selectedProxyRoute);
+                    } else {
+                        connectionTarget = selectedProxyRoute == null
+                                ? ClientConnectionTarget.create(connectionKey, uri.scheme())
+                                : ClientConnectionTarget.create(connectionKey, uri.scheme(), selectedProxyRoute);
+                    }
+                    if (explicitConnection == null || clientRequest.selectedProxyRoute().isPresent()) {
+                        clientRequest.selectedProxyRoute(connectionTarget.proxyRoute());
+                    }
                 }
             }
         }
 
-        Http2ConnectionAttemptResult result = http2Client.connectionCache()
-                .newStream(http2Client, connectionTarget, clientRequest, uri, serviceRequest, http1FallbackHandler);
+        Http2ConnectionAttemptResult result = connectionLookupKey == null
+                ? http2Client.connectionCache()
+                        .newStream(http2Client,
+                                   connectionTarget,
+                                   clientRequest,
+                                   uri,
+                                   serviceRequest,
+                                   http1FallbackHandler)
+                : http2Client.connectionCache()
+                        .newStream(http2Client,
+                                   connectionLookupKey,
+                                   clientRequest,
+                                   uri,
+                                   serviceRequest,
+                                   http1FallbackHandler);
 
         try {
             if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
@@ -191,7 +215,7 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
             if (!clientRequest().outputStreamRedirect()
                     && (clientRequest.connection().isEmpty()
                             || Http2ClientConnectionHandler.ownsExplicitConnection(clientRequest))) {
-                http2Client.connectionCache().remove(connectionTarget, result.handler());
+                http2Client.connectionCache().remove(result.connectionTarget(), result.handler());
                 closeFailedStream(result);
             }
             throw e;

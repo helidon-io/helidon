@@ -57,6 +57,9 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
 
     private final ConcurrentMap<ClientConnectionTarget, ConnectionPool> cache = new ConcurrentHashMap<>();
+    // Non-owning aliases, updated only while holding cacheLock.
+    private final ConcurrentMap<ClientConnectionTarget.LookupKey, List<ConnectionPool>> lookupCache =
+            new ConcurrentHashMap<>();
     // Mutated only while holding cacheLock.
     private final Map<ClientConnectionTarget, ConnectionPool> insertionOrder = new LinkedHashMap<>();
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -111,15 +114,76 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     ClientConnection connection(Http1ClientImpl http1Client,
+                                ClientConnectionTarget.LookupKey lookupKey,
+                                ClientRequestHeaders headers,
+                                boolean defaultKeepAlive) {
+        boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
+        if (keepAlive) {
+            if (closed.get()) {
+                throw new IllegalStateException("Connection cache is closed");
+            }
+            if (!lookupKey.currentTlsGeneration()) {
+                throw new IllegalStateException("TLS configuration was reloaded before connection-pool acquisition");
+            }
+
+            List<ConnectionPool> connectionPools = lookupCache.get(lookupKey);
+            if (connectionPools != null) {
+                for (ConnectionPool connectionPool : connectionPools) {
+                    ClientConnection connection = connectedConnection(connectionPool);
+                    if (connection != null) {
+                        if (LOGGER.isLoggable(DEBUG)) {
+                            LOGGER.log(DEBUG, String.format("[%s] client connection obtained %s",
+                                                            connection.channelId(),
+                                                            Thread.currentThread().getName()));
+                        }
+                        return connection;
+                    }
+                }
+            }
+
+            ClientConnectionTarget connectionTarget = ClientConnectionTarget.create(lookupKey);
+            ConnectionPool connectionPool = connectionPool(connectionTarget,
+                                                           http1Client.clientConfig().connectionCacheSize());
+            ClientConnection connection = connectedConnection(connectionPool);
+            if (connection == null) {
+                connection = TcpClientConnection.create(http1Client.webClient(),
+                                                        connectionTarget,
+                                                        ALPN_ID,
+                                                        connectionPool::release,
+                                                        conn -> {
+                                                        })
+                        .connect();
+            } else if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, String.format("[%s] client connection obtained %s",
+                                                connection.channelId(),
+                                                Thread.currentThread().getName()));
+            }
+            return connection;
+        } else {
+            return oneOffConnection(http1Client, ClientConnectionTarget.create(lookupKey));
+        }
+    }
+
+    ClientConnection connection(Http1ClientImpl http1Client,
                                 FullClientRequest<?> request,
                                 ClientUri uri,
                                 ClientRequestHeaders headers,
                                 boolean defaultKeepAlive) {
         ConnectionKey connectionKey = connectionKey(request, uri, headers, http1Client.clientConfig());
-        ClientConnectionTarget connectionTarget = request.selectedProxyRoute()
-                .map(route -> ClientConnectionTarget.create(connectionKey, uri, headers, route))
-                .orElseGet(() -> ClientConnectionTarget.create(connectionKey, uri, headers));
-        return connection(http1Client, connectionTarget, headers, defaultKeepAlive);
+        return request.selectedProxyRoute()
+                .map(route -> connection(http1Client,
+                                         ClientConnectionTarget.create(connectionKey, uri, headers, route),
+                                         headers,
+                                         defaultKeepAlive))
+                .orElseGet(() -> connectionKey.proxy().ipNoProxyConfigured()
+                        ? connection(http1Client,
+                                     ClientConnectionTarget.lookupKey(connectionKey, uri, headers),
+                                     headers,
+                                     defaultKeepAlive)
+                        : connection(http1Client,
+                                     ClientConnectionTarget.create(connectionKey, uri, headers),
+                                     headers,
+                                     defaultKeepAlive));
     }
 
     @Override
@@ -129,6 +193,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
         try {
             pools = List.copyOf(insertionOrder.values());
             cache.clear();
+            lookupCache.clear();
             insertionOrder.clear();
         } finally {
             cacheLock.unlock();
@@ -200,10 +265,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
         ConnectionPool connectionPool = connectionPool(connectionTarget, clientConfig.connectionCacheSize());
 
-        ClientConnection connection;
-        while ((connection = connectionPool.poll()) != null && !connection.isConnected()) {
-            connection.closeResource();
-        }
+        ClientConnection connection = connectedConnection(connectionPool);
 
         if (connection == null) {
             connection = UnixDomainSocketClientConnection.create(http1Client.webClient(),
@@ -233,10 +295,7 @@ class Http1ConnectionCache extends ClientConnectionCache {
         Http1ClientConfig clientConfig = http1Client.clientConfig();
         ConnectionPool connectionPool = connectionPool(connectionTarget, clientConfig.connectionCacheSize());
 
-        ClientConnection connection;
-        while ((connection = connectionPool.poll()) != null && !connection.isConnected()) {
-            connection.closeResource();
-        }
+        ClientConnection connection = connectedConnection(connectionPool);
 
         if (connection == null) {
             connection = TcpClientConnection.create(http1Client.webClient(),
@@ -328,6 +387,9 @@ class Http1ConnectionCache extends ClientConnectionCache {
                             && !cachedTarget.currentTlsGeneration()) {
                         ConnectionPool cachedPool = entry.getValue();
                         cache.remove(cachedTarget, cachedPool);
+                        if (cachedTarget.connectionKey().proxy().ipNoProxyConfigured()) {
+                            removeLookupPool(cachedTarget.lookupKey(), cachedPool);
+                        }
                         iterator.remove();
                         if (toRetire == null) {
                             toRetire = new ArrayList<>();
@@ -341,6 +403,9 @@ class Http1ConnectionCache extends ClientConnectionCache {
                     var evicted = evictionIterator.next();
                     ConnectionPool evictedPool = evicted.getValue();
                     cache.remove(evicted.getKey(), evictedPool);
+                    if (evicted.getKey().connectionKey().proxy().ipNoProxyConfigured()) {
+                        removeLookupPool(evicted.getKey().lookupKey(), evictedPool);
+                    }
                     evictionIterator.remove();
                     if (toRetire == null) {
                         toRetire = new ArrayList<>();
@@ -349,6 +414,17 @@ class Http1ConnectionCache extends ClientConnectionCache {
                 }
                 insertionOrder.put(connectionTarget, connectionPool);
                 cache.put(connectionTarget, connectionPool);
+                if (connectionTarget.connectionKey().proxy().ipNoProxyConfigured()) {
+                    ClientConnectionTarget.LookupKey lookupKey = connectionTarget.lookupKey();
+                    List<ConnectionPool> connectionPools = lookupCache.get(lookupKey);
+                    if (connectionPools == null) {
+                        lookupCache.put(lookupKey, List.of(connectionPool));
+                    } else {
+                        var updatedPools = new ArrayList<>(connectionPools);
+                        updatedPools.add(connectionPool);
+                        lookupCache.put(lookupKey, List.copyOf(updatedPools));
+                    }
+                }
             }
         } finally {
             cacheLock.unlock();
@@ -357,6 +433,29 @@ class Http1ConnectionCache extends ClientConnectionCache {
             toRetire.forEach(ConnectionPool::retire);
         }
         return connectionPool;
+    }
+
+    private void removeLookupPool(ClientConnectionTarget.LookupKey lookupKey, ConnectionPool expectedPool) {
+        lookupCache.computeIfPresent(lookupKey, (_, connectionPools) -> {
+            var updatedPools = new ArrayList<ConnectionPool>(connectionPools.size());
+            for (ConnectionPool connectionPool : connectionPools) {
+                if (connectionPool != expectedPool) {
+                    updatedPools.add(connectionPool);
+                }
+            }
+            if (updatedPools.size() == connectionPools.size()) {
+                return connectionPools;
+            }
+            return updatedPools.isEmpty() ? null : List.copyOf(updatedPools);
+        });
+    }
+
+    private static ClientConnection connectedConnection(ConnectionPool connectionPool) {
+        ClientConnection connection;
+        while ((connection = connectionPool.poll()) != null && !connection.isConnected()) {
+            connection.closeResource();
+        }
+        return connection;
     }
 
     private static final class ConnectionPool {
