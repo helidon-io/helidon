@@ -431,6 +431,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             writeHeaders(connection,
                          headers,
                          buffer,
+                         callChain.forwardProxy(),
                          protocolConfig.validateRequestHeaders(),
                          sendListener);
             writer.write(buffer);

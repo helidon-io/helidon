@@ -51,6 +51,7 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientConnectionTarget;
+import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.HttpClientConfig;
@@ -79,6 +80,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     private final Http1ConnectionListener recvListener;
 
     private ClientConnection effectiveConnection;
+    private boolean forwardProxy;
 
     Http1CallChainBase(Http1ClientImpl http1Client,
                        Http1ClientRequestImpl clientRequest,
@@ -136,20 +138,32 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     static void writeHeaders(ClientConnection connection,
-                             Headers headers,
+                             WritableHeaders<?> headers,
                              BufferData bufferData,
+                             boolean addProxyConnection,
                              boolean validate,
                              Http1ConnectionListener sendListener) {
-        for (Header header : headers) {
-            if (validate) {
-                header.validate();
-            }
-            header.writeHttp1Header(bufferData);
+        boolean addedProxyConnection = addProxyConnection
+                && !headers.contains(ClientRequestBase.PROXY_CONNECTION.headerName());
+        if (addedProxyConnection) {
+            headers.set(ClientRequestBase.PROXY_CONNECTION);
         }
-        bufferData.write(Bytes.CR_BYTE);
-        bufferData.write(Bytes.LF_BYTE);
+        try {
+            for (Header header : headers) {
+                if (validate) {
+                    header.validate();
+                }
+                header.writeHttp1Header(bufferData);
+            }
+            bufferData.write(Bytes.CR_BYTE);
+            bufferData.write(Bytes.LF_BYTE);
 
-        sendListener.headers(connection.helidonSocket(), headers);
+            sendListener.headers(connection.helidonSocket(), headers);
+        } finally {
+            if (addedProxyConnection) {
+                headers.remove(ClientRequestBase.PROXY_CONNECTION.headerName());
+            }
+        }
     }
 
     @Override
@@ -247,6 +261,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                   BufferData nonEntityData,
                   WebClientServiceRequest request,
                   ClientUri uri) {
+        forwardProxy = false;
         if (request.method() == Method.CONNECT) {
             // When CONNECT, the first line contains the remote host:port, in the same way as the HOST header.
             nonEntityData.writeAscii(request.method().text()
@@ -258,7 +273,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             // https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html which states: "The absoluteURI form is REQUIRED when the
             // request is being made to a proxy."
             String absoluteUri = uri.scheme() + "://" + uri.host() + ":" + uri.port();
-            boolean forwardProxy = effectiveConnection instanceof TcpClientConnection tcpConnection
+            forwardProxy = effectiveConnection instanceof TcpClientConnection tcpConnection
                     ? tcpConnection.resolvedTarget()
                             .map(target -> target.proxyRoute().forwardProxy())
                             .orElse(false)
@@ -330,6 +345,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
     Http1ConnectionListener sendListener() {
         return sendListener;
+    }
+
+    boolean forwardProxy() {
+        return forwardProxy;
     }
 
     ResponseHead readResponseHead(ClientConnection connection, DataReader reader) {

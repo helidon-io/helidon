@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Status;
-import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -46,8 +45,6 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ServerTest
 class HttpsProxyTest {
@@ -112,7 +109,9 @@ class HttpsProxyTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(GET, "/get", Routes::get);
+        router.route(GET, "/get", (request, response) -> {
+            response.send("Hello|" + request.headers().contains(ClientRequestBase.PROXY_CONNECTION.headerName()));
+        });
     }
 
     @Test
@@ -186,17 +185,10 @@ class HttpsProxyTest {
     }
 
     private void successVerify(Proxy proxy, HttpClient<?> client) {
-        ClientRequest<?> request = client.get("/get").proxy(proxy);
-        try (HttpClientResponse response = request.request()) {
+        try (HttpClientResponse response = client.get("/get").proxy(proxy).request()) {
             assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
-        }
-        boolean proxyConnection = request.headers().contains(ClientRequestBase.PROXY_CONNECTION);
-        if (client == clientHttp1) {
-            assertTrue(proxyConnection, "HTTP1 requires Proxy-Connection header");
-        } else {
-            assertFalse(proxyConnection, "HTTP2 does not allow Proxy-Connection header");
+            assertThat(entity, is("Hello|false"));
         }
     }
 
@@ -204,13 +196,7 @@ class HttpsProxyTest {
         try (HttpClientResponse response = client.get("/get").request()) {
             assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
-        }
-    }
-
-    private static class Routes {
-        private static String get() {
-            return "Hello";
+            assertThat(entity, is("Hello|false"));
         }
     }
 }

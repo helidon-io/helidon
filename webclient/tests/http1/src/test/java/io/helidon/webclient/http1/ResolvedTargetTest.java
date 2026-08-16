@@ -32,6 +32,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2Client;
@@ -44,6 +45,7 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
@@ -76,6 +78,11 @@ class ResolvedTargetTest {
                 })
                 .get("/generic-connection-target", (req, res) -> {
                     res.send("bootstrap|" + req.socketId());
+                })
+                .get("/proxy-connection", (req, res) -> {
+                    res.send(req.socketId()
+                                     + "|"
+                                     + req.headers().contains(ClientRequestBase.PROXY_CONNECTION.headerName()));
                 })
                 .post("/proxy-route-first", (req, res) -> {
                     res.status(Status.TEMPORARY_REDIRECT_307)
@@ -176,7 +183,7 @@ class ResolvedTargetTest {
                     resolutions.incrementAndGet();
                     return InetAddress.ofLiteral("127.0.0.1");
                 })
-                .baseUri("http://target.example:" + plainPort + "/connection-target")
+                .baseUri("http://target.example:" + plainPort + "/proxy-connection")
                 .proxy(proxy)
                 .build();
 
@@ -185,6 +192,7 @@ class ResolvedTargetTest {
             String reused = client.get().request().as(String.class);
 
             assertThat(reused, is(first));
+            assertThat(first, endsWith("|false"));
             assertThat(resolutions.get(), is(1));
         } finally {
             client.closeResource();

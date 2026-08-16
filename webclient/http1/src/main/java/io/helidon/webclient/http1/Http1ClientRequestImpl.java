@@ -37,7 +37,6 @@ import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.Proxy;
-import io.helidon.webclient.api.Proxy.ProxyType;
 import io.helidon.webclient.api.ProxyRoute;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -251,14 +250,6 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     @Override
     protected MediaContext mediaContext() {
         return super.mediaContext();
-    }
-
-    @Override
-    protected void additionalHeaders() {
-        super.additionalHeaders();
-        if (effectiveProxy().type() != ProxyType.NONE) {
-            header(PROXY_CONNECTION);
-        }
     }
 
     Proxy effectiveProxy() {

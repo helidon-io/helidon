@@ -55,6 +55,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
@@ -67,6 +68,7 @@ import io.helidon.http.HttpLogConfig;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.http.http1.Http1LoggingConnectionListener;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
@@ -74,6 +76,7 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.HttpClientRequest;
@@ -720,7 +723,7 @@ class Http1ClientTest {
         try {
             Http1LoggingConnectionListener listener = Http1LoggingConnectionListener.create(HttpLogConfig.create(),
                                                                                             "cl-send");
-            Headers headers = WritableHeaders.create()
+            WritableHeaders<?> headers = WritableHeaders.create()
                     .add(HeaderNames.AUTHORIZATION, "Bearer secret-token")
                     .add(HeaderNames.COOKIE, "session=secret-cookie")
                     .add(HeaderNames.create("X-Safe"), "first\r\nForged: value")
@@ -729,6 +732,7 @@ class Http1ClientTest {
             Http1CallChainBase.writeHeaders(new FakeHttp1ClientConnection(),
                                             headers,
                                             BufferData.growing(128),
+                                            false,
                                             false,
                                             listener);
 
@@ -780,13 +784,14 @@ class Http1ClientTest {
                                                                                                     .unsafeRawData(true)
                                                                                                     .build(),
                                                                                             "cl-send");
-            Headers headers = WritableHeaders.create()
+            WritableHeaders<?> headers = WritableHeaders.create()
                     .add(HeaderNames.AUTHORIZATION, "Bearer secret-token")
                     .add(HeaderNames.COOKIE, "session=secret-cookie");
 
             Http1CallChainBase.writeHeaders(new FakeHttp1ClientConnection(),
                                             headers,
                                             BufferData.growing(128),
+                                            false,
                                             false,
                                             listener);
 
@@ -800,6 +805,40 @@ class Http1ClientTest {
             logger.setUseParentHandlers(previousUseParentHandlers);
             handler.close();
         }
+    }
+
+    @Test
+    void automaticProxyConnectionHeaderIsScopedToSerialization() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        BufferData buffer = BufferData.growing(128);
+        AtomicBoolean listenerObservedHeader = new AtomicBoolean();
+        Http1ConnectionListener listener = new Http1ConnectionListener() {
+            @Override
+            public void headers(SocketContext ctx, Headers sentHeaders) {
+                listenerObservedHeader.set(sentHeaders.contains(ClientRequestBase.PROXY_CONNECTION.headerName()));
+            }
+        };
+
+        Http1CallChainBase.writeHeaders(new FakeHttp1ClientConnection(),
+                                        headers,
+                                        buffer,
+                                        true,
+                                        false,
+                                        listener);
+
+        assertThat(new String(buffer.readBytes(), StandardCharsets.US_ASCII),
+                   containsString("Proxy-Connection: keep-alive\r\n"));
+        assertThat(listenerObservedHeader.get(), is(true));
+        assertThat(headers.contains(ClientRequestBase.PROXY_CONNECTION.headerName()), is(false));
+
+        headers.set(ClientRequestBase.PROXY_CONNECTION);
+        Http1CallChainBase.writeHeaders(new FakeHttp1ClientConnection(),
+                                        headers,
+                                        BufferData.growing(128),
+                                        true,
+                                        false,
+                                        listener);
+        assertThat(headers.contains(ClientRequestBase.PROXY_CONNECTION.headerName()), is(true));
     }
 
     @Test
@@ -1032,6 +1071,9 @@ class Http1ClientTest {
         st.nextToken();
         // Validate URI part
         assertThat(st.nextToken(), startsWith(expectedUriStart));
+        boolean expectedProxyConnection = proxyConfig == ProxyConfiguration.HTTP
+                || proxyConfig == ProxyConfiguration.SYSTEM_SET_PROXY;
+        assertThat(connection.proxyConnectionHeader, is(expectedProxyConnection));
 
         // Clear proxy system properties that were set
         switch (proxyConfig) {
@@ -1437,6 +1479,7 @@ class Http1ClientTest {
         private Throwable serverException;
         private ExecutorService webServerEmulator;
         private String prologue;
+        private boolean proxyConnectionHeader;
         private int releaseCount;
         private int closeCount;
 
@@ -1673,6 +1716,7 @@ class Http1ClientTest {
             WritableHeaders<?> reqHeaders = null;
             try {
                 reqHeaders = Http1HeadersParser.readHeaders(serverReader, 16384, false);
+                proxyConnectionHeader = reqHeaders.contains(ClientRequestBase.PROXY_CONNECTION.headerName());
                 for (Iterator<Header> it = reqHeaders.iterator(); it.hasNext(); ) {
                     Header header = it.next();
                     header.validate();

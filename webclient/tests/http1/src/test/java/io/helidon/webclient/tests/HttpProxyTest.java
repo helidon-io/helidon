@@ -45,8 +45,6 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ServerTest
 class HttpProxyTest {
@@ -72,7 +70,9 @@ class HttpProxyTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(GET, "/get", Routes::get);
+        router.route(GET, "/get", (request, response) -> {
+            response.send("Hello|" + request.headers().contains(ClientRequestBase.PROXY_CONNECTION.headerName()));
+        });
     }
 
     @BeforeEach
@@ -239,7 +239,7 @@ class HttpProxyTest {
         try (HttpClientResponse response = client.get("/get").proxy(proxy).request()) {
             assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
+            assertThat(entity, is("Hello|false"));
         }
         assertThat(httpProxy.counter(), is(0));
     }
@@ -249,13 +249,7 @@ class HttpProxyTest {
         try (HttpClientResponse response = request.request()) {
             assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
-        }
-        boolean proxyConnection = request.headers().contains(ClientRequestBase.PROXY_CONNECTION);
-        if (client == clientHttp1) {
-            assertTrue(proxyConnection, "HTTP1 requires Proxy-Connection header");
-        } else {
-            assertFalse(proxyConnection, "HTTP2 does not allow Proxy-Connection header");
+            assertThat(entity, is("Hello|false"));
         }
         assertThat(httpProxy.counter(), is(1));
     }
@@ -264,14 +258,8 @@ class HttpProxyTest {
         try (HttpClientResponse response = client.get("/get").request()) {
             assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
+            assertThat(entity, is("Hello|false"));
         }
         assertThat(httpProxy.counter(), is(0));
-    }
-
-    private static class Routes {
-        private static String get() {
-            return "Hello";
-        }
     }
 }
