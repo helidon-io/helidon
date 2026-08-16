@@ -550,6 +550,68 @@ public final class ClientConnectionTarget {
                 + ']';
     }
 
+    private static UriAuthority normalizedAuthority(String authority, String scheme) {
+        UriAuthority parsed = UriAuthority.create(authority);
+        int port = parsed.port();
+        if (port == UriAuthority.UNDEFINED_PORT) {
+            port = "https".equals(scheme) ? 443 : 80;
+        }
+        return UriAuthority.create(parsed.host(), port);
+    }
+
+    private static UriAuthority originAuthority(ConnectionKey connectionKey,
+                                                ClientUri uri,
+                                                ClientRequestHeaders headers,
+                                                String scheme) {
+        UriAuthority fallback = canonicalOriginAuthority(connectionKey,
+                                                         normalizedAuthority(uri.authority(), scheme));
+        String authority = headers.contains(AUTHORITY)
+                ? headers.get(AUTHORITY).get()
+                : headers.contains(HeaderNames.HOST) ? headers.get(HeaderNames.HOST).get() : null;
+        if (authority == null) {
+            return fallback;
+        }
+        try {
+            return canonicalOriginAuthority(connectionKey, normalizedAuthority(authority, scheme));
+        } catch (IllegalArgumentException _) {
+            return fallback;
+        }
+    }
+
+    private static UriAuthority canonicalOriginAuthority(ConnectionKey connectionKey,
+                                                         UriAuthority originAuthority) {
+        UriAuthority authority = Objects.requireNonNull(originAuthority, "originAuthority");
+        return authority.equals(normalizedOriginAuthority(connectionKey)) ? null : authority;
+    }
+
+    private static UriAuthority normalizedOriginAuthority(ConnectionKey connectionKey) {
+        return UriAuthority.create(UriHost.create(connectionKey.routingHost()), connectionKey.port());
+    }
+
+    private static ProxyRoute routeFor(ConnectionKey connectionKey, String scheme, ProxyRoute proxyRoute) {
+        ProxyRoute route = Objects.requireNonNull(proxyRoute, "proxyRoute");
+        if (!route.belongsTo(connectionKey.proxy())) {
+            return connectionKey.proxy().effectiveRoute(scheme,
+                                                        connectionKey.routingHost(),
+                                                        connectionKey.port(),
+                                                        connectionKey.tls().enabled(),
+                                                        connectionKey.dnsResolver(),
+                                                        connectionKey.dnsAddressLookup());
+        }
+        if (!route.selectedFor(scheme,
+                               connectionKey.routingHost(),
+                               connectionKey.port(),
+                               connectionKey.tls().enabled())) {
+            return connectionKey.proxy().effectiveRoute(scheme,
+                                                        connectionKey.routingHost(),
+                                                        connectionKey.port(),
+                                                        connectionKey.tls().enabled(),
+                                                        connectionKey.dnsResolver(),
+                                                        connectionKey.dnsAddressLookup());
+        }
+        return route;
+    }
+
     /**
      * DNS-free identity used to look up a logical WebClient connection target before selecting its proxy route.
      */
@@ -624,67 +686,5 @@ public final class ClientConnectionTarget {
                     + ", tlsGeneration=" + tlsGeneration
                     + ']';
         }
-    }
-
-    private static UriAuthority normalizedAuthority(String authority, String scheme) {
-        UriAuthority parsed = UriAuthority.create(authority);
-        int port = parsed.port();
-        if (port == UriAuthority.UNDEFINED_PORT) {
-            port = "https".equals(scheme) ? 443 : 80;
-        }
-        return UriAuthority.create(parsed.host(), port);
-    }
-
-    private static UriAuthority originAuthority(ConnectionKey connectionKey,
-                                                ClientUri uri,
-                                                ClientRequestHeaders headers,
-                                                String scheme) {
-        UriAuthority fallback = canonicalOriginAuthority(connectionKey,
-                                                         normalizedAuthority(uri.authority(), scheme));
-        String authority = headers.contains(AUTHORITY)
-                ? headers.get(AUTHORITY).get()
-                : headers.contains(HeaderNames.HOST) ? headers.get(HeaderNames.HOST).get() : null;
-        if (authority == null) {
-            return fallback;
-        }
-        try {
-            return canonicalOriginAuthority(connectionKey, normalizedAuthority(authority, scheme));
-        } catch (IllegalArgumentException _) {
-            return fallback;
-        }
-    }
-
-    private static UriAuthority canonicalOriginAuthority(ConnectionKey connectionKey,
-                                                         UriAuthority originAuthority) {
-        UriAuthority authority = Objects.requireNonNull(originAuthority, "originAuthority");
-        return authority.equals(normalizedOriginAuthority(connectionKey)) ? null : authority;
-    }
-
-    private static UriAuthority normalizedOriginAuthority(ConnectionKey connectionKey) {
-        return UriAuthority.create(UriHost.create(connectionKey.routingHost()), connectionKey.port());
-    }
-
-    private static ProxyRoute routeFor(ConnectionKey connectionKey, String scheme, ProxyRoute proxyRoute) {
-        ProxyRoute route = Objects.requireNonNull(proxyRoute, "proxyRoute");
-        if (!route.belongsTo(connectionKey.proxy())) {
-            return connectionKey.proxy().effectiveRoute(scheme,
-                                                        connectionKey.routingHost(),
-                                                        connectionKey.port(),
-                                                        connectionKey.tls().enabled(),
-                                                        connectionKey.dnsResolver(),
-                                                        connectionKey.dnsAddressLookup());
-        }
-        if (!route.selectedFor(scheme,
-                               connectionKey.routingHost(),
-                               connectionKey.port(),
-                               connectionKey.tls().enabled())) {
-            return connectionKey.proxy().effectiveRoute(scheme,
-                                                        connectionKey.routingHost(),
-                                                        connectionKey.port(),
-                                                        connectionKey.tls().enabled(),
-                                                        connectionKey.dnsResolver(),
-                                                        connectionKey.dnsAddressLookup());
-        }
-        return route;
     }
 }

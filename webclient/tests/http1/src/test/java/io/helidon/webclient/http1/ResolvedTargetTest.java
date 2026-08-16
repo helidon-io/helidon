@@ -341,7 +341,7 @@ class ResolvedTargetTest {
                     .outputStream(outputStream -> {
                         outputStream.write(entity.getBytes(StandardCharsets.UTF_8));
                         outputStream.close();
-                })) {
+                    })) {
                 assertThat(response.status(), is(Status.OK_200));
                 assertThat(response.as(String.class), is(entity));
             }

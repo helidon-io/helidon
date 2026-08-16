@@ -50,27 +50,6 @@ public class WebClientConnectionTargetBenchmark {
     private static final int TARGETS_PER_THREAD = 4;
     private static final String PATH = "/target";
 
-    public enum ProxyMode {
-        NONE(Proxy.noProxy()),
-        IP_NO_PROXY(Proxy.builder()
-                            .type(Proxy.ProxyType.HTTP)
-                            .host("proxy.invalid")
-                            .port(8080)
-                            .addNoProxy(".example")
-                            .addNoProxy("127.0.0.1")
-                            .build());
-
-        private final Proxy proxy;
-
-        ProxyMode(Proxy proxy) {
-            this.proxy = proxy;
-        }
-
-        Proxy proxy() {
-            return proxy;
-        }
-    }
-
     @Benchmark
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http1CacheHit(Http1State state, Blackhole blackhole) {
@@ -195,6 +174,27 @@ public class WebClientConnectionTargetBenchmark {
             throw new IllegalStateException("Proxy host must not be resolved");
         }
         return InetAddress.ofLiteral("127.0.0.1");
+    }
+
+    public enum ProxyMode {
+        NONE(Proxy.noProxy()),
+        IP_NO_PROXY(Proxy.builder()
+                            .type(Proxy.ProxyType.HTTP)
+                            .host("proxy.invalid")
+                            .port(8080)
+                            .addNoProxy(".example")
+                            .addNoProxy("127.0.0.1")
+                            .build());
+
+        private final Proxy proxy;
+
+        ProxyMode(Proxy proxy) {
+            this.proxy = proxy;
+        }
+
+        Proxy proxy() {
+            return proxy;
+        }
     }
 
     @State(Scope.Benchmark)
