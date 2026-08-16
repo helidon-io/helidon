@@ -50,6 +50,27 @@ public class WebClientConnectionTargetBenchmark {
     private static final int TARGETS_PER_THREAD = 4;
     private static final String PATH = "/target";
 
+    public enum ProxyMode {
+        NONE(Proxy.noProxy()),
+        IP_NO_PROXY(Proxy.builder()
+                            .type(Proxy.ProxyType.HTTP)
+                            .host("proxy.invalid")
+                            .port(8080)
+                            .addNoProxy(".example")
+                            .addNoProxy("127.0.0.1")
+                            .build());
+
+        private final Proxy proxy;
+
+        ProxyMode(Proxy proxy) {
+            this.proxy = proxy;
+        }
+
+        Proxy proxy() {
+            return proxy;
+        }
+    }
+
     @Benchmark
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http1CacheHit(Http1State state, Blackhole blackhole) {
@@ -169,6 +190,13 @@ public class WebClientConnectionTargetBenchmark {
         return result;
     }
 
+    private static InetAddress resolve(String host) {
+        if ("proxy.invalid".equals(host)) {
+            throw new IllegalStateException("Proxy host must not be resolved");
+        }
+        return InetAddress.ofLiteral("127.0.0.1");
+    }
+
     @State(Scope.Benchmark)
     public static class ServerState {
         private WebServer server;
@@ -202,6 +230,9 @@ public class WebClientConnectionTargetBenchmark {
         @Param({"1", "64"})
         public int prefilledTargetCount;
 
+        @Param({"NONE", "IP_NO_PROXY"})
+        public ProxyMode proxyMode;
+
         private Http1Client http1Client;
         private String[] targetUris;
 
@@ -210,8 +241,8 @@ public class WebClientConnectionTargetBenchmark {
             http1Client = Http1Client.builder()
                     .shareConnectionCache(false)
                     .servicesDiscoverServices(false)
-                    .proxy(Proxy.noProxy())
-                    .dnsResolver((_, _) -> InetAddress.ofLiteral("127.0.0.1"))
+                    .proxy(proxyMode.proxy())
+                    .dnsResolver((host, _) -> resolve(host))
                     .build();
             targetUris = targetUris(prefilledTargetCount, serverState.server.port());
             for (String targetUri : targetUris) {
@@ -239,6 +270,9 @@ public class WebClientConnectionTargetBenchmark {
         @Param({"1", "64"})
         public int prefilledTargetCount;
 
+        @Param({"NONE", "IP_NO_PROXY"})
+        public ProxyMode proxyMode;
+
         private Http2Client http2Client;
         private String[] targetUris;
 
@@ -247,8 +281,8 @@ public class WebClientConnectionTargetBenchmark {
             http2Client = Http2Client.builder()
                     .shareConnectionCache(false)
                     .servicesDiscoverServices(false)
-                    .proxy(Proxy.noProxy())
-                    .dnsResolver((_, _) -> InetAddress.ofLiteral("127.0.0.1"))
+                    .proxy(proxyMode.proxy())
+                    .dnsResolver((host, _) -> resolve(host))
                     .protocolConfig(builder -> builder.priorKnowledge(true))
                     .build();
             targetUris = targetUris(prefilledTargetCount, serverState.server.port());

@@ -19,6 +19,7 @@ package io.helidon.webclient.benchmark.jmh;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
@@ -41,6 +42,7 @@ class WebClientConnectionTargetJmhRunnerTest {
         String[] targetCounts = contention
                 ? new String[] {"64"}
                 : System.getProperty("webclient.target.jmh.targetCounts", "1,64").split(",");
+        String[] proxyModes = System.getProperty("webclient.target.jmh.proxyModes", "NONE").split(",");
         int[] threadCounts = contention
                 ? new int[] {1, 2, 4, 8, 16}
                 : new int[] {Integer.getInteger("webclient.target.jmh.threads", 1)};
@@ -55,8 +57,10 @@ class WebClientConnectionTargetJmhRunnerTest {
             var optionsBuilder = new OptionsBuilder()
                     .include(include)
                     .param("prefilledTargetCount", targetCounts)
+                    .param("proxyMode", proxyModes)
                     .threads(threadCount)
                     .forks(forks)
+                    .mode(Mode.valueOf(System.getProperty("webclient.target.jmh.mode", "AverageTime")))
                     .warmupIterations(Integer.getInteger("webclient.target.jmh.warmupIterations", 3))
                     .warmupTime(TimeValue.milliseconds(Long.getLong("webclient.target.jmh.warmupMillis", 500)))
                     .measurementIterations(Integer.getInteger("webclient.target.jmh.measurementIterations", 5))
