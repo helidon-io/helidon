@@ -278,7 +278,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * Each configured HTTP protocol honors this common option independently; it is not an aggregate cache quota across
      * protocol versions. This is a retention limit, not a limit on concurrent requests or streams and not a hard cap on
      * live sockets. Active or draining connections may temporarily cause the number of live sockets for a target to
-     * exceed this value. Defaults to {@code 256}.
+     * exceed this value. Each protocol retains at most {@code 1,000} connection-target entries; adding another target
+     * retires the oldest cached target entry. The value must be greater than zero. Defaults to {@code 256}.
      *
      * @return maximum number of reusable physical connections retained per target by each HTTP protocol
      */
