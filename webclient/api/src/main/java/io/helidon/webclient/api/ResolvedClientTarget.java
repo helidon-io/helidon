@@ -45,9 +45,9 @@ public final class ResolvedClientTarget {
                                  InetSocketAddress destinationAddress,
                                  long networkGeneration) {
         this.logicalTarget = Objects.requireNonNull(logicalTarget, "logicalTarget");
-        this.routeAuthority = Objects.requireNonNull(routeAuthority, "routeAuthority");
+        this.routeAuthority = routeAuthority;
         this.peerAddress = Objects.requireNonNull(peerAddress, "peerAddress");
-        this.destinationAddress = Objects.requireNonNull(destinationAddress, "destinationAddress");
+        this.destinationAddress = destinationAddress;
         this.networkGeneration = networkGeneration;
     }
 
@@ -56,12 +56,24 @@ public final class ResolvedClientTarget {
                                         int routePort,
                                         long networkGeneration) {
         Objects.requireNonNull(routeHost, "routeHost");
-        UriAuthority routeAuthority = UriAuthority.create(UriHost.create(routeHost), routePort);
         ProxyRoute proxyRoute = logicalTarget.proxyRoute();
-        InetSocketAddress selectedAddress = proxyRoute.proxyAddress()
-                .orElseGet(() -> InetSocketAddress.createUnresolved(routeAuthority.host().value(), routePort));
         ConnectionKey connectionKey = logicalTarget.connectionKey();
         DnsResolver dnsResolver = connectionKey.dnsResolver();
+        if (proxyRoute == ProxyRoute.DIRECT
+                && connectionKey.routingHost().equals(routeHost)
+                && connectionKey.port() == routePort) {
+            InetAddress peer = dnsResolver.resolveAddress(routeHost, connectionKey.dnsAddressLookup());
+            InetAddress numericPeer = InetAddress.ofLiteral(peer.getHostAddress());
+            return new ResolvedClientTarget(logicalTarget,
+                                            null,
+                                            new InetSocketAddress(numericPeer, routePort),
+                                            null,
+                                            networkGeneration);
+        }
+
+        UriAuthority routeAuthority = UriAuthority.create(UriHost.create(routeHost), routePort);
+        InetSocketAddress selectedAddress = proxyRoute.proxyAddress()
+                .orElseGet(() -> InetSocketAddress.createUnresolved(routeAuthority.host().value(), routePort));
         InetSocketAddress noProxyAddress = proxyRoute.noProxyAddress().orElse(null);
         if (noProxyAddress != null
                 && (!connectionKey.routingHost().equalsIgnoreCase(routeHost) || connectionKey.port() != routePort)) {
@@ -123,7 +135,11 @@ public final class ResolvedClientTarget {
      * @return route authority
      */
     public UriAuthority routeAuthority() {
-        return routeAuthority;
+        if (routeAuthority != null) {
+            return routeAuthority;
+        }
+        ConnectionKey connectionKey = logicalTarget.connectionKey();
+        return UriAuthority.create(UriHost.create(connectionKey.routingHost()), connectionKey.port());
     }
 
     /**
@@ -143,7 +159,11 @@ public final class ResolvedClientTarget {
      * @return logical destination address
      */
     public InetSocketAddress destinationAddress() {
-        return destinationAddress;
+        if (destinationAddress != null) {
+            return destinationAddress;
+        }
+        UriAuthority authority = routeAuthority();
+        return InetSocketAddress.createUnresolved(authority.host().value(), authority.port());
     }
 
     /**
@@ -191,23 +211,23 @@ public final class ResolvedClientTarget {
             return false;
         }
         return logicalTarget.equals(other.logicalTarget)
-                && routeAuthority.equals(other.routeAuthority)
+                && routeAuthority().equals(other.routeAuthority())
                 && peerAddress.equals(other.peerAddress)
-                && destinationAddress.equals(other.destinationAddress)
+                && destinationAddress().equals(other.destinationAddress())
                 && networkGeneration == other.networkGeneration;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(logicalTarget, routeAuthority, peerAddress, destinationAddress, networkGeneration);
+        return Objects.hash(logicalTarget, routeAuthority(), peerAddress, destinationAddress(), networkGeneration);
     }
 
     @Override
     public String toString() {
         return "ResolvedClientTarget[origin=" + logicalTarget.originAuthority()
-                + ", route=" + routeAuthority
+                + ", route=" + routeAuthority()
                 + ", peerAddress=" + peerAddress
-                + ", destinationAddress=" + destinationAddress
+                + ", destinationAddress=" + destinationAddress()
                 + ", proxyRoute=" + proxyRoute()
                 + ", tlsGeneration=" + tlsGeneration()
                 + ", networkGeneration=" + networkGeneration

@@ -103,6 +103,34 @@ class ClientConnectionTargetTest {
     }
 
     @Test
+    void defaultDirectResolutionPreservesResolvedTargetValue() {
+        InetAddress peer = InetAddress.ofLiteral("127.0.0.7");
+        ConnectionKey connectionKey = ConnectionKey.create("http",
+                                                           "Origin.Example.",
+                                                           80,
+                                                           NO_TLS,
+                                                           (host, _) -> {
+                                                               assertThat(host, is("Origin.Example."));
+                                                               return peer;
+                                                           },
+                                                           DnsAddressLookup.IPV4,
+                                                           Proxy.noProxy());
+        ClientConnectionTarget target = ClientConnectionTarget.create(connectionKey, "http");
+
+        ResolvedClientTarget resolved = target.resolve();
+        ResolvedClientTarget explicit = ResolvedClientTarget.direct(target,
+                                                                    target.originAuthority(),
+                                                                    new InetSocketAddress(peer, 80),
+                                                                    0);
+
+        assertThat(resolved, is(explicit));
+        assertThat(resolved.hashCode(), is(explicit.hashCode()));
+        assertThat(resolved.routeAuthority().toString(), is("origin.example:80"));
+        assertThat(resolved.destinationAddress().isUnresolved(), is(true));
+        assertThat(resolved.destinationAddress().getHostString(), is("origin.example"));
+    }
+
+    @Test
     void usesFinalAuthorityBeforeHost() {
         ClientUri uri = ClientUri.create(URI.create("https://route.example/path"));
         ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
