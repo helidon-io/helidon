@@ -248,12 +248,13 @@ class NarayanaClientTest {
 
     @Test
     void ipv6AddressHexDigitsAreCaseInsensitive() {
-        NarayanaClient client = client(URI.create("http://[2001:DB8::1]:9/coordinator"));
+        int port = server.port();
+        NarayanaClient client = client(URI.create("http://[::FFFF:7F00:1]:" + port + "/configured"));
 
-        CoordinatorConnectionException exception = assertConnectionException(
-                () -> client.status(URI.create("http://[2001:db8::1]:9/coordinator/id"), PropagatedHeaders.noop()));
+        LRAStatus status = client.status(URI.create("http://[::ffff:7f00:1]:" + port + "/configured/id"),
+                                         PropagatedHeaders.noop());
 
-        assertThat(exception.status(), is(500));
+        assertThat(status, is(LRAStatus.Active));
     }
 
     @Test
