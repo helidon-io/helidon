@@ -39,6 +39,7 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webclient.http1.UpgradeResponse;
 import io.helidon.webclient.spi.DnsResolver;
 
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,7 @@ class Http2ConnectionCacheTest {
     @Test
     void oldestHandlerEvictionDoesNotAllowRetiredHandlerToRemoveSuccessor() {
         Tls tls = Tls.builder().enabled(false).build();
-        Proxy proxy = Proxy.builder().host("proxy.example").port(8080).build();
+        Proxy proxy = Proxy.noProxy();
         DnsResolver dnsResolver = (_, _) -> InetAddress.getLoopbackAddress();
         IntFunction<ClientConnectionTarget> target = id -> ClientConnectionTarget.create(
                 ConnectionKey.create("http",
@@ -85,11 +86,14 @@ class Http2ConnectionCacheTest {
         WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
 
         when(http2Client.clientConfig()).thenReturn(Http2ClientConfig.create());
+        when(http2Client.protocolConfig()).thenReturn(Http2ClientProtocolConfig.create());
         when(http2Client.http1FallbackClient()).thenReturn(http1Client);
         when(http1Client.method(Method.GET)).thenReturn(fallbackRequest);
         when(fallbackRequest.headers()).thenReturn(fallbackHeaders);
+        when(fallbackRequest.upgrade("h2c")).thenReturn(UpgradeResponse.failure(fallbackResponse));
         when(request.connection()).thenReturn(Optional.empty());
         when(request.tcpProtocolIds()).thenReturn(List.of(Http1Client.PROTOCOL_ID));
+        when(request.tls()).thenReturn(tls);
         when(request.method()).thenReturn(Method.GET);
         when(request.headers()).thenReturn(requestHeaders);
         when(request.properties()).thenReturn(Map.of());

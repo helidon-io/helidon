@@ -173,6 +173,15 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                                serviceRequest,
                                http1FallbackHandler);
         }
+        if (connectionTarget.proxyRoute().forwardProxy() && !request.priorKnowledge()) {
+            return new Http2ClientConnectionHandler(http2Client.clientConfig().connectionCacheSize())
+                    .newStream(http2Client,
+                               connectionTarget,
+                               request,
+                               initialUri,
+                               serviceRequest,
+                               http1FallbackHandler);
+        }
 
         List<Http2ClientConnectionHandler> retiredHandlers = null;
         Http2ClientConnectionHandler handler;

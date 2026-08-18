@@ -189,7 +189,6 @@ class Http2ClientConnectionHandler {
                 if (!http1FallbackAllowed(request)) {
                     throw unsupportedHttp1Fallback(initialUri, request, http1FallbackHandler);
                 }
-                result.set(Result.HTTP_1);
                 return http1(http2Client, requestTarget, request, initialUri, serviceRequest, http1FallbackHandler);
             }
 
@@ -291,7 +290,8 @@ class Http2ClientConnectionHandler {
         Http2ClientConnection connection = activeConnection.get();
         if (connection != null) {
             ClientConnectionTarget connectionTarget = allConnections.get(connection);
-            if (connectionTarget != null) {
+            if (connectionTarget != null
+                    && (request.priorKnowledge() || !connectionTarget.proxyRoute().forwardProxy())) {
                 if (connection.closed(protocolConfig)) {
                     discardConnection(connection);
                 } else {
@@ -319,6 +319,9 @@ class Http2ClientConnectionHandler {
             }
             ClientConnectionTarget connectionTarget = allConnections.get(candidate);
             if (connectionTarget == null) {
+                continue;
+            }
+            if (!request.priorKnowledge() && connectionTarget.proxyRoute().forwardProxy()) {
                 continue;
             }
             if (candidate.closed(protocolConfig)) {

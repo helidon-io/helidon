@@ -86,6 +86,12 @@ class Http2WireProtocolTest {
                                      + "|" + requestedUri.authority()
                                      + "|" + requestedUri.path().path());
                 }))
+                .route(Http1Route.route(GET, "/forward-proxy", (req, res) -> {
+                    var requestedUri = req.requestedUri();
+                    res.send(requestedUri.scheme()
+                                     + "|" + requestedUri.authority()
+                                     + "|" + requestedUri.path().path());
+                }))
                 .route(Http2Route.route(POST, "/expect-redirect", (req, res) -> {
                     if (req.headers().containsToken(HeaderValues.EXPECT_100)) {
                         res.status(Status.SEE_OTHER_303)
@@ -200,6 +206,98 @@ class Http2WireProtocolTest {
             assertThat(response.protocolId(), is(Http2Client.PROTOCOL_ID));
             assertThat(response.as(String.class),
                        is("http|unresolvable.invalid:8181|/forward-proxy"));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void nonPriorKnowledgeForwardProxyDoesNotPoisonPriorKnowledgeRequest() {
+        String proxyHost = "h2-forward-proxy.invalid";
+        Proxy proxy = Proxy.builder()
+                .type(ProxyType.HTTP)
+                .host(proxyHost)
+                .port(http2Port)
+                .build();
+        Http2Client client = Http2Client.builder()
+                .baseUri("http://unresolvable.invalid:8181")
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .dnsResolver((host, _) -> {
+                    if (!proxyHost.equals(host)) {
+                        throw new AssertionError("Logical origin must not be resolved: " + host);
+                    }
+                    return InetAddress.ofLiteral("127.0.0.1");
+                })
+                .proxy(proxy)
+                .build();
+
+        try {
+            try (Http2ClientResponse response = client.get("/forward-proxy")
+                    .priorKnowledge(false)
+                    .request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
+                assertThat(response.as(String.class),
+                           is("http|unresolvable.invalid:8181|/forward-proxy"));
+            }
+            try (Http2ClientResponse response = client.get("/forward-proxy")
+                    .priorKnowledge(true)
+                    .request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.protocolId(), is(Http2Client.PROTOCOL_ID));
+                assertThat(response.as(String.class),
+                           is("http|unresolvable.invalid:8181|/forward-proxy"));
+            }
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void nonPriorKnowledgeRequestDoesNotReuseCachedForwardProxyH2Stream() {
+        String proxyHost = "h2-forward-proxy.invalid";
+        String originHost = "unresolvable.invalid";
+        AtomicInteger originResolutions = new AtomicInteger();
+        Proxy proxy = Proxy.builder()
+                .type(ProxyType.HTTP)
+                .host(proxyHost)
+                .port(http2Port)
+                .addNoProxy("127.0.0.2")
+                .build();
+        Http2Client client = Http2Client.builder()
+                .baseUri("http://" + originHost + ":8181")
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .dnsResolver((host, _) -> {
+                    if (originHost.equals(host)) {
+                        originResolutions.incrementAndGet();
+                    } else if (!proxyHost.equals(host)) {
+                        throw new AssertionError("Unexpected DNS lookup: " + host);
+                    }
+                    return InetAddress.ofLiteral("127.0.0.1");
+                })
+                .proxy(proxy)
+                .build();
+
+        try {
+            try (Http2ClientResponse response = client.get("/forward-proxy")
+                    .priorKnowledge(true)
+                    .request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.protocolId(), is(Http2Client.PROTOCOL_ID));
+                assertThat(response.as(String.class),
+                           is("http|unresolvable.invalid:8181|/forward-proxy"));
+            }
+            try (Http2ClientResponse response = client.get("/forward-proxy")
+                    .priorKnowledge(false)
+                    .request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
+                assertThat(response.as(String.class),
+                           is("http|unresolvable.invalid:8181|/forward-proxy"));
+            }
+            assertThat(originResolutions.get(), is(2));
         } finally {
             client.closeResource();
         }
