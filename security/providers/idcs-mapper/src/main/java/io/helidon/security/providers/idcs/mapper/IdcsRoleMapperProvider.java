@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -51,7 +50,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
     private final String asserterUri;
 
     // caching application token (as that can be re-used for group requests)
-    private final LazyValue<AppToken> appToken;
+    private final RetryableLazyValue<AppToken> appToken;
 
     /**
      * Constructor that accepts any {@link IdcsRoleMapperProvider.Builder} descendant.
@@ -65,7 +64,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         OidcConfig oidcConfig = builder.oidcConfig();
 
         this.asserterUri = oidcConfig.identityUri() + "/admin/v1/Asserter";
-        this.appToken = LazyValue.create(() -> createAppToken(oidcConfig));
+        this.appToken = new RetryableLazyValue<>(() -> createAppToken(oidcConfig));
     }
 
     /**

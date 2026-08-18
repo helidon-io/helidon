@@ -23,9 +23,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
@@ -527,6 +529,47 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
                            e);
             }
             return new AppTokenData();
+        }
+    }
+
+    /**
+     * Shares each initialization attempt with concurrent callers. A successful value remains cached, while a failed
+     * attempt is shared by its callers and replaced so a later call can retry.
+     *
+     * @param <T> type of the initialized value
+     */
+    static final class RetryableLazyValue<T> {
+        private final Supplier<T> supplier;
+        private final AtomicReference<LazyValue<Outcome<T>>> attempt;
+
+        RetryableLazyValue(Supplier<T> supplier) {
+            this.supplier = Objects.requireNonNull(supplier);
+            this.attempt = new AtomicReference<>(newAttempt());
+        }
+
+        T get() {
+            LazyValue<Outcome<T>> currentAttempt = attempt.get();
+            Outcome<T> outcome = currentAttempt.get();
+            RuntimeException failure = outcome.failure();
+            if (failure == null) {
+                return outcome.value();
+            }
+
+            attempt.compareAndSet(currentAttempt, newAttempt());
+            throw failure;
+        }
+
+        private LazyValue<Outcome<T>> newAttempt() {
+            return LazyValue.create(() -> {
+                try {
+                    return new Outcome<>(supplier.get(), null);
+                } catch (RuntimeException e) {
+                    return new Outcome<>(null, e);
+                }
+            });
+        }
+
+        private record Outcome<T>(T value, RuntimeException failure) {
         }
     }
 

@@ -22,12 +22,21 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntFunction;
 
+import io.helidon.common.Errors;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -62,8 +71,10 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableWithSize.iterableWithSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class IdcsRoleMapperProviderTest {
@@ -410,6 +421,164 @@ class IdcsRoleMapperProviderTest {
         }
     }
 
+    @Test
+    void testSingleTenantMetadataFailureIsSharedByConcurrentRequests() throws Exception {
+        assertMetadataFailureSharedByConcurrentRequests(false);
+    }
+
+    @Test
+    void testMultitenantMetadataFailureIsSharedByConcurrentRequests() throws Exception {
+        assertMetadataFailureSharedByConcurrentRequests(true);
+    }
+
+    private void assertMetadataFailureSharedByConcurrentRequests(boolean multitenant) throws Exception {
+        int followerCount = 3;
+        AtomicInteger metadataRequests = new AtomicInteger();
+        AtomicInteger tokenRequests = new AtomicInteger();
+        CountDownLatch firstMetadataRequest = new CountDownLatch(1);
+        CountDownLatch releaseMetadataFailure = new CountDownLatch(1);
+        JsonObject[] metadata = new JsonObject[1];
+        String accessToken = signedToken();
+
+        WebServer server = WebServer.builder()
+                .host(InetAddress.getLoopbackAddress().getHostAddress())
+                .routing(routing -> routing
+                        .get("/.well-known/openid-configuration", (req, res) -> {
+                            if (metadataRequests.incrementAndGet() == 1) {
+                                firstMetadataRequest.countDown();
+                                try {
+                                    releaseMetadataFailure.await();
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                }
+                                res.status(Status.INTERNAL_SERVER_ERROR_500)
+                                        .send("metadata unavailable");
+                            } else {
+                                res.send(metadata[0]);
+                            }
+                        })
+                        .post("/oauth2/v1/token", (req, res) -> {
+                            tokenRequests.incrementAndGet();
+                            res.header(HeaderValues.CONTENT_TYPE_JSON)
+                                    .send("{\"access_token\":\"" + accessToken + "\"}");
+                        }))
+                .build()
+                .start();
+        ExecutorService executor = Executors.newFixedThreadPool(followerCount + 1);
+
+        try {
+            String infraHost = "infra.example.test";
+            String tenantHost = "tenant1.example.test";
+            String baseUri = "http://" + infraHost + ":" + server.port();
+            metadata[0] = JsonObject.builder()
+                    .set("token_endpoint", baseUri + "/oauth2/v1/token")
+                    .set("authorization_endpoint", baseUri + "/oauth2/v1/authorize")
+                    .set("end_session_endpoint", baseUri + "/oauth2/v1/userlogout")
+                    .set("introspection_endpoint", baseUri + "/oauth2/v1/introspect")
+                    .set("issuer", baseUri)
+                    .build();
+
+            OidcConfig oidcConfig = OidcConfig.builder()
+                    .clientId("client-id")
+                    .clientSecret("client-secret")
+                    .identityUri(URI.create(baseUri))
+                    .serverType("idcs")
+                    .validateJwtWithJwk(false)
+                    .webclient(webClient -> webClient.dnsResolver((hostname, dnsAddressLookup) ->
+                                                                           InetAddress.getLoopbackAddress()))
+                    .build();
+
+            IntFunction<Optional<String>> tokenRequest;
+            if (multitenant) {
+                IdcsMtRoleMapperProvider.Builder<?> builder = IdcsMtRoleMapperProvider.builder();
+                builder.oidcConfig(oidcConfig)
+                        .multitenantEndpoints(new TestMultitenancyEndpoints(
+                                oidcConfig,
+                                URI.create("http://" + tenantHost + ":" + server.port()
+                                                   + "/oauth2/v1/token?IDCS_CLIENT_TENANT=infra")));
+                IdcsMtRoleMapperProvider provider = builder.build();
+                tokenRequest = requestIndex -> provider.getAppToken(requestIndex % 2 == 0 ? "tenant1" : "tenant2",
+                                                                    SecurityTracing.get().roleMapTracing("idcs"));
+            } else {
+                IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
+                builder.oidcConfig(oidcConfig);
+                IdcsRoleMapperProvider provider = builder.build();
+                tokenRequest = requestIndex -> provider.getAppToken(SecurityTracing.get().roleMapTracing("idcs"));
+            }
+
+            List<Future<Optional<String>>> requests = new ArrayList<>();
+            requests.add(executor.submit(() -> tokenRequest.apply(0)));
+            assertThat(firstMetadataRequest.await(10, TimeUnit.SECONDS), is(true));
+
+            CountDownLatch followersAtCallSite = new CountDownLatch(followerCount);
+            Thread[] followerThreads = new Thread[followerCount];
+            for (int i = 1; i <= followerCount; i++) {
+                int requestIndex = i;
+                requests.add(executor.submit(() -> {
+                    followerThreads[requestIndex - 1] = Thread.currentThread();
+                    followersAtCallSite.countDown();
+                    return tokenRequest.apply(requestIndex);
+                }));
+            }
+            assertThat(followersAtCallSite.await(10, TimeUnit.SECONDS), is(true));
+            // A started task can still be descheduled before it reads the current attempt. Wait until every follower
+            // is parked inside the retryable lazy value before allowing that attempt to fail.
+            for (Thread followerThread : followerThreads) {
+                awaitWaitingInRetryableLazyValue(followerThread);
+            }
+            releaseMetadataFailure.countDown();
+
+            RuntimeException firstFailure = null;
+            for (Future<Optional<String>> request : requests) {
+                ExecutionException failure = assertThrows(ExecutionException.class,
+                                                          () -> request.get(10, TimeUnit.SECONDS));
+                assertThat(failure.getCause(), instanceOf(Errors.ErrorMessagesException.class));
+                if (firstFailure == null) {
+                    firstFailure = (RuntimeException) failure.getCause();
+                } else {
+                    assertThat(failure.getCause(), sameInstance(firstFailure));
+                }
+            }
+            assertThat(metadataRequests.get(), is(1));
+            assertThat(tokenRequests.get(), is(0));
+
+            Optional<String> token = tokenRequest.apply(0);
+            assertThat(token.orElseThrow(), is(accessToken));
+            assertThat(metadataRequests.get(), is(2));
+            assertThat(tokenRequests.get(), is(1));
+        } finally {
+            releaseMetadataFailure.countDown();
+            executor.shutdownNow();
+            server.stop();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS), is(true));
+        }
+    }
+
+    private static void awaitWaitingInRetryableLazyValue(Thread thread) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        do {
+            if (waitingInRetryableLazyValue(thread)) {
+                return;
+            }
+            Thread.onSpinWait();
+        } while (deadline - System.nanoTime() > 0);
+        fail("Follower did not join the current initialization attempt: " + thread.getName());
+    }
+
+    private static boolean waitingInRetryableLazyValue(Thread thread) {
+        if (thread.getState() != Thread.State.WAITING) {
+            return false;
+        }
+        String retryableLazyValueClass = IdcsRoleMapperProviderBase.class.getName() + "$RetryableLazyValue";
+        for (StackTraceElement element : thread.getStackTrace()) {
+            if (element.getClassName().equals(retryableLazyValueClass)
+                    && element.getMethodName().equals("get")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static IdcsRoleMapperProvider.Builder<?> roleMapperBuilder() {
         IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
         builder.oidcConfig(OidcConfig.builder()
@@ -492,6 +661,11 @@ class IdcsRoleMapperProviderTest {
         @Override
         public URI tokenEndpoint(String tenantId) {
             return tokenEndpoint;
+        }
+
+        @Override
+        public boolean useClientCredentials(String tenantId, URI tokenEndpoint) {
+            return true;
         }
     }
 
