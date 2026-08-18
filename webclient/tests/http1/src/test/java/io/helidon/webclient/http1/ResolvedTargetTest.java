@@ -352,6 +352,43 @@ class ResolvedTargetTest {
     }
 
     @Test
+    void sameOriginExpectContinueRedirectProbesRetainAddressBoundNoProxyRoute() {
+        AtomicInteger resolutions = new AtomicInteger();
+        Proxy proxy = Proxy.builder()
+                .host("proxy.invalid")
+                .port(8181)
+                .addNoProxy("127.0.0.1")
+                .build();
+        Http1Client client = Http1Client.builder()
+                .shareConnectionCache(false)
+                .servicesDiscoverServices(false)
+                .dnsResolver((_, _) -> {
+                    resolutions.incrementAndGet();
+                    return InetAddress.ofLiteral("127.0.0.1");
+                })
+                .baseUri("http://target.example:" + plainPort)
+                .proxy(proxy)
+                .build();
+        String entity = "address-bound no-proxy route";
+
+        try {
+            try (Http1ClientResponse response = client.post("/proxy-route-first")
+                    .maxRedirects(2)
+                    .sendExpectContinue(true)
+                    .outputStream(outputStream -> {
+                        outputStream.write(entity.getBytes(StandardCharsets.UTF_8));
+                        outputStream.close();
+                    })) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class), is(entity));
+            }
+            assertThat(resolutions.get(), is(1));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
     void usesLogicalTlsPeerIdentityAfterDnsResolution() throws UnknownHostException {
         InetAddress physicalAddress = InetAddress.getByAddress("physical.invalid",
                                                                new byte[] {127, 0, 0, 1});

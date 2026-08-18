@@ -240,6 +240,13 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         effectiveConnection = suppliedConnection == null
                 ? obtainConnection(connectionTarget, connectionLookupKey, headers, udsAddress)
                 : suppliedConnection;
+        if (connectionLookupKey != null) {
+            TcpClientConnection tcpConnection = (TcpClientConnection) effectiveConnection;
+            ProxyRoute acquiredRoute = tcpConnection.resolvedTarget()
+                    .orElseThrow()
+                    .proxyRoute();
+            originalRequest.selectedProxyRoute(acquiredRoute);
+        }
         effectiveConnection.readTimeout(this.timeout);
 
         DataWriter writer = effectiveConnection.writer();

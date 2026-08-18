@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -352,6 +353,54 @@ class Http2WireProtocolTest {
                 assertThat(response.protocolId(), is(Http2Client.PROTOCOL_ID));
             }
             assertThat(selectorInvocations.get(), is(1));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void multiHopExpectContinueRedirectRetainsAddressBoundNoProxyRouteAcrossConnectionReplacement() {
+        AtomicInteger resolutions = new AtomicInteger();
+        AtomicReference<Http2ConnectionCache> connectionCache = new AtomicReference<>();
+        Proxy proxy = Proxy.builder()
+                .host("proxy.invalid")
+                .port(8181)
+                .addNoProxy("127.0.0.1")
+                .build();
+        Http2ClientImpl client = (Http2ClientImpl) Http2Client.builder()
+                .baseUri("http://target.example:" + http2Port)
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .followRedirects(true)
+                .protocolConfig(it -> it.priorKnowledge(true))
+                .dnsResolver((_, _) -> {
+                    resolutions.incrementAndGet();
+                    return InetAddress.ofLiteral("127.0.0.1");
+                })
+                .proxy(proxy)
+                .addService((chain, request) -> {
+                    if (request.uri().path().path().equals("/proxy-route-second")) {
+                        connectionCache.get().evict();
+                    }
+                    return chain.proceed(request);
+                })
+                .build();
+        connectionCache.set(client.connectionCache());
+        String entity = "address-bound no-proxy route";
+
+        try {
+            try (Http2ClientResponse response = client.post("/proxy-route-first")
+                    .maxRedirects(2)
+                    .sendExpectContinue(true)
+                    .outputStream(outputStream -> {
+                        outputStream.write(entity.getBytes(StandardCharsets.UTF_8));
+                        outputStream.close();
+                    })) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class), is(entity));
+                assertThat(response.protocolId(), is(Http2Client.PROTOCOL_ID));
+            }
+            assertThat(resolutions.get(), is(1));
         } finally {
             client.closeResource();
         }

@@ -200,6 +200,9 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
                                    http1FallbackHandler);
 
         try {
+            if (connectionLookupKey != null) {
+                clientRequest.selectedProxyRoute(result.connectionTarget().proxyRoute());
+            }
             if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
                 // ALPN, prior knowledge, or upgrade success
                 this.stream = result.stream();
