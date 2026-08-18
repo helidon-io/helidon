@@ -106,7 +106,9 @@
         <version.lib.junit>5.12.2</version.lib.junit>
         <version.lib.kafka>3.9.2</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
-        <version.lib.kotlin>1.9.10</version.lib.kotlin>
+        <version.lib.kotlin>2.3.21</version.lib.kotlin>
+        <!-- kotlin-stdlib-common 2.1+ is POM-only; retain JAR management for 4.x compatibility -->
+        <version.lib.kotlin-stdlib-common>1.9.10</version.lib.kotlin-stdlib-common>
         <version.lib.langchain4j>1.12.1</version.lib.langchain4j>
         <version.lib.langchain4j-community>1.12.1-beta21</version.lib.langchain4j-community>
         <!-- Force upgrade opennlp-tools transitive dependency of langchain4j. Remove once langchain4j upgrades -->
@@ -145,8 +147,8 @@
         <version.lib.oci>3.86.2</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
-        <!-- Force upgrade of okio for dependency convergence: make the OTel otlp exporter use the release langchain4j uses -->
-        <version.lib.okio>3.6.0</version.lib.okio>
+        <!-- Force upgrade of okio for dependency convergence and Kotlin 2.x compatibility -->
+        <version.lib.okio>3.18.1</version.lib.okio>
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
@@ -978,7 +980,7 @@
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-common</artifactId>
-                <version>${version.lib.kotlin}</version>
+                <version>${version.lib.kotlin-stdlib-common}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
