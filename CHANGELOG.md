@@ -13,7 +13,7 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## 4.5.3
 
-This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 4.
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
 
 A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 
@@ -32,6 +32,7 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - Dependencies: Upgrade PostgreSQL JDBC driver to 42.7.13 [12201](https://github.com/helidon-io/helidon/pull/12201)
 - Docs: Convert documentation source from AsciiDoc to Markdown [12220](https://github.com/helidon-io/helidon/pull/12220)
 - Docs: Fix unresolved placeholder in the metrics guide [12235](https://github.com/helidon-io/helidon/pull/12235)
+- HTTP: Skip unsupported HTTP/2 settings values [12278](https://github.com/helidon-io/helidon/pull/12278)
 - JSON: Limit parser nesting depth [48c331fcab](https://github.com/helidon-io/helidon/commit/48c331fcab1ff79b8ebf57f4ac6bf77e4c62228b)
 - LRA: Authenticate non-JAX-RS participant callbacks [d0ebe4e55f](https://github.com/helidon-io/helidon/commit/d0ebe4e55f08e423b5fb4383c0d4d0d99129735d)
 - LRA: Clarify coordinator test-only scope [7bf39bcb09](https://github.com/helidon-io/helidon/commit/7bf39bcb09d219b5df5424310b7a9e80d9440f8f)
