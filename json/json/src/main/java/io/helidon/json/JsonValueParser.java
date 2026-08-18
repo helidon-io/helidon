@@ -28,6 +28,8 @@ import java.util.Map;
 class JsonValueParser implements JsonParser {
 
     private static final int INITIAL_FRAME_CAPACITY = 4;
+    private static final BigDecimal LONG_MIN_MINUS_ONE = new BigDecimal("-9223372036854775809");
+    private static final BigDecimal LONG_MAX_PLUS_ONE = new BigDecimal("9223372036854775808");
 
     private JsonValue current;
     private Frame[] frames;
@@ -146,7 +148,7 @@ class JsonValueParser implements JsonParser {
     @Override
     public byte readByte() {
         try {
-            return readBigInteger().byteValueExact();
+            return (byte) readIntegral(Byte.MIN_VALUE, Byte.MAX_VALUE, "byte");
         } catch (ArithmeticException e) {
             throw createException("The number is too big for a byte value", e);
         }
@@ -155,7 +157,7 @@ class JsonValueParser implements JsonParser {
     @Override
     public short readShort() {
         try {
-            return readBigInteger().shortValueExact();
+            return (short) readIntegral(Short.MIN_VALUE, Short.MAX_VALUE, "short");
         } catch (ArithmeticException e) {
             throw createException("The number is too big for a short value", e);
         }
@@ -164,7 +166,7 @@ class JsonValueParser implements JsonParser {
     @Override
     public int readInt() {
         try {
-            return readBigInteger().intValueExact();
+            return (int) readIntegral(Integer.MIN_VALUE, Integer.MAX_VALUE, "int");
         } catch (ArithmeticException e) {
             throw createException("The number is too big for an int value", e);
         }
@@ -173,7 +175,7 @@ class JsonValueParser implements JsonParser {
     @Override
     public long readLong() {
         try {
-            return readBigInteger().longValueExact();
+            return readIntegral(Long.MIN_VALUE, Long.MAX_VALUE, "long");
         } catch (ArithmeticException e) {
             throw createException("The number is too big for a long value", e);
         }
@@ -320,6 +322,18 @@ class JsonValueParser implements JsonParser {
         markedCurrent = null;
         markedDepth = 0;
         marked = false;
+    }
+
+    private long readIntegral(long minValue, long maxValue, String type) {
+        BigDecimal value = readBigDecimal();
+        if (value.compareTo(LONG_MIN_MINUS_ONE) <= 0 || value.compareTo(LONG_MAX_PLUS_ONE) >= 0) {
+            throw new ArithmeticException("BigInteger out of " + type + " range");
+        }
+        long result = value.longValue();
+        if (result < minValue || result > maxValue) {
+            throw new ArithmeticException("BigInteger out of " + type + " range");
+        }
+        return result;
     }
 
     private static final class Frame {

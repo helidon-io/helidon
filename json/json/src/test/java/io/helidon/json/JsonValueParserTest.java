@@ -77,6 +77,44 @@ class JsonValueParserTest {
     }
 
     @Test
+    void testJsonValueParserTruncatesIntegralBoundaryFractions() {
+        assertThat(JsonParser.create(JsonNumber.create(new BigDecimal("127.9"))).readByte(), is(Byte.MAX_VALUE));
+        assertThat(JsonParser.create(JsonNumber.create(new BigDecimal("-128.9"))).readByte(), is(Byte.MIN_VALUE));
+        assertThat(JsonParser.create(JsonNumber.create(new BigDecimal("32767.9"))).readShort(), is(Short.MAX_VALUE));
+        assertThat(JsonParser.create(JsonNumber.create(new BigDecimal("-32768.9"))).readShort(), is(Short.MIN_VALUE));
+        assertThat(JsonParser.create(JsonNumber.create(new BigDecimal("2147483647.9"))).readInt(), is(Integer.MAX_VALUE));
+        assertThat(JsonParser.create(JsonNumber.create(new BigDecimal("-2147483648.9"))).readInt(), is(Integer.MIN_VALUE));
+        assertThat(JsonParser.create(JsonNumber.create(new BigDecimal("9223372036854775807.9"))).readLong(),
+                   is(Long.MAX_VALUE));
+        assertThat(JsonParser.create(JsonNumber.create(new BigDecimal("-9223372036854775808.9"))).readLong(),
+                   is(Long.MIN_VALUE));
+    }
+
+    @Test
+    void testJsonValueParserRejectsExtremePositiveExponentWithoutBigIntegerConversion() {
+        JsonNumber number = JsonNumber.create(new BigIntegerGuardDecimal("1e100000000"));
+
+        assertThat(assertThrows(JsonException.class, () -> JsonParser.create(number).readByte()).getMessage(),
+                   is("The number is too big for a byte value"));
+        assertThat(assertThrows(JsonException.class, () -> JsonParser.create(number).readShort()).getMessage(),
+                   is("The number is too big for a short value"));
+        assertThat(assertThrows(JsonException.class, () -> JsonParser.create(number).readInt()).getMessage(),
+                   is("The number is too big for an int value"));
+        assertThat(assertThrows(JsonException.class, () -> JsonParser.create(number).readLong()).getMessage(),
+                   is("The number is too big for a long value"));
+    }
+
+    @Test
+    void testJsonValueParserTruncatesExtremeNegativeExponentWithoutBigIntegerConversion() {
+        JsonNumber number = JsonNumber.create(new BigIntegerGuardDecimal("1e-100000000"));
+
+        assertThat(JsonParser.create(number).readByte(), is((byte) 0));
+        assertThat(JsonParser.create(number).readShort(), is((short) 0));
+        assertThat(JsonParser.create(number).readInt(), is(0));
+        assertThat(JsonParser.create(number).readLong(), is(0L));
+    }
+
+    @Test
     public void testJsonValueParserWithSpecialDoubleString() {
         JsonValue original = JsonString.create("NaN");
         JsonParser parser = JsonParser.create(original);
@@ -617,6 +655,39 @@ class JsonValueParserTest {
         assertThat(value.unscaledValueCalls(), is(1));
     }
 
+    private static void assertNestedEmptyContainerSkipped(JsonValue emptyContainer, byte start, byte end) {
+        JsonParser parser = JsonParser.create(JsonArray.create(emptyContainer, JsonString.create("after")));
+
+        assertThat(parser.currentByte(), is((byte) '['));
+        assertThat(parser.nextToken(), is(start));
+        parser.skip();
+        assertThat(parser.currentByte(), is(end));
+        assertThat(parser.hasNext(), is(true));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readString(), is("after"));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    private static final class BigIntegerGuardDecimal extends BigDecimal {
+        private static final long serialVersionUID = 1L;
+
+        private BigIntegerGuardDecimal(String value) {
+            super(value);
+        }
+
+        @Override
+        public BigInteger toBigInteger() {
+            throw new AssertionError("Unexpected BigInteger conversion");
+        }
+
+        @Override
+        public BigInteger toBigIntegerExact() {
+            throw new AssertionError("Unexpected exact BigInteger conversion");
+        }
+    }
+
     private static final class TrackingBigDecimal extends BigDecimal {
         private static final long serialVersionUID = 1L;
 
@@ -645,21 +716,6 @@ class JsonValueParserTest {
         private int unscaledValueCalls() {
             return unscaledValueCalls;
         }
-    }
-
-    private static void assertNestedEmptyContainerSkipped(JsonValue emptyContainer, byte start, byte end) {
-        JsonParser parser = JsonParser.create(JsonArray.create(emptyContainer, JsonString.create("after")));
-
-        assertThat(parser.currentByte(), is((byte) '['));
-        assertThat(parser.nextToken(), is(start));
-        parser.skip();
-        assertThat(parser.currentByte(), is(end));
-        assertThat(parser.hasNext(), is(true));
-        assertThat(parser.nextToken(), is((byte) ','));
-        assertThat(parser.nextToken(), is((byte) '"'));
-        assertThat(parser.readString(), is("after"));
-        assertThat(parser.nextToken(), is((byte) ']'));
-        assertThat(parser.hasNext(), is(false));
     }
 
 }
