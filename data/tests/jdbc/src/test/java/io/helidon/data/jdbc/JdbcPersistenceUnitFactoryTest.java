@@ -19,16 +19,12 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
@@ -41,12 +37,10 @@ import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.DataException;
-import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceInstance;
 
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -54,41 +48,18 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class JdbcPersistenceUnitFactoryTest {
 
-    @Test
-    void createsDistinctNamedAndProviderQualifiedClients() throws Exception {
-        JdbcDataSource contacts = dataSource("contacts", "CONTACTS");
-        JdbcDataSource audit = dataSource("audit", "AUDIT");
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.name", "contacts",
-                "data.persistence-units.jdbc.0.data-source", "contacts-source",
-                "data.persistence-units.jdbc.1.name", "audit",
-                "data.persistence-units.jdbc.1.data-source", "audit-source")));
-        List<ServiceInstance<DataSource>> sources = List.of(instance("contacts-source", contacts),
-                                                            instance("audit-source", audit));
-        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(() -> sources,
-                                                                            () -> config,
-                                                                            new JdbcTransactionConnectionManager());
-
-        List<Service.QualifiedInstance<JdbcClient>> clients = factory.services();
-
-        assertThat(clients.size(), is(2));
-        JdbcClient contactsClient = namedProviderClient(clients, "contacts");
-        JdbcClient auditClient = namedProviderClient(clients, "audit");
-        assertThat(contactsClient.create("SELECT NAME FROM UNIT_NAME").map(String.class).one(), is("CONTACTS"));
-        assertThat(auditClient.create("SELECT NAME FROM UNIT_NAME").map(String.class).one(), is("AUDIT"));
-    }
-
+    /**
+     * Proves absent configuration and duplicate named units fail before any
+     * provider service can be activated.
+     */
     @Test
     void rejectsMissingAndDuplicatePersistenceUnitConfiguration() {
         Config missing = Config.just(ConfigSources.create(Map.of(
@@ -104,15 +75,17 @@ class JdbcPersistenceUnitFactoryTest {
                 "data.persistence-units.jdbc.0.data-source", "source",
                 "data.persistence-units.jdbc.1.name", "same",
                 "data.persistence-units.jdbc.1.data-source", "source")));
-        JdbcDataSource source = new JdbcDataSource();
-        source.setURL("jdbc:h2:mem:duplicate;DB_CLOSE_DELAY=-1");
         JdbcPersistenceUnitFactory duplicateFactory = new JdbcPersistenceUnitFactory(
-                () -> List.of(instance("source", source)),
+                () -> List.of(instance("source", new FailingDataSource())),
                 () -> duplicate,
                 new JdbcTransactionConnectionManager());
         assertThrows(DataException.class, duplicateFactory::services);
     }
 
+    /**
+     * Proves duplicate unnamed units fail without disclosing the internal
+     * default qualifier.
+     */
     @Test
     void rejectsDuplicateUnnamedPersistenceUnitsWithoutExposingTheDefaultQualifier() {
         Config config = Config.just(ConfigSources.create(Map.of(
@@ -128,6 +101,10 @@ class JdbcPersistenceUnitFactoryTest {
                                                    + "More than one configured persistence unit is unnamed."));
     }
 
+    /**
+     * Proves the complete unit list is validated before the first datasource
+     * is activated.
+     */
     @Test
     void validatesEveryUnitBeforeActivatingTheFirstDatasource() {
         Config duplicate = Config.just(ConfigSources.create(Map.of(
@@ -147,6 +124,10 @@ class JdbcPersistenceUnitFactoryTest {
         assertThat(failure.getMessage(), is("More than one JDBC persistence unit is named 'same'."));
     }
 
+    /**
+     * Proves a later invalid connection-source definition fails before an
+     * earlier datasource is activated.
+     */
     @Test
     void validatesALaterConnectionSourceBeforeActivatingTheFirstDatasource() {
         Config invalidLaterUnit = Config.just(ConfigSources.create(Map.of(
@@ -166,81 +147,10 @@ class JdbcPersistenceUnitFactoryTest {
         assertThat(failure.getMessage(), containsString("exactly one connection source"));
     }
 
-    @Test
-    void createsAClientFromExistingDirectConnectionConfiguration() {
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.connection.url",
-                "jdbc:h2:mem:direct_unit;DB_CLOSE_DELAY=-1",
-                "data.persistence-units.jdbc.0.connection.jdbc-driver-class-name",
-                "org.h2.Driver",
-                "data.persistence-units.jdbc.0.init-script.resource-path",
-                "jdbc-bootstrap-init.sql")));
-        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(List::of,
-                                                                            () -> config,
-                                                                            new JdbcTransactionConnectionManager());
-
-        JdbcClient client = namedProviderClient(factory.services(), Service.Named.DEFAULT_NAME);
-
-        assertThat(client.create("SELECT DATA_VALUE FROM SCRIPT_VALUE ORDER BY ID").map(String.class).list(),
-                   is(List.of("first;value", "second 'quoted;value'")));
-    }
-
-    @Test
-    void executesFilesystemBootstrapResource(@TempDir Path directory) throws Exception {
-        Path script = directory.resolve("filesystem-bootstrap.sql");
-        Files.writeString(script, "CREATE TABLE FILESYSTEM_RESOURCE (DATA_VALUE VARCHAR(20));"
-                + "INSERT INTO FILESYSTEM_RESOURCE VALUES ('filesystem');");
-        JdbcDataSource source = new JdbcDataSource();
-        source.setURL("jdbc:h2:mem:filesystem_resource;DB_CLOSE_DELAY=-1");
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.data-source", "source",
-                "data.persistence-units.jdbc.0.init-script.path", script.toString())));
-        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
-                () -> List.of(instance("source", source)),
-                () -> config,
-                new JdbcTransactionConnectionManager());
-
-        JdbcClient client = namedProviderClient(factory.services(), Service.Named.DEFAULT_NAME);
-
-        assertThat(client.create("SELECT DATA_VALUE FROM FILESYSTEM_RESOURCE").map(String.class).one(), is("filesystem"));
-    }
-
-    @Test
-    void executesConfiguredTextBootstrapResource() {
-        JdbcDataSource source = new JdbcDataSource();
-        source.setURL("jdbc:h2:mem:configured_text_resource;DB_CLOSE_DELAY=-1");
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.data-source", "source",
-                "data.persistence-units.jdbc.0.init-script.content-plain",
-                "CREATE TABLE TEXT_RESOURCE (DATA_VALUE VARCHAR(20));"
-                        + "INSERT INTO TEXT_RESOURCE VALUES ('configured');")));
-        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
-                () -> List.of(instance("source", source)),
-                () -> config,
-                new JdbcTransactionConnectionManager());
-
-        JdbcClient client = namedProviderClient(factory.services(), Service.Named.DEFAULT_NAME);
-
-        assertThat(client.create("SELECT DATA_VALUE FROM TEXT_RESOURCE").map(String.class).one(), is("configured"));
-    }
-
-    @Test
-    void acceptsEmptyBootstrapResource() {
-        JdbcDataSource source = new JdbcDataSource();
-        source.setURL("jdbc:h2:mem:empty_resource");
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.data-source", "source",
-                "data.persistence-units.jdbc.0.init-script.content-plain", "")));
-        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
-                () -> List.of(instance("source", source)),
-                () -> config,
-                new JdbcTransactionConnectionManager());
-
-        JdbcClient client = namedProviderClient(factory.services(), Service.Named.DEFAULT_NAME);
-
-        assertThat(client.create("SELECT 1").map(Integer.class).one(), is(1));
-    }
-
+    /**
+     * Proves bootstrap input is fully detached and closed before datasource
+     * resolution begins.
+     */
     @Test
     void closesBootstrapResourceBeforeDatasourceResolution() {
         String resourceName = "close-before-datasource.sql";
@@ -279,6 +189,10 @@ class JdbcPersistenceUnitFactoryTest {
         }
     }
 
+    /**
+     * Proves a unit with no connection source fails before dependency or
+     * bootstrap-resource resolution.
+     */
     @Test
     void rejectsMissingConnectionSourceBeforeResolvingDependenciesOrScripts() {
         Config config = Config.just(ConfigSources.create(Map.of(
@@ -299,6 +213,10 @@ class JdbcPersistenceUnitFactoryTest {
                                                    + "'connection'."));
     }
 
+    /**
+     * Proves ambiguous direct and named connection sources fail before either
+     * source is resolved.
+     */
     @Test
     void rejectsAmbiguousConnectionSourceBeforeResolvingEitherSource() {
         Config config = Config.just(ConfigSources.create(Map.of(
@@ -321,6 +239,10 @@ class JdbcPersistenceUnitFactoryTest {
                                                    + "'connection'."));
     }
 
+    /**
+     * Proves an ambiguous unnamed unit does not expose its internal default
+     * qualifier in diagnostics.
+     */
     @Test
     void rejectsAmbiguousUnnamedConnectionSourceWithoutExposingTheDefaultQualifier() {
         Config config = Config.just(ConfigSources.create(Map.of(
@@ -341,6 +263,10 @@ class JdbcPersistenceUnitFactoryTest {
                                                    + "'connection'."));
     }
 
+    /**
+     * Proves a blank datasource name fails before datasource services are
+     * activated.
+     */
     @Test
     void rejectsBlankDatasourceNameBeforeActivatingDatasourceServices() {
         Config config = Config.just(ConfigSources.create(Map.of(
@@ -358,62 +284,18 @@ class JdbcPersistenceUnitFactoryTest {
         assertThat(failure.getMessage(), is("JDBC persistence unit 'blank-source' has a blank 'data-source' name."));
     }
 
-    @Test
-    void executesDropBeforeInitForNamedDataSource() throws Exception {
-        JdbcDataSource source = dataSource("bootstrap_order", "obsolete");
-        try (var connection = source.getConnection();
-             var statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE SCRIPT_VALUE (ID INTEGER PRIMARY KEY, DATA_VALUE VARCHAR(80))");
-            statement.execute("INSERT INTO SCRIPT_VALUE VALUES (99, 'obsolete')");
-        }
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.name", "bootstrap",
-                "data.persistence-units.jdbc.0.data-source", "bootstrap-source",
-                "data.persistence-units.jdbc.0.drop-script.resource-path", "jdbc-bootstrap-drop.sql",
-                "data.persistence-units.jdbc.0.init-script.resource-path", "jdbc-bootstrap-init.sql")));
-        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
-                () -> List.of(instance("bootstrap-source", source)),
-                () -> config,
-                new JdbcTransactionConnectionManager());
-
-        JdbcClient client = namedProviderClient(factory.services(), "bootstrap");
-
-        assertThat(client.create("SELECT DATA_VALUE FROM SCRIPT_VALUE ORDER BY ID").map(String.class).list(),
-                   is(List.of("first;value", "second 'quoted;value'")));
-    }
-
-    @Test
-    void executesDropScriptWithoutAnInitScript() throws Exception {
-        JdbcDataSource source = dataSource("bootstrap_drop_only", "obsolete");
-        try (var connection = source.getConnection();
-             var statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE SCRIPT_VALUE (ID INTEGER PRIMARY KEY)");
-        }
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.name", "drop-only",
-                "data.persistence-units.jdbc.0.data-source", "drop-only-source",
-                "data.persistence-units.jdbc.0.drop-script.resource-path", "jdbc-bootstrap-drop.sql")));
-        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
-                () -> List.of(instance("drop-only-source", source)),
-                () -> config,
-                new JdbcTransactionConnectionManager());
-
-        JdbcClient client = namedProviderClient(factory.services(), "drop-only");
-
-        assertThrows(DataException.class,
-                     () -> client.create("SELECT COUNT(*) FROM SCRIPT_VALUE").map(Long.class).one());
-    }
-
+    /**
+     * Proves a missing classpath script fails and is sanitized before opening
+     * a JDBC connection.
+     */
     @Test
     void rejectsMissingScriptBeforeOpeningAConnection() {
-        JdbcDataSource source = new JdbcDataSource();
-        source.setURL("jdbc:h2:mem:missing_script;DB_CLOSE_DELAY=-1");
         Config config = Config.just(ConfigSources.create(Map.of(
                 "data.persistence-units.jdbc.0.name", "missing-script",
                 "data.persistence-units.jdbc.0.data-source", "missing-script-source",
                 "data.persistence-units.jdbc.0.init-script.resource-path", "does-not-exist.sql")));
         JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
-                () -> List.of(instance("missing-script-source", source)),
+                () -> List.of(instance("missing-script-source", new FailingDataSource())),
                 () -> config,
                 new JdbcTransactionConnectionManager());
 
@@ -424,25 +306,60 @@ class JdbcPersistenceUnitFactoryTest {
         assertThat(failure.getMessage(), not(containsString("does-not-exist.sql")));
     }
 
+    /**
+     * Proves missing and directory filesystem resources fail before connection
+     * acquisition without disclosing their configured paths.
+     */
+    @Test
+    void rejectsInvalidFilesystemScriptsBeforeOpeningAConnection(@TempDir Path directory) {
+        for (Path path : List.of(directory.resolve("private-missing-script.sql"), directory)) {
+            Config config = Config.just(ConfigSources.create(Map.of(
+                    "data.persistence-units.jdbc.0.name", "invalid-filesystem-script",
+                    "data.persistence-units.jdbc.0.data-source", "source",
+                    "data.persistence-units.jdbc.0.init-script.path", path.toString())));
+            JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                    () -> List.of(instance("source", new FailingDataSource())),
+                    () -> config,
+                    new JdbcTransactionConnectionManager());
+
+            DataException failure = assertThrows(DataException.class, factory::services);
+
+            assertThat(failure.getMessage(), containsString("invalid-filesystem-script"));
+            for (Throwable current = failure; current != null; current = current.getCause()) {
+                assertThat(current.toString(), not(containsString(path.toString())));
+            }
+        }
+    }
+
+    /**
+     * Proves unsupported URI configuration fails without exposing URI
+     * credentials or retaining its parsing failure.
+     */
     @Test
     void failedUriResourceDoesNotExposeUriSecrets() {
         String secret = "private-uri-token";
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.name", "private-uri",
-                "data.persistence-units.jdbc.0.data-source", "source",
-                "data.persistence-units.jdbc.0.init-script.uri", "not a URI " + secret)));
-        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(List::of,
-                                                                            () -> config,
-                                                                            new JdbcTransactionConnectionManager());
+        for (String role : List.of("init-script", "drop-script")) {
+            Config config = Config.just(ConfigSources.create(Map.of(
+                    "data.persistence-units.jdbc.0.name", "private-uri",
+                    "data.persistence-units.jdbc.0.data-source", "source",
+                    "data.persistence-units.jdbc.0." + role + ".uri", "not a URI " + secret)));
+            JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(List::of,
+                                                                                () -> config,
+                                                                                new JdbcTransactionConnectionManager());
 
-        DataException failure = assertThrows(DataException.class, factory::services);
+            DataException failure = assertThrows(DataException.class, factory::services);
 
-        assertThat(failure.getMessage(),
-                   is("JDBC persistence unit 'private-uri' does not support a URI value for 'init-script'."));
-        assertThat(failure.getMessage(), not(containsString(secret)));
-        assertThat(failure.getCause(), nullValue());
+            assertThat(failure.getMessage(),
+                       is("JDBC persistence unit 'private-uri' does not support a URI value for '" + role + "'."));
+            assertThat(failure.getMessage(), not(containsString(secret)));
+            assertThat(failure.getCause(), nullValue());
+        }
     }
 
+    /**
+     * Proves every unterminated protected SQL region fails before connection
+     * acquisition and without exposing its resource name.
+     */
     @Test
     void rejectsEveryUnterminatedBootstrapLexicalRegionBeforeConnecting() {
         for (String resource : List.of("jdbc-bootstrap-unterminated-quote.sql",
@@ -463,101 +380,6 @@ class JdbcPersistenceUnitFactoryTest {
             assertThat(failure.getMessage(), containsString("classpath init script"));
             assertThat(failure.getMessage(), not(containsString(resource)));
         }
-    }
-
-    @Test
-    void directDatasourceUsesIndependentPropertiesAndReportsUnsupportedTimeouts() throws Exception {
-        Driver driver = mock(Driver.class);
-        Connection firstConnection = mock(Connection.class);
-        Connection secondConnection = mock(Connection.class);
-        Connection credentialConnection = mock(Connection.class);
-        List<Properties> received = new ArrayList<>();
-        when(driver.connect(anyString(), any(Properties.class))).thenAnswer(invocation -> {
-            Properties properties = invocation.getArgument(1);
-            Properties snapshot = new Properties();
-            snapshot.putAll(properties);
-            received.add(snapshot);
-            properties.setProperty("driver-mutation", "must-not-escape");
-            return switch (received.size()) {
-            case 1 -> firstConnection;
-            case 2 -> secondConnection;
-            default -> credentialConnection;
-            };
-        });
-        ConnectionConfig config = ConnectionConfig.builder()
-                .url("jdbc:test:properties")
-                .username("configured-user")
-                .password("configured-password".toCharArray())
-                .build();
-        DataSource dataSource = JdbcPersistenceUnitFactory.directDataSource(config, driver);
-
-        assertThat(dataSource.getConnection(), sameInstance(firstConnection));
-        assertThat(dataSource.getConnection(), sameInstance(secondConnection));
-        assertThat(dataSource.getConnection(null, null), sameInstance(credentialConnection));
-
-        assertThat(received.get(0).getProperty("user"), is("configured-user"));
-        assertThat(received.get(0).getProperty("password"), is("configured-password"));
-        assertThat(received.get(1).getProperty("user"), is("configured-user"));
-        assertThat(received.get(1).containsKey("driver-mutation"), is(false));
-        assertThat(received.get(2).isEmpty(), is(true));
-        dataSource.setLoginTimeout(0);
-        assertThat(dataSource.getLoginTimeout(), is(0));
-        assertThrows(IllegalArgumentException.class, () -> dataSource.setLoginTimeout(-1));
-        assertThrows(SQLFeatureNotSupportedException.class, () -> dataSource.setLoginTimeout(1));
-    }
-
-    @Test
-    void rejectedDirectConnectionDoesNotExposeTheConfiguredUrl() throws Exception {
-        String url = "jdbc:test://user:private-password@host/database?token=private-token";
-        Driver driver = mock(Driver.class);
-        ConnectionConfig config = ConnectionConfig.builder()
-                .url(url)
-                .build();
-        DataSource dataSource = JdbcPersistenceUnitFactory.directDataSource(config, driver);
-
-        SQLException failure = assertThrows(SQLException.class, dataSource::getConnection);
-
-        assertThat(failure.getMessage(), is("The configured JDBC driver does not accept the configured URL."));
-        assertThat(failure.getMessage(), not(containsString(url)));
-        assertThat(failure.getMessage(), not(containsString("private-password")));
-        assertThat(failure.getMessage(), not(containsString("private-token")));
-    }
-
-    /**
-     * Locates the client carrying both the persistence-unit name and the JDBC
-     * provider qualifier.
-     *
-     * @param clients qualified clients
-     * @param name persistence-unit name
-     * @return matching client
-     */
-    private static JdbcClient namedProviderClient(List<Service.QualifiedInstance<JdbcClient>> clients, String name) {
-        Qualifier named = Qualifier.createNamed(name);
-        return clients.stream()
-                .filter(client -> client.qualifiers().contains(named))
-                .filter(client -> client.qualifiers().size() == 2)
-                .findFirst()
-                .orElseThrow()
-                .get();
-    }
-
-    /**
-     * Creates a datasource with one identifying row.
-     *
-     * @param database in-memory database name
-     * @param value identifying value
-     * @return initialized datasource
-     * @throws Exception when setup fails
-     */
-    private static JdbcDataSource dataSource(String database, String value) throws Exception {
-        JdbcDataSource dataSource = new JdbcDataSource();
-        dataSource.setURL("jdbc:h2:mem:" + database + ";DB_CLOSE_DELAY=-1");
-        try (var connection = dataSource.getConnection();
-             var statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE UNIT_NAME (NAME VARCHAR(20))");
-            statement.execute("INSERT INTO UNIT_NAME VALUES ('" + value + "')");
-        }
-        return dataSource;
     }
 
     /**

@@ -58,17 +58,6 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     // Transaction context is synchronous and does not propagate to another thread.
     private final ThreadLocal<State> local = new ThreadLocal<>();
 
-    /**
-     * Reports whether the current thread retains connection-association state.
-     * Package access allows focused cleanup tests to verify removal without
-     * exposing mutable transaction state.
-     *
-     * @return whether connection-association state is present for the current thread
-     */
-    boolean threadStatePresent() {
-        return local.get() != null;
-    }
-
     @Override
     public JdbcConnectionLease acquire(DataSource dataSource) throws SQLException {
         Objects.requireNonNull(dataSource, "The JDBC datasource must not be null.");
@@ -109,17 +98,20 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         if (association.connection == null) {
             Connection connection;
             try {
-                connection = dataSource.getConnection();
+                connection = JdbcExceptionTranslator.invoke("acquiring a transaction connection",
+                                                            dataSource::getConnection);
             } catch (SQLException | RuntimeException | Error failure) {
                 failJdbcAssociation(state, state.activeJdbc, association);
                 throw failure;
             }
             try {
-                if (!connection.getAutoCommit()) {
+                if (!JdbcExceptionTranslator.invoke("inspecting transaction automatic commit mode",
+                                                    connection::getAutoCommit)) {
                     throw JdbcExceptionTranslator.safeException(
                             "Datasources used for local JDBC transactions must provide connections with auto-commit enabled.");
                 }
-                connection.setAutoCommit(false);
+                JdbcExceptionTranslator.invokeVoid("disabling automatic commit mode",
+                                                   () -> connection.setAutoCommit(false));
                 // Publish the connection only after it is ready for transaction use.
                 association.connection = connection;
             } catch (SQLException | RuntimeException | Error failure) {
@@ -330,7 +322,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         } catch (SQLException | RuntimeException | Error failure) {
             completionFailure = failure;
             if (commit) {
-                // Best-effort rollback releases server work; it cannot make a failed commit outcome known.
+                // Best-effort rollback releases server work. It cannot determine the outcome of a failed commit.
                 try {
                     connection.rollback();
                 } catch (SQLException | RuntimeException | Error rollbackFailure) {
@@ -456,7 +448,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      */
     private static String currentType(State state) {
         if (state.invocationTypes.isEmpty()) {
-            throw new IllegalStateException("The transaction begin event has no active transaction support.");
+            throw new IllegalStateException("A transaction begin event has no active transaction support.");
         }
         return state.invocationTypes.peek();
     }

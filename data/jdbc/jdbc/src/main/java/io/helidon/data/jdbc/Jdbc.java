@@ -32,6 +32,7 @@ import io.helidon.common.Api;
 @Api.Preview
 public final class Jdbc {
 
+    // Use one provider identifier for repository selection, service qualifiers, and transaction lifecycle events.
     static final String PROVIDER = "jdbc";
 
     /**

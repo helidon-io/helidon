@@ -54,34 +54,11 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.sql</groupId>
-            <artifactId>helidon-data-sql-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.transaction</groupId>
-            <artifactId>helidon-transaction</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -106,11 +83,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <configuration>
-                    <!-- Main sources need these JPMS modules. -->
+                    <!-- Main sources need these JPMS modules through helidon-data-jdbc. -->
                     <ignoredNonTestScopedDependencies>
                         <dependency>io.helidon.config:helidon-config</dependency>
-                        <dependency>io.helidon.data.sql:helidon-data-sql-common</dependency>
-                        <dependency>io.helidon.transaction:helidon-transaction</dependency>
                     </ignoredNonTestScopedDependencies>
                 </configuration>
             </plugin>
@@ -118,6 +93,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <compilerArgs combine.children="append">
+                        <!-- This module intentionally exercises preview JDBC APIs; internal API use must still fail. -->
+                        <arg>-Ahelidon.api.preview=ignore</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.codegen</groupId>
@@ -127,6 +106,11 @@
                         <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-api-stability</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>

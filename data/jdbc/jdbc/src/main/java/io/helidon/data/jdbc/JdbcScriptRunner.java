@@ -49,15 +49,16 @@ import io.helidon.service.registry.Service;
  */
 final class JdbcScriptRunner {
 
-    // UTF-8 scripts may begin with this marker.
+    // Remove an optional leading UTF-8 byte order mark so it does not become part of the first JDBC statement.
     private static final char BYTE_ORDER_MARK = '\ufeff';
 
-    // One immutable policy keeps all bootstrap allocation and plan limits consistent.
+    // Limit each resource to 8 MiB, each persistence-unit plan to 16 MiB, and each plan to 10,000 statements
+    // so application startup cannot consume unbounded memory or JDBC work while processing bootstrap input.
     private static final BootstrapPolicy POLICY = new BootstrapPolicy(8 * 1024 * 1024,
                                                                        16 * 1024 * 1024,
                                                                        10_000);
 
-    // The release exposes no script-dialect configuration; every bootstrap path uses this fixed profile.
+    // The release exposes no script dialect configuration. Every bootstrap path uses this fixed profile.
     private static final ScriptBoundaryProfile SCRIPT_BOUNDARY_PROFILE = ScriptBoundaryProfile.PORTABLE;
 
     private JdbcScriptRunner() {
@@ -104,10 +105,13 @@ final class JdbcScriptRunner {
         BootstrapOutcome outcome = BootstrapOutcome.NOT_STARTED;
         Throwable failure = null;
         try {
-            connection = dataSource.getConnection();
+            connection = JdbcExceptionTranslator.invoke("acquiring a bootstrap connection",
+                                                        dataSource::getConnection);
             // Keep the datasource's transaction mode instead of changing it for bootstrap.
-            manualCommit = !connection.getAutoCommit();
-            statement = connection.createStatement();
+            manualCommit = !JdbcExceptionTranslator.invoke("inspecting bootstrap automatic commit mode",
+                                                           connection::getAutoCommit);
+            statement = JdbcExceptionTranslator.invoke("creating a bootstrap JDBC statement",
+                                                       connection::createStatement);
             for (Script script : scripts) {
                 execute(unitName, statement, script);
             }
@@ -142,7 +146,7 @@ final class JdbcScriptRunner {
 
         if (failure != null && manualCommit && connection != null
                 && (outcome == BootstrapOutcome.NOT_STARTED || outcome == BootstrapOutcome.UNKNOWN)) {
-            // Rollback after UNKNOWN is cleanup only; even success cannot prove that commit did not take effect.
+            // Rollback after UNKNOWN is cleanup only. Even success cannot prove that commit did not take effect.
             try {
                 connection.rollback();
                 if (outcome == BootstrapOutcome.NOT_STARTED) {
@@ -205,7 +209,16 @@ final class JdbcScriptRunner {
                 JdbcBootstrapResource.Role.INIT,
                 JdbcBootstrapResource.SourceType.CONFIGURED_TEXT,
                 1);
-        return statements(unitName, descriptor, content, POLICY.newBudget(), SCRIPT_BOUNDARY_PROFILE);
+        List<ScriptStatement> parsed = parseStatements(unitName,
+                                                       descriptor,
+                                                       content,
+                                                       POLICY.newBudget(),
+                                                       SCRIPT_BOUNDARY_PROFILE);
+        List<String> statements = new ArrayList<>(parsed.size());
+        for (ScriptStatement statement : parsed) {
+            statements.add(statement.sql());
+        }
+        return List.copyOf(statements);
     }
 
     /**
@@ -218,24 +231,26 @@ final class JdbcScriptRunner {
      * @param profile statement-boundary profile
      * @return executable statements
      */
-    private static List<String> statements(String unitName,
-                                           JdbcBootstrapResource.Descriptor descriptor,
-                                           String content,
-                                           BootstrapBudget budget,
-                                           ScriptBoundaryProfile profile) {
-        List<String> statements = new ArrayList<>();
+    private static List<ScriptStatement> parseStatements(String unitName,
+                                                         JdbcBootstrapResource.Descriptor descriptor,
+                                                         String content,
+                                                         BootstrapBudget budget,
+                                                         ScriptBoundaryProfile profile) {
+        List<ScriptStatement> statements = new ArrayList<>();
         StringBuilder current = new StringBuilder(content.length());
         State state = State.NORMAL;
         String dollarDelimiter = null;
         char qQuoteClosingDelimiter = '\0';
         boolean executableContent = false;
-        boolean onlyWhitespaceOnLine = true;
+        SourcePosition sourcePosition = new SourcePosition();
         for (int index = 0; index < content.length(); index++) {
             int firstConsumed = index;
             char character = content.charAt(index);
+            boolean executableBeforeCharacter = executableContent;
             switch (state) {
             case NORMAL -> {
-                if (onlyWhitespaceOnLine && unsupportedClientBoundary(content, index, character)) {
+                if (sourcePosition.onlyWhitespaceOnLine()
+                        && unsupportedClientBoundary(content, index, character)) {
                     throw scriptFailure(unitName,
                                         descriptor,
                                         profile,
@@ -287,39 +302,34 @@ final class JdbcScriptRunner {
                         state = State.DOLLAR_QUOTE;
                     }
                 } else if (character == ';') {
-                    addStatement(unitName, descriptor, statements, current, executableContent, budget);
+                    addStatement(unitName,
+                                 descriptor,
+                                 statements,
+                                 current,
+                                 executableContent,
+                                 sourcePosition.statementStartLine(),
+                                 budget);
                     executableContent = false;
+                    sourcePosition.statementCompleted();
                 } else {
                     current.append(character);
                     executableContent |= !Character.isWhitespace(character);
                 }
             }
             case SINGLE_QUOTE -> {
-                current.append(character);
-                if (character == '\'' && next(content, index) == '\'') {
-                    current.append('\'');
-                    index++;
-                } else if (character == '\'') {
-                    state = State.NORMAL;
-                }
+                QuoteResult result = consumeQuote(content, current, index, character, '\'', state);
+                index = result.index();
+                state = result.state();
             }
             case DOUBLE_QUOTE -> {
-                current.append(character);
-                if (character == '"' && next(content, index) == '"') {
-                    current.append('"');
-                    index++;
-                } else if (character == '"') {
-                    state = State.NORMAL;
-                }
+                QuoteResult result = consumeQuote(content, current, index, character, '"', state);
+                index = result.index();
+                state = result.state();
             }
             case BACKTICK_QUOTE -> {
-                current.append(character);
-                if (character == '`' && next(content, index) == '`') {
-                    current.append('`');
-                    index++;
-                } else if (character == '`') {
-                    state = State.NORMAL;
-                }
+                QuoteResult result = consumeQuote(content, current, index, character, '`', state);
+                index = result.index();
+                state = result.state();
             }
             case LINE_COMMENT -> {
                 current.append(character);
@@ -363,11 +373,16 @@ final class JdbcScriptRunner {
             }
             default -> throw new IllegalStateException("The script parser entered the unexpected state '" + state + "'.");
             }
-            onlyWhitespaceOnLine = updateLineState(content, firstConsumed, index, onlyWhitespaceOnLine);
+            sourcePosition.consumed(content, firstConsumed, index, executableBeforeCharacter, executableContent);
         }
-        // A line comment may end at the end of the file without a newline.
         validateTermination(unitName, descriptor, content, state, profile);
-        addStatement(unitName, descriptor, statements, current, executableContent, budget);
+        addStatement(unitName,
+                     descriptor,
+                     statements,
+                     current,
+                     executableContent,
+                     sourcePosition.statementStartLine(),
+                     budget);
         return List.copyOf(statements);
     }
 
@@ -402,16 +417,21 @@ final class JdbcScriptRunner {
      * @param script script content
      */
     private static void execute(String unitName, Statement statement, Script script) {
-        for (int index = 0; index < script.statements().size(); index++) {
-            String sql = script.statements().get(index);
+        for (ScriptStatement scriptStatement : script.statements()) {
+            String sql = scriptStatement.sql();
             try {
-                boolean resultSet = statement.execute(sql);
+                boolean resultSet = JdbcExceptionTranslator.invoke("executing a bootstrap JDBC statement",
+                                                                   () -> statement.execute(sql));
                 // One script statement may expose several result channels.
-                while (resultSet || statement.getUpdateCount() != -1) {
-                    resultSet = statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
+                while (resultSet || JdbcExceptionTranslator.invoke("reading a bootstrap JDBC update count",
+                                                                  statement::getUpdateCount) != -1) {
+                    // Bootstrap never retains multiple open results. Baseline advancement closes the current result
+                    // before exposing the next channel and avoids optional result-retention controls.
+                    resultSet = JdbcExceptionTranslator.invoke("advancing to the next bootstrap JDBC result",
+                                                               statement::getMoreResults);
                 }
             } catch (SQLException e) {
-                throw statementFailure(unitName, script.descriptor(), index + 1, e);
+                throw statementFailure(unitName, script.descriptor(), scriptStatement.startLine(), e);
             }
         }
     }
@@ -455,11 +475,11 @@ final class JdbcScriptRunner {
                 content = content.substring(1);
             }
             script = new Script(descriptor,
-                                statements(unitName,
-                                           descriptor,
-                                           content,
-                                           budget,
-                                           SCRIPT_BOUNDARY_PROFILE));
+                                parseStatements(unitName,
+                                                descriptor,
+                                                content,
+                                                budget,
+                                                SCRIPT_BOUNDARY_PROFILE));
         } catch (Error error) {
             failure = error;
         } catch (DataException dataException) {
@@ -608,13 +628,15 @@ final class JdbcScriptRunner {
      * @param statements target statements
      * @param current current statement buffer
      * @param executableContent whether the buffer contains executable input
+     * @param startLine one-based line containing the first executable token
      * @param budget bootstrap plan budget
      */
     private static void addStatement(String unitName,
                                      JdbcBootstrapResource.Descriptor descriptor,
-                                     List<String> statements,
+                                     List<ScriptStatement> statements,
                                      StringBuilder current,
                                      boolean executableContent,
+                                     int startLine,
                                      BootstrapBudget budget) {
         if (executableContent) {
             if (!budget.addStatement()) {
@@ -622,7 +644,7 @@ final class JdbcScriptRunner {
                                                 + " because it exceeds the bootstrap statement limit of "
                                                 + POLICY.maxStatements() + ".");
             }
-            statements.add(current.toString());
+            statements.add(new ScriptStatement(current.toString(), startLine));
         }
         current.setLength(0);
     }
@@ -654,29 +676,18 @@ final class JdbcScriptRunner {
         return false;
     }
 
-    /**
-     * Updates the whitespace state of the current physical line after the
-     * parser consumes a range of source characters.
-     *
-     * @param content script content
-     * @param start first consumed offset
-     * @param end last consumed offset
-     * @param onlyWhitespace current line state before the range
-     * @return line state after the range
-     */
-    private static boolean updateLineState(String content,
-                                           int start,
-                                           int end,
-                                           boolean onlyWhitespace) {
-        for (int current = start; current <= end; current++) {
-            char character = content.charAt(current);
-            if (character == '\n' || character == '\r') {
-                onlyWhitespace = true;
-            } else if (!Character.isWhitespace(character)) {
-                onlyWhitespace = false;
-            }
+    private static QuoteResult consumeQuote(String content,
+                                            StringBuilder current,
+                                            int index,
+                                            char character,
+                                            char delimiter,
+                                            State state) {
+        current.append(character);
+        if (character == delimiter && next(content, index) == delimiter) {
+            current.append(delimiter);
+            return new QuoteResult(index + 1, state);
         }
-        return onlyWhitespace;
+        return new QuoteResult(index, character == delimiter ? State.NORMAL : state);
     }
 
     /**
@@ -748,16 +759,18 @@ final class JdbcScriptRunner {
      *
      * @param unitName persistence-unit name
      * @param descriptor safe script descriptor
-     * @param position one-based statement position
+     * @param startLine one-based line containing the statement's first executable token
      * @param cause JDBC failure
      * @return translated failure
      */
     private static DataException statementFailure(String unitName,
                                                   JdbcBootstrapResource.Descriptor descriptor,
-                                                  int position,
+                                                  int startLine,
                                                   SQLException cause) {
-        return new DataException(persistenceUnitDescription(unitName) + " could not execute statement " + position
-                                         + " from the " + descriptor + "." + sqlDiagnostic(cause),
+        return new DataException(persistenceUnitDescription(unitName)
+                                         + " failed to execute the statement beginning at line " + startLine
+                                         + " of the configured " + descriptor.role().text() + " script."
+                                         + sqlDiagnostic(cause),
                                  JdbcExceptionTranslator.sanitize("bootstrap statement", cause));
     }
 
@@ -873,8 +886,7 @@ final class JdbcScriptRunner {
      * @return diagnostic suffix
      */
     private static String sqlDiagnostic(SQLException cause) {
-        String state = cause.getSQLState() == null ? "not provided" : "'" + cause.getSQLState() + "'";
-        return " The SQL state is " + state + ", and the vendor code is " + cause.getErrorCode() + ".";
+        return JdbcExceptionTranslator.sqlDiagnostic(cause);
     }
 
     private static String persistenceUnitDescription(String unitName) {
@@ -924,7 +936,69 @@ final class JdbcScriptRunner {
      * @param descriptor safe resource descriptor
      * @param statements parsed statements
      */
-    private record Script(JdbcBootstrapResource.Descriptor descriptor, List<String> statements) {
+    private record Script(JdbcBootstrapResource.Descriptor descriptor, List<ScriptStatement> statements) {
+    }
+
+    /**
+     * Parsed SQL and its safe source location.
+     *
+     * @param sql SQL text supplied to JDBC
+     * @param startLine one-based line containing the first executable token
+     */
+    private record ScriptStatement(String sql, int startLine) {
+    }
+
+    /**
+     * Result of consuming one character from a doubled-delimiter quote.
+     *
+     * @param index final consumed source offset
+     * @param state parser state after the character
+     */
+    private record QuoteResult(int index, State state) {
+    }
+
+    /**
+     * Tracks safe physical source locations independently from SQL text. The
+     * statement start is captured only when the parser first recognizes
+     * executable input, so retained leading whitespace and ordinary comments
+     * do not distort the line reported to an application.
+     */
+    private static final class SourcePosition {
+        private boolean onlyWhitespaceOnLine = true;
+        private int sourceLine = 1;
+        private int statementStartLine;
+
+        private boolean onlyWhitespaceOnLine() {
+            return onlyWhitespaceOnLine;
+        }
+
+        private int statementStartLine() {
+            return statementStartLine;
+        }
+
+        private void statementCompleted() {
+            statementStartLine = 0;
+        }
+
+        private void consumed(String content,
+                              int start,
+                              int end,
+                              boolean executableBefore,
+                              boolean executableAfter) {
+            if (!executableBefore && executableAfter) {
+                statementStartLine = sourceLine;
+            }
+            for (int current = start; current <= end; current++) {
+                char character = content.charAt(current);
+                if (character == '\n'
+                        || (character == '\r' && JdbcScriptRunner.character(content, current + 1) != '\n')) {
+                    sourceLine++;
+                    onlyWhitespaceOnLine = true;
+                } else if (!Character.isWhitespace(character)) {
+                    onlyWhitespaceOnLine = false;
+                }
+            }
+        }
     }
 
     /**
@@ -1028,8 +1102,8 @@ final class JdbcScriptRunner {
     private enum ScriptBoundaryProfile {
 
         /**
-         * Semicolon boundaries outside complete quoted and comment regions;
-         * database-client boundary commands are not accepted.
+         * Semicolons delimit statements outside complete quoted and comment regions.
+         * Database client boundary commands are not accepted.
          */
         PORTABLE
     }
