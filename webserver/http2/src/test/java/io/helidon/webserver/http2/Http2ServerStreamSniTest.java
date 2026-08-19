@@ -179,6 +179,35 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
+    void rejectedHeadStreamSuppressesEntity() {
+        byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
+        DirectHandlers directHandlers = DirectHandlers.builder()
+                .addHandler(DirectHandler.EventType.BAD_REQUEST,
+                            (_, _, _, _, _) -> DirectHandler.TransportResponse.builder()
+                                    .status(Status.BAD_REQUEST_400)
+                                    .entity(entity)
+                                    .header(HeaderNames.CONTENT_LENGTH, "23")
+                                    .build())
+                .build();
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        Http2ServerStream stream = stream(streams, writer);
+        when(stream.connectionContext().listenerContext().directHandlers()).thenReturn(directHandlers);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(HEAD_PROLOGUE);
+        stream.headers(headersWithoutAuthority(), false);
+
+        stream.run();
+
+        assertAll(
+                () -> assertThat(writer.headers.status(), is(Status.BAD_REQUEST_400)),
+                () -> assertThat(writer.headers.httpHeaders().contentLength().orElseThrow(), is((long) entity.length)),
+                () -> assertThat(writer.headerFlags.endOfStream(), is(true)),
+                () -> assertThat(writer.dataFrame, is(nullValue()))
+        );
+    }
+
+    @Test
     void rejectedStreamRejectsEarlyHintsWithEntity() {
         assertRejectedStreamRejectsInformationalStatus(Status.create(103), true);
     }

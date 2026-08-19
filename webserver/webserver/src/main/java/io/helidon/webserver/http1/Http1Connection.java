@@ -49,6 +49,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.HtmlEncoder;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
@@ -849,15 +850,18 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         // we are escaping the connection loop, the connection will be closed
         headers.set(HeaderValues.CONNECTION_CLOSE);
 
+        var responseEntity = response.entity();
+        byte[] responseEntityBytes = responseEntity.orElse(BufferData.EMPTY_BYTES);
         Status status = response.status();
         boolean noEntityResponse = Http1ServerResponse.isNoEntityStatus(status);
-        byte[] entity = noEntityResponse
+        boolean headRequest = Method.HEAD_NAME.equals(e.request().method());
+        byte[] entity = noEntityResponse || headRequest
                 ? BufferData.EMPTY_BYTES
-                : response.entity().orElse(BufferData.EMPTY_BYTES);
+                : responseEntityBytes;
         if (noEntityResponse) {
             Http1ServerResponse.normalizeNoEntityHeaders(headers, status);
         } else {
-            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
+            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(responseEntityBytes.length)));
         }
 
         Http1ServerResponse.nonEntityBytes(headers, status, buffer, response.keepAlive(),

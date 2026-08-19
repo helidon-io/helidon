@@ -701,8 +701,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                   message);
 
         var responseEntity = response.entity();
-        boolean preserveHeadContentLength = responseEntity.isEmpty()
-                && Method.HEAD_NAME.equals(exception.request().method());
+        boolean headRequest = Method.HEAD_NAME.equals(exception.request().method());
+        boolean preserveHeadContentLength = responseEntity.isEmpty() && headRequest;
         Status responseStatus = response.status();
         boolean finalInformationalResponse = responseStatus.family() == Status.Family.INFORMATIONAL;
         if (finalInformationalResponse) {
@@ -729,9 +729,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
             headers.remove(HeaderNames.TRANSFER_ENCODING);
             headers.remove(HeaderNames.TRAILER);
         } else {
-            entity = responseEntity.orElse(BufferData.EMPTY_BYTES);
+            byte[] responseEntityBytes = responseEntity.orElse(BufferData.EMPTY_BYTES);
+            entity = headRequest ? BufferData.EMPTY_BYTES : responseEntityBytes;
             if (!preserveHeadContentLength) {
-                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
+                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(responseEntityBytes.length)));
             }
         }
         Http2Headers http2Headers = Http2Headers.create(headers)

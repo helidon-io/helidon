@@ -108,6 +108,23 @@ class BadRequestTest {
     }
 
     @Test
+    void testHeadBadRequestDoesNotSendEntity() throws IOException {
+        socketClient.request(Method.HEAD,
+                             "/",
+                             null,
+                             List.of("Content-Length: 47a"));
+        String response = new String(socketClient.socketInputStream().readAllBytes(), StandardCharsets.ISO_8859_1)
+                .replace("\r\n", "\n");
+
+        assertThat(SocketHttpClient.statusFromResponse(response),
+                   is(Status.create(Status.BAD_REQUEST_400.code(), CUSTOM_REASON_PHRASE)));
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
+        assertThat(headers.contentLength().orElseThrow(),
+                   is((long) CUSTOM_ENTITY.getBytes(StandardCharsets.UTF_8).length));
+        assertThat(SocketHttpClient.entityFromResponse(response, true), is(""));
+    }
+
+    @Test
     void testInvalidRequestWithRedirect() {
         // wrong content length
         String response = socketClient.sendAndReceive(Method.GET,
