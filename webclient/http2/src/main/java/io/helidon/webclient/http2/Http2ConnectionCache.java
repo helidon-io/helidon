@@ -164,7 +164,9 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         if (closed.get()) {
             throw new IllegalStateException("Connection cache is closed");
         }
-        if (request.connection().isPresent() && !Http2ClientConnectionHandler.ownsExplicitConnection(request)) {
+        boolean forwardHttp1 = connectionTarget.proxyRoute().forwardProxy() && !request.priorKnowledge();
+        if (request.connection().isPresent()
+                && (!Http2ClientConnectionHandler.ownsExplicitConnection(request) || forwardHttp1)) {
             return new Http2ClientConnectionHandler(http2Client.clientConfig().connectionCacheSize())
                     .newStream(http2Client,
                                connectionTarget,
@@ -173,14 +175,19 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                                serviceRequest,
                                http1FallbackHandler);
         }
-        if (connectionTarget.proxyRoute().forwardProxy() && !request.priorKnowledge()) {
-            return new Http2ClientConnectionHandler(http2Client.clientConfig().connectionCacheSize())
-                    .newStream(http2Client,
-                               connectionTarget,
-                               request,
-                               initialUri,
-                               serviceRequest,
-                               http1FallbackHandler);
+        if (forwardHttp1) {
+            if (!Http2ClientConnectionHandler.http1FallbackAllowed(request)) {
+                throw Http2ClientConnectionHandler.unsupportedHttp1Fallback(initialUri,
+                                                                            request,
+                                                                            http1FallbackHandler);
+            }
+            return Http2ClientConnectionHandler.http1(http2Client,
+                                                       connectionTarget,
+                                                       request,
+                                                       initialUri,
+                                                       serviceRequest,
+                                                       http1FallbackHandler,
+                                                       null);
         }
 
         List<Http2ClientConnectionHandler> retiredHandlers = null;

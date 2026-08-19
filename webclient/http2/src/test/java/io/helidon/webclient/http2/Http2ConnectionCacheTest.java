@@ -48,12 +48,78 @@ import org.mockito.Answers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionCacheTest {
+    @Test
+    void forwardProxyFallbackDoesNotCreateHttp2Handler() {
+        Tls tls = Tls.builder().enabled(false).build();
+        Proxy proxy = Proxy.builder()
+                .host("proxy.example")
+                .port(8181)
+                .build();
+        ClientConnectionTarget connectionTarget = ClientConnectionTarget.create(
+                ConnectionKey.create("http",
+                                     "target.example",
+                                     80,
+                                     tls,
+                                     (_, _) -> InetAddress.getLoopbackAddress(),
+                                     DnsAddressLookup.IPV4,
+                                     proxy),
+                "http");
+        ClientUri initialUri = ClientUri.create(URI.create("http://target.example"));
+        ClientRequestHeaders requestHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        ClientRequestHeaders fallbackHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        ClientRequestHeaders serviceHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        Http2ClientImpl http2Client = mock(Http2ClientImpl.class);
+        Http1Client http1Client = mock(Http1Client.class);
+        Http1ClientRequest fallbackRequest = mock(Http1ClientRequest.class, Answers.RETURNS_SELF);
+        Http1ClientResponse fallbackResponse = mock(Http1ClientResponse.class);
+        Http2ClientRequestImpl request = mock(Http2ClientRequestImpl.class);
+        WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
+
+        when(http2Client.clientConfig()).thenReturn(Http2ClientConfig.create());
+        when(http2Client.http1FallbackClient()).thenReturn(http1Client);
+        when(http1Client.method(Method.GET)).thenReturn(fallbackRequest);
+        when(fallbackRequest.headers()).thenReturn(fallbackHeaders);
+        when(request.connection()).thenReturn(Optional.empty());
+        when(request.tcpProtocolIds()).thenReturn(List.of(Http1Client.PROTOCOL_ID));
+        when(request.tls()).thenReturn(tls);
+        when(request.proxy()).thenReturn(proxy);
+        when(request.method()).thenReturn(Method.GET);
+        when(request.headers()).thenReturn(requestHeaders);
+        when(request.properties()).thenReturn(Map.of());
+        when(request.address()).thenReturn(Optional.empty());
+        when(request.sni()).thenReturn(Optional.empty());
+        when(request.sendExpectContinue()).thenReturn(Optional.empty());
+        when(serviceRequest.context()).thenReturn(Context.create());
+        when(serviceRequest.headers()).thenReturn(serviceHeaders);
+
+        Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(),
+                                                                        _ -> fallbackResponse,
+                                                                        true);
+        Http2ConnectionCache cache = Http2ConnectionCache.create();
+        try {
+            Http2ConnectionAttemptResult result = cache.newStream(http2Client,
+                                                                  connectionTarget,
+                                                                  request,
+                                                                  initialUri,
+                                                                  serviceRequest,
+                                                                  fallbackHandler);
+
+            assertThat(result.result(), is(Http2ConnectionAttemptResult.Result.HTTP_1));
+            assertThat(result.response(), sameInstance(fallbackResponse));
+            assertThat(result.connectionTarget(), sameInstance(connectionTarget));
+            assertThat(result.handler(), is(nullValue()));
+        } finally {
+            cache.closeResource();
+        }
+    }
+
     @Test
     void rejectsNonPositiveConnectionCacheSize() {
         assertThrows(IllegalArgumentException.class, () -> new Http2ClientConnectionHandler(0));

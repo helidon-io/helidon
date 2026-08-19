@@ -189,7 +189,13 @@ class Http2ClientConnectionHandler {
                 if (!http1FallbackAllowed(request)) {
                     throw unsupportedHttp1Fallback(initialUri, request, http1FallbackHandler);
                 }
-                return http1(http2Client, requestTarget, request, initialUri, serviceRequest, http1FallbackHandler);
+                return http1(http2Client,
+                             requestTarget,
+                             request,
+                             initialUri,
+                             serviceRequest,
+                             http1FallbackHandler,
+                             this);
             }
 
             return switch (result.get()) {
@@ -197,7 +203,13 @@ class Http2ClientConnectionHandler {
                     if (!http1FallbackAllowed(request)) {
                         throw unsupportedHttp1Fallback(initialUri, request, http1FallbackHandler);
                     }
-                    yield http1(http2Client, requestTarget, request, initialUri, serviceRequest, http1FallbackHandler);
+                    yield http1(http2Client,
+                                requestTarget,
+                                request,
+                                initialUri,
+                                serviceRequest,
+                                http1FallbackHandler,
+                                this);
                 }
                 case HTTP_2 -> http2(http2Client, requestTarget, request, initialUri, serviceRequest, http1FallbackHandler);
                 case UNKNOWN -> httpX(http2Client,
@@ -501,7 +513,13 @@ class Http2ClientConnectionHandler {
                                                                   ClientConnection clientConnection) {
         request.connection(clientConnection);
         try {
-            return http1(http2Client, requestTarget, request, initialUri, serviceRequest, http1FallbackHandler);
+            return http1(http2Client,
+                         requestTarget,
+                         request,
+                         initialUri,
+                         serviceRequest,
+                         http1FallbackHandler,
+                         this);
         } catch (RuntimeException | Error e) {
             closeClientConnection(clientConnection);
             throw e;
@@ -550,7 +568,8 @@ class Http2ClientConnectionHandler {
                          request,
                          initialUri,
                          serviceRequest,
-                         http1FallbackHandler);
+                         http1FallbackHandler,
+                         this);
         }
         return http2ExplicitConnection(http2Client, requestTarget, request, clientConnection);
     }
@@ -612,12 +631,13 @@ class Http2ClientConnectionHandler {
         return Base64.getUrlEncoder().encodeToString(b);
     }
 
-    private Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,
-                                               ClientConnectionTarget requestTarget,
-                                               Http2ClientRequestImpl request,
-                                               ClientUri initialUri,
-                                               WebClientServiceRequest serviceRequest,
-                                               Http1FallbackHandler http1FallbackHandler) {
+    static Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,
+                                              ClientConnectionTarget requestTarget,
+                                              Http2ClientRequestImpl request,
+                                              ClientUri initialUri,
+                                              WebClientServiceRequest serviceRequest,
+                                              Http1FallbackHandler http1FallbackHandler,
+                                              Http2ClientConnectionHandler resultHandler) {
         try {
             Http1ClientRequest http1Request = http1Request(http2Client.http1FallbackClient(),
                                                            requestTarget,
@@ -626,7 +646,7 @@ class Http2ClientConnectionHandler {
             return new Http2ConnectionAttemptResult(Result.HTTP_1,
                                                     null,
                                                     http1FallbackHandler.apply(http1Request, serviceRequest),
-                                                    this,
+                                                    resultHandler,
                                                     requestTarget);
         } catch (RuntimeException | Error e) {
             http1FallbackHandler.completeSentExceptionally(e);
@@ -634,10 +654,10 @@ class Http2ClientConnectionHandler {
         }
     }
 
-    private Http1ClientRequest http1Request(Http1Client http1Client,
-                                           ClientConnectionTarget requestTarget,
-                                           Http2ClientRequestImpl request,
-                                           ClientUri initialUri) {
+    private static Http1ClientRequest http1Request(Http1Client http1Client,
+                                                  ClientConnectionTarget requestTarget,
+                                                  Http2ClientRequestImpl request,
+                                                  ClientUri initialUri) {
         Http1ClientRequest http1Request = http1Client.method(request.method())
                 .uri(initialUri)
                 .keepAlive(request.keepAlive())
@@ -864,7 +884,7 @@ class Http2ClientConnectionHandler {
         }
     }
 
-    private static boolean http1FallbackAllowed(Http2ClientRequestImpl request) {
+    static boolean http1FallbackAllowed(Http2ClientRequestImpl request) {
         return request.tcpProtocolIds().contains(Http1Client.PROTOCOL_ID);
     }
 
@@ -874,9 +894,9 @@ class Http2ClientConnectionHandler {
                                                    + request.tcpProtocolIds());
     }
 
-    private static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri,
-                                                                     Http2ClientRequestImpl request,
-                                                                     Http1FallbackHandler http1FallbackHandler) {
+    static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri,
+                                                             Http2ClientRequestImpl request,
+                                                             Http1FallbackHandler http1FallbackHandler) {
         IllegalArgumentException failure = unsupportedHttp1Fallback(uri, request);
         http1FallbackHandler.completeSentExceptionally(failure);
         return failure;

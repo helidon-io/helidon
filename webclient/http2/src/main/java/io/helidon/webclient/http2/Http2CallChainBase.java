@@ -215,10 +215,12 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
         } catch (StreamTimeoutException e) {
             //This request was waiting for 100 Continue, but it was very likely not supported by the server.
             //Do not remove connection from the cache in that case.
-            if (!clientRequest().outputStreamRedirect()
+            Http2ClientConnectionHandler resultHandler = result.handler();
+            if (resultHandler != null
+                    && !clientRequest().outputStreamRedirect()
                     && (clientRequest.connection().isEmpty()
                             || Http2ClientConnectionHandler.ownsExplicitConnection(clientRequest))) {
-                http2Client.connectionCache().remove(result.connectionTarget(), result.handler());
+                http2Client.connectionCache().remove(result.connectionTarget(), resultHandler);
                 closeFailedStream(result);
             }
             throw e;

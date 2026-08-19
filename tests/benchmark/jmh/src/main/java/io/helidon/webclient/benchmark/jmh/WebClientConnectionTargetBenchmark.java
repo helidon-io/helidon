@@ -169,31 +169,38 @@ public class WebClientConnectionTargetBenchmark {
         return result;
     }
 
-    private static InetAddress resolve(String host) {
-        if ("proxy.invalid".equals(host)) {
-            throw new IllegalStateException("Proxy host must not be resolved");
+    private static InetAddress resolve(String host, ProxyMode proxyMode) {
+        boolean proxyHost = "proxy.invalid".equals(host);
+        if (proxyMode == ProxyMode.HTTP_FORWARD && !proxyHost) {
+            throw new IllegalStateException("Origin host must not be resolved through an HTTP forward proxy: " + host);
+        }
+        if (proxyMode != ProxyMode.HTTP_FORWARD && proxyHost) {
+            throw new IllegalStateException("Proxy host must not be resolved: " + host);
         }
         return InetAddress.ofLiteral("127.0.0.1");
     }
 
     public enum ProxyMode {
-        NONE(Proxy.noProxy()),
-        IP_NO_PROXY(Proxy.builder()
-                            .type(Proxy.ProxyType.HTTP)
-                            .host("proxy.invalid")
-                            .port(8080)
-                            .addNoProxy(".example")
-                            .addNoProxy("127.0.0.1")
-                            .build());
+        NONE,
+        IP_NO_PROXY,
+        HTTP_FORWARD;
 
-        private final Proxy proxy;
-
-        ProxyMode(Proxy proxy) {
-            this.proxy = proxy;
-        }
-
-        Proxy proxy() {
-            return proxy;
+        Proxy proxy(int serverPort) {
+            return switch (this) {
+                case NONE -> Proxy.noProxy();
+                case IP_NO_PROXY -> Proxy.builder()
+                        .type(Proxy.ProxyType.HTTP)
+                        .host("proxy.invalid")
+                        .port(8080)
+                        .addNoProxy(".example")
+                        .addNoProxy("127.0.0.1")
+                        .build();
+                case HTTP_FORWARD -> Proxy.builder()
+                        .type(Proxy.ProxyType.HTTP)
+                        .host("proxy.invalid")
+                        .port(serverPort)
+                        .build();
+            };
         }
     }
 
@@ -241,8 +248,8 @@ public class WebClientConnectionTargetBenchmark {
             http1Client = Http1Client.builder()
                     .shareConnectionCache(false)
                     .servicesDiscoverServices(false)
-                    .proxy(proxyMode.proxy())
-                    .dnsResolver((host, _) -> resolve(host))
+                    .proxy(proxyMode.proxy(serverState.server.port()))
+                    .dnsResolver((host, _) -> resolve(host, proxyMode))
                     .build();
             targetUris = targetUris(prefilledTargetCount, serverState.server.port());
             for (String targetUri : targetUris) {
@@ -281,16 +288,21 @@ public class WebClientConnectionTargetBenchmark {
             http2Client = Http2Client.builder()
                     .shareConnectionCache(false)
                     .servicesDiscoverServices(false)
-                    .proxy(proxyMode.proxy())
-                    .dnsResolver((host, _) -> resolve(host))
-                    .protocolConfig(builder -> builder.priorKnowledge(true))
+                    .proxy(proxyMode.proxy(serverState.server.port()))
+                    .dnsResolver((host, _) -> resolve(host, proxyMode))
+                    .protocolConfig(builder -> builder.priorKnowledge(proxyMode != ProxyMode.HTTP_FORWARD))
                     .build();
             targetUris = targetUris(prefilledTargetCount, serverState.server.port());
-            for (String targetUri : targetUris) {
-                try (var response = http2Client.get(targetUri).request()) {
+            for (int i = 0; i < targetUris.length; i++) {
+                try (var response = http2Client.get(targetUris[i]).request()) {
                     response.entity().consume();
                     if (response.status().code() != 200) {
                         throw new IllegalStateException("Unexpected HTTP/2 status: " + response.status());
+                    }
+                    if (i == 0
+                            && proxyMode == ProxyMode.HTTP_FORWARD
+                            && !Http1Client.PROTOCOL_ID.equals(response.protocolId())) {
+                        throw new IllegalStateException("Unexpected HTTP forward proxy protocol: " + response.protocolId());
                     }
                 }
             }
