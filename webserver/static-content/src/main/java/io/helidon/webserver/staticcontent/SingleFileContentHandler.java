@@ -21,8 +21,8 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.Method;
-import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -52,7 +52,13 @@ class SingleFileContentHandler extends FileBasedContentHandler {
                     if (path.equals(resolvedPath)) {
                         Path secureRoot = Optional.ofNullable(realPath.get()).map(Path::getParent).orElse(null);
                         byte[] fileBytes = FileBasedContentHandler.readAllBytes(resolvedPath, false, secureRoot);
-                        cacheInMemory(".", detectType(fileName(path)), fileBytes, lastModified(resolvedPath, false, secureRoot));
+                        var contentType = detectType(fileName(path));
+                        var lastModified = lastModified(resolvedPath, false, secureRoot);
+                        if (lastModified.isPresent()) {
+                            cacheInMemory(".", contentType, fileBytes, lastModified.get());
+                        } else {
+                            cacheInMemory(".", contentType, fileBytes);
+                        }
                     } else {
                         LOGGER.log(System.Logger.Level.WARNING, "File " + path + " cannot be added to in memory cache,"
                                 + " as it uses a symbolic link.");
@@ -69,7 +75,15 @@ class SingleFileContentHandler extends FileBasedContentHandler {
             }
         } catch (IOException e) {
             LOGGER.log(System.Logger.Level.WARNING, "Failed to add file to in-memory cache, path: " + path, e);
-            cacheFileHandler();
+            try {
+                cacheFileHandler();
+            } catch (ForbiddenException forbiddenException) {
+                LOGGER.log(System.Logger.Level.WARNING,
+                           "Failed to resolve static content file during startup: " + path,
+                           forbiddenException);
+            }
+        } catch (ForbiddenException e) {
+            LOGGER.log(System.Logger.Level.WARNING, "Failed to resolve static content file during startup: " + path, e);
         }
         super.beforeStart();
     }
@@ -83,7 +97,8 @@ class SingleFileContentHandler extends FileBasedContentHandler {
             if (cachedHandler.isPresent()) {
                 return cachedHandler.get().handle(handlerCache(), method, req, res, resource);
             }
-            return cacheFileHandler().handle(handlerCache(), method, req, res, ".");
+            Optional<CachedHandlerPath> handler = cacheFileHandler();
+            return handler.isPresent() && handler.get().handle(handlerCache(), method, req, res, resource);
         }
 
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -92,17 +107,24 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         return false;
     }
 
-    private CachedHandler cacheFileHandler() {
-        CachedHandler handler = new CachedHandlerPath(path,
-                                                      detectType(fileName(path)),
-                                                      FileBasedContentHandler::lastModified,
-                                                      ServerResponseHeaders::lastModified,
-                                                      this::contentPath,
-                                                      false,
-                                                      it -> Optional.ofNullable(realPath.get()).map(Path::getParent));
-        cacheHandler(".", handler);
-
-        return handler;
+    private Optional<CachedHandlerPath> cacheFileHandler() {
+        try {
+            Optional<Path> maybeResolvedPath = contentPath(path);
+            if (maybeResolvedPath.isEmpty()) {
+                return Optional.empty();
+            }
+            Path resolvedPath = maybeResolvedPath.get();
+            CachedHandlerPath handler = CachedHandlerPath.create(path,
+                                                                 resolvedPath,
+                                                                 detectType(fileName(path)),
+                                                                 false,
+                                                                 resolvedPath.getParent());
+            cacheHandler(".", handler);
+            return Optional.of(handler);
+        } catch (IOException e) {
+            LOGGER.log(System.Logger.Level.WARNING, "Failed to resolve static content file: " + path, e);
+            return Optional.empty();
+        }
     }
 
     private Optional<Path> contentPath(Path path) {

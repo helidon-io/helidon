@@ -25,19 +25,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
-import java.util.function.BiConsumer;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.http.Header;
-import io.helidon.http.HeaderNames;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
-import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import static io.helidon.webserver.staticcontent.StaticContentHandler.formatLastModified;
 import static io.helidon.webserver.staticcontent.StaticContentHandler.processPreconditions;
 
 /**
@@ -46,10 +40,7 @@ import static io.helidon.webserver.staticcontent.StaticContentHandler.processPre
  */
 class CachedHandlerJar implements CachedHandler {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerJar.class.getName());
-    private final MediaType mediaType;
-    private final Header contentLength;
-    private final Instant lastModified;
-    private final BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader;
+    private final StaticContentMetadata metadata;
     private final Path path;
     private final URL url;
 
@@ -57,13 +48,9 @@ class CachedHandlerJar implements CachedHandler {
                              URL url,
                              long contentLength,
                              Instant lastModified,
-                             BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
                              Path path) {
-        this.mediaType = mediaType;
         this.url = url;
-        this.contentLength = HeaderValues.create(HeaderNames.CONTENT_LENGTH, true, false, contentLength);
-        this.lastModified = lastModified;
-        this.setLastModifiedHeader = setLastModifiedHeader;
+        this.metadata = StaticContentMetadata.create(mediaType, lastModified, contentLength);
         this.path = path;
     }
 
@@ -73,23 +60,27 @@ class CachedHandlerJar implements CachedHandler {
                                    MediaType mediaType,
                                    long contentLength) {
 
-        BiConsumer<ServerResponseHeaders, Instant> headerHandler = headerHandler(lastModified);
-
         var createdTmpFile = tmpStorage.createFile();
         if (createdTmpFile.isPresent()) {
             // extract entry
             Path tmpFile = createdTmpFile.get();
             try (InputStream is = fileUrl.openStream()) {
-                Files.copy(is, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                long extractedLength = Files.copy(is, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                return new CachedHandlerJar(mediaType,
+                                            fileUrl,
+                                            extractedLength,
+                                            lastModified,
+                                            tmpFile);
             } catch (IOException e) {
-                // silently consume the exception, as the tmp file may have been removed, we may throw when reading the file
                 LOGGER.log(Level.TRACE, "Failed to create temporary extracted file for " + fileUrl, e);
             }
-            return new CachedHandlerJar(mediaType, fileUrl, contentLength, lastModified, headerHandler, tmpFile);
-        } else {
-            // use the entry always
-            return new CachedHandlerJar(mediaType, fileUrl, contentLength, lastModified, headerHandler, null);
         }
+        // use the entry always
+        return new CachedHandlerJar(mediaType,
+                                    fileUrl,
+                                    contentLength,
+                                    lastModified,
+                                    null);
     }
 
     @Override
@@ -104,19 +95,15 @@ class CachedHandlerJar implements CachedHandler {
         }
 
         // etag etc.
-        processPreconditions(lastModified == null ? null : String.valueOf(lastModified.toEpochMilli()),
-                             lastModified,
-                             request.headers(),
-                             response.headers(),
-                             setLastModifiedHeader);
+        processPreconditions(metadata, request.headers(), response.headers());
 
-        response.headers().contentType(mediaType);
+        metadata.setContentType(response.headers());
 
         if (method == Method.GET) {
             try {
                 if (path != null && Files.exists(path)) {
                     try (var channel = Files.newByteChannel(path)) {
-                        FileBasedContentHandler.send(request, response, channel);
+                        FileBasedContentHandler.send(request, response, channel, metadata);
                     }
                     return true;
                 }
@@ -127,27 +114,18 @@ class CachedHandlerJar implements CachedHandler {
                                e);
                 }
             }
-            try (var in = url.openStream(); var out = response.outputStream()) {
+            try (var in = url.openStream()) {
                 // no support for ranges when using jar stream
-                in.transferTo(out);
+                metadata.setContentLength(response.headers());
+                try (var out = response.outputStream()) {
+                    in.transferTo(out);
+                }
             }
         } else {
-            response.headers().set(contentLength);
+            metadata.setContentLength(response.headers());
             response.send();
         }
 
         return true;
-    }
-
-    private static BiConsumer<ServerResponseHeaders, Instant> headerHandler(Instant lastModified) {
-        if (lastModified == null) {
-            return (headers, instant) -> {
-            };
-        }
-        Header instantHeader = HeaderValues.create(HeaderNames.LAST_MODIFIED,
-                                                   true,
-                                                   false,
-                                                   formatLastModified(lastModified));
-        return (headers, instant) -> headers.set(instantHeader);
     }
 }

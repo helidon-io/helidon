@@ -29,8 +29,19 @@ import io.helidon.http.Method;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-record CachedHandlerUrlStream(MediaType mediaType, URL url) implements CachedHandler {
+record CachedHandlerUrlStream(URL url, StaticContentMetadata metadata) implements CachedHandler {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerUrlStream.class.getName());
+
+    static CachedHandlerUrlStream create(MediaType mediaType, URL url) throws IOException {
+        URLConnection urlConnection = url.openConnection();
+        long lastModified = urlConnection.getLastModified();
+        long contentLength = urlConnection.getContentLengthLong();
+        StaticContentMetadata metadata = lastModified == 0
+                ? StaticContentMetadata.create(mediaType, contentLength)
+                : StaticContentMetadata.create(mediaType, Instant.ofEpochMilli(lastModified), contentLength);
+        return new CachedHandlerUrlStream(url,
+                                          metadata);
+    }
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
@@ -43,24 +54,21 @@ record CachedHandlerUrlStream(MediaType mediaType, URL url) implements CachedHan
             LOGGER.log(System.Logger.Level.DEBUG, "Sending static content using stream from classpath: " + url);
         }
 
-        URLConnection urlConnection = url.openConnection();
-        long lastModified = urlConnection.getLastModified();
-        Instant modified = lastModified == 0 ? null : Instant.ofEpochMilli(lastModified);
+        StaticContentHandler.processPreconditions(metadata, request.headers(), response.headers());
 
-        StaticContentHandler.processPreconditions(modified == null ? null : String.valueOf(lastModified),
-                                                  modified,
-                                                  request.headers(),
-                                                  response.headers());
-
-        response.headers().contentType(mediaType);
+        metadata.setContentType(response.headers());
 
         if (method == Method.HEAD) {
+            metadata.setContentLength(response.headers());
             response.send();
             return true;
         }
 
-        try (InputStream in = url.openStream(); OutputStream outputStream = response.outputStream()) {
-            in.transferTo(outputStream);
+        try (InputStream in = url.openStream()) {
+            metadata.setContentLength(response.headers());
+            try (OutputStream outputStream = response.outputStream()) {
+                in.transferTo(outputStream);
+            }
         }
         return true;
     }
