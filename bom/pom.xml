@@ -1047,6 +1047,13 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Messaging -->
+            <dependency>
+                <groupId>io.helidon.messaging</groupId>
+                <artifactId>helidon-messaging</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- Discovery -->
             <dependency>
                 <groupId>io.helidon.discovery</groupId>

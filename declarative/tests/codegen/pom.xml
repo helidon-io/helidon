@@ -97,6 +97,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.messaging</groupId>
+            <artifactId>helidon-messaging</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.validation</groupId>
             <artifactId>helidon-validation</artifactId>
             <scope>test</scope>
