@@ -30,6 +30,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -65,6 +67,22 @@ class MappersTest {
         assertThat(shortResult, is((short) 10));
 
         assertThrows(MapperException.class, () -> mm.map(source, String.class, Object.class, "default"));
+    }
+
+    @Test
+    void testStringToCharArray() {
+        Mappers mappers = Mappers.builder()
+                .mapperProvidersDiscoverServices(false)
+                .mappersDiscoverServices(false)
+                .build();
+        GenericType<char[]> charArrayType = GenericType.create(char[].class);
+
+        char[] first = mappers.map("secret", GenericType.STRING, charArrayType, "defaults");
+        first[0] = '\0';
+        char[] second = mappers.map("secret", GenericType.STRING, charArrayType, "defaults");
+
+        assertNotSame(first, second);
+        assertArrayEquals("secret".toCharArray(), second);
     }
 
     @Test

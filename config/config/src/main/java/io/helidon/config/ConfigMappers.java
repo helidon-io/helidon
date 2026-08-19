@@ -128,6 +128,7 @@ public final class ConfigMappers {
                              Map.entry(Double.class, wrap(ConfigMappers::toDouble)),
                              Map.entry(Boolean.class, wrap(ConfigMappers::toBoolean)),
                              Map.entry(Character.class, wrap(ConfigMappers::toChar)),
+                             Map.entry(char[].class, wrap(String::toCharArray)),
                              //java.lang
                              Map.entry(Class.class, wrap(ConfigMappers::toClass)),
                              //javax.math
