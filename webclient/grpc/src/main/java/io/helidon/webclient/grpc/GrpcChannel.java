@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,12 @@
 
 package io.helidon.webclient.grpc;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.ClientUri;
 
 import io.grpc.CallOptions;
@@ -29,6 +35,9 @@ import io.grpc.MethodDescriptor;
 public class GrpcChannel extends Channel {
 
     private final GrpcClientImpl grpcClient;
+    private final Map<String, GrpcBaseClientCall.MethodMetrics> methodMetrics = new ConcurrentHashMap<>();
+    private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
 
     /**
      * Creates a new channel from a {@link GrpcClient}.
@@ -37,6 +46,13 @@ public class GrpcChannel extends Channel {
      */
     GrpcChannel(GrpcClient grpcClient) {
         this.grpcClient = (GrpcClientImpl) grpcClient;
+        if (this.grpcClient.clientConfig().enableMetrics()) {
+            this.meterRegistry = Services.get(MeterRegistry.class);
+            this.metricsFactory = meterRegistry.metricsFactory();
+        } else {
+            this.metricsFactory = null;
+            this.meterRegistry = null;
+        }
     }
 
     /**
@@ -46,6 +62,18 @@ public class GrpcChannel extends Channel {
      */
     public GrpcClient grpcClient() {
         return grpcClient;
+    }
+
+    Map<String, GrpcBaseClientCall.MethodMetrics> methodMetrics() {
+        return methodMetrics;
+    }
+
+    MetricsFactory metricsFactory() {
+        return metricsFactory;
+    }
+
+    MeterRegistry meterRegistry() {
+        return meterRegistry;
     }
 
     @Override

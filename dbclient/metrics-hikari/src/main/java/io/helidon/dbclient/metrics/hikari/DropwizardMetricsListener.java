@@ -18,10 +18,10 @@ package io.helidon.dbclient.metrics.hikari;
 import java.lang.System.Logger.Level;
 import java.util.Set;
 
-import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
@@ -42,14 +42,20 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
     private static final System.Logger LOGGER = System.getLogger(DropwizardMetricsListener.class.getName());
 
     private final String prefix;
-    private final LazyValue<MeterRegistry> registry = LazyValue.create(Metrics::globalRegistry);
+    private final MetricsFactory metricsFactory;
+    private final MeterRegistry registry;
 
-    private DropwizardMetricsListener(String prefix) {
+    private DropwizardMetricsListener(String prefix, MetricsFactory metricsFactory, MeterRegistry registry) {
         this.prefix = prefix;
+        this.metricsFactory = metricsFactory;
+        this.registry = registry;
     }
 
     static MetricRegistryListener create(Config config) {
-        return new DropwizardMetricsListener(config.get("name-prefix").asString().orElse("db.pool."));
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+        return new DropwizardMetricsListener(config.get("name-prefix").asString().orElse("db.pool."),
+                                             meterRegistry.metricsFactory(),
+                                             meterRegistry);
     }
 
     @Override
@@ -70,7 +76,7 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
     @Override
     public void onGaugeRemoved(String name) {
         LOGGER.log(Level.TRACE, () -> String.format("Gauge removed: %s", name));
-        registry.get().remove(prefix + name, Set.of(), SCOPE);
+        registry.remove(prefix + name, Set.of(), SCOPE);
     }
 
     @Override
@@ -82,7 +88,7 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
     @Override
     public void onCounterRemoved(String name) {
         LOGGER.log(Level.TRACE, () -> String.format("Counter removed: %s", name));
-        registry.get().remove(prefix + name, Set.of(), SCOPE);
+        registry.remove(prefix + name, Set.of(), SCOPE);
     }
 
     @Override
@@ -117,18 +123,18 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
 
 
     private io.helidon.metrics.api.Gauge registerGauge(String name, Gauge<? extends Number> gauge) {
-        return registry.get()
-                .getOrCreate(io.helidon.metrics.api.Gauge.builder(prefix + name,
-                                                                  gauge,
-                                                                  g -> g.getValue().doubleValue())
+        return registry
+                .getOrCreate(metricsFactory.gaugeBuilder(prefix + name,
+                                                         gauge,
+                                                         g -> g.getValue().doubleValue())
                                      .scope(SCOPE));
     }
 
     private io.helidon.metrics.api.Gauge registerGauge(String name, Counter counter) {
-        return registry.get()
-                .getOrCreate(io.helidon.metrics.api.Gauge.builder(prefix + name,
-                                                                  counter,
-                                                                  Counter::getCount)
+        return registry
+                .getOrCreate(metricsFactory.gaugeBuilder(prefix + name,
+                                                         counter,
+                                                         Counter::getCount)
                                      .scope(SCOPE));
     }
 }

@@ -23,15 +23,12 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
@@ -54,7 +51,7 @@ import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.webserver.CloseConnectionException;
@@ -100,20 +97,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final DecompressorRegistry DECOMPRESSOR_REGISTRY = DecompressorRegistry.getDefaultInstance();
     private static final CompressorRegistry COMPRESSOR_REGISTRY = CompressorRegistry.getDefaultInstance();
 
-    private static final Tag OK_TAG = Tag.create("grpc.status", "OK");
-
-    private record MethodMetrics(Counter callStarted,
-                                 Timer callDuration,
-                                 DistributionSummary sentMessageSize,
-                                 DistributionSummary recvMessageSize) { }
-
-    private enum ListenerTerminal {
-        CANCEL,
-        COMPLETE
-    }
-
-    private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
-
     private static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
 
@@ -126,6 +109,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final Condition inboundChanged = inboundLock.newCondition();
     private final StreamFlowControl flowControl;
     private final GrpcConfig grpcConfig;
+    private final GrpcProtocolSelector.Metrics metrics;
 
     private volatile ServerCall<REQ, RES> serverCall;
     private volatile ServerCall.Listener<REQ> listener;
@@ -161,7 +145,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                         StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
                         GrpcRouteHandler<REQ, RES> route,
-                        GrpcConfig grpcConfig) {
+                        GrpcConfig grpcConfig,
+                        GrpcProtocolSelector.Metrics metrics) {
         this.connectionContext = connectionContext;
         this.headers = headers;
         this.streamWriter = streamWriter;
@@ -170,6 +155,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         this.currentStreamState.set(currentStreamState);
         this.route = route;
         this.grpcConfig = grpcConfig;
+        this.metrics = metrics;
     }
 
     @Override
@@ -613,7 +599,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     /**
      * Ensures that if moving to a HALF_CLOSE state we can reach the CLOSED state
      * if already on the other HALF_CLOSE state. Reaching CLOSED state is necessary
-     * for {@link io.helidon.webserver.http2.Http2ConnectionStreams} to remove
+     * for {@code io.helidon.webserver.http2.Http2ConnectionStreams} to remove
      * streams from its map.
      *
      * @param desiredStreamState desired new state
@@ -789,41 +775,52 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     /**
      * Initializes gRPC server metrics for the method being invoked. Note that
      * duration and size metrics are currently recorded only for successful calls,
-     * using the {@link #OK_TAG}. If a call fails, it will only increment the number
+     * using the ok tag. If a call fails, it will only increment the number
      * of started calls, but not record any of the other metrics.
      */
     private void initMetrics() {
         String methodName = route.method().getFullMethodName();
-        methodMetrics = METHOD_METRICS.get().computeIfAbsent(methodName, name -> {
-            MeterRegistry meterRegistry = Metrics.globalRegistry();
-            Tag grpcMethod = Tag.create("grpc.method", name);
+        methodMetrics = metrics.methodMetrics().computeIfAbsent(methodName, name -> {
+            GrpcProtocolSelector.MetricsOwner owner = metrics.owner().get();
+            MetricsFactory metricsFactory = owner.factory();
+            MeterRegistry meterRegistry = owner.registry();
 
-            Counter.Builder callStartedBuilder = Counter.builder("grpc.server.call.started")
+            Tag okTag = metricsFactory.tagCreate("grpc.status", "OK");
+            Tag grpcMethod = metricsFactory.tagCreate("grpc.method", name);
+
+            Counter.Builder callStartedBuilder = metricsFactory.counterBuilder("grpc.server.call.started")
                     .scope(VENDOR)
                     .tags(List.of(grpcMethod));
             Counter callStarted = meterRegistry.getOrCreate(callStartedBuilder);
 
-            Timer.Builder callDurationOkBuilder = Timer.builder("grpc.server.call.duration")
+            Timer.Builder callDurationOkBuilder = metricsFactory.timerBuilder("grpc.server.call.duration")
                     .scope(VENDOR)
                     .baseUnit(Timer.BaseUnits.MILLISECONDS)
-                    .tags(List.of(grpcMethod, OK_TAG));
+                    .tags(List.of(grpcMethod, okTag));
             Timer callDuration = meterRegistry.getOrCreate(callDurationOkBuilder);
 
-            DistributionSummary.Builder sendMessageSizeBuilder = DistributionSummary.builder(
-                            "grpc.server.call.sent_total_compressed_message_size")
+            DistributionSummary.Builder sendMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
+                            "grpc.server.call.sent_total_compressed_message_size",
+                            metricsFactory.distributionStatisticsConfigBuilder())
                     .scope(VENDOR)
-                    .tags(List.of(grpcMethod, OK_TAG));
+                    .tags(List.of(grpcMethod, okTag));
             DistributionSummary sentMessageSize = meterRegistry.getOrCreate(sendMessageSizeBuilder);
 
-            DistributionSummary.Builder recvMessageSizeBuilder = DistributionSummary.builder(
-                            "grpc.server.call.rcvd_total_compressed_message_size")
+            DistributionSummary.Builder recvMessageSizeBuilder = metricsFactory.distributionSummaryBuilder(
+                            "grpc.server.call.rcvd_total_compressed_message_size",
+                            metricsFactory.distributionStatisticsConfigBuilder())
                     .scope(VENDOR)
-                    .tags(List.of(grpcMethod, OK_TAG));
+                    .tags(List.of(grpcMethod, okTag));
             DistributionSummary recvMessageSize = meterRegistry.getOrCreate(recvMessageSizeBuilder);
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
         });
     }
+
+    record MethodMetrics(Counter callStarted,
+                         Timer callDuration,
+                         DistributionSummary sentMessageSize,
+                         DistributionSummary recvMessageSize) { }
 
     /**
      * An input stream that can return its length. gRPC parsers can use this extra
@@ -891,5 +888,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             // single exact-size allocation; avoids the default growing-array loop
             return bufferData.readBytes();
         }
+    }
+
+    private enum ListenerTerminal {
+        CANCEL,
+        COMPLETE
     }
 }

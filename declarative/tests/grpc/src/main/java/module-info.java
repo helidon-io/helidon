@@ -25,6 +25,8 @@ module io.helidon.declarative.tests.grpc {
     requires io.helidon.logging.common;
     requires io.helidon.metrics;
     requires io.helidon.metrics.api;
+    requires io.helidon.metrics.providers.micrometer;
+    requires io.helidon.metrics.systemmeters;
     requires io.helidon.security;
     requires io.helidon.security.abac.role;
     requires io.helidon.security.abac.scope;

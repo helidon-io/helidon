@@ -43,7 +43,9 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.PortTransportBinding;
 import io.helidon.webserver.spi.ProtocolConfig;
@@ -348,7 +350,9 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
             return InitializationContext.create(socketName);
         }
-        return InitializationContext.create(socketName, List.of(Tag.create("socketName", socketName)));
+        // we access service registry here, but this was already the case, it was just hidden behind a static method
+        Tag socketNameTag = Services.get(MetricsFactory.class).tagCreate("socketName", socketName);
+        return InitializationContext.create(socketName, List.of(socketNameTag));
     }
 
     private List<TransportBinding> planTransportBindings(List<ProtocolConfig> protocolConfigs) {

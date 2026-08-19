@@ -25,7 +25,10 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.Method;
+import io.helidon.http.WritableHeaders;
 
 class SimpleSseClient implements AutoCloseable {
 
@@ -39,6 +42,7 @@ class SimpleSseClient implements AutoCloseable {
     private State state = State.DISCONNECTED;
     private final String path;
     private final SocketHttpClient client;
+    private final WritableHeaders<?> responseHeaders = WritableHeaders.create();
     private String contentEncoding;
     private boolean chunked;
     private InputStream inputStream;
@@ -98,6 +102,12 @@ class SimpleSseClient implements AutoCloseable {
         ensureHeadersRead();
     }
 
+    public Headers responseHeaders() {
+        ensureConnected();
+        ensureHeadersRead();
+        return responseHeaders;
+    }
+
     @Override
     public void close() throws Exception {
         client.close();
@@ -143,6 +153,12 @@ class SimpleSseClient implements AutoCloseable {
                         }
                         return;
                     }
+                    int colonIndex = line.indexOf(':');
+                    if (colonIndex > 0) {
+                        responseHeaders.add(HeaderValues.create(line.substring(0, colonIndex),
+                                                                line.substring(colonIndex + 1).trim()));
+                    }
+
                     line = line.toLowerCase(Locale.ROOT);
                     if (line.contains("http/1.1") && !line.contains("200")) {
                         throw new RuntimeException("Invalid status code in response");

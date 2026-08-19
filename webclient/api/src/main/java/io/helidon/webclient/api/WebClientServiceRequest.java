@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,10 +46,11 @@ public interface WebClientServiceRequest {
      * Returns an HTTP protocol ID, mapped to a specific version. This is the same ID that is used for ALPN
      * (protocol negotiation) - {@code http/1.1} for HTTP/1.1 and {@code h2} for HTTP/2.
      * <p>
-     * If communication starts as a {@code HTTP/1.1} with {@code h2c} upgrade, then it will be automatically
-     * upgraded and this method returns {@code HTTP/2.0}.
+     * The selected protocol may change while the downstream service chain executes, for example when an HTTP/2 client
+     * falls back to HTTP/1.1. The request exposes the selected wire protocol when the chain returns and through
+     * {@link #whenSent()} and {@link #whenComplete()}.
      *
-     * @return an HTTP version
+     * @return protocol identifier, such as {@code http/1.1}, {@code h2}, or {@code h3}
      */
     String protocolId();
 

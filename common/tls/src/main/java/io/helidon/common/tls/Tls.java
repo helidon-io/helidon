@@ -77,7 +77,11 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
 
         if (config.enabled()) {
             if (config.sslContext().isEmpty()) {
-                this.tlsManager = config.manager();
+                TlsManager configuredManager = config.manager();
+                if (configuredManager.getClass() == ConfiguredTlsManager.class) {
+                    configuredManager = new ConfiguredTlsManager();
+                }
+                this.tlsManager = configuredManager;
             } else {
                 this.tlsManager = new ExplicitContextTlsManager(config.sslContext().get());
                 configuredTls = TlsConfig.builder(config)
@@ -255,7 +259,7 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     }
 
     /**
-     * Provides the SSL context.
+     * Provides the SSL context captured when this TLS instance was created.
      *
      * @return SSL context
      */
@@ -298,6 +302,22 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         if (enabled) {
             tlsManager.reload(material);
         }
+    }
+
+    /**
+     * Generation of TLS material changes reported by the configured
+     * {@link io.helidon.common.tls.TlsManager#generation()}.
+     * <p>
+     * For enabled TLS, this method returns the configured manager's generation. The generation after the manager's
+     * first successful initialization is zero. A custom manager that inherits the compatibility default continues to
+     * report zero after material changes and may therefore lag behind its current material. When TLS is disabled, this
+     * method also returns zero.
+     *
+     * @return current TLS material generation
+     */
+    @Api.Internal
+    public long generation() {
+        return enabled ? tlsManager.generation() : 0L;
     }
 
     /**

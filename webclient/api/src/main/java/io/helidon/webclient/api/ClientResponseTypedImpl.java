@@ -66,6 +66,11 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
     }
 
     @Override
+    public String protocolId() {
+        return response.protocolId();
+    }
+
+    @Override
     public Status status() {
         return response.status();
     }

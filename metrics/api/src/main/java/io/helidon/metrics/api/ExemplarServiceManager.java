@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,62 +15,46 @@
  */
 package io.helidon.metrics.api;
 
-import java.lang.System.Logger.Level;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.metrics.spi.ExemplarService;
+import io.helidon.service.registry.Service;
 
 /**
  * Loads the {@link io.helidon.metrics.spi.ExemplarService} instance (if any) with the most urgent priority.
  */
+@Service.Singleton
 class ExemplarServiceManager {
 
     static final String INACTIVE_LABEL = "";
-    private static final System.Logger LOGGER = System.getLogger(ExemplarServiceManager.class.getName());
-    private static final List<ExemplarService> EXEMPLAR_SERVICES = collectExemplarServices();
-    private static final boolean IS_ACTIVE = !EXEMPLAR_SERVICES.isEmpty();
-    private static final Supplier<String> EXEMPLAR_SUPPLIER = () -> EXEMPLAR_SERVICES.stream()
-            .map(ExemplarService::label)
-            .filter(Predicate.not(String::isBlank))
-            .collect(ExemplarServiceManager::labelsStringJoiner, StringJoiner::add, StringJoiner::merge)
-            .toString();
+    private final List<ExemplarService> exemplarServices;
 
-    private ExemplarServiceManager() {
+    ExemplarServiceManager(List<ExemplarService> exemplarServices) {
+        this.exemplarServices = exemplarServices;
     }
 
     /**
-     * Returns the current exemplar label (e.g., trace ID).
+     * Returns a labeled sample using the current exemplar label (e.g., trace ID), if available.
      *
-     * @return exemplar string provided by the highest-priority service instance
+     * @param value sample value
+     * @return labeled sample
      */
-    static String exemplarLabel() {
-        return IS_ACTIVE ? EXEMPLAR_SUPPLIER.get() : INACTIVE_LABEL;
-    }
-
-    /**
-     * @return whether exemplar handling is active or not
-     */
-    static boolean isActive() {
-        return IS_ACTIVE;
+    Sample.Labeled labeled(double value) {
+        if (exemplarServices.isEmpty()) {
+            return new LabeledSample(value, INACTIVE_LABEL, 0);
+        }
+        String label = exemplarServices.stream()
+                .map(ExemplarService::label)
+                .filter(Predicate.not(String::isBlank))
+                .collect(ExemplarServiceManager::labelsStringJoiner, StringJoiner::add, StringJoiner::merge)
+                .toString();
+        return new LabeledSample(value, label, System.currentTimeMillis());
     }
 
     private static StringJoiner labelsStringJoiner() {
         // A StringJoiner that suppresses the prefix and suffix if no strings were added
         return new StringJoiner(",", "{", "}").setEmptyValue("");
-    }
-
-    private static List<ExemplarService> collectExemplarServices() {
-        List<ExemplarService> exemplarServices =
-                HelidonServiceLoader.create(ServiceLoader.load(ExemplarService.class)).asList();
-        if (!exemplarServices.isEmpty()) {
-            LOGGER.log(Level.INFO, "Using metrics ExemplarServices " + exemplarServices.toString());
-        }
-
-        return exemplarServices;
     }
 }

@@ -263,8 +263,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         boolean hasRequestEntity = retainRequestEntity && callChain.hasRequestEntity();
         Object requestEntity = retainRequestEntity ? callChain.requestEntity() : null;
         long maxBufferedEntitySize = http2Client.protocolConfig().maxBufferedEntitySize().toBytes();
-        // if this was an HTTP/1.1 response, do something different (just re-use response)
         Http2ClientResponseImpl response = new Http2ClientResponseImpl(clientConfig(),
+                                                                       callChain.protocolId(),
                                                                        serviceResponse.status(),
                                                                        callChain.requestHeaders(),
                                                                        serviceResponse.headers(),

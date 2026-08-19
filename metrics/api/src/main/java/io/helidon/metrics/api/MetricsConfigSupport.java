@@ -141,11 +141,4 @@ class MetricsConfigSupport {
         }
     }
 
-    static class RestRequestEnabledDecorator implements Prototype.OptionDecorator<MetricsConfig.BuilderBase<?, ?>, Optional<Boolean>> {
-
-        @Override
-        public void decorate(MetricsConfig.BuilderBase<?, ?> builder, Optional<Boolean> optionValue) {
-            optionValue.ifPresent(builder::restRequestEnabled);
-        }
-    }
 }

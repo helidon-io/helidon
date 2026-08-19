@@ -49,6 +49,11 @@ class JsonRpcClientBatchResponseImpl implements JsonRpcClientBatchResponse {
     }
 
     @Override
+    public String protocolId() {
+        return delegate.protocolId();
+    }
+
+    @Override
     public int size() {
         return asJsonArray().size();
     }

@@ -170,7 +170,7 @@ An OpenTelemetry object returned from a method on a callback-enabled object is i
 * `Span` returned from `SpanBuilder#startSpan`.
 * `Scope` returned from `Span#makeCurrent`.
 
-Each callback-enabled object is a new instance of a _Helidon_ object which implements both the indicated OpenTelemetry interface and the Helidon link:{tracing-javadoc-base-url}/io/helidon/tracing/Wrapper.html[`Wrapper`] interface. These Helidon objects _do not_ themselves implement other OpenTelemetry interfaces. To do type checks and casts on callback-enabled objects, invoke the `unwrap(Class<?>)` on a callback-enabled object as shown in the following example.
+Each callback-enabled object is a new instance of a _Helidon_ object which implements both the indicated OpenTelemetry interface and the Helidon link:{common-javadoc-base-url}/io/helidon/common/Wrapper.html[`Wrapper`] interface. These Helidon objects _do not_ themselves implement other OpenTelemetry interfaces. To do type checks and casts on callback-enabled objects, invoke the `unwrap(Class<?>)` on a callback-enabled object as shown in the following example.
 
 [source,java]
 ----

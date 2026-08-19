@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
@@ -89,8 +88,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private String streamResult = "";
     private boolean isNoEntityStatus;
     private final boolean validateHeaders;
-
-    private UnaryOperator<OutputStream> outputStreamFilter;
 
     Http1ServerResponse(ConnectionContext ctx,
                         Http1ConnectionListener sendListener,
@@ -215,7 +212,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         // send bytes to writer
         beforeSend();
 
-        if (outputStreamFilter == null && !headers.contains(HeaderNames.TRAILER)) {
+        if (!hasStreamFilter() && !headers.contains(HeaderNames.TRAILER)) {
             byte[] entity = entityBytes(bytes, position, length);
             BufferData bufferData = (bytes != entity) ? responseBuffer(entity)
                     : responseBuffer(entity, position, length);         // no encoding, same length
@@ -348,6 +345,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     }
 
     @Override
+    public boolean resetEntity() {
+        if (!super.resetEntity()) {
+            return false;
+        }
+        streamResult = "";
+        trailers.clear();
+        return true;
+    }
+
+    @Override
     public void commit() {
         if (outputStream != null) {
             outputStream.commit();
@@ -401,23 +408,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 };
             }
         });
-    }
-
-    @Override
-    public void streamFilter(UnaryOperator<OutputStream> filterFunction) {
-        if (isSent) {
-            throw new IllegalStateException("Response already sent");
-        }
-        if (streamingEntity) {
-            throw new IllegalStateException("OutputStream already obtained");
-        }
-        Objects.requireNonNull(filterFunction);
-        UnaryOperator<OutputStream> current = this.outputStreamFilter;
-        if (current == null) {
-            this.outputStreamFilter = filterFunction;
-        } else {
-            this.outputStreamFilter = it -> filterFunction.apply(current.apply(it));
-        }
     }
 
     protected Optional<OutputStream> sinkEntityOutputStream(Runnable responsePreparation) {
@@ -553,7 +543,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             encodedOutputStream = contentEncode(outputStream);
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
-        return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
+        return applyStreamFilters(encodedOutputStream);
     }
 
     boolean keepConnectionOpen() {

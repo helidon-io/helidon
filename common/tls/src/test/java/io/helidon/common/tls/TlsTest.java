@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
@@ -185,6 +186,25 @@ public class TlsTest {
     }
 
     @Test
+    public void defaultManagerIsOwnedByTlsInstance() {
+        TlsConfig.Builder builder = Tls.builder().trustAll(true);
+
+        Tls first = builder.build();
+        Tls second = builder.trustAll(false).build();
+
+        assertThat(second.prototype().manager(), sameInstance(first.prototype().manager()));
+        assertThat(second.sslContext(), not(sameInstance(first.sslContext())));
+
+        TlsConfig prototype = Tls.builder().buildPrototype();
+        Tls fromPrototype = prototype.build();
+        Tls repeatedFromPrototype = prototype.build();
+
+        assertThat(fromPrototype.prototype(), sameInstance(prototype));
+        assertThat(repeatedFromPrototype.prototype(), sameInstance(prototype));
+        assertThat(repeatedFromPrototype.sslContext(), not(sameInstance(fromPrototype.sslContext())));
+    }
+
+    @Test
     public void explicitSslContextRejectsMaterialReload() {
         SSLContext sslContext = createSslContext();
         Tls tls = Tls.create(it -> it.sslContext(sslContext));
@@ -197,6 +217,39 @@ public class TlsTest {
 
         assertThat(exception.getMessage(),
                    is("TLS cannot be reloaded when an explicit instance of SSL context was used to create it"));
+    }
+
+    @Test
+    public void successfulEnabledReloadsAdvanceGeneration() {
+        Tls tls = Tls.create(it -> it.trustAll(true));
+
+        assertThat(tls.generation(), is(0L));
+        tls.reload(TlsMaterial.builder().trustAll(true).build());
+        assertThat(tls.generation(), is(1L));
+
+        tls.reload(Tls.create(it -> it.trustAll(true)));
+        assertThat(tls.generation(), is(2L));
+    }
+
+    @Test
+    public void failedReloadDoesNotAdvanceGeneration() {
+        Tls tls = Tls.create(it -> it.sslContext(createSslContext()));
+
+        assertThrows(UnsupportedOperationException.class,
+                     () -> tls.reload(TlsMaterial.builder().trustAll(true).build()));
+        assertThat(tls.generation(), is(0L));
+    }
+
+    @Test
+    public void disabledTlsReloadDoesNotAdvanceGeneration() {
+        Tls tls = Tls.builder()
+                .enabled(false)
+                .build();
+
+        tls.reload(TlsMaterial.builder().trustAll(true).build());
+        tls.reload(Tls.create(it -> it.trustAll(true)));
+
+        assertThat(tls.generation(), is(0L));
     }
 
     private static SSLContext createSslContext() {
@@ -240,4 +293,5 @@ public class TlsTest {
             return "failing";
         }
     }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,14 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
     private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new CopyOnWriteArrayList<>();
+    private final MetricsFactory factory;
 
-    NoOpMeterRegistry() {
+    NoOpMeterRegistry(MetricsFactory factory) {
+        this.factory = factory;
     }
 
-    static Builder builder() {
-        return new Builder();
+    static Builder builder(NoOpMetricsFactory noOpMetricsFactory) {
+        return new Builder(noOpMetricsFactory);
     }
 
     @Override
@@ -64,7 +66,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
     @Override
     public Clock clock() {
-        return Clock.system();
+        return factory.clockSystem();
     }
 
     @Override
@@ -135,8 +137,9 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
         return this;
     }
 
-    private <M extends Meter> Optional<M> find(Meter.Id id, Class<M> mClass) {
-        return Optional.empty();
+    @Override
+    public MetricsFactory metricsFactory() {
+        return factory;
     }
 
     private <M extends Meter, B extends Meter.Builder<B, M>> M findOrRegister(Meter.Id id, B builder) {
@@ -150,9 +153,15 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
     static class Builder implements MeterRegistry.Builder<Builder, NoOpMeterRegistry> {
 
+        private final MetricsFactory factory;
+
+        Builder(NoOpMetricsFactory factory) {
+            this.factory = factory;
+        }
+
         @Override
         public NoOpMeterRegistry build() {
-            return new NoOpMeterRegistry();
+            return new NoOpMeterRegistry(factory);
         }
 
         @Override

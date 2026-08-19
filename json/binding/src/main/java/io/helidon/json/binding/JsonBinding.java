@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.List;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -111,6 +112,20 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
     <T> String serialize(T obj, Class<? super T> type);
 
     /**
+     * Serializes a list of objects of a specific item type to a JSON string.
+     * If the provided list is null, returns the string {@code null}.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
+     *
+     * @param values   the list to serialize, this parameter may be {@code null}
+     * @param itemType the type to use for serializing each list item
+     * @param <T>      the type of each list item
+     * @return         the JSON string representation
+     */
+    default <T> String serializeList(List<T> values, Class<? super T> itemType) {
+        return serialize(values, JsonBindingTypes.listType(itemType));
+    }
+
+    /**
      * Serializes an object of a generic type to a JSON string.
      * If the provided object is null, returns the string {@code null}.
      *
@@ -140,6 +155,20 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @return the JSON bytes encoded using UTF-8
      */
     <T> byte[] serializeToBytes(T obj, Class<? super T> type);
+
+    /**
+     * Serializes a list of objects of a specific item type to JSON bytes encoded using UTF-8.
+     * If the provided list is null, returns the bytes of the string {@code null}.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
+     *
+     * @param values   the list to serialize, this parameter may be {@code null}
+     * @param itemType the type to use for serializing each list item
+     * @param <T>      the type of each list item
+     * @return         the JSON bytes encoded using UTF-8
+     */
+    default <T> byte[] serializeListToBytes(List<T> values, Class<? super T> itemType) {
+        return serializeToBytes(values, JsonBindingTypes.listType(itemType));
+    }
 
     /**
      * Serializes an object of a generic type to JSON bytes encoded using UTF-8.
@@ -173,6 +202,20 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
     <T> void serialize(OutputStream outputStream, T obj, Class<? super T> type);
 
     /**
+     * Serializes a list of objects of a specific item type to JSON and writes it to an OutputStream.
+     * If the provided list is null, writes the bytes of the string {@code null} to the output stream.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
+     *
+     * @param outputStream the output stream to write to
+     * @param values       the list to serialize, this parameter may be {@code null}
+     * @param itemType     the type to use for serializing each list item
+     * @param <T>          the type of each list item
+     */
+    default <T> void serializeList(OutputStream outputStream, List<T> values, Class<? super T> itemType) {
+        serialize(outputStream, values, JsonBindingTypes.listType(itemType));
+    }
+
+    /**
      * Serializes an object of a generic type to JSON and writes it to an OutputStream.
      * If the provided object is null, writes the bytes of the string {@code null} to the output stream.
      *
@@ -202,6 +245,20 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param <T>       the type of the object
      */
     <T> void serialize(JsonGenerator generator, T obj, Class<? super T> type);
+
+    /**
+     * Serializes a list of objects of a specific item type to JSON using the provided generator.
+     * If the provided list is null, writes {@code null} to the generator.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
+     *
+     * @param generator the JSON generator to write to
+     * @param values    the list to serialize, this parameter may be {@code null}
+     * @param itemType  the type to use for serializing each list item
+     * @param <T>       the type of each list item
+     */
+    default <T> void serializeList(JsonGenerator generator, List<T> values, Class<? super T> itemType) {
+        serialize(generator, values, JsonBindingTypes.listType(itemType));
+    }
 
     /**
      * Serializes an object of a generic type to JSON using the provided generator.
@@ -235,6 +292,20 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
     <T> void serialize(Writer writer, T obj, Class<? super T> type);
 
     /**
+     * Serializes a list of objects of a specific item type to JSON and writes it to a Writer.
+     * If the provided list is null, writes the characters of {@code null} to the writer.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
+     *
+     * @param writer   the writer to write to
+     * @param values   the list to serialize, this parameter may be {@code null}
+     * @param itemType the type to use for serializing each list item
+     * @param <T>      the type of each list item
+     */
+    default <T> void serializeList(Writer writer, List<T> values, Class<? super T> itemType) {
+        serialize(writer, values, JsonBindingTypes.listType(itemType));
+    }
+
+    /**
      * Serializes an object of a generic type to JSON and writes it to a Writer.
      * If the provided object is null, writes the characters of {@code null} to the writer.
      *
@@ -251,9 +322,21 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bytes the JSON data as bytes
      * @param type  the class type to deserialize to
      * @param <T>   the type of the object
-     * @return      the deserialized object
+     * @return      the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(byte[] bytes, Class<T> type);
+
+    /**
+     * Deserializes a JSON array from a byte array to a list of objects of the specified item type.
+     *
+     * @param bytes    the JSON data as bytes
+     * @param itemType the class type of each list item
+     * @param <T>      the type of each list item
+     * @return         the deserialized list, or {@code null} when the input represents JSON null
+     */
+    default <T> List<T> deserializeList(byte[] bytes, Class<T> itemType) {
+        return deserialize(bytes, JsonBindingTypes.listType(itemType));
+    }
 
     /**
      * Deserializes JSON from a byte array to an object of the specified generic type.
@@ -261,7 +344,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bytes the JSON data as bytes
      * @param type  the generic type to deserialize to
      * @param <T>   the type of the object
-     * @return      the deserialized object
+     * @return      the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(byte[] bytes, GenericType<T> type);
 
@@ -271,9 +354,21 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param jsonStr the JSON string
      * @param type    the class type to deserialize to
      * @param <T>     the type of the object
-     * @return        the deserialized object
+     * @return        the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(String jsonStr, Class<T> type);
+
+    /**
+     * Deserializes a JSON array from a string to a list of objects of the specified item type.
+     *
+     * @param jsonStr  the JSON string
+     * @param itemType the class type of each list item
+     * @param <T>      the type of each list item
+     * @return         the deserialized list, or {@code null} when the input represents JSON null
+     */
+    default <T> List<T> deserializeList(String jsonStr, Class<T> itemType) {
+        return deserialize(jsonStr, JsonBindingTypes.listType(itemType));
+    }
 
     /**
      * Deserializes JSON from a string to an object of the specified generic type.
@@ -281,7 +376,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param jsonStr the JSON string
      * @param type    the generic type to deserialize to
      * @param <T>     the type of the object
-     * @return        the deserialized object
+     * @return        the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(String jsonStr, GenericType<T> type);
 
@@ -291,9 +386,21 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param inputStream the input stream containing JSON data
      * @param type        the class type to deserialize to
      * @param <T>         the type of the object
-     * @return            the deserialized object
+     * @return            the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(InputStream inputStream, Class<T> type);
+
+    /**
+     * Deserializes a JSON array from an InputStream to a list of objects of the specified item type.
+     *
+     * @param inputStream the input stream containing JSON data
+     * @param itemType    the class type of each list item
+     * @param <T>         the type of each list item
+     * @return            the deserialized list, or {@code null} when the input represents JSON null
+     */
+    default <T> List<T> deserializeList(InputStream inputStream, Class<T> itemType) {
+        return deserialize(inputStream, JsonBindingTypes.listType(itemType));
+    }
 
     /**
      * Deserializes JSON from an InputStream to an object of the specified generic type.
@@ -301,7 +408,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param inputStream the input stream containing JSON data
      * @param type        the generic type to deserialize to
      * @param <T>         the type of the object
-     * @return            the deserialized object
+     * @return            the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(InputStream inputStream, GenericType<T> type);
 
@@ -312,9 +419,22 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bufferSize  the buffer size for reading
      * @param type        the class type to deserialize to
      * @param <T>         the type of the object
-     * @return            the deserialized object
+     * @return            the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(InputStream inputStream, int bufferSize, Class<T> type);
+
+    /**
+     * Deserializes a JSON array from an InputStream with buffer size to a list of objects of the specified item type.
+     *
+     * @param inputStream the input stream containing JSON data
+     * @param bufferSize  the buffer size for reading
+     * @param itemType    the class type of each list item
+     * @param <T>         the type of each list item
+     * @return            the deserialized list, or {@code null} when the input represents JSON null
+     */
+    default <T> List<T> deserializeList(InputStream inputStream, int bufferSize, Class<T> itemType) {
+        return deserialize(inputStream, bufferSize, JsonBindingTypes.listType(itemType));
+    }
 
     /**
      * Deserializes JSON from an InputStream with buffer size to an object of the specified generic type.
@@ -323,7 +443,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param bufferSize  the buffer size for reading
      * @param type        the generic type to deserialize to
      * @param <T>         the type of the object
-     * @return            the deserialized object
+     * @return            the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(InputStream inputStream, int bufferSize, GenericType<T> type);
 
@@ -333,9 +453,21 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param reader the reader containing JSON data
      * @param type   the class type to deserialize to
      * @param <T>    the type of the object
-     * @return       the deserialized object
+     * @return       the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(Reader reader, Class<T> type);
+
+    /**
+     * Deserializes a JSON array from a Reader to a list of objects of the specified item type.
+     *
+     * @param reader   the reader containing JSON data
+     * @param itemType the class type of each list item
+     * @param <T>      the type of each list item
+     * @return         the deserialized list, or {@code null} when the input represents JSON null
+     */
+    default <T> List<T> deserializeList(Reader reader, Class<T> itemType) {
+        return deserialize(reader, JsonBindingTypes.listType(itemType));
+    }
 
     /**
      * Deserializes JSON from a Reader to an object of the specified generic type.
@@ -343,7 +475,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param reader the reader containing JSON data
      * @param type   the generic type to deserialize to
      * @param <T>    the type of the object
-     * @return       the deserialized object
+     * @return       the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(Reader reader, GenericType<T> type);
 
@@ -353,9 +485,21 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param jsonValue the JsonValue to deserialize
      * @param type      the class type to deserialize to
      * @param <T>       the type of the object
-     * @return          the deserialized object
+     * @return          the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(JsonValue jsonValue, Class<T> type);
+
+    /**
+     * Deserializes a JSON array value to a list of objects of the specified item type.
+     *
+     * @param jsonValue the JSON value to deserialize
+     * @param itemType  the class type of each list item
+     * @param <T>       the type of each list item
+     * @return          the deserialized list, or {@code null} when the input represents JSON null
+     */
+    default <T> List<T> deserializeList(JsonValue jsonValue, Class<T> itemType) {
+        return deserialize(jsonValue, JsonBindingTypes.listType(itemType));
+    }
 
     /**
      * Deserializes a JsonValue to an object of the specified generic type.
@@ -363,7 +507,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param jsonValue the JsonValue to deserialize
      * @param type      the generic type to deserialize to
      * @param <T>       the type of the object
-     * @return          the deserialized object
+     * @return          the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(JsonValue jsonValue, GenericType<T> type);
 
@@ -373,9 +517,21 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param parser the parser containing JSON data
      * @param type   the class type to deserialize to
      * @param <T>    the type of the object
-     * @return       the deserialized object
+     * @return       the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(JsonParser parser, Class<T> type);
+
+    /**
+     * Deserializes a JSON array from a parser to a list of objects of the specified item type.
+     *
+     * @param parser   the parser containing JSON data
+     * @param itemType the class type of each list item
+     * @param <T>      the type of each list item
+     * @return         the deserialized list, or {@code null} when the input represents JSON null
+     */
+    default <T> List<T> deserializeList(JsonParser parser, Class<T> itemType) {
+        return deserialize(parser, JsonBindingTypes.listType(itemType));
+    }
 
     /**
      * Deserializes JSON from a parser to an object of the specified generic type.
@@ -383,7 +539,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      * @param parser the parser containing JSON data
      * @param type   the generic type to deserialize to
      * @param <T>    the type of the object
-     * @return       the deserialized object
+     * @return       the deserialized object, or {@code null} when the input represents JSON null
      */
     <T> T deserialize(JsonParser parser, GenericType<T> type);
 

@@ -17,8 +17,8 @@
 package io.helidon.webclient.grpc;
 
 import java.time.Duration;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,6 +38,7 @@ import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -155,6 +156,7 @@ class GrpcClientCallLifecycleTest {
     }
 
     @Test
+    @Timeout(45)
     void callerRunsHeartbeatDoesNotUseSchedulerThread() throws Exception {
         AtomicReference<String> rejectionThread = new AtomicReference<>();
         CountDownLatch rejected = new CountDownLatch(1);
@@ -162,12 +164,13 @@ class GrpcClientCallLifecycleTest {
                                                              1,
                                                              0,
                                                              TimeUnit.MILLISECONDS,
-                                                             new SynchronousQueue<>(),
+                                                             new ArrayBlockingQueue<>(1),
                                                              (task, ignored) -> {
-                                                                 rejectionThread.compareAndSet(null,
-                                                                                               Thread.currentThread()
-                                                                                                       .getName());
-                                                                 rejected.countDown();
+                                                                 String threadName = Thread.currentThread().getName();
+                                                                 if (threadName.startsWith("helidon-grpc-heartbeat-dispatch-")) {
+                                                                     rejectionThread.compareAndSet(null, threadName);
+                                                                     rejected.countDown();
+                                                                 }
                                                                  task.run();
                                                              });
         WebServer server = startServer();
@@ -183,13 +186,7 @@ class GrpcClientCallLifecycleTest {
         try {
             call.start(new ClientCall.Listener<>() { }, new Metadata());
             call.request(1);
-            call.halfClose();
-            assertThat("heartbeat scheduled", call.heartbeatTaskPending(), is(true));
-            assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
-                while (executor.getActiveCount() != 0) {
-                    Thread.sleep(10);
-                }
-            });
+            // Occupy both the worker and its queue before the heartbeat is scheduled.
             executor.execute(() -> {
                 blockerEntered.countDown();
                 try {
@@ -199,6 +196,10 @@ class GrpcClientCallLifecycleTest {
                 }
             });
             assertThat("executor saturated", blockerEntered.await(10, TimeUnit.SECONDS), is(true));
+            executor.execute(() -> { });
+            assertThat("executor queue saturated", executor.getQueue().size(), is(1));
+            call.halfClose();
+            assertThat("heartbeat scheduled", call.heartbeatTaskPending(), is(true));
 
             assertThat("heartbeat dispatched to rejected executor", rejected.await(10, TimeUnit.SECONDS), is(true));
             assertThat(rejectionThread.get().startsWith("helidon-grpc-heartbeat-dispatch-"), is(true));

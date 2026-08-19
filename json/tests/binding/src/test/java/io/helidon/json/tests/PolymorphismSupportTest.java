@@ -16,15 +16,18 @@
 
 package io.helidon.json.tests;
 
+import java.io.StringWriter;
 import java.util.List;
 
 import io.helidon.common.GenericType;
 import io.helidon.json.JsonException;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.binding.JsonBindingException;
 import io.helidon.testing.junit5.Testing;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -370,6 +373,54 @@ public class PolymorphismSupportTest {
         InterfaceA deserialize = bindingMethod.deserialize(jsonBinding, json, InterfaceA.class);
         assertThat(deserialize, instanceOf(ConcreteA1.class));
         assertThat(((ConcreteA1) deserialize).data(), is("testA1"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void testListPolymorphismAsItemSupertype(BindingMethod bindingMethod) {
+        ConcreteA1 obj = new ConcreteA1();
+        obj.data("testA1");
+
+        List<ConcreteA1> values = List.of(obj);
+        String json = bindingMethod.serializeList(jsonBinding, values, InterfaceA.class);
+        assertThat(json, is("[{\"@type\":\"a1\",\"data\":\"testA1\"}]"));
+
+        List<InterfaceA> deserialized = bindingMethod.deserializeList(jsonBinding, json, InterfaceA.class);
+        assertThat(deserialized.size(), is(1));
+        assertThat(deserialized.get(0), instanceOf(ConcreteA1.class));
+        assertThat(((ConcreteA1) deserialized.get(0)).data(), is("testA1"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void testListPolymorphismWithDifferentItemTypes(BindingMethod bindingMethod) {
+        ConcreteA1 objA = new ConcreteA1();
+        objA.data("testA1");
+        ConcreteB1 objB = new ConcreteB1();
+        objB.nestedData("testB1");
+
+        List<InterfaceA> values = List.of(objA, objB);
+        String json = bindingMethod.serializeList(jsonBinding, values, InterfaceA.class);
+        List<InterfaceA> deserialized = bindingMethod.deserializeList(jsonBinding, json, InterfaceA.class);
+
+        assertThat(deserialized.size(), is(2));
+        assertThat(deserialized.get(0), instanceOf(ConcreteA1.class));
+        assertThat(((ConcreteA1) deserialized.get(0)).data(), is("testA1"));
+        assertThat(deserialized.get(1), instanceOf(ConcreteB1.class));
+        assertThat(((ConcreteB1) deserialized.get(1)).nestedData(), is("testB1"));
+    }
+
+    @Test
+    void testListPolymorphismWithGenerator() {
+        ConcreteA1 obj = new ConcreteA1();
+        obj.data("testA1");
+        StringWriter writer = new StringWriter();
+
+        try (JsonGenerator generator = JsonGenerator.create(writer)) {
+            jsonBinding.serializeList(generator, List.of(obj), InterfaceA.class);
+        }
+
+        assertThat(writer.toString(), is("[{\"@type\":\"a1\",\"data\":\"testA1\"}]"));
     }
 
     @ParameterizedTest

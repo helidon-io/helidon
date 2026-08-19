@@ -15,73 +15,79 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.config.Config;
+import io.helidon.service.registry.Services;
 
 /**
  * The basic contract for implementations of the Helidon metrics API, mostly acting as a factory for
  * meter <em>builders</em> rather than for meters themselves.
  * <p>
- * This is not intended to be the interface which developers use to work with Helidon metrics. Instead use
- *     <ul>
- *         <li>the {@link io.helidon.metrics.api.Metrics} interface and its static convenience methods,</li>
- *         <li>the static methods on the various meter interfaces in the API (such as {@link io.helidon.metrics.api.Timer},
- *         or</li>
- *         <li>{@link io.helidon.metrics.api.Metrics#globalRegistry()} and use the returned
- *      {@link io.helidon.metrics.api.MeterRegistry} directly</li>
- *     </ul>
- * <p>
- * An implementation of this interface provides instance methods for each
- * of the static methods on the Helidon metrics API interfaces. The prefix of each method
- * here identifies the interface that bears the corresponding static method. For example,
- * {@link #timerStart(io.helidon.metrics.api.MeterRegistry)} corresponds to the static
- * {@link io.helidon.metrics.api.Timer#start(io.helidon.metrics.api.MeterRegistry)} method.
- * <p>
- * Also, various static methods create new instances or return previously-created ones.
+ * Applications normally inject {@link io.helidon.metrics.api.MeterRegistry} or use
+ * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MeterRegistry.class)} to obtain the shared
+ * meter registry for registering and looking up meters. To create meter builders, timer samples, tags, snapshots, or custom
+ * registries, applications inject {@code MetricsFactory} or use
+ * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
  */
 public interface MetricsFactory {
 
     /**
      * Qualifier for context setting indicating if any pull publishers are present.
+     *
+     * @deprecated since 27.0.0, for removal. This constant is no longer used because publisher availability is specific to
+     * each meter registry.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     String PULL_PUBLISHERS_PRESENT = "io.helidon.metrics.pull-publishers";
 
     /**
-     * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at
-     * runtime and using the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} section from the
-     * current config.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @return current or new metrics factory
+     * @return shared metrics factory
+     * @deprecated since 27.0.0, for removal. Use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} for the
+     * shared metrics factory, or create non-global metrics objects using the programmatic API.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static MetricsFactory getInstance() {
-        return MetricsFactoryManager.getMetricsFactory();
+        return Services.get(MetricsFactory.class);
     }
 
     /**
-     * Returns a new metrics factory instance from a highest-weight provider using the provided
-     * config node to set up the metrics factory and saving the resulting metrics factory
-     * as the current one, returned by {@link #getInstance()}.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @param metricsConfigNode metrics config node
-     * @return new instance configured as directed
+     * @param ignoredConfig ignored config; must not be {@code null}
+     * @return shared metrics factory
+     * @deprecated since 27.0.0, for removal. Static config-based access is no longer supported. Use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} for the
+     * shared metrics factory, or create non-global metrics objects using the programmatic API.
      */
-    static MetricsFactory getInstance(Config metricsConfigNode) {
-        return MetricsFactoryManager.getMetricsFactory(metricsConfigNode);
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    static MetricsFactory getInstance(Config ignoredConfig) {
+        Objects.requireNonNull(ignoredConfig);
+        return Services.get(MetricsFactory.class);
     }
 
     /**
-     * Closes all {@link io.helidon.metrics.api.MetricsFactory} instances.
+     * No-op.
      *
      * <p>
-     *     Applications do not normally need to invoke this method.
+     *     Metrics instances obtained from the service registry are closed by the service registry lifecycle.
      * </p>
+     *
+     * @deprecated since 27.0.0, for removal. Metrics instances obtained from the service registry are closed by the
+     * service registry lifecycle.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static void closeAll() {
-        MetricsFactoryManager.closeAll();
+        // No-op; service-registry-owned metrics instances are closed by service registry lifecycle.
     }
 
     /**
@@ -96,36 +102,50 @@ public interface MetricsFactory {
     /**
      * Returns the global {@link io.helidon.metrics.api.MeterRegistry} for this metrics factory.
      *
-     * <p>
-     * The metric factory creates its global registry on-demand using
-     * {@link #getInstance()}.{@link #createMeterRegistry(MetricsConfig)} with a
-     * {@link MetricsConfig} instance derived from the root {@link io.helidon.config.Config} most recently passed to
-     * {@link #getInstance(io.helidon.config.Config)}, or if none then the config from
-     * current {@link io.helidon.config.Config}.
-     *
      * @return the global meter registry
+     * @deprecated since 27.0.0, for removal. Obtain the shared registry from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MeterRegistry.class)}. This method
+     * remains for metrics implementation compatibility.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     MeterRegistry globalRegistry();
 
     /**
-     * Creates a new global registry according to the configuration and returns it.
+     * Returns this factory's global registry. The configuration is ignored and does not alter the global registry.
      *
-     * @param metricsConfig configuration to control the meter registry
-     * @return meter registry
+     * @param ignoredMetricsConfig ignored configuration; must not be {@code null}
+     * @return this factory's global meter registry
+     * @deprecated since 27.0.0, for removal. Obtain the shared registry from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MeterRegistry.class)}. To create a
+     * non-global registry with custom configuration, use {@link #createMeterRegistry(MetricsConfig)}.
      */
-    MeterRegistry globalRegistry(MetricsConfig metricsConfig);
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    default MeterRegistry globalRegistry(MetricsConfig ignoredMetricsConfig) {
+        Objects.requireNonNull(ignoredMetricsConfig);
+        return globalRegistry();
+    }
 
 
     /**
-     * Returns the global {@link io.helidon.metrics.api.MeterRegistry} enrolling the specified listeners to the meter registry.
+     * Returns this factory's global {@link io.helidon.metrics.api.MeterRegistry}. The listeners and backfill setting are
+     * ignored and do not alter the global registry.
      *
-     * @param onAddListener    invoked whenever a new meter is added to the returned meter registry
-     * @param onRemoveListener invoked whenever a meter is removed from the returned meter registry
-     * @param backfill         whether the meter registry should invoke the on-add listener for meters already present in an
-     *                         existing global registry
-     * @return on-demand global registry with the indicated listeners added
+     * @param ignoredOnAddListener    ignored add listener; must not be {@code null}
+     * @param ignoredOnRemoveListener ignored remove listener; must not be {@code null}
+     * @param ignoredBackfill         ignored backfill setting
+     * @return this factory's global meter registry
+     * @deprecated since 27.0.0, for removal. Obtain the shared registry from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MeterRegistry.class)}. Listeners can be
+     * enrolled with a custom registry using {@link #createMeterRegistry(MetricsConfig, Consumer, Consumer)}.
      */
-    MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill);
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    default MeterRegistry globalRegistry(Consumer<Meter> ignoredOnAddListener,
+                                         Consumer<Meter> ignoredOnRemoveListener,
+                                         boolean ignoredBackfill) {
+        Objects.requireNonNull(ignoredOnAddListener);
+        Objects.requireNonNull(ignoredOnRemoveListener);
+        return globalRegistry();
+    }
 
     /**
      * Returns the {@link io.helidon.metrics.api.MetricsConfig} instance used to initialize the metrics factory.
@@ -135,54 +155,60 @@ public interface MetricsFactory {
     MetricsConfig metricsConfig();
 
     /**
-     * Returns a builder for creating a new {@link io.helidon.metrics.api.MeterRegistry}.
+     * Returns a builder for creating a new caller-owned {@link io.helidon.metrics.api.MeterRegistry}.
+     * The caller must close the registry created by the builder to release the registry and any publisher resources it owns.
      *
-     * @return the new builder
+     * @return the new builder for a caller-owned registry
      * @param <B> specific type of the builder
      * @param <M> specific type of the registry
      */
     <B extends MeterRegistry.Builder<B, M>, M extends MeterRegistry> B meterRegistryBuilder();
 
     /**
-     * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided metrics config.
+     * Creates a new caller-owned {@link io.helidon.metrics.api.MeterRegistry} using the provided metrics config.
+     * The caller must close the returned registry to release the registry and any publisher resources it owns.
      *
      * @param metricsConfig metrics configuration which influences the new registry
-     * @return new meter registry
+     * @return new caller-owned meter registry
      */
     MeterRegistry createMeterRegistry(MetricsConfig metricsConfig);
 
     /**
-     * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided metrics config and enrolling the specified
-     * listeners with the returned meter registry.
+     * Creates a new caller-owned {@link io.helidon.metrics.api.MeterRegistry} using the provided metrics config and enrolling
+     * the specified listeners with the returned meter registry. The caller must close the returned registry to release the
+     * registry and any publisher resources it owns.
      *
      * @param metricsConfig    metrics configuration which influences the new registry
      * @param onAddListener    invoked whenever a new meter is added to the meter registry
      * @param onRemoveListener invoked whenever a new meter is removed from the meter registry
-     * @return new meter registry with the listeners enrolled
+     * @return new caller-owned meter registry with the listeners enrolled
      */
     MeterRegistry createMeterRegistry(MetricsConfig metricsConfig,
                                       Consumer<Meter> onAddListener,
                                       Consumer<Meter> onRemoveListener);
 
     /**
-     * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided {@link io.helidon.metrics.api.Clock} and
-     * {@link io.helidon.metrics.api.MetricsConfig}.
+     * Creates a new caller-owned {@link io.helidon.metrics.api.MeterRegistry} using the provided
+     * {@link io.helidon.metrics.api.Clock} and {@link io.helidon.metrics.api.MetricsConfig}. The caller must close the returned
+     * registry to release the registry and any publisher resources it owns.
      *
      * @param clock         default clock to associate with the meter registry
      * @param metricsConfig metrics configuration which influences the new registry
-     * @return new meter registry
+     * @return new caller-owned meter registry
      */
     MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig);
 
     /**
-     * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided {@link io.helidon.metrics.api.Clock} and
-     * {@link io.helidon.metrics.api.MetricsConfig} and enrolling the specified listners with the new meter registry.
+     * Creates a new caller-owned {@link io.helidon.metrics.api.MeterRegistry} using the provided
+     * {@link io.helidon.metrics.api.Clock} and {@link io.helidon.metrics.api.MetricsConfig} and enrolling the specified
+     * listeners with the new meter registry. The caller must close the returned registry to release the registry and any
+     * publisher resources it owns.
      *
      * @param clock            clock to associate with the meter registry
      * @param metricsConfig    metrics config which influences the new registry
      * @param onAddListener    invoked whenever a new meter is added to the meter registry
      * @param onRemoveListener invoked whenever a new meter is removed from the meter registry
-     * @return new meter registry
+     * @return new caller-owned meter registry
      */
     MeterRegistry createMeterRegistry(Clock clock,
                                       MetricsConfig metricsConfig,
@@ -329,8 +355,8 @@ public interface MetricsFactory {
         } else {
             throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
         }
-        SystemTagsManager.instance()
-                .effectiveScope(builder.scope())
+        builder.scope()
+                .or(() -> metricsConfig().scoping().defaultValue())
                 .ifPresent(noOpBuilder::scope);
         return noOpBuilder.build();
     }

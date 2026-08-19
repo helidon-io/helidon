@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,13 @@
 package io.helidon.metrics.spi;
 
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LazyValue;
-import io.helidon.common.Weighted;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.ScopingConfig;
-import io.helidon.metrics.api.SeMetricsProgrammaticConfig;
+import io.helidon.service.registry.Services;
 
 /**
  * Programmatic (rather than user-configurable) settings that govern certain metrics behavior.
@@ -42,9 +38,11 @@ public interface MetricsProgrammaticConfig {
      * Returns the singleton instance of the metrics programmatic settings.
      *
      * @return the singleton
+     * @deprecated use {@link io.helidon.service.registry.Services#get(Class)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static MetricsProgrammaticConfig instance() {
-        return Instance.INSTANCE.get();
+        return Services.get(MetricsProgrammaticConfig.class);
     }
 
     /**
@@ -120,23 +118,4 @@ public interface MetricsProgrammaticConfig {
         return apply(MetricsConfig.builder(metricsConfig)).build();
     }
 
-    /**
-     * Internal use class to hold a reference to the singleton.
-     */
-    class Instance {
-
-        private static final LazyValue<MetricsProgrammaticConfig> INSTANCE =
-                LazyValue.create(() ->
-                                         HelidonServiceLoader.builder(
-                                                         ServiceLoader.load(
-                                                                 MetricsProgrammaticConfig.class))
-                                                 .addService(new SeMetricsProgrammaticConfig(),
-                                                             Weighted.DEFAULT_WEIGHT - 50)
-                                                 .build()
-                                                 .asList()
-                                                 .get(0));
-
-        private Instance() {
-        }
-    }
 }

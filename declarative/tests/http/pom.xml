@@ -62,6 +62,10 @@
             <artifactId>helidon-fault-tolerance</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-micrometer</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics-system-meters</artifactId>
         </dependency>

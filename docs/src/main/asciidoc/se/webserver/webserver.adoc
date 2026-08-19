@@ -537,8 +537,19 @@ headers and entity.
 Status and headers configured on `ServerResponse` are mutable response metadata.
 Configure them before calling `send()` or `outputStream()` when they should apply to the response emitted by the route.
 Once configured, this metadata remains on the current response until later handling changes it.
-Calling `next()`, calling `reroute(...)`, or throwing an exception does not clear it automatically; downstream routes and
-error handlers can replace or remove response metadata before sending the response.
+Calling `next()` or `reroute(...)` does not clear it automatically; downstream routes can replace or remove response
+metadata before sending the response.
+
+If a handler throws an exception while its response can still be reset, WebServer discards the unsent entity before
+invoking error handling. It also removes entity-related framing, representation, validator, range, digest, and trailer
+metadata, together with response preparation callbacks and output stream filters explicitly registered by Helidon
+infrastructure for that entity. Public `beforeSend(...)` listeners and `streamFilter(...)` filters remain registered so
+cross-cutting application policies also apply to a replacement error response. A response-scoped stream filter that
+changes representation metadata must use a response-scoped `beforeSend(...)` listener to configure the matching headers
+and register any trailer callback for whichever entity is sent. The configured status and unrelated metadata, such as
+CORS, cookies, cache controls, `Vary`, and custom headers, remain available to the error handler. The error handler is
+responsible for configuring or deliberately retaining an appropriate status before sending the replacement response.
+Once response metadata or entity bytes have been sent, the response cannot be replaced.
 
 [[anchor-filtering]]
 === Filtering

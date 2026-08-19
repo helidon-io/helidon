@@ -53,6 +53,11 @@ class JsonRpcClientResponseImpl implements JsonRpcClientResponse {
     }
 
     @Override
+    public String protocolId() {
+        return delegate.protocolId();
+    }
+
+    @Override
     public Optional<JsonValue> rpcId() {
         return asJsonObject().value("id");
     }

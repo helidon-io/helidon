@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Service;
 
@@ -57,7 +58,8 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private Counter openedCounterMetric;
 
     @Service.Inject
-    CircuitBreakerImpl(CircuitBreakerConfig config) {
+    CircuitBreakerImpl(CircuitBreakerConfig config,
+                       Supplier<MeterRegistry> meterRegistry) {
         this.delayMillis = config.delay().toMillis();
         this.successThreshold = config.successThreshold();
         this.results = new ResultWindow(config.volume(), config.errorRatio());
@@ -68,9 +70,11 @@ class CircuitBreakerImpl implements CircuitBreaker {
 
         this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
-            Tag nameTag = Tag.create("name", name);
-            callsCounterMetric = MetricsUtils.counterBuilder(FT_CIRCUITBREAKER_CALLS_TOTAL, nameTag);
-            openedCounterMetric = MetricsUtils.counterBuilder(FT_CIRCUITBREAKER_OPENED_TOTAL, nameTag);
+            var mr = meterRegistry.get();
+            var mf = mr.metricsFactory();
+            Tag nameTag = MetricsUtils.tag(mf, "name", name);
+            callsCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_CIRCUITBREAKER_CALLS_TOTAL, nameTag);
+            openedCounterMetric = MetricsUtils.counterBuilder(mf, mr, FT_CIRCUITBREAKER_OPENED_TOTAL, nameTag);
         }
     }
 

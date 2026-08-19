@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,24 +50,25 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
     }
 
     @AfterAll
-    static void checkMetrics() {
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+    static void checkMetrics(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
+        Tag okTag = okStatusTag(metricsFactory);
 
-        for (Tag tag : METHOD_TAGS) {
+        for (Tag tag : grpcMethodTags(metricsFactory)) {
             Optional<Counter> counter = meterRegistry.counter(CALL_STARTED, List.of(tag));
             assertThat(counter.isPresent(), is(true));
             assertThat(counter.get().count(), is(20L));
 
-            Optional<Timer> timer = meterRegistry.timer(CALL_DURATION, List.of(tag, OK_TAG));
+            Optional<Timer> timer = meterRegistry.timer(CALL_DURATION, List.of(tag, okTag));
             assertThat(timer.isPresent(), is(true));
             assertThat(timer.get().count(), is(20L));
 
-            Optional<DistributionSummary> summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            Optional<DistributionSummary> summary;
+            summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(tag, okTag));
             assertThat(summary.isPresent(), is(true));
             assertThat(summary.get().count(), is(20L));
             assertThat(summary.get().max(), greaterThan(0.0));
 
-            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(tag, okTag));
             assertThat(summary.isPresent(), is(true));
             assertThat(summary.get().count(), is(20L));
             assertThat(summary.get().max(), greaterThan(0.0));

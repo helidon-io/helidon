@@ -15,6 +15,7 @@
  */
 package io.helidon.docs.se.metrics;
 
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -23,14 +24,14 @@ import io.helidon.webserver.http.ServerResponse;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 
 @SuppressWarnings("ALL")
 class MicrometerSnippets {
 
     void snippet_1() {
         // tag::snippet_1[]
-        MeterRegistry registry = Metrics.globalRegistry; // <1>
+        MeterRegistry registry = Services.get(io.helidon.metrics.api.MeterRegistry.class)
+                .unwrap(MeterRegistry.class); // <1>
         MyService myService = new MyService(registry); // <2>
 
         WebServer.builder()

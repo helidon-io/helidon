@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.service.registry.Services;
 
 /**
  * Behavior of a tag for further identifying meters.
@@ -30,9 +31,11 @@ public interface Tag extends Wrapper {
      * @param key   the tag's key
      * @param value the tag's value
      * @return new {@code Tag} representing the key and value
+     * @deprecated use {@link io.helidon.metrics.api.MetricsFactory#tagCreate(String, String)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Tag create(String key, String value) {
-        return MetricsFactory.getInstance().tagCreate(key, value);
+        return Services.get(MetricsFactory.class).tagCreate(key, value);
     }
 
     /**

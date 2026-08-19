@@ -17,6 +17,7 @@
 package io.helidon.webclient.http2;
 
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -103,12 +104,14 @@ public class Http2ClientConnection {
     private final Semaphore pingPongSemaphore = new Semaphore(0);
     private final AtomicLong pingIdSequence = new AtomicLong();
     private final Http2ClientConfig clientConfig;
+    private final boolean clearReadTimeoutAfterInitialSettings;
     private final ReentrantLock reservedStreamsLock = new ReentrantLock();
     private final CountDownLatch initialSettingsLatch = new CountDownLatch(1);
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
     private volatile int lastStreamId;
     private volatile long expectedPingAck = NO_PING_ACK;
     private volatile long peerMaxConcurrentStreams = Http2Setting.MAX_CONCURRENT_STREAMS.defaultValue();
+    private volatile boolean clientPrefaceSent;
     private volatile boolean initialSettingsReceived;
     private int reservedStreams;
 
@@ -119,14 +122,22 @@ public class Http2ClientConnection {
 
     Http2ClientConnection(Http2ClientImpl http2Client, ClientConnection connection) {
         this(http2Client, connection, it -> {
-        });
+        }, false);
     }
 
     Http2ClientConnection(Http2ClientImpl http2Client,
                           ClientConnection connection,
                           Consumer<Http2ClientConnection> closeListener) {
+        this(http2Client, connection, closeListener, false);
+    }
+
+    private Http2ClientConnection(Http2ClientImpl http2Client,
+                                  ClientConnection connection,
+                                  Consumer<Http2ClientConnection> closeListener,
+                                  boolean clearReadTimeoutAfterInitialSettings) {
         this.protocolConfig = http2Client.protocolConfig();
         this.clientConfig = http2Client.clientConfig();
+        this.clearReadTimeoutAfterInitialSettings = clearReadTimeoutAfterInitialSettings;
         this.pendingInboundHeaders = new PendingInboundHeaders(protocolConfig.maxHeaderListSize());
         this.sendListener = http2Client.sendListener();
         this.recvListener = http2Client.recvListener();
@@ -168,6 +179,15 @@ public class Http2ClientConnection {
         return create(h2conn, http2Client, sendSettings);
     }
 
+    static Http2ClientConnection createUpgraded(Http2ClientImpl http2Client,
+                                                ClientConnection connection,
+                                                Consumer<Http2ClientConnection> closeListener,
+                                                Consumer<Http2ClientConnection> beforeStart) {
+
+        Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection, closeListener, true);
+        return create(h2conn, http2Client, false, beforeStart);
+    }
+
     /**
      * Starts a pre-created client connection instance and waits for the peer's
      * initial {@code SETTINGS}. This is primarily used by package-local tests
@@ -183,9 +203,17 @@ public class Http2ClientConnection {
     static <T extends Http2ClientConnection> T create(T connection,
                                                       Http2ClientImpl http2Client,
                                                       boolean sendSettings) {
+        return create(connection, http2Client, sendSettings, _ -> { });
+    }
+
+    private static <T extends Http2ClientConnection> T create(T connection,
+                                                              Http2ClientImpl http2Client,
+                                                              boolean sendSettings,
+                                                              Consumer<T> beforeStart) {
         Http2ClientConnection rawConnection = connection;
         boolean success = false;
         try {
+            beforeStart.accept(connection);
             rawConnection.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
             rawConnection.awaitInitialSettings();
             success = true;
@@ -431,6 +459,10 @@ public class Http2ClientConnection {
      */
     public void close() {
         initialSettingsLatch.countDown();
+        if (!clientPrefaceSent) {
+            closeConnection();
+            return;
+        }
         try {
             this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
         } catch (Throwable e) {
@@ -497,6 +529,7 @@ public class Http2ClientConnection {
             ctx.log(LOGGER, TRACE, "Starting HTTP/2 connection, thread: %s", Thread.currentThread().getName());
             try {
                 sendPreface(protocolConfig, sendSettings);
+                clientPrefaceSent = true;
             } catch (Throwable e) {
                 ctx.log(LOGGER, WARNING, "Failed to send preface.", e);
             } finally {
@@ -753,6 +786,12 @@ public class Http2ClientConnection {
         recvListener.frame(ctx, streamId, receivedSettings);
         serverSettings = mergeSettings(serverSettings, receivedSettings);
         updatePeerSettings(receivedSettings);
+        if (!initialSettingsReceived && clearReadTimeoutAfterInitialSettings) {
+            // Preserve the HTTP/1.1 request timeout through the upgrade handshake. Once the peer's initial
+            // SETTINGS arrive, HTTP/2 owns a permanent connection reader and applies timeouts to individual
+            // streams, so the inherited socket timeout must be cleared before the next connection read.
+            connection.readTimeout(Duration.ZERO);
+        }
         initialSettingsReceived = true;
         initialSettingsLatch.countDown();
         ackSettings();

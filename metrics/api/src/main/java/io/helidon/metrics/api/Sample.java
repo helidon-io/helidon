@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.metrics.api;
+
+import io.helidon.service.registry.Services;
 
 /**
  * Common behavior to all types of samples.
@@ -49,9 +51,7 @@ public interface Sample {
      * @return a new labeled value if exemplar handling is supported
      */
     static Labeled labeled(double value) {
-        return ExemplarServiceManager.isActive()
-                ? new LabeledSample(value, ExemplarServiceManager.exemplarLabel(), System.currentTimeMillis())
-                : new LabeledSample(value, ExemplarServiceManager.INACTIVE_LABEL, 0);
+        return Services.get(ExemplarServiceManager.class).labeled(value);
     }
 
     /**

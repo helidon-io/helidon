@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import java.time.Duration;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.service.registry.Services;
 
 /**
  * Timeout attempts to terminate execution after defined duration of time.
@@ -43,7 +46,8 @@ public interface Timeout extends FtHandler, RuntimeType.Api<TimeoutConfig> {
      * @return timeout handler
      */
     static Timeout create(TimeoutConfig config) {
-        return new TimeoutImpl(config);
+        return new TimeoutImpl(config,
+                               LazyValue.create(() -> Services.get(MeterRegistry.class)));
     }
 
     /**

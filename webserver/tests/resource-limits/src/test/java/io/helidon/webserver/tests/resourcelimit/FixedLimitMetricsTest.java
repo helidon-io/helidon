@@ -57,14 +57,21 @@ class FixedLimitMetricsTest {
             "fixed_concurrent_requests"
     };
 
-    private static final Tag ADMIN_SOCKET_TAG = Tag.create("socketName", "admin");
-
     private final WebClient webClient;
     private final WebClient adminClient;
+    private final MetricsFactory metricsFactory;
+    private final MeterRegistry meterRegistry;
+    private final Tag adminSocketTag;
 
-    FixedLimitMetricsTest(WebClient webClient, @Socket("admin") WebClient adminClient) {
+    FixedLimitMetricsTest(WebClient webClient,
+                          @Socket("admin") WebClient adminClient,
+                          MetricsFactory metricsFactory,
+                          MeterRegistry meterRegistry) {
         this.webClient = webClient;
         this.adminClient = adminClient;
+        this.metricsFactory = metricsFactory;
+        this.meterRegistry = meterRegistry;
+        this.adminSocketTag = metricsFactory.tagCreate("socketName", "admin");
     }
 
     @SetUpServer
@@ -111,7 +118,6 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
         Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", Collections.emptyList());
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));
@@ -123,8 +129,7 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
-        Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", List.of(ADMIN_SOCKET_TAG));
+        Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", List.of(adminSocketTag));
         assertThat(rtt.isPresent(), is(true));
 
         try (HttpClientResponse res = webClient.get("/observe/metrics").request()) {

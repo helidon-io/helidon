@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import java.util.List;
 
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,16 +31,20 @@ import static org.hamcrest.Matchers.is;
 
 class TestDistributionSummary {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = Services.get(MeterRegistry.class);
     }
 
     @Test
     void testUnwrap() {
-        DistributionSummary.Builder builder = DistributionSummary.builder("a");
+        DistributionSummary.Builder builder = metricsFactory.distributionSummaryBuilder(
+                "a",
+                metricsFactory.distributionStatisticsConfigBuilder());
         builder.unwrap(io.micrometer.core.instrument.DistributionSummary.Builder.class)
                 .distributionStatisticExpiry(Duration.ofMinutes(10));
         DistributionSummary summary = meterRegistry.getOrCreate(builder);

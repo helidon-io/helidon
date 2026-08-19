@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,24 @@
 
 package io.helidon.webserver.tests;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.NoSuchElementException;
 
+import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.encoding.ContentEncodingContextConfig;
+import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
@@ -38,10 +47,17 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 
 @ServerTest
 class ContentEncodingContextTest {
 
+    private static final String ETAG = "\"content-encoding\"";
+    private static final Header VARY_ACCEPT_ENCODING =
+            HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
+    private static final Header VARY_ORIGIN =
+            HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ORIGIN.defaultCase());
     private static final CustomizedEncodingContext encodingContext = new CustomizedEncodingContext();
 
     private final Http1Client client;
@@ -57,24 +73,125 @@ class ContentEncodingContextTest {
 
     @SetUpRoute
     static void routing(HttpRules rules) {
-        rules.get("/hello", (req, res) -> res.send("hello webserver"));
+        rules.get("/hello", (_, res) -> res.send("hello webserver"))
+                .get("/stream", (_, res) -> {
+                    try (OutputStream out = res.outputStream()) {
+                        out.write("hello webserver".getBytes(StandardCharsets.UTF_8));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+                .get("/vary", (_, res) -> {
+                    res.headers().add(HeaderValues.create(HeaderNames.VARY, HeaderNames.ORIGIN.defaultCase()));
+                    res.send("hello webserver");
+                })
+                .get("/not-modified", (req, res) -> {
+                    res.header(HeaderNames.ETAG, ETAG);
+                    if (req.headers().contains(HeaderValues.create(HeaderNames.IF_NONE_MATCH, ETAG))) {
+                        res.status(Status.NOT_MODIFIED_304).send();
+                    } else {
+                        res.send("hello webserver");
+                    }
+                });
     }
 
     @Test
-    void testCustomizeContentEncodingContext() {
+    void testAutomaticContentEncodingAddsVaryWithoutRequestHeader() {
         try (Http1ClientResponse response = client.method(Method.GET).uri("/hello").request()) {
+            assertThat(response.status(), equalTo(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY,
+                                                                       HeaderNames.ACCEPT_ENCODING_NAME));
             assertThat(response.entity().as(String.class), equalTo("hello webserver"));
             assertThat(encodingContext.NO_ACCEPT_ENCODING_COUNT, greaterThan(0));
         }
     }
 
+    @Test
+    void testAutomaticContentEncodingAddsVaryWithoutRequestHeaderForOutputStream() {
+        try (Http1ClientResponse response = client.method(Method.GET).uri("/stream").request()) {
+            assertThat(response.status(), equalTo(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY,
+                                                                       HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.entity().as(String.class), equalTo("hello webserver"));
+        }
+    }
+
+    @Test
+    void testAutomaticContentEncodingAddsVaryAcceptEncoding() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/hello")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request()) {
+
+            assertThat(response.status(), equalTo(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY,
+                                                                       HeaderNames.ACCEPT_ENCODING_NAME));
+        }
+    }
+
+    @Test
+    void testAutomaticContentEncodingAddsVaryAcceptEncodingForOutputStream() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/stream")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request()) {
+
+            assertThat(response.status(), equalTo(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY,
+                                                                       HeaderNames.ACCEPT_ENCODING_NAME));
+        }
+    }
+
+    @Test
+    void testAutomaticContentEncodingPreservesVary() {
+        try (Http1ClientResponse response = client.method(Method.GET).uri("/vary").request()) {
+            assertThat(response.headers().values(HeaderNames.VARY), hasSize(2));
+            assertThat(response.headers().containsToken(VARY_ORIGIN), is(true));
+            assertThat(response.headers().containsToken(VARY_ACCEPT_ENCODING), is(true));
+        }
+    }
+
+    @Test
+    void testAutomaticContentEncodingAddsVaryToNotModified() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/not-modified")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+
+            var varyValues = response.headers().values(HeaderNames.VARY);
+            assertThat("Vary response header " + varyValues,
+                       response.headers().containsToken(VARY_ACCEPT_ENCODING), is(true));
+        }
+
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/not-modified")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .header(HeaderNames.IF_NONE_MATCH, ETAG)
+                .request()) {
+            assertThat(response.status(), is(Status.NOT_MODIFIED_304));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.entity().hasEntity(), is(false));
+
+            var varyValues = response.headers().values(HeaderNames.VARY);
+            assertThat("Vary response header " + varyValues,
+                       response.headers().containsToken(VARY_ACCEPT_ENCODING), is(true));
+        }
+    }
 
     private static class CustomizedEncodingContext implements ContentEncodingContext {
         int ACCEPT_ENCODING_COUNT = 0;
 
         int NO_ACCEPT_ENCODING_COUNT = 0;
 
-        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.builder()
+                .addContentEncoding(GzipEncoding.create())
+                .build();
 
         @Override
         public ContentEncodingContextConfig prototype() {
