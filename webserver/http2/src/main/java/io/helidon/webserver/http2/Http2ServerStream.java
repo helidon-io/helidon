@@ -42,6 +42,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
@@ -699,6 +700,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                   exception.responseHeaders(),
                                                                   message);
 
+        var responseEntity = response.entity();
+        boolean preserveHeadContentLength = responseEntity.isEmpty()
+                && Method.HEAD_NAME.equals(exception.request().method());
         Status responseStatus = response.status();
         boolean finalInformationalResponse = responseStatus.family() == Status.Family.INFORMATIONAL;
         if (finalInformationalResponse) {
@@ -725,8 +729,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
             headers.remove(HeaderNames.TRANSFER_ENCODING);
             headers.remove(HeaderNames.TRAILER);
         } else {
-            entity = response.entity().orElse(BufferData.EMPTY_BYTES);
-            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
+            entity = responseEntity.orElse(BufferData.EMPTY_BYTES);
+            if (!preserveHeadContentLength) {
+                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
+            }
         }
         Http2Headers http2Headers = Http2Headers.create(headers)
                 .status(responseStatus);

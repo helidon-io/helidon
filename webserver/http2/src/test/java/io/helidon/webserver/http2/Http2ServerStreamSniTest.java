@@ -95,6 +95,12 @@ class Http2ServerStreamSniTest {
                                                                      Method.GET,
                                                                      "/",
                                                                      true);
+    private static final HttpPrologue HEAD_PROLOGUE = HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
+                                                                          Http2Connection.PROTOCOL,
+                                                                          Http2Connection.PROTOCOL_VERSION,
+                                                                          Method.HEAD,
+                                                                          "/",
+                                                                          true);
 
     @Test
     void missingAuthorityClosesStream() {
@@ -142,6 +148,33 @@ class Http2ServerStreamSniTest {
                 () -> assertThat(writer.dataFrame.header().length(), is(entity.length)),
                 () -> assertThat(new String(writer.dataFrame.data().readBytes(), StandardCharsets.UTF_8),
                                  is("custom handler entity"))
+        );
+    }
+
+    @Test
+    void rejectedHeadStreamPreservesContentLengthWithoutEntity() {
+        DirectHandlers directHandlers = DirectHandlers.builder()
+                .addHandler(DirectHandler.EventType.BAD_REQUEST,
+                            (_, _, _, _, _) -> DirectHandler.TransportResponse.builder()
+                                    .status(Status.BAD_REQUEST_400)
+                                    .header(HeaderNames.CONTENT_LENGTH, "23")
+                                    .build())
+                .build();
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        Http2ServerStream stream = stream(streams, writer);
+        when(stream.connectionContext().listenerContext().directHandlers()).thenReturn(directHandlers);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(HEAD_PROLOGUE);
+        stream.headers(headersWithoutAuthority(), false);
+
+        stream.run();
+
+        assertAll(
+                () -> assertThat(writer.headers.status(), is(Status.BAD_REQUEST_400)),
+                () -> assertThat(writer.headers.httpHeaders().contentLength().orElseThrow(), is(23L)),
+                () -> assertThat(writer.headerFlags.endOfStream(), is(true)),
+                () -> assertThat(writer.dataFrame, is(nullValue()))
         );
     }
 
