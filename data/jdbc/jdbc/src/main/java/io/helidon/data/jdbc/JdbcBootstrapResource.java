@@ -54,6 +54,11 @@ final class JdbcBootstrapResource {
                                          resource);
     }
 
+    @Override
+    public String toString() {
+        return descriptor.toString();
+    }
+
     /**
      * Returns the safe descriptor.
      *
@@ -70,11 +75,6 @@ final class JdbcBootstrapResource {
      */
     Resource resource() {
         return resource;
-    }
-
-    @Override
-    public String toString() {
-        return descriptor.toString();
     }
 
     /**

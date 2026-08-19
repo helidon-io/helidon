@@ -15,7 +15,7 @@
  */
 
 /**
- * End-to-end tests for declarative repositories and imperative JDBC applications.
+ * Database-free generated fixtures for the Data JDBC provider tests.
  */
 module io.helidon.data.jdbc.tests {
     requires java.sql;
@@ -23,7 +23,6 @@ module io.helidon.data.jdbc.tests {
     requires io.helidon.data;
     requires io.helidon.data.jdbc;
     requires io.helidon.service.registry;
-    requires io.helidon.transaction;
 
     exports io.helidon.data.jdbc.tests;
 }

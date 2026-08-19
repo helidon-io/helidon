@@ -66,7 +66,8 @@ interface JdbcConnectionLease extends AutoCloseable {
     }
 
     /**
-     * Lease that closes its physical connection when the operation ends.
+     * Lease that closes its physical connection when the operation ends and invalidates it when close cannot confirm
+     * release.
      */
     final class Owned implements JdbcConnectionLease {
 
@@ -89,7 +90,7 @@ interface JdbcConnectionLease extends AutoCloseable {
          * Acquires and validates a physically owned connection. Operations that
          * own their connection require auto-commit so an ordinary lease close cannot leave
          * transaction completion to driver-specific {@link Connection#close()}
-         * behavior. A rejected connection is closed before the acquisition
+         * behavior. A rejected connection is closed, or invalidated after a failed close, before the acquisition
          * failure is rethrown.
          *
          * @param dataSource source of the owned connection
@@ -97,9 +98,11 @@ interface JdbcConnectionLease extends AutoCloseable {
          * @throws SQLException when acquisition or validation fails
          */
         static Owned acquire(DataSource dataSource) throws SQLException {
-            Connection connection = dataSource.getConnection();
+            Connection connection = JdbcExceptionTranslator.invoke("acquiring a connection",
+                                                                   dataSource::getConnection);
             try {
-                if (!connection.getAutoCommit()) {
+                if (!JdbcExceptionTranslator.invoke("inspecting automatic commit mode",
+                                                    connection::getAutoCommit)) {
                     throw JdbcExceptionTranslator.safeException(AUTO_COMMIT_REQUIRED);
                 }
                 return new Owned(connection);
@@ -108,19 +111,59 @@ interface JdbcConnectionLease extends AutoCloseable {
                 try {
                     connection.close();
                 } catch (SQLException | RuntimeException | Error closeFailure) {
-                    // Preserve the acquisition failure and prevent driver cleanup details from escaping.
-                    reportedFailure = JdbcExceptionTranslator.suppress(failure,
+                    // A failed close does not prove that a pooled or physical connection was released. Preserve the
+                    // validation failure, record a safe close diagnostic, and invalidate while the reference is held.
+                    reportedFailure = JdbcExceptionTranslator.suppress(reportedFailure,
                                                                        "closing a rejected connection",
                                                                        closeFailure);
+                    reportedFailure = JdbcConnectionInvalidator.invalidate(connection, reportedFailure);
                 }
                 throw rethrow(reportedFailure);
             }
         }
 
+        @Override
+        public Connection connection() {
+            if (closed) {
+                throw new IllegalStateException("The connection lease is closed.");
+            }
+            return connection;
+        }
+
         /**
-         * Restores the declared or unchecked category of an acquisition failure.
+         * Closes the owned connection, or invalidates it when ordinary close cannot confirm release.
+         * The first close failure remains the reported failure even when best-effort invalidation succeeds.
          *
-         * @param failure failure to throw
+         * @throws SQLException when ordinary close reports an SQL failure
+         */
+        @Override
+        public void close() throws SQLException {
+            if (closed) {
+                return;
+            }
+
+            Throwable failure = null;
+            try {
+                connection.close();
+            } catch (SQLException | RuntimeException | Error closeFailure) {
+                // Connection.close may fail before a pool return or physical release. Invalidate immediately rather
+                // than leaving the runner with a terminal lease whose connection has no remaining cleanup path.
+                failure = JdbcConnectionInvalidator.invalidate(connection, closeFailure);
+            } finally {
+                // Success and completed invalidation are both terminal. A later close must not reuse or retry an
+                // unsafe connection after this method has exhausted the provider's cleanup sequence.
+                closed = true;
+            }
+
+            if (failure != null) {
+                throw rethrow(failure);
+            }
+        }
+
+        /**
+         * Restores the declared or unchecked category of a connection failure.
+         *
+         * @param failure connection failure to throw
          * @return never returns
          * @throws SQLException when the failure is an SQL exception
          */
@@ -132,22 +175,6 @@ interface JdbcConnectionLease extends AutoCloseable {
                 throw runtimeException;
             }
             throw (Error) failure;
-        }
-
-        @Override
-        public Connection connection() {
-            if (closed) {
-                throw new IllegalStateException("The connection lease is closed.");
-            }
-            return connection;
-        }
-
-        @Override
-        public void close() throws SQLException {
-            if (!closed) {
-                closed = true;
-                connection.close();
-            }
         }
     }
 }

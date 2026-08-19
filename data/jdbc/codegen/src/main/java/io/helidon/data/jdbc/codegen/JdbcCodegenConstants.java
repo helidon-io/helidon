@@ -29,6 +29,7 @@ final class JdbcCodegenConstants {
     static final String JDBC_CLIENT_NAME = "jdbcClient";
     static final String NAMED_JDBC_CLIENT_NAME = "namedJdbcClient";
     static final String JDBC_STATEMENT_NAME = "jdbcStatement";
+    static final String BIND_PARAMETER_METHOD_NAME = "bindParameter";
     static final String SQL_FIELD_PREFIX = "SQL_";
     static final String MAPPER_FIELD_PREFIX = "MAPPER_";
     static final String ROW_MAPPER_SUFFIX = "RowMapper";

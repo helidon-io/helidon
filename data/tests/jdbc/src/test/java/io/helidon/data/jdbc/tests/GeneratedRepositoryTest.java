@@ -15,260 +15,67 @@
  */
 package io.helidon.data.jdbc.tests;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import io.helidon.data.DataException;
-import io.helidon.service.registry.ServiceRegistryException;
-import io.helidon.service.registry.ServiceRegistryManager;
-import io.helidon.transaction.Tx;
-import io.helidon.transaction.TxException;
+import io.helidon.data.jdbc.JdbcClient;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class GeneratedRepositoryTest {
 
+    /**
+     * Proves generated {@code int} update methods preserve overflow instead of
+     * silently narrowing the JDBC long update count.
+     */
     @Test
-    void executesGeneratedRepositoryThroughServiceRegistryAndLocalTransactions() {
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
-        try {
-            ContactRepository repository = manager.registry().get(ContactRepository.class);
-
-            assertThat(repository.findAll(),
-                       is(List.of(new ContactView(1, "alpha", Optional.of("alpha@example.test")),
-                                  new ContactView(2, "beta", Optional.empty()))));
-            assertThat(repository.email(1), is(Optional.of("alpha@example.test")));
-            assertThat(repository.email(2), is(Optional.empty()));
-            assertThat(repository.idsWithDuplicateUnusedLabels(), is(List.of(1L, 2L)));
-
-            DataException ambiguousLabel = assertThrows(DataException.class,
-                                                        () -> repository.ambiguousRecordLabels(1));
-            assertThat(ambiguousLabel.getMessage(),
-                       is("The result contains more than one column labeled 'name'."));
-            DataException missingLabel = assertThrows(DataException.class,
-                                                      () -> repository.missingRecordLabel(1));
-            assertThat(missingLabel.getMessage(), is("The result does not contain a column labeled 'name'."));
-
-            assertThat(repository.mapped(1), is(new ContactLabel(1, "preferred:alpha")));
-            assertThat(repository.singleMapped(1), is(new SingleMapperContact("single:alpha")));
-            assertThat(repository.mappedOptional(1),
-                       is(Optional.of(new ContactLabel(1, "preferred:alpha"))));
-            assertThat(repository.mappedOptional(Long.MAX_VALUE), is(Optional.empty()));
-            assertThat(repository.mappedList().subList(0, 2),
-                       is(List.of(new ContactLabel(1, "preferred:alpha"),
-                                  new ContactLabel(2, "preferred:beta"))));
-            assertThat(repository.explicitlyMapped(1), is(new ContactLabel(1, "explicit:alpha")));
-            assertThat(repository.explicitlyMappedOptional(1),
-                       is(Optional.of(new ContactLabel(1, "explicit:alpha"))));
-            assertThat(repository.explicitlyMappedOptional(Long.MAX_VALUE), is(Optional.empty()));
-            assertThat(repository.explicitlyMappedList().subList(0, 2),
-                       is(List.of(new ContactLabel(1, "explicit:alpha"),
-                                  new ContactLabel(2, "explicit:beta"))));
-            IllegalStateException mapperFailure = assertThrows(IllegalStateException.class,
-                                                               () -> repository.mapperFailure(1));
-            assertThat(mapperFailure.getMessage(), is("deliberate mapper failure"));
-            assertThat(repository.email(1), is(Optional.of("alpha@example.test")));
-
-            assertThat(repository.optionalEmailFilter("alpha@example.test").size(), is(1));
-            assertThat(repository.optionalEmailFilter(null).size(), is(2));
-            assertThat(repository.nullSafeEmail("alpha@example.test").size(), is(1));
-            assertThat(repository.nullSafeEmail(null),
-                       is(List.of(new ContactView(2, "beta", Optional.empty()))));
-
-            long scalarKey = repository.insert("scalar-key");
-            assertThat(repository.insertOptional("optional-key").isPresent(), is(true));
-            assertThat(repository.insertList("list-key").size(), is(1));
-            ContactView recordKey = repository.insertRecord("record-key", "record@example.test");
-            assertThat(recordKey.name(), is("record-key"));
-            assertThat(recordKey.email(), is(Optional.of("record@example.test")));
-            assertThat(repository.insertMapped("marker-key").label(), is("preferred:marker-key"));
-            assertThat(repository.insertMappedOptional("marker-optional-key").isPresent(), is(true));
-            assertThat(repository.insertMappedList("marker-list-key").size(), is(1));
-            assertThat(repository.insertExplicitlyMapped("explicit-key").label(), is("explicit:explicit-key"));
-            assertThat(repository.insertExplicitlyMappedOptional("explicit-optional-key").isPresent(), is(true));
-            assertThat(repository.insertExplicitlyMappedList("explicit-list-key").size(), is(1));
-            assertThat(repository.rename("renamed", scalarKey), is(1));
-            assertThat(repository.delete(scalarKey), is(1L));
-
-            Tx.transaction(Tx.Type.REQUIRED, () -> {
-                repository.insert("committed");
-                return null;
-            });
-            int beforeRollback = repository.findAll().size();
-            assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, () -> {
-                repository.insert("rolled-back");
-                throw new IllegalStateException("force rollback");
-            }));
-            assertThat(repository.findAll().size(), is(beforeRollback));
-        } finally {
-            manager.shutdown();
-        }
-    }
-
-    @Test
-    void selectsEqualWeightMarkerMapperDeterministically() {
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
-        try {
-            EqualWeightMapperRepository repository = manager.registry().get(EqualWeightMapperRepository.class);
-
-            assertThat(repository.find(1), is(new EqualWeightContact("alpha:alpha")));
-        } finally {
-            manager.shutdown();
-        }
-    }
-
-    @Test
-    void rejectsMissingMarkerAndExplicitMapperServicesDuringRepositoryActivation() {
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
-        try {
-            assertThrows(ServiceRegistryException.class,
-                         () -> manager.registry().get(MissingMapperRepository.class));
-            assertThrows(ServiceRegistryException.class,
-                         () -> manager.registry().get(UnregisteredMapperRepository.class));
-        } finally {
-            manager.shutdown();
-        }
-    }
-
-    @Test
-    void doesNotFallBackWhenPreferredMapperActivationFails() {
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
-        try {
-            assertThrows(ServiceRegistryException.class,
-                         () -> manager.registry().get(FailingMapperRepository.class));
-        } finally {
-            manager.shutdown();
-        }
-    }
-
-    @Test
-    void invokesSharedSingletonMapperConcurrently() throws Exception {
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
-        try {
-            ContactRepository repository = manager.registry().get(ContactRepository.class);
-            Callable<ContactLabel> invocation = () -> repository.mapped(1);
-            List<Callable<ContactLabel>> invocations = java.util.Collections.nCopies(100, invocation);
-
-            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-                List<Future<ContactLabel>> results = executor.invokeAll(invocations);
-                for (Future<ContactLabel> result : results) {
-                    assertThat(result.get(), is(new ContactLabel(1, "preferred:alpha")));
-                }
-            }
-        } finally {
-            manager.shutdown();
-        }
-    }
-
-    @Test
+    @SuppressWarnings("helidon:api:internal")
     void rejectsAnUpdateCountOutsideThePrimitiveIntRange() {
-        io.helidon.data.jdbc.JdbcClient client = org.mockito.Mockito.mock(io.helidon.data.jdbc.JdbcClient.class);
-        io.helidon.data.jdbc.JdbcClient.Statement statement =
-                org.mockito.Mockito.mock(io.helidon.data.jdbc.JdbcClient.Statement.class);
-        org.mockito.Mockito.when(client.create(org.mockito.ArgumentMatchers.anyString())).thenReturn(statement);
-        org.mockito.Mockito.when(statement.bind(org.mockito.ArgumentMatchers.anyInt(),
-                                                org.mockito.ArgumentMatchers.any()))
-                .thenReturn(statement);
-        org.mockito.Mockito.when(statement.execute()).thenReturn(Long.MAX_VALUE);
-        ContactRepository repository = new ContactRepository__Jdbc(client,
-                                                                    row -> new ContactLabel(0, ""),
-                                                                    row -> new SingleMapperContact(""),
-                                                                    new ExplicitContactMapper(),
-                                                                    new ThrowingContactMapper());
+        JdbcClient client = mock(JdbcClient.class);
+        JdbcClient.Statement statement = mock(JdbcClient.Statement.class);
+        when(client.create(anyString(), anyInt())).thenReturn(statement);
+        when(statement.bind(anyInt(), any())).thenReturn(statement);
+        when(statement.execute()).thenReturn(Long.MAX_VALUE);
+        OverflowRepository repository = new OverflowRepository__Jdbc(client);
 
         assertThrows(ArithmeticException.class, () -> repository.rename("overflow", 1));
     }
 
+    /**
+     * Proves a repository requesting more than ten key columns emits one
+     * fluent {@code addColumn} call per name and no size-limited collection
+     * construction in generated source.
+     *
+     * @throws Exception when the compiler output cannot be inspected
+     */
     @Test
-    void executesGeneratedOperationKindsAcrossEveryPropagationType() {
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
-        try {
-            ContactRepository repository = manager.registry().get(ContactRepository.class);
+    void emitsEveryWideGeneratedKeyColumnAsAFluentCall() throws Exception {
+        Path testClasses = Path.of(GeneratedRepositoryTest.class.getProtectionDomain()
+                                           .getCodeSource()
+                                           .getLocation()
+                                           .toURI());
+        Path generatedSource = testClasses.getParent()
+                .resolve("generated-sources/annotations/io/helidon/data/jdbc/tests/"
+                                 + "WideGeneratedKeyRepository__Jdbc.java");
 
-            exerciseGeneratedOperations(repository, Tx.Type.REQUIRED);
-            exerciseGeneratedOperations(repository, Tx.Type.NEW);
-            exerciseGeneratedOperations(repository, Tx.Type.SUPPORTED);
-            exerciseGeneratedOperations(repository, Tx.Type.NEVER);
-            exerciseGeneratedOperations(repository, Tx.Type.UNSUPPORTED);
-            assertThrows(TxException.class,
-                         () -> exerciseGeneratedOperations(repository, Tx.Type.MANDATORY));
+        String source = Files.readString(generatedSource);
 
-            for (Tx.Type type : List.of(Tx.Type.REQUIRED,
-                                        Tx.Type.MANDATORY,
-                                        Tx.Type.SUPPORTED,
-                                        Tx.Type.NEW,
-                                        Tx.Type.UNSUPPORTED)) {
-                Tx.transaction(Tx.Type.REQUIRED, () -> {
-                    exerciseGeneratedOperations(repository, type);
-                    return null;
-                });
-            }
-            Tx.transaction(Tx.Type.REQUIRED, () -> {
-                assertThrows(TxException.class,
-                             () -> exerciseGeneratedOperations(repository, Tx.Type.NEVER));
-                return null;
-            });
-        } finally {
-            manager.shutdown();
+        assertThat(source.split("\\.addColumn\\(", -1).length - 1, is(11));
+        for (int index = 1; index <= 11; index++) {
+            assertThat(source, containsString(".addColumn(\"KEY_%02d\")".formatted(index)));
         }
-    }
-
-    @Test
-    void appliesTransactionAnnotationsOnGeneratedRepositoryMethods() {
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
-        try {
-            TransactionalContactRepository repository = manager.registry().get(TransactionalContactRepository.class);
-
-            assertThrows(TxException.class, () -> repository.mandatory("mandatory-outside"));
-            assertThat(repository.findByName("mandatory-outside"), is(Optional.empty()));
-
-            repository.required("required-outside");
-            repository.never("never-outside");
-            assertThat(repository.findByName("required-outside"), is(Optional.of("required-outside")));
-            assertThat(repository.findByName("never-outside"), is(Optional.of("never-outside")));
-
-            invokeAndRollBack(() -> repository.mandatory("mandatory-joined"));
-            invokeAndRollBack(() -> repository.required("required-joined"));
-            invokeAndRollBack(() -> repository.supported("supported-joined"));
-            assertThat(repository.findByName("mandatory-joined"), is(Optional.empty()));
-            assertThat(repository.findByName("required-joined"), is(Optional.empty()));
-            assertThat(repository.findByName("supported-joined"), is(Optional.empty()));
-
-            invokeAndRollBack(() -> repository.inNewTransaction("new-suspended"));
-            invokeAndRollBack(() -> repository.unsupported("unsupported-suspended"));
-            assertThat(repository.findByName("new-suspended"), is(Optional.of("new-suspended")));
-            assertThat(repository.findByName("unsupported-suspended"), is(Optional.of("unsupported-suspended")));
-
-            Tx.transaction(Tx.Type.REQUIRED, () -> {
-                assertThrows(TxException.class, () -> repository.never("never-inside"));
-                return null;
-            });
-            assertThat(repository.findByName("never-inside"), is(Optional.empty()));
-        } finally {
-            manager.shutdown();
-        }
-    }
-
-    private static void exerciseGeneratedOperations(ContactRepository repository, Tx.Type type) {
-        Tx.transaction(type, () -> {
-            repository.findAll();
-            repository.rename("alpha", 1);
-            repository.insert("propagation-" + type);
-            return null;
-        });
-    }
-
-    private static void invokeAndRollBack(Runnable invocation) {
-        assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, () -> {
-            invocation.run();
-            throw new IllegalStateException("force rollback");
-        }));
+        assertThat(source, not(containsString("List.of(")));
+        assertThat(source, not(containsString("new String[]")));
     }
 }

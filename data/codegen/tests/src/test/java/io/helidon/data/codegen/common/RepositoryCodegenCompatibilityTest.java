@@ -139,7 +139,7 @@ class RepositoryCodegenCompatibilityTest {
                 CodegenException.class,
                 () -> new RepositoryCodegen(context, List.of(unrelated), List.of(persistence))
                         .process(round(repositoryWithoutOwnedAnnotation)));
-        assertThat(absent.getMessage(), containsString("extends no data repository provider's interface"));
+        assertThat(absent.getMessage(), containsString("No data repository provider recognizes the repository interface."));
         verify(persistence, never()).generate(any(), any(), any(), any());
 
         RepositoryGenerator first = generator(Set.of(REPOSITORY_ANNOTATION), Set.of());
@@ -148,7 +148,8 @@ class RepositoryCodegenCompatibilityTest {
                 CodegenException.class,
                 () -> new RepositoryCodegen(context, List.of(first, second), List.of(persistence))
                         .process(round(repository)));
-        assertThat(ambiguous.getMessage(), containsString("owned by multiple data repository generators"));
+        assertThat(ambiguous.getMessage(),
+                   containsString("More than one data repository generator recognizes the repository annotation."));
     }
 
     @Test
@@ -237,6 +238,16 @@ class RepositoryCodegenCompatibilityTest {
         }
 
         @Override
+        public QueryBuilder queryBuilder(RepositoryInfo repositoryInfo) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public StatementGenerator statementGenerator() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         protected String provider() {
             return provider;
         }
@@ -254,16 +265,6 @@ class RepositoryCodegenCompatibilityTest {
                                                TypeName className,
                                                ClassModel.Builder classModel) {
             generated++;
-        }
-
-        @Override
-        public QueryBuilder queryBuilder(RepositoryInfo repositoryInfo) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public StatementGenerator statementGenerator() {
-            throw new UnsupportedOperationException();
         }
 
         private int generated() {

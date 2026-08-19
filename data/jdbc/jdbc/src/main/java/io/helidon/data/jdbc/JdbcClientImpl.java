@@ -23,7 +23,8 @@ import javax.sql.DataSource;
 import io.helidon.common.LruCache;
 
 /**
- * Creates statement stages for generated JDBC repository execution.
+ * Creates statement stages for imperative applications and generated JDBC
+ * repository execution.
  * <p>
  * No connection is borrowed until a terminal operation reaches
  * {@link JdbcRunner}. The client is safe to share. Each returned
@@ -31,22 +32,15 @@ import io.helidon.common.LruCache;
  */
 final class JdbcClientImpl implements JdbcClient {
 
-    // Package access lets focused tests verify both cache boundaries without reflection.
-    static final int PARAMETER_COUNT_CACHE_CAPACITY = 256;
-    static final int MAX_CACHEABLE_SQL_LENGTH = 4_096;
+    // Retain marker counts for at most 256 imperative SQL strings per client so repeated dynamic statements
+    // benefit from reuse without allowing application SQL to grow the cache without limit.
+    private static final int PARAMETER_COUNT_CACHE_CAPACITY = 256;
+
+    // Admit SQL up to 4,096 UTF-16 code units and scan longer SQL without retaining it in the client cache.
+    private static final int MAX_CACHEABLE_SQL_LENGTH = 4_096;
 
     private final JdbcRunner runner;
-    private final JdbcLexicalProfile lexicalProfile;
     private final LruCache<String, Integer> parameterCounts;
-
-    /**
-     * Creates a client that owns connections obtained directly from the datasource.
-     *
-     * @param dataSource datasource used for terminal operations
-     */
-    JdbcClientImpl(DataSource dataSource) {
-        this(dataSource, JdbcConnectionLease.ownedProvider());
-    }
 
     /**
      * Creates a client with a connection-lease policy.
@@ -56,63 +50,20 @@ final class JdbcClientImpl implements JdbcClient {
      */
     JdbcClientImpl(DataSource dataSource,
                    JdbcConnectionLease.Provider leaseProvider) {
-        this(dataSource,
-             leaseProvider,
-             JdbcLexicalProfile.PORTABLE,
-             LruCache.create(PARAMETER_COUNT_CACHE_CAPACITY));
-    }
-
-    /**
-     * Creates a client with an explicit parameter-count cache.
-     *
-     * <p>This package-private seam allows tests to use a small common LRU cache
-     * and observe admission and eviction without exposing cache state through
-     * the public client contract.</p>
-     *
-     * @param dataSource datasource used for terminal operations
-     * @param leaseProvider provider that decides whether an operation owns or borrows a connection
-     * @param parameterCounts cache of positional marker counts by SQL text
-     */
-    JdbcClientImpl(DataSource dataSource,
-                   JdbcConnectionLease.Provider leaseProvider,
-                   LruCache<String, Integer> parameterCounts) {
-        this(dataSource, leaseProvider, JdbcLexicalProfile.PORTABLE, parameterCounts);
-    }
-
-    /**
-     * Creates a client with an explicit lexical profile and parameter-count
-     * cache.
-     * <p>
-     * The profile is fixed for the lifetime of the client, so SQL text remains
-     * a sufficient cache key. This package-private constructor also establishes
-     * the propagation point for a future, separately approved profile-selection
-     * contract without exposing one through {@link JdbcClient} today.
-     *
-     * @param dataSource datasource used for terminal operations
-     * @param leaseProvider provider that decides whether an operation owns or borrows a connection
-     * @param lexicalProfile marker lexical profile
-     * @param parameterCounts cache of positional marker counts by SQL text
-     */
-    JdbcClientImpl(DataSource dataSource,
-                   JdbcConnectionLease.Provider leaseProvider,
-                   JdbcLexicalProfile lexicalProfile,
-                   LruCache<String, Integer> parameterCounts) {
         this.runner = new JdbcRunner(Objects.requireNonNull(dataSource, "The datasource must not be null."),
                                      Objects.requireNonNull(leaseProvider,
                                                             "The connection lease provider must not be null."));
-        this.lexicalProfile = Objects.requireNonNull(lexicalProfile, "The JDBC lexical profile must not be null.");
-        this.parameterCounts = Objects.requireNonNull(parameterCounts,
-                                                      "The parameter count cache must not be null.");
+        this.parameterCounts = LruCache.create(PARAMETER_COUNT_CACHE_CAPACITY);
     }
 
     /**
      * Creates a new in-memory statement stage.
      *
-     * <p>Declarative code has already rewritten named parameters to JDBC
-     * positional markers. Counting those markers lets the stage allocate the
-     * exact number of bind slots without preparing a JDBC statement. The
-     * bounded cache benefits static generated SQL while preventing unbounded
-     * retention when callers supply dynamic SQL. SQL longer than
+     * <p>Imperative SQL uses positional JDBC markers. Counting those markers
+     * lets the stage allocate the exact number of bind slots without preparing
+     * a JDBC statement. The bounded cache benefits repeated application SQL
+     * while preventing unbounded retention when callers supply dynamic SQL.
+     * SQL longer than
      * {@value #MAX_CACHEABLE_SQL_LENGTH} UTF-16 code units is still scanned
      * normally but is never retained by the client cache.</p>
      *
@@ -127,6 +78,27 @@ final class JdbcClientImpl implements JdbcClient {
     }
 
     /**
+     * Creates a statement stage from a code-generation plan whose SQL and
+     * physical marker count were validated at compilation time.
+     *
+     * @param sql validated positional SQL
+     * @param parameterCount exact physical marker count
+     * @return a new single-use statement stage
+     */
+    @Override
+    public Statement create(String sql, int parameterCount) {
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        // A physical marker occupies at least one code unit. This constant-time
+        // guard prevents an invalid internal caller from requesting an
+        // unrelated or unbounded bind array without rescanning generated SQL.
+        if (parameterCount < 0 || parameterCount > sql.length()) {
+            throw new IllegalArgumentException(
+                    "The JDBC parameter count must be between zero and the SQL statement length.");
+        }
+        return new JdbcStatement(runner, sql, parameterCount);
+    }
+
+    /**
      * Returns the positional marker count with bounded SQL retention.
      *
      * <p>The constant-time length check intentionally happens before the cache
@@ -137,7 +109,7 @@ final class JdbcClientImpl implements JdbcClient {
      *
      * <p>The common cache may invoke the supplier concurrently for the same
      * missing key. That is safe because SQL strings are immutable and marker
-     * counting is deterministic; every caller receives the same count even
+     * counting is deterministic. Every caller receives the same count even
      * when duplicate scans race.</p>
      *
      * @param sql non-null SQL text
@@ -145,9 +117,11 @@ final class JdbcClientImpl implements JdbcClient {
      */
     private int parameterCount(String sql) {
         if (sql.length() > MAX_CACHEABLE_SQL_LENGTH) {
-            return JdbcOperation.parameterCount(sql, lexicalProfile);
+            return JdbcOperation.parameterCount(sql, JdbcLexicalProfile.PORTABLE);
         }
-        return parameterCounts.computeValue(sql, () -> Optional.of(JdbcOperation.parameterCount(sql, lexicalProfile)))
+        return parameterCounts.computeValue(
+                        sql,
+                        () -> Optional.of(JdbcOperation.parameterCount(sql, JdbcLexicalProfile.PORTABLE)))
                 .orElseThrow();
     }
 }

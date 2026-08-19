@@ -66,6 +66,16 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     }
 
     /**
+     * Returns the number of physical JDBC marker positions in the rewritten
+     * SQL. Repeated named parameters occupy one position for each occurrence.
+     *
+     * @return physical JDBC marker count
+     */
+    int parameterCount() {
+        return binds.size();
+    }
+
+    /**
      * Validates the fixed declarative scalar input boundary.
      *
      * @param parameters repository parameters
