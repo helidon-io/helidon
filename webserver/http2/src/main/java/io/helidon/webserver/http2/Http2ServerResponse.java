@@ -222,7 +222,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         outputStream = new BlockingOutputStream(request, this, () -> this.isSent = true, () -> {
             this.isSent = true;
             afterSend();
-        }, beforeTrailers(), noEntityResponse);
+        }, beforeTrailers(), noEntityResponse, ctx.listenerContext().config().writeBufferSize());
         if (noEntityResponse) {
             return new ApplicationOutputStream(outputStream, outputStream);
         }
@@ -364,11 +364,13 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private final Http2ServerStream stream;
         private final boolean headRequest;
         private final boolean noEntityResponse;
+        private final int headWriteLimit;
 
         private BufferData firstBuffer;
         private boolean closed;
         private boolean firstByte = true;
         private boolean headResponseSent;
+        private long headApplicationBytes;
         private long bytesWritten;
         private long headRepresentationLength;
         private final Consumer<ServerResponseTrailers> beforeTrailers;
@@ -378,7 +380,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                      Runnable responseSentRunnable,
                                      Runnable responseCloseRunnable,
                                      Consumer<ServerResponseTrailers> beforeTrailers,
-                                     boolean noEntityResponse) {
+                                     boolean noEntityResponse,
+                                     int headWriteLimit) {
             this.request = request;
             this.response = response;
             this.headers = response.headers;
@@ -390,6 +393,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             this.beforeTrailers = beforeTrailers;
             this.headRequest = request.prologue().method() == Method.HEAD;
             this.noEntityResponse = noEntityResponse;
+            this.headWriteLimit = headWriteLimit;
         }
 
         @Override
@@ -410,14 +414,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         @Override
         public void flush() throws IOException {
             if (headRequest) {
-                if (!headResponseSent) {
-                    if (noEntityResponse) {
-                        normalizeNoEntityHeaders(headers, status);
-                    }
-                    headers.remove(HeaderNames.TRAILER);
-                    sendHeadHeaders(true);
-                    responseSentRunnable.run();
-                }
+                sendIncompleteHeadResponse();
                 return;
             }
             if (firstByte && firstBuffer != null) {
@@ -525,6 +522,18 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             headResponseSent = true;
         }
 
+        private void sendIncompleteHeadResponse() {
+            if (headResponseSent) {
+                return;
+            }
+            if (noEntityResponse) {
+                normalizeNoEntityHeaders(headers, status);
+            }
+            headers.remove(HeaderNames.TRAILER);
+            sendHeadHeaders(true);
+            responseSentRunnable.run();
+        }
+
         private void sendFirstChunkOnly(boolean sendTrailers) {
             int contentLength;
             if (firstBuffer == null) {
@@ -586,6 +595,14 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             }
             if (length > 0 && headResponseSent) {
                 throw new IOException("HEAD response already sent");
+            }
+            if (length > 0 && headRequest) {
+                if (headApplicationBytes + length > headWriteLimit) {
+                    sendIncompleteHeadResponse();
+                    throw new IOException("HEAD response representation exceeded streaming limit of "
+                                                  + headWriteLimit + " bytes");
+                }
+                headApplicationBytes += length;
             }
         }
     }

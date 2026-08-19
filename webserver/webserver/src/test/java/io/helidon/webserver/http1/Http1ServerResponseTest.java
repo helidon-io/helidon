@@ -576,6 +576,32 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void streamingHeadStopsAfterConfiguredDiscardLimit() throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        DataWriter writer = mock(DataWriter.class);
+        ListenerConfig listenerConfig = WebServer.builder().writeBufferSize(4).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext, listenerConfig);
+        response.contentLength(100);
+
+        OutputStream output = response.outputStream();
+        output.write("1234".getBytes(StandardCharsets.UTF_8));
+        IOException exception = assertThrows(IOException.class, () -> output.write('5'));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = new String(responseBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("streaming limit of 4 bytes")),
+                () -> assertThat(response.isSent(), is(true)),
+                () -> assertThat(responseText, containsString("Content-Length: 100\r\n")),
+                () -> assertThat(responseText.contains("1234"), is(false)),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+    }
+
+    @Test
     void flushedStreamingHeadSendsHeadersWithoutGeneratedMetadata() throws IOException {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);

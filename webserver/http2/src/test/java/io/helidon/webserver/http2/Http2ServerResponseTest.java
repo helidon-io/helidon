@@ -41,6 +41,7 @@ import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.DirectHandlers;
@@ -536,6 +537,31 @@ class Http2ServerResponseTest {
     }
 
     @Test
+    void streamingHeadStopsAfterConfiguredDiscardLimit() throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        ListenerConfig listenerConfig = WebServer.builder().writeBufferSize(4).buildPrototype();
+        Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext, listenerConfig);
+        response.contentLength(100);
+
+        OutputStream output = response.outputStream();
+        output.write("1234".getBytes(StandardCharsets.UTF_8));
+        IOException exception = assertThrows(IOException.class, () -> output.write('5'));
+        response.commit();
+
+        var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+        verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
+        verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+        verify(stream, never()).writeData(any(), anyBoolean());
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("streaming limit of 4 bytes")),
+                () -> assertThat(response.isSent(), is(true)),
+                () -> assertThat(responseHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(100L))
+        );
+    }
+
+    @Test
     void flushedStreamingHeadSendsImmediatelyAndStopsWrites() throws IOException {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
@@ -748,10 +774,33 @@ class Http2ServerResponseTest {
                                                       Method method,
                                                       ContentEncodingContext contentEncodingContext,
                                                       ServerRequestHeaders requestHeaders) {
+        return createResponse(stream,
+                              method,
+                              contentEncodingContext,
+                              requestHeaders,
+                              WebServer.builder().buildPrototype());
+    }
+
+    private static Http2ServerResponse createResponse(Http2ServerStream stream,
+                                                      Method method,
+                                                      ContentEncodingContext contentEncodingContext,
+                                                      ListenerConfig listenerConfig) {
+        return createResponse(stream,
+                              method,
+                              contentEncodingContext,
+                              ServerRequestHeaders.create(WritableHeaders.create()),
+                              listenerConfig);
+    }
+
+    private static Http2ServerResponse createResponse(Http2ServerStream stream,
+                                                      Method method,
+                                                      ContentEncodingContext contentEncodingContext,
+                                                      ServerRequestHeaders requestHeaders,
+                                                      ListenerConfig listenerConfig) {
         ListenerContext listenerContext = mock(ListenerContext.class);
         when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
         when(listenerContext.mediaContext()).thenReturn(MediaContext.create());
-        when(listenerContext.config()).thenReturn(WebServer.builder().buildPrototype());
+        when(listenerContext.config()).thenReturn(listenerConfig);
 
         ConnectionContext connectionContext = mock(ConnectionContext.class);
         when(connectionContext.listenerContext()).thenReturn(listenerContext);

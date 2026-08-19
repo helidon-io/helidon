@@ -514,6 +514,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
         streamingEntity = true;
 
+        int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
         BlockingOutputStream bos = new BlockingOutputStream(headers,
                                                             trailers,
                                                             beforeTrailers(),
@@ -530,9 +531,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                                             sendListener,
                                                             request,
                                                             keepAlive,
-                                                            validateHeaders);
+                                                            validateHeaders,
+                                                            writeBufferSize);
 
-        int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
 
         OutputStream encodedOutputStream = outputStream;
@@ -587,6 +588,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private final boolean keepAlive;
         private final Supplier<String> streamResult;
         private final boolean headRequest;
+        private final int headWriteLimit;
         private boolean forcedChunked;
 
         private BufferData firstBuffer;
@@ -596,6 +598,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private boolean isChunked;
         private boolean firstByte = true;
         private boolean headResponseSent;
+        private long headApplicationBytes;
         private long responseBytesTotal;
         private boolean closing = false;
         private boolean committing;
@@ -614,7 +617,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                      Http1ConnectionListener sendListener,
                                      Http1ServerRequest request,
                                      boolean keepAlive,
-                                     boolean validateHeaders) {
+                                     boolean validateHeaders,
+                                     int headWriteLimit) {
             this.headers = headers;
             this.trailers = trailers;
             this.beforeTrailers = beforeTrailers;
@@ -630,6 +634,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             this.keepAlive = keepAlive;
             this.validateHeaders = validateHeaders;
             this.headRequest = request.prologue().method() == Method.HEAD;
+            this.headWriteLimit = headWriteLimit;
         }
 
         void checkResponseHeaders() {
@@ -962,6 +967,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             Status usedStatus = status.get();
             if (length > 0 && isNoEntityStatus(usedStatus)) {
                 throw new IllegalStateException("Attempting to write data on a response with status " + usedStatus);
+            }
+            if (length > 0 && headRequest) {
+                if (headApplicationBytes + length > headWriteLimit) {
+                    sendHeadResponse(false);
+                    throw new IOException("HEAD response representation exceeded streaming limit of "
+                                                  + headWriteLimit + " bytes");
+                }
+                headApplicationBytes += length;
             }
         }
 
