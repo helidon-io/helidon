@@ -17,14 +17,14 @@
 package io.helidon.json;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
 
 /**
- * Represents a JSON array value containing an ordered list of JSON values.
+ * Represents a JSON array value containing an ordered list of non-null JSON values.
  */
 @Api.Preview
 public final class JsonArray extends JsonValue {
@@ -32,22 +32,22 @@ public final class JsonArray extends JsonValue {
     /**
      * An empty JSON array instance.
      */
-    static final JsonArray EMPTY_ARRAY = JsonArray.create(List.of());
+    static final JsonArray EMPTY_ARRAY = new JsonArray(List.of());
 
-    private final List<? extends JsonValue> jsonValues;
+    private final List<JsonValue> jsonValues;
 
-    private JsonArray(List<? extends JsonValue> jsonValues) {
+    private JsonArray(List<JsonValue> jsonValues) {
         this.jsonValues = jsonValues;
     }
 
     /**
      * Create a JsonArray from a list of JsonValue instances.
      *
-     * @param jsonValues the list of JSON values
+     * @param jsonValues the list of non-null JSON values
      * @return a new JsonArray
      */
     public static JsonArray create(List<? extends JsonValue> jsonValues) {
-        return new JsonArray(jsonValues);
+        return new JsonArray(List.copyOf(jsonValues));
     }
 
     /**
@@ -67,8 +67,8 @@ public final class JsonArray extends JsonValue {
      * @return a new JsonArray containing JsonString values
      */
     public static JsonArray createStrings(List<String> values) {
-        List<JsonString> jsonValues = values.stream()
-                .map(JsonString::create)
+        List<JsonValue> jsonValues = values.stream()
+                .<JsonValue>map(JsonString::create)
                 .toList();
         return new JsonArray(jsonValues);
     }
@@ -80,8 +80,8 @@ public final class JsonArray extends JsonValue {
      * @return a new JsonArray containing JsonNumber values
      */
     public static JsonArray createNumbers(List<BigDecimal> values) {
-        List<JsonNumber> jsonValues = values.stream()
-                .map(JsonNumber::create)
+        List<JsonValue> jsonValues = values.stream()
+                .<JsonValue>map(JsonNumber::create)
                 .toList();
         return new JsonArray(jsonValues);
     }
@@ -93,8 +93,8 @@ public final class JsonArray extends JsonValue {
      * @return a new JsonArray containing JsonBoolean values
      */
     public static JsonArray createBooleans(List<Boolean> values) {
-        List<JsonBoolean> jsonValues = values.stream()
-                .map(JsonBoolean::create)
+        List<JsonValue> jsonValues = values.stream()
+                .<JsonValue>map(JsonBoolean::create)
                 .toList();
         return new JsonArray(jsonValues);
     }
@@ -106,6 +106,10 @@ public final class JsonArray extends JsonValue {
      */
     public static JsonArray empty() {
         return EMPTY_ARRAY;
+    }
+
+    static JsonArray createFromOwnedList(List<JsonValue> jsonValues) {
+        return new JsonArray(Collections.unmodifiableList(jsonValues));
     }
 
     /**
@@ -151,7 +155,7 @@ public final class JsonArray extends JsonValue {
      * @return an unmodifiable list of JsonValue instances
      */
     public List<JsonValue> values() {
-        return List.copyOf(jsonValues);
+        return jsonValues;
     }
 
     @Override
@@ -176,20 +180,12 @@ public final class JsonArray extends JsonValue {
         if (that == this) {
             return true;
         }
-        if (this.jsonValues.size() != that.values().size()) {
-            return false;
-        }
-        for (int i = 0; i < this.jsonValues.size(); i++) {
-             if (!this.jsonValues.get(i).equals(that.values().get(i))) {
-                 return false;
-             }
-        }
-        return true;
+        return jsonValues.equals(that.jsonValues);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(jsonValues);
+        return jsonValues.hashCode();
     }
 
     @Override

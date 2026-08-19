@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -55,11 +56,11 @@ public abstract class JsonParserBase implements JsonParser {
         if (b == '}') {
             return JsonObject.EMPTY_OBJECT;
         }
-        List<JsonObject.Pair> pairs = new ArrayList<>();
+        LinkedHashMap<String, JsonValue> values = new LinkedHashMap<>();
         while (hasNext()) {
-            JsonString key;
+            String key;
             if (b == '"') {
-                key = readJsonString();
+                key = readString();
             } else {
                 throw createException("Key name start expected", b);
             }
@@ -68,43 +69,22 @@ public abstract class JsonParserBase implements JsonParser {
                 throw createException("Colon expected", b);
             }
             b = nextToken();
-            switch (b) {
-            case '"':
-                pairs.add(new JsonObject.Pair(key, readJsonString()));
-                break;
-            case '{':
-                pairs.add(new JsonObject.Pair(key, readJsonObject()));
-                break;
-            case '[':
-                pairs.add(new JsonObject.Pair(key, readJsonArray()));
-                break;
-            case '-':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                pairs.add(new JsonObject.Pair(key, readJsonNumber()));
-                break;
-            case 'n':
+            JsonValue value = switch (b) {
+            case '"' -> readJsonString();
+            case '{' -> readJsonObject();
+            case '[' -> readJsonArray();
+            case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> readJsonNumber();
+            case 'n' -> {
                 checkNull();
-                pairs.add(new JsonObject.Pair(key, JsonNull.instance()));
-                break;
-            case 't':
-            case 'f':
-                pairs.add(new JsonObject.Pair(key, JsonBoolean.create(readBoolean())));
-                break;
-            default:
-                throw createException("Unexpected json value type", b);
+                yield JsonNull.instance();
             }
+            case 't', 'f' -> JsonBoolean.create(readBoolean());
+            default -> throw createException("Unexpected json value type", b);
+            };
+            values.put(key, value);
             b = nextToken();
             if (b == '}') {
-                return JsonObject.create(pairs);
+                return JsonObject.createFromOwnedMap(values);
             } else if (b != ',') {
                 throw createException("Comma or object end expected", b);
             }
@@ -160,7 +140,7 @@ public abstract class JsonParserBase implements JsonParser {
             }
             b = nextToken();
             if (b == ']') {
-                return JsonArray.create(values);
+                return JsonArray.createFromOwnedList(values);
             } else if (b != ',') {
                 throw createException("Comma or array end expected", b);
             }

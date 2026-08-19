@@ -906,7 +906,11 @@ final class JsonParserStream extends JsonParserBase {
             if (finished) {
                 throw createException("Unexpected end of string. Incomplete JSON or incorrect use of the skip method");
             }
+            int previousIndex = currentIndex;
             readMoreData();
+            if (currentIndex < previousIndex) {
+                currentIndex++;
+            }
         }
     }
 
