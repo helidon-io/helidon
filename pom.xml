@@ -174,6 +174,7 @@
         <module>metadata</module>
         <module>testing</module>
         <module>declarative</module>
+        <module>messaging</module>
         <module>discovery</module>
         <module>data</module>
         <module>transaction</module>
