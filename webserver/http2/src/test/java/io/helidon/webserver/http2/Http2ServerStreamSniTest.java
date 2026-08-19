@@ -40,6 +40,7 @@ import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ConnectionWriter;
@@ -202,6 +203,54 @@ class Http2ServerStreamSniTest {
         assertAll(
                 () -> assertThat(writer.headers.status(), is(Status.BAD_REQUEST_400)),
                 () -> assertThat(writer.headers.httpHeaders().contentLength().orElseThrow(), is((long) entity.length)),
+                () -> assertThat(writer.headerFlags.endOfStream(), is(true)),
+                () -> assertThat(writer.dataFrame, is(nullValue()))
+        );
+    }
+
+    @Test
+    void rejectedHeadStreamWithoutExceptionRequestPreservesContentLength() {
+        assertRejectedUnsupportedEncodingHead(false);
+    }
+
+    @Test
+    void rejectedHeadStreamWithoutExceptionRequestSuppressesEntity() {
+        assertRejectedUnsupportedEncodingHead(true);
+    }
+
+    private static void assertRejectedUnsupportedEncodingHead(boolean withEntity) {
+        byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
+        DirectHandlers directHandlers = DirectHandlers.builder()
+                .addHandler(DirectHandler.EventType.OTHER,
+                            (_, _, _, _, _) -> {
+                                var builder = DirectHandler.TransportResponse.builder()
+                                        .status(Status.UNSUPPORTED_MEDIA_TYPE_415)
+                                        .header(HeaderNames.CONTENT_LENGTH, "23");
+                                if (withEntity) {
+                                    builder.entity(entity);
+                                }
+                                return builder.build();
+                            })
+                .build();
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentDecodingEnabled()).thenReturn(true);
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        Http2ServerStream stream = stream(streams, writer);
+        ListenerContext listenerContext = stream.connectionContext().listenerContext();
+        when(listenerContext.directHandlers()).thenReturn(directHandlers);
+        when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(HEAD_PROLOGUE);
+        stream.headers(unsupportedEncodingHeadHeaders(), true);
+
+        stream.run();
+
+        long expectedContentLength = withEntity ? entity.length : 23L;
+        assertAll(
+                () -> assertThat(writer.headers.status(), is(Status.UNSUPPORTED_MEDIA_TYPE_415)),
+                () -> assertThat(writer.headers.httpHeaders().contentLength().orElseThrow(),
+                                 is(expectedContentLength)),
                 () -> assertThat(writer.headerFlags.endOfStream(), is(true)),
                 () -> assertThat(writer.dataFrame, is(nullValue()))
         );
@@ -1574,6 +1623,16 @@ class Http2ServerStreamSniTest {
         if (contentLength != null) {
             headers.add(HeaderNames.CONTENT_LENGTH, contentLength);
         }
+        return Http2Headers.create(headers);
+    }
+
+    private static Http2Headers unsupportedEncodingHeadHeaders() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(Http2Headers.METHOD_NAME, Method.HEAD.text());
+        headers.add(Http2Headers.PATH_NAME, "/");
+        headers.add(Http2Headers.SCHEME_NAME, "https");
+        headers.add(Http2Headers.AUTHORITY_NAME, "api.example.com");
+        headers.add(HeaderNames.CONTENT_ENCODING, "unsupported");
         return Http2Headers.create(headers);
     }
 

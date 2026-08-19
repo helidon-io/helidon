@@ -701,7 +701,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                   message);
 
         var responseEntity = response.entity();
-        boolean headRequest = Method.HEAD_NAME.equals(exception.request().method());
+        boolean headRequest = prologue.method() == Method.HEAD;
         boolean preserveHeadContentLength = responseEntity.isEmpty() && headRequest;
         Status responseStatus = response.status();
         boolean finalInformationalResponse = responseStatus.family() == Status.Family.INFORMATIONAL;
