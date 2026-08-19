@@ -560,7 +560,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             bytesWritten += stream.writeHeaders(http2Headers, false);
         }
 
-        private void sendTrailers(){
+        private void sendTrailers() {
             if (headers.contains(HeaderNames.TRAILER)
                     && headers.get(HeaderNames.TRAILER).allValues().contains("stream-result")) {
                 // only send if configured
