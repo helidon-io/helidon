@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
 import io.helidon.security.Subject;
+import io.helidon.security.SubjectType;
 import io.helidon.security.providers.common.EvictableCache;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 
@@ -43,9 +44,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class IdcsRoleMapperRxProviderTest {
     private static TestProvider provider;
+    private static TestProvider serviceProvider;
 
     @BeforeAll
     static void prepareProvider() {
+        provider = createProvider();
+        serviceProvider = createProvider(SubjectType.SERVICE);
+    }
+
+    private static TestProvider createProvider(SubjectType... subjectTypes) {
         IdcsRoleMapperRxProvider.Builder<?> builder = IdcsRoleMapperRxProvider.builder();
         builder.oidcConfig(OidcConfig.builder()
                                    .oidcMetadataWellKnown(false)
@@ -58,8 +65,9 @@ class IdcsRoleMapperRxProviderTest {
                                    .build())
                 .roleCache(EvictableCache.<String, List<Grant>>builder()
                                    .maxSize(2)
-                                   .build());
-        provider = new TestProvider(builder);
+                                   .build())
+                .subjectTypes(subjectTypes);
+        return new TestProvider(builder);
     }
 
     @Test
@@ -98,6 +106,45 @@ class IdcsRoleMapperRxProviderTest {
         assertThat("Expecting the same role, as it should have been cached", counted2, is(counted));
         Role additionalCounted2 = findAdditionalCounted(grants);
         assertThat("Additional roles should not be cached", additionalCounted2, not(additionalCounted));
+    }
+
+    @Test
+    void testServiceMappedToService() {
+        ProviderRequest mock = Mockito.mock(ProviderRequest.class);
+        String serviceName = "test-service";
+        AuthenticationResponse response = serviceProvider.map(mock,
+                                                               AuthenticationResponse.builder()
+                                                                       .service(Subject.builder()
+                                                                                        .principal(Principal.create(serviceName))
+                                                                                        .build())
+                                                                       .build())
+                .toCompletableFuture()
+                .join();
+
+        assertThat(response.user().isPresent(), is(false));
+        Subject service = response.service().orElseThrow();
+        assertThat(service.principal().id(), is(serviceName));
+        assertThat(service.grants(Role.class),
+                   hasItems(Role.create("fixed"), Role.create(serviceName), Role.create("additional-fixed")));
+    }
+
+    @Test
+    void testUnsupportedUserRemainsUser() {
+        ProviderRequest mock = Mockito.mock(ProviderRequest.class);
+        String username = "test-user-not-mapped";
+        AuthenticationResponse response = serviceProvider.map(mock,
+                                                               AuthenticationResponse.builder()
+                                                                       .user(Subject.builder()
+                                                                                     .principal(Principal.create(username))
+                                                                                     .build())
+                                                                       .build())
+                .toCompletableFuture()
+                .join();
+
+        Subject user = response.user().orElseThrow();
+        assertThat(user.principal().id(), is(username));
+        assertThat(user.grants(Role.class), iterableWithSize(0));
+        assertThat(response.service().isPresent(), is(false));
     }
 
     private Role findCounted(List<Role> grants) {

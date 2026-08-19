@@ -139,14 +139,14 @@ public abstract class IdcsRoleMapperRxProviderBase implements SubjectMappingProv
                         .peek(it::user)
                         .map(ignored -> it));
             } else {
-                result = result.peek(it -> it.service(maybeUser.get()));
+                result = result.peek(it -> it.user(maybeUser.get()));
             }
         }
 
         if (maybeService.isPresent()) {
             if (supportedTypes.contains(SubjectType.SERVICE)) {
                 result = result.flatMapSingle(it -> enhance(authenticatedRequest, previousResponse, maybeService.get())
-                        .peek(it::user)
+                        .peek(it::service)
                         .map(ignored -> it));
             } else {
                 result = result.peek(it -> it.service(maybeService.get()));
