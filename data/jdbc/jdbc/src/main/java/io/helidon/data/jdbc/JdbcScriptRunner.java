@@ -52,11 +52,10 @@ final class JdbcScriptRunner {
     // Remove an optional leading UTF-8 byte order mark so it does not become part of the first JDBC statement.
     private static final char BYTE_ORDER_MARK = '\ufeff';
 
-    // Limit each resource to 8 MiB, each persistence-unit plan to 16 MiB, and each plan to 10,000 statements
-    // so application startup cannot consume unbounded memory or JDBC work while processing bootstrap input.
-    private static final BootstrapPolicy POLICY = new BootstrapPolicy(8 * 1024 * 1024,
-                                                                       16 * 1024 * 1024,
-                                                                       10_000);
+    // Helpers without persistence unit configuration preserve the established bootstrap limits.
+    private static final BootstrapPolicy DEFAULT_POLICY = new BootstrapPolicy(8 * 1024 * 1024,
+                                                                               16 * 1024 * 1024,
+                                                                               10_000);
 
     // The release exposes no script dialect configuration. Every bootstrap path uses this fixed profile.
     private static final ScriptBoundaryProfile SCRIPT_BOUNDARY_PROFILE = ScriptBoundaryProfile.PORTABLE;
@@ -181,8 +180,23 @@ final class JdbcScriptRunner {
      * @return detached parsed scripts
      */
     static PreparedScripts load(String unitName, List<JdbcBootstrapResource> resources) {
+        return load(unitName, resources, DEFAULT_POLICY);
+    }
+
+    /**
+     * Loads and parses all configured UTF-8 script resources with one
+     * persistence unit policy.
+     *
+     * @param unitName persistence unit name
+     * @param resources ordered and safely described script resources
+     * @param policy validated bootstrap policy
+     * @return detached parsed scripts
+     */
+    static PreparedScripts load(String unitName,
+                                List<JdbcBootstrapResource> resources,
+                                BootstrapPolicy policy) {
         List<Script> scripts = new ArrayList<>(resources.size());
-        BootstrapBudget budget = POLICY.newBudget();
+        BootstrapBudget budget = policy.newBudget();
         for (int index = 0; index < resources.size(); index++) {
             try {
                 scripts.add(load(unitName, resources.get(index), budget));
@@ -212,7 +226,7 @@ final class JdbcScriptRunner {
         List<ScriptStatement> parsed = parseStatements(unitName,
                                                        descriptor,
                                                        content,
-                                                       POLICY.newBudget(),
+                                                       DEFAULT_POLICY.newBudget(),
                                                        SCRIPT_BOUNDARY_PROFILE);
         List<String> statements = new ArrayList<>(parsed.size());
         for (ScriptStatement statement : parsed) {
@@ -573,7 +587,7 @@ final class JdbcScriptRunner {
                                InputStream input,
                                BootstrapBudget budget) {
         int remainingTotal = budget.remainingBytes();
-        int limit = Math.min(POLICY.maxResourceBytes(), remainingTotal);
+        int limit = budget.resourceLimit();
         byte[] bytes;
         try {
             bytes = input.readNBytes(limit + 1);
@@ -583,9 +597,9 @@ final class JdbcScriptRunner {
             throw resourceFailure(unitName, descriptor, "read", failure);
         }
         if (bytes.length > limit) {
-            String limitDescription = remainingTotal < POLICY.maxResourceBytes()
-                    ? "aggregate bootstrap byte limit of " + POLICY.maxTotalBytes()
-                    : "per-resource bootstrap byte limit of " + POLICY.maxResourceBytes();
+            String limitDescription = remainingTotal < budget.maxResourceBytes()
+                    ? "aggregate bootstrap byte limit of " + budget.maxTotalBytes()
+                    : "per resource bootstrap byte limit of " + budget.maxResourceBytes();
             throw new DataException(persistenceUnitDescription(unitName) + " cannot load the " + descriptor
                                             + " because it exceeds the " + limitDescription + ".");
         }
@@ -642,7 +656,7 @@ final class JdbcScriptRunner {
             if (!budget.addStatement()) {
                 throw new DataException(persistenceUnitDescription(unitName) + " cannot load the " + descriptor
                                                 + " because it exceeds the bootstrap statement limit of "
-                                                + POLICY.maxStatements() + ".");
+                                                + budget.maxStatements() + ".");
             }
             statements.add(new ScriptStatement(current.toString(), startLine));
         }
@@ -931,6 +945,138 @@ final class JdbcScriptRunner {
     }
 
     /**
+     * Immutable bootstrap safety policy for one persistence unit.
+     *
+     * @param maxResourceBytes maximum bytes in one resource
+     * @param maxTotalBytes maximum bytes in one bootstrap plan
+     * @param maxStatements maximum statements in one bootstrap plan
+     */
+    record BootstrapPolicy(int maxResourceBytes, int maxTotalBytes, int maxStatements) {
+
+        private static final int MAX_RESOURCE_BYTES = 64 * 1024 * 1024;
+        private static final int MAX_TOTAL_BYTES = 128 * 1024 * 1024;
+        private static final int MAX_STATEMENTS = 100_000;
+
+        BootstrapPolicy {
+            if (maxResourceBytes < 1) {
+                throw new DataException("The JDBC bootstrap maximum resource size must be greater than zero bytes.");
+            }
+            if (maxResourceBytes > Integer.MAX_VALUE - 1 || maxTotalBytes > Integer.MAX_VALUE - 1) {
+                throw new DataException("The JDBC bootstrap byte limits must leave room for one overflow byte.");
+            }
+            if (maxResourceBytes > MAX_RESOURCE_BYTES) {
+                throw new DataException("The JDBC bootstrap maximum resource size must not exceed "
+                                                + MAX_RESOURCE_BYTES + " bytes.");
+            }
+            if (maxTotalBytes < maxResourceBytes) {
+                throw new DataException("The JDBC bootstrap maximum total size must be at least the maximum resource size.");
+            }
+            if (maxTotalBytes > MAX_TOTAL_BYTES) {
+                throw new DataException("The JDBC bootstrap maximum total size must not exceed "
+                                                + MAX_TOTAL_BYTES + " bytes.");
+            }
+            if (maxStatements < 1 || maxStatements > MAX_STATEMENTS) {
+                throw new DataException("The JDBC bootstrap maximum statement count must be between one and "
+                                                + MAX_STATEMENTS + ".");
+            }
+        }
+
+        /**
+         * Creates independent mutable accounting for one persistence unit.
+         *
+         * @return new bootstrap budget
+         */
+        BootstrapBudget newBudget() {
+            return new BootstrapBudget(this);
+        }
+    }
+
+    /**
+     * Mutable byte and statement accounting for one detached bootstrap plan.
+     * Loading is synchronous, so this state never crosses a thread boundary.
+     */
+    static final class BootstrapBudget {
+
+        private final BootstrapPolicy policy;
+        private int bytes;
+        private int statements;
+
+        private BootstrapBudget(BootstrapPolicy policy) {
+            this.policy = policy;
+        }
+
+        /**
+         * Returns the aggregate byte capacity not yet consumed.
+         *
+         * @return remaining byte capacity
+         */
+        int remainingBytes() {
+            return policy.maxTotalBytes() - bytes;
+        }
+
+        /**
+         * Returns the byte limit for the next resource.
+         *
+         * @return effective resource byte limit
+         */
+        int resourceLimit() {
+            return Math.min(policy.maxResourceBytes(), remainingBytes());
+        }
+
+        /**
+         * Returns the configured resource byte limit.
+         *
+         * @return maximum bytes in one resource
+         */
+        int maxResourceBytes() {
+            return policy.maxResourceBytes();
+        }
+
+        /**
+         * Returns the configured plan byte limit.
+         *
+         * @return maximum bytes in one plan
+         */
+        int maxTotalBytes() {
+            return policy.maxTotalBytes();
+        }
+
+        /**
+         * Returns the configured statement limit.
+         *
+         * @return maximum statements in one plan
+         */
+        int maxStatements() {
+            return policy.maxStatements();
+        }
+
+        /**
+         * Accounts for a resource after its bounded read succeeds.
+         *
+         * @param count resource byte count
+         */
+        void addBytes(int count) {
+            if (count < 0 || count > resourceLimit()) {
+                throw new IllegalArgumentException("The bootstrap resource byte count exceeds the remaining budget.");
+            }
+            bytes += count;
+        }
+
+        /**
+         * Attempts to reserve one parsed statement.
+         *
+         * @return whether the statement remains within the plan limit
+         */
+        boolean addStatement() {
+            if (statements == policy.maxStatements()) {
+                return false;
+            }
+            statements++;
+            return true;
+        }
+    }
+
+    /**
      * Parsed script.
      *
      * @param descriptor safe resource descriptor
@@ -1002,95 +1148,30 @@ final class JdbcScriptRunner {
     }
 
     /**
-     * Fixed bootstrap safety policy. Limits are implementation safeguards, not
-     * configurable JDBC behavior, and are intentionally kept together so
-     * configured and programmatic resource paths cannot diverge.
-     *
-     * @param maxResourceBytes maximum bytes in one resource
-     * @param maxTotalBytes maximum bytes in one bootstrap plan
-     * @param maxStatements maximum statements in one bootstrap plan
-     */
-    private record BootstrapPolicy(int maxResourceBytes, int maxTotalBytes, int maxStatements) {
-
-        BootstrapPolicy {
-            if (maxResourceBytes < 1 || maxTotalBytes < maxResourceBytes || maxStatements < 1) {
-                throw new IllegalArgumentException("The JDBC bootstrap safety policy is invalid.");
-            }
-        }
-
-        /**
-         * Creates independent mutable accounting for one persistence unit.
-         *
-         * @return new bootstrap budget
-         */
-        BootstrapBudget newBudget() {
-            return new BootstrapBudget(this);
-        }
-    }
-
-    /**
-     * Mutable byte and statement accounting for one detached bootstrap plan.
-     * Loading is synchronous, so this state never crosses a thread boundary.
-     */
-    private static final class BootstrapBudget {
-
-        private final BootstrapPolicy policy;
-        private int bytes;
-        private int statements;
-
-        private BootstrapBudget(BootstrapPolicy policy) {
-            this.policy = policy;
-        }
-
-        /**
-         * Returns the aggregate byte capacity not yet consumed.
-         *
-         * @return remaining byte capacity
-         */
-        int remainingBytes() {
-            return policy.maxTotalBytes() - bytes;
-        }
-
-        /**
-         * Accounts for a resource after its bounded read succeeds.
-         *
-         * @param count resource byte count
-         */
-        void addBytes(int count) {
-            bytes += count;
-        }
-
-        /**
-         * Attempts to reserve one parsed statement.
-         *
-         * @return whether the statement remains within the plan limit
-         */
-        boolean addStatement() {
-            if (statements == policy.maxStatements()) {
-                return false;
-            }
-            statements++;
-            return true;
-        }
-    }
-
-    /**
      * Outcome of provider-owned bootstrap transaction completion. This state
      * describes database completion, not whether JDBC resource cleanup later
      * succeeded.
      */
     private enum BootstrapOutcome {
 
-        /** No commit or successful rollback has completed. */
+        /**
+         * No commit or successful rollback has completed.
+         */
         NOT_STARTED,
 
-        /** Commit completed successfully. */
+        /**
+         * Commit completed successfully.
+         */
         COMMITTED,
 
-        /** Rollback completed before any commit attempt had an unknown result. */
+        /**
+         * Rollback completed before any commit attempt had an unknown result.
+         */
         ROLLED_BACK,
 
-        /** Completion cannot be proven; the connection must be invalidated. */
+        /**
+         * Completion cannot be proven. The connection must be invalidated.
+         */
         UNKNOWN
     }
 

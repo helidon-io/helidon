@@ -68,6 +68,70 @@ class JdbcScriptRunnerFailureTest {
         when(statement.getUpdateCount()).thenReturn(-1);
     }
 
+    /**
+     * Verifies configured byte and statement limits accept their exact
+     * boundaries while scripts remain detached from their resources.
+     */
+    @Test
+    void acceptsExactConfiguredBootstrapLimits() throws Exception {
+        JdbcScriptRunner.BootstrapPolicy policy = new JdbcScriptRunner.BootstrapPolicy(4, 6, 2);
+
+        JdbcScriptRunner.PreparedScripts scripts = JdbcScriptRunner.load(
+                "test",
+                List.of(bootstrapResource(JdbcBootstrapResource.Role.DROP, 1, "A;  "),
+                        bootstrapResource(JdbcBootstrapResource.Role.INIT, 2, "B;")),
+                policy);
+
+        JdbcScriptRunner.execute("test", dataSource, scripts);
+        verify(dataSource).getConnection();
+    }
+
+    /**
+     * Verifies configured resource and aggregate byte limits reject a single
+     * overflow byte before datasource acquisition.
+     */
+    @Test
+    void rejectsOneByteAboveConfiguredBootstrapLimits() throws Exception {
+        JdbcScriptRunner.BootstrapPolicy resourcePolicy = new JdbcScriptRunner.BootstrapPolicy(4, 8, 10);
+        DataException resourceFailure = assertThrows(
+                DataException.class,
+                () -> JdbcScriptRunner.load(
+                        "test",
+                        List.of(bootstrapResource(JdbcBootstrapResource.Role.INIT, 1, "A;   ")),
+                        resourcePolicy));
+        JdbcScriptRunner.BootstrapPolicy aggregatePolicy = new JdbcScriptRunner.BootstrapPolicy(4, 6, 10);
+        DataException aggregateFailure = assertThrows(
+                DataException.class,
+                () -> JdbcScriptRunner.load(
+                        "test",
+                        List.of(bootstrapResource(JdbcBootstrapResource.Role.DROP, 1, "    "),
+                                bootstrapResource(JdbcBootstrapResource.Role.INIT, 2, "   ")),
+                        aggregatePolicy));
+
+        assertThat(resourceFailure.getMessage(), containsString("per resource bootstrap byte limit of 4"));
+        assertThat(aggregateFailure.getMessage(), containsString("aggregate bootstrap byte limit of 6"));
+        verify(dataSource, never()).getConnection();
+    }
+
+    /**
+     * Verifies configured statement limits are carried by the same bootstrap
+     * budget as configured byte limits.
+     */
+    @Test
+    void rejectsConfiguredStatementLimitOverflow() throws Exception {
+        JdbcScriptRunner.BootstrapPolicy policy = new JdbcScriptRunner.BootstrapPolicy(16, 16, 2);
+
+        DataException failure = assertThrows(
+                DataException.class,
+                () -> JdbcScriptRunner.load(
+                        "test",
+                        List.of(bootstrapResource(JdbcBootstrapResource.Role.INIT, 1, "A;B;C;")),
+                        policy));
+
+        assertThat(failure.getMessage(), containsString("bootstrap statement limit of 2"));
+        verify(dataSource, never()).getConnection();
+    }
+
     @Test
     void closesTheConnectionWhenStatementCloseFailsAfterSuccessfulExecution() throws Exception {
         SQLException statementClose = new SQLException("statement close failed", "08003", 51);
@@ -469,7 +533,7 @@ class JdbcScriptRunnerFailureTest {
                                                      dataSource,
                                                      List.of(Resource.create("oversized", input))));
 
-        assertThat(failure.getMessage(), containsString("per-resource bootstrap byte limit of 8388608"));
+        assertThat(failure.getMessage(), containsString("per resource bootstrap byte limit of 8388608"));
         assertThat(input.closed(), is(true));
         verify(dataSource, never()).getConnection();
     }
@@ -516,6 +580,21 @@ class JdbcScriptRunnerFailureTest {
         assertThat(failure.getMessage(), containsString("bootstrap statement limit of 10000"));
         assertThat(failure.getMessage(), not(containsString(content)));
         verify(dataSource, never()).getConnection();
+    }
+
+    /**
+     * Creates one safely described bootstrap resource for configured policy
+     * tests.
+     *
+     * @param role bootstrap role
+     * @param ordinal resource position
+     * @param content resource content
+     * @return described bootstrap resource
+     */
+    private static JdbcBootstrapResource bootstrapResource(JdbcBootstrapResource.Role role,
+                                                           int ordinal,
+                                                           String content) {
+        return JdbcBootstrapResource.create(role, ordinal, Resource.create("configured test script", content));
     }
 
     private static void assertSafeSqlCause(Throwable actual, SQLException expected) {
