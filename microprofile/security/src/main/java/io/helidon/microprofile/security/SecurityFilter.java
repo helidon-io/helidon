@@ -406,14 +406,15 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             methodsToProcess.add(definitionMethod);
 
             String fullPath = fullPathBuilder.toString();
-            // now full path can be used as a cache
-            try {
-                subResourceMethodSecurityLock.lock();
-                if (subResourceMethodSecurity(appRealClass).containsKey(fullPath)) {
-                    return subResourceMethodSecurity(appRealClass).get(fullPath);
-                }
-            } finally {
-                subResourceMethodSecurityLock.unlock();
+            Config methodConfig = findMethodConfig(UriPath.create(uriInfo.getPath()), requestContext.getMethod());
+            SubResourceMethodKey methodKey = new SubResourceMethodKey(fullPath, methodConfig.key().toString());
+            Map<SubResourceMethodKey, SecurityDefinition> subResourceMethodSecurity =
+                    subResourceMethodSecurity(appRealClass);
+
+            // now full path together with matched method configuration can be used as a cache
+            SecurityDefinition cached = cachedMethodSecurity(subResourceMethodSecurityLock, subResourceMethodSecurity, methodKey);
+            if (cached != null) {
+                return cached;
             }
 
             // now process each definition method and class
@@ -421,10 +422,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             for (Method method : methodsToProcess) {
                 Class<?> clazz = method.getDeclaringClass();
                 current = securityForClass(clazz, current);
-                SecurityDefinition methodDef = processMethod(current.copyMe(),
-                                                             uriInfo.getPath(),
-                                                             requestContext.getMethod(),
-                                                             method);
+                SecurityDefinition methodDef = processMethod(current.copyMe(), methodConfig, method);
 
                 SecurityLevel currentSecurityLevel = methodDef.securityLevels().get(methodDef.securityLevels().size() - 1);
 
@@ -446,29 +444,21 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 current = methodDef;
             }
 
-            try {
-                subResourceMethodSecurityLock.lock();
-                subResourceMethodSecurity(appRealClass).put(fullPath, current);
-            } finally {
-                subResourceMethodSecurityLock.unlock();
-            }
-            return current;
+            cached = cacheMethodSecurity(subResourceMethodSecurityLock, subResourceMethodSecurity, methodKey, current);
+            return cached == null ? current : cached;
         }
 
-        try {
-            resourceMethodSecurityLock.lock();
-            if (resourceMethodSecurity(appRealClass).containsKey(definitionMethod)) {
-                return resourceMethodSecurity(appRealClass).get(definitionMethod);
-            }
-        } finally {
-            resourceMethodSecurityLock.unlock();
+        Config methodConfig = findMethodConfig(UriPath.create(uriInfo.getRequestUri().getPath()), requestContext.getMethod());
+        ResourceMethodKey methodKey = new ResourceMethodKey(definitionMethod, methodConfig.key().toString());
+        Map<ResourceMethodKey, SecurityDefinition> resourceMethodSecurity = resourceMethodSecurity(appRealClass);
+
+        SecurityDefinition cached = cachedMethodSecurity(resourceMethodSecurityLock, resourceMethodSecurity, methodKey);
+        if (cached != null) {
+            return cached;
         }
 
         SecurityDefinition resClassSecurity = obtainClassSecurityDefinition(appRealClass, appClassSecurity, definitionClass);
-        SecurityDefinition methodDef = processMethod(resClassSecurity,
-                                                     uriInfo.getRequestUri().getPath(),
-                                                     requestContext.getMethod(),
-                                                     definitionMethod);
+        SecurityDefinition methodDef = processMethod(resClassSecurity, methodConfig, definitionMethod);
 
         int index = methodDef.securityLevels().size() - 1;
         SecurityLevel currentSecurityLevel = methodDef.securityLevels().get(index);
@@ -479,12 +469,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                                                               .withMethodName(definitionMethod.getName())
                                                               .withMethodAnnotations(methodLevelAnnotations)
                                                               .build());
-        try {
-            resourceMethodSecurityLock.lock();
-            resourceMethodSecurity(appRealClass).put(definitionMethod, methodDef);
-        } finally {
-            resourceMethodSecurityLock.unlock();
-        }
 
         for (AnnotationAnalyzer analyzer : analyzers) {
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(definitionMethod,
@@ -493,7 +477,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             methodDef.analyzerResponse(analyzer, analyzerResponse);
         }
 
-        return methodDef;
+        cached = cacheMethodSecurity(resourceMethodSecurityLock, resourceMethodSecurity, methodKey, methodDef);
+        return cached == null ? methodDef : cached;
     }
 
     private SecurityDefinition obtainClassSecurityDefinition(Class<?> appRealClass, SecurityDefinition appClassSecurity,
@@ -528,15 +513,37 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
     }
 
+    private <T> SecurityDefinition cachedMethodSecurity(ReentrantLock lock,
+                                                        Map<T, SecurityDefinition> methodSecurity,
+                                                        T key) {
+        try {
+            lock.lock();
+            return methodSecurity.get(key);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private <T> SecurityDefinition cacheMethodSecurity(ReentrantLock lock,
+                                                       Map<T, SecurityDefinition> methodSecurity,
+                                                       T key,
+                                                       SecurityDefinition definition) {
+        try {
+            lock.lock();
+            return methodSecurity.putIfAbsent(key, definition);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     // unit test method
     List<AnnotationAnalyzer> analyzers() {
         return this.analyzers;
     }
 
-    private SecurityDefinition processMethod(SecurityDefinition current, String path, String httpMethod, Method method) {
+    private SecurityDefinition processMethod(SecurityDefinition current, Config methodConfig, Method method) {
         SecurityDefinition methodDef = current.copyMe();
-        findMethodConfig(UriPath.create(path), httpMethod)
-                .asNode()
+        methodConfig.asNode()
                 .ifPresentOrElse(methodDef::fromConfig,
                                  () -> {
                                      Authenticated atn = method.getAnnotation(Authenticated.class);
@@ -556,8 +563,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     private static class CacheEntry {
         private SecurityDefinition appClassSecurity;
         private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new HashMap<>();
-        private final Map<Method, SecurityDefinition> resourceMethodSecurity = new HashMap<>();
-        private final Map<String, SecurityDefinition> subResourceMethodSecurity = new HashMap<>();
+        private final Map<ResourceMethodKey, SecurityDefinition> resourceMethodSecurity = new HashMap<>();
+        private final Map<SubResourceMethodKey, SecurityDefinition> subResourceMethodSecurity = new HashMap<>();
     }
 
     private CacheEntry appClassCacheEntry(Class<?> appClass) {
@@ -582,12 +589,18 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return appClassCacheEntry(appClass).resourceClassSecurity;
     }
 
-    private Map<Method, SecurityDefinition> resourceMethodSecurity(Class<?> appClass) {
+    private Map<ResourceMethodKey, SecurityDefinition> resourceMethodSecurity(Class<?> appClass) {
         return appClassCacheEntry(appClass).resourceMethodSecurity;
     }
 
-    private Map<String, SecurityDefinition> subResourceMethodSecurity(Class<?> appClass) {
+    private Map<SubResourceMethodKey, SecurityDefinition> subResourceMethodSecurity(Class<?> appClass) {
         return appClassCacheEntry(appClass).subResourceMethodSecurity;
+    }
+
+    private record ResourceMethodKey(Method method, String configKey) {
+    }
+
+    private record SubResourceMethodKey(String fullPath, String configKey) {
     }
 
     private static final class PathVisitor extends AbstractResourceModelVisitor {
