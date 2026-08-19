@@ -274,6 +274,66 @@ class Http2ServerResponseTest {
     }
 
     @Test
+    void presetInformationalStatusIsNotSentAsFinalResponse() {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        response.status(Status.CONTINUE_100);
+        response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
+
+        response.send("entity".getBytes(StandardCharsets.UTF_8));
+
+        assertRejectedInformationalResponse(stream);
+    }
+
+    @Test
+    void filteredInformationalStatusIsNotSentAsFinalResponse() {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        AtomicBoolean filterCalled = new AtomicBoolean();
+        response.status(Status.CONTINUE_100);
+        response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
+        response.streamFilter(output -> {
+            filterCalled.set(true);
+            return output;
+        });
+
+        response.send("entity".getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        assertAll(
+                () -> assertThat(filterCalled.get(), is(false)),
+                () -> assertRejectedInformationalResponse(stream)
+        );
+    }
+
+    @Test
+    void streamingInformationalStatusIsNotSentAsFinalResponse() throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        response.status(Status.CONTINUE_100);
+        response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
+
+        OutputStream output = response.outputStream();
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> output.write('x'));
+        output.write(new byte[0]);
+        response.commit();
+
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString(Status.INTERNAL_SERVER_ERROR_500.toString())),
+                () -> assertRejectedInformationalResponse(stream)
+        );
+    }
+
+    @Test
     void filteredNoEntityStatusesBypassNegotiatedGzip() {
         for (Status status : NO_ENTITY_STATUSES) {
             ContentEncodingContext contentEncodingContext = ContentEncodingContext.builder()
@@ -657,6 +717,22 @@ class Http2ServerResponseTest {
                 headers.remove(HeaderNames.CONTENT_LENGTH);
             }
         };
+    }
+
+    private static void assertRejectedInformationalResponse(Http2ServerStream stream) {
+        var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+        verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
+        verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+        verify(stream, never()).writeData(any(), anyBoolean());
+        verify(stream, never()).writeTrailers(any());
+        Http2Headers sentHeaders = responseHeaders.getValue();
+        Headers sentHttpHeaders = sentHeaders.httpHeaders();
+        assertAll(
+                () -> assertThat(sentHeaders.status(), is(Status.INTERNAL_SERVER_ERROR_500)),
+                () -> assertThat(sentHttpHeaders.contentLength().orElseThrow(), is(0L)),
+                () -> assertThat(sentHttpHeaders.contains(HeaderNames.TRANSFER_ENCODING), is(false)),
+                () -> assertThat(sentHttpHeaders.contains(HeaderNames.TRAILER), is(false))
+        );
     }
 
     private static Http2ServerResponse createResponse(Http2ServerStream stream,

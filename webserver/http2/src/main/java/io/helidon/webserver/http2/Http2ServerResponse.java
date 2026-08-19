@@ -105,7 +105,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             if (hasStreamFilter()) {
                 // in this case we must honor user's request to filter the stream
                 try (OutputStream os = outputStream()) {
-                    if (!isNoEntityStatus(status())) {
+                    if (!outputStream.noEntityResponse) {
                         os.write(entityBytes, position, length);
                     }
                 } catch (IOException e) {
@@ -126,26 +126,14 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                     false,
                                                     DateTime.rfc1123String()));
 
-            int initialStatusCode = status().code();
-            prepareResponse();
+            boolean noEntityResponse = prepareResponse();
 
             int actualLength = length;
             int actualPosition = position;
             byte[] actualBytes = entityBytes;
 
             Status responseStatus = status();
-            int statusCode = responseStatus.code();
-            boolean statusChanged = statusCode != initialStatusCode;
-            boolean noEntityResponse = isNoEntityStatus(responseStatus);
-            if (statusChanged && responseStatus.family() == Status.Family.INFORMATIONAL) {
-                LOGGER.log(System.Logger.Level.ERROR,
-                           "Attempt to send a final informational response. "
-                                   + "Server responded with Internal Server Error.");
-                status(Status.INTERNAL_SERVER_ERROR_500);
-                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
-                headers.remove(HeaderNames.TRAILER);
-                noEntityResponse = true;
-            } else if (noEntityResponse) {
+            if (noEntityResponse) {
                 normalizeNoEntityHeaders(headers, responseStatus);
             } else {
                 // handle content encoding
@@ -228,27 +216,38 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             headers.add(STREAM_TRAILERS);
         }
 
-        prepareResponse();
+        boolean noEntityResponse = prepareResponse();
         streamingEntity = true;
 
         outputStream = new BlockingOutputStream(request, this, () -> this.isSent = true, () -> {
             this.isSent = true;
             afterSend();
-        }, beforeTrailers());
-        if (isNoEntityStatus(status())) {
+        }, beforeTrailers(), noEntityResponse);
+        if (noEntityResponse) {
             return new ApplicationOutputStream(outputStream, outputStream);
         }
         OutputStream encodedOutputStream = contentEncode(outputStream);
         return new ApplicationOutputStream(applyStreamFilters(encodedOutputStream), outputStream);
     }
 
-    private void prepareResponse() {
+    private boolean prepareResponse() {
         preparingResponse = true;
         try {
             beforeSend();
         } finally {
             preparingResponse = false;
         }
+        if (status().family() == Status.Family.INFORMATIONAL) {
+            LOGGER.log(System.Logger.Level.ERROR,
+                       "Attempt to send a final informational response. "
+                               + "Server responded with Internal Server Error.");
+            status(Status.INTERNAL_SERVER_ERROR_500);
+            headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+            headers.remove(HeaderNames.TRANSFER_ENCODING);
+            headers.remove(HeaderNames.TRAILER);
+            return true;
+        }
+        return isNoEntityStatus(status());
     }
 
     @Override
@@ -364,6 +363,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private final Http2ServerResponse response;
         private final Http2ServerStream stream;
         private final boolean headRequest;
+        private final boolean noEntityResponse;
 
         private BufferData firstBuffer;
         private boolean closed;
@@ -377,7 +377,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                      Http2ServerResponse response,
                                      Runnable responseSentRunnable,
                                      Runnable responseCloseRunnable,
-                                     Consumer<ServerResponseTrailers> beforeTrailers) {
+                                     Consumer<ServerResponseTrailers> beforeTrailers,
+                                     boolean noEntityResponse) {
             this.request = request;
             this.response = response;
             this.headers = response.headers;
@@ -388,6 +389,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             this.responseCloseRunnable = responseCloseRunnable;
             this.beforeTrailers = beforeTrailers;
             this.headRequest = request.prologue().method() == Method.HEAD;
+            this.noEntityResponse = noEntityResponse;
         }
 
         @Override
@@ -409,7 +411,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         public void flush() throws IOException {
             if (headRequest) {
                 if (!headResponseSent) {
-                    if (isNoEntityStatus(status)) {
+                    if (noEntityResponse) {
                         normalizeNoEntityHeaders(headers, status);
                     }
                     headers.remove(HeaderNames.TRAILER);
@@ -433,7 +435,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 return;
             }
             this.closed = true;
-            boolean noEntityResponse = isNoEntityStatus(status);
             if (noEntityResponse) {
                 normalizeNoEntityHeaders(headers, status);
             }
@@ -489,7 +490,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 // Encoder and filter finalization after an early HEAD flush must not produce content.
                 return;
             }
-            if (isNoEntityStatus(status)) {
+            if (noEntityResponse) {
                 if (buffer.available() > 0) {
                     throw new IllegalStateException("Attempting to write data on a response with status " + status);
                 }
@@ -580,7 +581,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void checkWriteAllowed(int length) throws IOException {
-            if (length > 0 && isNoEntityStatus(status)) {
+            if (length > 0 && noEntityResponse) {
                 throw new IllegalStateException("Attempting to write data on a response with status " + status);
             }
             if (length > 0 && headResponseSent) {
