@@ -37,7 +37,7 @@ USAGE:
 $(basename "${0}") [ --version=V ] CMD
 
   --version=V
-        Override the version to use.
+        The version to use with update_version.
 
   --help
         Prints the usage and exits.
@@ -46,6 +46,9 @@ $(basename "${0}") [ --version=V ] CMD
 
     update_version
         Update the version in the workspace
+
+    get_version
+        Get the current version
 
     release_build
         Perform a release build
@@ -70,7 +73,7 @@ for ((i=0;i<${#ARGS[@]};i++))
         usage
         exit 0
         ;;
-    "update_version"|"release_build"|"create_tag")
+    "update_version"|"get_version"|"release_build"|"create_tag")
         readonly COMMAND="${ARG}"
         ;;
     *)
@@ -82,6 +85,12 @@ for ((i=0;i<${#ARGS[@]};i++))
 
 if [ -z "${COMMAND}" ] ; then
     echo "ERROR: no command provided" >&2
+    usage >&2
+    exit 1
+fi
+
+if [ "${COMMAND}" = "update_version" ] && [ -z "${VERSION}" ] ; then
+    echo "ERROR: version required" >&2
     usage >&2
     exit 1
 fi
@@ -102,64 +111,102 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 source "${WS_DIR}/etc/scripts/pipeline-env.sh"
 
-# Resolve FULL_VERSION
-if [ -z "${VERSION+x}" ]; then
+# Get the current project version from the root pom.
+current_version() {
+    awk 'BEGIN {FS="[<>]"} ; /<version>/ {print $3; exit 0}' "${WS_DIR}/pom.xml"
+}
 
-    # get maven version
-    MVN_VERSION=$(mvn ${MAVEN_ARGS} \
-        -q \
-        -f ${WS_DIR}/pom.xml \
-        -Dexec.executable="echo" \
-        -Dexec.args="\${project.version}" \
-        --non-recursive \
-        org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
+# Find matching Git-tracked files.
+# arg1: pattern
+# arg2: include pattern
+search() {
+    set +o pipefail
+    grep "${1}" -Er . --include "${2}" | cut -d ':' -f 1 | xargs git ls-files | sort | uniq
+}
 
-    # strip qualifier
-    readonly VERSION="${MVN_VERSION%-*}"
-    readonly FULL_VERSION="${VERSION}"
-else
-    readonly FULL_VERSION="${VERSION}"
-fi
+replace() {
+    local pattern value replace include
+    while (( ${#} > 0 )); do
+        case ${1} in
+        "--pattern="*)
+            pattern=${1#*=}
+            shift
+            ;;
+        "--include="*)
+            include=${1#*=}
+            shift
+            ;;
+        "--replace="*)
+            replace=${1#*=}
+            shift
+            ;;
+        "--value="*)
+            value=${1#*=}
+            shift
+            ;;
+        *)
+            echo "Unsupported argument: ${1}" >&2
+            return 1
+            ;;
+        esac
+    done
 
-export FULL_VERSION
-printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
+    if [ -z "${replace}" ] && [ -n "${value}" ] ; then
+        replace=${pattern/\.\*/${value}}
+    fi
+
+    for file in $(search "${pattern}" "${include}"); do
+        echo "Updating ${file}"
+        sed -e s@"${pattern}"@"${replace}"@g "${file}" > "${file}.tmp"
+        mv "${file}.tmp" "${file}"
+    done
+}
 
 update_version(){
-    # Update version
-    mvn ${MAVEN_ARGS} -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
-        -DgenerateBackupPoms=false \
-        -DnewVersion="${FULL_VERSION}" \
-        -Dproperty=helidon.version \
-        -DprocessAllModules=true
+    local version project_version
 
-    # Hack to update helidon.version
-    for pom in `egrep "<helidon.version>.*</helidon.version>" -r . --include pom.xml | cut -d ':' -f 1 | sort | uniq `
-    do
-        cat ${pom} | \
-            sed -e s@'<helidon.version>.*</helidon.version>'@"<helidon.version>${FULL_VERSION}</helidon.version>"@g \
-            > ${pom}.tmp
-        mv ${pom}.tmp ${pom}
-    done
+    if [ "${#}" -gt 0 ]; then
+        version=${1}
+    else
+        version=${VERSION}
+    fi
+    if [ -z "${version}" ] ; then
+        echo "ERROR: version required" >&2
+        usage >&2
+        exit 1
+    fi
 
-    # Hack to update helidon.version in build.gradle files
-    for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
-    do
-        cat ${bfile} | \
-            sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
-            > ${bfile}.tmp
-        mv ${bfile}.tmp ${bfile}
-    done
+    project_version=$(current_version)
 
+    replace \
+        --pattern="<version>${project_version}</version>" \
+        --replace="<version>${version}</version>" \
+        --include="pom.xml"
+
+    replace \
+        --pattern="<helidon.version>.*</helidon.version>" \
+        --value="${version}" \
+        --include="pom.xml"
+
+    replace \
+        --pattern="helidonversion = .*" \
+        --replace="helidonversion = '${version}'" \
+        --include="build.gradle"
 }
 
 prepare_release(){
+    readonly FULL_VERSION="${1}"
+    export FULL_VERSION
+
+    printf "\n%s: FULL_VERSION=%s\n\n" "$(basename "${0}")" "${FULL_VERSION}"
+
     # Do the release work in a branch
     local GIT_BRANCH="release/${FULL_VERSION}"
     git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true
     git checkout -b "${GIT_BRANCH}"
 
     # Invoke update_version
-    update_version
+    update_version "${FULL_VERSION}"
 
     # Update scm/tag entry in the parent pom
     sed -e s@'<tag>[^<]*</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
@@ -194,14 +241,22 @@ push_release_tag(){
 }
 
 create_tag(){
-    prepare_release
+    local version
+    version=$(current_version)
+    version=${version%-SNAPSHOT}
+
+    prepare_release "${version}"
     push_release_tag
 
     printf "version=%s\ntag=refs/tags/%s\n" "${FULL_VERSION}" "${FULL_VERSION}" >&6
 }
 
 release_build(){
-    prepare_release
+    local version
+    version=$(current_version)
+    version=${version%-SNAPSHOT}
+
+    prepare_release "${version}"
 
     # Perform deployment
     mvn ${MAVEN_ARGS} clean deploy \
@@ -214,6 +269,10 @@ release_build(){
     "${WS_DIR}/etc/scripts/upload.sh" upload_release \
                 --dir="staging" \
                 --description="Helidon v%{FULL_VERSION}"
+}
+
+get_version(){
+    printf "version=%s\n" "$(current_version)" >&6
 }
 
 # Invoke command
