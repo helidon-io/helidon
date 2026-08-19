@@ -78,6 +78,7 @@ import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.http2.spi.SubProtocolResult;
 
 import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.TRACE;
 
 /**
@@ -699,10 +700,18 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                                   message);
 
         Status responseStatus = response.status();
+        boolean finalInformationalResponse = responseStatus.family() == Status.Family.INFORMATIONAL;
+        if (finalInformationalResponse) {
+            LOGGER.log(ERROR,
+                       "Attempt to send a final informational response. "
+                               + "Server responded with Internal Server Error.");
+            responseStatus = Status.INTERNAL_SERVER_ERROR_500;
+        }
         ServerResponseHeaders headers = response.headers();
         int responseStatusCode = responseStatus.code();
         boolean noContentResponse = responseStatusCode == Status.NO_CONTENT_204.code();
-        boolean noEntityResponse = noContentResponse
+        boolean noEntityResponse = finalInformationalResponse
+                || noContentResponse
                 || responseStatusCode == Status.RESET_CONTENT_205.code()
                 || responseStatusCode == Status.NOT_MODIFIED_304.code();
         byte[] entity;
@@ -710,7 +719,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
             entity = BufferData.EMPTY_BYTES;
             if (noContentResponse) {
                 headers.remove(HeaderNames.CONTENT_LENGTH);
-            } else if (responseStatusCode == Status.RESET_CONTENT_205.code()) {
+            } else if (finalInformationalResponse || responseStatusCode == Status.RESET_CONTENT_205.code()) {
                 headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
             }
             headers.remove(HeaderNames.TRANSFER_ENCODING);

@@ -146,6 +146,56 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
+    void rejectedStreamRejectsEarlyHintsWithEntity() {
+        assertRejectedStreamRejectsInformationalStatus(Status.create(103), true);
+    }
+
+    @Test
+    void rejectedStreamRejectsEarlyHintsWithoutEntity() {
+        assertRejectedStreamRejectsInformationalStatus(Status.create(103), false);
+    }
+
+    @Test
+    void rejectedStreamRejectsSwitchingProtocols() {
+        assertRejectedStreamRejectsInformationalStatus(Status.SWITCHING_PROTOCOLS_101, true);
+    }
+
+    private static void assertRejectedStreamRejectsInformationalStatus(Status status, boolean withEntity) {
+        DirectHandlers directHandlers = DirectHandlers.builder()
+                .addHandler(DirectHandler.EventType.BAD_REQUEST,
+                            (_, _, _, _, _) -> {
+                                var builder = DirectHandler.TransportResponse.builder()
+                                        .status(status)
+                                        .header(HeaderNames.CONTENT_LENGTH, "7")
+                                        .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
+                                        .header(HeaderNames.TRAILER, "test-trailer");
+                                if (withEntity) {
+                                    builder.entity("ignored");
+                                }
+                                return builder.build();
+                            })
+                .build();
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        Http2ServerStream stream = stream(streams, writer);
+        when(stream.connectionContext().listenerContext().directHandlers()).thenReturn(directHandlers);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithoutAuthority(), false);
+
+        stream.run();
+
+        assertAll(
+                () -> assertThat(writer.headers.status(), is(Status.INTERNAL_SERVER_ERROR_500)),
+                () -> assertThat(writer.headers.httpHeaders().contentLength().orElseThrow(), is(0L)),
+                () -> assertThat(writer.headers.httpHeaders().contains(HeaderNames.TRANSFER_ENCODING), is(false)),
+                () -> assertThat(writer.headers.httpHeaders().contains(HeaderNames.TRAILER), is(false)),
+                () -> assertThat(writer.headerFlags.endOfStream(), is(true)),
+                () -> assertThat(writer.dataFrame, is(nullValue()))
+        );
+    }
+
+    @Test
     void rejectedStreamSuppressesNoContentEntityAndFraming() {
         RecordingStreamWriter writer = rejectedStreamWithNoEntityStatus(Status.NO_CONTENT_204);
 
