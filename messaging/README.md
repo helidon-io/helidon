@@ -445,3 +445,540 @@ sources are reported when the graph closes.
 An imperative emission has the same at-least-once behavior as a declarative emission: for each delivery, outputs run
 sequentially, the first failure prevents later outputs from running, and earlier outputs are not rolled back. Retrying
 an unsuccessful or indeterminate delivery can therefore produce duplicates.
+
+## Create a connector
+
+A connector module contains one stateless provider and one new lifecycle object for every configured incoming or
+outgoing binding. The provider is shared; connector instances are not. Implement only the direction interfaces the
+transport supports.
+
+### 1. Choose the connector identity and directions
+
+Choose a non-blank connector type that is unique in the application. Helidon connectors use the `helidon-` prefix;
+third-party connectors should use a similarly distinctive name. The examples below use `example-acme`.
+
+- Implement `IncomingConnectorProvider` for a source.
+- Implement `OutgoingConnectorProvider` for a sink.
+- Implement both interfaces on one provider when the transport supports both directions.
+
+The runtime rejects duplicate provider types and rejects an incoming or outgoing binding when its selected provider
+does not implement that direction.
+
+### 2. Create the connector module
+
+Add the core messaging, configuration, builder, and Service Registry APIs. Configuration metadata is optional at
+runtime but should be present while compiling a typed connector configuration:
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.messaging</groupId>
+        <artifactId>helidon-messaging</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.config</groupId>
+        <artifactId>helidon-config</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.builder</groupId>
+        <artifactId>helidon-builder-api</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.config.metadata</groupId>
+        <artifactId>helidon-config-metadata</artifactId>
+        <optional>true</optional>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.service</groupId>
+        <artifactId>helidon-service-registry</artifactId>
+    </dependency>
+</dependencies>
+```
+
+Also add the transport client used by the connector.
+
+Use the `helidon-bundles-apt` annotation-processor setup shown above. It generates the configuration prototype and the
+Service Registry descriptor for the provider. A JPMS connector module using a generated public configuration typically
+has this shape:
+
+```java
+module com.example.messaging.connector.acme {
+    requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.messaging;
+
+    requires io.helidon.service.registry;
+    requires com.acme.transport;
+
+    requires static io.helidon.config.metadata;
+
+    exports com.example.messaging.connector.acme;
+}
+```
+
+The generated Service Registry descriptor performs provider discovery; do not add a Java `provides` directive for the
+provider. A consuming application adds the connector artifact and, when modular, requires the connector module.
+
+### 3. Define and validate connector configuration
+
+Extending `ConnectorConfig` adds the runtime-provided connector type, direction, and channel name to the generated
+configuration:
+
+```java
+@Prototype.Blueprint
+@Prototype.Configured
+interface AcmeConnectorConfigBlueprint extends ConnectorConfig {
+    @Option.Required
+    @Option.Configured
+    String endpoint();
+
+    @Option.Required
+    @Option.Configured
+    String destination();
+}
+```
+
+Builder code generation creates `AcmeConnectorConfig` and its `create(Config)` factory. Add a builder decorator or
+custom builder methods for validation that involves several options, secrets, mutually exclusive values, or normalized
+transport properties. Mark secret options with `@Option.Confidential`, copy mutable values defensively, and keep them
+out of diagnostics and `toString()` output.
+
+For each binding, the runtime constructs the effective `Config` in this order:
+
+1. Start with defaults under `helidon.messaging.connector.<connector-type>`.
+2. Overlay the selected `incoming` or `outgoing` channel configuration.
+3. Remove the portable `failure` subtree.
+4. Add `channel-name`, `connector`, and `direction` (`INCOMING` or `OUTGOING`).
+
+The provider should parse and validate this configuration, but it must not open connections, create delivery threads,
+poll, or retain connector instances.
+
+### 4. Implement the stateless provider
+
+Register the provider as a Service Registry singleton. Return a fresh, unstarted connector from every successful
+factory call:
+
+```java
+@Service.Singleton
+public final class AcmeConnectorProvider
+        implements IncomingConnectorProvider, OutgoingConnectorProvider {
+    public static final String CONNECTOR_TYPE = "example-acme";
+
+    @Override
+    public String connectorType() {
+        return CONNECTOR_TYPE;
+    }
+
+    @Override
+    public IncomingConnector createIncomingConnector(Config config) {
+        AcmeConnectorConfig connectorConfig =
+                AcmeConnectorConfig.create(Objects.requireNonNull(config));
+        requireDirection(connectorConfig, ConnectorConfig.Direction.INCOMING);
+        return new AcmeIncomingConnector(connectorConfig);
+    }
+
+    @Override
+    public OutgoingConnector createOutgoingConnector(Config config) {
+        AcmeConnectorConfig connectorConfig =
+                AcmeConnectorConfig.create(Objects.requireNonNull(config));
+        requireDirection(connectorConfig, ConnectorConfig.Direction.OUTGOING);
+        return new AcmeOutgoingConnector(connectorConfig);
+    }
+
+    private static void requireDirection(AcmeConnectorConfig config,
+                                         ConnectorConfig.Direction expected) {
+        if (config.direction() != expected) {
+            throw new IllegalArgumentException("Unexpected connector direction " + config.direction());
+        }
+    }
+}
+```
+
+The provider may be called for several channels and graphs. It must remain stateless and must never reuse a transport
+client or connector lifecycle object between bindings.
+
+### 5. Implement an incoming connector
+
+The runtime invokes `IncomingConnector.run` once on a runtime-owned virtual thread. Establish enough transport state
+to report readiness, call `context.awaitRunning()` exactly once, and acquire no delivery until it returns `true`.
+
+Before polling, reading, or otherwise accepting a transport delivery, reserve runtime capacity. Keep the returned
+delivery lease until both runtime processing and transport settlement finish. This outline uses transport-specific
+placeholder types:
+
+```java
+final class AcmeIncomingConnector implements IncomingConnector {
+    private final AcmeConnectorConfig config;
+    private final AtomicBoolean runStarted = new AtomicBoolean();
+    private final AtomicBoolean draining = new AtomicBoolean();
+    private final AtomicBoolean closed = new AtomicBoolean();
+    private final AcmeIncomingLifecycle lifecycle = new AcmeIncomingLifecycle();
+    private volatile AcmeConsumer consumer;
+    private volatile Thread owner;
+
+    AcmeIncomingConnector(AcmeConnectorConfig config) {
+        this.config = config;
+    }
+
+    @Override
+    public void run(IncomingConnectorContext context) {
+        if (!runStarted.compareAndSet(false, true)) {
+            throw new IllegalStateException("Connector can only be run once");
+        }
+        if (closed.get() || draining.get()) {
+            return;
+        }
+        owner = Thread.currentThread();
+        try {
+            if (closed.get() || draining.get()) {
+                return;
+            }
+            AcmeConsumer transport = AcmeConsumer.open(config);
+            try (transport) {
+                consumer = transport;
+                if (closed.get()) {
+                    transport.forceClose();
+                    return;
+                }
+                if (!context.awaitRunning() || closed.get() || draining.get()) {
+                    return;
+                }
+                int maxMessages = context.maxDeliveryMessages();
+                if (maxMessages <= 0) {
+                    throw new MessagingException("Delivery limit must be greater than zero");
+                }
+
+                while (!closed.get() && !draining.get()) {
+                    try {
+                        try (ConnectorDeliveryReservation reservation = context.reserveDelivery()) {
+                            if (closed.get() || draining.get()) {
+                                break;
+                            }
+
+                            AcmeTransportBatch transportBatch =
+                                    transport.receive(maxMessages);
+                            if (transportBatch.isEmpty()) {
+                                continue;
+                            }
+                            if (closed.get() || draining.get()) {
+                                transport.abandon(transportBatch);
+                                break;
+                            }
+
+                            try {
+                                deliverAndSettle(transport,
+                                                 transportBatch,
+                                                 reservation,
+                                                 maxMessages,
+                                                 context.channel());
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                if (closed.get() || draining.get()) {
+                                    break;
+                                }
+                                throw new MessagingException("Incoming connector was interrupted", e);
+                            }
+                        }
+                    } catch (MessagingRejectedException e) {
+                        boolean lifecycleShutdown = e.reason() == MessagingRejectedException.Reason.SHUTDOWN
+                                || ((closed.get() || draining.get())
+                                && e.reason() == MessagingRejectedException.Reason.CANCELLED);
+                        if (lifecycleShutdown) {
+                            break;
+                        }
+                        throw e;
+                    }
+                }
+
+                if (!closed.get()) {
+                    transport.flushCheckpoint();
+                }
+            }
+        } finally {
+            consumer = null;
+            owner = null;
+        }
+    }
+
+    private void deliverAndSettle(AcmeConsumer transport,
+                                  AcmeTransportBatch transportBatch,
+                                  ConnectorDeliveryReservation reservation,
+                                  int maxMessages,
+                                  String channel) throws InterruptedException {
+        MessageBatch<?> batch;
+        try {
+            batch = toMessageBatch(transportBatch);
+            if (batch.size() > maxMessages) {
+                throw new MessagingRejectedException(
+                        channel,
+                        MessagingRejectedException.Reason.OVERSIZED,
+                        "Transport batch exceeds the runtime message limit");
+            }
+        } catch (RuntimeException | Error failure) {
+            abandon(transport, transportBatch, failure);
+            throw failure;
+        }
+
+        ConnectorDelivery delivery;
+        try {
+            // This helper closes the race between delivery start/publication and forceClose().
+            delivery = lifecycle.startDelivery(reservation, batch, channel);
+        } catch (RuntimeException | Error failure) {
+            abandon(transport, transportBatch, failure);
+            throw failure;
+        }
+
+        try {
+            try (delivery) {
+                try {
+                    delivery.await();
+                    // Commit only after runtime processing, retries, drop, or dead-letter handling succeeds.
+                    transport.commit(transportBatch);
+                } catch (InterruptedException e) {
+                    delivery.cancel();
+                    abandon(transport, transportBatch, e);
+                    throw e;
+                } catch (RuntimeException | Error failure) {
+                    abandon(transport, transportBatch, failure);
+                    throw failure;
+                }
+            }
+        } finally {
+            lifecycle.deliveryFinished(delivery);
+        }
+    }
+
+    private void abandon(AcmeConsumer transport,
+                         AcmeTransportBatch transportBatch,
+                         Throwable failure) {
+        try {
+            transport.abandon(transportBatch);
+        } catch (RuntimeException | Error abandonFailure) {
+            failure.addSuppressed(abandonFailure);
+        }
+    }
+
+    @Override
+    public void drain() {
+        draining.set(true);
+        lifecycle.drain();
+        AcmeConsumer current = consumer;
+        if (current != null) {
+            // Wake acquisition only; do not interrupt active settlement or checkpointing.
+            current.stopAcquisition();
+        }
+    }
+
+    @Override
+    public void forceClose() {
+        closed.set(true);
+        draining.set(true);
+        lifecycle.forceClose();
+        Thread currentOwner = owner;
+        if (currentOwner != null) {
+            currentOwner.interrupt();
+        }
+        AcmeConsumer current = consumer;
+        if (current != null) {
+            current.forceClose();
+        }
+    }
+
+    @Override
+    public void close() {
+        forceClose();
+    }
+}
+```
+
+`AcmeIncomingLifecycle` in this outline is a connector-specific helper, not a core API. Its locked state machine must
+atomically prevent new delivery starts during drain, record an in-progress `reservation.start(...)`, and publish the
+returned `ConnectorDelivery`. Forced close marks the gate closed, interrupts an in-progress start, and cancels a
+published delivery; a delivery that completes publication after close is cancelled before it is returned. The
+`drain()`, `forceClose()`, and `deliveryFinished(...)` helper calls are non-throwing bookkeeping and unblock actions.
+
+The placeholder `AcmeConsumer` lifecycle methods are assumed to be thread-safe and idempotent. A real connector must
+serialize resource publication and cleanup so a resource published while close is in progress is closed exactly once.
+`stopAcquisition()` must make `receive()` return normally or empty without disturbing active delivery settlement or
+checkpointing. Forced cleanup must run every unblock action even when one fails, then aggregate and report failures.
+
+`reserveDelivery()` blocks with bounded pending accounting. A transport that must keep polling for heartbeats should
+use `tryReserveDelivery()` and perform maintenance when it returns empty. After acquiring data, it may retry
+`reservation.tryStart(batch)` while retaining that exact transport delivery. Do not rebuild a retained batch between
+attempts; the admission lease follows the original batch and subsets created with `MessageBatch.subset(...)`.
+Repeated `tryReserveDelivery()` and `tryStart()` calls share one admission-timeout budget. Time spent acquiring the
+transport data between reservation and start is excluded from that budget.
+
+`ConnectorDelivery.await()` completes after the runtime's portable retry, drop, or dead-letter policy settles. If it
+throws, do not acknowledge or commit the transport delivery. Either leave it available for transport redelivery or
+apply a documented transport-specific negative acknowledgement. A connector that needs heartbeats while processing
+can call timed `await(Duration)` and perform transport maintenance between waits.
+
+A normal return from `await()` may mean normal handler completion, `DROP`, or successful dead-letter delivery; all are
+settled runtime outcomes and the complete source delivery may then be committed. The conservative outline above
+abandons the complete transport batch on failure. A connector that supports partial settlement may align a
+`BatchDeliveryException` to the original batch and settle only `SUCCEEDED` items, while respecting transport ordering
+constraints such as contiguous committed prefixes. `FAILED`, `NOT_ATTEMPTED`, and `INDETERMINATE` items remain
+unsettled. Treat an unstructured exception as indeterminate for the complete batch.
+
+`ConnectorDelivery.close()` releases runtime admission capacity; it does not acknowledge the source. Closing it before
+processing terminates requests cancellation, and capacity remains retained until processing actually stops. Commit,
+acknowledge, negatively acknowledge, or abandon the transport delivery first, and only then close the lease.
+
+`drain()` stops new acquisition but allows an acquired delivery to settle and checkpoint. `forceClose()` may run
+concurrently with startup, readiness, polling, admission, or delivery processing and must promptly unblock all of them.
+All close operations must be idempotent.
+
+The runtime owns the incoming `run` virtual thread and delivery tasks. Do not create another executor for messaging
+delivery. Transport libraries may still use their normal internal I/O threads. Different connector bindings and
+channels can overlap, so shared native resources must be synchronized without coupling sibling connector lifecycles.
+
+### 6. Implement an outgoing connector
+
+`OutgoingConnector.start()` acquires binding-owned transport resources and returns only when sends can begin.
+`sendBatch()` is synchronous: it must not return until the connector's documented external success point is reached.
+
+```java
+final class AcmeOutgoingConnector implements OutgoingConnector {
+    private final AcmeConnectorConfig config;
+    private final AcmeLifecycle lifecycle = new AcmeLifecycle();
+
+    AcmeOutgoingConnector(AcmeConnectorConfig config) {
+        this.config = config;
+    }
+
+    @Override
+    public void start() {
+        lifecycle.startInterruptibly(() -> AcmeProducer.open(config));
+    }
+
+    @Override
+    public BatchAtomicity batchAtomicity() {
+        return BatchAtomicity.PER_MESSAGE;
+    }
+
+    @Override
+    public void sendBatch(MessageBatch<?> batch) {
+        Objects.requireNonNull(batch);
+        AcmeProducer current;
+        try {
+            current = lifecycle.beginSend();
+        } catch (RuntimeException failure) {
+            throw BatchDeliveryException.notAttempted("Acme send", batch, failure);
+        }
+        try {
+            for (int i = 0; i < batch.size(); i++) {
+                try {
+                    // Await the transport acknowledgement or other documented success point.
+                    current.sendAndAwait(batch.get(i));
+                } catch (RuntimeException failure) {
+                    throw BatchDeliveryException.sequential("Acme send", batch, i, failure);
+                }
+            }
+        } finally {
+            lifecycle.endSend();
+        }
+    }
+
+    @Override
+    public void forceClose() {
+        lifecycle.forceClose();
+    }
+
+    @Override
+    public void close() {
+        lifecycle.close();
+    }
+}
+```
+
+`AcmeLifecycle` in this outline is a connector-specific helper, not a core API. Implement it with a lock and a
+one-shot `NEW`, `STARTING`, `READY`, `CLOSED` state machine. It must publish or close a resource atomically when close
+races startup, track startup and active-send owners, and make `forceClose()` unblock all of them. Repeated or concurrent
+close calls must have one cleanup owner. Run every unblock/cleanup action even when one fails, then aggregate and throw
+the failures. `beginSend()` must reject non-ready state before any transport attempt. `endSend()` is non-throwing
+bookkeeping so it cannot mask a primary delivery failure.
+
+The example reports an interrupted or failed item as indeterminate because the transport may have accepted it before
+throwing. Use `BatchItemOutcome.failed` only when the transport proves the item did not reach its success point. Use
+`BatchDeliveryException.notAttempted` for failures before any external attempt and `indeterminate` when the complete
+batch outcome is unknown. Return `BatchAtomicity.ATOMIC` only when the transport guarantees one all-or-none settlement
+boundary for the complete batch.
+
+Preserve the original transport failure as the cause. Make send and startup paths interruptible; `forceClose()` itself
+must run promptly to completion and perform every unblock action. Make normal and forced cleanup safe when invoked
+concurrently with an active send.
+
+### 7. Map transport messages and enforce limits
+
+- Convert each incoming transport record to an immutable `Message<T>` and copy portable headers into the
+  single-valued `Map<String, String>` contract.
+- Use a connector-specific immutable `Message<T>` subtype when applications need native keys, offsets, destinations,
+  or other metadata. Document which locally emitted messages are accepted by handlers requiring that subtype.
+- Outgoing mapping must accept ordinary core `Message` instances; treat a connector-specific subtype as an optional
+  richer view rather than a required input.
+- Bound every incoming batch by `context.maxDeliveryMessages()` before acquisition. Keep byte, frame, record, and
+  transport request limits in connector configuration; the core runtime performs message-count admission only.
+- Preserve message order and the exact `MessageBatch` identity through settlement. Use retained subsets rather than
+  rebuilding batches during partial failure handling.
+- Document null, duplicate, encoding, native-header, and payload-type conversion rules.
+
+The runtime owns portable delivery retry, `DROP`, and dead-letter routing. The connector still owns transport
+reconnection, polling, acknowledgements, commits, negative acknowledgements, and checkpoints.
+Do not add an independent application-delivery retry loop on top of the runtime policy.
+
+### 8. Configure and exercise the connector
+
+Connector defaults and channel overrides can be combined as follows:
+
+```yaml
+helidon:
+  messaging:
+    connector:
+      example-acme:
+        endpoint: https://broker.example
+
+    incoming:
+      orders:
+        connector: example-acme
+        destination: orders-in
+
+    outgoing:
+      validated-orders:
+        connector: example-acme
+        destination: orders-out
+```
+
+Add a generated receiver or named emitter for each configured channel, start the Service Registry application, and
+verify that the provider is discovered on both the class path and module path.
+
+### 9. Test the connector contract
+
+At minimum, cover:
+
+- connector type uniqueness, supported directions, the effective defaults-plus-channel overlay, injected common fields,
+  stripped `failure` keys, required values, secrets, defensive copying and redaction, and direction rejection;
+- Service Registry discovery and fresh, resource-free connector instances from every provider factory call; also prove
+  that the provider is not a lifecycle resource, provider-registry shutdown does not close an unattached factory-created
+  connector, and an attached connector is closed by its owning graph;
+- incoming readiness, reserve-before-acquire ordering, message-count bounds, empty polls, ordering, immutable message
+  snapshots, unmodifiable exact case-sensitive headers, oversize post-acquisition rejection, and release of every
+  unused reservation exactly once;
+- successful processing followed by transport commit, failed processing without commit, redelivery, drop, dead-letter
+  completion, commit or checkpoint failure, and retention of admission through commit, nack, or abandonment;
+- `tryReserveDelivery()` saturation and shared repeated-attempt timeout exhaustion, repeated-`tryStart()` budgets,
+  transport maintenance while delivery runs, and capacity retention after early cancellation until processing stops;
+- outgoing startup, the documented send-completion point, interruption, partial and indeterminate batch outcomes, and
+  the declared `BatchAtomicity`; verify ordinary core messages and optional connector-specific message subtypes;
+- aligned indexes for `SUCCEEDED`, `FAILED`, `NOT_ATTEMPTED`, and `INDETERMINATE`, preserved primary and suppressed
+  causes, and—when declaring `ATOMIC`—confirmed rollback versus ambiguous commit failure for the complete batch;
+- one-shot start/run, close before start/run, rejected restart, graceful drain, final checkpointing, blocked startup and
+  transport calls, drain/force-close while receive returns a buffered batch, late resource publication during
+  `forceClose()`, and one shared result from concurrent cleanup;
+- simultaneous sibling bindings, including shared-target framing and ordering where needed, with no client, delivery,
+  or lifecycle state leaking between them;
+- a real-transport integration test for every supported direction, including service discovery on the module path and
+  shutdown with no leaked threads or transport resources.
+
+Finally, document connector-specific configuration and completion semantics, record third-party dependencies and
+licenses, and run the connector repository's unit, integration, dependency, copyright, and style checks.
