@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.tests;
 
+import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
@@ -65,7 +67,12 @@ abstract class RoutingTestBase {
 
     static void sendHead(ServerResponse res, String responseMessage) {
         res.headers().set(HeaderValues.createCached(HeaderNames.create(HEAD_ROUTE_HEADER), responseMessage));
-        res.send(responseMessage);
+        res.headers().contentLength(responseMessage.getBytes(StandardCharsets.UTF_8).length);
+        res.send();
+    }
+
+    static void sendHeadEntity(ServerResponse res) {
+        res.send("entity".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -155,6 +162,16 @@ abstract class RoutingTestBase {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), hasHeader(MULTI_HANDLER));
             assertResponseEntity(response, responseMessage, hasResponseEntity);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/head_send_entity", "/head_stream_entity"})
+    void testHeadEntityIsInternalServerError(String path) {
+        try (Http1ClientResponse response = client.head(path).request()) {
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers().contentLength().orElseThrow(), is(21L));
+            assertThrows(IllegalStateException.class, () -> response.as(String.class));
         }
     }
 

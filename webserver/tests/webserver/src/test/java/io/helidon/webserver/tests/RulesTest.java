@@ -44,6 +44,8 @@ class RulesTest extends RoutingTestBase {
                 .put("/put", (req, res) -> res.send("put"))
                 .delete("/delete", (req, res) -> res.send("delete"))
                 .head("/head", (req, res) -> sendHead(res, "head"))
+                .head("/head_send_entity", (req, res) -> sendHeadEntity(res))
+                .head("/head_stream_entity", (req, res) -> res.outputStream().write('x'))
                 .options("/options", (req, res) -> res.send("options"))
                 .trace("/trace", (req, res) -> res.send("trace"))
                 .patch("/patch", (req, res) -> res.send("patch"))

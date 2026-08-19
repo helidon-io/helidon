@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.UnaryOperator;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.DirectHandler;
@@ -69,31 +68,21 @@ class Http2ServerResponseTest {
                                                                   Status.NOT_MODIFIED_304);
 
     @Test
-    void headUsesEncodedMetadataWithoutSendingEntity() {
+    void headRejectsEntityBeforeSendingResponse() {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
         when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder());
 
-        Http2ServerStream getStream = mock(Http2ServerStream.class);
-        createResponse(getStream, Method.GET, contentEncodingContext).send(entity);
-        var getHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        var getEntity = ArgumentCaptor.forClass(BufferData.class);
-        verify(getStream).writeHeadersWithData(getHeaders.capture(), anyInt(), getEntity.capture(), anyBoolean());
-
-        Http2ServerStream headStream = mock(Http2ServerStream.class);
-        createResponse(headStream, Method.HEAD, contentEncodingContext).send(entity);
-        var headHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        verify(headStream).writeHeaders(headHeaders.capture(), anyBoolean());
-        verify(headStream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> response.send(entity));
 
         assertAll(
-                () -> assertThat(getHeaders.getValue().httpHeaders().get(HeaderNames.CONTENT_ENCODING).get(), is("test")),
-                () -> assertThat(getHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(7L)),
-                () -> assertThat(new String(getEntity.getValue().readBytes(), StandardCharsets.UTF_8), is("xentity")),
-                () -> assertThat(headHeaders.getValue().httpHeaders().get(HeaderNames.CONTENT_ENCODING).get(), is("test")),
-                () -> assertThat(headHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(7L))
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(response.isSent(), is(false))
         );
+        verifyNoWrites(stream);
     }
 
     @Test
@@ -449,186 +438,64 @@ class Http2ServerResponseTest {
     }
 
     @Test
-    void filteredHeadUsesFilteredMetadataWithoutSendingEntity() {
+    void filteredHeadRejectsEntityBeforeApplyingFilter() {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
         when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder());
-        UnaryOperator<OutputStream> filter = network -> new OutputStream() {
-            @Override
-            public void write(int value) throws IOException {
-                network.write(new byte[] {'y', (byte) value});
-            }
-
-            @Override
-            public void write(byte[] bytes, int offset, int length) throws IOException {
-                byte[] filtered = new byte[length + 1];
-                filtered[0] = 'y';
-                System.arraycopy(bytes, offset, filtered, 1, length);
-                network.write(filtered);
-            }
-
-            @Override
-            public void close() throws IOException {
-                network.close();
-            }
-        };
-
-        Http2ServerStream getStream = mock(Http2ServerStream.class);
-        Http2ServerResponse getResponse = createResponse(getStream, Method.GET, contentEncodingContext);
-        getResponse.streamFilter(filter);
-        getResponse.send(entity);
-        getResponse.commit();
-        var getHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        var getEntity = ArgumentCaptor.forClass(BufferData.class);
-        verify(getStream).writeHeaders(getHeaders.capture(), eq(false));
-        verify(getStream).writeData(getEntity.capture(), eq(false));
-
-        Http2ServerStream headStream = mock(Http2ServerStream.class);
-        Http2ServerResponse headResponse = createResponse(headStream, Method.HEAD, contentEncodingContext);
-        headResponse.streamFilter(filter);
-        headResponse.send(entity);
-        headResponse.commit();
-        var headHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        verify(headStream).writeHeaders(headHeaders.capture(), eq(true));
-        verify(headStream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
-        verify(headStream, never()).writeData(any(), anyBoolean());
+        AtomicBoolean filterApplied = new AtomicBoolean();
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
+        response.streamFilter(network -> {
+            filterApplied.set(true);
+            return network;
+        });
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> response.send(entity));
 
         assertAll(
-                () -> assertThat(getHeaders.getValue().httpHeaders().get(HeaderNames.CONTENT_ENCODING).get(), is("test")),
-                () -> assertThat(new String(getEntity.getValue().readBytes(), StandardCharsets.UTF_8), is("xyentity")),
-                () -> assertThat(headHeaders.getValue().httpHeaders().get(HeaderNames.CONTENT_ENCODING).get(), is("test")),
-                () -> assertThat(headHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(8L))
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(filterApplied.get(), is(false)),
+                () -> assertThat(response.isSent(), is(false))
         );
+        verifyNoWrites(stream);
     }
 
     @Test
-    void streamingHeadUsesEntityMetadataWithoutSendingEntity() throws IOException {
+    void streamingHeadRejectsEntityBeforeSendingResponse() throws IOException {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
 
-        Http2ServerStream getStream = mock(Http2ServerStream.class);
-        Http2ServerResponse getResponse = createResponse(getStream, Method.GET, contentEncodingContext);
-        try (OutputStream output = getResponse.outputStream()) {
-            output.write(entity);
-        }
-        getResponse.commit();
-        var getHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        var getEntity = ArgumentCaptor.forClass(BufferData.class);
-        verify(getStream).writeHeadersWithData(getHeaders.capture(), anyInt(), getEntity.capture(), anyBoolean());
-
-        Http2ServerStream headStream = mock(Http2ServerStream.class);
-        Http2ServerResponse headResponse = createResponse(headStream, Method.HEAD, contentEncodingContext);
-        try (OutputStream output = headResponse.outputStream()) {
-            output.write(entity);
-        }
-        headResponse.commit();
-        var headHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        verify(headStream).writeHeaders(headHeaders.capture(), eq(true));
-        verify(headStream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
-        verify(headStream, never()).writeData(any(), anyBoolean());
-
-        assertAll(
-                () -> assertThat(getHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(6L)),
-                () -> assertThat(new String(getEntity.getValue().readBytes(), StandardCharsets.UTF_8), is("entity")),
-                () -> assertThat(headHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(6L))
-        );
-    }
-
-    @Test
-    void streamingHeadStopsAfterConfiguredDiscardLimit() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
         Http2ServerStream stream = mock(Http2ServerStream.class);
-        ListenerConfig listenerConfig = WebServer.builder().writeBufferSize(4).buildPrototype();
-        Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext, listenerConfig);
-        response.contentLength(100);
-
+        Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
         OutputStream output = response.outputStream();
-        output.write("1234".getBytes(StandardCharsets.UTF_8));
-        IOException exception = assertThrows(IOException.class, () -> output.write('5'));
-        response.commit();
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> output.write(entity));
 
-        var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
-        verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
-        verify(stream, never()).writeData(any(), anyBoolean());
         assertAll(
-                () -> assertThat(exception.getMessage(), containsString("streaming limit of 4 bytes")),
-                () -> assertThat(response.isSent(), is(true)),
-                () -> assertThat(responseHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(100L))
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(response.isSent(), is(false))
         );
+        verifyNoWrites(stream);
     }
 
     @Test
-    void flushedStreamingHeadSendsImmediatelyAndStopsWrites() throws IOException {
+    void flushedStreamingHeadRejectsEntityBeforeSendingResponse() throws IOException {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
-        AtomicInteger whenSentCalls = new AtomicInteger();
-        response.whenSent(whenSentCalls::incrementAndGet);
 
         OutputStream output = response.outputStream();
-        output.write("first".getBytes(StandardCharsets.UTF_8));
         output.flush();
+        verifyNoWrites(stream);
 
-        var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
-        verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
-        verify(stream, never()).writeData(any(), anyBoolean());
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> output.write("entity".getBytes(StandardCharsets.UTF_8)));
         assertAll(
-                () -> assertThat(response.isSent(), is(true)),
-                () -> assertThat(whenSentCalls.get(), is(0)),
-                () -> assertThat(responseHeaders.getValue().httpHeaders().contains(HeaderNames.CONTENT_LENGTH), is(false))
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(response.isSent(), is(false))
         );
-
-        IOException exception = assertThrows(IOException.class,
-                                             () -> output.write("second".getBytes(StandardCharsets.UTF_8)));
-        assertThat(exception.getMessage(), containsString("HEAD response already sent"));
-        response.commit();
-
-        verify(stream).writeHeaders(any(Http2Headers.class), eq(true));
-        verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
-        verify(stream, never()).writeData(any(), anyBoolean());
-        assertThat(whenSentCalls.get(), is(1));
-    }
-
-    @Test
-    void flushedStreamingHeadAllowsNegotiatedGzipToFinish() throws IOException {
-        ContentEncodingContext contentEncodingContext = ContentEncodingContext.builder()
-                .addContentEncoding(GzipEncoding.create())
-                .build();
-        WritableHeaders<?> requestHeaders = WritableHeaders.create();
-        requestHeaders.set(HeaderNames.ACCEPT_ENCODING, "gzip");
-        Http2ServerStream stream = mock(Http2ServerStream.class);
-        Http2ServerResponse response = createResponse(stream,
-                                                      Method.HEAD,
-                                                      contentEncodingContext,
-                                                      ServerRequestHeaders.create(requestHeaders));
-        AtomicInteger whenSentCalls = new AtomicInteger();
-        response.whenSent(whenSentCalls::incrementAndGet);
-
-        OutputStream output = response.outputStream();
-        output.write("first".getBytes(StandardCharsets.UTF_8));
-        output.flush();
-
-        IOException exception = assertThrows(IOException.class, () -> output.write('x'));
-        output.close();
-        response.commit();
-
-        var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
-        verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
-        verify(stream, never()).writeData(any(), anyBoolean());
-        assertAll(
-                () -> assertThat(exception.getMessage(), containsString("HEAD response already sent")),
-                () -> assertThat(response.isSent(), is(true)),
-                () -> assertThat(responseHeaders.getValue().httpHeaders().get(HeaderNames.CONTENT_ENCODING).get(), is("gzip")),
-                () -> assertThat(responseHeaders.getValue().httpHeaders().contains(HeaderNames.CONTENT_LENGTH), is(false)),
-                () -> assertThat(whenSentCalls.get(), is(1))
-        );
+        verifyNoWrites(stream);
     }
 
     @Test
@@ -640,8 +507,8 @@ class Http2ServerResponseTest {
         response.contentLength(42);
 
         OutputStream output = response.outputStream();
-        output.write("partial".getBytes(StandardCharsets.UTF_8));
         output.flush();
+        verifyNoWrites(stream);
         response.commit();
 
         var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
@@ -652,7 +519,7 @@ class Http2ServerResponseTest {
     }
 
     @Test
-    void flushedStreamingHeadOmitsTrailers() throws IOException {
+    void emptyStreamingHeadSendsTrailersWithoutData() throws IOException {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
         Http2ServerStream stream = mock(Http2ServerStream.class);
@@ -661,40 +528,7 @@ class Http2ServerResponseTest {
         response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
         response.beforeTrailers(_ -> beforeTrailersCalled.set(true));
 
-        OutputStream output = response.outputStream();
-        output.write("partial".getBytes(StandardCharsets.UTF_8));
-        output.flush();
-
-        var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
-        verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
-        verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
-        verify(stream, never()).writeData(any(), anyBoolean());
-        verify(stream, never()).writeTrailers(any());
-        assertAll(
-                () -> assertThat(beforeTrailersCalled.get(), is(false)),
-                () -> assertThat(responseHeaders.getValue().httpHeaders().contains(HeaderNames.CONTENT_LENGTH), is(false)),
-                () -> assertThat(responseHeaders.getValue().httpHeaders().contains(HeaderNames.TRAILER), is(false))
-        );
-
-        response.commit();
-        verify(stream).writeHeaders(any(Http2Headers.class), eq(true));
-        verify(stream, never()).writeTrailers(any());
-        assertThat(beforeTrailersCalled.get(), is(false));
-    }
-
-    @Test
-    void headSendsTrailersWithoutData() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
-        Http2ServerStream stream = mock(Http2ServerStream.class);
-        Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
-        AtomicBoolean beforeTrailersCalled = new AtomicBoolean();
-        response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
-        response.beforeTrailers(_ -> beforeTrailersCalled.set(true));
-
-        try (OutputStream output = response.outputStream()) {
-            output.write("entity".getBytes(StandardCharsets.UTF_8));
-        }
+        response.outputStream().close();
         response.commit();
 
         verify(stream).writeHeaders(any(Http2Headers.class), eq(false));
@@ -711,6 +545,13 @@ class Http2ServerResponseTest {
             assertThat(headers.contentLength().orElseThrow(),
                        is(status.code() == Status.RESET_CONTENT_205.code() ? 0L : 23L));
         }
+    }
+
+    private static void verifyNoWrites(Http2ServerStream stream) {
+        verify(stream, never()).writeHeaders(any(), anyBoolean());
+        verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+        verify(stream, never()).writeData(any(), anyBoolean());
+        verify(stream, never()).writeTrailers(any());
     }
 
     private static ContentEncoder testEncoder() {

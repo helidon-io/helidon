@@ -94,8 +94,8 @@ public class DirectHandlers {
                 httpException);
         var entity = response.entity();
         Status status = response.status();
-        boolean preserveHeadContentLength = entity.isEmpty()
-                && Method.HEAD_NAME.equals(request.method());
+        boolean headRequest = Method.HEAD_NAME.equals(request.method());
+        boolean preserveHeadContentLength = entity.isEmpty() && headRequest;
         boolean copyContentLength = preserveHeadContentLength
                 || status.code() == Status.NOT_MODIFIED_304.code();
 
@@ -133,6 +133,9 @@ public class DirectHandlers {
                         .send();
             } else if (status.code() == Status.NOT_MODIFIED_304.code()) {
                 // 304 does not carry an entity, but may describe the selected representation length
+                res.send();
+            } else if (headRequest) {
+                entity.ifPresent(bytes -> res.headers().contentLength(bytes.length));
                 res.send();
             } else {
                 // otherwise send the entity if present

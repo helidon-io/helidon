@@ -148,6 +148,40 @@ class DirectHandlersTest {
         verify(response, never()).send(any(byte[].class));
     }
 
+    @Test
+    void headSendsNoEntityAndDerivesContentLength() {
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        when(response.status(any())).thenReturn(response);
+        when(response.headers()).thenReturn(responseHeaders);
+        when(response.header(any(Header.class))).thenAnswer(invocation -> {
+            responseHeaders.set(invocation.getArgument(0));
+            return response;
+        });
+
+        DirectHandlers directHandlers = DirectHandlers.builder()
+                .addHandler(DirectHandler.EventType.INTERNAL_ERROR, (_, _, _, _, _) ->
+                        DirectHandler.TransportResponse.builder()
+                                .status(Status.INTERNAL_SERVER_ERROR_500)
+                                .header(HeaderNames.CONTENT_LENGTH, "23")
+                                .entity("error")
+                                .build())
+                .build();
+        RequestException requestException = RequestException.builder()
+                .type(DirectHandler.EventType.INTERNAL_ERROR)
+                .message("internal error")
+                .build();
+        DirectHandler.TransportRequest request = mock(DirectHandler.TransportRequest.class);
+        when(request.method()).thenReturn(Method.HEAD_NAME);
+        when(request.protocolVersion()).thenReturn("HTTP/1.1");
+
+        directHandlers.handle(requestException, request, response, true);
+
+        assertThat(responseHeaders.contentLength().orElseThrow(), is(5L));
+        verify(response).send();
+        verify(response, never()).send(any(byte[].class));
+    }
+
     private static void handle(DirectHandler.TransportResponse directResponse,
                                ServerResponseHeaders responseHeaders) {
         ServerResponse response = mock(ServerResponse.class);

@@ -194,6 +194,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
     @Override
     public void send(byte[] bytes, int position, int length) {
+        boolean headRequest = request.prologue().method() == Method.HEAD;
+        if (headRequest && length > 0) {
+            throw new IllegalStateException("Cannot send response entity for a HEAD request");
+        }
         // if no entity status, we cannot send bytes here
         if (isNoEntityStatus && length > 0) {
             status(noEntityInternalError(status()));
@@ -207,7 +211,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         if (noEntityResponse) {
             normalizeNoEntityHeaders(headers, status());
         }
-        boolean headRequest = request.prologue().method() == Method.HEAD;
         if (noEntityResponse || !hasStreamFilter() && !headers.contains(HeaderNames.TRAILER)) {
             byte[] entity = noEntityResponse ? BufferData.EMPTY_BYTES : entityBytes(bytes, position, length);
             int entityPosition = bytes == entity ? position : 0;
@@ -531,8 +534,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                                             sendListener,
                                                             request,
                                                             keepAlive,
-                                                            validateHeaders,
-                                                            writeBufferSize);
+                                                            validateHeaders);
 
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
 
@@ -588,7 +590,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private final boolean keepAlive;
         private final Supplier<String> streamResult;
         private final boolean headRequest;
-        private final int headWriteLimit;
         private boolean forcedChunked;
 
         private BufferData firstBuffer;
@@ -598,7 +599,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private boolean isChunked;
         private boolean firstByte = true;
         private boolean headResponseSent;
-        private long headApplicationBytes;
         private long responseBytesTotal;
         private boolean closing = false;
         private boolean committing;
@@ -617,8 +617,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                      Http1ConnectionListener sendListener,
                                      Http1ServerRequest request,
                                      boolean keepAlive,
-                                     boolean validateHeaders,
-                                     int headWriteLimit) {
+                                     boolean validateHeaders) {
             this.headers = headers;
             this.trailers = trailers;
             this.beforeTrailers = beforeTrailers;
@@ -634,7 +633,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             this.keepAlive = keepAlive;
             this.validateHeaders = validateHeaders;
             this.headRequest = request.prologue().method() == Method.HEAD;
-            this.headWriteLimit = headWriteLimit;
         }
 
         void checkResponseHeaders() {
@@ -676,7 +674,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 return;     // ignore final flush
             }
             if (headRequest) {
-                sendHeadResponse(false);
                 return;
             }
             if (firstByte && firstBuffer != null) {
@@ -961,20 +958,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         private void checkWriteAllowed(int length) throws IOException {
-            if (length > 0 && headResponseSent) {
-                throw new IOException("HEAD response already sent");
+            if (length > 0 && headRequest) {
+                throw new IllegalStateException("Cannot write response entity for a HEAD request");
             }
             Status usedStatus = status.get();
             if (length > 0 && isNoEntityStatus(usedStatus)) {
                 throw new IllegalStateException("Attempting to write data on a response with status " + usedStatus);
-            }
-            if (length > 0 && headRequest) {
-                if (headApplicationBytes + length > headWriteLimit) {
-                    sendHeadResponse(false);
-                    throw new IOException("HEAD response representation exceeded streaming limit of "
-                                                  + headWriteLimit + " bytes");
-                }
-                headApplicationBytes += length;
             }
         }
 

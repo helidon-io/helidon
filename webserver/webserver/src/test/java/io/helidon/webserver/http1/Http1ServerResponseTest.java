@@ -24,8 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.UnaryOperator;
 
 import javax.net.ssl.SSLException;
 
@@ -69,6 +67,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 class Http1ServerResponseTest {
@@ -358,32 +357,21 @@ class Http1ServerResponseTest {
     }
 
     @Test
-    void headUsesEncodedMetadataWithoutSendingEntity() {
+    void headRejectsEntityBeforeSendingResponse() {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
         when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder());
 
-        DataWriter getWriter = mock(DataWriter.class);
-        createResponse(getWriter, Method.GET, contentEncodingContext).send(entity);
-        var getBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(getWriter).write(getBuffer.capture());
-        String getResponse = new String(getBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
-
-        DataWriter headWriter = mock(DataWriter.class);
-        createResponse(headWriter, Method.HEAD, contentEncodingContext).send(entity);
-        var headBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(headWriter).write(headBuffer.capture());
-        String headResponse = new String(headBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> response.send(entity));
 
         assertAll(
-                () -> assertThat(getResponse, containsString("Content-Encoding: test\r\n")),
-                () -> assertThat(getResponse, containsString("Content-Length: 7\r\n")),
-                () -> assertThat(getResponse, endsWith("\r\n\r\nxentity")),
-                () -> assertThat(headResponse, containsString("Content-Encoding: test\r\n")),
-                () -> assertThat(headResponse, containsString("Content-Length: 7\r\n")),
-                () -> assertThat(headResponse, endsWith("\r\n\r\n"))
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(response.isSent(), is(false))
         );
+        verifyZeroInteractions(writer);
     }
 
     @Test
@@ -488,150 +476,65 @@ class Http1ServerResponseTest {
     }
 
     @Test
-    void filteredHeadUsesFilteredMetadataWithoutSendingEntity() {
+    void filteredHeadRejectsEntityBeforeApplyingFilter() {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
         when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder());
-        UnaryOperator<OutputStream> filter = network -> new OutputStream() {
-            @Override
-            public void write(int value) throws IOException {
-                network.write(new byte[] {'y', (byte) value});
-            }
-
-            @Override
-            public void write(byte[] bytes, int offset, int length) throws IOException {
-                byte[] filtered = new byte[length + 1];
-                filtered[0] = 'y';
-                System.arraycopy(bytes, offset, filtered, 1, length);
-                network.write(filtered);
-            }
-
-            @Override
-            public void close() throws IOException {
-                network.close();
-            }
-        };
-
-        DataWriter getWriter = mock(DataWriter.class);
-        Http1ServerResponse getResponse = createResponse(getWriter, Method.GET, contentEncodingContext);
-        getResponse.streamFilter(filter);
-        getResponse.send(entity);
-        getResponse.commit();
-        var getBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(getWriter).write(getBuffer.capture());
-        String getText = new String(getBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
-
-        DataWriter headWriter = mock(DataWriter.class);
-        Http1ServerResponse headResponse = createResponse(headWriter, Method.HEAD, contentEncodingContext);
-        headResponse.streamFilter(filter);
-        headResponse.send(entity);
-        headResponse.commit();
-        var headBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(headWriter).write(headBuffer.capture());
-        String headText = new String(headBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
+        AtomicBoolean filterApplied = new AtomicBoolean();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
+        response.streamFilter(network -> {
+            filterApplied.set(true);
+            return network;
+        });
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> response.send(entity));
 
         assertAll(
-                () -> assertThat(getText, containsString("Content-Encoding: test\r\n")),
-                () -> assertThat(getText, containsString("Content-Length: 8\r\n")),
-                () -> assertThat(getText, endsWith("\r\n\r\nxyentity")),
-                () -> assertThat(headText, containsString("Content-Encoding: test\r\n")),
-                () -> assertThat(headText, containsString("Content-Length: 8\r\n")),
-                () -> assertThat(headText, endsWith("\r\n\r\n"))
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(filterApplied.get(), is(false)),
+                () -> assertThat(response.isSent(), is(false))
         );
+        verifyZeroInteractions(writer);
     }
 
     @Test
-    void streamingHeadUsesEntityMetadataWithoutSendingEntity() throws IOException {
+    void streamingHeadRejectsEntityBeforeSendingResponse() throws IOException {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
 
-        DataWriter getWriter = mock(DataWriter.class);
-        Http1ServerResponse getResponse = createResponse(getWriter, Method.GET, contentEncodingContext);
-        try (OutputStream output = getResponse.outputStream()) {
-            output.write(entity);
-        }
-        getResponse.commit();
-        var getBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(getWriter).write(getBuffer.capture());
-        String getText = new String(getBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
-
-        DataWriter headWriter = mock(DataWriter.class);
-        Http1ServerResponse headResponse = createResponse(headWriter, Method.HEAD, contentEncodingContext);
-        try (OutputStream output = headResponse.outputStream()) {
-            output.write(entity);
-        }
-        headResponse.commit();
-        var headBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(headWriter).write(headBuffer.capture());
-        String headText = new String(headBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
-
-        assertAll(
-                () -> assertThat(getText, containsString("Content-Length: 6\r\n")),
-                () -> assertThat(getText, endsWith("\r\n\r\nentity")),
-                () -> assertThat(headText, containsString("Content-Length: 6\r\n")),
-                () -> assertThat(headText, endsWith("\r\n\r\n"))
-        );
-    }
-
-    @Test
-    void streamingHeadStopsAfterConfiguredDiscardLimit() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
         DataWriter writer = mock(DataWriter.class);
-        ListenerConfig listenerConfig = WebServer.builder().writeBufferSize(4).buildPrototype();
-        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext, listenerConfig);
-        response.contentLength(100);
-
+        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
         OutputStream output = response.outputStream();
-        output.write("1234".getBytes(StandardCharsets.UTF_8));
-        IOException exception = assertThrows(IOException.class, () -> output.write('5'));
-        response.commit();
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> output.write(entity));
 
-        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(writer).write(responseBuffer.capture());
-        String responseText = new String(responseBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
         assertAll(
-                () -> assertThat(exception.getMessage(), containsString("streaming limit of 4 bytes")),
-                () -> assertThat(response.isSent(), is(true)),
-                () -> assertThat(responseText, containsString("Content-Length: 100\r\n")),
-                () -> assertThat(responseText.contains("1234"), is(false)),
-                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(response.isSent(), is(false))
         );
+        verifyZeroInteractions(writer);
     }
 
     @Test
-    void flushedStreamingHeadSendsHeadersWithoutGeneratedMetadata() throws IOException {
+    void flushedStreamingHeadRejectsEntityBeforeSendingResponse() throws IOException {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
-        AtomicInteger whenSentCalls = new AtomicInteger();
-        response.whenSent(whenSentCalls::incrementAndGet);
 
         OutputStream output = response.outputStream();
-        output.write("first".getBytes(StandardCharsets.UTF_8));
         output.flush();
+        verifyZeroInteractions(writer);
 
-        IOException exception = assertThrows(IOException.class,
-                                             () -> output.write("second".getBytes(StandardCharsets.UTF_8)));
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> output.write("entity".getBytes(StandardCharsets.UTF_8)));
 
-        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(writer).write(responseBuffer.capture());
-        String responseText = new String(responseBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
         assertAll(
-                () -> assertThat(exception.getMessage(), containsString("HEAD response already sent")),
-                () -> assertThat(response.isSent(), is(true)),
-                () -> assertThat(whenSentCalls.get(), is(0)),
-                () -> assertThat(responseText.contains("Content-Length:"), is(false)),
-                () -> assertThat(responseText.contains("first"), is(false)),
-                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(response.isSent(), is(false))
         );
-
-        response.commit();
-        verify(writer).write(any(BufferData.class));
-        assertThat(whenSentCalls.get(), is(1));
+        verifyZeroInteractions(writer);
     }
 
     @Test
@@ -662,35 +565,6 @@ class Http1ServerResponseTest {
     }
 
     @Test
-    void flushedStreamingHeadAllowsEncoderToFinish() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
-        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(finalizingEncoder());
-        DataWriter writer = mock(DataWriter.class);
-        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
-        AtomicInteger whenSentCalls = new AtomicInteger();
-        response.whenSent(whenSentCalls::incrementAndGet);
-
-        OutputStream output = response.outputStream();
-        output.write("first".getBytes(StandardCharsets.UTF_8));
-        output.flush();
-
-        assertThrows(IOException.class, () -> output.write('x'));
-        output.close();
-        response.commit();
-
-        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(writer).write(responseBuffer.capture());
-        String responseText = new String(responseBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
-        assertAll(
-                () -> assertThat(responseText, containsString("Content-Encoding: test\r\n")),
-                () -> assertThat(responseText.contains("first"), is(false)),
-                () -> assertThat(responseText, endsWith("\r\n\r\n")),
-                () -> assertThat(whenSentCalls.get(), is(1))
-        );
-    }
-
-    @Test
     void flushedStreamingHeadPreservesExplicitContentLength() throws IOException {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
@@ -699,24 +573,21 @@ class Http1ServerResponseTest {
         response.contentLength(11);
 
         OutputStream output = response.outputStream();
-        output.write("first".getBytes(StandardCharsets.UTF_8));
         output.flush();
+        verifyZeroInteractions(writer);
+        response.commit();
 
         var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
         verify(writer).write(responseBuffer.capture());
         String responseText = new String(responseBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
         assertAll(
                 () -> assertThat(responseText, containsString("Content-Length: 11\r\n")),
-                () -> assertThat(responseText.contains("first"), is(false)),
                 () -> assertThat(responseText, endsWith("\r\n\r\n"))
         );
-
-        response.commit();
-        verify(writer).write(any(BufferData.class));
     }
 
     @Test
-    void flushedStreamingHeadOmitsTrailers() throws IOException {
+    void emptyStreamingHeadEvaluatesButDoesNotSendTrailers() throws IOException {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
         DataWriter writer = mock(DataWriter.class);
@@ -725,39 +596,7 @@ class Http1ServerResponseTest {
         response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
         response.beforeTrailers(_ -> beforeTrailersCalled.set(true));
 
-        OutputStream output = response.outputStream();
-        output.write("partial".getBytes(StandardCharsets.UTF_8));
-        output.flush();
-
-        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
-        verify(writer).write(responseBuffer.capture());
-        String responseText = new String(responseBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
-        assertAll(
-                () -> assertThat(beforeTrailersCalled.get(), is(false)),
-                () -> assertThat(responseText.contains("Content-Length:"), is(false)),
-                () -> assertThat(responseText.contains("Trailer:"), is(false)),
-                () -> assertThat(responseText.contains("partial"), is(false)),
-                () -> assertThat(responseText, endsWith("\r\n\r\n"))
-        );
-
-        response.commit();
-        verify(writer).write(any(BufferData.class));
-        assertThat(beforeTrailersCalled.get(), is(false));
-    }
-
-    @Test
-    void headEvaluatesButDoesNotSendTrailers() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
-        DataWriter writer = mock(DataWriter.class);
-        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
-        AtomicBoolean beforeTrailersCalled = new AtomicBoolean();
-        response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
-        response.beforeTrailers(_ -> beforeTrailersCalled.set(true));
-
-        try (OutputStream output = response.outputStream()) {
-            output.write("entity".getBytes(StandardCharsets.UTF_8));
-        }
+        response.outputStream().close();
         response.commit();
 
         var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
@@ -778,9 +617,7 @@ class Http1ServerResponseTest {
         Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
         response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
 
-        try (OutputStream output = response.outputStream()) {
-            output.write("entity".getBytes(StandardCharsets.UTF_8));
-        }
+        response.outputStream().close();
         response.commit();
 
         var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
@@ -874,43 +711,6 @@ class Http1ServerResponseTest {
 
                     @Override
                     public void close() throws IOException {
-                        network.close();
-                    }
-                };
-            }
-
-            @Override
-            public void headers(WritableHeaders<?> headers) {
-                headers.set(HeaderNames.CONTENT_ENCODING, "test");
-                headers.remove(HeaderNames.CONTENT_LENGTH);
-            }
-        };
-    }
-
-    private static ContentEncoder finalizingEncoder() {
-        return new ContentEncoder() {
-            @Override
-            public OutputStream apply(OutputStream network) {
-                return new OutputStream() {
-                    @Override
-                    public void write(int value) throws IOException {
-                        network.write(value);
-                    }
-
-                    @Override
-                    public void write(byte[] bytes, int offset, int length) throws IOException {
-                        network.write(bytes, offset, length);
-                    }
-
-                    @Override
-                    public void flush() throws IOException {
-                        network.write('f');
-                        network.flush();
-                    }
-
-                    @Override
-                    public void close() throws IOException {
-                        network.write('c');
                         network.close();
                     }
                 };

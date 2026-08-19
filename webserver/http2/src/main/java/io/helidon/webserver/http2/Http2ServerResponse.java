@@ -100,8 +100,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         if (preparingResponse) {
             throw new IllegalStateException("Response preparation already in progress");
         }
+        boolean headRequest = request.prologue().method() == Method.HEAD;
+        if (headRequest && length > 0) {
+            throw new IllegalStateException("Cannot send response entity for a HEAD request");
+        }
         try {
-            boolean headRequest = request.prologue().method() == Method.HEAD;
             if (hasStreamFilter()) {
                 // in this case we must honor user's request to filter the stream
                 try (OutputStream os = outputStream()) {
@@ -222,7 +225,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         outputStream = new BlockingOutputStream(request, this, () -> this.isSent = true, () -> {
             this.isSent = true;
             afterSend();
-        }, beforeTrailers(), noEntityResponse, ctx.listenerContext().config().writeBufferSize());
+        }, beforeTrailers(), noEntityResponse);
         if (noEntityResponse) {
             return new ApplicationOutputStream(outputStream, outputStream);
         }
@@ -364,13 +367,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private final Http2ServerStream stream;
         private final boolean headRequest;
         private final boolean noEntityResponse;
-        private final int headWriteLimit;
 
         private BufferData firstBuffer;
         private boolean closed;
         private boolean firstByte = true;
         private boolean headResponseSent;
-        private long headApplicationBytes;
         private long bytesWritten;
         private long headRepresentationLength;
         private final Consumer<ServerResponseTrailers> beforeTrailers;
@@ -380,8 +381,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                      Runnable responseSentRunnable,
                                      Runnable responseCloseRunnable,
                                      Consumer<ServerResponseTrailers> beforeTrailers,
-                                     boolean noEntityResponse,
-                                     int headWriteLimit) {
+                                     boolean noEntityResponse) {
             this.request = request;
             this.response = response;
             this.headers = response.headers;
@@ -393,7 +393,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             this.beforeTrailers = beforeTrailers;
             this.headRequest = request.prologue().method() == Method.HEAD;
             this.noEntityResponse = noEntityResponse;
-            this.headWriteLimit = headWriteLimit;
         }
 
         @Override
@@ -414,7 +413,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         @Override
         public void flush() throws IOException {
             if (headRequest) {
-                sendIncompleteHeadResponse();
                 return;
             }
             if (firstByte && firstBuffer != null) {
@@ -522,18 +520,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             headResponseSent = true;
         }
 
-        private void sendIncompleteHeadResponse() {
-            if (headResponseSent) {
-                return;
-            }
-            if (noEntityResponse) {
-                normalizeNoEntityHeaders(headers, status);
-            }
-            headers.remove(HeaderNames.TRAILER);
-            sendHeadHeaders(true);
-            responseSentRunnable.run();
-        }
-
         private void sendFirstChunkOnly(boolean sendTrailers) {
             int contentLength;
             if (firstBuffer == null) {
@@ -590,19 +576,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void checkWriteAllowed(int length) throws IOException {
+            if (length > 0 && headRequest) {
+                throw new IllegalStateException("Cannot write response entity for a HEAD request");
+            }
             if (length > 0 && noEntityResponse) {
                 throw new IllegalStateException("Attempting to write data on a response with status " + status);
-            }
-            if (length > 0 && headResponseSent) {
-                throw new IOException("HEAD response already sent");
-            }
-            if (length > 0 && headRequest) {
-                if (headApplicationBytes + length > headWriteLimit) {
-                    sendIncompleteHeadResponse();
-                    throw new IOException("HEAD response representation exceeded streaming limit of "
-                                                  + headWriteLimit + " bytes");
-                }
-                headApplicationBytes += length;
             }
         }
     }

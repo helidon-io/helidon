@@ -82,7 +82,9 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -385,6 +387,28 @@ class CachedHandlerTest {
                        updatedHeaders.get(HeaderNames.ETAG).get(),
                        not(is(initialEtag)));
         }
+    }
+
+    @Test
+    void testClasspathHeadSendsMetadataWithoutEntity() throws IOException, URISyntaxException {
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Method.HEAD,
+                                                            "/resource.txt", false));
+
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(responseHeaders);
+
+        boolean result = classpathHandler.doHandle(Method.HEAD, "resource.txt", req, res, false);
+
+        assertThat("Handler should have found resource.txt", result, is(true));
+        assertThat(responseHeaders, hasHeader(HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
+        assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
+        verify(res).send();
+        verify(res, never()).send(any(byte[].class));
+        verify(res, never()).outputStream();
     }
 
     @Test
