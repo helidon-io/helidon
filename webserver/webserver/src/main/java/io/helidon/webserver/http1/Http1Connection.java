@@ -855,12 +855,13 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         Status status = response.status();
         boolean noEntityResponse = Http1ServerResponse.isNoEntityStatus(status);
         boolean headRequest = Method.HEAD_NAME.equals(e.request().method());
+        boolean preserveHeadContentLength = headRequest && responseEntity.isEmpty();
         byte[] entity = noEntityResponse || headRequest
                 ? BufferData.EMPTY_BYTES
                 : responseEntityBytes;
         if (noEntityResponse) {
             Http1ServerResponse.normalizeNoEntityHeaders(headers, status);
-        } else {
+        } else if (!preserveHeadContentLength) {
             headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(responseEntityBytes.length)));
         }
 

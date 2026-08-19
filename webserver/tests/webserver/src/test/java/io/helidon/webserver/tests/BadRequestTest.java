@@ -125,6 +125,22 @@ class BadRequestTest {
     }
 
     @Test
+    void testHeadBadRequestPreservesContentLengthWithoutEntity() throws IOException {
+        socketClient.request(Method.HEAD,
+                             "/head-no-entity",
+                             null,
+                             List.of("Content-Length: 47a"));
+        String response = new String(socketClient.socketInputStream().readAllBytes(), StandardCharsets.ISO_8859_1)
+                .replace("\r\n", "\n");
+
+        assertThat(SocketHttpClient.statusFromResponse(response),
+                   is(Status.create(Status.BAD_REQUEST_400.code(), CUSTOM_REASON_PHRASE)));
+        ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
+        assertThat(headers.contentLength().orElseThrow(), is(23L));
+        assertThat(SocketHttpClient.entityFromResponse(response, true), is(""));
+    }
+
+    @Test
     void testInvalidRequestWithRedirect() {
         // wrong content length
         String response = socketClient.sendAndReceive(Method.GET,
@@ -387,6 +403,12 @@ class BadRequestTest {
             return DirectHandler.TransportResponse.builder()
                     .status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, "/errorPage")
+                    .build();
+        }
+        if (request.path().equals("/head-no-entity")) {
+            return DirectHandler.TransportResponse.builder()
+                    .status(Status.create(Status.BAD_REQUEST_400.code(), CUSTOM_REASON_PHRASE))
+                    .header(HeaderNames.CONTENT_LENGTH, "23")
                     .build();
         }
         if (request.path().equals("/no-content")) {
