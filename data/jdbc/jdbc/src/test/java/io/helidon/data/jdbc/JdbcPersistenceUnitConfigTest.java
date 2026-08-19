@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import javax.sql.DataSource;
@@ -49,6 +50,236 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class JdbcPersistenceUnitConfigTest {
+
+    /**
+     * Verifies a later invalid cache policy is reported before an earlier
+     * persistence unit can construct its configured resource.
+     */
+    @Test
+    void validatesEveryCachePolicyBeforeConstructingResources() {
+        AtomicBoolean datasourceAccess = new AtomicBoolean();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "first",
+                "data.persistence-units.jdbc.0.data-source", "unused",
+                "data.persistence-units.jdbc.0.init-script.resource-path", "missing-private-script.sql",
+                "data.persistence-units.jdbc.1.name", "second",
+                "data.persistence-units.jdbc.1.data-source", "unused",
+                "data.persistence-units.jdbc.1.properties.jdbc.parameter-count-cache.capacity", "4097",
+                "data.persistence-units.jdbc.1.properties.jdbc.parameter-count-cache.max-sql-length", "1")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> {
+                    datasourceAccess.set(true);
+                    return List.of();
+                },
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), containsString("JDBC persistence unit 'second'"));
+        assertThat(failure.getMessage(), containsString("cache capacity must be between zero and 4096"));
+        assertThat(failure.getMessage(), not(containsString("missing-private-script.sql")));
+        assertThat(datasourceAccess.get(), is(false));
+    }
+
+    /**
+     * Verifies a later invalid script policy is reported before an earlier
+     * persistence unit can construct its configured resource.
+     */
+    @Test
+    void validatesEveryScriptPolicyBeforeConstructingResources() {
+        AtomicBoolean datasourceAccess = new AtomicBoolean();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "first",
+                "data.persistence-units.jdbc.0.data-source", "unused",
+                "data.persistence-units.jdbc.0.init-script.resource-path", "missing-private-script.sql",
+                "data.persistence-units.jdbc.1.name", "second",
+                "data.persistence-units.jdbc.1.data-source", "unused",
+                "data.persistence-units.jdbc.1.properties.jdbc.scripts.max-resource-size", "65 MiB",
+                "data.persistence-units.jdbc.1.properties.jdbc.scripts.max-total-size", "65 MiB")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> {
+                    datasourceAccess.set(true);
+                    return List.of();
+                },
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), containsString("JDBC persistence unit 'second'"));
+        assertThat(failure.getMessage(), containsString("maximum resource size must not exceed 67108864 bytes"));
+        assertThat(failure.getMessage(), not(containsString("missing-private-script.sql")));
+        assertThat(datasourceAccess.get(), is(false));
+    }
+
+    /**
+     * Verifies exact inline plain text and Base64 limits are accepted for
+     * independent persistence units before datasource resolution.
+     */
+    @Test
+    void acceptsExactInlinePreflightLimits() {
+        AtomicBoolean datasourceAccess = new AtomicBoolean();
+        Config config = Config.just(ConfigSources.create(Map.ofEntries(
+                Map.entry("data.persistence-units.jdbc.0.name", "plain"),
+                Map.entry("data.persistence-units.jdbc.0.data-source", "missing"),
+                Map.entry("data.persistence-units.jdbc.0.init-script.content-plain", "€"),
+                Map.entry("data.persistence-units.jdbc.0.properties.jdbc.scripts.max-resource-size", "3"),
+                Map.entry("data.persistence-units.jdbc.0.properties.jdbc.scripts.max-total-size", "3"),
+                Map.entry("data.persistence-units.jdbc.1.name", "binary"),
+                Map.entry("data.persistence-units.jdbc.1.data-source", "missing"),
+                Map.entry("data.persistence-units.jdbc.1.init-script.content", "4oKs"),
+                Map.entry("data.persistence-units.jdbc.1.properties.jdbc.scripts.max-resource-size", "3"),
+                Map.entry("data.persistence-units.jdbc.1.properties.jdbc.scripts.max-total-size", "3"))));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> {
+                    datasourceAccess.set(true);
+                    return List.of();
+                },
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), is("No SQL datasource service is named 'missing'."));
+        assertThat(datasourceAccess.get(), is(true));
+    }
+
+    /**
+     * Verifies one additional UTF-8 byte is rejected before inline plain text
+     * resource construction and datasource access.
+     */
+    @Test
+    void rejectsPlainInlineContentOneByteAboveTheLimit() {
+        AtomicBoolean datasourceAccess = new AtomicBoolean();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "plain",
+                "data.persistence-units.jdbc.0.data-source", "unused",
+                "data.persistence-units.jdbc.0.init-script.content-plain", "€x",
+                "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-resource-size", "3",
+                "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-total-size", "3")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> {
+                    datasourceAccess.set(true);
+                    return List.of();
+                },
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), containsString("per resource bootstrap byte limit of 3"));
+        assertThat(datasourceAccess.get(), is(false));
+    }
+
+    /**
+     * Verifies one additional decoded byte is rejected before inline Base64
+     * resource construction and datasource access.
+     */
+    @Test
+    void rejectsBase64InlineContentOneByteAboveTheLimit() {
+        AtomicBoolean datasourceAccess = new AtomicBoolean();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "binary",
+                "data.persistence-units.jdbc.0.data-source", "unused",
+                "data.persistence-units.jdbc.0.init-script.content", "4oKsWA==",
+                "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-resource-size", "3",
+                "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-total-size", "3")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> {
+                    datasourceAccess.set(true);
+                    return List.of();
+                },
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), containsString("per resource bootstrap byte limit of 3"));
+        assertThat(datasourceAccess.get(), is(false));
+    }
+
+    /**
+     * Verifies drop and initialization preflight share one aggregate byte
+     * budget in execution order.
+     */
+    @Test
+    void sharesInlinePreflightBudgetAcrossDropAndInitialization() {
+        AtomicBoolean datasourceAccess = new AtomicBoolean();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "shared",
+                "data.persistence-units.jdbc.0.data-source", "unused",
+                "data.persistence-units.jdbc.0.drop-script.content-plain", "abc",
+                "data.persistence-units.jdbc.0.init-script.content-plain", "def",
+                "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-resource-size", "4",
+                "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-total-size", "5")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> {
+                    datasourceAccess.set(true);
+                    return List.of();
+                },
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), containsString("configured init script"));
+        assertThat(failure.getMessage(), containsString("aggregate bootstrap byte limit of 5"));
+        assertThat(datasourceAccess.get(), is(false));
+    }
+
+    /**
+     * Verifies malformed inline Base64 is rejected with a safe diagnostic
+     * before resource construction and datasource access.
+     */
+    @Test
+    void rejectsInvalidInlineBase64DuringPreflight() {
+        AtomicBoolean datasourceAccess = new AtomicBoolean();
+        String invalidContent = "private%%%content";
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "binary",
+                "data.persistence-units.jdbc.0.data-source", "unused",
+                "data.persistence-units.jdbc.0.init-script.content", invalidContent)));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> {
+                    datasourceAccess.set(true);
+                    return List.of();
+                },
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), containsString("invalid Base64 content"));
+        assertThat(failure.getMessage(), not(containsString(invalidContent)));
+        assertThat(datasourceAccess.get(), is(false));
+    }
+
+    /**
+     * Verifies the factory carries a configured statement limit into the
+     * script runner before datasource resolution.
+     */
+    @Test
+    void appliesConfiguredStatementLimitToBootstrapParsing() {
+        AtomicBoolean datasourceAccess = new AtomicBoolean();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "statements",
+                "data.persistence-units.jdbc.0.data-source", "unused",
+                "data.persistence-units.jdbc.0.init-script.content-plain", "A;B;",
+                "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-statements", "1")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> {
+                    datasourceAccess.set(true);
+                    return List.of();
+                },
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), containsString("bootstrap statement limit of 1"));
+        assertThat(datasourceAccess.get(), is(false));
+    }
 
     @Test
     void acceptsDirectConnectionWithoutCredentials() {
@@ -281,6 +512,42 @@ class JdbcPersistenceUnitConfigTest {
         }
     }
 
+    /**
+     * Verifies provider properties remain local while direct connection
+     * credentials retain their established JDBC driver mapping.
+     */
+    @Test
+    void doesNotForwardProviderPropertiesToTheJdbcDriver() throws Exception {
+        String url = "jdbc:test:provider-properties";
+        FailingDriver driver = new FailingDriver(url, new IllegalStateException("expected connection failure"));
+        DriverManager.registerDriver(driver);
+        try {
+            Config config = Config.just(ConfigSources.create(Map.of(
+                    "data.persistence-units.jdbc.0.connection.url", url,
+                    "data.persistence-units.jdbc.0.connection.username", "database-user",
+                    "data.persistence-units.jdbc.0.connection.password", "database-password",
+                    "data.persistence-units.jdbc.0.connection.jdbc-driver-class-name", driver.getClass().getName(),
+                    "data.persistence-units.jdbc.0.properties.jdbc.parameter-count-cache.capacity", "12",
+                    "data.persistence-units.jdbc.0.properties.jdbc.parameter-count-cache.max-sql-length", "512",
+                    "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-resource-size", "1 MiB",
+                    "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-total-size", "2 MiB",
+                    "data.persistence-units.jdbc.0.properties.jdbc.scripts.max-statements", "25")));
+            JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(List::of,
+                                                                                () -> config,
+                                                                                new JdbcTransactionConnectionManager());
+            JdbcClient client = factory.services().getFirst().get();
+
+            assertThrows(IllegalStateException.class, () -> client.create("UPDATE TEST SET VALUE = 1").execute());
+
+            Properties connectionProperties = driver.connectionProperties();
+            assertThat(connectionProperties.size(), is(2));
+            assertThat(connectionProperties.getProperty("user"), is("database-user"));
+            assertThat(connectionProperties.getProperty("password"), is("database-password"));
+        } finally {
+            DriverManager.deregisterDriver(driver);
+        }
+    }
+
     private static void assertNoSecret(Throwable failure, String... secrets) {
         StringBuilder messages = new StringBuilder();
         Throwable current = failure;
@@ -303,6 +570,7 @@ class JdbcPersistenceUnitConfigTest {
 
         private final String url;
         private final RuntimeException failure;
+        private Properties connectionProperties;
 
         private FailingDriver(String url, RuntimeException failure) {
             this.url = url;
@@ -314,6 +582,8 @@ class JdbcPersistenceUnitConfigTest {
             if (!acceptsURL(url)) {
                 return null;
             }
+            connectionProperties = new Properties();
+            connectionProperties.putAll(info);
             throw failure;
         }
 
@@ -345,6 +615,16 @@ class JdbcPersistenceUnitConfigTest {
         @Override
         public Logger getParentLogger() {
             return Logger.getLogger(FailingDriver.class.getName());
+        }
+
+        /**
+         * Returns the properties received by the most recent connection
+         * attempt.
+         *
+         * @return received connection properties
+         */
+        private Properties connectionProperties() {
+            return connectionProperties;
         }
     }
 }
