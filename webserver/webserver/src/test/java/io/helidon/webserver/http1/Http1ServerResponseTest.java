@@ -304,6 +304,33 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void noEntityStatusWithoutContentLengthUsesRequiredFraming() {
+        for (Status status : NO_ENTITY_STATUSES) {
+            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            DataWriter writer = mock(DataWriter.class);
+            Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+
+            response.status(status).send();
+
+            var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+            verify(writer).write(responseBuffer.capture());
+            String responseText = responseText(responseBuffer);
+            assertAll(
+                    () -> assertThat(responseText, containsString("HTTP/1.1 " + status + "\r\n")),
+                    () -> {
+                        if (status.code() == Status.RESET_CONTENT_205.code()) {
+                            assertThat(responseText, containsString("Content-Length: 0\r\n"));
+                        } else {
+                            assertThat(responseText.contains("Content-Length:"), is(false));
+                        }
+                    },
+                    () -> assertThat(responseText, endsWith("\r\n\r\n"))
+            );
+        }
+    }
+
+    @Test
     void noEntityStatusIgnoresEmptyWritesWithoutBuffering() throws IOException {
         for (Status status : NO_ENTITY_STATUSES) {
             ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);

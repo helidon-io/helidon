@@ -467,9 +467,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         boolean forcedChunkedEncoding = false;
         Status usedStatus = status();
-        boolean noContentResponse = usedStatus.code() == Status.NO_CONTENT_204.code();
+        boolean noEntityResponse = isNoEntityStatus(usedStatus);
 
-        if (noContentResponse) {
+        if (noEntityResponse) {
             normalizeNoEntityHeaders(headers, usedStatus);
         } else if (headers.contains(HeaderNames.TRANSFER_ENCODING)
                 && headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
@@ -484,10 +484,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         sendListener.headers(ctx, headers);
 
         // give some space for code and headers + entity
-        BufferData responseBuffer = BufferData.growing(256 + (headRequest || noContentResponse ? 0 : length));
+        BufferData responseBuffer = BufferData.growing(256 + (headRequest || noEntityResponse ? 0 : length));
 
         nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, validateHeaders);
-        if (!headRequest && !noContentResponse && forcedChunkedEncoding) {
+        if (!headRequest && !noEntityResponse && forcedChunkedEncoding) {
             byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
             responseBuffer.write(hex);
             responseBuffer.write('\r');
@@ -496,7 +496,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             responseBuffer.write('\r');
             responseBuffer.write('\n');
             responseBuffer.write(TERMINATING_CHUNK);
-        } else if (!headRequest && !noContentResponse) {
+        } else if (!headRequest && !noEntityResponse) {
             responseBuffer.write(bytes, position, length);
         }
 
