@@ -302,7 +302,9 @@ class JdbcPersistenceUnitFactoryTest {
         DataException failure = assertThrows(DataException.class, factory::services);
 
         assertThat(failure.getMessage(),
-                   is("The configuration for JDBC persistence unit 'missing-script' is invalid."));
+                   is("JDBC persistence unit 'missing-script' could not load the classpath init script configured by "
+                              + "'init-script.resource-path'. Ensure the classpath resource exists in the application "
+                              + "runtime classpath."));
         assertThat(failure.getMessage(), not(containsString("does-not-exist.sql")));
     }
 
