@@ -983,7 +983,8 @@ public class Proxy {
         }
 
         /**
-         * Configure a host pattern that is not going through a proxy.
+         * Configure a host or IP pattern that is not going through a proxy; IP patterns resolve host-name targets locally
+         * and bind direct routes to the matching address.
          * <p>
          * Options are:
          * <ul>
