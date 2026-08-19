@@ -226,7 +226,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                     }
                                     LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
                                     if (outcome.disposition() != LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
-                                        throw tooManyConcurrentRequests();
+                                        throw tooManyConcurrentRequests(prologue, headers);
                                     }
                                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
                                     LimitAlgorithm.Token permit = accepted.token();
@@ -295,7 +295,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         throw e;
                     }
                 } else {
-                    throw tooManyConcurrentRequests();
+                    throw tooManyConcurrentRequests(prologue, headers);
                 }
             }
         } catch (CloseConnectionException e) {
@@ -371,12 +371,13 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         upgradeConnection.handle(limit);
     }
 
-    private RequestException tooManyConcurrentRequests() {
+    private RequestException tooManyConcurrentRequests(HttpPrologue prologue, WritableHeaders<?> headers) {
         ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
         return RequestException.builder()
                 .setKeepAlive(false)
                 .status(Status.SERVICE_UNAVAILABLE_503)
                 .type(EventType.OTHER)
+                .request(DirectTransportRequest.create(prologue, headers))
                 .message("Too Many Concurrent Requests")
                 .build();
     }

@@ -79,8 +79,15 @@ public class DirectHandlers {
      * @param keepAlive     whether to keep the connection alive
      */
     public void handle(RequestException httpException, ServerResponse res, boolean keepAlive) {
+        handle(httpException, httpException.request(), res, keepAlive);
+    }
+
+    void handle(RequestException httpException,
+                DirectHandler.TransportRequest request,
+                ServerResponse res,
+                boolean keepAlive) {
         DirectHandler.TransportResponse response = handler(httpException.eventType()).handle(
-                httpException.request(),
+                request,
                 httpException.eventType(),
                 httpException.status(),
                 httpException.responseHeaders(),
@@ -88,7 +95,7 @@ public class DirectHandlers {
         var entity = response.entity();
         Status status = response.status();
         boolean preserveHeadContentLength = entity.isEmpty()
-                && Method.HEAD_NAME.equals(httpException.request().method());
+                && Method.HEAD_NAME.equals(request.method());
         boolean copyContentLength = preserveHeadContentLength
                 || status.code() == Status.NOT_MODIFIED_304.code();
 
@@ -107,7 +114,7 @@ public class DirectHandlers {
                 res.header(header);
             }
         });
-        if (!keepAlive && httpException.request().protocolVersion().startsWith("HTTP/1.")) {
+        if (!keepAlive && request.protocolVersion().startsWith("HTTP/1.")) {
             res.header(HeaderValues.CONNECTION_CLOSE);
         }
 
