@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ if [ -n "${JENKINS_HOME}" ] ; then
         echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
         gpg-connect-agent reloadagent /bye
         GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
-        /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
+        "$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase" --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
     fi
 fi
 
@@ -122,7 +122,7 @@ if [ -n "${RELEASE_WORKFLOW}" ] ; then
         echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
         gpg-connect-agent reloadagent /bye
         GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
-        /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
+        "$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase" --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
     fi
 fi
 export MAVEN_ARGS

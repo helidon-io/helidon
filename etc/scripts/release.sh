@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ on_error(){
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}" >&2
 }
 trap on_error ERR
 
@@ -34,11 +34,10 @@ DESCRIPTION: Helidon Release Script
 
 USAGE:
 
-$(basename ${0}) [ --build-number=N ] CMD
+$(basename "${0}") [ --version=V ] CMD
 
   --version=V
         Override the version to use.
-        This trumps --build-number=N
 
   --help
         Prints the usage and exits.
@@ -51,6 +50,9 @@ $(basename ${0}) [ --build-number=N ] CMD
     release_build
         Perform a release build
         This will create a local branch, deploy artifacts and push a tag
+
+    create_tag
+        Create and push a release tag
 
 EOF
 }
@@ -68,22 +70,25 @@ for ((i=0;i<${#ARGS[@]};i++))
         usage
         exit 0
         ;;
+    "update_version"|"release_build"|"create_tag")
+        readonly COMMAND="${ARG}"
+        ;;
     *)
-        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] ; then
-            readonly COMMAND="${ARG}"
-        else
-            echo "ERROR: unknown argument: ${ARG}"
-            exit 1
-        fi
+        echo "ERROR: unknown argument: ${ARG}" >&2
+        exit 1
         ;;
     esac
 }
 
 if [ -z "${COMMAND}" ] ; then
-    echo "ERROR: no command provided"
-    usage
+    echo "ERROR: no command provided" >&2
+    usage >&2
     exit 1
 fi
+
+# Copy stdout as fd 6 and redirect operational output to stderr. Commands that
+# return shell data use fd 6 so their output remains safe to source.
+exec 6>&1 1>&2
 
 # Path to this script
 if [ -h "${0}" ] ; then
@@ -95,7 +100,7 @@ fi
 # Path to the root of the workspace
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
-source ${WS_DIR}/etc/scripts/pipeline-env.sh
+source "${WS_DIR}/etc/scripts/pipeline-env.sh"
 
 # Resolve FULL_VERSION
 if [ -z "${VERSION+x}" ]; then
@@ -147,7 +152,7 @@ update_version(){
 
 }
 
-release_build(){
+prepare_release(){
     # Do the release work in a branch
     local GIT_BRANCH="release/${FULL_VERSION}"
     git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true
@@ -157,10 +162,9 @@ release_build(){
     update_version
 
     # Update scm/tag entry in the parent pom
-    cat parent/pom.xml | \
-        sed -e s@'<tag>HEAD</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
-        > parent/pom.xml.tmp
-    mv parent/pom.xml.tmp parent/pom.xml
+    sed -e s@'<tag>[^<]*</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
+        "${WS_DIR}/parent/pom.xml" > "${WS_DIR}/parent/pom.xml.tmp"
+    mv "${WS_DIR}/parent/pom.xml.tmp" "${WS_DIR}/parent/pom.xml"
 
     # Git user info
     git config user.email || git config --global user.email "info@helidon.io"
@@ -168,16 +172,44 @@ release_build(){
 
     # Commit version changes
     git commit -a -m "Release ${FULL_VERSION} [ci skip]"
+}
+
+push_release_tag(){
+    local GIT_REMOTE PUSH_REMOTE
+
+    git tag -f "${FULL_VERSION}"
+
+    PUSH_REMOTE=origin
+    if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
+        GIT_REMOTE=$(git config --get remote.origin.url | \
+            sed -e "s,https://[^@]*@\([^/]*\)/,git@\1:," \
+                -e "s,https://\([^/]*\)/,git@\1:,")
+        git remote remove release > /dev/null 2>&1 || true
+        git remote add release "${GIT_REMOTE}"
+        PUSH_REMOTE=release
+    fi
+
+    git push --force "${PUSH_REMOTE}" \
+        refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+}
+
+create_tag(){
+    prepare_release
+    push_release_tag
+
+    printf "version=%s\ntag=refs/tags/%s\n" "${FULL_VERSION}" "${FULL_VERSION}" >&6
+}
+
+release_build(){
+    prepare_release
 
     # Perform deployment
     mvn ${MAVEN_ARGS} clean deploy \
-       -Prelease,archetypes \
+       -Prelease,no-snapshots \
        -DskipTests  \
        -DaltDeploymentRepository=":::file://${PWD}/staging"
 
-    # Create and push a git tag
-    git tag -f "${FULL_VERSION}"
-    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    push_release_tag
 
     "${WS_DIR}/etc/scripts/upload.sh" upload_release \
                 --dir="staging" \
