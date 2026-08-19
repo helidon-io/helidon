@@ -33,6 +33,41 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 class JdbcClientCacheTest {
 
+    /**
+     * Verifies a zero capacity preserves marker counting and lexical
+     * validation without accessing the datasource.
+     */
+    @Test
+    void disabledCachePreservesMarkerCountingAndValidation() {
+        DataSource dataSource = mock(DataSource.class);
+        JdbcClientImpl client = new JdbcClientImpl(dataSource,
+                                                   JdbcConnectionLease.ownedProvider(),
+                                                   new JdbcClientImpl.CachePolicy(0, 1));
+
+        assertSingleParameter(client.create("?"));
+        assertSingleParameter(client.create("?"));
+        assertThrows(IllegalArgumentException.class, () -> client.create("'unterminated"));
+
+        verifyNoMoreInteractions(dataSource);
+    }
+
+    /**
+     * Verifies SQL at and above a custom admission boundary remains usable
+     * without accessing the datasource.
+     */
+    @Test
+    void customAdmissionLengthDoesNotChangeStatementSemantics() {
+        DataSource dataSource = mock(DataSource.class);
+        JdbcClientImpl client = new JdbcClientImpl(dataSource,
+                                                   JdbcConnectionLease.ownedProvider(),
+                                                   new JdbcClientImpl.CachePolicy(2, 1));
+
+        assertSingleParameter(client.create("?"));
+        assertSingleParameter(client.create(" ?"));
+
+        verifyNoMoreInteractions(dataSource);
+    }
+
     @Test
     void supportsLongSqlWithoutAccessingTheDatasource() {
         DataSource dataSource = mock(DataSource.class);

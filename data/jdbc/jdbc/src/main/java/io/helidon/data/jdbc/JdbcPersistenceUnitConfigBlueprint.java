@@ -64,4 +64,15 @@ interface JdbcPersistenceUnitConfigBlueprint extends SqlConfig {
     @Option.Configured
     Optional<Resource> dropScript();
 
+    /**
+     * Typed properties which configure Helidon Data JDBC provider behavior.
+     * These values are not forwarded to a datasource, JDBC driver, connection,
+     * statement, or result set.
+     *
+     * @return JDBC provider properties
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    JdbcPropertiesConfig properties();
+
 }
