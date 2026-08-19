@@ -77,7 +77,10 @@ final class JdbcColumnLayout {
      */
     static JdbcColumnLayout create(ResultSetMetaData metadata, JdbcOperation operation) {
         try {
-            return new JdbcColumnLayout(metadata.getColumnCount(), metadata, operation);
+            return new JdbcColumnLayout(
+                    JdbcExceptionTranslator.invoke("reading a JDBC result column count", metadata::getColumnCount),
+                    metadata,
+                    operation);
         } catch (SQLException e) {
             throw JdbcExceptionTranslator.translate(operation, e);
         }
@@ -135,9 +138,12 @@ final class JdbcColumnLayout {
         try {
             Map<String, Integer> resolved = new HashMap<>(Math.max(4, columnCount));
             for (int index = 1; index <= columnCount; index++) {
-                String label = metadata.getColumnLabel(index);
+                int position = index;
+                String label = JdbcExceptionTranslator.invoke("reading a JDBC result column label",
+                                                              () -> metadata.getColumnLabel(position));
                 if (label == null || label.isBlank()) {
-                    label = metadata.getColumnName(index);
+                    label = JdbcExceptionTranslator.invoke("reading a JDBC result column name",
+                                                           () -> metadata.getColumnName(position));
                 }
                 if (label == null || label.isBlank()) {
                     throw new DataException("Result column " + index

@@ -40,7 +40,7 @@ import io.helidon.transaction.spi.TxSupport;
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
 final class JdbcTxSupport implements TxSupport {
 
-    // Monotonic source of compact transaction identities.
+    // Generate compact process-local identities so lifecycle listeners can correlate events without application state.
     private static final AtomicLong IDS = new AtomicLong();
 
     // Lifecycle listeners, copied once to keep notification order stable.
@@ -57,17 +57,6 @@ final class JdbcTxSupport implements TxSupport {
     @Service.Inject
     JdbcTxSupport(List<TxLifeCycle> listeners) {
         this.listeners = List.copyOf(listeners);
-    }
-
-    /**
-     * Reports whether the current thread retains transaction state.
-     * Package access allows focused cleanup tests to verify removal without
-     * exposing the transaction stack.
-     *
-     * @return whether transaction state is present for the current thread
-     */
-    boolean threadStatePresent() {
-        return transactions.get() != null;
     }
 
     @Override

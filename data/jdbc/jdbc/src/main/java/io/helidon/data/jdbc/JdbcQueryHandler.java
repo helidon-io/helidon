@@ -187,13 +187,15 @@ final class JdbcQueryHandler {
      */
     private static ResultSet executeQuery(JdbcRunner.ExecutionScope scope) throws SQLException {
         scope.require(JdbcPreparationPlan.ResultKind.QUERY);
-        boolean resultSetAvailable = scope.statement().execute();
+        boolean resultSetAvailable = JdbcExceptionTranslator.invoke("executing a JDBC query",
+                                                                    scope.statement()::execute);
         if (!resultSetAvailable) {
             // Drain the update count and any later channels before reporting the mismatch.
             boolean unexpected = scope.drainFromCurrent(false);
             throw scope.unexpectedResult(unexpected);
         }
-        return scope.statement().getResultSet();
+        return JdbcExceptionTranslator.invoke("reading a JDBC query result set",
+                                              scope.statement()::getResultSet);
     }
 
     /**
@@ -215,7 +217,9 @@ final class JdbcQueryHandler {
         }
         // Register ownership before metadata access so setup failures still close the result set.
         scope.resultSet(resultSet);
-        JdbcColumnLayout columns = JdbcColumnLayout.create(resultSet.getMetaData(), scope.operation());
+        JdbcColumnLayout columns = JdbcColumnLayout.create(
+                JdbcExceptionTranslator.invoke("reading JDBC result metadata", resultSet::getMetaData),
+                scope.operation());
         return new JdbcResultCursor<>(scope, resultSet, columns, mapper);
     }
 
@@ -270,7 +274,7 @@ final class JdbcQueryHandler {
             if (exhausted) {
                 return false;
             }
-            ready = resultSet.next();
+            ready = JdbcExceptionTranslator.invoke("advancing a JDBC result set", resultSet::next);
             if (!ready) {
                 exhausted = true;
                 // JDBC exposes later results only after the accepted result set is exhausted.

@@ -17,6 +17,7 @@ package io.helidon.data.jdbc.codegen;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,9 @@ import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Parameter;
 import io.helidon.codegen.classmodel.TypeArgument;
+import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
@@ -67,6 +71,28 @@ final class JdbcMethodGenerator {
             plans.add(plan);
         }
 
+        int nullableBindCount = 0;
+        for (JdbcMethodPlan plan : plans) {
+            for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
+                if (bind.nullable()) {
+                    nullableBindCount++;
+                }
+            }
+        }
+        final String bindParameterMethodName;
+        if (nullableBindCount > 1) {
+            Set<String> repositoryMethodNames = new HashSet<>();
+            collectMethodNames(repositoryInfo.interfaceInfo(), new HashSet<>(), repositoryMethodNames);
+            String candidate = JdbcCodegenConstants.BIND_PARAMETER_METHOD_NAME;
+            int suffix = 2;
+            while (repositoryMethodNames.contains(candidate)) {
+                candidate = JdbcCodegenConstants.BIND_PARAMETER_METHOD_NAME + suffix++;
+            }
+            bindParameterMethodName = candidate;
+        } else {
+            bindParameterMethodName = null;
+        }
+
         List<MapperDependency> mapperDependencies = mapperDependencies(plans, classModel);
         JdbcRepositoryClassGenerator.generateConstructor(classModel, repositoryInfo, mapperDependencies);
         for (JdbcMethodPlan plan : plans) {
@@ -78,7 +104,10 @@ final class JdbcMethodGenerator {
             if (plan.mappingKind() == JdbcMethodPlan.MappingKind.RECORD) {
                 JdbcRecordMapperGenerator.generate(plan, plan.mapperFieldName(), classModel);
             }
-            classModel.addMethod(method -> generateMethod(plan, method));
+            classModel.addMethod(method -> generateMethod(plan, method, bindParameterMethodName));
+        }
+        if (bindParameterMethodName != null) {
+            classModel.addMethod(method -> generateBindParameter(method, bindParameterMethodName));
         }
     }
 
@@ -131,14 +160,17 @@ final class JdbcMethodGenerator {
 
     /**
      * Emits one repository method.
-     * Transaction annotations remain on the repository contract; common service
-     * codegen merges those annotations into the generated method metadata used
+     * Transaction annotations remain on the repository contract. Common service
+     * code generation merges those annotations into the generated method metadata used
      * for interception.
      *
      * @param plan method plan
      * @param method generated method
+     * @param bindParameterMethodName shared nullable-bind helper, or {@code null} to emit the branch inline
      */
-    private static void generateMethod(JdbcMethodPlan plan, Method.Builder method) {
+    private static void generateMethod(JdbcMethodPlan plan,
+                                       Method.Builder method,
+                                       String bindParameterMethodName) {
         method.name(plan.method().elementName())
                 .returnType(plan.method().typeName())
                 .addAnnotation(Annotation.create(Override.class));
@@ -158,9 +190,11 @@ final class JdbcMethodGenerator {
                 .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
                 .addContent(".create(")
                 .addContent(plan.sqlFieldName())
+                .addContent(", ")
+                .addContent(String.valueOf(plan.parameterPlan().parameterCount()))
                 .addContentLine(");");
         for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
-            addBind(method, statementName, bind);
+            addBind(method, statementName, bind, bindParameterMethodName);
         }
         addTerminal(plan, method, statementName);
     }
@@ -171,10 +205,12 @@ final class JdbcMethodGenerator {
      * @param method generated method
      * @param statementName local statement variable
      * @param bind physical bind
+     * @param bindParameterMethodName shared nullable-bind helper, or {@code null} to emit the branch inline
      */
     private static void addBind(Method.Builder method,
                                 String statementName,
-                                JdbcSqlParameterPlan.Bind bind) {
+                                JdbcSqlParameterPlan.Bind bind,
+                                String bindParameterMethodName) {
         String parameterName = bind.parameter().elementName();
         if (!bind.nullable()) {
             method.addContent(statementName)
@@ -182,6 +218,21 @@ final class JdbcMethodGenerator {
                     .addContent(String.valueOf(bind.position()))
                     .addContent(", ")
                     .addContent(parameterName)
+                    .addContentLine(");");
+            return;
+        }
+        if (bindParameterMethodName != null) {
+            method.addContent(bindParameterMethodName)
+                    .addContent("(")
+                    .addContent(statementName)
+                    .addContent(", ")
+                    .addContent(String.valueOf(bind.position()))
+                    .addContent(", ")
+                    .addContent(parameterName)
+                    .addContent(", ")
+                    .addContent(JdbcPersistenceTypes.JDBC_TYPE)
+                    .addContent(".")
+                    .addContent(bind.nullJdbcTypeConstant())
                     .addContentLine(");");
             return;
         }
@@ -204,6 +255,33 @@ final class JdbcMethodGenerator {
                 .addContent(", ")
                 .addContent(parameterName)
                 .addContentLine(");")
+                .addContentLine("}");
+    }
+
+    /**
+     * Emits the shared branch that binds a reference parameter as a scalar
+     * value or a typed SQL null.
+     *
+     * @param method generated helper method
+     * @param methodName collision-safe helper name
+     */
+    private static void generateBindParameter(Method.Builder method, String methodName) {
+        method.name(methodName)
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .addParameter(parameter -> parameter.name("statement")
+                        .type(JdbcPersistenceTypes.JDBC_CLIENT_STATEMENT))
+                .addParameter(parameter -> parameter.name("index")
+                        .type(TypeNames.PRIMITIVE_INT))
+                .addParameter(parameter -> parameter.name("value")
+                        .type(TypeNames.OBJECT))
+                .addParameter(parameter -> parameter.name("nullType")
+                        .type(JdbcPersistenceTypes.JDBC_TYPE))
+                .addContentLine("if (value == null) {")
+                .addContentLine("statement.bindNull(index, nullType);")
+                .decreaseContentPadding()
+                .addContentLine("} else {")
+                .addContentLine("statement.bind(index, value);")
                 .addContentLine("}");
     }
 
@@ -296,6 +374,30 @@ final class JdbcMethodGenerator {
         } else {
             throw new AssertionError("The JDBC mapping kind '" + plan.mappingKind()
                                              + "' does not use a mapper instance.");
+        }
+    }
+
+    /**
+     * Collects every declared repository method name so a generated private
+     * helper cannot conflict with an inherited instance method.
+     *
+     * @param typeInfo current repository interface
+     * @param visited visited interface declarations
+     * @param methodNames collected method names
+     */
+    private static void collectMethodNames(TypeInfo typeInfo,
+                                           Set<String> visited,
+                                           Set<String> methodNames) {
+        if (!visited.add(typeInfo.typeName().genericTypeName().resolvedName())) {
+            return;
+        }
+        typeInfo.elementInfo()
+                .stream()
+                .filter(element -> element.kind() == ElementKind.METHOD)
+                .map(TypedElementInfo::elementName)
+                .forEach(methodNames::add);
+        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
+            collectMethodNames(interfaceInfo, visited, methodNames);
         }
     }
 

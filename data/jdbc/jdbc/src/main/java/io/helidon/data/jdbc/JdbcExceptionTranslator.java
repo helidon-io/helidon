@@ -41,20 +41,18 @@ import io.helidon.data.DataException;
  */
 final class JdbcExceptionTranslator {
 
-    // A short digest correlates repeated SQL failures without revealing the statement.
+    // Retain 96 bits of the SHA-256 digest so applications can correlate failures without exposing SQL text.
     private static final int FINGERPRINT_BYTES = 12;
 
-    // Limits both work and the number of suppressed diagnostics accepted from one JDBC owner.
+    // Retain at most 64 warnings from one JDBC resource to bound traversal work and suppressed diagnostics.
     private static final int MAX_WARNINGS_PER_OWNER = 64;
 
-    // Includes the root and the truncation marker. One slot is reserved for that marker.
+    // Retain at most 16 nodes in a sanitized graph, including its root.
     private static final int MAX_EXCEPTION_GRAPH_NODES = 16;
-    private static final int MAX_COPIED_EXCEPTION_GRAPH_NODES = MAX_EXCEPTION_GRAPH_NODES - 1;
+
     private static final String DRIVER_FAILURE = "The JDBC driver reported a failure.";
     private static final String DRIVER_WARNING = "The JDBC driver reported a warning.";
     private static final String RESULT_VALUE_FAILURE = "The JDBC provider could not read a result value.";
-    private static final String TRUNCATED_EXCEPTION_GRAPH =
-            "Some JDBC failure relationships were not inspected or were omitted to keep diagnostics bounded.";
 
     private JdbcExceptionTranslator() {
     }
@@ -89,11 +87,10 @@ final class JdbcExceptionTranslator {
      * @return data-layer failure
      */
     static DataException translate(String operation, String sql, SQLException cause) {
-        String state = cause.getSQLState() == null ? "not provided" : "'" + cause.getSQLState() + "'";
-        String message = "The JDBC " + operation + " failed. The SQL state is " + state
-                + ", the vendor code is " + cause.getErrorCode() + ", and the SQL fingerprint is '"
-                + fingerprint(sql) + "'.";
-        return new DataException(message, safeCause(cause));
+        SqlMetadata metadata = sqlMetadata(cause);
+        String message = "The JDBC " + operation + " failed." + databaseDiagnostic(metadata)
+                + " The SQL fingerprint is '" + fingerprint(sql) + "'." + driverDocumentationGuidance(metadata);
+        return new DataException(message, safeCause(cause, metadata));
     }
 
     /**
@@ -114,22 +111,42 @@ final class JdbcExceptionTranslator {
     }
 
     /**
-     * Copies safe JDBC metadata without retaining driver-provided messages,
-     * SQL text, URLs, arbitrary cause text, or driver-owned throwable
-     * references. Identity tracking preserves shared relationships while
-     * rejecting only edges that would create cycles. An iterative traversal
-     * and a total node limit bound stack use and provider-created diagnostic
-     * state.
+     * Invokes one JDBC-owned value operation while preserving checked SQL
+     * failures for normal translation and sanitizing unexpected runtime
+     * failures at the point where their JDBC origin is known.
      *
-     * @param cause driver failure
-     * @return sanitized failure tree
+     * @param operation stable JDBC operation label
+     * @param invocation JDBC invocation
+     * @param <T> returned value type
+     * @return invocation result
+     * @throws SQLException when JDBC reports a checked failure
      */
-    private static SQLException safeCause(SQLException cause) {
-        if (cause instanceof SafeSqlDiagnostic safe) {
-            safe.diagnosticBudget().finish();
-            return cause;
+    static <T> T invoke(String operation, JdbcSupplier<T> invocation) throws SQLException {
+        try {
+            return invocation.get();
+        } catch (SQLException sqlException) {
+            throw sqlException;
+        } catch (RuntimeException runtimeException) {
+            throw (RuntimeException) sanitize(operation, runtimeException);
         }
-        return new ExceptionGraphSanitizer(cause).sanitize();
+    }
+
+    /**
+     * Invokes one JDBC-owned void operation with the same failure policy as
+     * {@link #invoke(String, JdbcSupplier)}.
+     *
+     * @param operation stable JDBC operation label
+     * @param invocation JDBC invocation
+     * @throws SQLException when JDBC reports a checked failure
+     */
+    static void invokeVoid(String operation, JdbcRunnable invocation) throws SQLException {
+        try {
+            invocation.run();
+        } catch (SQLException sqlException) {
+            throw sqlException;
+        } catch (RuntimeException runtimeException) {
+            throw (RuntimeException) sanitize(operation, runtimeException);
+        }
     }
 
     /**
@@ -147,7 +164,7 @@ final class JdbcExceptionTranslator {
             return failure;
         }
         if (failure instanceof SQLException sqlException) {
-            return new ExceptionGraphSanitizer(sqlException).sanitize(false);
+            return new ExceptionGraphSanitizer(sqlException).sanitize();
         }
         return diagnostic(operation, failure);
     }
@@ -163,8 +180,7 @@ final class JdbcExceptionTranslator {
      * @return sanitized provider-owned failure
      */
     static Throwable sanitize(String operation, Throwable failure) {
-        if (failure instanceof SafeSqlDiagnostic safe) {
-            safe.diagnosticBudget().finish();
+        if (failure instanceof SafeSqlDiagnostic) {
             return failure;
         }
         if (failure instanceof SafeDiagnosticException) {
@@ -205,15 +221,10 @@ final class JdbcExceptionTranslator {
         if (primary instanceof SQLException sqlPrimary) {
             SQLException sanitizedPrimary = sqlPrimary instanceof SafeSqlDiagnostic
                     ? sqlPrimary
-                    : new ExceptionGraphSanitizer(sqlPrimary).sanitize(false);
+                    : new ExceptionGraphSanitizer(sqlPrimary).sanitize();
             SafeSqlDiagnostic safePrimary = (SafeSqlDiagnostic) sanitizedPrimary;
             Throwable sanitized = relatedDiagnostic(operation, failure);
             DiagnosticBudget diagnosticBudget = safePrimary.diagnosticBudget();
-            if (failure instanceof SQLException
-                    && (!(failure instanceof SafeSqlDiagnostic safeRelated)
-                            || safeRelated.diagnosticBudget().hasOmissions())) {
-                diagnosticBudget.omitted();
-            }
             diagnosticBudget.attach(sanitizedPrimary, sanitized);
             return sanitizedPrimary;
         }
@@ -222,31 +233,6 @@ final class JdbcExceptionTranslator {
             primary.addSuppressed(sanitized);
         }
         return primary;
-    }
-
-    /**
-     * Creates one safe leaf for a provider-observed related failure. Its source
-     * relationships are deliberately not traversed; the receiving SQL graph's
-     * marker represents those opaque relationships.
-     *
-     * @param operation stable provider operation label
-     * @param failure related JDBC-owned failure
-     * @return provider-owned leaf diagnostic
-     */
-    private static Throwable relatedDiagnostic(String operation, Throwable failure) {
-        if (failure instanceof SQLException sqlException) {
-            boolean safeWarning = failure instanceof SafeSQLWarning;
-            String message = failure instanceof SafeSQLException || safeWarning
-                    ? failure.getMessage()
-                    : DRIVER_FAILURE;
-            return safeWarning
-                    ? new SafeSQLWarning(message, sqlException.getSQLState(), sqlException.getErrorCode())
-                    : new SafeSQLException(message, sqlException.getSQLState(), sqlException.getErrorCode());
-        }
-        if (failure instanceof SafeDiagnosticException safe) {
-            return new SafeDiagnosticException(safe.getMessage());
-        }
-        return diagnostic(operation, failure);
     }
 
     /**
@@ -260,7 +246,8 @@ final class JdbcExceptionTranslator {
     static Throwable warningFailure(String owner, Throwable failure) {
         String message = warningFailureMessage(owner);
         if (failure instanceof SQLException sqlException) {
-            return new SafeSQLException(message, sqlException.getSQLState(), sqlException.getErrorCode());
+            SqlMetadata metadata = sqlMetadata(sqlException);
+            return new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode());
         }
         return new SafeDiagnosticException(message);
     }
@@ -292,9 +279,10 @@ final class JdbcExceptionTranslator {
             }
             try {
                 // The returned list preserves order without retaining a driver-owned next link.
+                SqlMetadata metadata = sqlMetadata(current);
                 sanitized.add(new SafeSQLWarning(DRIVER_WARNING,
-                                                 current.getSQLState(),
-                                                 current.getErrorCode()));
+                                                 metadata.sqlState(),
+                                                 metadata.vendorCode()));
                 current = current.getNextWarning();
             } catch (RuntimeException traversalFailure) {
                 sanitized.add(warningFailure(operation, traversalFailure));
@@ -302,6 +290,75 @@ final class JdbcExceptionTranslator {
             }
         }
         return List.copyOf(sanitized);
+    }
+
+    /**
+     * Creates a provider-owned SQLException whose message contains no SQL or
+     * connection configuration and may therefore remain visible.
+     *
+     * @param message safe provider diagnostic
+     * @return JDBC failure carrying trusted text
+     */
+    static SQLException safeException(String message) {
+        return new SafeSQLException(message);
+    }
+
+    /**
+     * Formats the safe JDBC metadata retained from an SQL failure.
+     *
+     * @param cause JDBC failure
+     * @return application-visible diagnostic suffix
+     */
+    static String sqlDiagnostic(SQLException cause) {
+        SqlMetadata metadata = sqlMetadata(cause);
+        return databaseDiagnostic(metadata) + driverDocumentationGuidance(metadata);
+    }
+
+    /**
+     * Copies safe JDBC metadata without retaining driver-provided messages,
+     * SQL text, URLs, arbitrary cause text, or driver-owned throwable
+     * references. Identity tracking preserves shared relationships while
+     * rejecting only edges that would create cycles. An iterative traversal
+     * and a total node limit bound stack use and provider-created diagnostic
+     * state.
+     *
+     * @param cause driver failure
+     * @return sanitized failure tree
+     */
+    private static SQLException safeCause(SQLException cause) {
+        return safeCause(cause, sqlMetadata(cause));
+    }
+
+    private static SQLException safeCause(SQLException cause, SqlMetadata metadata) {
+        if (cause instanceof SafeSqlDiagnostic) {
+            return cause;
+        }
+        return new ExceptionGraphSanitizer(cause, metadata).sanitize();
+    }
+
+    /**
+     * Creates one safe leaf for a provider-observed related failure. Its source
+     * relationships are deliberately not traversed and are omitted silently.
+     *
+     * @param operation stable provider operation label
+     * @param failure related JDBC-owned failure
+     * @return provider-owned leaf diagnostic
+     */
+    private static Throwable relatedDiagnostic(String operation, Throwable failure) {
+        if (failure instanceof SQLException sqlException) {
+            boolean safeWarning = failure instanceof SafeSQLWarning;
+            String message = failure instanceof SafeSQLException || safeWarning
+                    ? failure.getMessage()
+                    : DRIVER_FAILURE;
+            SqlMetadata metadata = sqlMetadata(sqlException);
+            return safeWarning
+                    ? new SafeSQLWarning(message, metadata.sqlState(), metadata.vendorCode())
+                    : new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode());
+        }
+        if (failure instanceof SafeDiagnosticException safe) {
+            return new SafeDiagnosticException(safe.getMessage());
+        }
+        return diagnostic(operation, failure);
     }
 
     /**
@@ -329,14 +386,236 @@ final class JdbcExceptionTranslator {
     }
 
     /**
-     * Creates a provider-owned SQLException whose message contains no SQL or
-     * connection configuration and may therefore remain visible.
+     * Creates a provider-owned representation of a non-SQL JDBC failure.
+     * Only the stable provider label and throwable class name are retained.
      *
-     * @param message safe provider diagnostic
-     * @return JDBC failure carrying trusted text
+     * @param operation stable provider operation label
+     * @param failure JDBC-owned failure
+     * @return safe diagnostic without a cause
      */
-    static SQLException safeException(String message) {
-        return new SafeSQLException(message);
+    private static SafeDiagnosticException diagnostic(String operation, Throwable failure) {
+        return new SafeDiagnosticException("The JDBC provider encountered an exception of type '"
+                                                   + failure.getClass().getName() + "' while " + operation + ".");
+    }
+
+    /**
+     * Reads the two JDBC diagnostic values independently so a broken accessor
+     * cannot prevent the other value from being retained or escape the
+     * sanitization boundary. SQLState is retained only in its standard
+     * five-character alphanumeric form.
+     *
+     * @param source driver-owned SQL failure
+     * @return bounded safe metadata
+     */
+    private static SqlMetadata sqlMetadata(SQLException source) {
+        String sqlState = null;
+        try {
+            String candidate = source.getSQLState();
+            if (validSqlState(candidate)) {
+                sqlState = candidate;
+            }
+        } catch (RuntimeException ignored) {
+            // Broken driver accessors are treated as unavailable metadata.
+        }
+
+        int vendorCode = 0;
+        boolean vendorCodeAvailable = false;
+        try {
+            vendorCode = source.getErrorCode();
+            vendorCodeAvailable = true;
+        } catch (RuntimeException ignored) {
+            // Broken driver accessors are treated as unavailable metadata.
+        }
+        return new SqlMetadata(sqlState, vendorCode, vendorCodeAvailable);
+    }
+
+    private static boolean validSqlState(String sqlState) {
+        if (sqlState == null || sqlState.length() != 5) {
+            return false;
+        }
+        for (int index = 0; index < sqlState.length(); index++) {
+            char character = sqlState.charAt(index);
+            if (!(character >= '0' && character <= '9')
+                    && !(character >= 'A' && character <= 'Z')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static String databaseDiagnostic(SqlMetadata metadata) {
+        if (metadata.sqlState() == null) {
+            return " The database reported an error without a valid SQLSTATE (vendor code "
+                    + metadata.vendorCodeDescription() + ").";
+        }
+
+        String sqlState = metadata.sqlState();
+        String sqlStateClass = sqlState.substring(0, 2);
+        String classDescription = sqlStateClassDescription(sqlStateClass);
+        String reportedCondition = classDescription.isEmpty()
+                ? "an error outside the recognized portable SQLSTATE catalog"
+                : classDescription;
+        String conditionDescription = sqlStateConditionDescription(sqlState);
+        String retainedMetadata = "(SQLSTATE '" + sqlState + "' and vendor code "
+                + metadata.vendorCodeDescription() + ").";
+        if (conditionDescription.isEmpty()) {
+            return " The database reported " + reportedCondition + " " + retainedMetadata;
+        }
+        return " The database reported " + reportedCondition + ". The SQLSTATE condition is '"
+                + conditionDescription + "' " + retainedMetadata;
+    }
+
+    private static String driverDocumentationGuidance(SqlMetadata metadata) {
+        if (metadata.sqlState() != null && metadata.vendorCodeAvailable()) {
+            return " Consult the JDBC driver documentation for details about this SQLSTATE and vendor code.";
+        }
+        if (metadata.sqlState() != null) {
+            return " Consult the JDBC driver documentation for details about this SQLSTATE.";
+        }
+        if (metadata.vendorCodeAvailable()) {
+            return " Consult the JDBC driver documentation for details about this vendor code.";
+        }
+        return " Consult the JDBC driver documentation for details about this database error.";
+    }
+
+    /**
+     * Returns the portable description of an SQLSTATE class. SQLSTATE defines
+     * the first two characters as the condition class, so this class-level
+     * description provides a portable fallback when the final three characters
+     * identify an unknown or vendor-specific subclass. Recognized
+     * five-character conditions receive additional portable detail from
+     * {@link #sqlStateConditionDescription(String)}.
+     * <p>
+     * The mappings cover all non-RDA classes in Appendix B, SQLSTATE Values, of
+     * the X/Open
+     * <a href="https://www.opengroup.org/onlinepubs/9695959099/toc.pdf">Data
+     * Management: Structured Query Language (SQL), Version 2</a> specification.
+     * The {@code 21} and {@code 42} mappings also provide the class-level
+     * fallback for their asterisked diagnostic-area conditions. RDA
+     * {@code HZ} conditions are excluded deliberately and, like other unknown
+     * classes, return an empty string.
+     *
+     * @param sqlStateClass two-character SQLSTATE class
+     * @return portable class description, or an empty string when the class is
+     *         not recognized
+     */
+    private static String sqlStateClassDescription(String sqlStateClass) {
+        return switch (sqlStateClass) {
+        case "00" -> "successful completion";
+        case "01" -> "a warning";
+        case "02" -> "no data";
+        case "07" -> "a dynamic SQL error";
+        case "08" -> "a connection exception";
+        case "0A" -> "a feature-not-supported condition";
+        case "21" -> "a cardinality violation";
+        case "22" -> "a data exception";
+        case "23" -> "an integrity-constraint violation";
+        case "24" -> "an invalid cursor state";
+        case "25" -> "an invalid transaction state";
+        case "26" -> "an invalid SQL statement identifier";
+        case "28" -> "an invalid authorization specification";
+        case "2C" -> "an invalid character-set name";
+        case "2D" -> "an invalid transaction termination";
+        case "2E" -> "an invalid connection name";
+        case "33" -> "an invalid SQL descriptor name";
+        case "35" -> "an invalid exception number";
+        case "3D" -> "an invalid catalog name";
+        case "3F" -> "an invalid schema name";
+        case "40" -> "a transaction rollback";
+        case "42" -> "a syntax error or access-rule violation";
+        case "44" -> "a WITH CHECK OPTION violation";
+        default -> "";
+        };
+    }
+
+    /**
+     * Returns a safe portable description for a recognized five-character
+     * SQLSTATE condition. These provider-owned descriptions add standardized
+     * detail without retaining the JDBC driver's potentially sensitive
+     * message. An empty result deliberately falls back to the portable class
+     * description and the exact state supplied for driver-documentation lookup.
+     * <p>
+     * The catalog contains every non-RDA condition in the X/Open SQLSTATE
+     * table which is more specific than its class state. It explicitly
+     * includes the asterisked diagnostic-area conditions because JDBC drivers
+     * may return those values even though an implementation may return
+     * {@code 42000} instead. RDA {@code HZ} conditions are excluded.
+     *
+     * @param sqlState valid five-character SQLSTATE
+     * @return portable condition description, or an empty string when the
+     *         state has no more-specific recognized description
+     */
+    private static String sqlStateConditionDescription(String sqlState) {
+        return switch (sqlState) {
+        case "01002" -> "Disconnect error";
+        case "01003" -> "Null value eliminated in set function";
+        case "01004" -> "String data, right truncation";
+        case "01005" -> "Insufficient item descriptor areas";
+        case "01006" -> "Privilege not revoked";
+        case "01007" -> "Privilege not granted";
+        case "0100B" -> "Default value too long for system view";
+        case "07001" -> "Using clause does not match dynamic parameters";
+        case "07002" -> "Using clause does not match target specifications";
+        case "07003" -> "Cursor specification cannot be executed";
+        case "07004" -> "Using clause is required for dynamic parameters";
+        case "07005" -> "Prepared statement is not a cursor specification";
+        case "07006" -> "Restricted data type attribute violation";
+        case "07008" -> "Invalid descriptor count";
+        case "07009" -> "Invalid descriptor index";
+        case "08001" -> "Client unable to establish connection";
+        case "08002" -> "Connection name in use";
+        case "08003" -> "Connection does not exist";
+        case "08004" -> "Server rejected the connection";
+        case "08006" -> "Connection failure";
+        case "08007" -> "Transaction resolution unknown";
+        case "0A001" -> "Multiple-server transaction";
+        case "21S01" -> "Insert value list does not match column list";
+        case "21S02" -> "Degree of derived table does not match column list";
+        case "22001" -> "String data, right truncation";
+        case "22002" -> "Null value, no indicator parameter";
+        case "22003" -> "Numeric value out of range";
+        case "22005" -> "Error in assignment";
+        case "22006" -> "Invalid interval format";
+        case "22007" -> "Invalid date/time format";
+        case "22008" -> "Date/time field overflow";
+        case "22011" -> "Substring error";
+        case "22012" -> "Division by zero";
+        case "22015" -> "Interval field overflow";
+        case "22018" -> "Invalid character value for CAST";
+        case "22019" -> "Invalid escape character";
+        case "22021" -> "Translation result not in target repertoire";
+        case "22024" -> "Unterminated string";
+        case "22025" -> "Invalid escape sequence";
+        case "22027" -> "Trim error";
+        case "40003" -> "Statement completion unknown";
+        case "42S01" -> "Base table or viewed table already exists";
+        case "42S02" -> "Base table not found";
+        case "42S11" -> "Index already exists";
+        case "42S12" -> "Index not found";
+        case "42S21" -> "Column already exists";
+        case "42S22" -> "Column not found";
+        case "42S31" -> "Schema already exists";
+        case "42S32" -> "Schema not found";
+        case "42S42" -> "Catalog not found";
+        case "42S51" -> "Character set already exists";
+        case "42S52" -> "Character set not found";
+        case "42S61" -> "Collation already exists";
+        case "42S62" -> "Collation not found";
+        case "42S72" -> "Conversion not found";
+        case "42S81" -> "Translation already exists";
+        case "42S82" -> "Translation not found";
+        default -> "";
+        };
+    }
+
+    @FunctionalInterface
+    interface JdbcSupplier<T> {
+        T get() throws SQLException;
+    }
+
+    @FunctionalInterface
+    interface JdbcRunnable {
+        void run() throws SQLException;
     }
 
     /**
@@ -353,11 +632,14 @@ final class JdbcExceptionTranslator {
         private final ArrayDeque<SqlExceptionNode> pending = new ArrayDeque<>();
 
         private ExceptionGraphSanitizer(SQLException root) {
+            this(root, sqlMetadata(root));
+        }
+
+        private ExceptionGraphSanitizer(SQLException root, SqlMetadata rootMetadata) {
             this.diagnosticBudget = new DiagnosticBudget();
-            this.sanitizedRoot = copySqlException(root, diagnosticBudget);
-            diagnosticBudget.initialize(sanitizedRoot);
+            this.sanitizedRoot = copySqlException(root, diagnosticBudget, rootMetadata);
+            diagnosticBudget.initialize();
             // Java has no bounded suppressed-exception accessor, so driver-owned suppressed state remains opaque.
-            diagnosticBudget.omitted();
             sanitizedCopies.put(root, sanitizedRoot);
             pending.addLast(new SqlExceptionNode(root, sanitizedRoot));
         }
@@ -368,22 +650,10 @@ final class JdbcExceptionTranslator {
          * @return bounded provider-owned root exception
          */
         private SQLException sanitize() {
-            return sanitize(true);
-        }
-
-        /**
-         * Copies the reachable graph and optionally seals its omission marker.
-         * An unsealed graph may receive provider-observed cleanup diagnostics
-         * before it crosses the application boundary.
-         */
-        private SQLException sanitize(boolean finish) {
             while (!pending.isEmpty()) {
                 SqlExceptionNode node = pending.removeFirst();
                 copyCause(node);
                 copyNextException(node);
-            }
-            if (finish) {
-                diagnosticBudget.finish();
             }
             return sanitizedRoot;
         }
@@ -394,7 +664,12 @@ final class JdbcExceptionTranslator {
          * @param node current SQL exception pair
          */
         private void copyCause(SqlExceptionNode node) {
-            Throwable cause = node.source().getCause();
+            Throwable cause;
+            try {
+                cause = node.source().getCause();
+            } catch (RuntimeException traversalFailure) {
+                return;
+            }
             if (cause == null) {
                 return;
             }
@@ -412,7 +687,12 @@ final class JdbcExceptionTranslator {
          * @param node current SQL exception pair
          */
         private void copyNextException(SqlExceptionNode node) {
-            SQLException next = node.source().getNextException();
+            SQLException next;
+            try {
+                next = node.source().getNextException();
+            } catch (RuntimeException traversalFailure) {
+                return;
+            }
             if (next == null) {
                 return;
             }
@@ -440,7 +720,9 @@ final class JdbcExceptionTranslator {
             }
             Throwable copy;
             if (source instanceof SQLException sqlException) {
-                SQLException sqlCopy = copySqlException(sqlException, diagnosticBudget);
+                SQLException sqlCopy = copySqlException(sqlException,
+                                                        diagnosticBudget,
+                                                        sqlMetadata(sqlException));
                 copy = sqlCopy;
                 pending.addLast(new SqlExceptionNode(sqlException, sqlCopy));
             } else {
@@ -460,7 +742,6 @@ final class JdbcExceptionTranslator {
          */
         private boolean acceptsEdge(Throwable parent, Throwable child) {
             if (parent == child || reaches(child, parent)) {
-                diagnosticBudget.omitted();
                 return false;
             }
             return true;
@@ -469,7 +750,7 @@ final class JdbcExceptionTranslator {
         /**
          * Tests reachability using only relationships already accepted into
          * the bounded provider-owned graph. The graph contains at most
-         * {@value #MAX_COPIED_EXCEPTION_GRAPH_NODES} nodes.
+         * {@value #MAX_EXCEPTION_GRAPH_NODES} nodes.
          *
          * @param start traversal start
          * @param expected node being sought
@@ -513,12 +794,14 @@ final class JdbcExceptionTranslator {
          * @param source driver-owned SQL exception
          * @return provider-owned SQL exception
          */
-        private static SQLException copySqlException(SQLException source, DiagnosticBudget diagnosticBudget) {
+        private static SQLException copySqlException(SQLException source,
+                                                     DiagnosticBudget diagnosticBudget,
+                                                     SqlMetadata metadata) {
             boolean safeWarning = source instanceof SafeSQLWarning;
             String message = source instanceof SafeSQLException || safeWarning ? source.getMessage() : DRIVER_FAILURE;
             return safeWarning
-                    ? new SafeSQLWarning(message, source.getSQLState(), source.getErrorCode(), diagnosticBudget)
-                    : new SafeSQLException(message, source.getSQLState(), source.getErrorCode(), diagnosticBudget);
+                    ? new SafeSQLWarning(message, metadata.sqlState(), metadata.vendorCode(), diagnosticBudget)
+                    : new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode(), diagnosticBudget);
         }
 
         /**
@@ -535,20 +818,14 @@ final class JdbcExceptionTranslator {
      * Shared node budget for one provider-owned SQL diagnostic graph.
      */
     private static final class DiagnosticBudget {
-        private SQLException root;
         private int nodes;
-        private boolean markerRequired;
-        private boolean markerAdded;
 
-        private void initialize(SQLException root) {
-            this.root = root;
-            this.nodes = 1;
+        private void initialize() {
+            nodes = 1;
         }
 
         private boolean reserve() {
-            int limit = markerAdded ? MAX_EXCEPTION_GRAPH_NODES : MAX_COPIED_EXCEPTION_GRAPH_NODES;
-            if (nodes == limit) {
-                omitted();
+            if (nodes == MAX_EXCEPTION_GRAPH_NODES) {
                 return false;
             }
             nodes++;
@@ -560,35 +837,13 @@ final class JdbcExceptionTranslator {
                 target.addSuppressed(related);
             }
         }
-
-        private void omitted() {
-            markerRequired = true;
-        }
-
-        private boolean hasOmissions() {
-            return markerRequired;
-        }
-
-        private void finish() {
-            if (markerRequired && !markerAdded) {
-                root.addSuppressed(new SafeDiagnosticException(TRUNCATED_EXCEPTION_GRAPH));
-                nodes++;
-                markerAdded = true;
-            }
-        }
     }
 
-    /**
-     * Creates a provider-owned representation of a non-SQL JDBC failure.
-     * Only the stable provider label and throwable class name are retained.
-     *
-     * @param operation stable provider operation label
-     * @param failure JDBC-owned failure
-     * @return safe diagnostic without a cause
-     */
-    private static SafeDiagnosticException diagnostic(String operation, Throwable failure) {
-        return new SafeDiagnosticException("The JDBC provider encountered an exception of type '"
-                                                   + failure.getClass().getName() + "' while " + operation + ".");
+    private record SqlMetadata(String sqlState, int vendorCode, boolean vendorCodeAvailable) {
+
+        private String vendorCodeDescription() {
+            return vendorCodeAvailable ? Integer.toString(vendorCode) : "not provided";
+        }
     }
 
     /**
@@ -606,13 +861,13 @@ final class JdbcExceptionTranslator {
         private SafeSQLException(String message) {
             super(message);
             diagnosticBudget = new DiagnosticBudget();
-            diagnosticBudget.initialize(this);
+            diagnosticBudget.initialize();
         }
 
         private SafeSQLException(String message, String sqlState, int vendorCode) {
             super(message, sqlState, vendorCode);
             diagnosticBudget = new DiagnosticBudget();
-            diagnosticBudget.initialize(this);
+            diagnosticBudget.initialize();
         }
 
         private SafeSQLException(String message,
@@ -640,7 +895,7 @@ final class JdbcExceptionTranslator {
         private SafeSQLWarning(String message, String sqlState, int vendorCode) {
             super(message, sqlState, vendorCode);
             diagnosticBudget = new DiagnosticBudget();
-            diagnosticBudget.initialize(this);
+            diagnosticBudget.initialize();
         }
 
         private SafeSQLWarning(String message,

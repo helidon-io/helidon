@@ -127,9 +127,9 @@ class JdbcGeneratedKeyScalarMatrixTest {
         when(metadata.getColumnCount()).thenReturn(2);
         when(resultSet.next()).thenReturn(true, false);
         when(resultSet.getObject(1, Long.class)).thenReturn(11L);
-        when(statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT)).thenReturn(false);
+        when(statement.getMoreResults()).thenReturn(false);
 
-        long key = new JdbcClientImpl(dataSource)
+        long key = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
                 .create(SQL)
                 .generatedKeys()
                 .addColumn("ID")
@@ -149,7 +149,7 @@ class JdbcGeneratedKeyScalarMatrixTest {
             when(resultSet.getObject(1, type)).thenReturn(expected);
         }
 
-        T actual = new JdbcClientImpl(dataSource)
+        T actual = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
                 .create(SQL)
                 .generatedKeys()
                 .map(row -> row.required(1, type))
@@ -175,11 +175,11 @@ class JdbcGeneratedKeyScalarMatrixTest {
         when(resultSet.getMetaData()).thenReturn(metadata);
         when(metadata.getColumnCount()).thenReturn(1);
         when(resultSet.next()).thenReturn(true, false);
-        when(statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT)).thenReturn(false);
+        when(statement.getMoreResults()).thenReturn(false);
     }
 
     private JdbcClient.Rows<Long> generatedLongKeys() {
-        return new JdbcClientImpl(dataSource)
+        return new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
                 .create(SQL)
                 .generatedKeys()
                 .map(row -> row.required(1, Long.class));

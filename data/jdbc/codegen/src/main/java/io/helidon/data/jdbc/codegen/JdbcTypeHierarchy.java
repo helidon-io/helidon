@@ -85,34 +85,6 @@ final class JdbcTypeHierarchy {
         return substitutions(typeInfo, inherited, rawType(typeInfo, typeInfo.typeName()));
     }
 
-    private static Map<String, TypeName> substitutions(TypeInfo typeInfo,
-                                                       Map<String, TypeName> inherited,
-                                                       boolean rawType) {
-        List<String> parameters = declaredTypeParameters(typeInfo);
-        if (parameters.isEmpty()) {
-            return Map.of();
-        }
-        if (rawType) {
-            Map<String, TypeName> result = new LinkedHashMap<>();
-            for (int index = 0; index < parameters.size(); index++) {
-                TypeName parameter = declaredTypeParameter(typeInfo, parameters.get(index), index);
-                result.put(genericName(parameters.get(index)), erasure(parameter, new HashSet<>()));
-            }
-            return result;
-        }
-
-        List<TypeName> arguments = typeInfo.typeName().typeArguments();
-        if (arguments.isEmpty()) {
-            return Map.of();
-        }
-        Map<String, TypeName> result = new LinkedHashMap<>();
-        for (int index = 0; index < arguments.size() && index < parameters.size(); index++) {
-            result.put(genericName(parameters.get(index)),
-                       substitute(arguments.get(index), inherited));
-        }
-        return result;
-    }
-
     /**
      * Substitutes generic variables recursively in one type name.
      *
@@ -151,6 +123,34 @@ final class JdbcTypeHierarchy {
             return false;
         }
         return returnTypeAssignable(candidate, existing, context);
+    }
+
+    private static Map<String, TypeName> substitutions(TypeInfo typeInfo,
+                                                       Map<String, TypeName> inherited,
+                                                       boolean rawType) {
+        List<String> parameters = declaredTypeParameters(typeInfo);
+        if (parameters.isEmpty()) {
+            return Map.of();
+        }
+        if (rawType) {
+            Map<String, TypeName> result = new LinkedHashMap<>();
+            for (int index = 0; index < parameters.size(); index++) {
+                TypeName parameter = declaredTypeParameter(typeInfo, parameters.get(index), index);
+                result.put(genericName(parameters.get(index)), erasure(parameter, new HashSet<>()));
+            }
+            return result;
+        }
+
+        List<TypeName> arguments = typeInfo.typeName().typeArguments();
+        if (arguments.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, TypeName> result = new LinkedHashMap<>();
+        for (int index = 0; index < arguments.size() && index < parameters.size(); index++) {
+            result.put(genericName(parameters.get(index)),
+                       substitute(arguments.get(index), inherited));
+        }
+        return result;
     }
 
     private static void collectMethods(TypeInfo typeInfo,

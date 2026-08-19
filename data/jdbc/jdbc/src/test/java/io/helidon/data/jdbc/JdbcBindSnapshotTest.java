@@ -45,6 +45,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("helidon:api:internal")
 class JdbcBindSnapshotTest {
     private static final String UPDATE_SQL = "UPDATE TEST_VALUE SET VALUE = ?";
 
@@ -63,7 +64,7 @@ class JdbcBindSnapshotTest {
         when(connection.prepareStatement(UPDATE_SQL)).thenReturn(preparedStatement);
         when(preparedStatement.execute()).thenReturn(false);
         when(preparedStatement.getLargeUpdateCount()).thenReturn(1L, -1L);
-        client = new JdbcClientImpl(dataSource);
+        client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
     }
 
     @Test

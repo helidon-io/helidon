@@ -18,7 +18,6 @@ package io.helidon.data.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Statement;
 
 import javax.sql.DataSource;
 
@@ -26,6 +25,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,7 +52,7 @@ class JdbcLargeUpdateFallbackTest {
         statement = mock(PreparedStatement.class);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        client = new JdbcClientImpl(dataSource);
+        client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
     }
 
     @Test
@@ -62,11 +63,11 @@ class JdbcLargeUpdateFallbackTest {
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenThrow(new UnsupportedOperationException("not implemented"));
         when(statement.getUpdateCount()).thenReturn(7, -1);
-        when(statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT)).thenReturn(false);
+        when(statement.getMoreResults()).thenReturn(false);
 
         when(capableStatement.execute()).thenReturn(false);
         when(capableStatement.getLargeUpdateCount()).thenReturn(3_000_000_000L, -1L);
-        when(capableStatement.getMoreResults(Statement.CLOSE_CURRENT_RESULT)).thenReturn(false);
+        when(capableStatement.getMoreResults()).thenReturn(false);
 
         assertThat(client.create(SQL).execute(), is(7L));
         assertThat(client.create(SQL).execute(), is(3_000_000_000L));
@@ -83,7 +84,7 @@ class JdbcLargeUpdateFallbackTest {
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenThrow(new SQLFeatureNotSupportedException("not supported"));
         when(statement.getUpdateCount()).thenReturn(Integer.MAX_VALUE, -1);
-        when(statement.getMoreResults(Statement.CLOSE_CURRENT_RESULT)).thenReturn(false);
+        when(statement.getMoreResults()).thenReturn(false);
 
         assertThat(client.create(SQL).execute(), is((long) Integer.MAX_VALUE));
 
@@ -92,8 +93,10 @@ class JdbcLargeUpdateFallbackTest {
     }
 
     @Test
-    void doesNotTreatAnArbitraryRuntimeFailureAsAnUnsupportedCapability() throws Exception {
-        IllegalStateException driverFailure = new IllegalStateException("driver failure");
+    void sanitizesAnArbitraryRuntimeFailureWithoutTreatingItAsAnUnsupportedCapability() throws Exception {
+        IllegalStateException driverFailure = new IllegalStateException("private driver failure",
+                                                                         new RuntimeException("private cause"));
+        driverFailure.addSuppressed(new RuntimeException("private suppressed detail"));
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenThrow(driverFailure);
@@ -101,7 +104,12 @@ class JdbcLargeUpdateFallbackTest {
         IllegalStateException failure = assertThrows(IllegalStateException.class,
                                                      () -> client.create(SQL).execute());
 
-        assertThat(failure, sameInstance(driverFailure));
+        assertThat(failure, not(sameInstance(driverFailure)));
+        assertThat(failure.getMessage(),
+                   is("The JDBC provider encountered an exception of type 'java.lang.IllegalStateException' "
+                              + "while reading a JDBC large update count."));
+        assertThat(failure.getCause(), nullValue());
+        assertThat(failure.getSuppressed().length, is(0));
         verify(statement, never()).getUpdateCount();
         verify(statement).close();
         verify(connection).close();

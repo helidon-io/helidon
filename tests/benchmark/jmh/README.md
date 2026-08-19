@@ -34,6 +34,21 @@ the repository root:
 mvn -ntp clean install -DskipTests
 ```
 
+The JDBC client creation benchmark isolates the statement-stage path before
+connection acquisition. It compares the cached imperative path with the
+compile-time marker-count path used by generated repositories for one repeated
+SQL string and 32 pre-warmed SQL strings. By default its runner executes at 1,
+8, 32, and 128 threads and writes one JSON result per thread count. A short
+smoke run can use:
+
+```shell
+mvn test -Ptests,jmh -pl :helidon-data-jdbc,:helidon-tests-benchmark-jmh -am \
+    -Dtest=JdbcClientCreationJmhRunnerTest -Dsurefire.failIfNoSpecifiedTests=false \
+    -Djdbc.client.creation.jmh.threads=1,8 \
+    -Djdbc.client.creation.jmh.warmupIterations=1 -Djdbc.client.creation.jmh.warmupMillis=100 \
+    -Djdbc.client.creation.jmh.measurementIterations=1 -Djdbc.client.creation.jmh.measurementMillis=100 -ntp
+```
+
 The gRPC streaming benchmark covers the resource-owning server-streaming, client-streaming, and bidirectional APIs,
 same-run legacy iterator baselines, mixed new-client/legacy-server and legacy-client/new-server pairs, and a deliberately
 CPU-bound slow-consumer bidirectional path. Payloads exercise both sides of the client's readiness threshold. The JSON

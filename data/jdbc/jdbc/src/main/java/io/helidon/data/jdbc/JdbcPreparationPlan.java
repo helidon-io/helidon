@@ -27,17 +27,13 @@ import java.util.Set;
  */
 record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns) {
 
-    /**
-     * Primary result expected from JDBC.
-     */
-    enum ResultKind {
-        QUERY,
-        UPDATE,
-        GENERATED_KEYS
-    }
-
+    // Reuse one immutable empty column selection for plans that do not request named generated keys.
     private static final List<String> NO_COLUMNS = List.of();
+
+    // Query preparation has no generated-column selection, so one immutable plan can serve every query.
     private static final JdbcPreparationPlan QUERY = new JdbcPreparationPlan(ResultKind.QUERY, NO_COLUMNS);
+
+    // Ordinary update preparation has no generated-column selection, so one immutable plan can serve every update.
     private static final JdbcPreparationPlan UPDATE = new JdbcPreparationPlan(ResultKind.UPDATE, NO_COLUMNS);
 
     /**
@@ -120,5 +116,14 @@ record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns)
     @Override
     public List<String> generatedColumns() {
         return generatedColumns;
+    }
+
+    /**
+     * Primary result expected from JDBC.
+     */
+    enum ResultKind {
+        QUERY,
+        UPDATE,
+        GENERATED_KEYS
     }
 }

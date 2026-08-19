@@ -58,7 +58,7 @@ final class JdbcStatement implements JdbcClient.Statement {
      */
     @Override
     public JdbcClient.Statement bind(int index, Object value) {
-        Objects.requireNonNull(value, "The bind value must not be null. Use bindNull for SQL NULL.");
+        Objects.requireNonNull(value, "The bind value must not be null.");
         if (!JdbcRow.supportedScalar(value.getClass())) {
             throw new IllegalArgumentException("JDBC does not support bind values of type '"
                                                        + value.getClass().getTypeName() + "'.");
@@ -67,7 +67,7 @@ final class JdbcStatement implements JdbcClient.Statement {
     }
 
     /**
-     * Stores an explicitly typed SQL null.
+     * Stores an explicitly typed SQL null for generated repository code.
      *
      * @param index one-based JDBC position
      * @param type standard JDBC type
@@ -76,8 +76,14 @@ final class JdbcStatement implements JdbcClient.Statement {
     @Override
     public JdbcClient.Statement bindNull(int index, JDBCType type) {
         Objects.requireNonNull(type, "The JDBC null type must not be null.");
-        if (type == JDBCType.NULL || type == JDBCType.REF_CURSOR) {
-            throw new IllegalArgumentException("JDBC does not support null values of type '" + type + "'.");
+        switch (type) {
+        case NULL, REF_CURSOR -> throw new IllegalArgumentException(
+                "The JDBC client does not support null values of type '" + type + "'.");
+        case ARRAY, DISTINCT, JAVA_OBJECT, REF, STRUCT -> throw new IllegalArgumentException(
+                "The JDBC client cannot bind a null value of type '" + type
+                        + "' without a database type name.");
+        default -> {
+        }
         }
         return bind(index, new JdbcOperation.Bind(null, type));
     }
@@ -188,6 +194,15 @@ final class JdbcStatement implements JdbcClient.Statement {
     }
 
     /**
+     * Rejects changes after a terminal operation claims this stage.
+     */
+    void ensureMutable() {
+        if (terminalStarted) {
+            throw new IllegalStateException("A JDBC statement can perform only one terminal operation.");
+        }
+    }
+
+    /**
      * Assigns one bind slot after validating stage state and position.
      *
      * @param index one-based JDBC position
@@ -222,14 +237,5 @@ final class JdbcStatement implements JdbcClient.Statement {
         }
         terminalStarted = true;
         return new JdbcOperation(sql, binds.clone(), plan);
-    }
-
-    /**
-     * Rejects changes after a terminal operation claims this stage.
-     */
-    void ensureMutable() {
-        if (terminalStarted) {
-            throw new IllegalStateException("A JDBC statement can perform only one terminal operation.");
-        }
     }
 }

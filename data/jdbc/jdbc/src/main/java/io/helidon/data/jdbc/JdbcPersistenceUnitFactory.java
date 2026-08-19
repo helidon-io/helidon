@@ -51,13 +51,40 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     // All JDBC persistence units are read from this configuration branch.
     static final String CONFIG_KEY = "data.persistence-units.jdbc";
 
+    // Names identify persistence units in Service Registry qualifiers and application-visible diagnostics.
     private static final String NAME_CONFIG_KEY = "name";
+
+    // A data-source value selects an existing named datasource and is mutually exclusive with direct connection
+    // settings.
     private static final String DATA_SOURCE_CONFIG_KEY = "data-source";
+
+    // A connection value selects provider-created direct JDBC access and is mutually exclusive with a named
+    // datasource.
     private static final String CONNECTION_CONFIG_KEY = "connection";
+
+    // Initialization scripts run after any configured drop script and before the JDBC client is published.
     private static final String INIT_SCRIPT_CONFIG_KEY = "init-script";
+
+    // Drop scripts run before initialization so bootstrap ordering is deterministic for applications.
     private static final String DROP_SCRIPT_CONFIG_KEY = "drop-script";
+
+    // Resource configuration keys accepted for init-script and drop-script.
+    private static final String SUPPORTED_SCRIPT_RESOURCE_KEYS =
+            "Supported resource keys are 'path', 'resource-path', 'content-plain', and 'content'.";
+
+    private static final List<String> SCRIPT_RESOURCE_KEYS = List.of("path",
+                                                                     "resource-path",
+                                                                     "uri",
+                                                                     "content-plain",
+                                                                     "content");
+
+    // JDBC drivers conventionally receive direct-connection usernames through the standard user property.
     private static final String USER_PROPERTY = "user";
+
+    // JDBC drivers conventionally receive direct-connection credentials through the standard password property.
     private static final String PASSWORD_PROPERTY = "password";
+
+    // Publish every client with the JDBC provider qualifier so injection can distinguish it from other Data providers.
     private static final Qualifier PROVIDER_QUALIFIER = Qualifier.builder()
             .typeName(Data.ProviderType.TYPE)
             .value(Jdbc.PROVIDER)
@@ -91,6 +118,7 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         for (Config unitConfig : units) {
             validateConnectionSource(unitConfig);
             String unitName = unitConfig.get(NAME_CONFIG_KEY).asString().orElse(Service.Named.DEFAULT_NAME);
+            validateBootstrapResourceSourceKeys(unitName, unitConfig);
             validateBootstrapResources(unitName, bootstrapDescriptors(unitConfig));
             if (unitName.isBlank()) {
                 throw new DataException("A JDBC persistence unit name must not be blank.");
@@ -174,6 +202,28 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
 
     }
 
+    private static void validateBootstrapResourceSourceKeys(String unitName, Config unitConfig) {
+        validateBootstrapResourceSourceKeys(unitName, unitConfig.get(DROP_SCRIPT_CONFIG_KEY), DROP_SCRIPT_CONFIG_KEY);
+        validateBootstrapResourceSourceKeys(unitName, unitConfig.get(INIT_SCRIPT_CONFIG_KEY), INIT_SCRIPT_CONFIG_KEY);
+    }
+
+    private static void validateBootstrapResourceSourceKeys(String unitName, Config scriptConfig, String scriptKey) {
+        if (!scriptConfig.exists()) {
+            return;
+        }
+        List<String> configuredKeys = SCRIPT_RESOURCE_KEYS.stream()
+                .filter(key -> scriptConfig.get(key).exists())
+                .map(key -> "'" + key + "'")
+                .toList();
+        if (configuredKeys.size() > 1) {
+            throw new DataException(persistenceUnitDescription(unitName)
+                                            + " has invalid value for '" + scriptKey + "'. Configure exactly one "
+                                            + "resource source key for '" + scriptKey + "'. Configured keys are "
+                                            + String.join(" and ", configuredKeys) + ". "
+                                            + SUPPORTED_SCRIPT_RESOURCE_KEYS);
+        }
+    }
+
     private static String persistenceUnitDescription(String name) {
         return Service.Named.DEFAULT_NAME.equals(name)
                 ? "JDBC persistence unit configuration"
@@ -196,13 +246,44 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                 .toList();
         if (!invalidSettings.isEmpty()) {
             String subject = invalidSettings.size() == 1 ? "value" : "values";
+            String target = String.join(" and ", invalidSettings);
             return persistenceUnitDescription(name) + " has invalid " + subject + " for "
-                    + String.join(" and ", invalidSettings)
-                    + ". Each script must use a supported resource configuration.";
+                    + target
+                    + ". Configure " + target + " as a resource object. "
+                    + SUPPORTED_SCRIPT_RESOURCE_KEYS;
+        }
+        if (!descriptors.isEmpty()) {
+            JdbcBootstrapResource.Descriptor descriptor = descriptors.getFirst();
+            return persistenceUnitDescription(name) + " could not load the " + descriptor.sourceType().text()
+                    + " " + descriptor.role().text() + " script configured by '"
+                    + scriptConfigKey(descriptor.role()) + "." + scriptSourceKey(descriptor.sourceType()) + "'. "
+                    + scriptSourceGuidance(descriptor.sourceType());
         }
         return Service.Named.DEFAULT_NAME.equals(name)
                 ? "The JDBC persistence unit configuration is invalid."
                 : "The configuration for JDBC persistence unit '" + name + "' is invalid.";
+    }
+
+    private static String scriptSourceKey(JdbcBootstrapResource.SourceType sourceType) {
+        return switch (sourceType) {
+        case FILE -> "path";
+        case CLASSPATH -> "resource-path";
+        case CONFIGURED_TEXT -> "content-plain";
+        case CONFIGURED_BINARY -> "content";
+        case URI -> "uri";
+        case SUPPLIED_STREAM, UNSPECIFIED -> "resource";
+        };
+    }
+
+    private static String scriptSourceGuidance(JdbcBootstrapResource.SourceType sourceType) {
+        return switch (sourceType) {
+        case FILE -> "Ensure the filesystem path points to an existing file readable by the application process.";
+        case CLASSPATH -> "Ensure the classpath resource exists in the application runtime classpath.";
+        case CONFIGURED_BINARY -> "Ensure the configured content is valid Base64.";
+        case CONFIGURED_TEXT -> "Ensure the configured text content is valid.";
+        case URI -> "URI-backed bootstrap scripts are not supported.";
+        case SUPPLIED_STREAM, UNSPECIFIED -> "Use one supported resource source key. " + SUPPORTED_SCRIPT_RESOURCE_KEYS;
+        };
     }
 
     private static String scriptConfigKey(JdbcBootstrapResource.Role role) {
@@ -312,52 +393,67 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                 throw new DataException(persistenceUnitDescription(unit.name())
                                                 + " has a blank 'data-source' name.");
             }
-            return namedDataSource(name);
+            return namedDataSource(unit.name(), name);
         }
-        return directDataSource(unit.connection().orElseThrow());
+        return directDataSource(unit.name(), unit.connection().orElseThrow());
     }
 
     /**
      * Resolves exactly one registry datasource by name.
      *
+     * @param unitName persistence-unit name
      * @param name datasource service name
      * @return matching datasource
      */
-    private DataSource namedDataSource(String name) {
+    private DataSource namedDataSource(String unitName, String name) {
         Qualifier named = Qualifier.createNamed(name);
-        List<ServiceInstance<DataSource>> matches = dataSources.get()
-                .stream()
-                .filter(instance -> instance.qualifiers().contains(named))
-                .toList();
+        List<ServiceInstance<DataSource>> matches;
+        try {
+            matches = dataSources.get()
+                    .stream()
+                    .filter(instance -> instance.qualifiers().contains(named))
+                    .toList();
+        } catch (RuntimeException failure) {
+            throw dataSourceResolutionFailure(unitName, name, failure);
+        }
         if (matches.isEmpty()) {
             throw new DataException("No SQL datasource service is named '" + name + "'.");
         }
         if (matches.size() > 1) {
             throw new DataException("More than one SQL datasource service is named '" + name + "'.");
         }
-        return matches.getFirst().get();
+        try {
+            return matches.getFirst().get();
+        } catch (RuntimeException failure) {
+            throw dataSourceResolutionFailure(unitName, name, failure);
+        }
+    }
+
+    private static DataException dataSourceResolutionFailure(String unitName,
+                                                             String dataSourceName,
+                                                             RuntimeException cause) {
+        return new DataException(persistenceUnitDescription(unitName) + " could not resolve SQL datasource service '"
+                                         + dataSourceName + "'.",
+                                 JdbcExceptionTranslator.sanitize("resolving a SQL datasource service", cause));
     }
 
     /**
      * Adapts the existing direct connection configuration to a datasource.
      *
+     * @param unitName persistence-unit name
      * @param config direct connection configuration
      * @return datasource adapter
      */
-    private static DataSource directDataSource(ConnectionConfig config) {
-        return directDataSource(config, SqlDriver.create(config).driver());
-    }
-
-    /**
-     * Adapts direct connection configuration using an already selected driver.
-     * Package access supports focused adapter tests without exposing the private
-     * datasource implementation.
-     *
-     * @param config direct connection configuration
-     * @param driver selected driver
-     * @return datasource adapter
-     */
-    static DataSource directDataSource(ConnectionConfig config, Driver driver) {
+    private static DataSource directDataSource(String unitName, ConnectionConfig config) {
+        Driver driver;
+        try {
+            driver = SqlDriver.create(config).driver();
+        } catch (RuntimeException failure) {
+            Throwable cause = failure.getCause() == null ? failure : failure.getCause();
+            throw new DataException(persistenceUnitDescription(unitName)
+                                            + " could not resolve a JDBC driver for its direct connection.",
+                                    JdbcExceptionTranslator.sanitize("resolving a JDBC driver", cause));
+        }
         return new DirectDataSource(Objects.requireNonNull(config, "The connection configuration must not be null."),
                                     Objects.requireNonNull(driver, "The JDBC driver must not be null."));
     }
@@ -465,7 +561,12 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
 
         @Override
         public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-            return driver.getParentLogger();
+            try {
+                return driver.getParentLogger();
+            } catch (RuntimeException failure) {
+                throw (RuntimeException) JdbcExceptionTranslator.sanitize("reading a JDBC driver parent logger",
+                                                                           failure);
+            }
         }
 
         @Override
@@ -499,9 +600,10 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
          * @throws SQLException when the driver cannot connect
          */
         private Connection connect(Properties properties) throws SQLException {
-            Connection connection = driver.connect(url, properties);
+            Connection connection = JdbcExceptionTranslator.invoke("opening a direct JDBC connection",
+                                                                   () -> driver.connect(url, properties));
             if (connection == null) {
-                throw new SQLException("The configured JDBC driver does not accept the configured URL.");
+                throw new SQLException("The JDBC driver does not accept the configured URL.");
             }
             return connection;
         }

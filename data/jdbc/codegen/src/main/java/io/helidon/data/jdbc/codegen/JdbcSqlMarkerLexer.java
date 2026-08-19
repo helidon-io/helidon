@@ -333,6 +333,26 @@ final class JdbcSqlMarkerLexer {
     }
 
     /**
+     * Marker syntax used by a statement.
+     */
+    enum MarkerStyle {
+
+        NONE,
+        NAMED,
+        POSITIONAL
+    }
+
+    /**
+     * Rewritten SQL and ordered marker information.
+     *
+     * @param sql positional JDBC SQL
+     * @param markers named markers or empty positional entries
+     * @param style marker style
+     */
+    record Result(String sql, List<String> markers, MarkerStyle style) {
+    }
+
+    /**
      * Immutable lexical policy used to identify and rewrite JDBC bind markers
      * without parsing database-specific SQL grammar.
      */
@@ -491,23 +511,4 @@ final class JdbcSqlMarkerLexer {
         }
     }
 
-    /**
-     * Marker syntax used by a statement.
-     */
-    enum MarkerStyle {
-
-        NONE,
-        NAMED,
-        POSITIONAL
-    }
-
-    /**
-     * Rewritten SQL and ordered marker information.
-     *
-     * @param sql positional JDBC SQL
-     * @param markers named markers or empty positional entries
-     * @param style marker style
-     */
-    record Result(String sql, List<String> markers, MarkerStyle style) {
-    }
 }

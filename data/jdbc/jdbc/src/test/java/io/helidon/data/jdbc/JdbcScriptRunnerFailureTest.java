@@ -42,6 +42,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -79,8 +80,23 @@ class JdbcScriptRunnerFailureTest {
                                                                                     "jdbc-bootstrap-init.sql"))));
 
         assertSafeSqlCause(failure.getCause(), statementClose);
-        assertThat(failure.getMessage(), containsString("SQL state is '08003'"));
+        assertThat(failure.getMessage(), containsString("a connection exception"));
+        assertThat(failure.getMessage(), containsString("SQLSTATE '08003'"));
         verify(statement, times(1)).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void usesBaselineAdvancementAndSanitizesDriverFailures() throws Exception {
+        IllegalStateException advancementFailure = driverRuntimeFailure("private bootstrap result detail");
+        when(statement.execute(anyString())).thenReturn(true);
+        when(statement.getMoreResults()).thenThrow(advancementFailure);
+
+        assertSanitizedBootstrapRuntime(advancementFailure, "advancing to the next bootstrap JDBC result");
+
+        verify(statement).getMoreResults();
+        verify(statement, never()).getMoreResults(anyInt());
+        verify(statement).close();
         verify(connection).close();
     }
 
@@ -208,6 +224,36 @@ class JdbcScriptRunnerFailureTest {
     }
 
     @Test
+    void sanitizesRuntimeFailuresAcrossBootstrapJdbcSetupAndExecution() throws Exception {
+        IllegalStateException acquisitionFailure = driverRuntimeFailure("private bootstrap URL");
+        when(dataSource.getConnection()).thenThrow(acquisitionFailure);
+
+        assertSanitizedBootstrapRuntime(acquisitionFailure, "acquiring a bootstrap connection");
+
+        setUp();
+        IllegalStateException inspectionFailure = driverRuntimeFailure("private bootstrap connection");
+        when(connection.getAutoCommit()).thenThrow(inspectionFailure);
+
+        assertSanitizedBootstrapRuntime(inspectionFailure, "inspecting bootstrap automatic commit mode");
+        verify(connection).close();
+
+        setUp();
+        IllegalStateException creationFailure = driverRuntimeFailure("private bootstrap statement setup");
+        when(connection.createStatement()).thenThrow(creationFailure);
+
+        assertSanitizedBootstrapRuntime(creationFailure, "creating a bootstrap JDBC statement");
+        verify(connection).close();
+
+        setUp();
+        IllegalStateException executionFailure = driverRuntimeFailure("private bootstrap SQL");
+        when(statement.execute(anyString())).thenThrow(executionFailure);
+
+        assertSanitizedBootstrapRuntime(executionFailure, "executing a bootstrap JDBC statement");
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
     void rejectsInputStreamCloseFailureBeforeAcquiringAConnection() throws Exception {
         String resource = "close-failure.sql";
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
@@ -328,6 +374,7 @@ class JdbcScriptRunnerFailureTest {
     @Test
     void configuredTextFailureDoesNotExposeSql() throws Exception {
         String sql = "PRIVATE INVALID SQL TOKEN";
+        String script = "\n-- retained comment\n/* another retained comment */\n" + sql;
         SQLException executeFailure = new SQLException("driver repeated " + sql, "42000", 58);
         when(statement.execute(anyString())).thenThrow(executeFailure);
 
@@ -335,9 +382,35 @@ class JdbcScriptRunnerFailureTest {
                                              () -> JdbcScriptRunner.execute(
                                                      "test",
                                                      dataSource,
-                                                     List.of(Resource.create("private description", sql))));
+                                                     List.of(Resource.create("private description", script))));
 
-        assertThat(failure.getMessage(), containsString("configured text init script"));
+        assertThat(failure.getMessage(), containsString("failed to execute the statement beginning at line 4"));
+        assertThat(failure.getMessage(), containsString("configured init script"));
+        assertThat(failure.getMessage(), not(containsString("configured text")));
+        assertThat(failure.getMessage(), not(containsString("statement 1")));
+        assertThat(failure.getMessage(), not(containsString(sql)));
+        assertThat(failure.getMessage(), not(containsString("private description")));
+        assertSafeSqlCause(failure.getCause(), executeFailure);
+    }
+
+    @Test
+    void reportsTheStartingLineAndRoleOfALaterDropStatement() throws Exception {
+        String sql = "PRIVATE DROP FAILURE";
+        String script = "\n-- leading comment\nSELECT 1;\n/* retained\ncomment */\n" + sql;
+        SQLException executeFailure = new SQLException("driver repeated " + sql, "42000", 59);
+        when(statement.execute(anyString())).thenReturn(false).thenThrow(executeFailure);
+        JdbcBootstrapResource resource = JdbcBootstrapResource.create(JdbcBootstrapResource.Role.DROP,
+                                                                      1,
+                                                                      Resource.create("private description", script));
+        JdbcScriptRunner.PreparedScripts preparedScripts = JdbcScriptRunner.load("test", List.of(resource));
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> JdbcScriptRunner.execute("test", dataSource, preparedScripts));
+
+        assertThat(failure.getMessage(), containsString("failed to execute the statement beginning at line 6"));
+        assertThat(failure.getMessage(), containsString("configured drop script"));
+        assertThat(failure.getMessage(), not(containsString("configured text")));
+        assertThat(failure.getMessage(), not(containsString("statement 2")));
         assertThat(failure.getMessage(), not(containsString(sql)));
         assertThat(failure.getMessage(), not(containsString("private description")));
         assertSafeSqlCause(failure.getCause(), executeFailure);
@@ -361,6 +434,10 @@ class JdbcScriptRunnerFailureTest {
         verify(dataSource, never()).getConnection();
     }
 
+    /**
+     * Proves malformed binary script input is rejected and sanitized before
+     * datasource acquisition.
+     */
     @Test
     void rejectsMalformedUtf8BeforeAcquiringAConnection() throws Exception {
         byte[] malformed = {(byte) 0xc3, 0x28};
@@ -378,6 +455,10 @@ class JdbcScriptRunnerFailureTest {
         verify(dataSource, never()).getConnection();
     }
 
+    /**
+     * Proves a single bootstrap resource cannot exceed its bounded read
+     * budget and is closed before datasource acquisition.
+     */
     @Test
     void rejectsResourceAboveThePerResourceByteLimit() throws Exception {
         SizedInputStream input = new SizedInputStream(8 * 1024 * 1024 + 1);
@@ -393,6 +474,35 @@ class JdbcScriptRunnerFailureTest {
         verify(dataSource, never()).getConnection();
     }
 
+    /**
+     * Proves individually valid resources cannot collectively exceed the
+     * plan-wide byte budget and both consumed streams are closed.
+     */
+    @Test
+    void rejectsPlansAboveTheAggregateByteLimit() throws Exception {
+        SizedInputStream first = new SizedInputStream(8 * 1024 * 1024);
+        SizedInputStream second = new SizedInputStream(4 * 1024 * 1024);
+        SizedInputStream third = new SizedInputStream(4 * 1024 * 1024 + 1);
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> JdbcScriptRunner.execute(
+                                                     "test",
+                                                     dataSource,
+                                                     List.of(Resource.create("first", first),
+                                                             Resource.create("second", second),
+                                                             Resource.create("third", third))));
+
+        assertThat(failure.getMessage(), containsString("aggregate bootstrap byte limit of 16777216"));
+        assertThat(first.closed(), is(true));
+        assertThat(second.closed(), is(true));
+        assertThat(third.closed(), is(true));
+        verify(dataSource, never()).getConnection();
+    }
+
+    /**
+     * Proves bootstrap parsing stops at the plan-wide statement budget without
+     * exposing the oversized script or acquiring a datasource connection.
+     */
     @Test
     void rejectsPlansAboveTheStatementLimit() throws Exception {
         String content = "SELECT 1;".repeat(10_001);
@@ -429,6 +539,28 @@ class JdbcScriptRunnerFailureTest {
                               + "' while " + operation + " a bootstrap resource."));
         assertThat(actual.getCause(), nullValue());
         assertThat(actual.getSuppressed().length, is(0));
+    }
+
+    private void assertSanitizedBootstrapRuntime(RuntimeException original, String operation) {
+        IllegalStateException failure = assertThrows(
+                IllegalStateException.class,
+                () -> JdbcScriptRunner.execute("test",
+                                               dataSource,
+                                               List.of(Resource.create("private description", "SELECT 1"))));
+
+        assertThat(failure, not(sameInstance(original)));
+        assertThat(failure.getMessage(),
+                   is("The JDBC provider encountered an exception of type '" + original.getClass().getName()
+                              + "' while " + operation + "."));
+        assertThat(failure.getMessage(), not(containsString("private")));
+        assertThat(failure.getCause(), nullValue());
+        assertThat(failure.getSuppressed().length, is(0));
+    }
+
+    private static IllegalStateException driverRuntimeFailure(String secret) {
+        IllegalStateException failure = new IllegalStateException(secret, new RuntimeException("private cause"));
+        failure.addSuppressed(new RuntimeException("private suppressed"));
+        return failure;
     }
 
     private static final class TrackingInputStream extends InputStream {

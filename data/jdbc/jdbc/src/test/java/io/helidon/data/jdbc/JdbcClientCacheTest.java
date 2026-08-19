@@ -17,7 +17,6 @@ package io.helidon.data.jdbc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,13 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
-import io.helidon.common.LruCache;
-
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -40,71 +34,59 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 class JdbcClientCacheTest {
 
     @Test
-    void admitsOnlySqlWithinTheLengthLimit() {
+    void supportsLongSqlWithoutAccessingTheDatasource() {
         DataSource dataSource = mock(DataSource.class);
-        LruCache<String, Integer> cache = LruCache.create(4);
-        JdbcClientImpl client = client(dataSource, cache);
-        String admitted = paddedSql(JdbcClientImpl.MAX_CACHEABLE_SQL_LENGTH);
-        String oversized = admitted + "x";
+        JdbcClientImpl client = client(dataSource);
+        String sql = paddedSql(8_192);
 
-        assertSingleParameter(client.create(admitted));
-        assertThat(cache.get(admitted), is(Optional.of(1)));
-        assertSingleParameter(client.create(admitted));
-
-        // Repeat the oversized SQL to prove that successful scans do not make it cache-admissible.
-        assertSingleParameter(client.create(oversized));
-        assertSingleParameter(client.create(oversized));
-        assertThat(cache.get(oversized), is(Optional.empty()));
-        assertThat(cache.size(), is(1));
+        assertSingleParameter(client.create(sql));
+        assertSingleParameter(client.create(sql));
         verifyNoMoreInteractions(dataSource);
     }
 
     @Test
-    void evictsTheLeastRecentlyUsedSql() {
+    void validationFailuresDoNotAccessTheDatasource() {
         DataSource dataSource = mock(DataSource.class);
-        LruCache<String, Integer> cache = LruCache.create(2);
-        JdbcClientImpl client = client(dataSource, cache);
-        String first = "select ? /* first */";
-        String second = "select ? /* second */";
-        String third = "select ? /* third */";
+        JdbcClientImpl client = client(dataSource);
+        String malformed = "select 'unterminated";
+        String longMalformed = malformed + "x".repeat(8_192);
 
-        client.create(first);
-        client.create(second);
+        assertThrows(IllegalArgumentException.class, () -> client.create(malformed));
+        assertThrows(IllegalArgumentException.class, () -> client.create(longMalformed));
 
-        // A cache hit makes the first statement most recently used, so the second must be evicted.
-        client.create(first);
-        client.create(third);
-
-        assertThat(cache.get(first), is(Optional.of(1)));
-        assertThat(cache.get(second), is(Optional.empty()));
-        assertThat(cache.get(third), is(Optional.of(1)));
-        assertThat(cache.size(), is(2));
         verifyNoMoreInteractions(dataSource);
     }
 
     @Test
-    void validationFailuresNeverPopulateTheCache() {
+    @SuppressWarnings("helidon:api:internal")
+    void createsGeneratedStatementFromTheValidatedPhysicalMarkerCount() {
         DataSource dataSource = mock(DataSource.class);
-        LruCache<String, Integer> cache = LruCache.create(4);
-        JdbcClientImpl client = client(dataSource, cache);
-        String cacheableMalformed = "select 'unterminated";
-        String oversizedMalformed = cacheableMalformed
-                + "x".repeat(JdbcClientImpl.MAX_CACHEABLE_SQL_LENGTH);
+        JdbcClientImpl client = client(dataSource);
 
-        assertThrows(IllegalArgumentException.class, () -> client.create(cacheableMalformed));
-        assertThrows(IllegalArgumentException.class, () -> client.create(oversizedMalformed));
+        JdbcClient.Statement statement = client.create("select ?, '?' where ? = 1", 2);
+        statement.bind(1, 1).bind(2, 2);
 
-        assertThat(cache.get(cacheableMalformed), is(Optional.empty()));
-        assertThat(cache.get(oversizedMalformed), is(Optional.empty()));
-        assertThat(cache.size(), is(0));
+        assertThrows(IllegalArgumentException.class, () -> statement.bind(3, 3));
+        verifyNoMoreInteractions(dataSource);
+    }
+
+    @Test
+    @SuppressWarnings("helidon:api:internal")
+    void rejectsAnInvalidGeneratedParameterCountWithoutAccessingTheDatasource() {
+        DataSource dataSource = mock(DataSource.class);
+        JdbcClientImpl client = client(dataSource);
+
+        assertThrows(NullPointerException.class, () -> client.create(null, 0));
+        assertThrows(IllegalArgumentException.class, () -> client.create("select 1", -1));
+        assertThrows(IllegalArgumentException.class, () -> client.create("?", 2));
+
         verifyNoMoreInteractions(dataSource);
     }
 
     @Test
     void concurrentRepeatedSqlPreservesTheShareableClientContract() throws Exception {
         DataSource dataSource = mock(DataSource.class);
-        LruCache<String, Integer> cache = LruCache.create(8);
-        JdbcClientImpl client = client(dataSource, cache);
+        JdbcClientImpl client = client(dataSource);
         String sql = "select '?', \"?\", ? /* concurrent */";
         CountDownLatch start = new CountDownLatch(1);
         List<Future<JdbcClient.Statement>> futures = new ArrayList<>();
@@ -123,25 +105,22 @@ class JdbcClientCacheTest {
             }
         }
 
-        assertThat(cache.get(sql), is(Optional.of(1)));
-        assertThat(cache.size(), is(1));
         verifyNoMoreInteractions(dataSource);
     }
 
     @Test
-    void concurrentOversizedSqlIsNeverRetained() throws Exception {
+    void concurrentDistinctSqlPreservesTheShareableClientContract() throws Exception {
         DataSource dataSource = mock(DataSource.class);
-        LruCache<String, Integer> cache = LruCache.create(8);
-        JdbcClientImpl client = client(dataSource, cache);
-        String sql = paddedSql(JdbcClientImpl.MAX_CACHEABLE_SQL_LENGTH) + "x";
+        JdbcClientImpl client = client(dataSource);
         CountDownLatch start = new CountDownLatch(1);
         List<Future<JdbcClient.Statement>> futures = new ArrayList<>();
 
         try (ExecutorService executor = Executors.newFixedThreadPool(16)) {
-            for (int i = 0; i < 128; i++) {
+            for (int i = 0; i < 512; i++) {
+                int statementId = i;
                 futures.add(executor.submit(() -> {
                     start.await();
-                    return client.create(sql);
+                    return client.create("select ? /* " + statementId + " */");
                 }));
             }
             start.countDown();
@@ -151,43 +130,11 @@ class JdbcClientCacheTest {
             }
         }
 
-        assertThat(cache.get(sql), is(Optional.empty()));
-        assertThat(cache.size(), is(0));
         verifyNoMoreInteractions(dataSource);
     }
 
-    @Test
-    void concurrentDistinctSqlNeverExceedsCapacity() throws Exception {
-        DataSource dataSource = mock(DataSource.class);
-        int capacity = 16;
-        LruCache<String, Integer> cache = LruCache.create(capacity);
-        JdbcClientImpl client = client(dataSource, cache);
-        CountDownLatch start = new CountDownLatch(1);
-        List<Future<Integer>> futures = new ArrayList<>();
-
-        try (ExecutorService executor = Executors.newFixedThreadPool(capacity)) {
-            for (int i = 0; i < 512; i++) {
-                int statementId = i;
-                futures.add(executor.submit(() -> {
-                    start.await();
-                    JdbcClient.Statement statement = client.create("select ? /* " + statementId + " */");
-                    statement.bind(1, statementId);
-                    return cache.size();
-                }));
-            }
-            start.countDown();
-
-            for (Future<Integer> future : futures) {
-                assertThat(future.get(10, TimeUnit.SECONDS), is(lessThanOrEqualTo(capacity)));
-            }
-        }
-
-        assertThat(cache.size(), is(capacity));
-        verifyNoMoreInteractions(dataSource);
-    }
-
-    private static JdbcClientImpl client(DataSource dataSource, LruCache<String, Integer> cache) {
-        return new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider(), cache);
+    private static JdbcClientImpl client(DataSource dataSource) {
+        return new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
     }
 
     private static String paddedSql(int length) {

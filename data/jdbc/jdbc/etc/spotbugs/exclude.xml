@@ -23,10 +23,11 @@
     <Match>
         <!--
         JdbcRunner does not construct SQL from bound values. This is the preparation boundary for SQL emitted by
-        repository code generation, every application value is bound to a PreparedStatement position.
+        repository code generation or explicitly supplied by the application; every application value is bound to a
+        PreparedStatement position.
         -->
         <Class name="io.helidon.data.jdbc.JdbcRunner"/>
-        <Method name="prepare"/>
+        <Method name="~lambda\$prepare\$[0-9]+"/>
         <Bug pattern="SQL_INJECTION_JDBC"/>
     </Match>
 

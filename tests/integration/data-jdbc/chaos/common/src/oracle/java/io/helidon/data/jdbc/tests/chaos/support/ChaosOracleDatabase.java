@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.data.jdbc.tests.chaos.support;
+
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.DockerImageName;
+
+/**
+ * Creates Oracle containers and configuration for JDBC chaos smoke tests.
+ */
+public final class ChaosOracleDatabase {
+    /**
+     * Test-only system property used by imperative chaos adapters to request generated key columns explicitly.
+     */
+    public static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.chaos.generated-key-column";
+
+    /**
+     * Named datasource used by Oracle one-connection recovery tests.
+     */
+    public static final String HIKARI_SOURCE_NAME = "chaos-oracle-hikari-source";
+
+    private static final DockerImageName IMAGE = DockerImageName.parse(
+            "container-registry.oracle.com/database/free:latest-lite");
+    private static final AtomicInteger SCHEMA_COUNTER = new AtomicInteger();
+    private static final String PASSWORD = "oracle123";
+    private static volatile String username;
+
+    private ChaosOracleDatabase() {
+    }
+
+    /**
+     * Creates an Oracle container using the approved image.
+     *
+     * @return Oracle container
+     */
+    public static GenericContainer<?> container() {
+        return new GenericContainer<>(IMAGE)
+                .withEnv("ORACLE_PWD", PASSWORD)
+                .withExposedPorts(1521)
+                .withStartupAttempts(3)
+                .waitingFor(Wait.forLogMessage(".*DATABASE IS READY TO USE.*", 1)
+                        .withStartupTimeout(Duration.ofMinutes(5)));
+    }
+
+    /**
+     * Creates Helidon configuration from a started Oracle container.
+     *
+     * @param container started container
+     * @return Oracle chaos configuration
+     */
+    public static Config config(GenericContainer<?> container) {
+        username = "JDBC_CHAOS_" + SCHEMA_COUNTER.incrementAndGet();
+        createSchema(container, username);
+        System.setProperty(GENERATED_KEY_COLUMN_PROPERTY, "ID");
+        return Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.connection.url", jdbcUrl(container),
+                "data.persistence-units.jdbc.0.connection.username", username,
+                "data.persistence-units.jdbc.0.connection.password", PASSWORD,
+                "data.persistence-units.jdbc.0.connection.jdbc-driver-class-name", "oracle.jdbc.OracleDriver",
+                "data.persistence-units.jdbc.0.init-script.resource-path", "db/chaos/oracle/schema-init.sql")));
+    }
+
+    /**
+     * Creates Helidon configuration for a named Oracle Hikari datasource.
+     *
+     * @return datasource-backed configuration
+     */
+    public static Config hikariConfig() {
+        System.setProperty(GENERATED_KEY_COLUMN_PROPERTY, "ID");
+        return Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.data-source", HIKARI_SOURCE_NAME,
+                "data.persistence-units.jdbc.0.init-script.resource-path", "db/chaos/oracle/schema-init.sql")));
+    }
+
+    /**
+     * Creates a bounded Hikari datasource from a started Oracle container.
+     *
+     * @param container started container
+     * @return Hikari datasource
+     */
+    public static HikariDataSource dataSource(GenericContainer<?> container) {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(jdbcUrl(container));
+        config.setUsername(username);
+        config.setPassword(PASSWORD);
+        config.setDriverClassName("oracle.jdbc.OracleDriver");
+        config.setMaximumPoolSize(1);
+        config.setConnectionTimeout(1_000);
+        return new HikariDataSource(config);
+    }
+
+    private static void createSchema(GenericContainer<?> container, String username) {
+        try (var connection = DriverManager.getConnection(jdbcUrl(container), "system", PASSWORD);
+             var statement = connection.createStatement()) {
+            statement.executeUpdate("CREATE USER " + username + " IDENTIFIED BY \"" + PASSWORD + "\"");
+            statement.executeUpdate("GRANT CONNECT, RESOURCE TO " + username);
+            statement.executeUpdate("GRANT UNLIMITED TABLESPACE TO " + username);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not create Oracle chaos-test schema.", e);
+        }
+    }
+
+    private static String jdbcUrl(GenericContainer<?> container) {
+        return "jdbc:oracle:thin:@localhost:%s/FREEPDB1".formatted(container.getMappedPort(1521));
+    }
+}

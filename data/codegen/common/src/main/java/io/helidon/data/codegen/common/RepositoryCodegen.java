@@ -110,7 +110,7 @@ class RepositoryCodegen implements CodegenExtension {
                     }
                 });
         if (assigned.size() > 1) {
-            throw new CodegenException("Interface extends interfaces from multiple data repository providers",
+            throw new CodegenException("The repository interface extends interfaces from more than one data repository provider.",
                                        repositoryInterface.originatingElement()
                                                .orElseGet(repositoryInterface::typeName));
         }
@@ -122,12 +122,12 @@ class RepositoryCodegen implements CodegenExtension {
                             .anyMatch(repositoryInterface::hasAnnotation))
                     .forEach(assigned::add);
             if (assigned.isEmpty()) {
-                throw new CodegenException("Interface extends no data repository provider's interface",
+                throw new CodegenException("No data repository provider recognizes the repository interface.",
                                            repositoryInterface.originatingElement()
                                                    .orElseGet(repositoryInterface::typeName));
             }
             if (assigned.size() > 1) {
-                throw new CodegenException("Repository annotation is owned by multiple data repository generators",
+                throw new CodegenException("More than one data repository generator recognizes the repository annotation.",
                                            repositoryInterface.originatingElement()
                                                    .orElseGet(repositoryInterface::typeName));
             }

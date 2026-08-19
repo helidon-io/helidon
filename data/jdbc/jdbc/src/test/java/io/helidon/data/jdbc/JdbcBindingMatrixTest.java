@@ -26,12 +26,15 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -39,6 +42,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("helidon:api:internal")
 class JdbcBindingMatrixTest {
     private static final String SQL = "UPDATE TEST_VALUE SET VALUE = ?";
 
@@ -75,9 +79,30 @@ class JdbcBindingMatrixTest {
         assertBinding(Timestamp.valueOf("2026-07-27 10:11:12"), JDBCType.TIMESTAMP);
     }
 
+    /**
+     * Proves hostile application text does not alter the SQL prepared by the
+     * driver and reaches JDBC only as a bound value.
+     *
+     * @throws Exception if the mocked JDBC boundary reports a checked failure
+     */
+    @Test
+    void keepsHostileBindValueOutOfPreparedSql() throws Exception {
+        String originalSql = SQL;
+        String hostilePayload = "alpha'); DROP TABLE TEST_VALUE; -- :value ?";
+        prepareOperation();
+
+        new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
+                .create(originalSql)
+                .bind(1, hostilePayload)
+                .execute();
+
+        verify(connection).prepareStatement(originalSql);
+        verify(statement).setObject(1, hostilePayload);
+    }
+
     @Test
     void validatesEveryBindPositionBeforeConnectionAcquisition() throws Exception {
-        JdbcClient.Statement operation = new JdbcClientImpl(dataSource)
+        JdbcClient.Statement operation = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
                 .create("UPDATE TEST_VALUE SET VALUE = ? WHERE ID = ?")
                 .bind(1, "value");
 
@@ -86,9 +111,31 @@ class JdbcBindingMatrixTest {
         verify(dataSource, never()).getConnection();
     }
 
+    @Test
+    void rejectsNullTypesThatRequireDatabaseTypeNames() throws Exception {
+        JdbcClient client = new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider());
+
+        for (JDBCType type : List.of(JDBCType.ARRAY,
+                                     JDBCType.DISTINCT,
+                                     JDBCType.JAVA_OBJECT,
+                                     JDBCType.REF,
+                                     JDBCType.STRUCT)) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                            () -> client.create(SQL).bindNull(1, type));
+            assertThat(failure.getMessage(),
+                       is("The JDBC client cannot bind a null value of type '" + type
+                                  + "' without a database type name."));
+        }
+
+        verify(dataSource, never()).getConnection();
+    }
+
     private void assertBinding(Object value, JDBCType nullType) throws Exception {
         prepareOperation();
-        new JdbcClientImpl(dataSource).create(SQL).bind(1, value).execute();
+        new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
+                .create(SQL)
+                .bind(1, value)
+                .execute();
         if (value instanceof byte[] bytes) {
             verify(statement).setBytes(1, bytes);
         } else {
@@ -97,7 +144,10 @@ class JdbcBindingMatrixTest {
         verify(statement, never()).setNull(1, nullType.getVendorTypeNumber());
 
         prepareOperation();
-        new JdbcClientImpl(dataSource).create(SQL).bindNull(1, nullType).execute();
+        new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
+                .create(SQL)
+                .bindNull(1, nullType)
+                .execute();
         verify(statement).setNull(1, nullType.getVendorTypeNumber());
         verify(statement, never()).setObject(1, null);
     }
@@ -109,6 +159,6 @@ class JdbcBindingMatrixTest {
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(1L, -1L);
-        when(statement.getMoreResults(java.sql.Statement.CLOSE_CURRENT_RESULT)).thenReturn(false);
+        when(statement.getMoreResults()).thenReturn(false);
     }
 }

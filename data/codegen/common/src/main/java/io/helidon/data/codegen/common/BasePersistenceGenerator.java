@@ -66,25 +66,21 @@ public abstract class BasePersistenceGenerator
                                     repositoryClassName,
                                     classModel);
 
-            copyTransactionAnnotations(interfaceInfo, classModel);
+            // Recognize the transaction family by its semantic marker instead of coupling Data codegen to every Tx type.
+            // Keep directly declared, source-retained transaction annotations in the generated source so service codegen
+            // can include them in the interception metadata of the implementation. This deliberately copies every matching
+            // declaration without resolving transaction precedence. Other repository type annotations, including other
+            // interception annotations, are not copied by this step.
+            interfaceInfo.annotations()
+                    .stream()
+                    .filter(annotation -> annotation.hasMetaAnnotation(DataCommonCodegenTypes.TRANSACTION_TYPE))
+                    .forEach(classModel::addAnnotation);
 
             roundContext.addGeneratedType(repositoryClassName,
                                           classModel,
                                           repositoryInfo.interfaceInfo().typeName(),
                                           repositoryInfo.interfaceInfo().originatingElementValue());
         }
-    }
-
-    private static void copyTransactionAnnotations(TypeInfo repositoryInfo, ClassModel.Builder classModel) {
-        // Recognize the transaction family by its semantic marker instead of coupling Data codegen to every Tx type.
-        // Keep directly declared, source-retained transaction annotations in the generated source so service codegen
-        // can include them in the interception metadata of the implementation. This deliberately copies every matching
-        // declaration without resolving transaction precedence. Other repository type annotations, including other
-        // interception annotations, are not copied by this step.
-        repositoryInfo.annotations()
-                .stream()
-                .filter(annotation -> annotation.hasMetaAnnotation(DataCommonCodegenTypes.TRANSACTION_TYPE))
-                .forEach(classModel::addAnnotation);
     }
 
     /**

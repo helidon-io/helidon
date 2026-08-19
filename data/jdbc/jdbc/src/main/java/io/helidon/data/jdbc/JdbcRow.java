@@ -104,14 +104,6 @@ final class JdbcRow implements JdbcClient.Row {
         return SUPPORTED_TYPES.contains(normalized(type));
     }
 
-    /**
-     * Marks this row as no longer available to its mapper callback.
-     * Later reads fail before accessing the result set.
-     */
-    void expire() {
-        active = false;
-    }
-
     @Override
     public <T> Optional<T> optional(int index, Class<T> type) {
         ensureReadable();
@@ -152,6 +144,14 @@ final class JdbcRow implements JdbcClient.Row {
             throw new DataException("Required result column '" + label + "' contains SQL NULL.");
         }
         return value;
+    }
+
+    /**
+     * Marks this row as no longer available to its mapper callback.
+     * Later reads fail before accessing the result set.
+     */
+    void expire() {
+        active = false;
     }
 
     /**
@@ -210,7 +210,7 @@ final class JdbcRow implements JdbcClient.Row {
             throw new IllegalStateException("A JDBC row is valid only during its mapper callback.");
         }
         if (Thread.currentThread() != callbackThread) {
-            throw new IllegalStateException("A JDBC row may be read only by its mapper callback thread.");
+            throw new IllegalStateException("A JDBC row can be read only on its mapper callback thread.");
         }
     }
 

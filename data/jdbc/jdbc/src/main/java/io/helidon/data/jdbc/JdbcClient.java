@@ -45,6 +45,13 @@ public interface JdbcClient {
     /**
      * Creates a single-use statement description from positional JDBC SQL.
      * <p>
+     * The SQL is trusted executable application input. This method does not
+     * sanitize data concatenated into the SQL text. Represent untrusted values
+     * with {@code ?} markers and supply them through
+     * {@link Statement#bind(int, Object)}. Bind markers represent values only.
+     * Select identifiers, operators, sort directions, and other SQL structure
+     * from an explicit application allowlist.
+     * <p>
      * Marker recognition uses a portable lexical policy. Question marks
      * inside single-quoted strings, double-quoted identifiers, valid dollar or
      * Oracle alternative strings, and conventional comments are ignored.
@@ -59,6 +66,25 @@ public interface JdbcClient {
      * @throws IllegalArgumentException if the SQL is blank, malformed, or contains named markers
      */
     Statement create(String sql);
+
+    /**
+     * Creates a single-use statement description for generated repository
+     * code that has already validated the positional JDBC SQL.
+     * <p>
+     * This internal code-generation bridge carries the physical marker count
+     * computed by the annotation processor. It avoids rescanning static SQL or
+     * mutating the runtime marker-count cache on every repository invocation.
+     * Imperative applications must use {@link #create(String)}.
+     *
+     * @param sql validated SQL containing positional JDBC markers
+     * @param parameterCount exact number of physical JDBC markers
+     * @return statement description
+     * @throws NullPointerException if the SQL is {@code null}
+     * @throws IllegalArgumentException if the parameter count is negative or
+     *                                  greater than the SQL text length
+     */
+    @Api.Internal
+    Statement create(String sql, int parameterCount);
 
     /**
      * Describes one prepared JDBC operation.
@@ -82,15 +108,22 @@ public interface JdbcClient {
         Statement bind(int index, Object value);
 
         /**
-         * Binds SQL {@code NULL} with an explicit standard JDBC type.
+         * Binds SQL {@code NULL} for a generated declarative repository.
+         *
+         * <p>
+         * This is an internal code-generation bridge, not a supported
+         * imperative application API. Types that require a database type name
+         * are not supported.
          *
          * @param index one-based JDBC position
          * @param type SQL type of the null value
          * @return this statement
          * @throws NullPointerException if the type is {@code null}
-         * @throws IllegalArgumentException if the position or type is invalid
+         * @throws IllegalArgumentException if the position or type is invalid,
+         *                                  or the type requires a database type name
          * @throws IllegalStateException if a terminal operation has started
          */
+        @Api.Internal
         Statement bindNull(int index, JDBCType type);
 
         /**

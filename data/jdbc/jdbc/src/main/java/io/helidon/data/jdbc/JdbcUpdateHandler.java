@@ -45,7 +45,8 @@ final class JdbcUpdateHandler {
      */
     long execute(JdbcRunner.ExecutionScope scope) throws SQLException {
         scope.require(JdbcPreparationPlan.ResultKind.UPDATE);
-        boolean resultSetAvailable = scope.statement().execute();
+        boolean resultSetAvailable = JdbcExceptionTranslator.invoke("executing a JDBC update",
+                                                                    scope.statement()::execute);
         if (resultSetAvailable) {
             // Close every result channel before reporting the incompatible result.
             boolean unexpected = scope.drainFromCurrent(true);
@@ -123,7 +124,8 @@ final class JdbcUpdateHandler {
      */
     private static ResultSet executeForKeys(JdbcRunner.ExecutionScope scope) throws SQLException {
         scope.require(JdbcPreparationPlan.ResultKind.GENERATED_KEYS);
-        boolean resultSetAvailable = scope.statement().execute();
+        boolean resultSetAvailable = JdbcExceptionTranslator.invoke("executing a generated-keys JDBC update",
+                                                                    scope.statement()::execute);
         if (resultSetAvailable) {
             // Generated keys must come from getGeneratedKeys. Drain this incompatible result before failing.
             boolean unexpected = scope.drainFromCurrent(true);
@@ -133,6 +135,7 @@ final class JdbcUpdateHandler {
         if (scope.largeUpdateCount() < 0) {
             throw scope.unexpectedResult(false);
         }
-        return scope.statement().getGeneratedKeys();
+        return JdbcExceptionTranslator.invoke("reading JDBC generated keys",
+                                              scope.statement()::getGeneratedKeys);
     }
 }

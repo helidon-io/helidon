@@ -89,7 +89,7 @@ final class JdbcSqlLexicalRules {
      * <p>
      * An opening delimiter must follow {@code q'} and must not be whitespace,
      * a control character, or a single quote. The four conventional opening
-     * brackets are paired; any other valid delimiter closes with the same
+     * brackets are paired. Any other valid delimiter closes with the same
      * character. Returning NUL distinguishes ordinary SQL containing {@code q'}
      * from an unambiguous alternative-quote opener.
      *

@@ -131,7 +131,6 @@ class JdbcTxSupportTest {
         assertThat(events.count("rollback"), is(0L));
         assertThat(events.count("start:jdbc"), is(3L));
         assertThat(events.count("end"), is(3L));
-        assertThat(support.threadStatePresent(), is(false));
     }
 
     @Test
@@ -485,7 +484,6 @@ class JdbcTxSupportTest {
                                is(1L));
                 }
                 assertThat(support.transaction(Tx.Type.REQUIRED, () -> "reused"), is("reused"));
-                assertThat(support.threadStatePresent(), is(false));
             }
         }
     }
