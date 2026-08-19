@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ $(basename "${0}") [OPTIONS] --directory=DIR CMD
 
   --description=DESCRIPTION
         Set the staging repository description to use.
-        %{version} can be used to subsitute the release version.
+        %{version} can be used to substitute the release version.
 
   --help
         Prints the usage and exits.

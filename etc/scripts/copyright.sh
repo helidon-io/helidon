@@ -1,6 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,32 +23,35 @@ on_error(){
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
 }
 trap on_error ERR
 
 # Path to this script
 if [ -h "${0}" ] ; then
-    readonly SCRIPT_PATH="$(readlink "${0}")"
+    SCRIPT_PATH="$(readlink "${0}")"
 else
-    readonly SCRIPT_PATH="${0}"
+    SCRIPT_PATH="${0}"
 fi
+readonly SCRIPT_PATH
 
 # Path to the root of the workspace
-readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
-readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
+LOG_FILE=$(mktemp -t XXXcopyright-log)
+readonly LOG_FILE
 
-source ${WS_DIR}/etc/scripts/pipeline-env.sh
+die() { echo "${1}" ; exit 1 ;}
 
-die(){ echo "${1}" ; exit 1 ;}
+# shellcheck disable=SC2086
+mvn ${MVN_ARGS} -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
+  -f ${WS_DIR}/pom.xml \
+  -Dcopyright.exclude="${WS_DIR}/etc/copyright-exclude.txt" \
+  -Dcopyright.template="${WS_DIR}/etc/copyright.txt" \
+  -Dcopyright.scm="git" \
+  -Pexamples,docs,ossrh-releases,tests > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
-mvn ${MAVEN_ARGS} -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
-        -f ${WS_DIR}/pom.xml \
-        -Dcopyright.exclude="${WS_DIR}/etc/copyright-exclude.txt" \
-        -Dcopyright.template="${WS_DIR}/etc/copyright.txt" \
-        -Dcopyright.scm="git" \
-        -Pexamples,docs,ossrh-releases,tests > ${RESULT_FILE} || die "Error running the Maven command"
-
-grep -i "copyright" ${RESULT_FILE} \
-    && die "COPYRIGHT ERROR" || echo "COPYRIGHT OK"
+grep -i "copyright" "${LOG_FILE}" \
+  && die "COPYRIGHT ERROR" || echo "COPYRIGHT OK"

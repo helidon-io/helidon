@@ -5,12 +5,15 @@ name: "Release"
 
 on:
   push:
-    branches:
-      - 'release-*'
+    branches: [ 'release-*' ]
+
 env:
   JAVA_VERSION: '11'
   JAVA_DISTRO: 'temurin'
-  MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
+  MVN_ARGS: |
+    -B -fae -e -ntp
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
+    -Dmaven.wagon.http.retryHandler.count=3
 
 concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
@@ -32,35 +35,56 @@ jobs:
           cache: maven
       - name: Copyright
         run: etc/scripts/copyright.sh
+  create-tag:
+    runs-on: ubuntu-22.04
+    environment: release
+    outputs:
+      version: ${{ steps.create-tag.outputs.version }}
+      tag: ${{ steps.create-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
+      - id: create-tag
+        run: ./etc/scripts/release.sh create_tag >> "${GITHUB_OUTPUT}"
   release:
+    needs: [ create-tag ]
     timeout-minutes: 60
     runs-on: ubuntu-22.04
     environment: release
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
           fetch-depth: '0'
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.13.0
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - uses: actions/setup-java@v3.13.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
-      - name: Release
+      - id: build
         env:
           GPG_PASSPHRASE: ${{ secrets.HELIDON_GPG_PASSPHRASE }}
           GPG_PRIVATE_KEY: ${{ secrets.HELIDON_GPG_PRIVATE_KEY }}
-          GPG_PUBLIC_KEY: ${{ secrets.HELIDON_GPG_PUBLIC_KEY }}
+        shell: bash
+        run: |
+          etc/scripts/setup-gpg.sh
+          mvn ${MVN_ARGS} \
+            -Prelease,no-snapshots \
+            -DskipTests \
+            -DaltDeploymentRepository=":::file://${PWD}/staging" \
+            deploy
+      - id: upload
+        shell: bash
+        env:
           CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
-          RELEASE_WORKFLOW: "true"
         run: |
-          git config user.email "helidon-robot_ww@oracle.com"
-          git config user.name "Helidon Robot"
-          etc/scripts/release.sh release_build
-      - name: Upload Staged Artifacts
-        uses: actions/upload-artifact@v4
+          etc/scripts/upload.sh upload_release \
+            --dir="staging" \
+            --description="Helidon v%{version}" >> ${GITHUB_OUTPUT}
+      - uses: actions/upload-artifact@v4
         with:
           name: io-helidon-artifacts-${{ github.ref_name }}
           path: staging

@@ -20,27 +20,27 @@ set -o errtrace || true # trace ERR through commands and functions
 set -o errexit || true  # exit the script if any statement returns a non-true return value
 
 on_error(){
-    CODE="${?}" && \
-    set +x && \
-    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}" >&2
+  CODE="${?}" && \
+  set +x && \
+  printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
+      "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}" >&2
 }
 trap on_error ERR
 
 setup_gpg() {
-    local TMPFILE
+  local tmpfile
 
-    TMPFILE=$(mktemp)
-    echo "${GPG_PRIVATE_KEY}" > "${TMPFILE}"
-    gpg --allow-secret-key-import --import --no-tty --batch "${TMPFILE}"
-    rm "${TMPFILE}"
+  tmpfile=$(mktemp)
+  echo "${GPG_PRIVATE_KEY}" > "${tmpfile}"
+  gpg --allow-secret-key-import --import --no-tty --batch "${tmpfile}"
+  rm "${tmpfile}"
 
-    echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
-    gpg-connect-agent reloadagent /bye
-    GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
-    "$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase" --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
+  echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+  gpg-connect-agent reloadagent /bye
+  GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
+  "$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase" --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
 
-    gpg --list-keys helidon
+  gpg --list-keys helidon
 }
 
 setup_gpg

@@ -32,7 +32,7 @@
 
     <organization>
         <name>Oracle Corporation</name>
-        <url>http://www.oracle.com/</url>
+        <url>https://www.oracle.com/</url>
     </organization>
 
     <inceptionYear>2018</inceptionYear>
@@ -47,7 +47,7 @@
     <scm>
         <developerConnection>scm:git:git@github.com:oracle/helidon.git</developerConnection>
         <connection>scm:git:git@github.com:oracle/helidon.git</connection>
-        <tag>1.4.0</tag>
+        <tag>HEAD</tag>
         <url>https://github.com/oracle/helidon</url>
     </scm>
 

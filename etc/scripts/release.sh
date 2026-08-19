@@ -20,12 +20,26 @@ set -o errtrace || true # trace ERR through commands and functions
 set -o errexit || true  # exit the script if any statement returns a non-true return value
 
 on_error(){
-    CODE="${?}" && \
-    set +x && \
-    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}" >&2
+  CODE="${?}" && \
+  set +x && \
+  printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
+    "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}" >&2
 }
 trap on_error ERR
+
+# Path to this script
+if [ -h "${0}" ] ; then
+  SCRIPT_PATH="$(readlink "${0}")"
+else
+  # shellcheck disable=SC155
+  SCRIPT_PATH="${0}"
+fi
+readonly SCRIPT_PATH
+
+# Path to the root of the workspace
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
 usage(){
     cat <<EOF
@@ -34,10 +48,10 @@ DESCRIPTION: Helidon Release Script
 
 USAGE:
 
-$(basename "${0}") [ --version=V ] CMD
+$(basename "${0}") --version=V CMD
 
   --version=V
-        The version to use with update_version.
+        The version to use.
 
   --help
         Prints the usage and exits.
@@ -50,229 +64,196 @@ $(basename "${0}") [ --version=V ] CMD
     get_version
         Get the current version
 
-    release_build
-        Perform a release build
-        This will create a local branch, deploy artifacts and push a tag
-
     create_tag
-        Create and push a release tag
-
+        Create and and push a release tag
 EOF
 }
 
 # parse command line args
-ARGS=( "${@}" )
-for ((i=0;i<${#ARGS[@]};i++))
-{
-    ARG=${ARGS[${i}]}
-    case ${ARG} in
-    "--version="*)
-        VERSION=${ARG#*=}
-        ;;
-    "--help")
-        usage
-        exit 0
-        ;;
-    "update_version"|"get_version"|"release_build"|"create_tag")
-        readonly COMMAND="${ARG}"
-        ;;
-    *)
-        echo "ERROR: unknown argument: ${ARG}" >&2
-        exit 1
-        ;;
-    esac
-}
+ARGS=( )
+while (( ${#} > 0 )); do
+  case ${1} in
+  "--version="*)
+    VERSION=${1#*=}
+    shift
+    ;;
+  "--help")
+    usage
+    exit 0
+    ;;
+  "update_version"|"create_tag"|"get_version")
+    COMMAND="${1}"
+    shift
+    ;;
+  *)
+    ARGS+=( "${1}" )
+    shift
+    ;;
+  esac
+done
+readonly ARGS
+readonly COMMAND
 
-if [ -z "${COMMAND}" ] ; then
-    echo "ERROR: no command provided" >&2
-    usage >&2
-    exit 1
-fi
-
-if [ "${COMMAND}" = "update_version" ] && [ -z "${VERSION}" ] ; then
-    echo "ERROR: version required" >&2
-    usage >&2
-    exit 1
-fi
-
-# Copy stdout as fd 6 and redirect operational output to stderr. Commands that
-# return shell data use fd 6 so their output remains safe to source.
+# copy stdout as fd 6 and redirect stdout to stderr
+# this allows us to use fd 6 for returning data
 exec 6>&1 1>&2
 
-# Path to this script
-if [ -h "${0}" ] ; then
-    readonly SCRIPT_PATH="$(readlink "${0}")"
-else
-    readonly SCRIPT_PATH="${0}"
+if [ -z "${COMMAND+x}" ] ; then
+  echo "ERROR: no command provided"
+  exit 1
 fi
 
-# Path to the root of the workspace
-readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+case ${COMMAND} in
+"update_version")
+  if [ -z "${VERSION}" ] ; then
+    echo "ERROR: version required" >&2
+    usage
+    exit 1
+  fi
+  ;;
+"create_tag"|"get_version")
+  # no-op
+  ;;
+"")
+  echo "ERROR: no command provided" >&2
+  usage
+  exit 1
+  ;;
+*)
+  echo "ERROR: unknown command ${COMMAND}" >&2
+  usage
+  exit 1
+  ;;
+esac
 
-source "${WS_DIR}/etc/scripts/pipeline-env.sh"
-
-# Get the current project version from the root pom.
 current_version() {
-    awk 'BEGIN {FS="[<>]"} ; /<version>/ {print $3; exit 0}' "${WS_DIR}/pom.xml"
+  awk 'BEGIN {FS="[<>]"} ; /<version>/ {print $3; exit 0}' "${WS_DIR}"/pom.xml
 }
 
-# Find matching Git-tracked files.
 # arg1: pattern
 # arg2: include pattern
 search() {
-    set +o pipefail
-    grep "${1}" -Er . --include "${2}" | cut -d ':' -f 1 | xargs git ls-files | sort | uniq
+  set +o pipefail
+  grep "${1}" -Er . --include "${2}" | cut -d ':' -f 1 | xargs git ls-files | sort | uniq
 }
 
 replace() {
-    local pattern value replace include
-    while (( ${#} > 0 )); do
-        case ${1} in
-        "--pattern="*)
-            pattern=${1#*=}
-            shift
-            ;;
-        "--include="*)
-            include=${1#*=}
-            shift
-            ;;
-        "--replace="*)
-            replace=${1#*=}
-            shift
-            ;;
-        "--value="*)
-            value=${1#*=}
-            shift
-            ;;
-        *)
-            echo "Unsupported argument: ${1}" >&2
-            return 1
-            ;;
-        esac
-    done
+  local pattern value replace include
+  while (( ${#} > 0 )); do
+    case ${1} in
+    "--pattern="*)
+      pattern=${1#*=}
+      shift
+      ;;
+    "--include="*)
+      include=${1#*=}
+      shift
+      ;;
+    "--replace="*)
+      replace=${1#*=}
+      shift
+      ;;
+    "--value="*)
+      value=${1#*=}
+      shift
+      ;;
+    *)
+      echo "Unsupported argument: ${1}" >&2
+      return 1
+      ;;
+    esac
+  done
 
-    if [ -z "${replace}" ] && [ -n "${value}" ] ; then
-        replace=${pattern/\.\*/${value}}
-    fi
+  if [ -z "${replace}" ] && [ -n "${value}" ] ; then
+    replace=${pattern/\.\*/${value}}
+  fi
 
-    for file in $(search "${pattern}" "${include}"); do
-        echo "Updating ${file}"
-        sed -e s@"${pattern}"@"${replace}"@g "${file}" > "${file}.tmp"
-        mv "${file}.tmp" "${file}"
-    done
+  for file in $(search "${pattern}" "${include}"); do
+    echo "Updating ${file}"
+    sed -e s@"${pattern}"@"${replace}"@g "${file}" > "${file}.tmp"
+    mv "${file}.tmp" "${file}"
+  done
 }
 
 update_version(){
-    local version project_version
+  local version current_version
 
-    if [ "${#}" -gt 0 ]; then
-        version=${1}
-    else
-        version=${VERSION}
-    fi
-    if [ -z "${version}" ] ; then
-        echo "ERROR: version required" >&2
-        usage >&2
-        exit 1
-    fi
+  version=${1-${VERSION}}
+  if [ -z "${version+x}" ] ; then
+    echo "ERROR: version required" >&2
+    usage
+    exit 1
+  fi
 
-    project_version=$(current_version)
+  # find current version
+  current_version=$(current_version)
 
-    replace \
-        --pattern="<version>${project_version}</version>" \
-        --replace="<version>${version}</version>" \
-        --include="pom.xml"
+  # update poms
+  replace \
+      --pattern="<version>${current_version}</version>" \
+      --replace="<version>${version}</version>" \
+      --include="pom.xml"
 
-    replace \
-        --pattern="<helidon.version>.*</helidon.version>" \
-        --value="${version}" \
-        --include="pom.xml"
+  replace \
+      --pattern="<helidon.version>.*</helidon.version>" \
+      --value="${version}" \
+      --include="pom.xml"
 
-    replace \
-        --pattern="helidonversion = .*" \
-        --replace="helidonversion = '${version}'" \
-        --include="build.gradle"
+  replace \
+      --pattern="helidonversion = .*" \
+      --replace="helidonversion = '${version}'" \
+      --include="build.gradle"
 }
 
-prepare_release(){
-    readonly FULL_VERSION="${1}"
-    export FULL_VERSION
+create_tag() {
+  local git_branch version current_version git_remote
 
-    printf "\n%s: FULL_VERSION=%s\n\n" "$(basename "${0}")" "${FULL_VERSION}"
+  current_version=$(current_version)
+  version=${current_version%-SNAPSHOT}
+  git_branch="release/${version}"
 
-    # Do the release work in a branch
-    local GIT_BRANCH="release/${FULL_VERSION}"
-    git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true
-    git checkout -b "${GIT_BRANCH}"
+  # Use a separate branch
+  git branch -D "${git_branch}" > /dev/null 2>&1 || true
+  git checkout -b "${git_branch}"
 
-    # Invoke update_version
-    update_version "${FULL_VERSION}"
+  # Invoke update_version
+  update_version "${version}"
 
-    # Update scm/tag entry in the parent pom
-    sed -e s@'<tag>[^<]*</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
-        "${WS_DIR}/parent/pom.xml" > "${WS_DIR}/parent/pom.xml.tmp"
-    mv "${WS_DIR}/parent/pom.xml.tmp" "${WS_DIR}/parent/pom.xml"
+  # Update scm/tag entry in the parent pom
+  sed -e s@'<tag>HEAD</tag>'@"<tag>${version}</tag>"@g \
+    "${WS_DIR}/parent/pom.xml" > "${WS_DIR}/parent/pom.xml.tmp"
+  mv "${WS_DIR}/parent/pom.xml.tmp" "${WS_DIR}/parent/pom.xml"
 
-    # Git user info
-    git config user.email || git config --global user.email "info@helidon.io"
-    git config user.name || git config --global user.name "Helidon Robot"
+  # Git user info
+  git config user.email || git config --global user.email "info@helidon.io"
+  git config user.name || git config --global user.name "Helidon Robot"
 
-    # Commit version changes
-    git commit -a -m "Release ${FULL_VERSION} [ci skip]"
+  # Commit version changes
+  git commit -a -m "Release ${version}"
+
+  # Create and push a git tag
+  git tag -f "${version}"
+
+  push_remote=origin
+  if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
+    # Add an SSH based remote if not running in GitHub action
+    git_remote=$(git config --get remote.origin.url | \
+      sed -e "s,https://[^@]*@\([^/]*\)/,git@\1:," \
+          -e "s,https://\([^/]*\)/,git@\1:,")
+    git remote remove release > /dev/null 2>&1 || true
+    git remote add release "${git_remote}"
+    push_remote=release
+  fi
+
+  git push --force "${push_remote}" \
+        refs/tags/"${version}":refs/tags/"${version}"
+
+  echo "version=${version}" >&6
+  echo "tag=refs/tags/${version}" >&6
 }
 
-push_release_tag(){
-    local GIT_REMOTE PUSH_REMOTE
-
-    git tag -f "${FULL_VERSION}"
-
-    PUSH_REMOTE=origin
-    if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
-        GIT_REMOTE=$(git config --get remote.origin.url | \
-            sed -e "s,https://[^@]*@\([^/]*\)/,git@\1:," \
-                -e "s,https://\([^/]*\)/,git@\1:,")
-        git remote remove release > /dev/null 2>&1 || true
-        git remote add release "${GIT_REMOTE}"
-        PUSH_REMOTE=release
-    fi
-
-    git push --force "${PUSH_REMOTE}" \
-        refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
-}
-
-create_tag(){
-    local version
-    version=$(current_version)
-    version=${version%-SNAPSHOT}
-
-    prepare_release "${version}"
-    push_release_tag
-
-    printf "version=%s\ntag=refs/tags/%s\n" "${FULL_VERSION}" "${FULL_VERSION}" >&6
-}
-
-release_build(){
-    local version
-    version=$(current_version)
-    version=${version%-SNAPSHOT}
-
-    prepare_release "${version}"
-
-    # Perform deployment
-    mvn ${MAVEN_ARGS} clean deploy \
-       -Prelease,no-snapshots \
-       -DskipTests  \
-       -DaltDeploymentRepository=":::file://${PWD}/staging"
-
-    push_release_tag
-
-    "${WS_DIR}/etc/scripts/upload.sh" upload_release \
-                --dir="staging" \
-                --description="Helidon v%{FULL_VERSION}"
-}
-
-get_version(){
-    printf "version=%s\n" "$(current_version)" >&6
+get_version() {
+  echo "version=$(current_version)" >&6
 }
 
 # Invoke command
