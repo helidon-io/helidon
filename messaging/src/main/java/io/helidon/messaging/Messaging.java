@@ -29,8 +29,8 @@ import io.helidon.service.registry.Service;
  * Declarative messaging annotations.
  */
 @Api.Preview
-public final class Messages {
-    private Messages() {
+public final class Messaging {
+    private Messaging() {
     }
 
     /**
