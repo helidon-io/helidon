@@ -31,17 +31,6 @@ Main entry point for Neo4j support for Helidon
 </tr>
 <tr>
 <td>
-<code>certificate</code>
-</td>
-<td>
-<code>Path</code>
-</td>
-<td>
-</td>
-<td>Set certificate path</td>
-</tr>
-<tr>
-<td>
 <code>max-<wbr>connection-<wbr>pool-<wbr>size</code>
 </td>
 <td>
@@ -54,14 +43,17 @@ Main entry point for Neo4j support for Helidon
 </tr>
 <tr>
 <td>
-<code>hostname-<wbr>verification-<wbr>enabled</code>
+<a id="trustsettings-trustStrategy"></a>
+<a href="io.helidon.integrations.neo4j.Neo4j.Builder.TrustStrategy.md">
+<code>trustsettings.<wbr>trust<wbr>Strategy</code>
+</a>
 </td>
 <td>
-<code>Boolean</code>
+<code>Trust<wbr>Strategy</code>
 </td>
 <td>
 </td>
-<td>Enable hostname verification</td>
+<td>Set trust strategy</td>
 </tr>
 <tr>
 <td>
@@ -76,20 +68,6 @@ Main entry point for Neo4j support for Helidon
 </tr>
 <tr>
 <td>
-<a id="trust-strategy"></a>
-<a href="io.helidon.integrations.neo4j.Neo4j.Builder.TrustStrategy.md">
-<code>trust-<wbr>strategy</code>
-</a>
-</td>
-<td>
-<code>Trust<wbr>Strategy</code>
-</td>
-<td>
-</td>
-<td>Set trust strategy</td>
-</tr>
-<tr>
-<td>
 <code>uri</code>
 </td>
 <td>
@@ -98,6 +76,18 @@ Main entry point for Neo4j support for Helidon
 <td>
 </td>
 <td>Create uri</td>
+</tr>
+<tr>
+<td>
+<code>trustsettings.<wbr>hostname<wbr>Verification<wbr>Enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Enable hostname verification</td>
 </tr>
 <tr>
 <td>
@@ -158,6 +148,17 @@ Main entry point for Neo4j support for Helidon
 </tr>
 <tr>
 <td>
+<code>trustsettings.<wbr>certificate</code>
+</td>
+<td>
+<code>Path</code>
+</td>
+<td>
+</td>
+<td>Set certificate path</td>
+</tr>
+<tr>
+<td>
 <code>max-<wbr>connection-<wbr>lifetime</code>
 </td>
 <td>
@@ -182,6 +183,59 @@ Main entry point for Neo4j support for Helidon
 </tbody>
 </table>
 
+
+### Deprecated Options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>certificate</code>
+</td>
+<td>
+<code>Path</code>
+</td>
+<td>
+</td>
+<td>Set certificate path</td>
+</tr>
+<tr>
+<td>
+<code>hostname-<wbr>verification-<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Enable hostname verification</td>
+</tr>
+<tr>
+<td>
+<a id="trust-strategy"></a>
+<a href="io.helidon.integrations.neo4j.Neo4j.Builder.TrustStrategy.md">
+<code>trust-<wbr>strategy</code>
+</a>
+</td>
+<td>
+<code>Trust<wbr>Strategy</code>
+</td>
+<td>
+</td>
+<td>Set trust strategy</td>
+</tr>
+</tbody>
+</table>
 
 
 ---

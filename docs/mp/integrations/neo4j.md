@@ -57,6 +57,35 @@ The driver can be used according to the [Neo4j documentation][neo4j-documentat].
 
 ## Configuration
 
+### TLS hostname verification
+
+For manually configured encrypted `bolt://` and `neo4j://` connections
+(`encrypted: true`), Neo4j TLS hostname verification is enabled by default. The
+certificate presented by the Neo4j server must match the server name used by
+each TLS connection. For direct `bolt://` connections this is the host name in
+the configured `uri`. For routed `neo4j://` connections this also includes
+discovered cluster member addresses.
+
+Neo4j URI security schemes keep their driver-defined behavior: `bolt+s` and
+`neo4j+s` use trusted TLS with hostname verification, while `bolt+ssc` and
+`neo4j+ssc` use encrypted connections without hostname verification.
+
+If you need to use a trusted certificate whose host name does not match the
+connection address, you can disable hostname verification while keeping
+certificate-chain trust enabled:
+
+```properties [microprofile-config.properties]
+neo4j.uri=bolt://localhost:7687
+neo4j.encrypted=true
+neo4j.trustsettings.trustStrategy=TRUST_CUSTOM_CA_SIGNED_CERTIFICATES
+neo4j.trustsettings.certificate=/path/to/ca.pem
+neo4j.trustsettings.hostnameVerificationEnabled=false
+```
+
+Disabling hostname verification weakens TLS server identity checks. Do not
+combine it with `TRUST_ALL_CERTIFICATES` outside constrained testing, because
+that disables server authentication.
+
 ### Configuration options
 
 <!--@include ../../config/io.helidon.integrations.neo4j.Neo4j.md#configuration-options delim=--- offset=1 collapseTables=10 -->
