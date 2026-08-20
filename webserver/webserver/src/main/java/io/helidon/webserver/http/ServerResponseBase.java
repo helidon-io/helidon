@@ -318,6 +318,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      *
      * @return whether to suppress the implicit content length
      */
+    @Api.Internal
     protected final boolean suppressImplicitContentLength() {
         return suppressImplicitContentLength;
     }
