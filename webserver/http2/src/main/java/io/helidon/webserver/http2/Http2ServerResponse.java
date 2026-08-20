@@ -230,7 +230,10 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             return new ApplicationOutputStream(outputStream, outputStream);
         }
         OutputStream encodedOutputStream = contentEncode(outputStream);
-        return new ApplicationOutputStream(applyStreamFilters(encodedOutputStream), outputStream);
+        OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
+        return outputStream.headRequest
+                ? new ApplicationOutputStream(applicationOutputStream, outputStream)
+                : applicationOutputStream;
     }
 
     private boolean prepareResponse() {

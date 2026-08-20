@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -536,6 +537,61 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void streamingHeadRejectsEntityBeforeWritingToFilter() throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        AtomicBoolean filterWritten = new AtomicBoolean();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
+        response.streamFilter(network -> new FilterOutputStream(network) {
+            @Override
+            public void write(int value) throws IOException {
+                filterWritten.set(true);
+                super.write(value);
+            }
+
+            @Override
+            public void write(byte[] bytes, int offset, int length) throws IOException {
+                filterWritten.set(true);
+                super.write(bytes, offset, length);
+            }
+        });
+
+        OutputStream output = response.outputStream();
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> output.write("entity".getBytes(StandardCharsets.UTF_8)));
+
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(filterWritten.get(), is(false)),
+                () -> assertThat(response.isSent(), is(false))
+        );
+        verifyZeroInteractions(writer);
+    }
+
+    @Test
+    void streamingHeadRejectsEntityBeforeWritingToEncoder() throws IOException {
+        AtomicBoolean encoderWritten = new AtomicBoolean();
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class)))
+                .thenReturn(testEncoder(() -> encoderWritten.set(true)));
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
+
+        OutputStream output = response.outputStream();
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                        () -> output.write("entity".getBytes(StandardCharsets.UTF_8)));
+
+        assertAll(
+                () -> assertThat(exception.getMessage(), containsString("HEAD request")),
+                () -> assertThat(encoderWritten.get(), is(false)),
+                () -> assertThat(response.isSent(), is(false))
+        );
+        verifyZeroInteractions(writer);
+    }
+
+    @Test
     void streamingHeadRejectsEntityBeforeSendingResponse() throws IOException {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
@@ -730,18 +786,24 @@ class Http1ServerResponseTest {
     }
 
     private static ContentEncoder testEncoder() {
+        return testEncoder(() -> { });
+    }
+
+    private static ContentEncoder testEncoder(Runnable onWrite) {
         return new ContentEncoder() {
             @Override
             public OutputStream apply(OutputStream network) {
                 return new OutputStream() {
                     @Override
                     public void write(int value) throws IOException {
+                        onWrite.run();
                         network.write('x');
                         network.write(value);
                     }
 
                     @Override
                     public void write(byte[] bytes, int offset, int length) throws IOException {
+                        onWrite.run();
                         network.write('x');
                         network.write(bytes, offset, length);
                     }

@@ -164,6 +164,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         // set internal state
         super.status(status);
         isNoEntityStatus = isNoEntityStatus(status);
+        if (outputStream != null) {
+            outputStream.status(status);
+        }
 
         // check consistency if status code should not include entity
         if (isNoEntityStatus) {
@@ -539,11 +542,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
 
         OutputStream encodedOutputStream = outputStream;
-        if (!skipEncoders) {
+        if (!skipEncoders && !isNoEntityStatus(status())) {
             encodedOutputStream = contentEncode(outputStream);
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
-        return new ApplicationOutputStream(applyStreamFilters(encodedOutputStream), bos);
+        OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
+        return applicationOutputStream == outputStream
+                ? outputStream
+                : new ApplicationOutputStream(applicationOutputStream, bos);
     }
 
     boolean keepConnectionOpen() {
@@ -590,6 +596,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private final boolean keepAlive;
         private final Supplier<String> streamResult;
         private final boolean headRequest;
+        private Status writeForbiddenStatus;
         private boolean forcedChunked;
 
         private BufferData firstBuffer;
@@ -633,6 +640,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             this.keepAlive = keepAlive;
             this.validateHeaders = validateHeaders;
             this.headRequest = request.prologue().method() == Method.HEAD;
+            Status initialStatus = status.get();
+            this.writeForbiddenStatus = isNoEntityStatus(initialStatus) ? initialStatus : null;
+        }
+
+        void status(Status status) {
+            writeForbiddenStatus = isNoEntityStatus(status) ? status : null;
         }
 
         void checkResponseHeaders() {
@@ -806,7 +819,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 // Encoder and filter finalization after an early HEAD flush must not produce content.
                 return;
             }
-            if (isNoEntityStatus(status.get())) {
+            if (writeForbiddenStatus != null) {
                 // Discard entity data buffered before the status changed and ignore empty writes.
                 return;
             }
@@ -961,8 +974,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             if (length > 0 && headRequest) {
                 throw new IllegalStateException("Cannot write response entity for a HEAD request");
             }
-            Status usedStatus = status.get();
-            if (length > 0 && isNoEntityStatus(usedStatus)) {
+            Status usedStatus = writeForbiddenStatus;
+            if (length > 0 && usedStatus != null) {
                 throw new IllegalStateException("Attempting to write data on a response with status " + usedStatus);
             }
         }
@@ -1022,16 +1035,19 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         @Override
         public void write(int b) throws IOException {
+            closingDelegate.checkWriteAllowed(1);
             delegate.write(b);
         }
 
         @Override
         public void write(byte[] b) throws IOException {
+            closingDelegate.checkWriteAllowed(b.length);
             delegate.write(b);
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
+            closingDelegate.checkWriteAllowed(len);
             delegate.write(b, off, len);
         }
 
@@ -1052,6 +1068,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         long totalBytesWritten() {
             return closingDelegate.totalBytesWritten();
+        }
+
+        void status(Status status) {
+            closingDelegate.status(status);
         }
 
         void commit() {
