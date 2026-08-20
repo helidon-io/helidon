@@ -140,7 +140,8 @@ public class MessagingEmitterObserverProvider implements InjectCodegenObserverPr
                     .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                     .type(generatedType)
                     .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                    .description("Messaging emitter service for channel {@code " + channel + "}.")
+                    .description("Messaging emitter service for channel {@code "
+                                         + MessagingExtension.escapeJavadoc(channel) + "}.")
                     .addInterface(emitterInterface(payloadType))
                     .addInterface(MessagingTypes.EMITTER_REGISTRATION)
                     .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON))

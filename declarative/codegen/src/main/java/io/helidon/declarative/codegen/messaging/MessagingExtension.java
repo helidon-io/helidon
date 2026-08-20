@@ -124,7 +124,7 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .type(generatedType)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .description("Messaging consumer registration for channel {@code " + channel + "}.")
+                .description("Messaging consumer registration for channel {@code " + escapeJavadoc(channel) + "}.")
                 .addInterface(consumerMethod.processor()
                                       ? MessagingTypes.PROCESSOR_REGISTRATION
                                       : MessagingTypes.CONSUMER_REGISTRATION)
@@ -616,6 +616,11 @@ class MessagingExtension implements RegistryCodegenExtension {
                 : messageType(roundContext, argument.typeName(), argument.originatingElementValue());
         if (argument.hasAnnotation(MessagingTypes.ENTITY)
                 || (singleParameter && messageType == null)) {
+            if (argument.typeName().primitive() && !argument.typeName().array()) {
+                dispatch.addContent("(")
+                        .addContent(argument.typeName())
+                        .addContent(") ");
+            }
             dispatch.addContent("typedMessage.entity()");
             return;
         }
@@ -1120,6 +1125,11 @@ class MessagingExtension implements RegistryCodegenExtension {
         return typeName.typeArguments().stream().allMatch(MessagingExtension::isConcretePayloadType)
                 && typeName.lowerBounds().stream().allMatch(MessagingExtension::isConcretePayloadType)
                 && typeName.upperBounds().stream().allMatch(MessagingExtension::isConcretePayloadType);
+    }
+
+    static String escapeJavadoc(String value) {
+        return value.replace("\\", "&#92;")
+                .replace("*/", "*&#47;");
     }
 
     static boolean hasUnresolvedTypeVariable(TypeName typeName) {

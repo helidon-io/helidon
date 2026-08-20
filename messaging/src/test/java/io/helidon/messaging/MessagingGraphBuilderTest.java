@@ -18,8 +18,11 @@ package io.helidon.messaging;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.GenericType;
 import org.junit.jupiter.api.Test;
@@ -427,6 +431,123 @@ class MessagingGraphBuilderTest {
         assertTrue(failure.getMessage().contains("failing-stream-source"));
         assertTrue(failure.getCause() instanceof BatchDeliveryException);
         assertSame(sourceFailure, failure.getCause().getCause());
+    }
+
+    @Test
+    void blockedStreamIterationDrainsCleanlyWithoutAdmittedWork() throws InterruptedException {
+        CountDownLatch iterationEntered = new CountDownLatch(1);
+        CountDownLatch releaseIteration = new CountDownLatch(1);
+        CountDownLatch iterationInterrupted = new CountDownLatch(1);
+        AtomicBoolean streamClosed = new AtomicBoolean();
+        AtomicReference<Throwable> closeFailure = new AtomicReference<>();
+        Iterator<String> iterator = new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                iterationEntered.countDown();
+                try {
+                    releaseIteration.await();
+                    return false;
+                } catch (InterruptedException e) {
+                    iterationInterrupted.countDown();
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+
+            @Override
+            public String next() {
+                throw new AssertionError("next must not be called while hasNext is blocked");
+            }
+        };
+        Stream<String> source = StreamSupport.stream(
+                        Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
+                        false)
+                .onClose(() -> streamClosed.set(true));
+        MessagingGraph.Builder builder = MessagingGraph.builder()
+                .executionConfig(MessagingExecutionConfig.builder()
+                                         .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT)
+                                         .build());
+        MessagingChannel<String> channel = builder.channel("blocked-stream-iteration", String.class);
+        builder.payloadSource(channel, source)
+                .payloadSink(channel, ignored -> { });
+        MessagingGraph graph = builder.build();
+        graph.start();
+        assertTrue(iterationEntered.await(5, TimeUnit.SECONDS));
+
+        Thread closeThread = Thread.ofVirtual().start(() -> runCapturing(graph::close, closeFailure));
+        try {
+            closeThread.join(TimeUnit.SECONDS.toMillis(2));
+
+            assertFalse(closeThread.isAlive(), "Graph close exceeded its shutdown timeout");
+            assertNull(closeFailure.get());
+            assertTrue(iterationInterrupted.await(5, TimeUnit.SECONDS));
+            assertTrue(streamClosed.get());
+            assertEquals(DefaultMessagingGraph.State.CLOSED, ((DefaultMessagingGraph) graph).state());
+        } finally {
+            releaseIteration.countDown();
+            closeThread.join(TimeUnit.SECONDS.toMillis(5));
+        }
+    }
+
+    @Test
+    void genuineIteratorFailureDuringDrainFailsGraphClose() throws InterruptedException {
+        IllegalStateException iteratorFailure = new IllegalStateException("iterator failed during drain");
+        CountDownLatch iterationEntered = new CountDownLatch(1);
+        CountDownLatch drainInterruptObserved = new CountDownLatch(1);
+        CountDownLatch releaseFailure = new CountDownLatch(1);
+        AtomicBoolean streamClosed = new AtomicBoolean();
+        AtomicReference<Throwable> closeFailure = new AtomicReference<>();
+        Iterator<String> iterator = new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                iterationEntered.countDown();
+                try {
+                    releaseFailure.await();
+                } catch (InterruptedException e) {
+                    drainInterruptObserved.countDown();
+                    while (true) {
+                        try {
+                            releaseFailure.await();
+                            break;
+                        } catch (InterruptedException ignored) {
+                            // Keep the interrupt status clear so the unrelated iterator failure remains distinguishable.
+                        }
+                    }
+                }
+                throw iteratorFailure;
+            }
+
+            @Override
+            public String next() {
+                throw new AssertionError("next must not be called after hasNext fails");
+            }
+        };
+        Stream<String> source = StreamSupport.stream(
+                        Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
+                        false)
+                .onClose(() -> streamClosed.set(true));
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("failing-stream-iteration", String.class);
+        builder.payloadSource(channel, source)
+                .payloadSink(channel, ignored -> { });
+        MessagingGraph graph = builder.build();
+        graph.start();
+        assertTrue(iterationEntered.await(5, TimeUnit.SECONDS));
+
+        Thread closeThread = Thread.ofVirtual().start(() -> runCapturing(graph::close, closeFailure));
+        try {
+            assertTrue(drainInterruptObserved.await(5, TimeUnit.SECONDS));
+            releaseFailure.countDown();
+            closeThread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertFalse(closeThread.isAlive());
+            assertSame(iteratorFailure, closeFailure.get());
+            assertTrue(streamClosed.get());
+            assertEquals(DefaultMessagingGraph.State.FAILED, ((DefaultMessagingGraph) graph).state());
+        } finally {
+            releaseFailure.countDown();
+            closeThread.join(TimeUnit.SECONDS.toMillis(5));
+        }
     }
 
     @Test

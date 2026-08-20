@@ -865,7 +865,7 @@ class ChannelRegistry implements MessagingRuntime {
                                                           Map<String, ConnectorProvider> providers) {
         List<OutgoingBinding> bindings = new ArrayList<>();
         for (String channel : configuredChannels(root, ConnectorConfig.OUTGOING_PREFIX)) {
-            Config channelConfig = root.get(ConnectorConfig.OUTGOING_PREFIX + channel);
+            Config channelConfig = channelConfig(root, ConnectorConfig.OUTGOING_PREFIX, channel);
             String connectorType = channelConfig.get(ConnectorConfig.CONNECTOR_ATTRIBUTE).asString().orElse(null);
             if (connectorType == null) {
                 continue;
@@ -896,7 +896,7 @@ class ChannelRegistry implements MessagingRuntime {
             Map<String, List<ConsumerRegistration>> registrations) {
         List<IncomingDescriptor> descriptors = new ArrayList<>();
         for (String channel : configuredChannels(root, ConnectorConfig.INCOMING_PREFIX)) {
-            Config channelConfig = root.get(ConnectorConfig.INCOMING_PREFIX + channel);
+            Config channelConfig = channelConfig(root, ConnectorConfig.INCOMING_PREFIX, channel);
             String connectorType = channelConfig.get(ConnectorConfig.CONNECTOR_ATTRIBUTE).asString().orElse(null);
             if (connectorType == null) {
                 continue;
@@ -1116,9 +1116,8 @@ class ChannelRegistry implements MessagingRuntime {
         }
 
         Set<String> channels = new TreeSet<>();
-        config.detach().asMap().orElse(Map.of()).keySet()
-                .stream()
-                .map(ChannelRegistry::firstSegment)
+        config.asNodeList().orElse(List.of()).stream()
+                .map(Config::name)
                 .forEach(channels::add);
         return channels;
     }
@@ -1132,7 +1131,7 @@ class ChannelRegistry implements MessagingRuntime {
         root.get("helidon.messaging.execution").detach().asMap().ifPresent(properties::putAll);
         if (channel != null) {
             Map<String, String> channelProperties = new LinkedHashMap<>();
-            root.get("helidon.messaging.channel." + channel + ".execution")
+            root.get("helidon.messaging.channel." + Config.Key.escapeName(channel) + ".execution")
                     .detach()
                     .asMap()
                     .ifPresent(channelProperties::putAll);
@@ -1143,6 +1142,10 @@ class ChannelRegistry implements MessagingRuntime {
             properties.putAll(channelProperties);
         }
         return MessagingExecutionConfig.create(Config.just(ConfigSources.create(properties)));
+    }
+
+    private static Config channelConfig(Config root, String prefix, String channel) {
+        return root.get(prefix + Config.Key.escapeName(channel));
     }
 
     private Config connectorConfig(Config root,
@@ -1163,11 +1166,6 @@ class ChannelRegistry implements MessagingRuntime {
         channelConfig.detach().asMap().ifPresent(properties::putAll);
         properties.keySet().removeIf(key -> key.equals("failure") || key.startsWith("failure."));
         return properties;
-    }
-
-    private static String firstSegment(String key) {
-        int index = key.indexOf('.');
-        return index == -1 ? key : key.substring(0, index);
     }
 
     private final class RegistryIncomingConnectorContext implements IncomingConnectorContext {

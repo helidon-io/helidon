@@ -79,6 +79,27 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
+    void testLiteralDottedChannelExecutionConfigurationMerge() {
+        Config config = yaml("""
+                helidon:
+                  messaging:
+                    execution:
+                      queue-capacity: 3
+                      max-pending-messages: 5
+                    channel:
+                      orders~1v1:
+                        execution:
+                          queue-capacity: 12
+                          max-pending-messages: 14
+                """);
+
+        MessagingExecutionConfig orders = ChannelRegistry.executionConfig(config, "orders.v1");
+
+        assertThat(orders.queueCapacity(), is(12));
+        assertThat(orders.maxPendingMessages(), is(14));
+    }
+
+    @Test
     void testChannelCannotOverrideGlobalShutdownTimeout() {
         IllegalArgumentException failure = assertThrows(
                 IllegalArgumentException.class,
@@ -95,6 +116,36 @@ class ChannelRegistryFailurePolicyTest {
                         List.of()));
 
         assertThat(failure.getMessage(), containsString("must not override global shutdown-timeout"));
+    }
+
+    @Test
+    void testLiteralDottedChannelInvokesConnectorProviders() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        ChannelRegistry registry = new ChannelRegistry(
+                List.of(),
+                yaml("""
+                        helidon:
+                          messaging:
+                            incoming:
+                              orders~1v1:
+                                connector: test-in
+                                destination: orders-v1
+                            outgoing:
+                              orders~1v1:
+                                connector: test-out
+                        """),
+                List.of(incoming, outgoing));
+        try {
+            assertThat(incoming.createdCount(), is(1));
+            assertThat(outgoing.createdCount(), is(1));
+            TestConnectorConfig connectorConfig = incoming.config("orders.v1");
+            assertThat(connectorConfig.channel(), is("orders.v1"));
+            assertThat(connectorConfig.connector(), is("test-in"));
+            assertThat(connectorConfig.properties().get("destination"), is("orders-v1"));
+        } finally {
+            registry.close();
+        }
     }
 
     @Test
