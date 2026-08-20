@@ -440,6 +440,43 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void directHandlerHeadUsesEncodedRepresentationMetadata() {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder());
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
+        DirectHandler.TransportRequest request = mock(DirectHandler.TransportRequest.class);
+        when(request.method()).thenReturn(Method.HEAD_NAME);
+        when(request.protocolVersion()).thenReturn("HTTP/1.1");
+        DirectHandlers directHandlers = DirectHandlers.builder()
+                .addHandler(DirectHandler.EventType.BAD_REQUEST,
+                            (_, _, _, _, _) -> DirectHandler.TransportResponse.builder()
+                                    .status(Status.BAD_REQUEST_400)
+                                    .entity("error")
+                                    .build())
+                .build();
+        RequestException requestException = RequestException.builder()
+                .request(request)
+                .type(DirectHandler.EventType.BAD_REQUEST)
+                .message("bad request")
+                .build();
+
+        directHandlers.handle(requestException, response, true);
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = new String(responseBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
+        assertAll(
+                () -> assertThat(responseText, containsString("HTTP/1.1 400 Bad Request\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: test\r\n")),
+                () -> assertThat(responseText, containsString("Vary: Accept-Encoding\r\n")),
+                () -> assertThat(responseText, containsString("Content-Length: 6\r\n")),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+    }
+
+    @Test
     void directHandlerNoContentRemovesContentLength() {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);

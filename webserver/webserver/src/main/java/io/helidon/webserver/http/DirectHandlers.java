@@ -135,7 +135,19 @@ public class DirectHandlers {
                 // 304 does not carry an entity, but may describe the selected representation length
                 res.send();
             } else if (headRequest) {
-                entity.ifPresent(bytes -> res.headers().contentLength(bytes.length));
+                if (res instanceof ServerResponseBase<?> responseBase) {
+                    entity.ifPresent(bytes -> responseBase.entityBeforeSend(() -> {
+                        Status responseStatus = res.status();
+                        int responseCode = responseStatus.code();
+                        if (responseStatus.family() != Status.Family.INFORMATIONAL
+                                && responseCode != Status.NO_CONTENT_204.code()
+                                && responseCode != Status.RESET_CONTENT_205.code()
+                                && responseCode != Status.NOT_MODIFIED_304.code()) {
+                            byte[] representation = responseBase.entityBytes(bytes);
+                            res.headers().contentLength(representation.length);
+                        }
+                    }));
+                }
                 res.send();
             } else {
                 // otherwise send the entity if present

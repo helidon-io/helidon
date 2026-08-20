@@ -149,7 +149,7 @@ class DirectHandlersTest {
     }
 
     @Test
-    void headSendsNoEntityAndDerivesContentLength() {
+    void headSendsNoEntityWithoutSpeculativeContentLength() {
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         ServerResponse response = mock(ServerResponse.class);
         when(response.status(any())).thenReturn(response);
@@ -177,7 +177,7 @@ class DirectHandlersTest {
 
         directHandlers.handle(requestException, request, response, true);
 
-        assertThat(responseHeaders.contentLength().orElseThrow(), is(5L));
+        assertThat(responseHeaders.contains(HeaderNames.CONTENT_LENGTH), is(false));
         verify(response).send();
         verify(response, never()).send(any(byte[].class));
     }
