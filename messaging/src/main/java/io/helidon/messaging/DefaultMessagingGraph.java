@@ -510,13 +510,13 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
     }
 
-    private CleanupResult drainIncomingConnectors(RuntimeException current, long deadline) {
+    private CleanupResult drainSources(RuntimeException current, long deadline) {
         boolean failed = false;
         for (SourceBinding source : sources.values()) {
-            if (source.incomingConnector() == null) {
+            if (!source.drainable()) {
                 continue;
             }
-            OperationResult result = invokeBounded("drain incoming connector " + source.name(),
+            OperationResult result = invokeBounded("drain messaging source " + source.name(),
                                                    deadline,
                                                    source::drain);
             current = append(current, result.failure());
@@ -792,14 +792,14 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private RuntimeException closeGracefully() {
         RuntimeException closeFailure = null;
         long drainDeadline = deadline(deliveryEngine.shutdownTimeout());
-        CleanupResult connectorDrain = drainIncomingConnectors(closeFailure, drainDeadline);
-        closeFailure = connectorDrain.failure();
-        boolean drained = !connectorDrain.failed() && awaitDrained(drainDeadline);
+        CleanupResult sourceDrain = drainSources(closeFailure, drainDeadline);
+        closeFailure = sourceDrain.failure();
+        boolean drained = !sourceDrain.failed() && awaitDrained(drainDeadline);
         closeFailure = collectSourceFailures(closeFailure);
         if (!drained || closeFailure != null) {
             transitionToForcing();
-            String message = connectorDrain.failed()
-                    ? "Messaging graph incoming connector could not be drained; forced shutdown was requested"
+            String message = sourceDrain.failed()
+                    ? "Messaging graph source could not be drained; forced shutdown was requested"
                     : !drained
                             ? "Messaging graph drain timed out after " + deliveryEngine.shutdownTimeout()
                                     + "; forced shutdown was requested"
@@ -1148,6 +1148,10 @@ final class DefaultMessagingGraph implements MessagingGraph {
         FAILED
     }
 
+    interface DrainableSource {
+        void drain();
+    }
+
     private final class SourceBinding {
         private final String name;
         private final Runnable source;
@@ -1190,6 +1194,10 @@ final class DefaultMessagingGraph implements MessagingGraph {
 
         private IncomingConnector incomingConnector() {
             return incomingConnector;
+        }
+
+        private boolean drainable() {
+            return incomingConnector != null || source instanceof DrainableSource;
         }
 
         private void start(DeliveryEngine deliveryEngine) {
@@ -1246,7 +1254,11 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
 
         private void drain() {
-            incomingConnector.drain();
+            if (incomingConnector != null) {
+                incomingConnector.drain();
+            } else {
+                ((DrainableSource) source).drain();
+            }
         }
 
         private void cancelAdmission() {

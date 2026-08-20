@@ -17,12 +17,16 @@
 package io.helidon.messaging;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -286,14 +290,17 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         return new BatchDeliveryException(batchFailure.getMessage(), batch, outcomes, batchFailure);
     }
 
-    private static final class StreamSource implements Runnable, Connector {
+    private static final class StreamSource implements Runnable, Connector, DefaultMessagingGraph.DrainableSource {
         private final Stream<?> stream;
         private final Consumer<Object> consumer;
+        private final ReentrantLock lifecycleLock = new ReentrantLock();
         private final AtomicBoolean runStarted = new AtomicBoolean();
         private final AtomicBoolean closed = new AtomicBoolean();
+        private final AtomicBoolean drainRequested = new AtomicBoolean();
         private final AtomicBoolean forceCloseRequested = new AtomicBoolean();
         private final AtomicBoolean streamClosed = new AtomicBoolean();
         private final AtomicReference<Thread> owner = new AtomicReference<>();
+        private boolean delivering;
 
         private StreamSource(Stream<?> stream, Consumer<Object> consumer) {
             this.stream = stream;
@@ -305,19 +312,54 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
             if (!runStarted.compareAndSet(false, true)) {
                 throw new IllegalStateException("Messaging stream source can only be run once");
             }
-            if (closed.get()) {
+            Thread current = Thread.currentThread();
+            if (!claimOwner(current)) {
                 return;
             }
-            Thread current = Thread.currentThread();
-            owner.set(current);
             try {
-                Iterator<?> iterator = stream.sequential().iterator();
-                while (!closed.get() && iterator.hasNext()) {
-                    consumer.accept(iterator.next());
+                Iterator<?> iterator;
+                try {
+                    iterator = stream.sequential().iterator();
+                } catch (RuntimeException e) {
+                    if (!cooperativeInterruption(e)) {
+                        throw e;
+                    }
+                    return;
+                }
+                while (!closed.get()) {
+                    boolean hasNext;
+                    try {
+                        hasNext = iterator.hasNext();
+                    } catch (RuntimeException e) {
+                        if (!cooperativeInterruption(e)) {
+                            throw e;
+                        }
+                        break;
+                    }
+                    if (!hasNext || closed.get()) {
+                        break;
+                    }
+                    Object next;
+                    try {
+                        next = iterator.next();
+                    } catch (RuntimeException e) {
+                        if (!cooperativeInterruption(e)) {
+                            throw e;
+                        }
+                        break;
+                    }
+                    if (!beginDelivery()) {
+                        break;
+                    }
+                    try {
+                        consumer.accept(next);
+                    } finally {
+                        endDelivery();
+                    }
                 }
             } finally {
                 closed.set(true);
-                owner.compareAndSet(current, null);
+                releaseOwner(current);
                 if (!forceCloseRequested.get()) {
                     closeStream();
                 }
@@ -325,23 +367,98 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         }
 
         @Override
+        public void drain() {
+            drainRequested.set(true);
+            stop(false);
+        }
+
+        @Override
         public void forceClose() {
             forceCloseRequested.set(true);
-            stop();
+            stop(true);
         }
 
         @Override
         public void close() {
-            stop();
+            stop(true);
             closeStream();
         }
 
-        private void stop() {
-            closed.set(true);
-            Thread current = owner.get();
+        private boolean claimOwner(Thread current) {
+            lifecycleLock.lock();
+            try {
+                if (closed.get()) {
+                    return false;
+                }
+                owner.set(current);
+                return true;
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        private boolean beginDelivery() {
+            lifecycleLock.lock();
+            try {
+                if (closed.get()) {
+                    return false;
+                }
+                delivering = true;
+                return true;
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        private void endDelivery() {
+            lifecycleLock.lock();
+            try {
+                delivering = false;
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        private void releaseOwner(Thread current) {
+            lifecycleLock.lock();
+            try {
+                delivering = false;
+                owner.compareAndSet(current, null);
+            } finally {
+                lifecycleLock.unlock();
+            }
+        }
+
+        private void stop(boolean interruptDelivery) {
+            Thread current;
+            lifecycleLock.lock();
+            try {
+                closed.set(true);
+                current = interruptDelivery || !delivering ? owner.get() : null;
+            } finally {
+                lifecycleLock.unlock();
+            }
             if (current != null && current != Thread.currentThread()) {
                 current.interrupt();
             }
+        }
+
+        private boolean cooperativeInterruption(RuntimeException failure) {
+            if (!drainRequested.get() || forceCloseRequested.get()) {
+                return false;
+            }
+            if (Thread.currentThread().isInterrupted()) {
+                return true;
+            }
+            Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+            Throwable cause = failure;
+            while (cause != null && visited.add(cause)) {
+                if (cause instanceof InterruptedException) {
+                    return true;
+                }
+                cause = cause.getCause();
+            }
+            return false;
         }
 
         private void closeStream() {

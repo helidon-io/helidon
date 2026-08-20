@@ -33,6 +33,9 @@ import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.messaging.ConsumerRegistration;
+import io.helidon.messaging.Message;
+import io.helidon.messaging.MessageBatch;
 import io.helidon.service.registry.Service;
 
 import org.junit.jupiter.api.Test;
@@ -222,6 +225,55 @@ class MessagingExtensionTest {
         String generatedSource = generatedSource(result, "PrimitiveConsumer__MessagingConsumer_");
         assertTrue(generatedSource.contains("return PAYLOAD_GENERIC_TYPE.rawType();"), generatedSource);
         assertTrue(generatedSource.contains("new GenericType<Integer>()"), generatedSource);
+    }
+
+    @Test
+    void generatedPrimitiveHandlerDispatchTargetsAnnotatedOverload() throws Exception {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class PrimitiveOverloadConsumer {
+                    private String invocation;
+
+                    @Messaging.ReceiveFrom("numbers")
+                    void consume(int value) {
+                        invocation = "primitive:" + value;
+                    }
+
+                    void consume(Integer value) {
+                        invocation = "boxed:" + value;
+                    }
+
+                    public String invocation() {
+                        return invocation;
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        String generatedSource = generatedSource(result, "PrimitiveOverloadConsumer__MessagingConsumer_");
+        assertTrue(generatedSource.contains("consumerInstance.consume((int) typedMessage.entity());"), generatedSource);
+
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[] {
+                result.classOutput().toUri().toURL()
+        }, getClass().getClassLoader())) {
+            Class<?> consumerType = classLoader.loadClass("com.example.PrimitiveOverloadConsumer");
+            var constructor = consumerType.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            Object consumer = constructor.newInstance();
+            ConsumerRegistration registration = (ConsumerRegistration) newRegistration(
+                    generatedClass(classLoader, result, "PrimitiveOverloadConsumer__MessagingConsumer_"),
+                    (Supplier<Object>) () -> consumer,
+                    passthroughEntryPoints());
+
+            registration.dispatch(MessageBatch.create(Message.create(42)));
+
+            assertEquals("primitive:42", invoke(consumer, "invocation"));
+        }
     }
 
     @Test
@@ -1340,6 +1392,62 @@ class MessagingExtensionTest {
                 """.formatted(channel));
 
         assertCompilationSucceeded(result);
+    }
+
+    @Test
+    void escapesChannelTextInGeneratedConsumerAndEmitterJavadocs() throws IOException {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import io.helidon.messaging.Emitter;
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class JavadocChannelService {
+                    @Service.Inject
+                    @Service.Named("orders*/x")
+                    Emitter<String> emitter;
+
+                    @Messaging.ReceiveFrom("orders*/x")
+                    void consume(String value) {
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        String consumerSource = generatedSource(result, "JavadocChannelService__MessagingConsumer_");
+        String emitterSource = generatedSource(result, "JavadocChannelService__MessagingEmitter_");
+        assertTrue(consumerSource.contains("channel {@code orders*&#47;x}."), consumerSource);
+        assertTrue(emitterSource.contains("channel {@code orders*&#47;x}."), emitterSource);
+    }
+
+    @Test
+    void escapesUnicodeEscapeSpellingInGeneratedConsumerAndEmitterJavadocs() throws IOException {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import io.helidon.messaging.Emitter;
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class UnicodeJavadocChannelService {
+                    @Service.Inject
+                    @Service.Named("\\\\u002a\\\\u002f")
+                    Emitter<String> emitter;
+
+                    @Messaging.ReceiveFrom("\\\\u002a\\\\u002f")
+                    void consume(String value) {
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        String consumerSource = generatedSource(result, "UnicodeJavadocChannelService__MessagingConsumer_");
+        String emitterSource = generatedSource(result, "UnicodeJavadocChannelService__MessagingEmitter_");
+        assertTrue(consumerSource.contains("channel {@code &#92;u002a&#92;u002f}."), consumerSource);
+        assertTrue(emitterSource.contains("channel {@code &#92;u002a&#92;u002f}."), emitterSource);
     }
 
     @Test
