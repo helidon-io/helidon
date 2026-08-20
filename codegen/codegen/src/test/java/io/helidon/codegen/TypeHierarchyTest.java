@@ -39,6 +39,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TypeHierarchyTest {
     private static final TypeName NOT_BLANK = TypeName.create("io.helidon.validation.Validation.String.NotBlank");
@@ -128,6 +129,39 @@ class TypeHierarchyTest {
                    is(TypeHierarchy.methodSignature(renamedNumberMethod)));
         assertThat(TypeHierarchy.methodSignature(numberMethod),
                    not(TypeHierarchy.methodSignature(charSequenceMethod)));
+    }
+
+    @Test
+    void hierarchyAnnotationCandidatesRejectNullArguments() {
+        TypeName annotationType = TypeName.create("io.helidon.codegen.test.Candidate");
+        TypedElementInfo method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("candidate")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .build();
+        TypeInfo type = TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test.CandidateContract"))
+                .kind(ElementKind.INTERFACE)
+                .addElementInfo(method)
+                .build();
+
+        NullPointerException nullContext = assertThrows(
+                NullPointerException.class,
+                () -> TypeHierarchy.hierarchyAnnotationCandidates(null, type, method, annotationType));
+        NullPointerException nullType = assertThrows(
+                NullPointerException.class,
+                () -> TypeHierarchy.hierarchyAnnotationCandidates(CTX, null, method, annotationType));
+        NullPointerException nullMethod = assertThrows(
+                NullPointerException.class,
+                () -> TypeHierarchy.hierarchyAnnotationCandidates(CTX, type, null, annotationType));
+        NullPointerException nullAnnotationType = assertThrows(
+                NullPointerException.class,
+                () -> TypeHierarchy.hierarchyAnnotationCandidates(CTX, type, method, null));
+
+        assertThat(nullContext.getMessage(), is("ctx is null"));
+        assertThat(nullType.getMessage(), is("type is null"));
+        assertThat(nullMethod.getMessage(), is("method is null"));
+        assertThat(nullAnnotationType.getMessage(), is("annotationType is null"));
     }
 
     @Test

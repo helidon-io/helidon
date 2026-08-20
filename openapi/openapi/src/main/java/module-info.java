@@ -16,6 +16,7 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.openapi.v30.OpenApi30VersionProvider;
 
 /**
  * Helidon common OpenAPI behavior.
@@ -30,16 +31,24 @@ module io.helidon.openapi {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.common.media.type;
+    requires transitive io.helidon.json.schema;
+    requires transitive io.helidon.service.registry;
     requires io.helidon.webserver;
 
     requires org.yaml.snakeyaml;
 
     exports io.helidon.openapi;
     exports io.helidon.openapi.spi;
+    // this is a multi-package module, as version 3.0 must be supported for backward compatibility, and we cannot extract it
+    // into its own module
+    exports io.helidon.openapi.v30;
 
     uses io.helidon.openapi.spi.OpenApiServiceProvider;
     uses io.helidon.openapi.spi.OpenApiManagerProvider;
+    uses io.helidon.openapi.spi.OpenApiVersionProvider;
 
     provides io.helidon.webserver.spi.ServerFeatureProvider
             with io.helidon.openapi.OpenApiFeatureProvider;
+    provides io.helidon.openapi.spi.OpenApiVersionProvider
+            with OpenApi30VersionProvider;
 }

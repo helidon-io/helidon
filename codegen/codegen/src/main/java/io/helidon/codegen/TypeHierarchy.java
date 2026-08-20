@@ -178,6 +178,91 @@ public final class TypeHierarchy {
     }
 
     /**
+     * Find all distinct occurrences of an annotation type on matching methods in a method's type hierarchy, grouped by
+     * the declaring method. Meta-annotations are included. Unlike
+     * {@link #hierarchyAnnotations(CodegenContext, TypeInfo, TypedElementInfo)}, this method does not apply
+     * annotation-type precedence between declarations.
+     * The provided method itself and declarations without matching candidates are excluded. The outer list contains
+     * distinct declaration multisets; each inner list preserves candidate order and multiplicity.
+     *
+     * @param ctx codegen context
+     * @param type type info owning the method
+     * @param method method element
+     * @param annotationType annotation type to find
+     * @return distinct annotation candidates grouped by declaring method
+     */
+    @Api.Internal
+    public static List<List<Annotation>> hierarchyAnnotationCandidates(CodegenContext ctx,
+                                                                       TypeInfo type,
+                                                                       TypedElementInfo method,
+                                                                       TypeName annotationType) {
+        Objects.requireNonNull(annotationType, "annotationType is null");
+        return hierarchyAnnotationCandidatesForTypes(ctx, type, method, Set.of(annotationType));
+    }
+
+    /**
+     * Find all distinct occurrences of any of the annotation types on matching methods in a method's type hierarchy,
+     * grouped by the declaring method. Meta-annotations are included. Unlike
+     * {@link #hierarchyAnnotations(CodegenContext, TypeInfo, TypedElementInfo)}, this method does not apply
+     * annotation-type precedence between declarations.
+     * The provided method itself and declarations without matching candidates are excluded. The outer list contains
+     * distinct declaration multisets; each inner list preserves candidate order and multiplicity.
+     *
+     * @param ctx codegen context
+     * @param type type info owning the method
+     * @param method method element
+     * @param annotationTypes annotation types to find
+     * @return distinct annotation candidates grouped by declaring method
+     */
+    @Api.Internal
+    public static List<List<Annotation>> hierarchyAnnotationCandidatesForTypes(CodegenContext ctx,
+                                                                               TypeInfo type,
+                                                                               TypedElementInfo method,
+                                                                               Set<TypeName> annotationTypes) {
+        Objects.requireNonNull(ctx, "ctx is null");
+        Objects.requireNonNull(type, "type is null");
+        Objects.requireNonNull(method, "method is null");
+        Set<TypeName> candidateTypes = Set.copyOf(Objects.requireNonNull(annotationTypes, "annotationTypes is null"));
+        if (method.kind() != ElementKind.METHOD) {
+            throw new CodegenException("Only method elements have hierarchy annotation candidates: " + method.kind());
+        }
+
+        List<TypedElementInfo> prototypes = new ArrayList<>();
+        Set<TypeName> processedTypes = new HashSet<>();
+        String packageName = type.typeName().packageName();
+        type.superTypeInfo().ifPresent(it -> collectInheritedMethods(
+                processedTypes,
+                prototypes,
+                it,
+                method,
+                packageName));
+        type.interfaceTypeInfo().forEach(it -> collectInheritedMethods(
+                processedTypes,
+                prototypes,
+                it,
+                method,
+                packageName));
+
+        List<List<Annotation>> result = new ArrayList<>();
+        Set<Map<Annotation, Long>> distinctCandidates = new HashSet<>();
+        for (TypedElementInfo prototype : prototypes) {
+            List<Annotation> candidates = new ArrayList<>();
+            prototype.annotations()
+                    .forEach(it -> collectAnnotationCandidates(ctx,
+                                                               candidateTypes,
+                                                               candidates,
+                                                               it,
+                                                               new HashSet<>()));
+            Map<Annotation, Long> candidateCounts = candidates.stream()
+                    .collect(Collectors.groupingBy(it -> it, Collectors.counting()));
+            if (!candidates.isEmpty() && distinctCandidates.add(candidateCounts)) {
+                result.add(List.copyOf(candidates));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    /**
      * Annotations of a parameter, taken from the full inheritance hierarchy (super type(s), interface(s).
      *
      * @param ctx            codegen context to obtain {@link io.helidon.common.types.TypeInfo} of types
@@ -554,6 +639,30 @@ public final class TypeHierarchy {
         }
 
         newAnnotations.forEach(it -> annotations.putIfAbsent(it.typeName(), it));
+    }
+
+    private static void collectAnnotationCandidates(CodegenContext ctx,
+                                                    Set<TypeName> annotationTypes,
+                                                    List<Annotation> result,
+                                                    Annotation annotation,
+                                                    Set<TypeName> path) {
+        if (!path.add(annotation.typeName())) {
+            return;
+        }
+        if (annotationTypes.contains(annotation.typeName())) {
+            result.add(annotation);
+        }
+        List<Annotation> metaAnnotations = annotation.metaAnnotations();
+        if (metaAnnotations.isEmpty()) {
+            metaAnnotations = ctx.typeInfo(annotation.typeName())
+                    .map(TypeInfo::annotations)
+                    .orElseGet(List::of);
+        }
+        metaAnnotations.forEach(it -> collectAnnotationCandidates(ctx,
+                                                                   annotationTypes,
+                                                                   result,
+                                                                   it,
+                                                                   new HashSet<>(path)));
     }
 
     private static void collectMetaAnnotations(CodegenContext ctx,

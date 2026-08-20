@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.openapi;
+
+import io.helidon.openapi.v30.OpenApiDocumentMapperSupport;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -58,7 +60,7 @@ final class SimpleOpenApiManager implements OpenApiManager<String> {
             LOGGER.log(System.Logger.Level.TRACE, "Converting OpenAPI document in YAML format");
         }
         Yaml yaml = new Yaml(YAML_DUMPER_OPTIONS);
-        Object loadedData = yaml.load(rawData);
+        Object loadedData = OpenApiDocumentMapperSupport.parseYaml(rawData);
         return yaml.dump(loadedData);
     }
 
@@ -83,7 +85,7 @@ final class SimpleOpenApiManager implements OpenApiManager<String> {
             }
         };
         Yaml yaml = new Yaml(representer, JSON_DUMPER_OPTIONS);
-        Object loadedData = yaml.load(data);
+        Object loadedData = OpenApiDocumentMapperSupport.parseYaml(data);
         return yaml.dump(loadedData);
     }
 

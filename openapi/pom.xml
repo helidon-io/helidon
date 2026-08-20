@@ -31,6 +31,8 @@
 
     <modules>
         <module>openapi</module>
+        <module>openapi-31</module>
+        <module>openapi-32</module>
     </modules>
 
     <profiles>
