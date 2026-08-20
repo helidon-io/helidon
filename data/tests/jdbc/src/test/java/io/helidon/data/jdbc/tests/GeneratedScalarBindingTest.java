@@ -58,7 +58,7 @@ class GeneratedScalarBindingTest {
         String source = generatedSource(ScalarBindingRepository.class);
 
         assertThat(source.split("bindParameter\\(jdbcStatement,", -1).length - 1, is(18));
-        assertThat(source, containsString("private static void bindParameter("));
+        assertThat(source, containsString("private void bindParameter("));
         assertThat(source, containsString("if (value == null) {"));
         assertThat(source, containsString("statement.bindNull(index, nullType);"));
         assertThat(source, containsString("statement.bind(index, value);"));
@@ -76,7 +76,7 @@ class GeneratedScalarBindingTest {
         String source = generatedSource(OverflowRepository.class);
 
         assertThat(source, containsString("if (name == null) {"));
-        assertThat(source, not(containsString("private static void bindParameter(")));
+        assertThat(source, not(containsString("private void bindParameter(")));
     }
 
     /**
@@ -91,7 +91,7 @@ class GeneratedScalarBindingTest {
         String source = generatedSource(NullableBindingCollisionRepository.class);
 
         assertThat(source.split("bindParameter2\\(jdbcStatement,", -1).length - 1, is(3));
-        assertThat(source, containsString("private static void bindParameter2("));
+        assertThat(source, containsString("private void bindParameter2("));
         assertThat(source, containsString("bindParameter2(jdbcStatement, 1, name, JDBCType.VARCHAR);"));
         assertThat(source, containsString("bindParameter2(jdbcStatement, 2, label, JDBCType.VARCHAR);"));
         assertThat(source, containsString("bindParameter2(jdbcStatement, 3, name, JDBCType.VARCHAR);"));
