@@ -143,6 +143,15 @@ class RoundContextImpl implements RoundContext {
                         it));
     }
 
+    @Override
+    public TypeHierarchyResolver typeHierarchyResolver() {
+        return ctx.typeHierarchyResolver(this::typeInfo);
+    }
+
+    Collection<ClassCode> newTypes() {
+        return newTypes.values();
+    }
+
     /**
      * Uses the declared name of a generated top level class when only its simple
      * name is available.
@@ -255,7 +264,4 @@ class RoundContextImpl implements RoundContext {
                 .build();
     }
 
-    Collection<ClassCode> newTypes() {
-        return newTypes.values();
-    }
 }

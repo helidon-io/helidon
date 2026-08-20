@@ -79,6 +79,46 @@ class JdbcMethodPlanRoundContextTest {
         assertThat(plan.explicitMapper(), is(mapperType));
     }
 
+    /**
+     * Verifies an explicit mapper can inherit its generic row mapper contract
+     * through a round visible superclass.
+     */
+    @Test
+    void acceptsAnInheritedMapperContractFromTheCurrentRound() {
+        TypeName variable = TypeName.createFromGenericDeclaration("T");
+        TypeName baseType = TypeName.create("example.GeneratedBaseMapper");
+        TypeInfo baseInfo = TypeInfo.builder()
+                .typeName(baseType)
+                .declaredType(TypeName.builder(baseType)
+                                      .addTypeParameter("T")
+                                      .addTypeArgument(variable)
+                                      .build())
+                .kind(ElementKind.CLASS)
+                .addInterfaceTypeInfo(interfaceInfo -> interfaceInfo
+                        .typeName(TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
+                                          .addTypeArgument(variable)
+                                          .build())
+                        .kind(ElementKind.INTERFACE))
+                .build();
+        TypeName mapperType = TypeName.create("example.GeneratedStringMapper");
+        TypeInfo mapperInfo = TypeInfo.builder()
+                .typeName(mapperType)
+                .kind(ElementKind.CLASS)
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .superTypeInfo(TypeInfo.builder(baseInfo)
+                                       .typeName(TypeName.builder(baseType)
+                                                         .addTypeArgument(TypeNames.STRING)
+                                                         .build())
+                                       .build())
+                .build();
+
+        JdbcMethodPlan plan = JdbcMethodPlan.create(repositoryMethod("mappedValue", TypeNames.STRING, mapperType),
+                                                    new TypesRoundContext(Map.of(mapperType, mapperInfo)));
+
+        assertThat(plan.mappingKind(), is(JdbcMethodPlan.MappingKind.EXPLICIT));
+        assertThat(plan.explicitMapper(), is(mapperType));
+    }
+
     @Test
     void reportsMissingAndBlankStatementAnnotationsAsCompleteSentences() {
         TypedElementInfo missingStatement = TypedElementInfo.builder()

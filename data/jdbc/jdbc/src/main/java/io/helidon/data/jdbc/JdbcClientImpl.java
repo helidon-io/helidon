@@ -128,11 +128,11 @@ final class JdbcClientImpl implements JdbcClient {
     private int parameterCount(String sql) {
         LruCache<String, Integer> cache = parameterCounts;
         if (!cachePolicy.cacheable(sql) || cache == null) {
-            return JdbcOperation.parameterCount(sql, JdbcLexicalProfile.PORTABLE);
+            return JdbcOperation.parameterCount(sql);
         }
         return cache.computeValue(
                         sql,
-                        () -> Optional.of(JdbcOperation.parameterCount(sql, JdbcLexicalProfile.PORTABLE)))
+                        () -> Optional.of(JdbcOperation.parameterCount(sql)))
                 .orElseThrow();
     }
 

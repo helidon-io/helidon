@@ -21,6 +21,10 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Objects;
 
+import io.helidon.data.jdbc.lexical.JdbcSqlLexicalProfile;
+import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler;
+import io.helidon.data.jdbc.lexical.JdbcSqlScanner;
+
 /**
  * Immutable execution snapshot created immediately before a terminal operation.
  *
@@ -69,23 +73,13 @@ final class JdbcOperation {
      * @return number of positional bind markers
      */
     static int parameterCount(String sql) {
-        return parameterCount(sql, JdbcLexicalProfile.PORTABLE);
-    }
-
-    /**
-     * Counts positional markers using one explicit lexical profile.
-     *
-     * @param sql SQL text to scan
-     * @param profile marker lexical profile
-     * @return number of positional bind markers
-     */
-    static int parameterCount(String sql, JdbcLexicalProfile profile) {
         Objects.requireNonNull(sql, "The SQL statement must not be null.");
-        Objects.requireNonNull(profile, "The JDBC lexical profile must not be null.");
         if (sql.isBlank()) {
             throw new IllegalArgumentException("The SQL statement must not be blank.");
         }
-        return MarkerScanner.count(sql, profile);
+        MarkerCounter counter = new MarkerCounter();
+        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, counter);
+        return counter.count;
     }
 
     /**
@@ -211,218 +205,23 @@ final class JdbcOperation {
     }
 
     /**
-     * Lexically counts positional markers without interpreting SQL grammar.
-     *
-     * <p>The selected profile controls every dialect-sensitive protected
-     * region. The scanner intentionally validates only marker lexing and leaves
-     * SQL grammar to the JDBC driver and database.</p>
+     * Counts positional marker events and rejects named marker events for the
+     * imperative JDBC client contract.
      */
-    private static final class MarkerScanner {
+    private static final class MarkerCounter implements JdbcSqlScanHandler {
 
-        private final String sql;
-        private final int length;
-        private final JdbcLexicalProfile profile;
-        private int index;
         private int count;
 
-        /**
-         * Creates a scanner positioned before the first character.
-         *
-         * @param sql SQL text
-         * @param profile marker lexical profile
-         */
-        private MarkerScanner(String sql, JdbcLexicalProfile profile) {
-            this.sql = sql;
-            this.length = sql.length();
-            this.profile = profile;
+        @Override
+        public void namedMarker(int start, int end) {
+            throw new IllegalArgumentException(
+                    "JdbcClient SQL accepts only positional '?' markers. A named marker was found for lexical "
+                            + "profile " + JdbcSqlLexicalProfile.PORTABLE + " at offset " + start + ".");
         }
 
-        /**
-         * Scans one SQL string and returns its positional marker count.
-         *
-         * @param sql SQL text
-         * @param profile marker lexical profile
-         * @return marker count
-         */
-        static int count(String sql, JdbcLexicalProfile profile) {
-            MarkerScanner scanner = new MarkerScanner(sql, profile);
-            scanner.scan();
-            return scanner.count;
-        }
-
-        private void scan() {
-            while (index < length) {
-                char current = sql.charAt(index);
-                if (current == '\'') {
-                    quoted('\'');
-                } else if (current == '"') {
-                    quoted('"');
-                } else if (current == '`' && profile.backtickIdentifiers()) {
-                    quoted('`');
-                } else if (current == '[' && profile.bracketIdentifiers()) {
-                    bracketIdentifier();
-                } else if (current == '-' && peek(1) == '-' && profile.lineComment(sql, index)) {
-                    lineComment();
-                } else if (current == '/' && peek(1) == '*') {
-                    blockComment();
-                } else if ((current == 'q' || current == 'Q')
-                        && profile.qQuotedStrings()
-                        && JdbcSqlLexicalRules.qQuoteClosingDelimiter(sql, index) != '\0') {
-                    qQuoted();
-                } else if (profile.dollarQuotedStrings() && current == '$' && dollarQuoted()) {
-                    // The helper advances past the complete dollar-quoted region.
-                } else if (current == '?') {
-                    positionalMarker();
-                } else if (current == ':') {
-                    namedMarker();
-                } else {
-                    index++;
-                }
-            }
-        }
-
-        // An escape is recognized only when the selected driver contract defines it.
-        private void positionalMarker() {
-            char next = peek(1);
-            if (next == '?' && profile.questionMarkEscape()) {
-                index += 2;
-            } else {
-                count++;
-                index++;
-            }
-        }
-
-        // Generated code rewrites named markers before reaching the client.
-        private void namedMarker() {
-            char next = peek(1);
-            // PostgreSQL casts and SQL assignment operators are not named parameters.
-            if (next == ':' || next == '=') {
-                index += 2;
-                return;
-            }
-            if (Character.isJavaIdentifierStart(next)) {
-                throw new IllegalArgumentException(
-                        "JdbcClient SQL accepts only positional '?' markers. A named marker was found for lexical "
-                                + "profile " + profile + " at offset " + index + ".");
-            }
-            index++;
-        }
-
-        // SQL escapes a delimiter by doubling it.
-        private void quoted(char delimiter) {
-            index++;
-            while (index < length) {
-                if (sql.charAt(index) == delimiter) {
-                    if (peek(1) == delimiter) {
-                        index += 2;
-                    } else {
-                        index++;
-                        return;
-                    }
-                } else {
-                    index++;
-                }
-            }
-            throw malformed("Unterminated quoted SQL region");
-        }
-
-        private void bracketIdentifier() {
-            index++;
-            while (index < length) {
-                if (sql.charAt(index) == ']') {
-                    if (peek(1) == ']') {
-                        index += 2;
-                    } else {
-                        index++;
-                        return;
-                    }
-                } else {
-                    index++;
-                }
-            }
-            throw malformed("Unterminated bracket-quoted identifier");
-        }
-
-        private void lineComment() {
-            index += 2;
-            while (index < length) {
-                char current = sql.charAt(index++);
-                if (current == '\n' || current == '\r') {
-                    return;
-                }
-            }
-        }
-
-        private void blockComment() {
-            index += 2;
-            int depth = 1;
-            while (index < length) {
-                if (sql.charAt(index) == '/' && peek(1) == '*') {
-                    if (!profile.nestedBlockComments()) {
-                        throw malformed("Nested block comment is not supported");
-                    }
-                    depth++;
-                    index += 2;
-                } else if (sql.charAt(index) == '*' && peek(1) == '/') {
-                    depth--;
-                    index += 2;
-                    if (depth == 0) {
-                        return;
-                    }
-                } else {
-                    index++;
-                }
-            }
-            throw malformed("Unterminated block comment");
-        }
-
-        private void qQuoted() {
-            char closing = JdbcSqlLexicalRules.qQuoteClosingDelimiter(sql, index);
-            index += 3;
-            while (index + 1 < length) {
-                if (sql.charAt(index) == closing && sql.charAt(index + 1) == '\'') {
-                    index += 2;
-                    return;
-                }
-                index++;
-            }
-            throw malformed("Unterminated alternative quoted string");
-        }
-
-        // A lone dollar sign is ordinary SQL text, not an opening delimiter.
-        private boolean dollarQuoted() {
-            String delimiter = JdbcSqlLexicalRules.dollarDelimiter(sql, index);
-            if (delimiter == null) {
-                return false;
-            }
-            int contentEnd = sql.indexOf(delimiter, index + delimiter.length());
-            if (contentEnd < 0) {
-                throw malformed("Unterminated dollar-quoted string");
-            }
-            index = contentEnd + delimiter.length();
-            return true;
-        }
-
-        /**
-         * Reads one character relative to the current offset.
-         *
-         * @param offset relative character offset
-         * @return character, or the NUL sentinel beyond the SQL text
-         */
-        private char peek(int offset) {
-            int target = index + offset;
-            return target < length ? sql.charAt(target) : '\0';
-        }
-
-        /**
-         * Creates a malformed-SQL diagnostic for an unterminated protected region.
-         *
-         * @param message diagnostic text
-         * @return exception to throw
-         */
-        private IllegalArgumentException malformed(String message) {
-            return new IllegalArgumentException(message + ". The lexical profile is " + profile
-                                                        + ", and the SQL offset is " + index + ".");
+        @Override
+        public void positionalMarker(int offset) {
+            count++;
         }
     }
 }

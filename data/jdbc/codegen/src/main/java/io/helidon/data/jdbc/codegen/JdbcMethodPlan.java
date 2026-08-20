@@ -17,7 +17,6 @@ package io.helidon.data.jdbc.codegen;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -493,9 +492,9 @@ final class JdbcMethodPlan {
             throw failure(method, "Mapper '" + mapperType.resolvedName()
                     + "' must not be a nonstatic nested class.");
         }
-        TypeName mapperInterface = findImplementedInterface(mapperInfo,
-                                                            JdbcPersistenceTypes.ROW_MAPPER,
-                                                            Map.of());
+        TypeName mapperInterface = roundContext.typeHierarchyResolver()
+                .resolveSupertype(mapperType, JdbcPersistenceTypes.ROW_MAPPER)
+                .orElse(null);
         if (mapperInterface == null
                 || mapperInterface.typeArguments().size() != 1
                 || !mapperInterface.typeArguments().getFirst().equals(mappedType)) {
@@ -519,44 +518,6 @@ final class JdbcMethodPlan {
                                       + component.typeName().resolvedName() + "'.");
             }
         }
-    }
-
-    /**
-     * Finds a generic interface through the mapper's interface and superclass
-     * hierarchy.
-     *
-     * @param typeInfo candidate type
-     * @param contract generic contract
-     * @param inheritedSubstitutions type substitutions inherited from the caller
-     * @return implemented interface, or {@code null}
-     */
-    private static TypeName findImplementedInterface(TypeInfo typeInfo,
-                                                     TypeName contract,
-                                                     Map<String, TypeName> inheritedSubstitutions) {
-        Map<String, TypeName> substitutions = JdbcTypeHierarchy.substitutions(typeInfo, inheritedSubstitutions);
-        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
-            TypeName resolvedType = JdbcTypeHierarchy.substitute(interfaceInfo.typeName(), substitutions);
-            if (resolvedType.genericTypeName().equals(contract)) {
-                return resolvedType;
-            }
-            // Carry the actual type into the next level so recursive substitutions do not revert to type variables.
-            TypeInfo resolvedInfo = TypeInfo.builder(interfaceInfo)
-                    .typeName(resolvedType)
-                    .build();
-            TypeName inherited = findImplementedInterface(resolvedInfo, contract, substitutions);
-            if (inherited != null) {
-                return inherited;
-            }
-        }
-        return typeInfo.superTypeInfo()
-                .map(superType -> {
-                    TypeName resolvedType = JdbcTypeHierarchy.substitute(superType.typeName(), substitutions);
-                    TypeInfo resolvedInfo = TypeInfo.builder(superType)
-                            .typeName(resolvedType)
-                            .build();
-                    return findImplementedInterface(resolvedInfo, contract, substitutions);
-                })
-                .orElse(null);
     }
 
     /**
