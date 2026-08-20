@@ -21,8 +21,6 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Enumeration;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +30,6 @@ import java.util.function.Consumer;
 import java.util.logging.Filter;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
@@ -46,6 +43,7 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.json.JsonSupport;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
+import io.helidon.logging.common.spi.LoggerLevel;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.SecureHandler;
@@ -58,8 +56,8 @@ class LogService implements HttpService {
     private static final String DEFAULT_IDLE_STRING = "%\n";
     private static final ThreadLocal<Boolean> LOG_STREAM_WRITE = new ThreadLocal<>();
 
-    private final LogManager logManager;
     private final Logger root;
+    private final LogLevelManagers logLevelManagers;
     private final Map<Object, Consumer<String>> listeners = new ConcurrentHashMap<>();
     private final AtomicBoolean logHandlingInitialized = new AtomicBoolean();
     private final boolean permitAll;
@@ -71,8 +69,8 @@ class LogService implements HttpService {
     private final Charset logStreamCharset;
 
     LogService(LogObserverConfig config) {
-        this.logManager = LogManager.getLogManager();
         this.root = Logger.getLogger("");
+        this.logLevelManagers = LogLevelManagers.create();
 
         this.permitAll = config.permitAll();
 
@@ -180,7 +178,7 @@ class LogService implements HttpService {
 
     private void unsetLoggerHandler(ServerRequest req, ServerResponse res) {
         String logger = req.path().pathParameters().first("logger").orElse("");
-        Logger.getLogger(logger).setLevel(null);
+        logLevelManagers.unsetLevel(logger);
         res.status(Status.NO_CONTENT_204).send();
     }
 
@@ -190,9 +188,8 @@ class LogService implements HttpService {
                                              req.content().inputStream(),
                                              req.headers());
 
-        Level desiredLevel = Level.parse(requestJson.stringValue("level").orElse(null));
-        Logger.getLogger(logger)
-                .setLevel(desiredLevel);
+        String desiredLevel = requestJson.stringValue("level").orElse(null);
+        logLevelManagers.setLevel(logger, desiredLevel);
 
         res.status(Status.NO_CONTENT_204).send();
     }
@@ -200,7 +197,8 @@ class LogService implements HttpService {
     private void loggerHandler(ServerRequest req, ServerResponse res) {
         String logger = req.path().pathParameters().first("logger").orElse("");
         JsonObject.Builder rootObject = JsonObject.builder();
-        logger(rootObject, logger);
+        logLevelManagers.logger(logger)
+                .ifPresent(it -> logger(rootObject, it));
 
         write(req, res, rootObject.build());
     }
@@ -217,56 +215,23 @@ class LogService implements HttpService {
     private void loggers(JsonObject.Builder rootObject) {
         JsonObject.Builder loggersJson = JsonObject.builder();
 
-        Enumeration<String> loggerNames = logManager.getLoggerNames();
-        while (loggerNames.hasMoreElements()) {
-            logger(loggersJson, loggerNames.nextElement());
-        }
+        logLevelManagers.loggers().values()
+                .forEach(logger -> logger(loggersJson, logger));
 
         rootObject.set("loggers", loggersJson.build());
     }
 
-    private void logger(JsonObject.Builder parentJson, String loggerName) {
-        Logger logger = Logger.getLogger(loggerName);
-
-        Level configuredLevel = logger.getLevel();
-        Level effectiveLevel = effectiveLevel(logger);
-
+    private void logger(JsonObject.Builder parentJson, LoggerLevel logger) {
         JsonObject.Builder loggerJson = JsonObject.builder();
-        if (configuredLevel != null) {
-            loggerJson.set("configuredLevel", configuredLevel.getName());
-        }
-        loggerJson.set("level", effectiveLevel.getName());
+        logger.configuredLevel()
+                .ifPresent(level -> loggerJson.set("configuredLevel", level));
+        loggerJson.set("level", logger.level());
 
-        parentJson.set("".equals(loggerName) ? "ROOT" : loggerName, loggerJson.build());
+        parentJson.set(logger.name(), loggerJson.build());
     }
 
     private void levels(JsonObject.Builder rootObject) {
-        rootObject.set("levels",
-                       JsonArray.createStrings(List.of(Level.OFF.getName(),
-                                                       Level.SEVERE.getName(),
-                                                       Level.WARNING.getName(),
-                                                       Level.INFO.getName(),
-                                                       Level.FINE.getName(),
-                                                       Level.FINER.getName(),
-                                                       Level.FINEST.getName())));
-    }
-
-    private Level effectiveLevel(Logger logger) {
-        Level level = logger.getLevel();
-        if (level == null) {
-            if (logger == root) {
-                // we did not get a log level for parent, just assume the default
-                return Level.INFO;
-            }
-
-            Logger parent = logger.getParent();
-            if (parent == null) {
-                return effectiveLevel(root);
-            }
-
-            return effectiveLevel(parent);
-        }
-        return level;
+        rootObject.set("levels", JsonArray.createStrings(logLevelManagers.levels()));
     }
 
     private void write(ServerRequest req, ServerResponse res, JsonObject json) {
