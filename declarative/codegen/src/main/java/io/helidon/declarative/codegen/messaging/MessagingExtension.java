@@ -124,7 +124,7 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .type(generatedType)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .description("Messaging consumer registration for channel {@code " + escapeJavadoc(channel) + "}.")
+                .description("Messaging consumer registration for channel <code>" + escapeJavadoc(channel) + "</code>.")
                 .addInterface(consumerMethod.processor()
                                       ? MessagingTypes.PROCESSOR_REGISTRATION
                                       : MessagingTypes.CONSUMER_REGISTRATION)
@@ -1128,7 +1128,12 @@ class MessagingExtension implements RegistryCodegenExtension {
     }
 
     static String escapeJavadoc(String value) {
-        return value.replace("\\", "&#92;")
+        return value.replace("&", "&amp;")
+                .replace("\\", "&#92;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("{", "&#123;")
+                .replace("}", "&#125;")
                 .replace("*/", "*&#47;");
     }
 

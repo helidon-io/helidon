@@ -39,9 +39,11 @@ import java.util.concurrent.locks.ReentrantLock;
  * One validated messaging topology and lifecycle.
  */
 final class DefaultMessagingGraph implements MessagingGraph {
+    private static final System.Logger LOGGER = System.getLogger(DefaultMessagingGraph.class.getName());
     private static final AtomicLong LIFECYCLE_SEQUENCE = new AtomicLong();
 
     private final ReentrantLock lifecycleLock = new ReentrantLock();
+    private final ThreadLocal<Boolean> lifecycleCallback = new ThreadLocal<>();
     private final DeliveryEngine deliveryEngine;
     private final Map<String, MessagingChannel<?>> channels = new LinkedHashMap<>();
     private final Map<MessagingChannel<?>, Emitter<?>> emitters = new IdentityHashMap<>();
@@ -475,11 +477,26 @@ final class DefaultMessagingGraph implements MessagingGraph {
         } finally {
             lifecycleLock.unlock();
         }
+        boolean currentGraphTask = isCurrentGraphTask();
         if (!closeOwner) {
-            awaitShutdown();
+            if (!currentGraphTask || shutdownCompletion.isDone()) {
+                awaitShutdown();
+            }
             return;
         }
 
+        if (currentGraphTask) {
+            handOffShutdown(graceful);
+            return;
+        }
+
+        RuntimeException closeFailure = finishShutdown(graceful);
+        if (closeFailure != null) {
+            throw closeFailure;
+        }
+    }
+
+    private RuntimeException finishShutdown(boolean graceful) {
         RuntimeException closeFailure = null;
         try {
             closeFailure = graceful ? closeGracefully() : closeForced(null, "Messaging graph shutdown");
@@ -505,9 +522,46 @@ final class DefaultMessagingGraph implements MessagingGraph {
                 shutdownCompletion.completeExceptionally(closeFailure);
             }
         }
-        if (closeFailure != null) {
-            throw closeFailure;
+        return closeFailure;
+    }
+
+    private void handOffShutdown(boolean graceful) {
+        RuntimeException handoffFailure;
+        try {
+            Thread.ofVirtual()
+                    .name("helidon-messaging-lifecycle-" + LIFECYCLE_SEQUENCE.incrementAndGet())
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> {
+                        RuntimeException closeFailure = finishShutdown(graceful);
+                        if (closeFailure != null) {
+                            LOGGER.log(System.Logger.Level.ERROR,
+                                       "Messaging graph shutdown failed after handoff",
+                                       closeFailure);
+                        }
+                    });
+            return;
+        } catch (RuntimeException e) {
+            handoffFailure = new MessagingException("Cannot hand off messaging graph shutdown", e);
+        } catch (Error e) {
+            handoffFailure = new MessagingException("Cannot hand off messaging graph shutdown", e);
         }
+        completeShutdown(handoffFailure);
+        throw handoffFailure;
+    }
+
+    private boolean isCurrentGraphTask() {
+        return lifecycleCallback.get() != null || deliveryEngine.isCurrentDeliveryOrSourceThread();
+    }
+
+    private void completeShutdown(RuntimeException closeFailure) {
+        lifecycleLock.lock();
+        try {
+            failure = closeFailure;
+            state = State.FAILED;
+        } finally {
+            lifecycleLock.unlock();
+        }
+        shutdownCompletion.completeExceptionally(closeFailure);
     }
 
     private CleanupResult drainSources(RuntimeException current, long deadline) {
@@ -915,7 +969,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
                     .inheritInheritableThreadLocals(false)
                     .start(() -> {
                         try {
-                            action.run();
+                            invokeLifecycleCallback(action);
                         } catch (Throwable ignored) {
                             // The force timeout already reports that cleanup did not complete within its deadline.
                         }
@@ -945,7 +999,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
                     .inheritInheritableThreadLocals(false)
                     .start(() -> {
                         try {
-                            action.run();
+                            invokeLifecycleCallback(action);
                         } catch (Throwable t) {
                             callbackFailure.set(t);
                         } finally {
@@ -986,6 +1040,15 @@ final class DefaultMessagingGraph implements MessagingGraph {
             return new OperationResult(runtimeException);
         }
         return new OperationResult(new MessagingException("Failed to " + operation, callbackThrowable));
+    }
+
+    private void invokeLifecycleCallback(Runnable action) {
+        lifecycleCallback.set(Boolean.TRUE);
+        try {
+            action.run();
+        } finally {
+            lifecycleCallback.remove();
+        }
     }
 
     private boolean transitionToFailed(Throwable cause) {

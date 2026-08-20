@@ -149,6 +149,50 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
+    void testLiteralDottedConnectorDefaultsAndChannelOverrides() {
+        TestIncomingConnector incoming = new TestIncomingConnector("acme.v1");
+        ChannelRegistry registry = new ChannelRegistry(
+                List.of(registration("inherited", ignored -> { }),
+                        registration("overridden", ignored -> { })),
+                yaml("""
+                        helidon:
+                          messaging:
+                            connector:
+                              acme~1v1:
+                                endpoint: https://default.example.test
+                                authentication:
+                                  username: connector-user
+                                  password: connector-password
+                            incoming:
+                              inherited:
+                                connector: acme.v1
+                              overridden:
+                                connector: acme.v1
+                                endpoint: https://channel.example.test
+                                authentication:
+                                  username: channel-user
+                        """),
+                List.of(incoming));
+        try {
+            assertThat(incoming.createdCount(), is(2));
+
+            TestConnectorConfig inherited = incoming.config("inherited");
+            assertThat(inherited.connector(), is("acme.v1"));
+            assertThat(inherited.properties().get("endpoint"), is("https://default.example.test"));
+            assertThat(inherited.properties().get("authentication.username"), is("connector-user"));
+            assertThat(inherited.properties().get("authentication.password"), is("connector-password"));
+
+            TestConnectorConfig overridden = incoming.config("overridden");
+            assertThat(overridden.connector(), is("acme.v1"));
+            assertThat(overridden.properties().get("endpoint"), is("https://channel.example.test"));
+            assertThat(overridden.properties().get("authentication.username"), is("channel-user"));
+            assertThat(overridden.properties().get("authentication.password"), is("connector-password"));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
     void testRepeatedTryReserveCallsShareAdmissionTimeoutBudget() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> { })),
@@ -1439,15 +1483,24 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     static final class TestIncomingConnector implements IncomingConnectorProvider {
+        private final String connectorType;
         private final Map<String, IncomingConnectorContext> contexts = new ConcurrentHashMap<>();
         private final Map<String, TestConnectorConfig> configs = new ConcurrentHashMap<>();
         private final AtomicInteger configCreated = new AtomicInteger();
         private final AtomicInteger created = new AtomicInteger();
         private final CountDownLatch anyStart = new CountDownLatch(1);
 
+        private TestIncomingConnector() {
+            this("test-in");
+        }
+
+        private TestIncomingConnector(String connectorType) {
+            this.connectorType = connectorType;
+        }
+
         @Override
         public String connectorType() {
-            return "test-in";
+            return connectorType;
         }
 
         @Override

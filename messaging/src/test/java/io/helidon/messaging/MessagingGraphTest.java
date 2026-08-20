@@ -39,6 +39,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -482,6 +483,180 @@ class MessagingGraphTest {
         awaitSuccess(admitted);
         awaitSuccess(closing);
         assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
+    }
+
+    @Test
+    void closeFromSinkHandsShutdownOffUntilTheCurrentDeliveryCompletes() throws Exception {
+        CountDownLatch closeReturned = new CountDownLatch(1);
+        CountDownLatch releaseSink = new CountDownLatch(1);
+        AtomicReference<Throwable> closeFailure = new AtomicReference<>();
+        AtomicReference<MessagingGraph> graphReference = new AtomicReference<>();
+        MessagingGraph.Builder builder = MessagingGraph.builder().executionConfig(config(SHUTDOWN_TIMEOUT));
+        MessagingChannel<String> channel = builder.channel("orders", String.class);
+        builder.payloadSink(channel, ignored -> {
+            try {
+                graphReference.get().close();
+                graphReference.get().close();
+            } catch (Throwable throwable) {
+                closeFailure.set(throwable);
+            } finally {
+                closeReturned.countDown();
+            }
+            await(releaseSink);
+        });
+        MessagingGraph graph = builder.build();
+        graphReference.set(graph);
+        graph.start();
+
+        AsyncTask delivery = async(() -> graph.emitter(channel).emit("order"));
+        await(closeReturned);
+        AsyncTask shutdownWaiter = async(graph::close);
+        try {
+            assertNull(closeFailure.get());
+            assertEquals(DefaultMessagingGraph.State.DRAINING, ((DefaultMessagingGraph) graph).state());
+            awaitWaiting(shutdownWaiter);
+            assertFalse(delivery.completion().isDone(), "Delivery completed before its sink returned");
+        } finally {
+            releaseSink.countDown();
+        }
+
+        awaitSuccess(delivery);
+        awaitSuccess(shutdownWaiter);
+        assertEquals(DefaultMessagingGraph.State.CLOSED, ((DefaultMessagingGraph) graph).state());
+        assertTrue(((DefaultMessagingGraph) graph).failure().isEmpty());
+    }
+
+    @Test
+    void closeHandsShutdownOffFromAChildDeliveryInAnotherEngine() throws Exception {
+        MessagingExecutionConfig config = config(SHUTDOWN_TIMEOUT);
+        DeliveryEngine parentEngine = engine(config, "parent");
+        DeliveryEngine childEngine = engine(config, "child");
+        DefaultMessagingGraph parentGraph = new DefaultMessagingGraph(parentEngine);
+        DefaultMessagingGraph childGraph = new DefaultMessagingGraph(childEngine);
+        parentGraph.start();
+        childGraph.start();
+        CountDownLatch closeReturned = new CountDownLatch(1);
+        CountDownLatch releaseChild = new CountDownLatch(1);
+        AtomicReference<Throwable> closeFailure = new AtomicReference<>();
+
+        AsyncTask delivery = async(() -> parentEngine.dispatch(
+                "parent",
+                MessageBatch.create(List.of(message("parent"))),
+                () -> childEngine.dispatch(
+                        "child",
+                        MessageBatch.create(List.of(message("child"))),
+                        () -> {
+                            try {
+                                parentGraph.close();
+                            } catch (Throwable throwable) {
+                                closeFailure.set(throwable);
+                            } finally {
+                                closeReturned.countDown();
+                            }
+                            await(releaseChild);
+                        })));
+        await(closeReturned);
+        AsyncTask shutdownWaiter = async(parentGraph::close);
+        try {
+            assertNull(closeFailure.get());
+            assertEquals(DefaultMessagingGraph.State.DRAINING, parentGraph.state());
+            awaitWaiting(shutdownWaiter);
+        } finally {
+            releaseChild.countDown();
+        }
+
+        awaitSuccess(delivery);
+        awaitSuccess(shutdownWaiter);
+        assertEquals(DefaultMessagingGraph.State.CLOSED, parentGraph.state());
+        assertTrue(parentGraph.failure().isEmpty());
+        childGraph.close();
+    }
+
+    @Test
+    void closeFromSourceHandsShutdownOffUntilTheSourceReturns() throws Exception {
+        CountDownLatch closeReturned = new CountDownLatch(1);
+        CountDownLatch drainRequested = new CountDownLatch(1);
+        CountDownLatch releaseSource = new CountDownLatch(1);
+        AtomicReference<Throwable> closeFailure = new AtomicReference<>();
+        AtomicReference<DefaultMessagingGraph> graphReference = new AtomicReference<>();
+        IncomingConnector source = new IncomingConnector() {
+            @Override
+            public void run(IncomingConnectorContext context) {
+                if (!context.awaitRunning()) {
+                    return;
+                }
+                try {
+                    graphReference.get().close();
+                    graphReference.get().close();
+                } catch (Throwable throwable) {
+                    closeFailure.set(throwable);
+                } finally {
+                    closeReturned.countDown();
+                }
+                await(releaseSource);
+            }
+
+            @Override
+            public void drain() {
+                drainRequested.countDown();
+            }
+
+            @Override
+            public void forceClose() {
+                releaseSource.countDown();
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
+        graphReference.set(graph);
+        graph.addIncomingConnector("source", source);
+        graph.start();
+
+        await(closeReturned);
+        await(drainRequested);
+        AsyncTask shutdownWaiter = async(graph::close);
+        try {
+            assertNull(closeFailure.get());
+            assertEquals(DefaultMessagingGraph.State.DRAINING, graph.state());
+            awaitWaiting(shutdownWaiter);
+        } finally {
+            releaseSource.countDown();
+        }
+
+        awaitSuccess(shutdownWaiter);
+        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
+        assertTrue(graph.failure().isEmpty());
+    }
+
+    @Test
+    void connectorCloseCanReenterGraphClose() {
+        AtomicInteger connectorCloseCalls = new AtomicInteger();
+        AtomicReference<DefaultMessagingGraph> graphReference = new AtomicReference<>();
+        Connector connector = new Connector() {
+            @Override
+            public void forceClose() {
+            }
+
+            @Override
+            public void close() {
+                connectorCloseCalls.incrementAndGet();
+                graphReference.get().close();
+                graphReference.get().close();
+            }
+        };
+        DefaultMessagingGraph graph = graph(config(Duration.ofMillis(100)));
+        graphReference.set(graph);
+        graph.addBinding(connector);
+        graph.start();
+
+        graph.close();
+
+        assertEquals(1, connectorCloseCalls.get());
+        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
+        assertTrue(graph.failure().isEmpty());
     }
 
     @Test
