@@ -96,13 +96,17 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         return http2Supported.get(ck).isPresent();
     }
 
+    void markSupported(ConnectionKey connectionKey) {
+        http2Supported.put(connectionKey, true);
+    }
+
     void remove(ClientConnectionTarget connectionTarget, Http2ClientConnectionHandler expectedHandler) {
         cacheLock.lock();
         try {
             if (cache.remove(connectionTarget, expectedHandler)) {
                 insertionOrder.remove(connectionTarget, expectedHandler);
                 removeLookupHandler(connectionTarget, expectedHandler);
-                http2Supported.remove(connectionTarget.connectionKey());
+                removeSupportIfUnused(connectionTarget.connectionKey());
             }
         } finally {
             cacheLock.unlock();
@@ -140,7 +144,7 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                     handler.release();
                 }
                 if (result != null) {
-                    http2Supported.put(result.connectionTarget().connectionKey(), true);
+                    markSupported(result.connectionTarget().connectionKey());
                     return result;
                 }
             }
@@ -293,9 +297,18 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2
                 && (request.connection().isEmpty()
                         || Http2ClientConnectionHandler.ownsExplicitConnection(request))) {
-            http2Supported.put(connectionTarget.connectionKey(), true);
+            markSupported(connectionTarget.connectionKey());
         }
         return result;
+    }
+
+    private void removeSupportIfUnused(ConnectionKey connectionKey) {
+        for (ClientConnectionTarget cachedTarget : cache.keySet()) {
+            if (connectionKey.equals(cachedTarget.connectionKey())) {
+                return;
+            }
+        }
+        http2Supported.remove(connectionKey);
     }
 
     private void removeLookupHandler(ClientConnectionTarget connectionTarget,

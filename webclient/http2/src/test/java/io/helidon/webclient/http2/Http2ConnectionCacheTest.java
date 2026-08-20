@@ -28,6 +28,7 @@ import java.util.function.IntFunction;
 import io.helidon.common.context.Context;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientConnectionTarget;
@@ -124,6 +125,103 @@ class Http2ConnectionCacheTest {
     void rejectsNonPositiveConnectionCacheSize() {
         assertThrows(IllegalArgumentException.class, () -> new Http2ClientConnectionHandler(0));
         assertThrows(IllegalArgumentException.class, () -> new Http2ClientConnectionHandler(-1));
+    }
+
+    @Test
+    void removingOneTargetRetainsSharedHttp2Support() {
+        Tls tls = Tls.builder().enabled(false).build();
+        Proxy proxy = Proxy.noProxy();
+        DnsResolver dnsResolver = (_, _) -> InetAddress.getLoopbackAddress();
+        ConnectionKey connectionKey = ConnectionKey.create("http",
+                                                           "target.example",
+                                                           80,
+                                                           tls,
+                                                           dnsResolver,
+                                                           DnsAddressLookup.IPV4,
+                                                           proxy);
+        ClientUri initialUri = ClientUri.create(URI.create("http://target.example"));
+        ClientRequestHeaders firstTargetHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        firstTargetHeaders.set(HeaderNames.HOST, "first.example");
+        ClientRequestHeaders secondTargetHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        secondTargetHeaders.set(HeaderNames.HOST, "second.example");
+        ClientConnectionTarget firstTarget = ClientConnectionTarget.create(connectionKey,
+                                                                            initialUri,
+                                                                            firstTargetHeaders);
+        ClientConnectionTarget secondTarget = ClientConnectionTarget.create(connectionKey,
+                                                                             initialUri,
+                                                                             secondTargetHeaders);
+        ClientRequestHeaders requestHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        ClientRequestHeaders fallbackHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        ClientRequestHeaders serviceHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        Http2ClientImpl http2Client = mock(Http2ClientImpl.class);
+        Http1Client http1Client = mock(Http1Client.class);
+        Http1ClientRequest fallbackRequest = mock(Http1ClientRequest.class, Answers.RETURNS_SELF);
+        Http1ClientResponse fallbackResponse = mock(Http1ClientResponse.class);
+        Http2ClientRequestImpl request = mock(Http2ClientRequestImpl.class);
+        WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
+
+        when(http2Client.clientConfig()).thenReturn(Http2ClientConfig.create());
+        when(http2Client.protocolConfig()).thenReturn(Http2ClientProtocolConfig.create());
+        when(http2Client.http1FallbackClient()).thenReturn(http1Client);
+        when(http1Client.method(Method.GET)).thenReturn(fallbackRequest);
+        when(fallbackRequest.headers()).thenReturn(fallbackHeaders);
+        when(fallbackRequest.upgrade("h2c")).thenReturn(UpgradeResponse.failure(fallbackResponse));
+        when(request.connection()).thenReturn(Optional.empty());
+        when(request.tcpProtocolIds()).thenReturn(List.of(Http1Client.PROTOCOL_ID));
+        when(request.tls()).thenReturn(tls);
+        when(request.proxy()).thenReturn(proxy);
+        when(request.method()).thenReturn(Method.GET);
+        when(request.headers()).thenReturn(requestHeaders);
+        when(request.properties()).thenReturn(Map.of());
+        when(request.address()).thenReturn(Optional.empty());
+        when(request.sni()).thenReturn(Optional.empty());
+        when(request.sendExpectContinue()).thenReturn(Optional.empty());
+        when(serviceRequest.context()).thenReturn(Context.create());
+        when(serviceRequest.headers()).thenReturn(serviceHeaders);
+
+        Http1FallbackHandler fallbackHandler = new Http1FallbackHandler(new CompletableFuture<>(),
+                                                                        _ -> fallbackResponse,
+                                                                        true);
+        Http2ConnectionCache cache = Http2ConnectionCache.create();
+        try {
+            Http2ClientConnectionHandler firstHandler = cache.newStream(http2Client,
+                                                                         firstTarget,
+                                                                         request,
+                                                                         initialUri,
+                                                                         serviceRequest,
+                                                                         fallbackHandler)
+                    .handler();
+            Http2ClientConnectionHandler secondHandler = cache.newStream(http2Client,
+                                                                          secondTarget,
+                                                                          request,
+                                                                          initialUri,
+                                                                          serviceRequest,
+                                                                          fallbackHandler)
+                    .handler();
+            cache.markSupported(connectionKey);
+
+            assertThat(firstTarget, not(secondTarget));
+            assertThat(firstHandler, not(sameInstance(secondHandler)));
+            assertThat(cache.supports(connectionKey), is(true));
+
+            cache.remove(firstTarget, firstHandler);
+
+            assertThat(cache.supports(connectionKey), is(true));
+            assertThat(cache.newStream(http2Client,
+                                       secondTarget,
+                                       request,
+                                       initialUri,
+                                       serviceRequest,
+                                       fallbackHandler)
+                               .handler(),
+                       sameInstance(secondHandler));
+
+            cache.remove(secondTarget, secondHandler);
+
+            assertThat(cache.supports(connectionKey), is(false));
+        } finally {
+            cache.closeResource();
+        }
     }
 
     @Test
