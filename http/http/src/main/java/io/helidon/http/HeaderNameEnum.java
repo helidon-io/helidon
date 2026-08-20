@@ -32,6 +32,7 @@ enum HeaderNameEnum implements HeaderName {
     ACCEPT_ENCODING(Strings.ACCEPT_ENCODING_NAME),
     ACCEPT_LANGUAGE(Strings.ACCEPT_LANGUAGE_NAME),
     ACCEPT_DATETIME(Strings.ACCEPT_DATETIME_NAME),
+    ACCEPT_QUERY(Strings.ACCEPT_QUERY_NAME),
     ACCESS_CONTROL_ALLOW_CREDENTIALS(Strings.ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME),
     ACCESS_CONTROL_ALLOW_HEADERS(Strings.ACCESS_CONTROL_ALLOW_HEADERS_NAME),
     ACCESS_CONTROL_ALLOW_METHODS(Strings.ACCESS_CONTROL_ALLOW_METHODS_NAME),
@@ -167,6 +168,7 @@ enum HeaderNameEnum implements HeaderName {
         static final String ACCEPT_ENCODING_NAME = "Accept-Encoding";
         static final String ACCEPT_LANGUAGE_NAME = "Accept-Language";
         static final String ACCEPT_DATETIME_NAME = "Accept-Datetime";
+        static final String ACCEPT_QUERY_NAME = "Accept-Query";
         static final String ACCESS_CONTROL_ALLOW_CREDENTIALS_NAME = "Access-Control-Allow-Credentials";
         static final String ACCESS_CONTROL_ALLOW_HEADERS_NAME = "Access-Control-Allow-Headers";
         static final String ACCESS_CONTROL_ALLOW_METHODS_NAME = "Access-Control-Allow-Methods";

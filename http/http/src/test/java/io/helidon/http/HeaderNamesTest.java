@@ -135,6 +135,18 @@ class HeaderNamesTest {
     }
 
     @Test
+    void testAcceptQueryHeaderName() {
+        HeaderName acceptQuery = HeaderNames.ACCEPT_QUERY;
+
+        assertAll(
+                () -> assertThat(HeaderNames.ACCEPT_QUERY_NAME, is("Accept-Query")),
+                () -> assertThat(acceptQuery.defaultCase(), is("Accept-Query")),
+                () -> assertThat(acceptQuery.lowerCase(), is("accept-query")),
+                () -> assertThat(HeaderNames.create("Accept-Query"), equalTo(acceptQuery))
+        );
+    }
+
+    @Test
     void testAllConstantsHaveStringAndHeaderName() throws Exception {
         Map<String, String> stringConstantValues = new HashMap<>();
         Map<String, String> headerNameConstantValues = new HashMap<>();

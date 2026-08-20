@@ -36,16 +36,19 @@ class RedirectionProcessor {
             && status.family() == Status.Family.REDIRECTION;
     }
 
-    static boolean keepsMethodAndEntity(Status status) {
-        return status == Status.TEMPORARY_REDIRECT_307
-                || status == Status.PERMANENT_REDIRECT_308;
+    static boolean keepsMethodAndEntity(Method method, Status status) {
+        if (status == Status.TEMPORARY_REDIRECT_307
+                || status == Status.PERMANENT_REDIRECT_308) {
+            return true;
+        }
+        return method == Method.QUERY && status != Status.SEE_OTHER_303;
     }
 
     static void validateEntityRedirect(Http1ClientRequestImpl request,
                                        Status status,
                                        ClientUri redirectUri,
                                        byte[] entity) {
-        if (keepsMethodAndEntity(status)
+        if (keepsMethodAndEntity(request.method(), status)
                 && entity.length > 0
                 && !request.canReplayEntityTo(redirectUri)) {
             throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
@@ -99,7 +102,7 @@ class RedirectionProcessor {
                 }
                 //Method and entity is required to be the same as with original request with 307 and 308 requests
                 validateEntityRedirect(clientRequest, clientResponse.status(), redirectUri, entityToBeSent);
-                if (keepsMethodAndEntity(clientResponse.status())) {
+                if (keepsMethodAndEntity(clientRequest.method(), clientResponse.status())) {
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                clientRequest.method(),
                                                                redirectUri,

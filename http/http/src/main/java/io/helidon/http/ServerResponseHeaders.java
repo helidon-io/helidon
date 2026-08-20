@@ -71,6 +71,23 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
     }
 
     /**
+     * Adds one or more acceptedTypes query document formats
+     * (header {@link HeaderNames#ACCEPT_QUERY}).
+     *
+     * @param acceptableMediaTypes media types to add.
+     * @return this instance
+     */
+    default ServerResponseHeaders addAcceptQueries(MediaType... acceptableMediaTypes) {
+        String[] values = new String[acceptableMediaTypes.length];
+        for (int i = 0; i < acceptableMediaTypes.length; i++) {
+            MediaType acceptableMediaType = acceptableMediaTypes[i];
+            values[i] = acceptableMediaType.text();
+        }
+        return add(HeaderValues.create(HeaderNames.ACCEPT_QUERY,
+                                       values));
+    }
+
+    /**
      * Adds {@code Set-Cookie} header specified in <a href="https://tools.ietf.org/html/rfc6265">RFC6265</a>.
      *
      * @param cookie a cookie definition

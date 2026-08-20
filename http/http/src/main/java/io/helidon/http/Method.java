@@ -69,6 +69,11 @@ public final class Method {
      * {@value} method name.
      */
     public static final String CONNECT_NAME = "CONNECT";
+    /**
+     * {@value} method name.
+     */
+    public static final String QUERY_NAME = "QUERY";
+
 
     /**
      * The GET method means retrieve whatever information (in the form of an entity) is identified by the Request-URI.
@@ -141,6 +146,14 @@ public final class Method {
      * The HTTP CONNECT method starts two-way communications with the requested resource. It can be used to open a tunnel.
      */
     public static final Method CONNECT = new Method(CONNECT_NAME, true);
+
+    /**
+     * The HTTP QUERY method as described on RFC 10008 is used to perform a safe, idempotent request with a body.
+     * This is in contrast with GET, which does not define a body, and POST, which is not considered safe or idempotent.
+     * The response to a QUERY request should not have any side effects on the server, and it should return the requested
+     * information in the response body.
+     */
+    public static final Method QUERY = new Method(QUERY_NAME, true);
 
     static {
         // THIS MUST BE AFTER THE LAST CONSTANT
@@ -255,6 +268,46 @@ public final class Method {
      */
     public int length() {
         return length;
+    }
+
+    /**
+     * Whether this method is safe (see RFC 9110 Section 9.2.1).
+     *
+     * @return {@code true} if safe
+     */
+    public boolean isSafe() {
+        return this.equals(GET)
+                || this.equals(HEAD)
+                || this.equals(OPTIONS)
+                || this.equals(TRACE)
+                || this.equals(QUERY);
+    }
+
+    /**
+     * Whether this method is idempotent (see RFC 9110 Section 9.2.2).
+     *
+     * @return {@code true} if idempotent
+     */
+    public boolean isIdempotent() {
+        return this.equals(GET)
+                || this.equals(HEAD)
+                || this.equals(OPTIONS)
+                || this.equals(TRACE)
+                || this.equals(PUT)
+                || this.equals(DELETE)
+                || this.equals(QUERY);
+    }
+
+    /**
+     * Whether this method is cacheable (see RFC 9110 Section 9.2.3 and RFC 10008 Section 2.7).
+     *
+     * @return {@code true} if cacheable
+     */
+    public boolean isCacheable() {
+        return this.equals(GET)
+                || this.equals(HEAD)
+                || this.equals(POST)
+                || this.equals(QUERY);
     }
 
     @Override
