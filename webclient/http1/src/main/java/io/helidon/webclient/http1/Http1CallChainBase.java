@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -407,16 +408,35 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         @Override
         public int read(byte[] b, int off, int len) {
+            Objects.checkFromIndexSize(off, len, b.length);
+            if (len == 0) {
+                return 0;
+            }
             if (finished) {
                 return -1;
             }
-            int maxRemaining = maxRemaining(len);
-            ensureBuffer(maxRemaining);
-            if (finished || currentBuffer == null) {
+            if (remainingLength == 0) {
+                completeEntity();
                 return -1;
             }
-            int read = currentBuffer.read(b, off, len);
+            int maxRemaining = maxRemaining(len);
+            int read;
+            if (currentBuffer != null && !currentBuffer.consumed()) {
+                read = currentBuffer.read(b, off, maxRemaining);
+            } else {
+                currentBuffer = null;
+                read = reader.read(b, off, maxRemaining);
+                if (read < 0) {
+                    throw new DataReader.InsufficientDataAvailableException();
+                }
+                if (read > 0 && recvListener.enabled()) {
+                    recvListener.data(socket, BufferData.createReadOnly(b, off, read));
+                }
+            }
             remainingLength -= read;
+            if (remainingLength == 0) {
+                completeEntity();
+            }
             return read;
         }
 
@@ -426,10 +446,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         private void ensureBuffer(int estimate) {
             if (remainingLength == 0) {
-                entityProcessedRunnable.run();
-                // we have fully read the entity
-                finished = true;
-                currentBuffer = null;
+                completeEntity();
                 return;
             }
 
@@ -448,6 +465,13 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             } else {
                 recvListener.data(socket, currentBuffer);
             }
+        }
+
+        private void completeEntity() {
+            entityProcessedRunnable.run();
+            // we have fully read the entity
+            finished = true;
+            currentBuffer = null;
         }
     }
 

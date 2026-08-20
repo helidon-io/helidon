@@ -16,6 +16,8 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -149,6 +151,25 @@ class Http1ClientTest {
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.headers(), noHeader(HeaderNames.CONNECTION));
         assertThat(response.entity().as(String.class), is("Sending Something"));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void testInputStreamReadsExactContentLengthAndReleasesConnection() throws IOException {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(false);
+        String content = "Sending Something";
+        byte[] expected = content.getBytes(StandardCharsets.UTF_8);
+
+        Http1ClientResponse response = client.put("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .submit(content);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.headers(), noHeader(HeaderNames.CONNECTION));
+        try (response; InputStream input = response.inputStream()) {
+            assertThat(input.readNBytes(expected.length), is(expected));
+        }
         assertThat(connection.releaseCount(), is(1));
         assertThat(connection.closeCount(), is(0));
     }

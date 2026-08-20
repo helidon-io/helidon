@@ -137,6 +137,7 @@ public class TcpClientConnection implements ClientConnection {
         }
 
 
+        PlainSocket connectedSocket;
         if (tls.enabled()) {
             SSLSocket sslSocket = tls.createSocket(tcpProtocolIds, socket, targetAddress);
             try {
@@ -152,12 +153,13 @@ public class TcpClientConnection implements ClientConnection {
             if (LOGGER.isLoggable(TRACE)) {
                 debugTls(sslSocket, channelId);
             }
-            this.helidonSocket = TlsSocket.client(sslSocket, channelId);
+            connectedSocket = TlsSocket.client(sslSocket, channelId);
         } else {
-            this.helidonSocket = PlainSocket.client(socket, channelId);
+            connectedSocket = PlainSocket.client(socket, channelId);
         }
 
-        this.reader = DataReader.create(helidonSocket);
+        this.helidonSocket = connectedSocket;
+        this.reader = DataReader.create(connectedSocket, connectedSocket::read);
         int writeBufferSize = webClient.prototype().writeBufferSize();
         this.writer = new BufferedDataWriter(helidonSocket, writeBufferSize);
 
