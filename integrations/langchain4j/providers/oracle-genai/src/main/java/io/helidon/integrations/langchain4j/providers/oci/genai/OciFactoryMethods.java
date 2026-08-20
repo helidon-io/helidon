@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,16 +30,12 @@ final class OciFactoryMethods {
     }
 
     @Prototype.ConfigFactoryMethod("region")
-    static Region createRegion(io.helidon.common.config.Config config) {
-        return config.asString()
-                .map(Region::fromRegionCodeOrId)
-                .get();
+    static Region createRegion(String region) {
+        return Region.fromRegionCodeOrId(region);
     }
 
     @Prototype.ConfigFactoryMethod("servingType")
-    static ServingMode.ServingType createServingType(io.helidon.common.config.Config config) {
-        return config.asString()
-                .map(ServingMode.ServingType::create)
-                .get();
+    static ServingMode.ServingType createServingType(String servingType) {
+        return ServingMode.ServingType.create(servingType);
     }
 }

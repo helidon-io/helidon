@@ -19,7 +19,6 @@ package io.helidon.integrations.oci;
 import java.net.URI;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.Config;
 
 import com.oracle.bmc.Region;
 
@@ -37,9 +36,7 @@ final class OciConfigSupport {
     }
 
     @Prototype.ConfigFactoryMethod("region")
-    static Region createRegion(Config config) {
-        return config.asString()
-                .map(Region::fromRegionCodeOrId)
-                .get();
+    static Region createRegion(String region) {
+        return Region.fromRegionCodeOrId(region);
     }
 }
