@@ -18,6 +18,7 @@ package io.helidon.json.tests;
 
 import java.io.ByteArrayOutputStream;
 
+import io.helidon.common.GenericType;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonBinding;
@@ -49,6 +50,11 @@ final class SmileBindingSupport {
     }
 
     public static <T> T deserializeSmile(JsonBinding jsonBinding, byte[] data, Class<T> type) {
+        JsonParser parser = SmileParser.create(data);
+        return jsonBinding.deserialize(parser, type);
+    }
+
+    public static <T> T deserializeSmile(JsonBinding jsonBinding, byte[] data, GenericType<T> type) {
         JsonParser parser = SmileParser.create(data);
         return jsonBinding.deserialize(parser, type);
     }

@@ -24,6 +24,7 @@ import java.util.List;
  */
 public abstract class JsonParserBase implements JsonParser {
 
+    private BigIntegerExpansionBudget bigIntegerExpansionBudget;
     private int nestingDepth;
 
     /**
@@ -196,6 +197,15 @@ public abstract class JsonParserBase implements JsonParser {
      */
     final void exitStructure() {
         nestingDepth--;
+    }
+
+    final BigIntegerExpansionBudget bigIntegerExpansionBudget() {
+        BigIntegerExpansionBudget budget = bigIntegerExpansionBudget;
+        if (budget == null) {
+            budget = new BigIntegerExpansionBudget();
+            bigIntegerExpansionBudget = budget;
+        }
+        return budget;
     }
 
 }

@@ -30,6 +30,7 @@ import java.util.Arrays;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonDecodingException;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonNumber;
@@ -40,6 +41,8 @@ import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
 import io.helidon.json.Parsers;
 
+import static io.helidon.json.JsonParserSupport.createJsonNumber;
+import static io.helidon.json.JsonParserSupport.toBigInteger;
 import static io.helidon.json.Parsers.translateHex;
 
 /**
@@ -780,11 +783,11 @@ final class SmileInputStreamParser extends JsonParserBase {
         } else if (b == (SmileConstants.TOKEN_BIG_INT & 0xFF)) {
             number = JsonNumber.create(new BigDecimal(decodeBigInteger()));
         } else if (b == (SmileConstants.TOKEN_BIG_DEC & 0xFF)) {
-            number = JsonNumber.create(decodeBigDecimal());
+            number = createJsonNumber(this, decodeBigDecimal());
         } else if (b == (SmileConstants.TOKEN_FLOAT32 & 0xFF)) {
-            number = JsonNumber.create(decodeFloat());
+            number = createJsonNumber(this, decodeFloat());
         } else if (b == (SmileConstants.TOKEN_FLOAT64 & 0xFF)) {
-            number = JsonNumber.create(decodeDouble());
+            number = createJsonNumber(this, decodeDouble());
         } else {
             throw createException("Unsupported numeric value");
         }
@@ -1067,7 +1070,7 @@ final class SmileInputStreamParser extends JsonParserBase {
         } else if (b >= (SmileConstants.VALUE_SMALL_INT_MIN & 0xFF) && b <= (SmileConstants.VALUE_SMALL_INT_MAX & 0xFF)) {
             toReturn = BigInteger.valueOf(zigzagDecodeInt(b & 0x1F));
         } else if (b == (SmileConstants.TOKEN_BIG_DEC & 0xFF)) {
-            toReturn = decodeBigDecimal().toBigInteger();
+            toReturn = toBigInteger(this, decodeBigDecimal());
         } else if (b == (SmileConstants.TOKEN_FLOAT64 & 0xFF)) {
             toReturn = BigInteger.valueOf((long) decodeDouble());
         } else if (b == (SmileConstants.TOKEN_FLOAT32 & 0xFF)) {
@@ -1430,11 +1433,11 @@ final class SmileInputStreamParser extends JsonParserBase {
 
     @Override
     public JsonException createException(String message) {
-        return new JsonException(message + " (stream position ~" + currentIndex + ")");
+        return new JsonDecodingException(message + " (stream position ~" + currentIndex + ")");
     }
 
     public JsonException createException(String message, java.lang.Exception e) {
-        return new JsonException(message + " (stream position ~" + currentIndex + ")", e);
+        return new JsonDecodingException(message + " (stream position ~" + currentIndex + ")", e);
     }
 
     // -----------------------------------------------------------------------

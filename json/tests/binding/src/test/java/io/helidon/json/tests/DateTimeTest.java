@@ -16,12 +16,13 @@
 
 package io.helidon.json.tests;
 
+import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.Duration;
 import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -36,23 +37,95 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 import io.helidon.common.GenericType;
+import io.helidon.json.JsonDecodingException;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
 public class DateTimeTest {
+
+    private static final String OUT_OF_RANGE_DATE_TIME = "+999999999-12-31T23:59:59Z";
+    private static final List<Class<?>> DATE_TIME_TYPES = List.of(LocalDate.class,
+                                                                 LocalTime.class,
+                                                                 LocalDateTime.class,
+                                                                 OffsetDateTime.class,
+                                                                 ZonedDateTime.class,
+                                                                 Instant.class,
+                                                                 Period.class,
+                                                                 Duration.class,
+                                                                 Date.class,
+                                                                 Calendar.class,
+                                                                 GregorianCalendar.class);
+    private static final List<Class<?>> LEGACY_DATE_TIME_TYPES = List.of(Date.class,
+                                                                        Calendar.class,
+                                                                        GregorianCalendar.class);
 
     private final JsonBinding jsonBinding;
 
     DateTimeTest(JsonBinding jsonBinding) {
         this.jsonBinding = jsonBinding;
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testMalformedDateTimeParameterized(BindingMethod bindingMethod) {
+        for (Class<?> type : DATE_TIME_TYPES) {
+            JsonDecodingException exception = assertThrows(JsonDecodingException.class,
+                                                            () -> bindingMethod.deserialize(jsonBinding,
+                                                                                            "\"invalid\"",
+                                                                                            type),
+                                                            type.getName());
+            assertMalformedDateTimeException(exception, type);
+        }
+    }
+
+    @Test
+    public void testMalformedDateTimeSmile() {
+        byte[] invalid = SmileBindingSupport.serializeSmile(jsonBinding, "invalid");
+        for (Class<?> type : DATE_TIME_TYPES) {
+            JsonDecodingException exception = assertThrows(JsonDecodingException.class,
+                                                            () -> SmileBindingSupport.deserializeSmile(jsonBinding,
+                                                                                                         invalid,
+                                                                                                         type),
+                                                            type.getName());
+            assertMalformedDateTimeException(exception, type);
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    public void testOutOfRangeLegacyDateTimeParameterized(BindingMethod bindingMethod) {
+        String json = "\"" + OUT_OF_RANGE_DATE_TIME + "\"";
+        for (Class<?> type : LEGACY_DATE_TIME_TYPES) {
+            JsonDecodingException exception = assertThrows(JsonDecodingException.class,
+                                                            () -> bindingMethod.deserialize(jsonBinding, json, type),
+                                                            type.getName());
+            assertOutOfRangeDateTimeException(exception, type);
+        }
+    }
+
+    @Test
+    public void testOutOfRangeLegacyDateTimeSmile() {
+        byte[] invalid = SmileBindingSupport.serializeSmile(jsonBinding, OUT_OF_RANGE_DATE_TIME);
+        for (Class<?> type : LEGACY_DATE_TIME_TYPES) {
+            JsonDecodingException exception = assertThrows(JsonDecodingException.class,
+                                                            () -> SmileBindingSupport.deserializeSmile(jsonBinding,
+                                                                                                         invalid,
+                                                                                                         type),
+                                                            type.getName());
+            assertOutOfRangeDateTimeException(exception, type);
+        }
     }
 
     @ParameterizedTest
@@ -247,6 +320,16 @@ public class DateTimeTest {
         assertThat(deserialized.optionalInstant, is(model.optionalInstant));
         assertThat(deserialized.optionalPeriod.isEmpty(), is(true));
         assertThat(deserialized.optionalDuration, is(model.optionalDuration));
+    }
+
+    private static void assertMalformedDateTimeException(JsonDecodingException exception, Class<?> type) {
+        assertThat(exception.getMessage(), startsWith("Invalid " + type.getSimpleName() + " value"));
+        assertThat(exception.getCause(), instanceOf(DateTimeException.class));
+    }
+
+    private static void assertOutOfRangeDateTimeException(JsonDecodingException exception, Class<?> type) {
+        assertThat(exception.getMessage(), startsWith("Invalid " + type.getSimpleName() + " value"));
+        assertThat(exception.getCause(), instanceOf(IllegalArgumentException.class));
     }
 
     @Json.Entity

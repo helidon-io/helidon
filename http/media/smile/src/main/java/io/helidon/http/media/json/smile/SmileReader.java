@@ -22,7 +22,10 @@ import java.io.UncheckedIOException;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.http.media.EntityReaderBase;
+import io.helidon.json.JsonDecodingException;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.smile.SmileParser;
 
@@ -36,7 +39,11 @@ class SmileReader<T> extends EntityReaderBase<T> {
 
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers headers) {
-        return read(type, stream);
+        try {
+            return read(type, stream);
+        } catch (JsonDecodingException e) {
+            throw new HttpException("Failed to deserialize Smile request entity", Status.BAD_REQUEST_400, e);
+        }
     }
 
     @Override

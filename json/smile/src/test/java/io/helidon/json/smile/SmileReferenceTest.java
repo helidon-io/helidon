@@ -149,11 +149,16 @@ class SmileReferenceTest {
 
     @Test
     public void testBigDecimalReference() {
-        BigDecimal testValue = new BigDecimal("12345678901234567890.1234567890");
-        byte[] jacksonBytes = generateJacksonSmileBytes(gen -> gen.writeNumber(testValue));
-        byte[] helidonBytes = generateHelidonSmileBytes(gen -> gen.write(testValue));
+        for (String literal : new String[] {"12345678901234567890.1234567890",
+                                            "1E+100000", "-1E+100000",
+                                            "1E+100001", "-1E+100001"}) {
+            BigDecimal testValue = new BigDecimal(literal);
+            byte[] jacksonBytes = generateJacksonSmileBytes(gen -> gen.writeNumber(testValue));
+            byte[] helidonBytes = generateHelidonSmileBytes(gen -> gen.write(testValue));
 
-        assertThat("BigDecimal encoding should match Jackson", Arrays.equals(jacksonBytes, helidonBytes), is(true));
+            assertThat("BigDecimal encoding should match Jackson for " + literal,
+                       helidonBytes, is(jacksonBytes));
+        }
     }
 
     /*

@@ -70,7 +70,7 @@ public interface JsonParser {
     static JsonParser create(byte[] json) {
         Objects.requireNonNull(json);
         if (json.length == 0) {
-            throw new JsonException("Empty byte array provided");
+            throw new JsonDecodingException("Empty byte array provided");
         }
         JsonParserArray parser = new JsonParserArray(json);
         if (WHITESPACE_CHARS[json[0] & 0xff]) {
@@ -97,7 +97,7 @@ public interface JsonParser {
             throw new JsonException("Invalid start/length: start="
                                             + start + ", length=" + length + ", array length=" + json.length);
         } else if (length == 0) {
-            throw new JsonException("Empty byte array provided");
+            throw new JsonDecodingException("Empty byte array provided");
         }
         JsonParserArray parser = new JsonParserArray(json, start, length);
         if (WHITESPACE_CHARS[json[start] & 0xff]) {
@@ -272,7 +272,8 @@ public interface JsonParser {
      * Reads a JSON number value from the current position.
      * <p>
      * This method expects the next token to be a number and returns
-     * the parsed numeric value.
+     * the parsed numeric value. Numbers returned by built-in parsers retain their originating parser's cumulative
+     * BigInteger expansion budget described by {@link #readBigInteger()}.
      * </p>
      *
      * @return the parsed JsonNumber
@@ -401,8 +402,14 @@ public interface JsonParser {
 
     /**
      * Reads a numeric value as {@link BigInteger}.
+     * <p>
+     * For a nonzero value with a negative scale, a conversion may introduce at most 4,096 trailing decimal digits.
+     * Built-in parsers permit at most 65,536 such digits cumulatively over the parser lifetime. This aggregate budget
+     * is monotonic; marking, clearing a mark, or resetting to a mark does not restore it.
+     * </p>
      *
      * @return the big integer value
+     * @throws JsonException if parsing fails or the conversion exceeds either expansion budget
      */
     BigInteger readBigInteger();
 
@@ -445,6 +452,7 @@ public interface JsonParser {
 
     /**
      * Create a JsonException with the given message.
+     * Built-in parsers return {@link JsonDecodingException} to identify failures caused by JSON input.
      *
      * @param message the exception message
      * @return a JsonException
@@ -453,6 +461,7 @@ public interface JsonParser {
 
     /**
      * Create a JsonException with the given message and cause.
+     * Built-in parsers return {@link JsonDecodingException} to identify failures caused by JSON input.
      *
      * @param message the exception message
      * @param e the cause

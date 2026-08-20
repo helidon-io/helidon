@@ -95,7 +95,7 @@ public final class Parsers {
     static int translateHex(byte b) {
         int val = HEX_DIGITS[b & 0xFF];
         if (val == -1) {
-            throw new JsonException("Invalid hex digit found");
+            throw new JsonDecodingException("Invalid hex digit found");
         }
         return val;
     }
@@ -156,7 +156,7 @@ public final class Parsers {
                 return decodeEscapedJsonString(buffer, start, end);
             }
             if (isControlCharacter(b)) {
-                throw new JsonException("Unescaped control character in JSON string");
+                throw new JsonDecodingException("Unescaped control character in JSON string");
             }
         }
         return decodeUtf8Strict(buffer, start, length);
@@ -172,16 +172,16 @@ public final class Parsers {
             if (current == '\\') {
                 if (segmentStart < i) {
                     if (expectLowSurrogate) {
-                        throw new JsonException("Low surrogate must follow the high surrogate.");
+                        throw new JsonDecodingException("Low surrogate must follow the high surrogate.");
                     }
                     builder.append(decodeUtf8Strict(buffer, segmentStart, i - segmentStart));
                 }
                 if (++i == end) {
-                    throw new JsonException("Incomplete escaped JSON string");
+                    throw new JsonDecodingException("Incomplete escaped JSON string");
                 }
                 byte escaped = buffer[i];
                 if (expectLowSurrogate && escaped != 'u') {
-                    throw new JsonException("Low surrogate must follow the high surrogate.");
+                    throw new JsonDecodingException("Low surrogate must follow the high surrogate.");
                 }
                 char decoded = switch (escaped) {
                     case '\\', '"', '/' -> (char) escaped;
@@ -192,7 +192,7 @@ public final class Parsers {
                     case 't' -> '\t';
                     case 'u' -> {
                         if (i + 4 >= end) {
-                            throw new JsonException("Incomplete escaped JSON string");
+                            throw new JsonDecodingException("Incomplete escaped JSON string");
                         }
                         char ch = (char) (
                                 (translateHex(buffer[++i]) << 12)
@@ -201,37 +201,37 @@ public final class Parsers {
                                         + translateHex(buffer[++i]));
                         if (Character.isHighSurrogate(ch)) {
                             if (expectLowSurrogate) {
-                                throw new JsonException("A high surrogate must always be followed by a low surrogate");
+                                throw new JsonDecodingException("A high surrogate must always be followed by a low surrogate");
                             }
                             expectLowSurrogate = true;
                         } else if (Character.isLowSurrogate(ch)) {
                             if (!expectLowSurrogate) {
-                                throw new JsonException("A low surrogate must always follow a high surrogate");
+                                throw new JsonDecodingException("A low surrogate must always follow a high surrogate");
                             }
                             expectLowSurrogate = false;
                         } else if (expectLowSurrogate) {
-                            throw new JsonException("Low surrogate must follow the high surrogate.");
+                            throw new JsonDecodingException("Low surrogate must follow the high surrogate.");
                         }
                         yield ch;
                     }
-                    default -> throw new JsonException("Invalid escaped value");
+                    default -> throw new JsonDecodingException("Invalid escaped value");
                 };
                 builder.append(decoded);
                 segmentStart = i + 1;
                 continue;
             }
             if (isControlCharacter(current)) {
-                throw new JsonException("Unescaped control character in JSON string");
+                throw new JsonDecodingException("Unescaped control character in JSON string");
             }
         }
 
         if (segmentStart < end) {
             if (expectLowSurrogate) {
-                throw new JsonException("Low surrogate must follow the high surrogate.");
+                throw new JsonDecodingException("Low surrogate must follow the high surrogate.");
             }
             builder.append(decodeUtf8Strict(buffer, segmentStart, end - segmentStart));
         } else if (expectLowSurrogate) {
-            throw new JsonException("Low surrogate must follow the high surrogate.");
+            throw new JsonDecodingException("Low surrogate must follow the high surrogate.");
         }
 
         return builder.toString();
@@ -246,7 +246,7 @@ public final class Parsers {
                     .decode(ByteBuffer.wrap(buffer, start, length))
                     .toString();
         } catch (CharacterCodingException e) {
-            throw new JsonException("Invalid UTF-8 sequence in JSON string", e);
+            throw new JsonDecodingException("Invalid UTF-8 sequence in JSON string", e);
         }
     }
 

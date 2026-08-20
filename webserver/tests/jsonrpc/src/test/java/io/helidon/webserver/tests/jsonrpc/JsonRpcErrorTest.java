@@ -15,10 +15,13 @@
  */
 package io.helidon.webserver.tests.jsonrpc;
 
+import java.math.BigDecimal;
+
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Status;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.jsonrpc.JsonRpcClient;
@@ -28,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 
 @ServerTest
 class JsonRpcErrorTest extends JsonRpcBaseTest {
@@ -92,6 +96,27 @@ class JsonRpcErrorTest extends JsonRpcBaseTest {
             assertThat(object.intValue("id").orElseThrow(), is(1));
             JsonObject error = object.objectValue("error").orElseThrow();
             assertThat(error.intValue("code").orElseThrow(), is(JsonRpcError.METHOD_NOT_FOUND));
+        }
+    }
+
+    @Test
+    void testInvalidMethodWithLargeExponentId() {
+        for (String id : new String[] {"1e100000", "-1e100000",
+                                       "1e2147483647", "-1e2147483647",
+                                       "1e2147483648", "-1e2147483648"}) {
+            String request = MACHINE_START.replace("start", "badMethod")
+                    .replace("\"id\": 1", "\"id\": " + id);
+            try (var res = client().post("/rpc/machine")
+                    .contentType(MediaTypes.APPLICATION_JSON)
+                    .submit(request)) {
+                assertThat(res.status(), is(Status.OK_200));
+                String response = res.entity().as(String.class);
+                assertThat(response.length(), lessThan(1_000));
+                JsonObject object = JsonParser.create(response).readJsonObject();
+                assertThat(object.numberValue("id").orElseThrow(), is(new BigDecimal(id)));
+                JsonObject error = object.objectValue("error").orElseThrow();
+                assertThat(error.intValue("code").orElseThrow(), is(JsonRpcError.METHOD_NOT_FOUND));
+            }
         }
     }
 

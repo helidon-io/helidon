@@ -105,6 +105,6 @@ class BinaryValueTest {
     @EnumSource(ParserMethod.class)
     public void testReadBinaryRejectsInvalidBase64(ParserMethod parserMethod) {
         JsonParser parser = parserMethod.createParser("\"not-base64***\"");
-        assertThrows(IllegalArgumentException.class, parser::readBinary);
+        assertThrows(JsonDecodingException.class, parser::readBinary);
     }
 }

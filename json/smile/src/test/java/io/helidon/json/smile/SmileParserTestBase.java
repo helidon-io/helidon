@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -210,6 +211,126 @@ abstract class SmileParserTestBase {
     }
 
     @Test
+    public void testParseBigIntegerAtExpansionLimit() throws Exception {
+        BigInteger magnitude = BigInteger.TEN.pow(4_096);
+        for (String literal : new String[] {"1E+4096", "-1E+4096"}) {
+            byte[] smileData = generateSmileBytes(gen -> gen.write(new BigDecimal(literal)));
+            JsonParser parser = createParser(smileData);
+            BigInteger expected = literal.startsWith("-") ? magnitude.negate() : magnitude;
+
+            assertThat(parser.readBigInteger(), is(expected));
+            assertThat(parser.hasNext(), is(false));
+        }
+    }
+
+    @Test
+    public void testRejectExcessiveBigIntegerExpansion() throws Exception {
+        for (String literal : new String[] {"1E+4097", "-1E+4097",
+                                            "1E+2147483648", "-1E+2147483648"}) {
+            byte[] smileData = generateSmileBytes(gen -> gen.write(new BigDecimal(literal)));
+            JsonParser parser = createParser(smileData);
+
+            assertThrows(JsonException.class, parser::readBigInteger);
+        }
+    }
+
+    @Test
+    public void testAggregateBigIntegerExpansionBudget() throws Exception {
+        BigDecimal value = new BigDecimal("1E+4096");
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            for (int i = 0; i < 17; i++) {
+                gen.write(value);
+            }
+            gen.writeArrayEnd();
+        });
+        JsonParser parser = createParser(smileData);
+
+        assertThat(parser.nextToken(), is((byte) '1'));
+        for (int i = 0; i < 16; i++) {
+            assertThat(parser.readBigInteger(), is(expected));
+            assertThat(parser.nextToken(), is((byte) ','));
+            assertThat(parser.nextToken(), is((byte) '1'));
+        }
+        JsonException exception = assertThrows(JsonException.class, parser::readBigInteger);
+        assertThat(exception.getMessage(), containsString("65536"));
+
+        JsonParser freshParser = createParser(smileData);
+        assertThat(freshParser.nextToken(), is((byte) '1'));
+        assertThat(freshParser.readBigInteger(), is(expected));
+    }
+
+    @Test
+    public void testFloatingPointJsonNumbersRetainAggregateBigIntegerExpansionBudget() throws Exception {
+        byte[][] values = {
+                generateSmileBytes(gen -> gen.write(Float.MAX_VALUE)),
+                generateSmileBytes(gen -> gen.write(Double.MAX_VALUE))
+        };
+        for (byte[] smileData : values) {
+            JsonNumber number = createParser(smileData).readJsonNumber();
+            int expansion = -number.bigDecimalValue().scale();
+            assertThat(expansion, greaterThan(0));
+
+            int conversions = 65_536 / expansion;
+            for (int i = 0; i < conversions; i++) {
+                number.bigIntegerValue();
+            }
+            JsonException exception = assertThrows(JsonException.class, number::bigIntegerValue);
+            assertThat(exception.getMessage(), containsString("65536"));
+        }
+    }
+
+    @Test
+    public void testParsedTreeSharesAggregateBigIntegerExpansionBudget() throws Exception {
+        BigDecimal value = new BigDecimal("1E+4096");
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            for (int i = 0; i < 17; i++) {
+                gen.write(value);
+            }
+            gen.writeArrayEnd();
+        });
+        JsonArray array = createParser(smileData).readJsonArray();
+
+        for (int i = 0; i < 16; i++) {
+            assertThat(array.get(i).orElseThrow().asNumber().bigIntegerValue(), is(expected));
+        }
+        JsonException exception = assertThrows(JsonException.class,
+                                               () -> array.get(16).orElseThrow().asNumber().bigIntegerValue());
+        assertThat(exception.getMessage(), containsString("65536"));
+
+        JsonArray freshArray = createParser(smileData).readJsonArray();
+        assertThat(freshArray.get(0).orElseThrow().asNumber().bigIntegerValue(), is(expected));
+    }
+
+    @Test
+    public void testMarkAndResetDoesNotRestoreBigIntegerExpansionBudget() throws Exception {
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        byte[] smileData = generateSmileBytes(gen -> gen.write(new BigDecimal("1E+4096")));
+        JsonParser parser = createParser(smileData);
+
+        for (int i = 0; i < 16; i++) {
+            parser.mark();
+            assertThat(parser.readBigInteger(), is(expected));
+            parser.resetToMark();
+        }
+        JsonException exception = assertThrows(JsonException.class, parser::readBigInteger);
+        assertThat(exception.getMessage(), containsString("65536"));
+    }
+
+    @Test
+    public void testParseBigDecimalWithoutIntegerDigitsAsBigInteger() throws Exception {
+        BigDecimal value = new BigDecimal(BigInteger.ONE, Integer.MAX_VALUE);
+        byte[] smileData = generateSmileBytes(gen -> gen.write(value));
+        JsonParser parser = createParser(smileData);
+
+        assertThat(parser.readBigInteger(), is(BigInteger.ZERO));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
     public void testParseBigDecimal() throws Exception {
         BigDecimal testValue = new BigDecimal("1234567890.12345");
         byte[] smileData = generateSmileBytes(gen -> gen.write(testValue));
@@ -223,15 +344,18 @@ abstract class SmileParserTestBase {
 
     @Test
     public void testParseNegativeScaleBigDecimal() throws Exception {
-        BigDecimal testValue = new BigDecimal("1E+3");
-        byte[] smileData = generateSmileBytes(gen -> gen.write(testValue));
-        JsonParser parser = createParser(smileData);
+        for (String literal : new String[] {"1E+3", "1E+2147483647", "-1E+2147483647",
+                                            "1E+2147483648", "-1E+2147483648"}) {
+            BigDecimal testValue = new BigDecimal(literal);
+            byte[] smileData = generateSmileBytes(gen -> gen.write(testValue));
+            JsonParser parser = createParser(smileData);
 
-        BigDecimal result = parser.readBigDecimal();
+            BigDecimal result = parser.readBigDecimal();
 
-        assertThat(result, is(testValue));
-        assertThat(result.scale(), is(testValue.scale()));
-        assertThat(parser.hasNext(), is(false));
+            assertThat(result, is(testValue));
+            assertThat(result.scale(), is(testValue.scale()));
+            assertThat(parser.hasNext(), is(false));
+        }
     }
 
     @Test

@@ -21,7 +21,7 @@ import java.math.BigInteger;
 import java.util.Base64;
 import java.util.Set;
 
-class JsonValueParser implements JsonParser {
+class JsonValueParser extends JsonParserBase {
 
     private JsonValue[] values = new JsonValue[100];
     private JsonValue[] replay = new JsonValue[10];
@@ -217,7 +217,7 @@ class JsonValueParser implements JsonParser {
 
     @Override
     public BigInteger readBigInteger() {
-        return current.asNumber().bigDecimalValue().toBigInteger();
+        return current.asNumber().bigIntegerValue(this);
     }
 
     @Override
@@ -228,7 +228,11 @@ class JsonValueParser implements JsonParser {
     @Override
     public byte[] readBinary() {
         String value = current.asString().value();
-        return Base64.getDecoder().decode(value);
+        try {
+            return Base64.getDecoder().decode(value);
+        } catch (IllegalArgumentException e) {
+            throw createException("Invalid Base64 value", e);
+        }
     }
 
     @Override
@@ -280,12 +284,12 @@ class JsonValueParser implements JsonParser {
 
     @Override
     public JsonException createException(String message) {
-        return new JsonException(message);
+        return new JsonDecodingException(message);
     }
 
     @Override
     public JsonException createException(String message, Exception e) {
-        return new JsonException(message, e);
+        return new JsonDecodingException(message, e);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package io.helidon.json.binding.converters;
 
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
@@ -50,7 +51,12 @@ class ZonedDateTimeConverter implements JsonConverter<ZonedDateTime> {
     @Override
     public ZonedDateTime deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
-            return ZonedDateTime.parse(parser.readString());
+            String value = parser.readString();
+            try {
+                return ZonedDateTime.parse(value);
+            } catch (DateTimeParseException e) {
+                throw parser.createException("Invalid ZonedDateTime value", e);
+            }
         }
         throw parser.createException("Only the string format of the ZonedDateTime is supported");
     }

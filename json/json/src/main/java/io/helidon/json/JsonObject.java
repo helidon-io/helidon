@@ -399,6 +399,8 @@ public final class JsonObject extends JsonValue {
      *
      * @param key the key to look up
      * @return an Optional containing the BigInteger value, or empty if the key is not present
+     * @throws JsonException if the conversion exceeds the limits documented by
+     *         {@link JsonNumber#bigIntegerValue()}
      */
     public Optional<BigInteger> bigIntegerValue(String key) {
         JsonValue jsonValue = valueForKey(key);
@@ -414,6 +416,8 @@ public final class JsonObject extends JsonValue {
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present
      * @return the BigInteger value associated with the key, or the default value
+     * @throws JsonException if the conversion exceeds the limits documented by
+     *         {@link JsonNumber#bigIntegerValue()}
      */
     public BigInteger bigIntegerValue(String key, BigInteger defaultValue) {
         JsonValue jsonValue = valueForKey(key);
