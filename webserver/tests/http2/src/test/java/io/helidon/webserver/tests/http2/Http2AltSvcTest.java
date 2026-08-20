@@ -226,7 +226,7 @@ class Http2AltSvcTest {
     void shouldEndNoContentStatusesSelectedByBeforeSendWithHeaders(Http2TestClient testClient) {
         assertHeaderOnlyResponse(testClient, "/before-send-204", Status.NO_CONTENT_204, null, true);
         assertHeaderOnlyResponse(testClient, "/before-send-205", Status.RESET_CONTENT_205, "0", true);
-        assertHeaderOnlyResponse(testClient, "/before-send-304", Status.NOT_MODIFIED_304, "4", true);
+        assertHeaderOnlyResponse(testClient, "/before-send-304", Status.NOT_MODIFIED_304, null, true);
         assertHeaderOnlyResponse(testClient, "/before-send-100", Status.INTERNAL_SERVER_ERROR_500, "0", false);
     }
 

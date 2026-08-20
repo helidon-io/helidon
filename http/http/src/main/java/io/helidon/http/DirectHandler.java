@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -253,6 +253,8 @@ public interface DirectHandler {
 
         /**
          * Configured headers.
+         * The transport may replace or remove {@code Content-Length} to match the final response representation
+         * and status.
          *
          * @return headers
          */
@@ -308,6 +310,8 @@ public interface DirectHandler {
 
             /**
              * Set headers.
+             * The transport may replace or remove {@code Content-Length} to match the final response representation
+             * and status.
              *
              * @param headers headers to use
              * @return updated builder
@@ -320,6 +324,8 @@ public interface DirectHandler {
             /**
              * Set a header (if exists, it would be replaced).
              * Keep alive header is ignored, please use {@link #keepAlive(boolean)}.
+             * The transport may replace or remove {@code Content-Length} to match the final response representation
+             * and status.
              *
              * @param name name of the header
              * @param values value of the header
@@ -333,6 +339,8 @@ public interface DirectHandler {
             /**
              * Set a header (if exists, it would be replaced).
              * Keep alive header is ignored, please use {@link #keepAlive(boolean)}.
+             * The transport may replace or remove {@code Content-Length} to match the final response representation
+             * and status.
              *
              * @param header header value
              * @return updated builder
@@ -355,7 +363,9 @@ public interface DirectHandler {
 
             /**
              * Custom entity. Uses the content, reads it as {@code UTF-8}, configures
-             * {@code Content-Length} header, configures {@code Content-Type} header to {@code text/plain}.
+             * an initial {@code Content-Length} header for a non-empty entity, and configures
+             * {@code Content-Type} header to {@code text/plain}.
+             * The transport determines the final content length.
              * <p>
              * Use {@link #entity(byte[])} for custom encoding.
              * <p>
@@ -370,8 +380,8 @@ public interface DirectHandler {
             }
 
             /**
-             * Custom entity. Uses the content, configures
-             * {@code Content-Length} header.
+             * Custom entity. Uses the content and configures an initial {@code Content-Length} header
+             * for a non-empty entity. The transport determines the final content length.
              * <p>
              * Use {@link #entity(String)} for simple text messages.
              *

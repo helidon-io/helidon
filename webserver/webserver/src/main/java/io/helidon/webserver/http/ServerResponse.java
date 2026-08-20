@@ -119,6 +119,8 @@ public interface ServerResponse {
 
     /**
      * Send a response with no entity.
+     * Use this method for a {@link io.helidon.http.Method#HEAD HEAD} response after configuring the representation
+     * metadata in the response headers.
      */
     void send();
 
@@ -126,6 +128,7 @@ public interface ServerResponse {
      * Send a byte array response.
      *
      * @param bytes bytes to send
+     * @throws IllegalStateException if non-empty bytes are sent for a {@link io.helidon.http.Method#HEAD HEAD} request
      */
     void send(byte[] bytes);
 
@@ -135,6 +138,7 @@ public interface ServerResponse {
      * @param bytes bytes to send
      * @param position starting position
      * @param length number of bytes send
+     * @throws IllegalStateException if a positive length is sent for a {@link io.helidon.http.Method#HEAD HEAD} request
      */
     default void send(byte[] bytes, int position, int length) {
         send(Arrays.copyOfRange(bytes, position, length));
@@ -144,6 +148,8 @@ public interface ServerResponse {
      * Send an entity, a {@link io.helidon.http.media.MediaContext} will be used to serialize the entity.
      *
      * @param entity entity object
+     * @throws IllegalStateException if serialization writes a non-empty entity for a
+     *                               {@link io.helidon.http.Method#HEAD HEAD} request
      */
     void send(Object entity);
 
@@ -151,6 +157,8 @@ public interface ServerResponse {
      * Send an entity if present, throw {@link io.helidon.http.NotFoundException} if empty.
      *
      * @param entity entity as an optional
+     * @throws IllegalStateException if serialization writes a non-empty entity for a
+     *                               {@link io.helidon.http.Method#HEAD HEAD} request
      */
     default void send(Optional<?> entity) {
         send(entity.orElseThrow(() -> new NotFoundException("")));
@@ -184,6 +192,8 @@ public interface ServerResponse {
      * <p>
      * Configure response status and headers before requesting the output stream. The returned stream completes the
      * response when it is closed, so it must be closed before the handler method returns.
+     * Writing non-empty data to the stream for a {@link io.helidon.http.Method#HEAD HEAD} request throws an
+     * {@link IllegalStateException}.
      *
      * @return output stream
      */
@@ -200,6 +210,9 @@ public interface ServerResponse {
      * Executed right before the first byte is written to the socket (including response status and headers).
      * Response can be modified (i.e. headers, status) at this point, though modifying the entity may not be done, as
      * this method is most likely called from within one of the {@link #send()} methods.
+     * Changing the response status is supported only if the new status has the same response entity semantics.
+     * For example, changing between an entity-bearing status and a status without an entity may leave response framing
+     * inconsistent and break the response.
      * The listener remains registered if error handling replaces the unsent response entity.
      * <p>
      * Note: this method is implemented as a default method that does nothing, for backward compatibility.

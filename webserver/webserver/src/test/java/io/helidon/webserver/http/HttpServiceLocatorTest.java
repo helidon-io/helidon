@@ -37,6 +37,7 @@ import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webserver.ConnectionContext;
@@ -907,6 +908,7 @@ class HttpServiceLocatorTest {
             when(response.reset()).thenReturn(true);
             when(response.resetEntity()).thenReturn(true);
             when(response.status()).thenReturn(Status.OK_200);
+            when(response.headers()).thenReturn(ServerResponseHeaders.create());
             doAnswer(inv -> {
                 entity.set("");
                 return null;

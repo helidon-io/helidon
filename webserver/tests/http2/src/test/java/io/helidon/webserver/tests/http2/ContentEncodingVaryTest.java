@@ -114,7 +114,7 @@ class ContentEncodingVaryTest {
                 .request()) {
             assertThat(response.status(), is(Status.NOT_MODIFIED_304));
             assertThat(response.headers(), noHeader(HeaderNames.CONTENT_ENCODING));
-            assertThat(response.entity().as(byte[].class).length, is(0));
+            assertThat(response.entity().hasEntity(), is(false));
 
             var varyValues = response.headers().values(HeaderNames.VARY);
             assertThat("Vary response header " + varyValues,

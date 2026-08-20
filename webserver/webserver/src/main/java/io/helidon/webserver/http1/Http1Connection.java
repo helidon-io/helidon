@@ -49,6 +49,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.HtmlEncoder;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
@@ -225,7 +226,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                     }
                                     LimitAlgorithm.Outcome outcome = limit.tryAcquireOutcome(true);
                                     if (outcome.disposition() != LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
-                                        throw tooManyConcurrentRequests();
+                                        throw tooManyConcurrentRequests(prologue, headers);
                                     }
                                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
                                     LimitAlgorithm.Token permit = accepted.token();
@@ -294,7 +295,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         throw e;
                     }
                 } else {
-                    throw tooManyConcurrentRequests();
+                    throw tooManyConcurrentRequests(prologue, headers);
                 }
             }
         } catch (CloseConnectionException e) {
@@ -370,12 +371,13 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         upgradeConnection.handle(limit);
     }
 
-    private RequestException tooManyConcurrentRequests() {
+    private RequestException tooManyConcurrentRequests(HttpPrologue prologue, WritableHeaders<?> headers) {
         ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
         return RequestException.builder()
                 .setKeepAlive(false)
                 .status(Status.SERVICE_UNAVAILABLE_503)
                 .type(EventType.OTHER)
+                .request(DirectTransportRequest.create(prologue, headers))
                 .message("Too Many Concurrent Requests")
                 .build();
     }
@@ -849,16 +851,28 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         // we are escaping the connection loop, the connection will be closed
         headers.set(HeaderValues.CONNECTION_CLOSE);
 
-        byte[] entity = response.entity().orElse(BufferData.EMPTY_BYTES);
-        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
+        var responseEntity = response.entity();
+        byte[] responseEntityBytes = responseEntity.orElse(BufferData.EMPTY_BYTES);
+        Status status = response.status();
+        boolean noEntityResponse = Http1ServerResponse.isNoEntityStatus(status);
+        boolean headRequest = Method.HEAD_NAME.equals(e.request().method());
+        boolean preserveHeadContentLength = headRequest && responseEntity.isEmpty();
+        byte[] entity = noEntityResponse || headRequest
+                ? BufferData.EMPTY_BYTES
+                : responseEntityBytes;
+        if (noEntityResponse) {
+            Http1ServerResponse.normalizeNoEntityHeaders(headers, status);
+        } else if (!preserveHeadContentLength) {
+            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(responseEntityBytes.length)));
+        }
 
-        Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive(),
+        Http1ServerResponse.nonEntityBytes(headers, status, buffer, response.keepAlive(),
                                            http1Config.validateResponseHeaders());
         if (entity.length != 0) {
             buffer.write(entity);
         }
 
-        sendListener.status(ctx, response.status());
+        sendListener.status(ctx, status);
         sendListener.headers(ctx, headers);
         sendListener.data(ctx, buffer);
         try {
@@ -867,7 +881,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             throw new ServerConnectionException("Failed to write request exception", writeException);
         }
 
-        if (response.status() == Status.INTERNAL_SERVER_ERROR_500) {
+        if (status == Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", e);
         }
     }
