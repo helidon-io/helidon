@@ -210,6 +210,9 @@ public interface ServerResponse {
      * Executed right before the first byte is written to the socket (including response status and headers).
      * Response can be modified (i.e. headers, status) at this point, though modifying the entity may not be done, as
      * this method is most likely called from within one of the {@link #send()} methods.
+     * Changing the response status is supported only if the new status has the same response entity semantics.
+     * For example, changing between an entity-bearing status and a status without an entity may leave response framing
+     * inconsistent and break the response.
      * The listener remains registered if error handling replaces the unsent response entity.
      * <p>
      * Note: this method is implemented as a default method that does nothing, for backward compatibility.
