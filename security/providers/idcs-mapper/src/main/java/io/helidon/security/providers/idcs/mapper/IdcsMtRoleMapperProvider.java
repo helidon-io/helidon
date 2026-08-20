@@ -72,7 +72,8 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     private final TokenHandler idcsAppNameTokenHandler;
     private final EvictableCache<MtCacheKey, List<Grant>> cache;
     private final MultitenancyEndpoints multitenantEndpoints;
-    private final ConcurrentHashMap<String, AppToken> tokenCache = new ConcurrentHashMap<>();
+    private final RetryableLazyValue<WebClient> appWebClient;
+    private final ConcurrentHashMap<String, RetryableLazyValue<AppToken>> tokenCache = new ConcurrentHashMap<>();
 
     /**
      * Configure instance from any descendant of
@@ -86,6 +87,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         this.idcsTenantTokenHandler = builder.idcsTenantTokenHandler;
         this.idcsAppNameTokenHandler = builder.idcsAppNameTokenHandler;
         this.cache = builder.cache;
+        this.appWebClient = new RetryableLazyValue<>(builder.oidcConfig()::appWebClient);
         if (null == builder.multitentantEndpoints) {
             this.multitenantEndpoints = new DefaultMultitenancyEndpoints(builder.oidcConfig());
         } else {
@@ -289,22 +291,26 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      */
     protected Optional<String> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
         // if cached and valid, use the cached token
-        return tokenCache.computeIfAbsent(idcsTenantId, key -> {
-            URI tokenEndpoint = multitenantEndpoints.tokenEndpoint(key);
-            OidcConfig oidcConfig = oidcConfig();
+        RetryableLazyValue<AppToken> appToken = tokenCache.computeIfAbsent(
+                idcsTenantId,
+                key -> new RetryableLazyValue<>(() -> createAppToken(key)));
+        return appToken.get().getToken(tracing);
+    }
 
-            if (oidcConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC
-                    && multitenantEndpoints.useClientCredentials(key, tokenEndpoint)) {
-                return new AppToken(oidcConfig.appWebClient(),
-                                    tokenEndpoint,
-                                    oidcConfig.tokenRefreshSkew(),
-                                    oidcConfig.clientId(),
-                                    oidcConfig.clientSecret());
-            }
+    private AppToken createAppToken(String idcsTenantId) {
+        URI tokenEndpoint = multitenantEndpoints.tokenEndpoint(idcsTenantId);
+        OidcConfig oidcConfig = oidcConfig();
 
-            return new AppToken(oidcConfig.generalWebClient(), tokenEndpoint, oidcConfig.tokenRefreshSkew());
-        })
-                .getToken(tracing);
+        if (oidcConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC
+                && multitenantEndpoints.useClientCredentials(idcsTenantId, tokenEndpoint)) {
+            return new AppToken(appWebClient.get(),
+                                tokenEndpoint,
+                                oidcConfig.tokenRefreshSkew(),
+                                oidcConfig.clientId(),
+                                oidcConfig.clientSecret());
+        }
+
+        return new AppToken(oidcConfig.generalWebClient(), tokenEndpoint, oidcConfig.tokenRefreshSkew());
     }
 
     /**
@@ -472,8 +478,6 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         private final String urlPrefix;
         private final String assertUrlSuffix;
         private final String tokenUrlSuffix;
-        private final WebClient appClient;
-        private final WebClient generalClient;
 
         // we want to cache endpoints for each tenant
         private final ConcurrentHashMap<String, URI> assertEndpointCache = new ConcurrentHashMap<>();
@@ -503,8 +507,6 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
             urlPrefix = config.identityUri().getScheme() + "://";
             this.assertUrlSuffix = "/admin/v1/Asserter";
             this.tokenUrlSuffix = "/oauth2/v1/token?IDCS_CLIENT_TENANT=";
-            this.generalClient = config.generalWebClient();
-            this.appClient = config.appWebClient();
         }
 
         @Override
