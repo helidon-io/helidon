@@ -31,6 +31,7 @@ import io.helidon.common.GenericType;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
+import io.helidon.config.spi.ConfigNode;
 
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +43,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -69,6 +71,19 @@ public class ConfigMapperManagerTest {
     void testPrimitiveGenericTypeBuiltInMapper() {
         Boolean builtIn = managerWithServices.map("true", GenericType.create(boolean.class), "flag");
         assertThat(builtIn, is(true));
+    }
+
+    @Test
+    void testClassBasedCharArrayKeepsListSemantics() {
+        ConfigNode.ListNode chars = ConfigNode.ListNode.builder()
+                .addValue("a")
+                .addValue("b")
+                .build();
+        Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
+                                                                 .addList("chars", chars)
+                                                                 .build()));
+
+        assertArrayEquals(new char[] {'a', 'b'}, config.get("chars").as(char[].class).get());
     }
 
     @Test
