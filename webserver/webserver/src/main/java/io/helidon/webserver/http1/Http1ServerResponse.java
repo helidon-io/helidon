@@ -547,9 +547,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
         OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
-        return applicationOutputStream == outputStream
-                ? outputStream
-                : new ApplicationOutputStream(applicationOutputStream, bos);
+        if (applicationOutputStream == outputStream) {
+            outputStream.applicationFacing();
+            return outputStream;
+        }
+        return new ApplicationOutputStream(applicationOutputStream, bos);
     }
 
     boolean keepConnectionOpen() {
@@ -1027,6 +1029,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         private final BlockingOutputStream closingDelegate;
         private final OutputStream delegate;
+        private boolean applicationFacing;
 
         ClosingBufferedOutputStream(BlockingOutputStream out, int size) {
             this.closingDelegate = out;
@@ -1035,19 +1038,19 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         @Override
         public void write(int b) throws IOException {
-            closingDelegate.checkWriteAllowed(1);
+            checkApplicationWrite(1);
             delegate.write(b);
         }
 
         @Override
         public void write(byte[] b) throws IOException {
-            closingDelegate.checkWriteAllowed(b.length);
+            checkApplicationWrite(b.length);
             delegate.write(b);
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            closingDelegate.checkWriteAllowed(len);
+            checkApplicationWrite(len);
             delegate.write(b, off, len);
         }
 
@@ -1072,6 +1075,16 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         void status(Status status) {
             closingDelegate.status(status);
+        }
+
+        void applicationFacing() {
+            applicationFacing = true;
+        }
+
+        private void checkApplicationWrite(int length) throws IOException {
+            if (applicationFacing) {
+                closingDelegate.checkWriteAllowed(length);
+            }
         }
 
         void commit() {
