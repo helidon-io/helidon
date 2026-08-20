@@ -1,6 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,33 +23,42 @@ on_error(){
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE}" "${LINENO}" "${BASH_COMMAND}"
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
 }
 trap on_error ERR
 
 # Path to this script
 if [ -h "${0}" ] ; then
-    readonly SCRIPT_PATH="$(readlink "${0}")"
+    SCRIPT_PATH="$(readlink "${0}")"
 else
-    readonly SCRIPT_PATH="${0}"
+    # shellcheck disable=SC155
+    SCRIPT_PATH="${0}"
 fi
+readonly SCRIPT_PATH
 
 # Path to the root of the workspace
-readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
-readonly LOG_FILE=$(mktemp -t XXXcheckstyle-log)
+LOG_FILE=$(mktemp -t XXXcheckstyle-log)
+readonly LOG_FILE
 
-readonly RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
-
-source ${WS_DIR}/etc/scripts/pipeline-env.sh
+RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
+readonly  RESULT_FILE
 
 die(){ echo "${1}" ; exit 1 ;}
 
-mvn ${MAVEN_ARGS} checkstyle:checkstyle-aggregate \
-    -f ${WS_DIR}/pom.xml \
+# Remove cache
+rm -f "${WS_DIR}"/target/checkstyle-*
+
+# shellcheck disable=SC2086
+mvn ${MVN_ARGS} checkstyle:checkstyle-aggregate \
+    -f "${WS_DIR}"/pom.xml \
     -Dcheckstyle.output.format="plain" \
     -Dcheckstyle.output.file="${RESULT_FILE}" \
-    -Pexamples,ossrh-releases > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
+    -Pexamples \
+    > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
 
-grep "^\[ERROR\]" ${RESULT_FILE} \
+grep "^\[ERROR\]" "${RESULT_FILE}" \
     && die "CHECKSTYLE ERROR" || echo "CHECKSTYLE OK"
