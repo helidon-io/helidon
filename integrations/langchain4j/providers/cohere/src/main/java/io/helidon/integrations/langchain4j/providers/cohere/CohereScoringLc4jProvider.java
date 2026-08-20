@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,25 @@ import io.helidon.builder.api.Option;
 import io.helidon.common.Weighted;
 import io.helidon.integrations.langchain4j.AiProvider;
 
+import dev.langchain4j.http.client.HttpClientBuilder;
 import dev.langchain4j.model.cohere.CohereScoringModel;
 
 @AiProvider.ModelConfig(value = CohereScoringModel.class,
                         weight = Weighted.DEFAULT_WEIGHT - 20,
-                        providerKey = "cohere")
+                        providerKey = "cohere",
+                        skip = {"proxy\\(java\\.net\\.Proxy\\)",
+                                "httpClientBuilder\\(dev\\.langchain4j\\.http\\.client\\.HttpClientBuilder\\)"})
 interface CohereScoringLc4jProvider {
+
+    /**
+     * HTTP client builder to use.
+     *
+     * @return an {@link Optional} containing HTTP client builder to use
+     */
+    @Option.Configured
+    @Option.RegistryService
+    @AiProvider.CustomBuilderMapping
+    Optional<HttpClientBuilder> httpClientBuilder();
 
     /**
      * Proxy to use.
@@ -37,5 +50,21 @@ interface CohereScoringLc4jProvider {
      */
     @Option.Configured
     @Option.RegistryService
+    @Option.Deprecated("httpClientBuilder")
+    @AiProvider.CustomBuilderMapping
     Optional<Proxy> proxy();
+
+    /**
+     * Customizes the model builder to preserve the legacy proxy configuration through the new LangChain4j HTTP client
+     * abstraction.
+     *
+     * @return partially configured LangChain4j model builder
+     */
+    default CohereScoringModel.CohereScoringModelBuilder configuredBuilder() {
+        var modelBuilder = CohereScoringModel.builder();
+        httpClientBuilder()
+                .or(() -> proxy().map(CohereHttpClientSupport::create))
+                .ifPresent(modelBuilder::httpClientBuilder);
+        return modelBuilder;
+    }
 }

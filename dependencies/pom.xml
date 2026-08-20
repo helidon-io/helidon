@@ -107,8 +107,8 @@
         <version.lib.kafka>3.9.2</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
-        <version.lib.langchain4j>1.12.1</version.lib.langchain4j>
-        <version.lib.langchain4j-community>1.12.1-beta21</version.lib.langchain4j-community>
+        <version.lib.langchain4j>1.18.1</version.lib.langchain4j>
+        <version.lib.langchain4j-community>1.18.0-beta28</version.lib.langchain4j-community>
         <!-- Force upgrade opennlp-tools transitive dependency of langchain4j. Remove once langchain4j upgrades -->
         <version.lib.opennlp-tools>2.5.11</version.lib.opennlp-tools>
         <version.lib.log4j>2.25.5</version.lib.log4j>

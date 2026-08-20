@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,31 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.integrations.langchain4j.AiProvider;
 
-import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.model.openai.OpenAiImageModel;
 
-@AiProvider.ModelConfig(value = OpenAiChatModel.class)
-@AiProvider.ModelConfig(value = OpenAiStreamingChatModel.class)
-interface OpenAiLc4jProvider {
+@AiProvider.ConfigKey("open-ai")
+@AiProvider.ModelConfig(value = OpenAiImageModel.class)
+interface OpenAiImageLc4jProvider {
 
     /**
-     * Enable a "JSON mode" in the model configuration. This way, the LLM will be forced to respond with a valid JSON.
-     * For newer models that support Structured Outputs use supported-capabilities.
+     * Legacy image style option retained for configuration compatibility.
      *
-     * @return "json_object" to enable JSON mode on older models like gpt-3.5-turbo or gpt-4
+     * @return configured image style
+     * @deprecated this option is no longer supported by LangChain4j and is ignored
      */
+    @Deprecated
     @Option.Configured
+    @AiProvider.CustomBuilderMapping
+    Optional<String> style();
+
+    /**
+     * Legacy image response format option retained for configuration compatibility.
+     *
+     * @return configured image response format
+     * @deprecated this option is no longer supported by LangChain4j and is ignored
+     */
+    @Deprecated
+    @Option.Configured
+    @AiProvider.CustomBuilderMapping
     Optional<String> responseFormat();
 }
