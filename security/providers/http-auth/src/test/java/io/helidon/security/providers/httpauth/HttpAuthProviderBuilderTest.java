@@ -192,11 +192,15 @@ public class HttpAuthProviderBuilderTest {
     }
 
     @Test
-    public void sendInvalidTypeTest() {
-        setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, "bearer token=\"adfasfaf\"");
+    public void sendBearerNotBasicTest() {
+        String credentials = "SECRET-TOKEN-XYZ";
+        setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, "Bearer " + credentials);
 
-        AuthenticationResponse response = context.authenticate();
+        AuthenticationResponse response = context.atnClientBuilder()
+                .explicitProvider("basic")
+                .buildAndGet();
 
+        assertThat(response.description().orElse(""), not(containsString(credentials)));
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.statusCode().orElse(200), is(401));
     }
@@ -369,11 +373,13 @@ public class HttpAuthProviderBuilderTest {
 
     @Test
     public void sendBasicNotDigestTest() {
-        setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, buildBasic("jack", "jackIsGreat"));
+        String credentials = "dXNlcjpwYXNz";
+        setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, "Basic " + credentials);
         AuthenticationResponse response = context.atnClientBuilder()
                 .explicitProvider("digest")
                 .buildAndGet();
 
+        assertThat(response.description().orElse(""), not(containsString(credentials)));
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.statusCode().orElse(200), is(401));
     }

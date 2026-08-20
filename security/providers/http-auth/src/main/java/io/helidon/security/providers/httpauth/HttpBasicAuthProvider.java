@@ -224,8 +224,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                 .filter(header -> header.toLowerCase().startsWith(BASIC_PREFIX))
                 .findFirst()
                 .map(this::validateBasicAuth)
-                .orElseGet(() ->
-                        failOrAbstain("Authorization header does not contain basic authentication: " + authorizationHeader));
+                .orElseGet(() -> failOrAbstain("Authorization header does not contain basic authentication"));
     }
 
     private AuthenticationResponse validateBasicAuth(String basicAuthHeader) {

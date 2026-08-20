@@ -160,8 +160,7 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
                 .filter(header -> header.toLowerCase().startsWith(DIGEST_PREFIX))
                 .findFirst()
                 .map(value -> validateDigestAuth(value, providerRequest.env()))
-                .orElseGet(() ->
-                        failOrAbstain("Authorization header does not contain digest authentication: " + authorizationHeader));
+                .orElseGet(() -> failOrAbstain("Authorization header does not contain digest authentication"));
 
     }
 
