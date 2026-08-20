@@ -313,6 +313,11 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         suppressImplicitContentLength = true;
     }
 
+    /**
+     * Whether the protocol implementation should suppress an implicit content length.
+     *
+     * @return whether to suppress the implicit content length
+     */
     protected final boolean suppressImplicitContentLength() {
         return suppressImplicitContentLength;
     }
