@@ -27,6 +27,7 @@ module io.helidon.data.jdbc {
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.config;
     requires io.helidon.data;
+    requires io.helidon.data.jdbc.lexical;
     requires transitive io.helidon.data.sql.common;
     requires transitive io.helidon.service.registry;
     requires io.helidon.transaction;

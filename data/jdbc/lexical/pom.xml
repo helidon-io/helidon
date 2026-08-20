@@ -21,21 +21,30 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.helidon.data</groupId>
-        <artifactId>helidon-data-project</artifactId>
+        <groupId>io.helidon.data.jdbc</groupId>
+        <artifactId>helidon-data-jdbc-project</artifactId>
         <version>27.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>io.helidon.data.jdbc</groupId>
-    <artifactId>helidon-data-jdbc-project</artifactId>
-    <packaging>pom</packaging>
-    <name>Helidon Data JDBC Project</name>
+    <artifactId>helidon-data-jdbc-lexical</artifactId>
+    <name>Helidon Data JDBC Lexical</name>
 
-    <modules>
-        <module>lexical</module>
-        <module>codegen</module>
-        <module>jdbc</module>
-    </modules>
-
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

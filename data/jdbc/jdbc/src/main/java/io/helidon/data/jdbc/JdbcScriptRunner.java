@@ -30,6 +30,7 @@ import javax.sql.DataSource;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.data.DataException;
+import io.helidon.data.jdbc.lexical.JdbcSqlLexicalRules;
 import io.helidon.service.registry.Service;
 
 /**

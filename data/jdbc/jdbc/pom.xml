@@ -69,6 +69,10 @@
             <artifactId>helidon-data-sql-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.data.jdbc</groupId>
+            <artifactId>helidon-data-jdbc-lexical</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
