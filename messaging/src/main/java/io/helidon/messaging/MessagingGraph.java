@@ -58,8 +58,13 @@ public interface MessagingGraph extends AutoCloseable {
 
     /**
      * Stop admission, drain admitted work, and close all graph-owned resources.
+     * <p>
+     * When called from a delivery, source task, or connector lifecycle callback owned by this graph, shutdown is
+     * handed off so the current task can complete. Such a call returns after initiating shutdown; any eventual failure
+     * is recorded and reported to a later waiting caller. A call from any other thread waits for shutdown to complete.
      *
-     * @throws MessagingException if a managed source failed asynchronously or shutdown cannot complete cleanly
+     * @throws MessagingException if shutdown cannot be initiated, or if a waiting caller observes a managed source
+     *                            failure or shutdown that cannot complete cleanly
      */
     @Override
     void close();

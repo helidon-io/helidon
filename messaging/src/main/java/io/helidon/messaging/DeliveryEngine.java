@@ -259,6 +259,12 @@ final class DeliveryEngine implements AutoCloseable {
         return shutdownTimeout;
     }
 
+    boolean isCurrentDeliveryOrSourceThread() {
+        DeliveryContext delivery = CURRENT_DELIVERY.get();
+        return (delivery != null && delivery.path().stream().anyMatch(node -> node.owner() == this))
+                || sourceThreads.contains(Thread.currentThread());
+    }
+
     void beginDrain() {
         if (!accepting.compareAndSet(true, false)) {
             return;

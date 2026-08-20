@@ -360,7 +360,9 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
             } finally {
                 closed.set(true);
                 releaseOwner(current);
-                if (!forceCloseRequested.get()) {
+                // Graceful drain may have interrupted this thread; lifecycle cleanup closes the stream
+                // on a clean thread.
+                if (!drainRequested.get() && !forceCloseRequested.get()) {
                     closeStream();
                 }
             }
@@ -447,9 +449,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
             if (!drainRequested.get() || forceCloseRequested.get()) {
                 return false;
             }
-            if (Thread.currentThread().isInterrupted()) {
-                return true;
-            }
+            // The interrupt flag can outlive the blocking operation and does not make an unrelated failure cooperative.
             Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
             Throwable cause = failure;
             while (cause != null && visited.add(cause)) {

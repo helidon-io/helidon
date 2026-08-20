@@ -439,6 +439,7 @@ class MessagingGraphBuilderTest {
         CountDownLatch releaseIteration = new CountDownLatch(1);
         CountDownLatch iterationInterrupted = new CountDownLatch(1);
         AtomicBoolean streamClosed = new AtomicBoolean();
+        AtomicBoolean streamCloseInterrupted = new AtomicBoolean();
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
         Iterator<String> iterator = new Iterator<>() {
             @Override
@@ -462,7 +463,13 @@ class MessagingGraphBuilderTest {
         Stream<String> source = StreamSupport.stream(
                         Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
                         false)
-                .onClose(() -> streamClosed.set(true));
+                .onClose(() -> {
+                    streamCloseInterrupted.set(Thread.currentThread().isInterrupted());
+                    if (streamCloseInterrupted.get()) {
+                        throw new IllegalStateException("Stream close inherited the drain interruption");
+                    }
+                    streamClosed.set(true);
+                });
         MessagingGraph.Builder builder = MessagingGraph.builder()
                 .executionConfig(MessagingExecutionConfig.builder()
                                          .shutdownTimeout(SHORT_SHUTDOWN_TIMEOUT)
@@ -482,6 +489,7 @@ class MessagingGraphBuilderTest {
             assertNull(closeFailure.get());
             assertTrue(iterationInterrupted.await(5, TimeUnit.SECONDS));
             assertTrue(streamClosed.get());
+            assertFalse(streamCloseInterrupted.get());
             assertEquals(DefaultMessagingGraph.State.CLOSED, ((DefaultMessagingGraph) graph).state());
         } finally {
             releaseIteration.countDown();
@@ -505,14 +513,8 @@ class MessagingGraphBuilderTest {
                     releaseFailure.await();
                 } catch (InterruptedException e) {
                     drainInterruptObserved.countDown();
-                    while (true) {
-                        try {
-                            releaseFailure.await();
-                            break;
-                        } catch (InterruptedException ignored) {
-                            // Keep the interrupt status clear so the unrelated iterator failure remains distinguishable.
-                        }
-                    }
+                    awaitUninterruptibly(releaseFailure);
+                    Thread.currentThread().interrupt();
                 }
                 throw iteratorFailure;
             }

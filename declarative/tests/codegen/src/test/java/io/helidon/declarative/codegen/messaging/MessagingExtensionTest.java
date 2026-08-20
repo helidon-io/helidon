@@ -18,6 +18,7 @@ package io.helidon.declarative.codegen.messaging;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -28,6 +29,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import javax.tools.DocumentationTool;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
@@ -1418,8 +1423,8 @@ class MessagingExtensionTest {
         assertCompilationSucceeded(result);
         String consumerSource = generatedSource(result, "JavadocChannelService__MessagingConsumer_");
         String emitterSource = generatedSource(result, "JavadocChannelService__MessagingEmitter_");
-        assertTrue(consumerSource.contains("channel {@code orders*&#47;x}."), consumerSource);
-        assertTrue(emitterSource.contains("channel {@code orders*&#47;x}."), emitterSource);
+        assertTrue(consumerSource.contains("channel <code>orders*&#47;x</code>."), consumerSource);
+        assertTrue(emitterSource.contains("channel <code>orders*&#47;x</code>."), emitterSource);
     }
 
     @Test
@@ -1446,8 +1451,40 @@ class MessagingExtensionTest {
         assertCompilationSucceeded(result);
         String consumerSource = generatedSource(result, "UnicodeJavadocChannelService__MessagingConsumer_");
         String emitterSource = generatedSource(result, "UnicodeJavadocChannelService__MessagingEmitter_");
-        assertTrue(consumerSource.contains("channel {@code &#92;u002a&#92;u002f}."), consumerSource);
-        assertTrue(emitterSource.contains("channel {@code &#92;u002a&#92;u002f}."), emitterSource);
+        assertTrue(consumerSource.contains("channel <code>&#92;u002a&#92;u002f</code>."), consumerSource);
+        assertTrue(emitterSource.contains("channel <code>&#92;u002a&#92;u002f</code>."), emitterSource);
+    }
+
+    @Test
+    void escapesInlineTagsInGeneratedConsumerAndEmitterJavadocs() throws IOException {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import io.helidon.messaging.Emitter;
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class InlineTagJavadocChannelService {
+                    @Service.Inject
+                    @Service.Named("x}{@value&<>")
+                    Emitter<String> emitter;
+
+                    @Messaging.ReceiveFrom("x}{@value&<>")
+                    void consume(String value) {
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        Path consumerSource = generatedSourcePath(result, "InlineTagJavadocChannelService__MessagingConsumer_");
+        Path emitterSource = generatedSourcePath(result, "InlineTagJavadocChannelService__MessagingEmitter_");
+        String escapedChannel = "channel <code>x&#125;&#123;@value&amp;&lt;&gt;</code>.";
+        assertTrue(Files.readString(consumerSource).contains(escapedChannel));
+        assertTrue(Files.readString(emitterSource).contains(escapedChannel));
+        Path javadocs = generateJavadocs(result, consumerSource, emitterSource);
+        assertRenderedJavadoc(javadocs, consumerSource, "Messaging consumer registration for " + escapedChannel);
+        assertRenderedJavadoc(javadocs, emitterSource, "Messaging emitter service for " + escapedChannel);
     }
 
     @Test
@@ -1671,6 +1708,37 @@ class MessagingExtensionTest {
 
     private String generatedSource(TestCompiler.Result result, String filePrefix) throws IOException {
         return Files.readString(generatedSourcePath(result, filePrefix));
+    }
+
+    private Path generateJavadocs(TestCompiler.Result result, Path... sources) throws IOException {
+        DocumentationTool javadoc = ToolProvider.getSystemDocumentationTool();
+        Path output = Files.createDirectories(result.classOutput().resolve("javadoc"));
+        StringWriter diagnostics = new StringWriter();
+        try (StandardJavaFileManager fileManager = javadoc.getStandardFileManager(null, null, StandardCharsets.UTF_8)) {
+            String classpath = result.classOutput() + File.pathSeparator + System.getProperty("java.class.path");
+            Boolean success = javadoc.getTask(diagnostics,
+                                               fileManager,
+                                               null,
+                                               null,
+                                               List.of("-private",
+                                                       "-quiet",
+                                                       "-Xdoclint:syntax",
+                                                       "-classpath",
+                                                       classpath,
+                                                       "-d",
+                                                       output.toString()),
+                                               fileManager.getJavaFileObjects(sources))
+                    .call();
+            assertTrue(success, diagnostics.toString());
+        }
+        return output;
+    }
+
+    private void assertRenderedJavadoc(Path output, Path source, String expected) throws IOException {
+        String sourceFile = source.getFileName().toString();
+        String htmlFile = sourceFile.substring(0, sourceFile.length() - ".java".length()) + ".html";
+        String html = Files.readString(output.resolve("com/example").resolve(htmlFile));
+        assertTrue(html.contains(expected), html);
     }
 
     private void assertSingleOccurrence(String source, String expected) {

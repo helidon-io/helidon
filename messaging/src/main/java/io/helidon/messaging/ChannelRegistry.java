@@ -1162,7 +1162,10 @@ class ChannelRegistry implements MessagingRuntime {
 
     private Map<String, String> connectorProperties(Config root, Config channelConfig, String connector) {
         Map<String, String> properties = new LinkedHashMap<>();
-        root.get(ConnectorConfig.CONNECTOR_PREFIX + connector).detach().asMap().ifPresent(properties::putAll);
+        root.get(ConnectorConfig.CONNECTOR_PREFIX + Config.Key.escapeName(connector))
+                .detach()
+                .asMap()
+                .ifPresent(properties::putAll);
         channelConfig.detach().asMap().ifPresent(properties::putAll);
         properties.keySet().removeIf(key -> key.equals("failure") || key.startsWith("failure."));
         return properties;
