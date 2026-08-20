@@ -190,6 +190,53 @@ class Http2ServerResponseTest {
     }
 
     @Test
+    void directHandlerFilteredHeadUsesOnlyConfiguredRepresentationLength() {
+        for (long configuredLength : List.of(-1L, 10L)) {
+            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            Http2ServerStream stream = mock(Http2ServerStream.class);
+            Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
+            response.streamFilter(output -> new FilterOutputStream(output) {
+                @Override
+                public void write(byte[] bytes, int offset, int length) throws IOException {
+                    out.write(bytes, offset, length);
+                    out.write(bytes, offset, length);
+                }
+            });
+            if (configuredLength >= 0) {
+                response.beforeSend(() -> response.contentLength(configuredLength));
+            }
+            DirectHandler.TransportRequest request = mock(DirectHandler.TransportRequest.class);
+            when(request.method()).thenReturn(Method.HEAD_NAME);
+            DirectHandlers directHandlers = DirectHandlers.builder()
+                    .addHandler(DirectHandler.EventType.BAD_REQUEST,
+                                (_, _, _, _, _) -> DirectHandler.TransportResponse.builder()
+                                        .status(Status.BAD_REQUEST_400)
+                                        .entity("error")
+                                        .build())
+                    .build();
+            RequestException requestException = RequestException.builder()
+                    .request(request)
+                    .type(DirectHandler.EventType.BAD_REQUEST)
+                    .message("bad request")
+                    .build();
+
+            directHandlers.handle(requestException, response, true);
+
+            var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+            verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
+            verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+            verify(stream, never()).writeData(any(), anyBoolean());
+            Headers sentHeaders = responseHeaders.getValue().httpHeaders();
+            if (configuredLength < 0) {
+                assertThat(sentHeaders.contains(HeaderNames.CONTENT_LENGTH), is(false));
+            } else {
+                assertThat(sentHeaders.contentLength().orElseThrow(), is(configuredLength));
+            }
+        }
+    }
+
+    @Test
     void directHandlerHeadSkipsRepresentationMetadataForLateInformationalStatus() {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);

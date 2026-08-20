@@ -149,10 +149,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                         headers.add(VARY_ACCEPT_ENCODING);
                     }
                 }
-                headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
-                                                        true,
-                                                        false,
-                                                        String.valueOf(actualLength)));
+                if (!headRequest || !suppressImplicitContentLength()) {
+                    headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                            true,
+                                                            false,
+                                                            String.valueOf(actualLength)));
+                }
             }
             isSent = true;
 

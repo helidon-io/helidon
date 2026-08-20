@@ -136,17 +136,25 @@ public class DirectHandlers {
                 res.send();
             } else if (headRequest) {
                 if (res instanceof ServerResponseBase<?> responseBase) {
-                    entity.ifPresent(bytes -> responseBase.entityBeforeSend(() -> {
-                        Status responseStatus = res.status();
-                        int responseCode = responseStatus.code();
-                        if (responseStatus.family() != Status.Family.INFORMATIONAL
-                                && responseCode != Status.NO_CONTENT_204.code()
-                                && responseCode != Status.RESET_CONTENT_205.code()
-                                && responseCode != Status.NOT_MODIFIED_304.code()) {
-                            byte[] representation = responseBase.entityBytes(bytes);
-                            res.headers().contentLength(representation.length);
+                    entity.ifPresent(bytes -> {
+                        boolean hasStreamFilter = responseBase.hasStreamFilter();
+                        responseBase.entityBeforeSend(() -> {
+                            Status responseStatus = res.status();
+                            int responseCode = responseStatus.code();
+                            if (responseStatus.family() != Status.Family.INFORMATIONAL
+                                    && responseCode != Status.NO_CONTENT_204.code()
+                                    && responseCode != Status.RESET_CONTENT_205.code()
+                                    && responseCode != Status.NOT_MODIFIED_304.code()) {
+                                byte[] representation = responseBase.entityBytes(bytes);
+                                if (!hasStreamFilter) {
+                                    res.headers().contentLength(representation.length);
+                                }
+                            }
+                        });
+                        if (hasStreamFilter) {
+                            responseBase.prepareFilteredHeadResponse();
                         }
-                    }));
+                    });
                 }
                 res.send();
             } else {

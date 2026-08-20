@@ -92,6 +92,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private Runnable responseBeforeSend;
     private UnaryOperator<OutputStream> responseStreamFilter;
     private UnaryOperator<OutputStream> streamFilter;
+    private boolean suppressImplicitContentLength;
 
     /**
      * Create server response.
@@ -264,6 +265,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         }
         beforeTrailers = null;
         streamFilter = responseStreamFilter;
+        suppressImplicitContentLength = false;
         return true;
     }
 
@@ -304,6 +306,15 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     @Api.Internal
     protected final boolean hasStreamFilter() {
         return streamFilter != null;
+    }
+
+    final void prepareFilteredHeadResponse() {
+        streamFilter = null;
+        suppressImplicitContentLength = true;
+    }
+
+    protected final boolean suppressImplicitContentLength() {
+        return suppressImplicitContentLength;
     }
 
     /**

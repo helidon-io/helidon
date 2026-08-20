@@ -482,7 +482,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             headers.remove(HeaderNames.CONTENT_LENGTH);
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;
-        } else if (!headers.contains(HeaderNames.CONTENT_LENGTH)) {
+        } else if (!headers.contains(HeaderNames.CONTENT_LENGTH)
+                && (!headRequest || !suppressImplicitContentLength())) {
             headers.contentLength(length);
         }
 

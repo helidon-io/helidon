@@ -478,6 +478,53 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void directHandlerFilteredHeadUsesOnlyConfiguredRepresentationLength() {
+        for (long configuredLength : List.of(-1L, 10L)) {
+            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            DataWriter writer = mock(DataWriter.class);
+            Http1ServerResponse response = createResponse(writer, Method.HEAD, contentEncodingContext);
+            response.streamFilter(output -> new FilterOutputStream(output) {
+                @Override
+                public void write(byte[] bytes, int offset, int length) throws IOException {
+                    out.write(bytes, offset, length);
+                    out.write(bytes, offset, length);
+                }
+            });
+            if (configuredLength >= 0) {
+                response.beforeSend(() -> response.contentLength(configuredLength));
+            }
+            DirectHandler.TransportRequest request = mock(DirectHandler.TransportRequest.class);
+            when(request.method()).thenReturn(Method.HEAD_NAME);
+            when(request.protocolVersion()).thenReturn("HTTP/1.1");
+            DirectHandlers directHandlers = DirectHandlers.builder()
+                    .addHandler(DirectHandler.EventType.BAD_REQUEST,
+                                (_, _, _, _, _) -> DirectHandler.TransportResponse.builder()
+                                        .status(Status.BAD_REQUEST_400)
+                                        .entity("error")
+                                        .build())
+                    .build();
+            RequestException requestException = RequestException.builder()
+                    .request(request)
+                    .type(DirectHandler.EventType.BAD_REQUEST)
+                    .message("bad request")
+                    .build();
+
+            directHandlers.handle(requestException, response, true);
+
+            var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+            verify(writer).write(responseBuffer.capture());
+            String responseText = new String(responseBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
+            assertThat(responseText, endsWith("\r\n\r\n"));
+            if (configuredLength < 0) {
+                assertThat(responseText.contains("Content-Length:"), is(false));
+            } else {
+                assertThat(responseText, containsString("Content-Length: " + configuredLength + "\r\n"));
+            }
+        }
+    }
+
+    @Test
     void directHandlerNoContentRemovesContentLength() {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
