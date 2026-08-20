@@ -77,7 +77,7 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 interface KeyedMessage<K, V> extends Message<V> {
@@ -85,7 +85,7 @@ class MessagingExtensionTest {
 
                 @Service.Singleton
                 class ConflictingEnvelopeConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(KeyedMessage<String, Integer> first,
                                  KeyedMessage<Long, Integer> second) {
                     }
@@ -101,7 +101,7 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 interface KeyedMessage<K, V> extends Message<V> {
@@ -109,7 +109,7 @@ class MessagingExtensionTest {
 
                 @Service.Singleton
                 class GenericEnvelopeConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     <K> void consume(KeyedMessage<K, Integer> message) {
                     }
                 }
@@ -124,7 +124,7 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 interface KeyedMessage<K, V> extends Message<V> {
@@ -132,7 +132,7 @@ class MessagingExtensionTest {
 
                 @Service.Singleton
                 class WildcardEnvelopeConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(KeyedMessage<?, Integer> message) {
                     }
                 }
@@ -147,7 +147,7 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 interface KeyedMessage<K, V> extends Message<V> {
@@ -155,7 +155,7 @@ class MessagingExtensionTest {
 
                 @Service.Singleton
                 class GenericWildcardEnvelopeConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     <K> void consume(KeyedMessage<? extends K, Integer> message) {
                     }
                 }
@@ -172,7 +172,7 @@ class MessagingExtensionTest {
                 import java.util.List;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 interface KeyedMessage<K, V> extends Message<V> {
@@ -180,7 +180,7 @@ class MessagingExtensionTest {
 
                 @Service.Singleton
                 class GenericMetadataConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(KeyedMessage<String, List<Integer>> message) {
                     }
                 }
@@ -207,12 +207,12 @@ class MessagingExtensionTest {
         TestCompiler.Result result = compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class PrimitiveConsumer {
-                    @Messages.ReceiveFrom("numbers")
+                    @Messaging.ReceiveFrom("numbers")
                     void consume(int value) {
                     }
                 }
@@ -315,15 +315,15 @@ class MessagingExtensionTest {
                 import java.util.Optional;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class InterceptedConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(Message<String> message,
-                                 @Messages.HeaderParam("required") String required,
-                                 @Messages.HeaderParam("optional") Optional<String> optional) throws IOException {
+                                 @Messaging.HeaderParam("required") String required,
+                                 @Messaging.HeaderParam("optional") Optional<String> optional) throws IOException {
                     }
                 }
                 """);
@@ -358,13 +358,13 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.FailureDisposition;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class FailurePolicyConsumer {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.OnFailure(
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.OnFailure(
                             retryDelay = "PT0.25S",
                             maxAttempts = 3,
                             onExhausted = FailureDisposition.DEAD_LETTER,
@@ -410,20 +410,20 @@ class MessagingExtensionTest {
         TestCompiler.Result result = compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class BareFailurePolicyConsumer {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.OnFailure
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.OnFailure
                     void consume(String value) {
                     }
                 }
 
                 @Service.Singleton
                 class UnannotatedConsumer {
-                    @Messages.ReceiveFrom("audit")
+                    @Messaging.ReceiveFrom("audit")
                     void consume(String value) {
                     }
                 }
@@ -467,17 +467,17 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class OrphanFailurePolicy {
-                    @Messages.OnFailure(maxAttempts = 1)
+                    @Messaging.OnFailure(maxAttempts = 1)
                     void consume(String value) {
                     }
                 }
                 """),
-                         "@Messages.OnFailure is only allowed on @Messages.ReceiveFrom methods");
+                         "@Messaging.OnFailure is only allowed on @Messaging.ReceiveFrom methods");
     }
 
     @Test
@@ -485,13 +485,13 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class InvalidRetryDelay {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.OnFailure(retryDelay = "tomorrow")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.OnFailure(retryDelay = "tomorrow")
                     void consume(String value) {
                     }
                 }
@@ -501,13 +501,13 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class ZeroRetryDelay {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.OnFailure(retryDelay = "PT0S")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.OnFailure(retryDelay = "PT0S")
                     void consume(String value) {
                     }
                 }
@@ -517,13 +517,13 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class NegativeAttempts {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.OnFailure(maxAttempts = -1)
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.OnFailure(maxAttempts = -1)
                     void consume(String value) {
                     }
                 }
@@ -534,13 +534,13 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.FailureDisposition;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class UnboundedDrop {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.OnFailure(onExhausted = FailureDisposition.DROP)
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.OnFailure(onExhausted = FailureDisposition.DROP)
                     void consume(String value) {
                     }
                 }
@@ -551,13 +551,13 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.FailureDisposition;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class MissingDeadLetterChannel {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.OnFailure(maxAttempts = 1,
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.OnFailure(maxAttempts = 1,
                                          onExhausted = FailureDisposition.DEAD_LETTER)
                     void consume(String value) {
                     }
@@ -568,13 +568,13 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class DeadLetterChannelWithoutDisposition {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.OnFailure(deadLetterChannel = "orders-dlq")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.OnFailure(deadLetterChannel = "orders-dlq")
                     void consume(String value) {
                     }
                 }
@@ -585,20 +585,20 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.FailureDisposition;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class SelfDeadLetterChannel {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.OnFailure(maxAttempts = 1,
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.OnFailure(maxAttempts = 1,
                                          onExhausted = FailureDisposition.DEAD_LETTER,
                                          deadLetterChannel = "orders")
                     void consume(String value) {
                     }
                 }
                 """),
-                         "deadLetterChannel must differ from the @Messages.ReceiveFrom channel");
+                         "deadLetterChannel must differ from the @Messaging.ReceiveFrom channel");
     }
 
     @Test
@@ -606,13 +606,13 @@ class MessagingExtensionTest {
         TestCompiler.Result result = compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class PayloadProcessor {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo("audit")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo("audit")
                     Integer process(String value) {
                         return value.length();
                     }
@@ -646,13 +646,13 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class EnvelopeProcessor {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo("audit")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo("audit")
                     Message<Integer> process(Message<String> message) {
                         return Message.create(message.entity().length());
                     }
@@ -672,7 +672,7 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 interface ArrayMessage<T> extends Message<T[][]> {
@@ -680,8 +680,8 @@ class MessagingExtensionTest {
 
                 @Service.Singleton
                 class ArrayEnvelopeProcessor {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo("audit")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo("audit")
                     ArrayMessage<String> process(String value) {
                         return null;
                     }
@@ -689,7 +689,7 @@ class MessagingExtensionTest {
 
                 @Service.Singleton
                 class ArrayPayloadConsumer {
-                    @Messages.ReceiveFrom("audit")
+                    @Messaging.ReceiveFrom("audit")
                     void consume(String[][] value) {
                     }
                 }
@@ -737,12 +737,12 @@ class MessagingExtensionTest {
                 import java.io.IOException;
 
                 import io.helidon.messaging.MessageBatch;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class BatchConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(MessageBatch<String> messages) throws IOException {
                     }
                 }
@@ -772,18 +772,18 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.MessageBatch;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class BatchProcessor {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo("audit")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo("audit")
                     void consume(MessageBatch<String> messages) {
                     }
                 }
                 """),
-                         "Batch @Messages.ReceiveFrom methods cannot declare @Messages.SendTo");
+                         "Batch @Messaging.ReceiveFrom methods cannot declare @Messaging.SendTo");
     }
 
     @Test
@@ -792,7 +792,7 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.MessageBatch;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 class CustomBatch<T> extends MessageBatch<T> {
@@ -800,7 +800,7 @@ class MessagingExtensionTest {
 
                 @Service.Singleton
                 class BatchConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(CustomBatch<Integer> messages) {
                     }
                 }
@@ -817,12 +817,12 @@ class MessagingExtensionTest {
                 import java.util.List;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class LegacyBatchConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(List<Message<String>> messages) {
                     }
                 }
@@ -871,7 +871,7 @@ class MessagingExtensionTest {
 
                 import io.helidon.messaging.Emitter;
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
@@ -880,8 +880,8 @@ class MessagingExtensionTest {
                     @Service.Named("audit")
                     Emitter<List<String>> emitter;
 
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo("audit")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo("audit")
                     Message<List<String>> process(Message<List<String>> message) {
                         return message;
                     }
@@ -920,11 +920,11 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
 
                 @Deprecated
                 class NotAService {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(String value) {
                     }
                 }
@@ -934,12 +934,12 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class InvalidHandler {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     private void consume(String value) {
                     }
                 }
@@ -949,12 +949,12 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class StaticHandler {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     static void consume(String value) {
                     }
                 }
@@ -967,87 +967,87 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class BlankChannel {
-                    @Messages.ReceiveFrom(" ")
+                    @Messaging.ReceiveFrom(" ")
                     void consume(String value) {
                     }
                 }
                 """),
-                         "@Messages.ReceiveFrom channel must not be blank");
+                         "@Messaging.ReceiveFrom channel must not be blank");
 
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class BlankSendToChannel {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo(" ")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo(" ")
                     String process(String value) {
                         return value;
                     }
                 }
                 """),
-                         "@Messages.SendTo channel must not be blank");
+                         "@Messaging.SendTo channel must not be blank");
 
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class PaddedSendToChannel {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo(" audit")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo(" audit")
                     String process(String value) {
                         return value;
                     }
                 }
                 """),
-                         "@Messages.SendTo channel must not have leading or trailing whitespace");
+                         "@Messaging.SendTo channel must not have leading or trailing whitespace");
 
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class ControlCharacterSendToChannel {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo("audit\\nchannel")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo("audit\\nchannel")
                     String process(String value) {
                         return value;
                     }
                 }
                 """),
-                         "@Messages.SendTo channel must not contain control characters");
+                         "@Messaging.SendTo channel must not contain control characters");
 
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class DuplicateRoute {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void first(String value) {
                     }
 
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void second(Integer value) {
                     }
                 }
                 """),
-                         "declares multiple @Messages.ReceiveFrom handlers for channel orders");
+                         "declares multiple @Messaging.ReceiveFrom handlers for channel orders");
     }
 
     @Test
@@ -1056,13 +1056,13 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.Message;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class AmbiguousConsumer {
-                    @Messages.ReceiveFrom("orders")
-                    void consume(@Messages.Entity String entity, Message<String> message) {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(@Messaging.Entity String entity, Message<String> message) {
                     }
                 }
                 """),
@@ -1071,14 +1071,14 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class InvalidHeaderConsumer {
-                    @Messages.ReceiveFrom("orders")
-                    void consume(@Messages.Entity String entity,
-                                 @Messages.HeaderParam("attempt") Integer attempt) {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(@Messaging.Entity String entity,
+                                 @Messaging.HeaderParam("attempt") Integer attempt) {
                     }
                 }
                 """),
@@ -1087,19 +1087,19 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class DuplicateHeaderConsumer {
-                    @Messages.ReceiveFrom("orders")
-                    void consume(@Messages.Entity String entity,
-                                 @Messages.HeaderParam("id") String first,
-                                 @Messages.HeaderParam("id") String second) {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(@Messaging.Entity String entity,
+                                 @Messaging.HeaderParam("id") String first,
+                                 @Messaging.HeaderParam("id") String second) {
                     }
                 }
                 """),
-                         "Duplicate @Messages.HeaderParam name id");
+                         "Duplicate @Messaging.HeaderParam name id");
     }
 
     @Test
@@ -1107,29 +1107,29 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class ReturningTerminal {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     String consume(String value) {
                         return value;
                     }
                 }
                 """),
-                         "Terminal @Messages.ReceiveFrom methods must return void");
+                         "Terminal @Messaging.ReceiveFrom methods must return void");
 
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class VoidProcessor {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo("audit")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo("audit")
                     void consume(String value) {
                     }
                 }
@@ -1141,35 +1141,35 @@ class MessagingExtensionTest {
 
                 import java.util.concurrent.CompletableFuture;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class AsyncProcessor {
-                    @Messages.ReceiveFrom("orders")
-                    @Messages.SendTo("audit")
+                    @Messaging.ReceiveFrom("orders")
+                    @Messaging.SendTo("audit")
                     CompletableFuture<String> consume(String value) {
                         return CompletableFuture.completedFuture(value);
                     }
                 }
                 """),
-                         "Asynchronous or publisher @Messages.ReceiveFrom return types are not supported");
+                         "Asynchronous or publisher @Messaging.ReceiveFrom return types are not supported");
 
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class OrphanSendTo {
-                    @Messages.SendTo("audit")
+                    @Messaging.SendTo("audit")
                     String consume(String value) {
                         return value;
                     }
                 }
                 """),
-                         "@Messages.SendTo is only allowed on @Messages.ReceiveFrom methods");
+                         "@Messaging.SendTo is only allowed on @Messaging.ReceiveFrom methods");
     }
 
     @Test
@@ -1179,12 +1179,12 @@ class MessagingExtensionTest {
 
                 import java.util.List;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class RawPayloadConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(List value) {
                     }
                 }
@@ -1348,12 +1348,12 @@ class MessagingExtensionTest {
         TestCompiler.Result result = compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class %s {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(String value) {
                     }
                 }
@@ -1393,7 +1393,7 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import io.helidon.messaging.Emitter;
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
@@ -1402,7 +1402,7 @@ class MessagingExtensionTest {
                     @Service.Named("audit")
                     Emitter<String> emitter;
 
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(String value) {
                     }
                 }
@@ -1413,7 +1413,7 @@ class MessagingExtensionTest {
                     @Service.Named("audit")
                     Emitter<String> emitter;
 
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(String value) {
                     }
                 }
@@ -1431,7 +1431,7 @@ class MessagingExtensionTest {
         TestCompiler.Result result = compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 class Aa {
@@ -1442,11 +1442,11 @@ class MessagingExtensionTest {
 
                 @Service.Singleton
                 class CollidingConsumer {
-                    @Messages.ReceiveFrom("first")
+                    @Messaging.ReceiveFrom("first")
                     void consume(Aa value) {
                     }
 
-                    @Messages.ReceiveFrom("second")
+                    @Messaging.ReceiveFrom("second")
                     void consume(BB value) {
                     }
                 }
@@ -1477,7 +1477,7 @@ class MessagingExtensionTest {
         assertDiagnostic(compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
@@ -1485,7 +1485,7 @@ class MessagingExtensionTest {
                     private static class Payload {
                     }
 
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(Payload payload) {
                     }
                 }
@@ -1516,12 +1516,12 @@ class MessagingExtensionTest {
         TestCompiler.Result result = compile("""
                 package com.example;
 
-                import io.helidon.messaging.Messages;
+                import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
                 @Service.Singleton
                 class ThrowableConsumer {
-                    @Messages.ReceiveFrom("orders")
+                    @Messaging.ReceiveFrom("orders")
                     void consume(String value) throws Throwable {
                     }
                 }
@@ -1539,7 +1539,7 @@ class MessagingExtensionTest {
                 .addClasspath(COMPILER_CLASSPATH)
                 .addClasspath(loadClass("io.helidon.builder.api.Prototype"))
                 .addClasspath(loadClass("io.helidon.config.ConfigBuilderSupport"))
-                .addClasspath(loadClass("io.helidon.messaging.Messages"))
+                .addClasspath(loadClass("io.helidon.messaging.Messaging"))
                 .update(this::addProcessor)
                 .printDiagnostics(false)
                 .addSource("Consumer.java", source)

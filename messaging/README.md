@@ -112,7 +112,7 @@ A receiving method must belong to a concrete Service Registry service:
 ```java
 @Service.Singleton
 final class OrderHandler {
-    @Messages.ReceiveFrom("orders")
+    @Messaging.ReceiveFrom("orders")
     void receive(Order order) {
         // Process one order.
     }
@@ -129,25 +129,25 @@ The primary method parameter can expose one of three views of a delivery:
 
 Connector-specific immutable `Message` subtypes, such as the Kafka and JMS message types, can also be declared for
 messages originating from that connector. A default message emitted locally does not satisfy a handler that requires
-one of those subtypes. In a multi-parameter method, a payload is identified with `@Messages.Entity`; alternatively,
+one of those subtypes. In a multi-parameter method, a payload is identified with `@Messaging.Entity`; alternatively,
 an unannotated `Message<T>` or connector-specific envelope can be the primary view. Other parameters use
-`@Messages.HeaderParam`. Header names are exact and case-sensitive; `String` declares a required header and
+`@Messaging.HeaderParam`. Header names are exact and case-sensitive; `String` declares a required header and
 `Optional<String>` declares an optional one:
 
 ```java
-@Messages.ReceiveFrom("orders")
-void receive(@Messages.Entity Order order,
-             @Messages.HeaderParam("tenant") String tenant,
-             @Messages.HeaderParam("trace-id") Optional<String> traceId) {
+@Messaging.ReceiveFrom("orders")
+void receive(@Messaging.Entity Order order,
+             @Messaging.HeaderParam("tenant") String tenant,
+             @Messaging.HeaderParam("trace-id") Optional<String> traceId) {
     // Process one order and its selected headers.
 }
 ```
 
-Use `@Messages.SendTo` for a synchronous one-to-one processor:
+Use `@Messaging.SendTo` for a synchronous one-to-one processor:
 
 ```java
-@Messages.ReceiveFrom("orders")
-@Messages.SendTo("validated-orders")
+@Messaging.ReceiveFrom("orders")
+@Messaging.SendTo("validated-orders")
 Message<Order> validate(Message<Order> incoming) {
     return Message.builder(validate(incoming.entity()))
             .header("trace-id", incoming.header("trace-id").orElse("unknown"))
@@ -157,7 +157,7 @@ Message<Order> validate(Message<Order> incoming) {
 
 A processor can return a payload or a `Message<T>`. A payload is wrapped in a new message without the input headers;
 return a message envelope when headers must be retained or changed. Terminal receivers and batch handlers return
-`void`, and a batch handler cannot use `@Messages.SendTo`. Asynchronous return types and reactive publishers are not
+`void`, and a batch handler cannot use `@Messaging.SendTo`. Asynchronous return types and reactive publishers are not
 supported.
 
 Several services can receive from the same channel. Each receiver is a required output, so the delivery succeeds only
@@ -253,11 +253,11 @@ the selected connector's documentation in the Helidon Extensions repository for 
 
 ### Retry, drop, and dead-letter handling
 
-`@Messages.OnFailure` supplies a default policy for a configured incoming connector channel:
+`@Messaging.OnFailure` supplies a default policy for a configured incoming connector channel:
 
 ```java
-@Messages.ReceiveFrom("orders")
-@Messages.OnFailure(
+@Messaging.ReceiveFrom("orders")
+@Messaging.OnFailure(
         retryDelay = "PT0.25S",
         maxAttempts = 3,
         onExhausted = FailureDisposition.DEAD_LETTER,
@@ -266,7 +266,7 @@ void receive(Order order) {
     throw new IllegalArgumentException("Invalid order");
 }
 
-@Messages.ReceiveFrom("orders-dlq")
+@Messaging.ReceiveFrom("orders-dlq")
 void deadLetter(DeadLetterMessage<Order> failed) {
     System.err.printf("Order failed after %d attempts: %s%n",
                       failed.attempts(), failed.failureMessage());
@@ -312,7 +312,7 @@ Exhaustion has these results:
 - `DEAD_LETTER` routes a `DeadLetterMessage<T>` with the original envelope, source channel, attempt count, and failure
   details. The source is settled only after dead-letter delivery succeeds.
 
-`@Messages.OnFailure` does not retry calls made through a local `Emitter`; an emitter returns its delivery exception
+`@Messaging.OnFailure` does not retry calls made through a local `Emitter`; an emitter returns its delivery exception
 directly.
 
 ### Configure execution limits
@@ -402,7 +402,7 @@ stream source, and downstream paths from distinct stream sources cannot converge
 The imperative builder registers streams as sources and can attach an `OutgoingConnector` directly. The built graph
 exposes typed emitters for application-originated input. The builder owns registered streams and connectors until a
 successful build transfers them to the graph. The builder does not currently expose an incoming-connector registration
-method. Declarative connector configuration and `@Messages.OnFailure` policies are not applied to an imperative graph.
+method. Declarative connector configuration and `@Messaging.OnFailure` policies are not applied to an imperative graph.
 
 ### Emit batches
 
