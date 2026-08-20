@@ -15,14 +15,6 @@
  */
 
 /**
- * Generates implementations of Helidon Data JDBC repositories.
+ * Internal lexical support shared by JDBC runtime and JDBC code generation.
  */
-module io.helidon.data.jdbc.codegen {
-
-    requires io.helidon.codegen;
-    requires io.helidon.data.codegen.common;
-    requires io.helidon.data.jdbc.lexical;
-
-    provides io.helidon.data.codegen.common.spi.PersistenceGeneratorProvider
-            with io.helidon.data.jdbc.codegen.JdbcPersistenceGeneratorProvider;
-}
+package io.helidon.data.jdbc.lexical;

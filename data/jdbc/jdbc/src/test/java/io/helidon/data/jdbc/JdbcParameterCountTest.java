@@ -24,7 +24,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class JdbcMarkerScannerTest {
+class JdbcParameterCountTest {
 
     @Test
     void appliesPortablePunctuationAndCommentRules() {

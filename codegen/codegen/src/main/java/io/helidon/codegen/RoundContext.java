@@ -128,4 +128,18 @@ public interface RoundContext {
      * @return discovered type information, or empty if the type cannot be discovered
      */
     Optional<TypeInfo> typeInfo(TypeName typeName);
+
+    /**
+     * Returns the Java type hierarchy resolver for this processing round.
+     * <p>
+     * The resolver can see types generated earlier in the same processing run.
+     * Environment specific contexts may also delegate supported operations to
+     * their Java type system.
+     *
+     * @return type hierarchy resolver for this round
+     */
+    @Api.Internal
+    default TypeHierarchyResolver typeHierarchyResolver() {
+        return TypeHierarchyResolver.create(this::typeInfo);
+    }
 }

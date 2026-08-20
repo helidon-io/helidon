@@ -19,6 +19,7 @@ package io.helidon.codegen;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.spi.AnnotationMapper;
@@ -100,6 +101,17 @@ public interface CodegenContext {
      * @return discovered type information, or empty if the type cannot be discovered
      */
     Optional<TypeInfo> typeInfo(TypeName typeName, Predicate<TypedElementInfo> elementPredicate);
+
+    /**
+     * Creates the Java type hierarchy resolver for a processing round.
+     *
+     * @param typeInfoLookup lookup that includes types generated during the round
+     * @return type hierarchy resolver
+     */
+    @Api.Internal
+    default TypeHierarchyResolver typeHierarchyResolver(Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
+        return TypeHierarchyResolver.create(typeInfoLookup);
+    }
 
     /**
      * List of available element mappers in this environment.

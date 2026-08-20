@@ -15,16 +15,17 @@
  */
 package io.helidon.data.jdbc.codegen;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -32,93 +33,151 @@ import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcTypeHierarchyTest {
 
+    /**
+     * Verifies unrelated inherited methods cannot declare different JDBC policy.
+     */
     @Test
-    void implementsJavaArrayReturnCovariance() {
-        TypeName bytes = TypeName.create(byte[].class);
+    void rejectsConflictingJdbcAnnotations() {
+        TypeInfo left = repository("example.LeftRepository",
+                                   method("find", TypeNames.STRING, "select LEFT_VALUE from ITEM"));
+        TypeInfo right = repository("example.RightRepository",
+                                    method("find", TypeNames.STRING, "select RIGHT_VALUE from ITEM"));
+        TypeInfo repository = repository("example.Repository", left, right);
 
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(bytes, TypeNames.OBJECT, null), is(true));
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(bytes, TypeName.create(Cloneable.class), null), is(true));
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(bytes, TypeName.create(Serializable.class), null), is(true));
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(TypeName.create(String[].class),
-                                                       TypeName.create(Object[].class),
-                                                       null),
-                   is(true));
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(TypeName.create(String[][].class),
-                                                       TypeName.create(Object[].class),
-                                                       null),
-                   is(true));
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(bytes, TypeName.create(int[].class), null), is(false));
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(TypeName.create(int[].class), bytes, null), is(false));
+        CodegenException failure = assertThrows(CodegenException.class,
+                                                () -> JdbcTypeHierarchy.abstractMethods(repository,
+                                                                                       new TypesRoundContext(Map.of())));
+
+        assertThat(failure.getMessage(),
+                   is("Inherited repository method 'find()' has conflicting JDBC or transaction annotations."));
     }
 
+    /**
+     * Verifies named SQL markers keep the same physical parameter meaning in a diamond.
+     */
     @Test
-    void preservesTypeUseAnnotationsDuringSubstitution() {
-        Annotation annotation = Annotation.create(TypeName.create("example.ResultType"));
-        TypeName variable = TypeName.builder()
-                .className("T")
-                .generic(true)
-                .addAnnotation(annotation)
+    void rejectsConflictingNamedParameterBindings() {
+        String sql = "select VALUE from ITEM where FIRST_VALUE = :first and SECOND_VALUE = :second";
+        TypeInfo left = repository("example.LeftRepository",
+                                   method("find", TypeNames.STRING, sql, "first", "second"));
+        TypeInfo right = repository("example.RightRepository",
+                                    method("find", TypeNames.STRING, sql, "second", "first"));
+        TypeInfo repository = repository("example.Repository", left, right);
+
+        CodegenException failure = assertThrows(CodegenException.class,
+                                                () -> JdbcTypeHierarchy.abstractMethods(repository,
+                                                                                       new TypesRoundContext(Map.of())));
+
+        assertThat(failure.getMessage(),
+                   is("Inherited repository method 'find(java.lang.String,java.lang.String)' has incompatible named SQL "
+                              + "parameter bindings."));
+    }
+
+    /**
+     * Verifies the closest declaration can replace inherited JDBC policy.
+     */
+    @Test
+    void usesTheClosestRepositoryDeclaration() {
+        TypeInfo parent = repository("example.ParentRepository",
+                                     method("find", TypeNames.STRING, "select OLD_VALUE from ITEM"));
+        TypedElementInfo childMethod = method("find", TypeNames.STRING, "select NEW_VALUE from ITEM");
+        TypeInfo repository = TypeInfo.builder()
+                .typeName(TypeName.create("example.Repository"))
+                .kind(ElementKind.INTERFACE)
+                .addElementInfo(childMethod)
+                .addInterfaceTypeInfo(parent)
                 .build();
 
-        TypeName resolved = JdbcTypeHierarchy.substitute(variable, Map.of("T", TypeNames.STRING));
+        List<TypedElementInfo> methods = JdbcTypeHierarchy.abstractMethods(repository,
+                                                                          new TypesRoundContext(Map.of()));
 
-        assertThat(resolved, is(TypeNames.STRING));
-        assertThat(resolved.annotations(), hasItem(annotation));
+        assertThat(methods.size(), is(1));
+        assertThat(methods.getFirst()
+                           .findAnnotation(JdbcPersistenceTypes.JDBC_STATEMENT)
+                           .flatMap(Annotation::stringValue)
+                           .orElseThrow(),
+                   is("select NEW_VALUE from ITEM"));
     }
 
+    /**
+     * Verifies repository return type covariance can use types generated during
+     * the current code generation round.
+     */
     @Test
-    void preservesEncodedTypeUseAnnotationsDuringSubstitution() {
-        TypeName variable = TypeName.createFromGenericDeclaration("@example.ResultType(\"mapped\") T");
-
-        TypeName resolved = JdbcTypeHierarchy.substitute(variable, Map.of("T", TypeNames.STRING));
-
-        Annotation annotation = resolved.findAnnotation(TypeName.create("example.ResultType")).orElseThrow();
-        assertThat(annotation.stringValue().orElseThrow(), is("mapped"));
-    }
-
-    @Test
-    void doesNotSubstituteAConcreteDefaultPackageType() {
-        TypeName concreteType = TypeName.builder()
-                .className("T")
+    void resolvesRepositoryCovarianceFromTheCurrentRound() {
+        TypeName baseResultType = TypeName.create("example.GeneratedBaseResult");
+        TypeInfo baseResult = TypeInfo.builder()
+                .typeName(baseResultType)
+                .kind(ElementKind.CLASS)
                 .build();
+        TypeName childResultType = TypeName.create("example.GeneratedChildResult");
+        TypeInfo childResult = TypeInfo.builder()
+                .typeName(childResultType)
+                .kind(ElementKind.CLASS)
+                .superTypeInfo(baseResult)
+                .build();
+        String sql = "select VALUE from ITEM";
+        TypeInfo baseRepository = repository("example.BaseRepository",
+                                             method("find", baseResultType, sql));
+        TypeInfo childRepository = repository("example.ChildRepository",
+                                              method("find", childResultType, sql));
+        TypeInfo repository = repository("example.Repository", baseRepository, childRepository);
 
-        TypeName resolved = JdbcTypeHierarchy.substitute(concreteType, Map.of("T", TypeNames.STRING));
+        List<TypedElementInfo> methods = JdbcTypeHierarchy.abstractMethods(
+                repository,
+                new TypesRoundContext(Map.of(baseResultType, baseResult,
+                                              childResultType, childResult)));
 
-        assertThat(resolved, is(concreteType));
+        assertThat(methods.size(), is(1));
+        assertThat(methods.getFirst().typeName(), is(childResultType));
     }
 
-    @Test
-    void recognizesImplicitSupertypesOfRoundVisibleTypes() {
-        TypeName recordType = TypeName.create("example.RoundRecord");
-        TypeName enumType = TypeName.create("example.RoundEnum");
-        TypeName annotationType = TypeName.create("example.RoundAnnotation");
-        RoundContext context = new TypesRoundContext(Map.of(recordType, typeInfo(recordType, ElementKind.RECORD),
-                                                             enumType, typeInfo(enumType, ElementKind.ENUM),
-                                                             annotationType,
-                                                             typeInfo(annotationType, ElementKind.ANNOTATION_TYPE)));
-
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(recordType, TypeName.create(Record.class), context), is(true));
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(enumType, TypeName.create(Enum.class), context), is(true));
-        assertThat(JdbcTypeHierarchy.returnTypeSubtype(annotationType,
-                                                       TypeName.create(java.lang.annotation.Annotation.class),
-                                                       context),
-                   is(true));
-    }
-
-    private static TypeInfo typeInfo(TypeName typeName, ElementKind kind) {
+    private static TypeInfo repository(String typeName, TypedElementInfo method) {
         return TypeInfo.builder()
-                .typeName(typeName)
-                .kind(kind)
+                .typeName(TypeName.create(typeName))
+                .kind(ElementKind.INTERFACE)
+                .addElementInfo(method)
                 .build();
     }
 
-    private record TypesRoundContext(Map<TypeName, TypeInfo> typesByName) implements RoundContext {
+    private static TypeInfo repository(String typeName, TypeInfo... parents) {
+        return TypeInfo.builder()
+                .typeName(TypeName.create(typeName))
+                .kind(ElementKind.INTERFACE)
+                .interfaceTypeInfo(List.of(parents))
+                .build();
+    }
+
+    private static TypedElementInfo method(String name, TypeName returnType, String sql, String... parameters) {
+        TypedElementInfo.Builder builder = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName(name)
+                .typeName(returnType)
+                .addElementModifier(Modifier.ABSTRACT)
+                .addAnnotation(Annotation.builder()
+                                       .typeName(JdbcPersistenceTypes.JDBC_STATEMENT)
+                                       .value(sql)
+                                       .build());
+        for (String parameter : parameters) {
+            builder.addParameterArgument(TypedElementInfo.builder()
+                                                 .kind(ElementKind.PARAMETER)
+                                                 .elementName(parameter)
+                                                 .typeName(TypeNames.STRING)
+                                                 .build());
+        }
+        return builder.build();
+    }
+
+    /**
+     * Minimal round context for repository hierarchy policy tests.
+     */
+    private record TypesRoundContext(Map<TypeName, TypeInfo> typeInfo) implements RoundContext {
         @Override
         public Collection<TypeName> availableAnnotations() {
             return List.of();
@@ -126,7 +185,7 @@ class JdbcTypeHierarchyTest {
 
         @Override
         public Collection<TypeInfo> types() {
-            return typesByName.values();
+            return typeInfo.values();
         }
 
         @Override
@@ -154,7 +213,7 @@ class JdbcTypeHierarchyTest {
 
         @Override
         public Optional<TypeInfo> typeInfo(TypeName typeName) {
-            return Optional.ofNullable(typesByName.get(typeName));
+            return Optional.ofNullable(typeInfo.get(typeName));
         }
     }
 }

@@ -268,7 +268,6 @@ final class JdbcMethodGenerator {
     private static void generateBindParameter(Method.Builder method, String methodName) {
         method.name(methodName)
                 .accessModifier(AccessModifier.PRIVATE)
-                .isStatic(true)
                 .addParameter(parameter -> parameter.name("statement")
                         .type(JdbcPersistenceTypes.JDBC_CLIENT_STATEMENT))
                 .addParameter(parameter -> parameter.name("index")
