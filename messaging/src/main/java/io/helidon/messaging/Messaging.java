@@ -122,6 +122,9 @@ public final class Messaging {
 
     /**
      * Message payload parameter.
+     * <p>
+     * This explicit marker selects the payload view even when the parameter type implements {@link Message}. Header
+     * parameters on the same method are read from the outer delivery message.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)

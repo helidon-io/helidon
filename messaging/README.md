@@ -129,10 +129,10 @@ The primary method parameter can expose one of three views of a delivery:
 
 Connector-specific immutable `Message` subtypes, such as the Kafka and JMS message types, can also be declared for
 messages originating from that connector. A default message emitted locally does not satisfy a handler that requires
-one of those subtypes. In a multi-parameter method, a payload is identified with `@Messaging.Entity`; alternatively,
-an unannotated `Message<T>` or connector-specific envelope can be the primary view. Other parameters use
-`@Messaging.HeaderParam`. Header names are exact and case-sensitive; `String` declares a required header and
-`Optional<String>` declares an optional one:
+one of those subtypes. In a multi-parameter method, a payload is identified with `@Messaging.Entity`. This explicit
+marker selects the payload view even when the parameter type implements `Message`; only an unannotated `Message<T>` or
+connector-specific subtype selects the envelope view. Other parameters use `@Messaging.HeaderParam`. Header names are
+exact and case-sensitive; `String` declares a required header and `Optional<String>` declares an optional one:
 
 ```java
 @Messaging.ReceiveFrom("orders")
@@ -156,9 +156,10 @@ Message<Order> validate(Message<Order> incoming) {
 ```
 
 A processor can return a payload or a `Message<T>`. A payload is wrapped in a new message without the input headers;
-return a message envelope when headers must be retained or changed. Terminal receivers and batch handlers return
-`void`, and a batch handler cannot use `@Messaging.SendTo`. Asynchronous return types and reactive publishers are not
-supported.
+return a message envelope when headers must be retained or changed. A return type that implements `Message` is always
+treated as an envelope; wrap it in an outer `Message<P>` to produce a message-valued payload `P`. Terminal receivers
+and batch handlers return `void`, and a batch handler cannot use `@Messaging.SendTo`. Asynchronous return types and
+reactive publishers are not supported.
 
 Several services can receive from the same channel. Each receiver is a required output, so the delivery succeeds only
 after all of them succeed. One service cannot declare two receivers for the same channel.

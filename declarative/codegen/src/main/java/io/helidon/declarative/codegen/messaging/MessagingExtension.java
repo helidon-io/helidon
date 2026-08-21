@@ -684,14 +684,12 @@ class MessagingExtension implements RegistryCodegenExtension {
                 continue;
             }
 
-            MessageType declaredMessage = messageType(roundContext,
-                                                       argument.typeName(),
-                                                       argument.originatingElementValue());
+            MessageType declaredMessage = entity
+                    ? null
+                    : messageType(roundContext,
+                                  argument.typeName(),
+                                  argument.originatingElementValue());
             if (entity) {
-                if (declaredMessage != null) {
-                    throw new CodegenException("@Messaging.Entity cannot annotate a Message envelope parameter",
-                                               argument.originatingElementValue());
-                }
                 TypeName payloadType = concreteType(roundContext,
                                                     argument.typeName().boxed(),
                                                     argument.originatingElementValue(),
