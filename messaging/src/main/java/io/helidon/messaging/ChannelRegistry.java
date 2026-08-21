@@ -1196,7 +1196,8 @@ class ChannelRegistry implements MessagingRuntime {
             reservationDeadline = Long.MIN_VALUE;
             return deliveryEngine.reserveConnectorDelivery(channel,
                                                             maxDeliveryMessages(),
-                                                            this::processDelivery);
+                                                            this::processDelivery,
+                                                            this::processFailedDelivery);
         }
 
         @Override
@@ -1220,7 +1221,8 @@ class ChannelRegistry implements MessagingRuntime {
                     channel,
                     maxDeliveryMessages(),
                     remaining,
-                    this::processDelivery);
+                    this::processDelivery,
+                    this::processFailedDelivery);
             if (result.isPresent()) {
                 reservationDeadline = Long.MIN_VALUE;
             } else if (reservationDeadline == Long.MIN_VALUE && timeout != Long.MAX_VALUE) {
@@ -1236,12 +1238,28 @@ class ChannelRegistry implements MessagingRuntime {
         }
 
         private void processDelivery(MessageBatch<?> root) {
+            processDelivery(root, null);
+        }
+
+        private void processFailedDelivery(MessageBatch<?> root, RuntimeException failure) {
+            processDelivery(root, Objects.requireNonNull(failure));
+        }
+
+        private void processDelivery(MessageBatch<?> root, RuntimeException preDispatchFailure) {
             boolean[] settled = new boolean[root.size()];
             Deque<PendingDelivery> pending = new ArrayDeque<>();
-            pending.addFirst(new PendingDelivery(root, 0));
+            pending.addFirst(new PendingDelivery(root, 0, preDispatchFailure));
             while (!pending.isEmpty()) {
                 ensureDeliveryActive();
                 PendingDelivery current = pending.removeFirst();
+                if (current.preDispatchFailure() != null) {
+                    handleDeliveryFailure(root,
+                                          settled,
+                                          pending,
+                                          current,
+                                          current.preDispatchFailure());
+                    continue;
+                }
                 try {
                     ChannelRegistry.this.emitBatch(channel, current.batch());
                     markSettled(root, settled, current.batch());
@@ -1276,7 +1294,8 @@ class ChannelRegistry implements MessagingRuntime {
                 deferredIndexes.clear();
             } else if (!deferredIndexes.isEmpty()) {
                 pending.addFirst(new PendingDelivery(current.batch().subset(deferredIndexes),
-                                                     current.failedAttempts()));
+                                                     current.failedAttempts(),
+                                                     current.preDispatchFailure()));
             }
 
             MessageBatch<?> failedBatch = current.batch().subset(failedIndexes);
@@ -1284,7 +1303,9 @@ class ChannelRegistry implements MessagingRuntime {
             int failedAttempt = current.failedAttempts() + 1;
             if (failurePolicy.maxAttempts() == 0 || failedAttempt < failurePolicy.maxAttempts()) {
                 awaitRetry();
-                pending.addFirst(new PendingDelivery(failedBatch, failedAttempt));
+                pending.addFirst(new PendingDelivery(failedBatch,
+                                                     failedAttempt,
+                                                     current.preDispatchFailure()));
                 return;
             }
 
@@ -1497,7 +1518,9 @@ class ChannelRegistry implements MessagingRuntime {
         return ((first ^ result) & (second ^ result)) < 0 ? Long.MAX_VALUE : result;
     }
 
-    private record PendingDelivery(MessageBatch<?> batch, int failedAttempts) {
+    private record PendingDelivery(MessageBatch<?> batch,
+                                   int failedAttempts,
+                                   RuntimeException preDispatchFailure) {
     }
 
     private static final class ResolvedParameterizedType implements ParameterizedType {

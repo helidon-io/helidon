@@ -17,6 +17,7 @@
 package io.helidon.messaging;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
@@ -25,13 +26,15 @@ import io.helidon.common.Api;
  * Pending message-count capacity reserved by an incoming connector before it acquires transport data.
  * <p>
  * A connector must reserve the maximum delivery it may retain before polling, reading, or otherwise accepting that
- * delivery from its transport. The actual delivery supplied to {@link #start(MessageBatch)} must not exceed
- * the reserved message count. Starting atomically transfers the actual count from pending capacity to in-flight
- * capacity and releases unused reservation capacity.
+ * delivery from its transport. The actual delivery supplied to {@link #start(MessageBatch)} or
+ * {@link #startFailed(MessageBatch, RuntimeException)} must not exceed the reserved message count. Starting
+ * atomically transfers the actual count from pending capacity to in-flight capacity and releases unused reservation
+ * capacity.
  * <p>
- * A reservation has one owner and one terminal transition: it is either started once or closed. Closing is
- * idempotent and releases capacity exactly once. After a successful start, ownership transfers to the returned
- * {@link ConnectorDelivery}; closing this reservation no longer releases the delivery lease.
+ * A reservation has one owner and one terminal transition: it is either started once, started with a pre-dispatch
+ * failure once, or closed. Closing is idempotent and releases capacity exactly once. After a successful start,
+ * ownership transfers to the returned {@link ConnectorDelivery}; closing this reservation no longer releases the
+ * delivery lease.
  */
 @Api.Preview
 public interface ConnectorDeliveryReservation extends AutoCloseable {
@@ -49,6 +52,36 @@ public interface ConnectorDeliveryReservation extends AutoCloseable {
      * @throws IllegalStateException if this reservation was already started or another start is in progress
      */
     ConnectorDelivery start(MessageBatch<?> batch);
+
+    /**
+     * Start a retained connector delivery whose transport-to-message mapping failed before dispatch.
+     * <p>
+     * Runtime implementations can apply the channel failure policy without invoking application handlers. The
+     * default implementation closes this reservation and rethrows the supplied failure so implementations compiled
+     * against an earlier version fail safely instead of dispatching an invalid batch.
+     *
+     * @param batch retained delivery metadata used for retry, drop, or dead-letter handling
+     * @param failure pre-dispatch mapping failure
+     * @return admitted delivery task and settlement lease
+     * @throws RuntimeException the supplied failure when this operation is not implemented by the runtime
+     */
+    default ConnectorDelivery startFailed(MessageBatch<?> batch, RuntimeException failure) {
+        RuntimeException primaryFailure;
+        try {
+            Objects.requireNonNull(batch);
+            primaryFailure = Objects.requireNonNull(failure);
+        } catch (RuntimeException validationFailure) {
+            primaryFailure = validationFailure;
+        }
+        try {
+            close();
+        } catch (RuntimeException | Error closeFailure) {
+            if (closeFailure != primaryFailure) {
+                primaryFailure.addSuppressed(closeFailure);
+            }
+        }
+        throw primaryFailure;
+    }
 
     /**
      * Attempt to start a retained connector delivery without waiting.
