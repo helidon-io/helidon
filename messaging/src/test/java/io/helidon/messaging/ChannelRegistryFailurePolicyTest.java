@@ -273,6 +273,77 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
+    void testPreDispatchFailureRetriesThenDeadLettersWithoutInvokingHandlers() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        AtomicInteger handlerCalls = new AtomicInteger();
+        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> {
+                                handlerCalls.incrementAndGet();
+                            })),
+                            yaml("""
+                                    helidon:
+                                      messaging:
+                                        incoming:
+                                          orders:
+                                            connector: test-in
+                                            failure:
+                                              retry:
+                                                delay: PT0.001S
+                                                max-attempts: 3
+                                              on-exhausted: DEAD_LETTER
+                                              dead-letter:
+                                                channel: orders-dlq
+                                        outgoing:
+                                          orders-dlq:
+                                            connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        registry.start();
+        Message<String> rejected = Message.builder((String) null).header("message-id", "poison-1").build();
+        IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
+
+        deliverFailed(incoming.context("orders"), MessageBatch.create(rejected), mappingFailure);
+
+        assertThat(handlerCalls.get(), is(0));
+        assertThat(outgoing.messages().size(), is(1));
+        DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().getFirst();
+        assertThat(deadLetter.originalMessage(), sameInstance(rejected));
+        assertThat(deadLetter.attempts(), is(3));
+        assertThat(deadLetter.failureType(), is(mappingFailure.getClass().getName()));
+        assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+    }
+
+    @Test
+    void testPreDispatchFailureDropsWithoutInvokingHandlersOrFailingGraph() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+                                handled.add((String) message.entity());
+                            })),
+                            yaml("""
+                                    helidon:
+                                      messaging:
+                                        incoming:
+                                          orders:
+                                            connector: test-in
+                                            failure:
+                                              retry:
+                                                max-attempts: 1
+                                              on-exhausted: DROP
+                                    """),
+                            List.of(incoming));
+        registry.start();
+        IncomingConnectorContext context = incoming.context("orders");
+
+        deliverFailed(context,
+                      MessageBatch.create(Message.<String>create(null)),
+                      new IllegalStateException("message mapping failed"));
+        deliver(context, MessageBatch.create(Message.create("good")));
+
+        assertThat(handled, is(List.of("good")));
+    }
+
+    @Test
     void testCoordinatorDeadLettersCustomMessageImplementations() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         TestOutgoingConnector outgoing = new TestOutgoingConnector();
@@ -1271,6 +1342,15 @@ class ChannelRegistryFailurePolicyTest {
                                 MessageBatch<?> batch) throws InterruptedException {
         try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
              ConnectorDelivery delivery = reservation.start(batch)) {
+            delivery.await();
+        }
+    }
+
+    private static void deliverFailed(IncomingConnectorContext context,
+                                      MessageBatch<?> batch,
+                                      RuntimeException failure) throws InterruptedException {
+        try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
+             ConnectorDelivery delivery = reservation.startFailed(batch, failure)) {
             delivery.await();
         }
     }

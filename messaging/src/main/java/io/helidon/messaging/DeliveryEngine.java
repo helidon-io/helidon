@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -158,18 +159,39 @@ final class DeliveryEngine implements AutoCloseable {
     ConnectorDeliveryReservation reserveConnectorDelivery(String channel,
                                                            int maxMessages,
                                                            Consumer<MessageBatch<?>> processor) {
+        return reserveConnectorDelivery(channel, maxMessages, processor, DeliveryEngine::throwDeliveryFailure);
+    }
+
+    ConnectorDeliveryReservation reserveConnectorDelivery(String channel,
+                                                           int maxMessages,
+                                                           Consumer<MessageBatch<?>> processor,
+                                                           BiConsumer<MessageBatch<?>, RuntimeException> failureProcessor) {
         rejectConnectorReservationFromDispatch();
         return dispatcher(channel).reserveConnectorDelivery(
                 connectorReservationMessages(channel, maxMessages),
                 AdmissionMode.WAIT,
                 -1,
-                Objects.requireNonNull(processor));
+                Objects.requireNonNull(processor),
+                Objects.requireNonNull(failureProcessor));
     }
 
     Optional<ConnectorDeliveryReservation> tryReserveConnectorDelivery(String channel,
                                                                        int maxMessages,
                                                                        long remainingCapacityWaitNanos,
                                                                        Consumer<MessageBatch<?>> processor) {
+        return tryReserveConnectorDelivery(channel,
+                                           maxMessages,
+                                           remainingCapacityWaitNanos,
+                                           processor,
+                                           DeliveryEngine::throwDeliveryFailure);
+    }
+
+    Optional<ConnectorDeliveryReservation> tryReserveConnectorDelivery(
+            String channel,
+            int maxMessages,
+            long remainingCapacityWaitNanos,
+            Consumer<MessageBatch<?>> processor,
+            BiConsumer<MessageBatch<?>, RuntimeException> failureProcessor) {
         rejectConnectorReservationFromDispatch();
         if (remainingCapacityWaitNanos < 0) {
             throw new IllegalArgumentException("remainingCapacityWaitNanos must be zero or greater");
@@ -178,7 +200,8 @@ final class DeliveryEngine implements AutoCloseable {
                 connectorReservationMessages(channel, maxMessages),
                 AdmissionMode.TRY,
                 remainingCapacityWaitNanos,
-                Objects.requireNonNull(processor)));
+                Objects.requireNonNull(processor),
+                Objects.requireNonNull(failureProcessor)));
     }
 
     ConnectorDeliveryReservation reserveConnectorDelivery(String channel,
@@ -331,6 +354,10 @@ final class DeliveryEngine implements AutoCloseable {
         if (CURRENT_DELIVERY.get() != null) {
             throw new MessagingException("A connector delivery cannot be reserved from messaging dispatch");
         }
+    }
+
+    private static void throwDeliveryFailure(MessageBatch<?> batch, RuntimeException failure) {
+        throw failure;
     }
 
     private void awaitCaller(DeliveryTask task) {
@@ -670,7 +697,8 @@ final class DeliveryEngine implements AutoCloseable {
         private DeliveryReservation reserveConnectorDelivery(int messageCount,
                                                              AdmissionMode admissionMode,
                                                              long initialCapacityWaitNanos,
-                                                             Consumer<MessageBatch<?>> processor) {
+                                                             Consumer<MessageBatch<?>> processor,
+                                                             BiConsumer<MessageBatch<?>, RuntimeException> failureProcessor) {
             validatePendingMessageCount(messageCount);
             if (!pendingAdmissions.tryAcquire()) {
                 if (admissionMode == AdmissionMode.TRY) {
@@ -700,7 +728,8 @@ final class DeliveryEngine implements AutoCloseable {
                         }
                         DeliveryReservation result = createReservation(messageCount,
                                                                        initialCapacityWaitNanos,
-                                                                       processor);
+                                                                       processor,
+                                                                       failureProcessor);
                         transferPermit = true;
                         return result;
                     }
@@ -713,7 +742,10 @@ final class DeliveryEngine implements AutoCloseable {
                         if (pendingReservationOrder.peekFirst() == reservationToken
                                 && canReservePending(messageCount)) {
                             pendingReservationOrder.removeFirst();
-                            DeliveryReservation result = createReservation(messageCount, remaining, processor);
+                            DeliveryReservation result = createReservation(messageCount,
+                                                                           remaining,
+                                                                           processor,
+                                                                           failureProcessor);
                             transferPermit = true;
                             changed.signalAll();
                             return result;
@@ -743,12 +775,14 @@ final class DeliveryEngine implements AutoCloseable {
 
         private DeliveryReservation createReservation(int messageCount,
                                                       long remainingCapacityWaitNanos,
-                                                      Consumer<MessageBatch<?>> processor) {
+                                                      Consumer<MessageBatch<?>> processor,
+                                                      BiConsumer<MessageBatch<?>, RuntimeException> failureProcessor) {
             reservePending(messageCount);
             DeliveryReservation result = new DeliveryReservation(this,
                                                                  messageCount,
                                                                  remainingCapacityWaitNanos,
-                                                                 processor);
+                                                                 processor,
+                                                                 failureProcessor);
             reservations.add(result);
             return result;
         }
@@ -1322,6 +1356,7 @@ final class DeliveryEngine implements AutoCloseable {
         private final ChannelDispatcher dispatcher;
         private final int reservedMessages;
         private final Consumer<MessageBatch<?>> processor;
+        private final BiConsumer<MessageBatch<?>, RuntimeException> failureProcessor;
         private final AtomicBoolean startClaimed = new AtomicBoolean();
         private final AtomicReference<ReservationState> state = new AtomicReference<>(ReservationState.OPEN);
         private long remainingCapacityWaitNanos;
@@ -1331,11 +1366,13 @@ final class DeliveryEngine implements AutoCloseable {
         private DeliveryReservation(ChannelDispatcher dispatcher,
                                     int reservedMessages,
                                     long remainingCapacityWaitNanos,
-                                    Consumer<MessageBatch<?>> processor) {
+                                    Consumer<MessageBatch<?>> processor,
+                                    BiConsumer<MessageBatch<?>, RuntimeException> failureProcessor) {
             this.dispatcher = dispatcher;
             this.reservedMessages = reservedMessages;
             this.remainingCapacityWaitNanos = remainingCapacityWaitNanos;
             this.processor = processor;
+            this.failureProcessor = failureProcessor;
         }
 
         @Override
@@ -1348,6 +1385,24 @@ final class DeliveryEngine implements AutoCloseable {
                                                    batch.size(),
                                                    batch,
                                                    () -> processor.accept(batch),
+                                                   AdmissionMode.WAIT);
+            } catch (RuntimeException | Error e) {
+                dispatcher.closeReservation(this, ReservationState.CLOSED);
+                throw e;
+            }
+        }
+
+        @Override
+        public ConnectorDelivery startFailed(MessageBatch<?> batch, RuntimeException failure) {
+            claimStart();
+            try {
+                Objects.requireNonNull(batch);
+                Objects.requireNonNull(failure);
+                updateTryStartBudget();
+                return dispatcher.startReservation(this,
+                                                   batch.size(),
+                                                   batch,
+                                                   () -> failureProcessor.accept(batch, failure),
                                                    AdmissionMode.WAIT);
             } catch (RuntimeException | Error e) {
                 dispatcher.closeReservation(this, ReservationState.CLOSED);
