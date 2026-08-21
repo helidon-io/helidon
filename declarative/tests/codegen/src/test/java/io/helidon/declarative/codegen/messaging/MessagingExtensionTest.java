@@ -282,6 +282,141 @@ class MessagingExtensionTest {
     }
 
     @Test
+    void explicitEntityTreatsMessageSubtypeAsPayloadWhileUnannotatedSubtypeRemainsEnvelope() throws Exception {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import java.util.Map;
+
+                import io.helidon.messaging.Message;
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                final class MessagePayload implements Message<String> {
+                    private final String value;
+
+                    MessagePayload(String value) {
+                        this.value = value;
+                    }
+
+                    @Override
+                    public String entity() {
+                        return value;
+                    }
+
+                    @Override
+                    public Map<String, String> headers() {
+                        return Map.of("tenant", "inner");
+                    }
+                }
+
+                @Service.Singleton
+                class EntityPayloadConsumer {
+                    private MessagePayload received;
+                    private String tenant;
+
+                    @Messaging.ReceiveFrom("entity-payload")
+                    void consume(@Messaging.Entity MessagePayload payload,
+                                 @Messaging.HeaderParam("tenant") String tenant) {
+                        this.received = payload;
+                        this.tenant = tenant;
+                    }
+
+                    public MessagePayload received() {
+                        return received;
+                    }
+
+                    public String tenant() {
+                        return tenant;
+                    }
+                }
+
+                @Service.Singleton
+                class EnvelopeConsumer {
+                    private MessagePayload received;
+                    private String tenant;
+
+                    @Messaging.ReceiveFrom("envelope")
+                    void consume(MessagePayload message,
+                                 @Messaging.HeaderParam("tenant") String tenant) {
+                        this.received = message;
+                        this.tenant = tenant;
+                    }
+
+                    public MessagePayload received() {
+                        return received;
+                    }
+
+                    public String tenant() {
+                        return tenant;
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        String entitySource = generatedSource(result, "EntityPayloadConsumer__MessagingConsumer_");
+        assertTrue(entitySource.contains("new GenericType<MessagePayload>()"), entitySource);
+        assertTrue(entitySource.contains("new GenericType<Message<MessagePayload>>()"), entitySource);
+        assertTrue(entitySource.contains("var typedMessage = (Message<MessagePayload>) message;"), entitySource);
+        assertTrue(entitySource.contains("consumerInstance.consume(typedMessage.entity(), "
+                                                + "typedMessage.header(\"tenant\").orElseThrow"),
+                   entitySource);
+
+        String envelopeSource = generatedSource(result, "EnvelopeConsumer__MessagingConsumer_");
+        assertTrue(envelopeSource.contains("new GenericType<String>()"), envelopeSource);
+        assertTrue(envelopeSource.contains("new GenericType<MessagePayload>()"), envelopeSource);
+        assertTrue(envelopeSource.contains("var typedMessage = (MessagePayload) message;"), envelopeSource);
+        assertTrue(envelopeSource.contains("consumerInstance.consume(typedMessage, "
+                                                  + "typedMessage.header(\"tenant\").orElseThrow"),
+                   envelopeSource);
+
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[] {
+                result.classOutput().toUri().toURL()
+        }, getClass().getClassLoader())) {
+            Class<?> payloadType = classLoader.loadClass("com.example.MessagePayload");
+            var payloadConstructor = payloadType.getDeclaredConstructor(String.class);
+            payloadConstructor.setAccessible(true);
+            Object payload = payloadConstructor.newInstance("payload");
+
+            Class<?> entityConsumerType = classLoader.loadClass("com.example.EntityPayloadConsumer");
+            var entityConsumerConstructor = entityConsumerType.getDeclaredConstructor();
+            entityConsumerConstructor.setAccessible(true);
+            Object entityConsumer = entityConsumerConstructor.newInstance();
+            ConsumerRegistration entityRegistration = (ConsumerRegistration) newRegistration(
+                    generatedClass(classLoader, result, "EntityPayloadConsumer__MessagingConsumer_"),
+                    (Supplier<Object>) () -> entityConsumer,
+                    passthroughEntryPoints());
+
+            assertSame(payloadType, entityRegistration.payloadType());
+            assertSame(Message.class, entityRegistration.envelopeType());
+
+            entityRegistration.dispatch(MessageBatch.create(Message.builder(payload)
+                                                                      .header("tenant", "outer")
+                                                                      .build()));
+
+            assertSame(payload, invoke(entityConsumer, "received"));
+            assertEquals("outer", invoke(entityConsumer, "tenant"));
+
+            Class<?> envelopeConsumerType = classLoader.loadClass("com.example.EnvelopeConsumer");
+            var envelopeConsumerConstructor = envelopeConsumerType.getDeclaredConstructor();
+            envelopeConsumerConstructor.setAccessible(true);
+            Object envelopeConsumer = envelopeConsumerConstructor.newInstance();
+            ConsumerRegistration envelopeRegistration = (ConsumerRegistration) newRegistration(
+                    generatedClass(classLoader, result, "EnvelopeConsumer__MessagingConsumer_"),
+                    (Supplier<Object>) () -> envelopeConsumer,
+                    passthroughEntryPoints());
+
+            assertSame(String.class, envelopeRegistration.payloadType());
+            assertSame(payloadType, envelopeRegistration.envelopeType());
+
+            envelopeRegistration.dispatch(MessageBatch.create((Message<?>) payload));
+
+            assertSame(payload, invoke(envelopeConsumer, "received"));
+            assertEquals("inner", invoke(envelopeConsumer, "tenant"));
+        }
+    }
+
+    @Test
     void rejectsConflictingEmitterPayloadsForSameServiceAndChannel() {
         TestCompiler.Result result = compile("""
                 package com.example;
