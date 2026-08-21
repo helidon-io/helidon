@@ -50,7 +50,7 @@ For each Helidon feature, we need a namespace class to contain the annotations a
 | GRPC             | `RpcServer`, `RpcClient`             | `GrpcClient` cannot be freed                              |
 | WebSocket        | `WebSocketClient`, `WebSocketServer` | `WsClient` cannot be freed                                |
 | Security         | `Secured`                            | `Security` cannot be freed (big API), existing annots.    |
-| Messaging        | `Messages`                           | `Messaging` cannot be freed                               |
+| Messaging        | `Messaging`                          | OK                                                        |
 | Scheduling       | `Scheduling`                         | Deprecate methods and current types for removal           |
 | Health           | `Health`                             | OK                                                        |
 | OpenAPI          | `OpenApi`                            | OK                                                        |
