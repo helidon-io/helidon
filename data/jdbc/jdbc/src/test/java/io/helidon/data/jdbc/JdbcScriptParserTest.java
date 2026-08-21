@@ -64,13 +64,40 @@ class JdbcScriptParserTest {
         assertThat(parse(first + ";" + second + ";\r\n"), is(List.of(first, second)));
     }
 
+    /**
+     * Verifies that portable comments protect semicolons and consecutive
+     * subtraction operators remain executable when separated by whitespace.
+     */
     @Test
     void appliesThePortableLineCommentDelimiter() {
-        assertThat(parse("UPDATE account SET balance = balance--1;SELECT 2;"),
-                   is(List.of("UPDATE account SET balance = balance--1", "SELECT 2")));
+        assertThat(parse("UPDATE account SET balance = balance - -1;SELECT 2;"),
+                   is(List.of("UPDATE account SET balance = balance - -1", "SELECT 2")));
 
         String commented = "SELECT 1 -- comment; retained\n";
         assertThat(parse(commented + ";SELECT 2;"), is(List.of(commented, "SELECT 2")));
+    }
+
+    /**
+     * Verifies that an ambiguous database comment cannot activate text after
+     * its semicolon as a separate bootstrap statement or acquire a connection.
+     */
+    @Test
+    void rejectsAmbiguousDoubleDashBeforeAcquiringAConnection() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        String privateSql = "SELECT 1--PRIVATE_VALUE; DELETE FROM CUSTOMER;";
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> JdbcScriptRunner.execute(
+                                                     "test",
+                                                     dataSource,
+                                                     List.of(Resource.create("private description", privateSql))));
+
+        assertThat(failure.getMessage(), containsString("contains an ambiguous double dash"));
+        assertThat(failure.getMessage(), containsString("profile is PORTABLE"));
+        assertThat(failure.getMessage(), containsString("source offset is 8"));
+        assertThat(failure.getMessage(), not(containsString("PRIVATE_VALUE")));
+        assertThat(failure.getMessage(), not(containsString("private description")));
+        verify(dataSource, never()).getConnection();
     }
 
     @Test
@@ -178,7 +205,7 @@ class JdbcScriptParserTest {
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.createStatement()).thenReturn(statement);
         when(statement.execute(anyString())).thenReturn(false);
-        when(statement.getUpdateCount()).thenReturn(-1);
+        when(statement.getLargeUpdateCount()).thenReturn(-1L);
 
         JdbcScriptRunner.execute("test",
                                  dataSource,

@@ -15,14 +15,10 @@
  */
 package io.helidon.data.jdbc;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +27,7 @@ import io.helidon.data.DataException;
 
 /**
  * Creates application-visible JDBC diagnostics without retaining confidential
- * driver or environment text.
+ * SQL, driver, or environment text.
  * <p>
  * Driver-owned throwables never cross this boundary by reference. SQL
  * exceptions are rebuilt from SQL state and vendor code, non-SQL failures are
@@ -40,9 +36,6 @@ import io.helidon.data.DataException;
  * Provider-owned safe diagnostic types make repeated sanitization idempotent.
  */
 final class JdbcExceptionTranslator {
-
-    // Retain 96 bits of the SHA-256 digest so applications can correlate failures without exposing SQL text.
-    private static final int FINGERPRINT_BYTES = 12;
 
     // Retain at most 64 warnings from one JDBC resource to bound traversal work and suppressed diagnostics.
     private static final int MAX_WARNINGS_PER_OWNER = 64;
@@ -65,7 +58,7 @@ final class JdbcExceptionTranslator {
      * @return data-layer failure
      */
     static DataException translate(JdbcOperation operation, SQLException cause) {
-        return translate(operationName(operation), operation.sql(), cause);
+        return translate(operationName(operation), cause);
     }
 
     /**
@@ -79,35 +72,18 @@ final class JdbcExceptionTranslator {
     }
 
     /**
-     * Translates a driver failure without including any bound values.
+     * Translates a driver failure without deriving an identity from its SQL.
      *
      * @param operation operation name
-     * @param sql statement text
      * @param cause driver failure
      * @return data-layer failure
      */
-    static DataException translate(String operation, String sql, SQLException cause) {
+    static DataException translate(String operation, SQLException cause) {
         SqlMetadata metadata = sqlMetadata(cause);
+        // A stable unkeyed SQL digest would let diagnostic readers identify predictable statements by comparison.
         String message = "The JDBC " + operation + " failed." + databaseDiagnostic(metadata)
-                + " The SQL fingerprint is '" + fingerprint(sql) + "'." + driverDocumentationGuidance(metadata);
+                + driverDocumentationGuidance(metadata);
         return new DataException(message, safeCause(cause, metadata));
-    }
-
-    /**
-     * Creates a bounded identity for SQL without retaining its text in a
-     * diagnostic.
-     *
-     * @param sql SQL text
-     * @return hexadecimal fingerprint
-     */
-    static String fingerprint(String sql) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(sql.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest, 0, FINGERPRINT_BYTES);
-        } catch (NoSuchAlgorithmException e) {
-            // SHA-256 is required by every Java implementation.
-            throw new IllegalStateException("The SHA-256 message digest is unavailable.", e);
-        }
     }
 
     /**
@@ -833,6 +809,7 @@ final class JdbcExceptionTranslator {
         }
 
         private void attach(SQLException target, Throwable related) {
+            // Omit excess relationships because a limit marker would consume space without useful JDBC detail.
             if (reserve()) {
                 target.addSuppressed(related);
             }

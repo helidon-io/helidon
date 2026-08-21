@@ -29,9 +29,9 @@ public enum JdbcSqlLexicalProfile {
      * JDBC clients.
      * <p>
      * Square brackets and backticks remain ordinary punctuation. Each
-     * question mark is a bind marker. Nested block comments are rejected.
-     * Complete PostgreSQL dollar quoted strings and Oracle alternative quoted
-     * strings are protected regions.
+     * question mark is a bind marker. A no-whitespace double-dash sequence and
+     * nested block comments are rejected. Complete PostgreSQL dollar quoted
+     * strings and Oracle alternative quoted strings are protected regions.
      */
     PORTABLE(false, false, false, false, true, true);
 

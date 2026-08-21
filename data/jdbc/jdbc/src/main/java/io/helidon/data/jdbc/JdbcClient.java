@@ -57,8 +57,9 @@ public interface JdbcClient {
      * Oracle alternative strings, and conventional comments are ignored.
      * Square brackets and backticks are ordinary punctuation, and each
      * question mark in {@code ??} is a bind marker. A {@code --} comment
-     * requires following whitespace, a control character, or end-of-input.
-     * Nested block comments are rejected.
+     * requires following whitespace, a control character, or end-of-input;
+     * other double-dash sequences are rejected as dialect-ambiguous. Nested
+     * block comments are rejected.
      *
      * @param sql SQL containing zero or more {@code ?} markers
      * @return statement description

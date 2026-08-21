@@ -144,22 +144,6 @@ public class TypeHierarchyResolver {
     }
 
     /**
-     * Tests whether the candidate is a strictly more specific return type.
-     *
-     * @param candidate candidate return type
-     * @param existing existing return type
-     * @return whether the candidate can replace the existing type and is not the same type
-     */
-    public final boolean returnTypeSubtype(TypeName candidate, TypeName existing) {
-        Objects.requireNonNull(candidate, "The candidate return type must not be null.");
-        Objects.requireNonNull(existing, "The existing return type must not be null.");
-        if (sameType(candidate, existing)) {
-            return false;
-        }
-        return returnTypeAssignable(candidate, existing);
-    }
-
-    /**
      * Resolves a declaration as a member of the inspected interface.
      *
      * @param interfaceInfo inspected interface
@@ -735,7 +719,10 @@ public class TypeHierarchyResolver {
         while (index < length && declaration.charAt(index) == '@') {
             int annotationStart = index + 1;
             int annotationNameEnd = annotationStart;
-            while (annotationNameEnd < length && annotationNamePart(declaration.charAt(annotationNameEnd))) {
+            while (annotationNameEnd < length
+                    && (Character.isJavaIdentifierPart(declaration.charAt(annotationNameEnd))
+                    || declaration.charAt(annotationNameEnd) == '.'
+                    || declaration.charAt(annotationNameEnd) == '$')) {
                 annotationNameEnd++;
             }
             int annotationEnd = skipWhitespace(declaration, annotationNameEnd);
@@ -768,10 +755,6 @@ public class TypeHierarchyResolver {
             index++;
         }
         return index;
-    }
-
-    private static boolean annotationNamePart(char current) {
-        return Character.isJavaIdentifierPart(current) || current == '.' || current == '$';
     }
 
     private static int annotationEnd(String declaration, int bodyStart) {

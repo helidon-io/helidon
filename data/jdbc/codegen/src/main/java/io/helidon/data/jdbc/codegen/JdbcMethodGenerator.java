@@ -16,14 +16,14 @@
 package io.helidon.data.jdbc.codegen;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.Annotation;
 import io.helidon.codegen.classmodel.ClassModel;
@@ -32,6 +32,7 @@ import io.helidon.codegen.classmodel.Parameter;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -52,20 +53,29 @@ final class JdbcMethodGenerator {
     /**
      * Plans every abstract repository method before emitting fields or methods.
      *
+     * @param codegenContext current code generation context
+     * @param roundContext current generation round
      * @param repositoryInfo repository metadata
      * @param classModel generated implementation
-     * @param roundContext current generation round
      */
-    static void generate(RepositoryInfo repositoryInfo,
-                         ClassModel.Builder classModel,
-                         RoundContext roundContext) {
+    static void generate(CodegenContext codegenContext,
+                         RoundContext roundContext,
+                         RepositoryInfo repositoryInfo,
+                         ClassModel.Builder classModel) {
         // Validate and name every method first so constructor dependencies and fields are complete before emission.
         List<TypedElementInfo> methods = JdbcTypeHierarchy.abstractMethods(repositoryInfo.interfaceInfo(), roundContext);
-        Map<String, Integer> generatedNames = new HashMap<>();
+        Set<String> generatedNames = new HashSet<>();
         List<JdbcMethodPlan> plans = new ArrayList<>(methods.size());
         for (TypedElementInfo method : methods) {
             JdbcMethodPlan plan = JdbcMethodPlan.create(method, roundContext);
-            String suffix = uniqueSuffix(method.elementName(), generatedNames);
+            String baseSuffix = CodegenUtil.toConstantName(
+                    codegenContext.uniqueName(repositoryInfo.interfaceInfo(), method));
+            String suffix = baseSuffix;
+            // Constant conversion is lossy: distinct Java names such as findValue and find_Value normalize to the
+            // same suffix. Reserve the final identifier as well as relying on signature-aware overload naming.
+            for (int index = 2; !generatedNames.add(suffix); index++) {
+                suffix = baseSuffix + "_" + index;
+            }
             plan.sqlFieldName(JdbcCodegenConstants.SQL_FIELD_PREFIX + suffix);
             plan.mapperFieldName(JdbcCodegenConstants.MAPPER_FIELD_PREFIX + suffix);
             plans.add(plan);
@@ -85,6 +95,8 @@ final class JdbcMethodGenerator {
             collectMethodNames(repositoryInfo.interfaceInfo(), new HashSet<>(), repositoryMethodNames);
             String candidate = JdbcCodegenConstants.BIND_PARAMETER_METHOD_NAME;
             int suffix = 2;
+            // The helper is private but it still participates in Java member lookup, so inherited repository names
+            // are reserved before generating a reusable nullable bind method.
             while (repositoryMethodNames.contains(candidate)) {
                 candidate = JdbcCodegenConstants.BIND_PARAMETER_METHOD_NAME + suffix++;
             }
@@ -95,6 +107,7 @@ final class JdbcMethodGenerator {
 
         List<MapperDependency> mapperDependencies = mapperDependencies(plans, classModel);
         JdbcRepositoryClassGenerator.generateConstructor(classModel, repositoryInfo, mapperDependencies);
+        Map<ResolvedType, JdbcMethodPlan> recordMappers = new LinkedHashMap<>();
         for (JdbcMethodPlan plan : plans) {
             classModel.addField(field -> field.name(plan.sqlFieldName())
                     .type(TypeNames.STRING)
@@ -102,7 +115,15 @@ final class JdbcMethodGenerator {
                     .isFinal(true)
                     .addContentLiteral(plan.jdbcSql()));
             if (plan.mappingKind() == JdbcMethodPlan.MappingKind.RECORD) {
-                JdbcRecordMapperGenerator.generate(plan, plan.mapperFieldName(), classModel);
+                // Avoid duplicate record mappers by reusing the first mapper planned for each exact mapped type.
+                // The shared field keeps the variable name derived from that first repository method. ResolvedType
+                // retains nested generic arguments that TypeName equality deliberately omits.
+                JdbcMethodPlan firstPlan = recordMappers.putIfAbsent(ResolvedType.create(plan.mappedType()), plan);
+                if (firstPlan == null) {
+                    JdbcRecordMapperGenerator.generate(plan, plan.mapperFieldName(), classModel);
+                } else {
+                    plan.mapperFieldName(firstPlan.mapperFieldName());
+                }
             }
             classModel.addMethod(method -> generateMethod(plan, method, bindParameterMethodName));
         }
@@ -125,34 +146,49 @@ final class JdbcMethodGenerator {
         Map<MapperDependencyKey, List<JdbcMethodPlan>> groupedPlans = new LinkedHashMap<>();
         for (JdbcMethodPlan plan : plans) {
             if (plan.mappingKind() == JdbcMethodPlan.MappingKind.EXPLICIT) {
-                MapperDependencyKey key = new MapperDependencyKey(plan.explicitMapper(), plan.mappedType(), true);
+                MapperDependencyKey key = new MapperDependencyKey(ResolvedType.create(plan.explicitMapper()),
+                                                                  ResolvedType.create(plan.mappedType()),
+                                                                  true);
                 groupedPlans.computeIfAbsent(key, ignored -> new ArrayList<>()).add(plan);
             } else if (plan.mappingKind() == JdbcMethodPlan.MappingKind.SERVICE) {
-                MapperDependencyKey key = new MapperDependencyKey(plan.mappedType(), plan.mappedType(), false);
+                ResolvedType mappedType = ResolvedType.create(plan.mappedType());
+                MapperDependencyKey key = new MapperDependencyKey(mappedType, mappedType, false);
                 groupedPlans.computeIfAbsent(key, ignored -> new ArrayList<>()).add(plan);
             }
         }
 
-        Map<String, Integer> fieldNames = new HashMap<>();
-        // Reserve the client name so an application type named JdbcClient cannot create a field collision.
-        fieldNames.put(JdbcCodegenConstants.JDBC_CLIENT_NAME, 1);
+        Set<String> dependencyNames = new HashSet<>();
+        // Mapper fields and their constructor parameters intentionally share one name. Reserve every client
+        // parameter name so a mapper can never replace infrastructure in any persistence-unit mode.
+        dependencyNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
+        dependencyNames.add(JdbcCodegenConstants.NAMED_JDBC_CLIENT_NAME);
         List<MapperDependency> dependencies = new ArrayList<>(groupedPlans.size());
         for (Map.Entry<MapperDependencyKey, List<JdbcMethodPlan>> entry : groupedPlans.entrySet()) {
             MapperDependencyKey key = entry.getKey();
             List<JdbcMethodPlan> mappedPlans = entry.getValue();
             TypeName mapperContract = TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
-                    .addTypeArgument(key.mappedType())
+                    .addTypeArgument(key.mappedType().type())
                     .build();
-            String baseName = lowerCamel(key.explicit() ? key.serviceType().className() : key.mappedType().className())
-                    + (key.explicit() ? "" : JdbcCodegenConstants.ROW_MAPPER_SUFFIX);
-            String fieldName = uniqueVariable(baseName, fieldNames);
+            // A fixed suffix keeps the application-derived name descriptive and turns a lower-cased Java keyword,
+            // such as Class, into the valid identifier classRowMapper.
+            String className = key.explicit()
+                    ? key.serviceType().type().className()
+                    : key.mappedType().type().className();
+            String baseName = Character.toLowerCase(className.charAt(0))
+                    + className.substring(1)
+                    + JdbcCodegenConstants.ROW_MAPPER_SUFFIX;
+            String candidate = baseName;
+            for (int index = 2; !dependencyNames.add(candidate); index++) {
+                candidate = baseName + index;
+            }
+            String fieldName = candidate;
             classModel.addField(field -> field.name(fieldName)
                     .type(mapperContract)
                     .isFinal(true));
             mappedPlans.forEach(plan -> plan.mapperFieldName(fieldName));
 
             // Inject an explicit mapper by its concrete service type, then retain it through RowMapper<T>.
-            TypeName parameterType = key.explicit() ? key.serviceType() : mapperContract;
+            TypeName parameterType = key.explicit() ? key.serviceType().type() : mapperContract;
             dependencies.add(new MapperDependency(parameterType, fieldName, fieldName));
         }
         return dependencies;
@@ -182,7 +218,16 @@ final class JdbcMethodGenerator {
                                                             .type(parameter.typeName())
                                                             .build()));
         plan.method().throwsChecked().forEach(method::addThrows);
-        String statementName = localName(plan, JdbcCodegenConstants.JDBC_STATEMENT_NAME);
+        Set<String> parameterNames = new HashSet<>();
+        for (TypedElementInfo parameter : plan.method().parameterArguments()) {
+            parameterNames.add(parameter.elementName());
+        }
+        String statementName = JdbcCodegenConstants.JDBC_STATEMENT_NAME;
+        int statementNameSuffix = 2;
+        // Repository parameter names are in method scope, so the generated statement variable must avoid them.
+        while (parameterNames.contains(statementName)) {
+            statementName = JdbcCodegenConstants.JDBC_STATEMENT_NAME + statementNameSuffix++;
+        }
         method.addContent(JdbcPersistenceTypes.JDBC_CLIENT_STATEMENT)
                 .addContent(" ")
                 .addContent(statementName)
@@ -222,6 +267,8 @@ final class JdbcMethodGenerator {
             return;
         }
         if (bindParameterMethodName != null) {
+            // Multiple nullable binds share one generated branch to keep repeated named markers from expanding the
+            // same typed null decision at every physical JDBC position.
             method.addContent(bindParameterMethodName)
                     .addContent("(")
                     .addContent(statementName)
@@ -365,14 +412,10 @@ final class JdbcMethodGenerator {
      * @param method generated method
      */
     private static void addMapper(JdbcMethodPlan plan, Method.Builder method) {
-        if (plan.mappingKind() == JdbcMethodPlan.MappingKind.RECORD) {
-            method.addContent(plan.mapperFieldName());
-        } else if (plan.mappingKind() == JdbcMethodPlan.MappingKind.SERVICE
-                || plan.mappingKind() == JdbcMethodPlan.MappingKind.EXPLICIT) {
-            method.addContent(plan.mapperFieldName());
-        } else {
-            throw new AssertionError("The JDBC mapping kind '" + plan.mappingKind()
-                                             + "' does not use a mapper instance.");
+        switch (plan.mappingKind()) {
+        case RECORD, SERVICE, EXPLICIT -> method.addContent(plan.mapperFieldName());
+        default -> throw new AssertionError("The JDBC mapping kind '" + plan.mappingKind()
+                                                     + "' does not use a mapper instance.");
         }
     }
 
@@ -401,82 +444,6 @@ final class JdbcMethodGenerator {
     }
 
     /**
-     * Finds a local variable name that does not collide with a method parameter.
-     *
-     * @param plan method plan
-     * @param base preferred name
-     * @return unique local name
-     */
-    private static String localName(JdbcMethodPlan plan, String base) {
-        Set<String> parameterNames = plan.method().parameterArguments()
-                .stream()
-                .map(TypedElementInfo::elementName)
-                .collect(Collectors.toSet());
-        String candidate = base;
-        int suffix = 2;
-        while (parameterNames.contains(candidate)) {
-            candidate = base + suffix++;
-        }
-        return candidate;
-    }
-
-    /**
-     * Creates a stable constant suffix and disambiguates overloaded methods.
-     *
-     * @param methodName repository method name
-     * @param names previously allocated base names
-     * @return unique constant suffix
-     */
-    private static String uniqueSuffix(String methodName, Map<String, Integer> names) {
-        String base = constantCase(methodName);
-        int count = names.merge(base, 1, Integer::sum);
-        return count == 1 ? base : base + "_" + count;
-    }
-
-    /**
-     * Creates a unique generated variable name.
-     *
-     * @param baseName preferred name
-     * @param names previously allocated names
-     * @return unique name
-     */
-    private static String uniqueVariable(String baseName, Map<String, Integer> names) {
-        int count = names.merge(baseName, 1, Integer::sum);
-        return count == 1 ? baseName : baseName + count;
-    }
-
-    /**
-     * Converts a simple type name to lower camel case.
-     *
-     * @param value simple type name
-     * @return lower-camel name
-     */
-    private static String lowerCamel(String value) {
-        if (value.isEmpty()) {
-            return value;
-        }
-        return Character.toLowerCase(value.charAt(0)) + value.substring(1);
-    }
-
-    /**
-     * Converts a Java method name to an upper underscore constant name.
-     *
-     * @param value method name
-     * @return constant name
-     */
-    private static String constantCase(String value) {
-        StringBuilder result = new StringBuilder(value.length() + 8);
-        for (int index = 0; index < value.length(); index++) {
-            char current = value.charAt(index);
-            if (index > 0 && Character.isUpperCase(current) && Character.isLowerCase(value.charAt(index - 1))) {
-                result.append('_');
-            }
-            result.append(Character.toUpperCase(current));
-        }
-        return result.toString();
-    }
-
-    /**
      * One statically typed mapper injection point and its repository field.
      *
      * @param parameterType injected service type
@@ -495,6 +462,6 @@ final class JdbcMethodGenerator {
      * @param mappedType mapper result type
      * @param explicit whether the annotation selected a concrete service type
      */
-    private record MapperDependencyKey(TypeName serviceType, TypeName mappedType, boolean explicit) {
+    private record MapperDependencyKey(ResolvedType serviceType, ResolvedType mappedType, boolean explicit) {
     }
 }

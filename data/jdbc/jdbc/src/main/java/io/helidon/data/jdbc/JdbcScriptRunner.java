@@ -22,6 +22,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -163,8 +164,23 @@ final class JdbcScriptRunner {
         if (outcome == BootstrapOutcome.UNKNOWN) {
             // Never restore or ordinarily close a connection whose transaction outcome is unknown.
             failure = JdbcConnectionInvalidator.invalidate(connection, failure);
-        } else {
-            failure = close(connection, "closing a bootstrap connection", failure);
+        } else if (connection != null) {
+            try {
+                connection.close();
+            } catch (Throwable closeFailure) {
+                // A failed close does not prove that a pooled handle was returned or a physical connection was released.
+                // Invalidate it while the handle is still available; abort is a no-op if close actually completed.
+                if (failure == null && closeFailure instanceof Error) {
+                    failure = closeFailure;
+                } else if (failure == null) {
+                    failure = JdbcExceptionTranslator.prepare("closing a bootstrap connection", closeFailure);
+                } else {
+                    failure = JdbcExceptionTranslator.suppress(failure,
+                                                               "closing a bootstrap connection",
+                                                               closeFailure);
+                }
+                failure = JdbcConnectionInvalidator.invalidate(connection, failure);
+            }
         }
         if (failure != null) {
             rethrow(unitName, failure);
@@ -283,11 +299,11 @@ final class JdbcScriptRunner {
                     current.append(character);
                     executableContent = true;
                     state = State.BACKTICK_QUOTE;
-                } else if (character == '-'
-                        && next(content, index) == '-'
-                        && JdbcSqlLexicalRules.lineComment(content, index)) {
-                    // Use the same conservative delimiter as runtime marker recognition. In particular,
-                    // balance--1 remains SQL, so a following semicolon remains an active statement boundary.
+                } else if (character == '-' && next(content, index) == '-') {
+                    if (!JdbcSqlLexicalRules.lineComment(content, index)) {
+                        // Reject ambiguity so a database-comment semicolon cannot activate a bootstrap statement.
+                        throw scriptFailure(unitName, descriptor, profile, "contains an ambiguous double dash", index);
+                    }
                     current.append("--");
                     index++;
                     state = State.LINE_COMMENT;
@@ -432,14 +448,38 @@ final class JdbcScriptRunner {
      * @param script script content
      */
     private static void execute(String unitName, Statement statement, Script script) {
+        boolean largeUpdateCountsUnsupported = false;
         for (ScriptStatement scriptStatement : script.statements()) {
             String sql = scriptStatement.sql();
             try {
                 boolean resultSet = JdbcExceptionTranslator.invoke("executing a bootstrap JDBC statement",
                                                                    () -> statement.execute(sql));
                 // One script statement may expose several result channels.
-                while (resultSet || JdbcExceptionTranslator.invoke("reading a bootstrap JDBC update count",
-                                                                  statement::getUpdateCount) != -1) {
+                while (true) {
+                    if (!resultSet) {
+                        long updateCount;
+                        if (largeUpdateCountsUnsupported) {
+                            updateCount = JdbcExceptionTranslator.invoke("reading a bootstrap JDBC update count",
+                                                                         statement::getUpdateCount);
+                        } else {
+                            try {
+                                // Preserve the -1 end marker when an update affects more than Integer.MAX_VALUE rows.
+                                updateCount = statement.getLargeUpdateCount();
+                            } catch (SQLFeatureNotSupportedException | UnsupportedOperationException unsupported) {
+                                // Remember this statement's capability so later results do not repeat exception probing.
+                                largeUpdateCountsUnsupported = true;
+                                updateCount = JdbcExceptionTranslator.invoke("reading a bootstrap JDBC update count",
+                                                                             statement::getUpdateCount);
+                            } catch (RuntimeException runtimeException) {
+                                throw (RuntimeException) JdbcExceptionTranslator.sanitize(
+                                        "reading a bootstrap JDBC large update count",
+                                        runtimeException);
+                            }
+                        }
+                        if (updateCount == -1) {
+                            break;
+                        }
+                    }
                     // Bootstrap never retains multiple open results. Baseline advancement closes the current result
                     // before exposing the next channel and avoids optional result-retention controls.
                     resultSet = JdbcExceptionTranslator.invoke("advancing to the next bootstrap JDBC result",
@@ -555,6 +595,7 @@ final class JdbcScriptRunner {
         try {
             input.close();
         } catch (Error closeError) {
+            // A fatal close error remains primary, but retain the earlier processing failure for diagnosis.
             if (failure == null) {
                 return closeError;
             }
@@ -1137,6 +1178,7 @@ final class JdbcScriptRunner {
             }
             for (int current = start; current <= end; current++) {
                 char character = content.charAt(current);
+                // Count CRLF at its line feed so the pair advances the physical line only once.
                 if (character == '\n'
                         || (character == '\r' && JdbcScriptRunner.character(content, current + 1) != '\n')) {
                     sourceLine++;

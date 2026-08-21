@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.List;
 
@@ -65,6 +66,7 @@ class JdbcScriptRunnerFailureTest {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.createStatement()).thenReturn(statement);
         when(statement.execute(anyString())).thenReturn(false);
+        when(statement.getLargeUpdateCount()).thenReturn(-1L);
         when(statement.getUpdateCount()).thenReturn(-1);
     }
 
@@ -160,6 +162,61 @@ class JdbcScriptRunnerFailureTest {
 
         verify(statement).getMoreResults();
         verify(statement, never()).getMoreResults(anyInt());
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    @Test
+    void drainsBootstrapResultsWithLargeUpdateCounts() throws Exception {
+        long largeCount = (long) Integer.MAX_VALUE + 1;
+        when(statement.getLargeUpdateCount()).thenReturn(largeCount, -1L);
+
+        JdbcScriptRunner.execute("test",
+                                 dataSource,
+                                 List.of(Resource.create("large update", "UPDATE TEST_VALUE SET VALUE = 1")));
+
+        InOrder order = inOrder(statement);
+        order.verify(statement).execute(anyString());
+        order.verify(statement).getLargeUpdateCount();
+        order.verify(statement).getMoreResults();
+        order.verify(statement).getLargeUpdateCount();
+        verify(statement, never()).getUpdateCount();
+    }
+
+    @Test
+    void cachesLargeUpdateCountFallbackAfterUnsupportedOperation() throws Exception {
+        when(statement.getLargeUpdateCount()).thenThrow(new UnsupportedOperationException("unsupported"));
+        when(statement.getUpdateCount()).thenReturn(1, -1);
+
+        JdbcScriptRunner.execute("test",
+                                 dataSource,
+                                 List.of(Resource.create("legacy update", "UPDATE TEST_VALUE SET VALUE = 1")));
+
+        verify(statement, times(1)).getLargeUpdateCount();
+        verify(statement, times(2)).getUpdateCount();
+    }
+
+    @Test
+    void cachesLargeUpdateCountFallbackAfterFeatureNotSupported() throws Exception {
+        when(statement.getLargeUpdateCount()).thenThrow(new SQLFeatureNotSupportedException("unsupported"));
+        when(statement.getUpdateCount()).thenReturn(1, -1);
+
+        JdbcScriptRunner.execute("test",
+                                 dataSource,
+                                 List.of(Resource.create("legacy update", "UPDATE TEST_VALUE SET VALUE = 1")));
+
+        verify(statement, times(1)).getLargeUpdateCount();
+        verify(statement, times(2)).getUpdateCount();
+    }
+
+    @Test
+    void sanitizesRuntimeFailureFromLargeBootstrapUpdateCount() throws Exception {
+        IllegalStateException countFailure = driverRuntimeFailure("private large update count detail");
+        when(statement.getLargeUpdateCount()).thenThrow(countFailure);
+
+        assertSanitizedBootstrapRuntime(countFailure, "reading a bootstrap JDBC large update count");
+
+        verify(statement, never()).getUpdateCount();
         verify(statement).close();
         verify(connection).close();
     }
@@ -271,9 +328,9 @@ class JdbcScriptRunnerFailureTest {
     }
 
     @Test
-    void reportsConnectionCloseFailureAfterSuccessfulExecution() throws Exception {
+    void invalidatesAfterConnectionCloseFailureFollowingSuccessfulExecution() throws Exception {
         SQLException connectionClose = new SQLException("connection close failed", "08003", 57);
-        doThrow(connectionClose).when(connection).close();
+        doThrow(connectionClose).doNothing().when(connection).close();
 
         DataException failure = assertThrows(DataException.class,
                                              () -> JdbcScriptRunner.execute("test",
@@ -284,6 +341,36 @@ class JdbcScriptRunnerFailureTest {
         assertSafeSqlCause(failure.getCause(), connectionClose);
         InOrder order = inOrder(statement, connection);
         order.verify(statement).close();
+        order.verify(connection).close();
+        order.verify(connection).abort(any());
+        order.verify(connection).close();
+    }
+
+    @Test
+    void preservesConnectionCloseFailureWhenInvalidationAlsoFails() throws Exception {
+        SQLException connectionClose = new SQLException("private initial close failure", "08003", 57);
+        IllegalStateException abortFailure = driverRuntimeFailure("private abort failure");
+        SQLException fallbackClose = new SQLException("private fallback close failure", "08007", 58);
+        doThrow(connectionClose).doThrow(fallbackClose).when(connection).close();
+        doThrow(abortFailure).when(connection).abort(any());
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> JdbcScriptRunner.execute("test",
+                                                                            dataSource,
+                                                                            List.of(Resource.create(
+                                                                                    "jdbc-bootstrap-init.sql"))));
+
+        assertSafeSqlCause(failure.getCause(), connectionClose);
+        assertThat(failure.getCause().getSuppressed().length, is(2));
+        assertThat(failure.getCause().getSuppressed()[0].getMessage(),
+                   is("The JDBC provider encountered an exception of type 'java.lang.IllegalStateException' while "
+                              + "aborting a connection."));
+        assertThat(failure.getCause().getSuppressed()[0].getCause(), nullValue());
+        assertSafeSqlCause(failure.getCause().getSuppressed()[1], fallbackClose);
+        InOrder order = inOrder(statement, connection);
+        order.verify(statement).close();
+        order.verify(connection).close();
+        order.verify(connection).abort(any());
         order.verify(connection).close();
     }
 

@@ -156,8 +156,7 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
                 || existingReturn.getKind() == TypeKind.VOID) {
             return Optional.of(false);
         }
-        if (types.isSubtype(candidateReturn, existingReturn)
-                || types.isAssignable(candidateReturn, existingReturn)) {
+        if (types.isAssignable(candidateReturn, existingReturn)) {
             return Optional.of(true);
         }
         if (!candidate.typeParameters().isEmpty() || !existing.typeParameters().isEmpty()) {

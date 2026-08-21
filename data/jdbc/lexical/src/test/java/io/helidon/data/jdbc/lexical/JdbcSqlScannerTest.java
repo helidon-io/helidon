@@ -58,7 +58,7 @@ class JdbcSqlScannerTest {
         String sql = """
                 select [question?], `question?`, ?, ??
                 from T
-                where BALANCE--? > 0 and ID = ?
+                where BALANCE - -? > 0 and ID = ?
                 -- ? ignored
                 /* ? ignored */
                 """;
@@ -70,6 +70,24 @@ class JdbcSqlScannerTest {
         assertThat(handler.protectedRegions(),
                    is(List.of(JdbcSqlScanHandler.RegionKind.LINE_COMMENT,
                               JdbcSqlScanHandler.RegionKind.BLOCK_COMMENT)));
+    }
+
+    /**
+     * Verifies that dialect-dependent double-dash input fails at its source
+     * offset without exposing the SQL text to the diagnostic.
+     */
+    @Test
+    void rejectsAmbiguousDoubleDashSequences() {
+        String sql = "select PRIVATE_VALUE--comment";
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, new RecordingHandler(sql)));
+
+        assertThat(failure.getMessage(), containsString("Ambiguous double-dash SQL sequence"));
+        assertThat(failure.getMessage(), containsString("PORTABLE"));
+        assertThat(failure.getMessage(), endsWith("offset is 20."));
+        assertThat(failure.getMessage(), not(containsString("PRIVATE_VALUE")));
     }
 
     /**

@@ -78,6 +78,7 @@ final class JdbcProviderPropertiesSupport {
         if (bytes < 1) {
             throw new DataException("The JDBC script property '" + propertyName + "' must be greater than zero bytes.");
         }
+        // The loader reads one extra byte to prove overflow, so the configured limit must leave room for that read.
         if (bytes > Integer.MAX_VALUE - 1L) {
             throw new DataException("The JDBC script property '" + propertyName + "' must not exceed "
                                             + (Integer.MAX_VALUE - 1L) + " bytes.");

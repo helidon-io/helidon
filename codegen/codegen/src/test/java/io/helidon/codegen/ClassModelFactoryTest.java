@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.codegen.spi.AnnotationMapper;
 import io.helidon.codegen.spi.ElementMapper;
 import io.helidon.codegen.spi.TypeMapper;
@@ -35,6 +36,7 @@ import io.helidon.common.types.TypedElementInfo;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ClassModelFactoryTest {
@@ -52,6 +54,70 @@ class ClassModelFactoryTest {
         TypeInfo recordInfo = ClassModelFactory.create(roundContext, recordType, record);
 
         assertThat(element(recordInfo, "value").kind(), is(ElementKind.RECORD_COMPONENT));
+    }
+
+    /**
+     * Verifies that a concrete lookup of an in-progress generic record retains its formal declaration metadata and
+     * generic component shapes before javac has created an element for the record.
+     */
+    @Test
+    void preservesInProgressGenericRecordDeclaration() {
+        TypeName recordType = TypeName.create("example.GeneratedRecord");
+        TypeArgument typeParameter = TypeArgument.builder()
+                .token("T")
+                .bound(CharSequence.class)
+                .build();
+        TypeName concreteRecordType = TypeName.builder(recordType)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        TypeName optionalType = TypeName.builder(TypeNames.OPTIONAL)
+                .addTypeArgument(typeParameter)
+                .build();
+        ClassModel.Builder record = ClassModel.builder()
+                .type(recordType)
+                .classType(ElementKind.RECORD)
+                .addGenericArgument(typeParameter)
+                .addField(field -> field.name("value").type(typeParameter))
+                .addField(field -> field.name("optionalValue").type(optionalType));
+        RoundContextImpl roundContext = newRoundContext();
+        roundContext.addGeneratedType(recordType, record, TypeNames.OBJECT);
+
+        TypeInfo recordInfo = roundContext.typeInfo(concreteRecordType).orElseThrow();
+
+        assertThat(recordInfo.typeName().typeArguments(), is(List.of(TypeNames.STRING)));
+        assertThat(recordInfo.rawType().typeArguments(), is(List.of()));
+        assertThat(recordInfo.declaredType().typeArguments().size(), is(1));
+        TypeName declaredParameter = recordInfo.declaredType().typeArguments().getFirst();
+        assertThat(declaredParameter.className(), is("T"));
+        assertThat(declaredParameter.upperBounds(), is(List.of(TypeName.create(CharSequence.class))));
+        assertThat(element(recordInfo, "value").typeName().className(), is("T"));
+        assertThat(element(recordInfo, "optionalValue").typeName().typeArguments().getFirst().className(), is("T"));
+    }
+
+    /**
+     * Verifies that a round reuses its hierarchy resolver without freezing the lookup view before later generated types
+     * are registered.
+     */
+    @Test
+    void reusesResolverWithoutFreezingSameRoundTypes() {
+        TypeName contractType = TypeName.create("example.GeneratedContract");
+        TypeName implementationType = TypeName.create("example.GeneratedImplementation");
+        RoundContextImpl roundContext = newRoundContext();
+        TypeHierarchyResolver resolver = roundContext.typeHierarchyResolver();
+
+        roundContext.addGeneratedType(contractType,
+                                      ClassModel.builder()
+                                              .type(contractType)
+                                              .classType(ElementKind.INTERFACE),
+                                      TypeNames.OBJECT);
+        roundContext.addGeneratedType(implementationType,
+                                      ClassModel.builder()
+                                              .type(implementationType)
+                                              .addInterface(contractType),
+                                      TypeNames.OBJECT);
+
+        assertThat(roundContext.typeHierarchyResolver(), sameInstance(resolver));
+        assertThat(resolver.resolveSupertype(implementationType, contractType).orElseThrow(), is(contractType));
     }
 
     @Test
