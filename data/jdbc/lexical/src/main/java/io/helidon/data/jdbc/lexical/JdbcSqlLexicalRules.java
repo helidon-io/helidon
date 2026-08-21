@@ -27,11 +27,12 @@ public final class JdbcSqlLexicalRules {
     }
 
     /**
-     * Tests whether two dashes begin a portable line comment.
+     * Tests whether two dashes form a portable line-comment delimiter.
      * <p>
      * The second dash must be followed by whitespace, a control character, or
-     * the end of the SQL source. Expressions such as {@code balance--1}
-     * therefore remain ordinary SQL.
+     * the end of the SQL source. A caller encountering two dashes must reject
+     * the sequence when this method returns {@code false}; treating it as
+     * ordinary SQL would have database-dependent semantics.
      *
      * @param source SQL source
      * @param start first dash offset

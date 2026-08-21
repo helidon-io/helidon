@@ -44,19 +44,16 @@ class TypeHierarchyResolverTest {
     @Test
     void implementsJavaArrayReturnCovariance() {
         TypeName bytes = TypeName.create(byte[].class);
-        TypeHierarchyResolver resolver = TypeHierarchyResolver.create(type -> Optional.empty());
 
-        assertThat(resolver.returnTypeSubtype(bytes, TypeNames.OBJECT), is(true));
-        assertThat(resolver.returnTypeSubtype(bytes, TypeName.create(Cloneable.class)), is(true));
-        assertThat(resolver.returnTypeSubtype(bytes, TypeName.create(Serializable.class)), is(true));
-        assertThat(resolver.returnTypeSubtype(TypeName.create(String[].class),
-                                              TypeName.create(Object[].class)),
-                   is(true));
-        assertThat(resolver.returnTypeSubtype(TypeName.create(String[][].class),
-                                              TypeName.create(Object[].class)),
-                   is(true));
-        assertThat(resolver.returnTypeSubtype(bytes, TypeName.create(int[].class)), is(false));
-        assertThat(resolver.returnTypeSubtype(TypeName.create(int[].class), bytes), is(false));
+        assertThat(effectiveReturnType(bytes, TypeNames.OBJECT), is(bytes));
+        assertThat(effectiveReturnType(bytes, TypeName.create(Cloneable.class)), is(bytes));
+        assertThat(effectiveReturnType(bytes, TypeName.create(Serializable.class)), is(bytes));
+        assertThat(effectiveReturnType(TypeName.create(String[].class), TypeName.create(Object[].class)),
+                   is(TypeName.create(String[].class)));
+        assertThat(effectiveReturnType(TypeName.create(String[][].class), TypeName.create(Object[].class)),
+                   is(TypeName.create(String[][].class)));
+        assertThrows(CodegenException.class,
+                     () -> effectiveReturnType(bytes, TypeName.create(int[].class)));
     }
 
     /**
@@ -118,10 +115,11 @@ class TypeHierarchyResolverTest {
                                                typeInfo(annotationType, ElementKind.ANNOTATION_TYPE));
         TypeHierarchyResolver resolver = TypeHierarchyResolver.create(type -> Optional.ofNullable(types.get(type)));
 
-        assertThat(resolver.returnTypeSubtype(recordType, TypeName.create(Record.class)), is(true));
-        assertThat(resolver.returnTypeSubtype(enumType, TypeName.create(Enum.class)), is(true));
-        assertThat(resolver.returnTypeSubtype(annotationType,
-                                              TypeName.create(java.lang.annotation.Annotation.class)),
+        assertThat(resolver.resolveSupertype(recordType, TypeName.create(Record.class)).isPresent(), is(true));
+        assertThat(resolver.resolveSupertype(enumType, TypeName.create(Enum.class)).isPresent(), is(true));
+        assertThat(resolver.resolveSupertype(annotationType,
+                                             TypeName.create(java.lang.annotation.Annotation.class))
+                           .isPresent(),
                    is(true));
     }
 
@@ -315,6 +313,18 @@ class TypeHierarchyResolverTest {
         assertThat(failure.getMessage(),
                    is("Inherited method 'find()' has return types that cannot be implemented by one method."));
         assertThat(failure.originatingElements(), is(List.of(stringOrigin, integerOrigin)));
+    }
+
+    private static TypeName effectiveReturnType(TypeName first, TypeName second) {
+        TypeInfo repository = repository(repository("example.FirstRepository",
+                                                    method("find", first, Modifier.ABSTRACT)),
+                                         repository("example.SecondRepository",
+                                                    method("find", second, Modifier.ABSTRACT)));
+        return TypeHierarchyResolver.create(type -> Optional.empty())
+                .effectiveInterfaceMethods(repository)
+                .getFirst()
+                .method()
+                .typeName();
     }
 
     private static TypeInfo typeInfo(TypeName typeName, ElementKind kind) {

@@ -127,8 +127,19 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
         // The first phase validates every provider policy before resource creation or JDBC activation can cause
         // side effects.
         for (Config unitConfig : units) {
-            validateConnectionSource(unitConfig);
             String unitName = unitConfig.get(NAME_CONFIG_KEY).asString().orElse(Service.Named.DEFAULT_NAME);
+            Config dataSource = unitConfig.get(DATA_SOURCE_CONFIG_KEY);
+            boolean hasDataSource = dataSource.exists();
+            boolean hasConnection = unitConfig.get(CONNECTION_CONFIG_KEY).exists();
+            if (hasDataSource == hasConnection) {
+                throw new DataException(persistenceUnitDescription(unitName)
+                                                + " must specify exactly one connection source. Configure either "
+                                                + "'data-source' or 'connection'.");
+            }
+            if (hasDataSource && dataSource.asString().orElse("").isBlank()) {
+                throw new DataException(persistenceUnitDescription(unitName)
+                                                + " has a blank 'data-source' name.");
+            }
             validateBootstrapResourceSourceKeys(unitName, unitConfig);
             List<JdbcBootstrapResource.Descriptor> descriptors = bootstrapDescriptors(unitConfig);
             validateBootstrapResources(unitName, descriptors);
@@ -138,10 +149,21 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             if (!names.add(unitName)) {
                 throw new DataException(duplicatePersistenceUnitNameMessage(unitName));
             }
+            JdbcProviderPropertiesSupport.Policy policy;
+            try {
+                JdbcPropertiesConfig properties = JdbcPropertiesConfig.create(unitConfig.get(PROPERTIES_CONFIG_KEY));
+                policy = JdbcProviderPropertiesSupport.create(properties);
+            } catch (DataException failure) {
+                throw new DataException(persistenceUnitDescription(unitName)
+                                                + " has invalid JDBC provider properties. " + failure.getMessage());
+            } catch (RuntimeException failure) {
+                throw new DataException(persistenceUnitDescription(unitName) + " has invalid JDBC provider properties.",
+                                        JdbcExceptionTranslator.sanitize("reading JDBC provider properties", failure));
+            }
             validatedUnits.add(new ValidatedUnit(unitConfig,
                                                  unitName,
                                                  descriptors,
-                                                 providerPolicy(unitName, unitConfig)));
+                                                 policy));
         }
 
         // The second phase preflights inline allocation and detaches scripts while JDBC services remain untouched.
@@ -150,13 +172,124 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             String unitName = validatedUnit.name();
             Config unitConfig = validatedUnit.config();
             List<JdbcBootstrapResource.Descriptor> descriptors = validatedUnit.descriptors();
-            preflightInlineResources(validatedUnit);
+            // One budget applies the per resource limit and the remaining total limit to all inline scripts in plan
+            // order.
+            JdbcScriptRunner.BootstrapBudget budget = validatedUnit.policy().bootstrap().newBudget();
+            for (JdbcBootstrapResource.Descriptor descriptor : descriptors) {
+                JdbcBootstrapResource.SourceType sourceType = descriptor.sourceType();
+                if (sourceType != JdbcBootstrapResource.SourceType.CONFIGURED_TEXT
+                        && sourceType != JdbcBootstrapResource.SourceType.CONFIGURED_BINARY) {
+                    // Other resource forms are bounded when the script runner reads their streams.
+                    continue;
+                }
+                Config scriptConfig = unitConfig.get(scriptConfigKey(descriptor.role()));
+                // The effective limit is the smaller of the per resource limit and the remaining total budget.
+                int limit = budget.resourceLimit();
+                try {
+                    if (sourceType == JdbcBootstrapResource.SourceType.CONFIGURED_TEXT) {
+                        String content = scriptConfig.get(CONTENT_PLAIN_CONFIG_KEY).asString().get();
+                        int encodedBytes = 0;
+                        // Count the bytes that String UTF-8 encoding would create without creating the byte array.
+                        for (int index = 0; index < content.length(); index++) {
+                            char character = content.charAt(index);
+                            int characterBytes;
+                            if (character <= 0x7f) {
+                                characterBytes = 1;
+                            } else if (character <= 0x7ff) {
+                                characterBytes = 2;
+                            } else if (Character.isHighSurrogate(character)
+                                    && index + 1 < content.length()
+                                    && Character.isLowSurrogate(content.charAt(index + 1))) {
+                                characterBytes = 4;
+                                index++;
+                            } else if (Character.isSurrogate(character)) {
+                                // String UTF-8 encoding replaces an unmatched surrogate with one byte.
+                                characterBytes = 1;
+                            } else {
+                                characterBytes = 3;
+                            }
+                            // Stop before allocating resource storage once the next character proves the limit is
+                            // exceeded.
+                            if (encodedBytes > limit - characterBytes) {
+                                throw inlineSizeFailure(unitName, descriptor, budget);
+                            }
+                            encodedBytes += characterBytes;
+                        }
+                        // Reserve the bytes so the next inline script sees the remaining aggregate budget.
+                        budget.addBytes(encodedBytes);
+                    } else {
+                        String content = scriptConfig.get(CONTENT_CONFIG_KEY).asString().get();
+                        int symbols = 0;
+                        int padding = 0;
+                        boolean paddingStarted = false;
+                        int decodedBytes = 0;
+                        // Validate the basic Base64 alphabet while counting decoded groups without decoding the
+                        // payload.
+                        for (int index = 0; index < content.length(); index++) {
+                            char character = content.charAt(index);
+                            boolean alphabet = (character >= 'A' && character <= 'Z')
+                                    || (character >= 'a' && character <= 'z')
+                                    || (character >= '0' && character <= '9')
+                                    || character == '+'
+                                    || character == '/';
+                            if (alphabet && !paddingStarted) {
+                                symbols++;
+                                // Each complete group of four alphabet symbols contributes three decoded bytes.
+                                if (symbols % 4 == 0) {
+                                    if (decodedBytes > limit - 3) {
+                                        throw inlineSizeFailure(unitName, descriptor, budget);
+                                    }
+                                    decodedBytes += 3;
+                                }
+                            } else if (character == '=') {
+                                // Padding is valid only at the end and contains no more than two symbols.
+                                paddingStarted = true;
+                                padding++;
+                                if (padding > 2) {
+                                    throw invalidBase64Failure(unitName, descriptor);
+                                }
+                            } else {
+                                throw invalidBase64Failure(unitName, descriptor);
+                            }
+                        }
+                        // Validate the final partial group and determine its one or two decoded bytes.
+                        int remainder = symbols % 4;
+                        int finalBytes;
+                        if (padding == 0) {
+                            if (remainder == 1) {
+                                throw invalidBase64Failure(unitName, descriptor);
+                            }
+                            finalBytes = remainder == 0 ? 0 : remainder - 1;
+                        } else if (padding == 1 && remainder == 3 && (symbols + padding) % 4 == 0) {
+                            finalBytes = 2;
+                        } else if (padding == 2 && remainder == 2 && (symbols + padding) % 4 == 0) {
+                            finalBytes = 1;
+                        } else {
+                            throw invalidBase64Failure(unitName, descriptor);
+                        }
+                        if (decodedBytes > limit - finalBytes) {
+                            throw inlineSizeFailure(unitName, descriptor, budget);
+                        }
+                        decodedBytes += finalBytes;
+                        // Reserve the decoded bytes so the next inline script sees the remaining aggregate budget.
+                        budget.addBytes(decodedBytes);
+                    }
+                } catch (DataException failure) {
+                    throw failure;
+                } catch (RuntimeException failure) {
+                    throw new DataException(persistenceUnitDescription(unitName) + " has invalid inline content for '"
+                                                    + scriptConfigKey(descriptor.role()) + "'.",
+                                            JdbcExceptionTranslator.sanitize("reading inline bootstrap content",
+                                                                             failure));
+                }
+            }
             JdbcPersistenceUnitConfig unit;
             try {
                 unit = JdbcPersistenceUnitConfig.create(unitConfig);
             } catch (RuntimeException e) {
                 throw new DataException(invalidPersistenceUnitConfigurationMessage(unitName, descriptors),
-                                        JdbcExceptionTranslator.sanitize("creating a persistence unit configuration", e));
+                                        JdbcExceptionTranslator.sanitize("creating a persistence unit configuration",
+                                                                         e));
             }
             List<JdbcBootstrapResource> resources = new ArrayList<>(2);
             // Drop is both loaded and executed before initialization.
@@ -180,28 +313,6 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             result.add(Service.QualifiedInstance.create(client, named, PROVIDER_QUALIFIER));
         }
         return List.copyOf(result);
-    }
-
-    /**
-     * Validates the raw unit before the shared SQL configuration decorator can
-     * report a source-cardinality error without the persistence-unit context.
-     *
-     * @param unitConfig persistence-unit configuration node
-     */
-    private static void validateConnectionSource(Config unitConfig) {
-        String unitName = unitConfig.get(NAME_CONFIG_KEY).asString().orElse(Service.Named.DEFAULT_NAME);
-        Config dataSource = unitConfig.get(DATA_SOURCE_CONFIG_KEY);
-        boolean hasDataSource = dataSource.exists();
-        boolean hasConnection = unitConfig.get(CONNECTION_CONFIG_KEY).exists();
-        if (hasDataSource == hasConnection) {
-            throw new DataException(persistenceUnitDescription(unitName)
-                                            + " must specify exactly one connection source. Configure either "
-                                            + "'data-source' or 'connection'.");
-        }
-        if (hasDataSource && dataSource.asString().orElse("").isBlank()) {
-            throw new DataException(persistenceUnitDescription(unitName)
-                                            + " has a blank 'data-source' name.");
-        }
     }
 
     /**
@@ -259,28 +370,6 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                                             + "resource source key for '" + scriptKey + "'. Configured keys are "
                                             + String.join(" and ", configuredKeys) + ". "
                                             + SUPPORTED_SCRIPT_RESOURCE_KEYS);
-        }
-    }
-
-    /**
-     * Creates only the side effect free provider configuration for one unit.
-     * This method deliberately avoids constructing the full persistence unit
-     * configuration because that operation can open script resources.
-     *
-     * @param unitName persistence unit name
-     * @param unitConfig raw persistence unit configuration
-     * @return validated provider policy
-     */
-    private static JdbcProviderPropertiesSupport.Policy providerPolicy(String unitName, Config unitConfig) {
-        try {
-            JdbcPropertiesConfig properties = JdbcPropertiesConfig.create(unitConfig.get(PROPERTIES_CONFIG_KEY));
-            return JdbcProviderPropertiesSupport.create(properties);
-        } catch (DataException failure) {
-            throw new DataException(persistenceUnitDescription(unitName)
-                                            + " has invalid JDBC provider properties. " + failure.getMessage());
-        } catch (RuntimeException failure) {
-            throw new DataException(persistenceUnitDescription(unitName) + " has invalid JDBC provider properties.",
-                                    JdbcExceptionTranslator.sanitize("reading JDBC provider properties", failure));
         }
     }
 
@@ -417,132 +506,6 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     }
 
     /**
-     * Preflights configured inline bootstrap content before the common resource
-     * builder can allocate a complete encoded or decoded byte array.
-     * <p>
-     * Plain content is measured using the same UTF-8 representation that
-     * resource construction creates. Binary content is validated as basic
-     * Base64 and measured by its decoded length without decoding the payload.
-     * The descriptors preserve drop before initialization order, so accepted
-     * inline resources consume one shared budget in execution order. Every
-     * accepted resource is still processed later by the ordinary bounded
-     * reader and strict UTF-8 decoder.
-     *
-     * @param unit validated persistence unit
-     * @throws DataException if inline content is invalid or exceeds its
-     *         effective byte limit
-     */
-    private static void preflightInlineResources(ValidatedUnit unit) {
-        // One budget applies the per resource limit and the remaining total limit to all inline scripts in plan order.
-        JdbcScriptRunner.BootstrapBudget budget = unit.policy().bootstrap().newBudget();
-        for (JdbcBootstrapResource.Descriptor descriptor : unit.descriptors()) {
-            JdbcBootstrapResource.SourceType sourceType = descriptor.sourceType();
-            if (sourceType != JdbcBootstrapResource.SourceType.CONFIGURED_TEXT
-                    && sourceType != JdbcBootstrapResource.SourceType.CONFIGURED_BINARY) {
-                // Other resource forms are bounded when the script runner reads their streams.
-                continue;
-            }
-            Config scriptConfig = unit.config().get(scriptConfigKey(descriptor.role()));
-            // The effective limit is the smaller of the per resource limit and the remaining total budget.
-            int limit = budget.resourceLimit();
-            try {
-                if (sourceType == JdbcBootstrapResource.SourceType.CONFIGURED_TEXT) {
-                    String content = scriptConfig.get(CONTENT_PLAIN_CONFIG_KEY).asString().get();
-                    int encodedBytes = 0;
-                    // Count the bytes that String UTF-8 encoding would create without creating the byte array.
-                    for (int index = 0; index < content.length(); index++) {
-                        char character = content.charAt(index);
-                        int characterBytes;
-                        if (character <= 0x7f) {
-                            characterBytes = 1;
-                        } else if (character <= 0x7ff) {
-                            characterBytes = 2;
-                        } else if (Character.isHighSurrogate(character)
-                                && index + 1 < content.length()
-                                && Character.isLowSurrogate(content.charAt(index + 1))) {
-                            characterBytes = 4;
-                            index++;
-                        } else if (Character.isSurrogate(character)) {
-                            // String UTF-8 encoding replaces an unmatched surrogate with one byte.
-                            characterBytes = 1;
-                        } else {
-                            characterBytes = 3;
-                        }
-                        // Stop before allocating resource storage once the next character proves the limit is exceeded.
-                        if (encodedBytes > limit - characterBytes) {
-                            throw inlineSizeFailure(unit.name(), descriptor, budget);
-                        }
-                        encodedBytes += characterBytes;
-                    }
-                    // Reserve the bytes so the next inline script sees the remaining aggregate budget.
-                    budget.addBytes(encodedBytes);
-                } else {
-                    String content = scriptConfig.get(CONTENT_CONFIG_KEY).asString().get();
-                    int symbols = 0;
-                    int padding = 0;
-                    boolean paddingStarted = false;
-                    int decodedBytes = 0;
-                    // Validate the basic Base64 alphabet while counting decoded groups without decoding the payload.
-                    for (int index = 0; index < content.length(); index++) {
-                        char character = content.charAt(index);
-                        boolean alphabet = (character >= 'A' && character <= 'Z')
-                                || (character >= 'a' && character <= 'z')
-                                || (character >= '0' && character <= '9')
-                                || character == '+'
-                                || character == '/';
-                        if (alphabet && !paddingStarted) {
-                            symbols++;
-                            // Each complete group of four alphabet symbols contributes three decoded bytes.
-                            if (symbols % 4 == 0) {
-                                if (decodedBytes > limit - 3) {
-                                    throw inlineSizeFailure(unit.name(), descriptor, budget);
-                                }
-                                decodedBytes += 3;
-                            }
-                        } else if (character == '=') {
-                            // Padding is valid only at the end and contains no more than two symbols.
-                            paddingStarted = true;
-                            padding++;
-                            if (padding > 2) {
-                                throw invalidBase64Failure(unit.name(), descriptor);
-                            }
-                        } else {
-                            throw invalidBase64Failure(unit.name(), descriptor);
-                        }
-                    }
-                    // Validate the final partial group and determine its one or two decoded bytes.
-                    int remainder = symbols % 4;
-                    int finalBytes;
-                    if (padding == 0) {
-                        if (remainder == 1) {
-                            throw invalidBase64Failure(unit.name(), descriptor);
-                        }
-                        finalBytes = remainder == 0 ? 0 : remainder - 1;
-                    } else if (padding == 1 && remainder == 3 && (symbols + padding) % 4 == 0) {
-                        finalBytes = 2;
-                    } else if (padding == 2 && remainder == 2 && (symbols + padding) % 4 == 0) {
-                        finalBytes = 1;
-                    } else {
-                        throw invalidBase64Failure(unit.name(), descriptor);
-                    }
-                    if (decodedBytes > limit - finalBytes) {
-                        throw inlineSizeFailure(unit.name(), descriptor, budget);
-                    }
-                    decodedBytes += finalBytes;
-                    // Reserve the decoded bytes so the next inline script sees the remaining aggregate budget.
-                    budget.addBytes(decodedBytes);
-                }
-            } catch (DataException failure) {
-                throw failure;
-            } catch (RuntimeException failure) {
-                throw new DataException(persistenceUnitDescription(unit.name()) + " has invalid inline content for '"
-                                                + scriptConfigKey(descriptor.role()) + "'.",
-                                        JdbcExceptionTranslator.sanitize("reading inline bootstrap content", failure));
-            }
-        }
-    }
-
-    /**
      * Creates a safe diagnostic for inline content that exceeds its effective
      * byte limit.
      *
@@ -571,8 +534,10 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
      */
     private static DataException invalidBase64Failure(String unitName,
                                                       JdbcBootstrapResource.Descriptor descriptor) {
-        return new DataException(persistenceUnitDescription(unitName) + " cannot load the configured "
-                                         + descriptor.role().text() + " script because it contains invalid Base64 content.");
+        return new DataException(persistenceUnitDescription(unitName)
+                                         + " cannot load the configured "
+                                         + descriptor.role().text()
+                                         + " script because it contains invalid Base64 content.");
     }
 
     /**
@@ -785,7 +750,8 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                 throw new IllegalArgumentException("The login timeout must not be negative.");
             }
             if (seconds != 0) {
-                throw new SQLFeatureNotSupportedException("The direct JDBC datasource does not support login timeouts.");
+                throw new SQLFeatureNotSupportedException(
+                        "The direct JDBC datasource does not support login timeouts.");
             }
         }
 

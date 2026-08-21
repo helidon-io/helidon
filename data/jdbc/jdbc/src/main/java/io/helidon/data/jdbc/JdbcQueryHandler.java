@@ -15,9 +15,12 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.DataTruncation;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -296,16 +299,34 @@ final class JdbcQueryHandler {
             ready = false;
             // Each callback gets a distinct view so an expired reference can never expose a later row.
             JdbcRow row = new JdbcRow(resultSet, columns, scope.operation());
+            T value;
             try {
-                T value = mapper.map(row);
+                value = mapper.map(row);
                 if (value == null) {
                     throw new DataException("The JDBC row mapper returned null.");
                 }
-                return value;
             } finally {
                 // Expire the row before the cursor can advance or release its resources.
                 row.expire();
             }
+
+            // A new row clears ResultSet warnings, so reject truncated data before this value can reach the caller.
+            SQLWarning warning = JdbcExceptionTranslator.invoke("reading JDBC result warnings",
+                                                                resultSet::getWarnings);
+            if (warning != null) {
+                // Drivers may return a cyclic warning chain, so follow links by identity while looking for truncation.
+                IdentityHashMap<SQLWarning, Boolean> visited = new IdentityHashMap<>();
+                while (warning != null && visited.put(warning, Boolean.TRUE) == null) {
+                    if (warning instanceof DataTruncation truncation) {
+                        // Sanitize the driver-owned warning before normal resource cleanup begins.
+                        throw JdbcExceptionTranslator.translate(scope.operation(), truncation);
+                    }
+                    SQLWarning current = warning;
+                    warning = JdbcExceptionTranslator.invoke("advancing the JDBC result warning chain",
+                                                             current::getNextWarning);
+                }
+            }
+            return value;
         }
     }
 

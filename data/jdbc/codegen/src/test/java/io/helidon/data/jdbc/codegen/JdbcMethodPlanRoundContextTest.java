@@ -80,6 +80,39 @@ class JdbcMethodPlanRoundContextTest {
     }
 
     /**
+     * Verifies nested generic arguments participate in exact explicit-mapper contract validation.
+     */
+    @Test
+    void rejectsAnExplicitMapperWithDifferentNestedTypeArguments() {
+        TypeName boxType = TypeName.create("example.Box");
+        TypeName stringBoxType = TypeName.builder(boxType)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        TypeName integerBoxType = TypeName.builder(boxType)
+                .addTypeArgument(TypeNames.BOXED_INT)
+                .build();
+        TypeName mapperType = TypeName.create("example.GeneratedIntegerBoxMapper");
+        TypeName mapperContract = TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
+                .addTypeArgument(integerBoxType)
+                .build();
+        TypeInfo mapperInfo = TypeInfo.builder()
+                .typeName(mapperType)
+                .kind(ElementKind.CLASS)
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addInterfaceTypeInfo(interfaceInfo -> interfaceInfo.typeName(mapperContract)
+                        .kind(ElementKind.INTERFACE))
+                .build();
+
+        CodegenException failure = assertThrows(
+                CodegenException.class,
+                () -> JdbcMethodPlan.create(repositoryMethod("mappedValue", stringBoxType, mapperType),
+                                            new TypesRoundContext(Map.of(mapperType, mapperInfo))));
+
+        assertThat(failure.getMessage(),
+                   is("The mapper must implement JdbcClient.RowMapper<example.Box<java.lang.String>>."));
+    }
+
+    /**
      * Verifies an explicit mapper can inherit its generic row mapper contract
      * through a round visible superclass.
      */

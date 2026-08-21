@@ -25,6 +25,7 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -245,6 +246,7 @@ final class JdbcMethodPlan {
         if (generatedKeys) {
             return Operation.UPDATE;
         }
+        // AUTO inference uses only the Java method shape because the provider must not parse SQL to guess intent.
         if (rowMapper || result.shape() == ReturnShape.OPTIONAL || result.shape() == ReturnShape.LIST) {
             return Operation.QUERY;
         }
@@ -495,9 +497,11 @@ final class JdbcMethodPlan {
         TypeName mapperInterface = roundContext.typeHierarchyResolver()
                 .resolveSupertype(mapperType, JdbcPersistenceTypes.ROW_MAPPER)
                 .orElse(null);
+        // ResolvedType keeps parameterized result types exact, so a mapper for List<Foo> cannot satisfy List<Bar>.
         if (mapperInterface == null
                 || mapperInterface.typeArguments().size() != 1
-                || !mapperInterface.typeArguments().getFirst().equals(mappedType)) {
+                || !ResolvedType.create(mapperInterface.typeArguments().getFirst())
+                        .equals(ResolvedType.create(mappedType))) {
             throw failure(method, "The mapper must implement JdbcClient.RowMapper<"
                     + mappedType.resolvedName() + ">.");
         }
@@ -565,10 +569,6 @@ final class JdbcMethodPlan {
      * @param recordComponents canonical record components, otherwise empty
      */
     private record Mapping(MappingKind kind, List<TypedElementInfo> recordComponents) {
-        private Mapping {
-            recordComponents = List.copyOf(recordComponents);
-        }
-
         private static Mapping of(MappingKind kind) {
             return new Mapping(kind, List.of());
         }

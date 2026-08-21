@@ -53,6 +53,61 @@ class GeneratedRepositoryTest {
     }
 
     /**
+     * Proves application mapper names cannot become Java keywords or replace
+     * constructor parameters owned by JDBC persistence-unit selection.
+     *
+     * @throws Exception when the compiler output cannot be inspected
+     */
+    @Test
+    void generatesCollisionSafeMapperDependencyNames() throws Exception {
+        String source = generatedSource(MapperNameCollisionRepository.class);
+
+        assertThat(source, containsString("private final JdbcClient.RowMapper<String> classRowMapper;"));
+        assertThat(source, containsString("private final JdbcClient.RowMapper<String> namedJdbcClientRowMapper;"));
+        assertThat(source, containsString("JdbcClient.RowMapper<MapperNameCollisionRepository.Box<String>> "
+                                                  + "boxRowMapper;"));
+        assertThat(source, containsString("JdbcClient.RowMapper<MapperNameCollisionRepository.Box<Integer>> "
+                                                  + "boxRowMapper2;"));
+        assertThat(source, containsString("Optional<JdbcClient> namedJdbcClient"));
+        assertThat(source, containsString("Supplier<JdbcClient> jdbcClient"));
+    }
+
+    /**
+     * Proves implicit record mappers are shared only when their complete mapped types are equal.
+     *
+     * @throws Exception when the compiler output cannot be inspected
+     */
+    @Test
+    void reusesRecordMappersByResolvedType() throws Exception {
+        String source = generatedSource(RecordMapperReuseRepository.class);
+
+        assertThat(source.split("RowMapper<RecordMapperReuseRepository.Projection<String>> MAPPER_", -1).length - 1,
+                   is(1));
+        assertThat(source.split("\\.map\\(MAPPER_STRING_VALUE\\)", -1).length - 1, is(2));
+        assertThat(source, not(containsString("MAPPER_OPTIONAL_STRING_VALUE")));
+        assertThat(source.split("RowMapper<RecordMapperReuseRepository.Projection<Integer>> MAPPER_", -1).length - 1,
+                   is(1));
+    }
+
+    /**
+     * Proves overload signatures and lossy constant normalization cannot produce duplicate generated fields,
+     * including when one overload is inherited. Compilation of the fixture independently proves the emitted
+     * identifiers are valid Java.
+     *
+     * @throws Exception when the compiler output cannot be inspected
+     */
+    @Test
+    void generatesCollisionSafeMethodFieldNames() throws Exception {
+        String source = generatedSource(GeneratedNameCollisionRepository.class);
+
+        assertThat(source, containsString("SQL_FIND_VALUE = \"SELECT ?\""));
+        assertThat(source, containsString("SQL_FIND_VALUE_1 = \"SELECT ?\""));
+        assertThat(source, containsString("SQL_FIND_VALUE_2 = \"SELECT ?\""));
+        assertThat(source, containsString("SQL_INHERITED_VALUE = \"SELECT ?\""));
+        assertThat(source, containsString("SQL_INHERITED_VALUE_1 = \"SELECT ?\""));
+    }
+
+    /**
      * Proves a repository requesting more than ten key columns emits one
      * fluent {@code addColumn} call per name and no size-limited collection
      * construction in generated source.
@@ -61,15 +116,7 @@ class GeneratedRepositoryTest {
      */
     @Test
     void emitsEveryWideGeneratedKeyColumnAsAFluentCall() throws Exception {
-        Path testClasses = Path.of(GeneratedRepositoryTest.class.getProtectionDomain()
-                                           .getCodeSource()
-                                           .getLocation()
-                                           .toURI());
-        Path generatedSource = testClasses.getParent()
-                .resolve("generated-sources/annotations/io/helidon/data/jdbc/tests/"
-                                 + "WideGeneratedKeyRepository__Jdbc.java");
-
-        String source = Files.readString(generatedSource);
+        String source = generatedSource(WideGeneratedKeyRepository.class);
 
         assertThat(source.split("\\.addColumn\\(", -1).length - 1, is(11));
         for (int index = 1; index <= 11; index++) {
@@ -77,5 +124,23 @@ class GeneratedRepositoryTest {
         }
         assertThat(source, not(containsString("List.of(")));
         assertThat(source, not(containsString("new String[]")));
+    }
+
+    /**
+     * Reads source emitted by annotation processing for a repository fixture.
+     *
+     * @param repositoryType repository interface
+     * @return generated repository source
+     * @throws Exception when the compiler output cannot be located or read
+     */
+    private static String generatedSource(Class<?> repositoryType) throws Exception {
+        Path testClasses = Path.of(GeneratedRepositoryTest.class.getProtectionDomain()
+                                           .getCodeSource()
+                                           .getLocation()
+                                           .toURI());
+        Path generatedSource = testClasses.getParent()
+                .resolve("generated-sources/annotations")
+                .resolve(repositoryType.getName().replace('.', '/') + "__Jdbc.java");
+        return Files.readString(generatedSource);
     }
 }

@@ -40,6 +40,7 @@ class RoundContextImpl implements RoundContext {
     private final CodegenContext ctx;
     private final List<ClassCode> newTypesFromPreviousExtensions;
     private final Collection<TypeName> annotations;
+    private TypeHierarchyResolver typeHierarchyResolver;
 
     RoundContextImpl(CodegenContext ctx,
                      List<ClassCode> newTypes,
@@ -145,7 +146,12 @@ class RoundContextImpl implements RoundContext {
 
     @Override
     public TypeHierarchyResolver typeHierarchyResolver() {
-        return ctx.typeHierarchyResolver(this::typeInfo);
+        if (typeHierarchyResolver == null) {
+            // Resolver construction can consult the compiler model, so create it only when hierarchy work is requested.
+            // The bound lookup remains live and continues to see ClassModels added later in this processing round.
+            typeHierarchyResolver = ctx.typeHierarchyResolver(this::typeInfo);
+        }
+        return typeHierarchyResolver;
     }
 
     Collection<ClassCode> newTypes() {

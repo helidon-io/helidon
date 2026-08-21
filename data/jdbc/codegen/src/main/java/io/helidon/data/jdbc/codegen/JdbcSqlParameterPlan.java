@@ -37,6 +37,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
      * @param binds ordered bindings
      */
     JdbcSqlParameterPlan {
+        binds = List.copyOf(binds);
     }
 
     /**
@@ -62,7 +63,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
             case NAMED -> namedBindings(parsed.markers(), parameters, method);
             case POSITIONAL -> positionalBindings(parsed.markers().size(), parameters, method);
         };
-        return new JdbcSqlParameterPlan(parsed.sql(), List.copyOf(binds));
+        return new JdbcSqlParameterPlan(parsed.sql(), binds);
     }
 
     /**
@@ -123,6 +124,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
         parameters.forEach(parameter -> byName.put(parameter.elementName(), parameter));
         Set<String> used = new HashSet<>();
         List<Bind> binds = new ArrayList<>(markers.size());
+        // Named SQL binds in marker encounter order because repeated names must produce repeated JDBC positions.
         for (int index = 0; index < markers.size(); index++) {
             String marker = markers.get(index);
             TypedElementInfo parameter = byName.get(marker);
