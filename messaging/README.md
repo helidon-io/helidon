@@ -917,8 +917,10 @@ concurrently with an active send.
   or other metadata. Document which locally emitted messages are accepted by handlers requiring that subtype.
 - Outgoing mapping must accept ordinary core `Message` instances; treat a connector-specific subtype as an optional
   richer view rather than a required input.
-- Bound every incoming batch by `context.maxDeliveryMessages()` before acquisition. Keep byte, frame, record, and
-  transport request limits in connector configuration; the core runtime performs message-count admission only.
+- Bound every incoming batch by `context.maxDeliveryMessages()` before acquisition. This stable limit includes the
+  source channel and every transitively reachable route; it does not promise immediate capacity while other deliveries
+  are active. Keep byte, frame, record, and transport request limits in connector configuration; the core runtime
+  performs message-count admission only.
 - Preserve message order and the exact `MessageBatch` identity through settlement. Use retained subsets rather than
   rebuilding batches during partial failure handling.
 - Document null, duplicate, encoding, native-header, and payload-type conversion rules.

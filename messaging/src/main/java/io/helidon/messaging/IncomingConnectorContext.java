@@ -48,7 +48,10 @@ public interface IncomingConnectorContext {
     /**
      * Maximum messages the runtime can admit in one retained connector delivery.
      * <p>
-     * Incoming connectors should use this limit to bound polling or reading before submitting a delivery.
+     * For runtime-provided contexts, this stable limit includes the source channel's pending and in-flight message
+     * limits and the in-flight limit of every transitively reachable routed channel. It does not guarantee immediate
+     * admission when another delivery is active. Incoming connectors should use this limit to bound polling or reading
+     * before submitting a delivery.
      *
      * @return maximum messages per delivery
      */

@@ -59,6 +59,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private final CompletableFuture<Void> preparationCompletion = new CompletableFuture<>();
     private final CompletableFuture<Void> startupCompletion = new CompletableFuture<>();
     private final CompletableFuture<Void> shutdownCompletion = new CompletableFuture<>();
+    private volatile Map<String, Integer> effectiveDeliveryLimits = Map.of();
     private boolean preparationInProgress;
     private boolean sealed;
     private volatile State state = State.NEW;
@@ -70,6 +71,17 @@ final class DefaultMessagingGraph implements MessagingGraph {
 
     DeliveryEngine deliveryEngine() {
         return deliveryEngine;
+    }
+
+    int maxDeliveryMessages(String channel) {
+        Integer limit = effectiveDeliveryLimits.get(channel);
+        if (limit != null) {
+            return limit;
+        }
+        if (!channels.containsKey(channel)) {
+            throw new MessagingException("Unknown messaging channel " + channel);
+        }
+        throw new IllegalStateException("Messaging graph topology is not finalized");
     }
 
     State state() {
@@ -269,7 +281,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
         lifecycleLock.lock();
         try {
             requireMutable();
-            validateTopology();
+            finalizeTopology();
             sealed = true;
         } finally {
             lifecycleLock.unlock();
@@ -688,6 +700,30 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
     }
 
+    private void finalizeTopology() {
+        validateTopology();
+        Map<String, Integer> routedLimits = new LinkedHashMap<>();
+        channels.keySet().forEach(channel -> routedMaxInFlightMessages(channel, routedLimits));
+        Map<String, Integer> effectiveLimits = new LinkedHashMap<>();
+        channels.keySet().forEach(channel -> effectiveLimits.put(
+                channel,
+                Math.min(deliveryEngine.maxDeliveryMessages(channel), routedLimits.get(channel))));
+        effectiveDeliveryLimits = Map.copyOf(effectiveLimits);
+    }
+
+    private int routedMaxInFlightMessages(String channel, Map<String, Integer> routedLimits) {
+        Integer existing = routedLimits.get(channel);
+        if (existing != null) {
+            return existing;
+        }
+        int limit = deliveryEngine.maxInFlightMessages(channel);
+        for (String target : routes.getOrDefault(channel, Set.of())) {
+            limit = Math.min(limit, routedMaxInFlightMessages(target, routedLimits));
+        }
+        routedLimits.put(channel, limit);
+        return limit;
+    }
+
     private void validateTopology() {
         for (Map.Entry<String, Set<String>> route : routes.entrySet()) {
             if (!channels.containsKey(route.getKey())) {
@@ -761,7 +797,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
     }
 
     private void prepareGraph() {
-        validateTopology();
+        finalizeTopology();
         requirePreparing();
     }
 

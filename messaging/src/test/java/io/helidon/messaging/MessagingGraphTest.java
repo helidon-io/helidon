@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -1002,6 +1003,74 @@ class MessagingGraphTest {
     }
 
     @Test
+    void routedDeliveryLimitUsesTargetInFlightRatherThanTargetPendingCapacity() {
+        DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
+        addChannel(graph, "source", 8, 8);
+        addChannel(graph, "target", 1, 4);
+        graph.addRoute("source", "target");
+        graph.prepare();
+        try {
+            assertThat(graph.maxDeliveryMessages("source"), is(4));
+            assertThat(graph.maxDeliveryMessages("target"), is(1));
+        } finally {
+            graph.close();
+        }
+    }
+
+    @Test
+    void routedDeliveryLimitIncludesTransitiveTargets() {
+        DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
+        addChannel(graph, "source", 8, 8);
+        addChannel(graph, "middle", 6, 6);
+        addChannel(graph, "target", 2, 2);
+        graph.addRoute("source", "middle");
+        graph.addRoute("middle", "target");
+        graph.prepare();
+        try {
+            assertThat(graph.maxDeliveryMessages("source"), is(2));
+            assertThat(graph.maxDeliveryMessages("middle"), is(2));
+            assertThat(graph.maxDeliveryMessages("target"), is(2));
+        } finally {
+            graph.close();
+        }
+    }
+
+    @Test
+    void routedDeliveryLimitUsesSmallestFanOutBranch() {
+        DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
+        addChannel(graph, "source", 8, 8);
+        addChannel(graph, "left", 4, 4);
+        addChannel(graph, "middle", 2, 2);
+        addChannel(graph, "right", 3, 3);
+        graph.addRoute("source", "left");
+        graph.addRoute("source", "middle");
+        graph.addRoute("source", "right");
+        graph.prepare();
+        try {
+            assertThat(graph.maxDeliveryMessages("source"), is(2));
+            assertThat(graph.maxDeliveryMessages("left"), is(4));
+            assertThat(graph.maxDeliveryMessages("middle"), is(2));
+            assertThat(graph.maxDeliveryMessages("right"), is(3));
+        } finally {
+            graph.close();
+        }
+    }
+
+    @Test
+    void unrelatedChannelDoesNotReduceDeliveryLimit() {
+        DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
+        addChannel(graph, "source", 6, 3);
+        addChannel(graph, "unrelated", 1, 1);
+        graph.prepare();
+        try {
+            assertThat(graph.maxDeliveryMessages("source"), is(3));
+            assertThat(graph.maxDeliveryMessages("unrelated"), is(1));
+        } finally {
+            graph.close();
+        }
+    }
+
+    @Test
     void rejectsCycleBeforePreparingSources() {
         List<String> events = new CopyOnWriteArrayList<>();
         ManagedSource source = ManagedSource.running("source", events, new AtomicBoolean(), () -> true);
@@ -1023,6 +1092,19 @@ class MessagingGraphTest {
 
     private static DefaultMessagingGraph graph(MessagingExecutionConfig config) {
         return new DefaultMessagingGraph(new DeliveryEngine(config));
+    }
+
+    private static void addChannel(DefaultMessagingGraph graph,
+                                   String channel,
+                                   int maxPendingMessages,
+                                   int maxInFlightMessages) {
+        MessagingExecutionConfig config = MessagingExecutionConfig.builder()
+                .queueCapacity(0)
+                .maxPendingMessages(maxPendingMessages)
+                .maxInFlightMessages(maxInFlightMessages)
+                .shutdownTimeout(SHUTDOWN_TIMEOUT)
+                .build();
+        graph.addChannel(channel, new NoOpChannel(), config);
     }
 
     private static DeliveryEngine engine(MessagingExecutionConfig config, String... channels) {

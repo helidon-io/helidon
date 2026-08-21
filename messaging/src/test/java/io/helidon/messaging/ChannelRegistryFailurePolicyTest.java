@@ -17,6 +17,7 @@
 package io.helidon.messaging;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -193,6 +194,61 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
+    void testProcessorRouteBoundsConnectorDeliveryAndUnlimitedRetryCompletes() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger processorAttempts = new AtomicInteger();
+        List<String> received = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = new ChannelRegistry(
+                List.of(passThroughProcessor("source", "target", processorAttempts),
+                        registration("target", message -> received.add((String) message.entity()))),
+                yaml("""
+                        helidon:
+                          messaging:
+                            channel:
+                              source:
+                                execution:
+                                  max-pending-messages: 2
+                                  max-in-flight-messages: 2
+                              target:
+                                execution:
+                                  max-pending-messages: 8
+                                  max-in-flight-messages: 1
+                            incoming:
+                              source:
+                                connector: test-in
+                        """),
+                List.of(incoming));
+        registry.start();
+        try {
+            IncomingConnectorContext context = incoming.context("source");
+            int advertised = context.maxDeliveryMessages();
+            List<Message<String>> messages = new ArrayList<>(advertised);
+            for (int i = 0; i < advertised; i++) {
+                messages.add(Message.create("message-" + i));
+            }
+            try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
+                 ConnectorDelivery delivery = reservation.start(MessageBatch.create(messages))) {
+                assertThat(delivery.await(Duration.ofSeconds(2)), is(true));
+            }
+
+            assertThat(advertised, is(1));
+            assertThat(processorAttempts.get(), is(1));
+            assertThat(received, is(List.of("message-0")));
+
+            try (ConnectorDeliveryReservation reservation = context.reserveDelivery()) {
+                MessagingRejectedException oversized = assertThrows(
+                        MessagingRejectedException.class,
+                        () -> reservation.start(MessageBatch.create(List.of(Message.create("one"),
+                                                                          Message.create("two")))));
+                assertThat(oversized.reason(), is(MessagingRejectedException.Reason.OVERSIZED));
+            }
+            assertThat(processorAttempts.get(), is(1));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
     void testRepeatedTryReserveCallsShareAdmissionTimeoutBudget() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> { })),
@@ -283,6 +339,15 @@ class ChannelRegistryFailurePolicyTest {
                             yaml("""
                                     helidon:
                                       messaging:
+                                        channel:
+                                          orders:
+                                            execution:
+                                              max-pending-messages: 2
+                                              max-in-flight-messages: 2
+                                          orders-dlq:
+                                            execution:
+                                              max-pending-messages: 8
+                                              max-in-flight-messages: 1
                                         incoming:
                                           orders:
                                             connector: test-in
@@ -299,18 +364,24 @@ class ChannelRegistryFailurePolicyTest {
                                     """),
                             List.of(incoming, outgoing));
         registry.start();
-        Message<String> rejected = Message.builder((String) null).header("message-id", "poison-1").build();
-        IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
+        try {
+            IncomingConnectorContext context = incoming.context("orders");
+            assertThat(context.maxDeliveryMessages(), is(1));
+            Message<String> rejected = Message.builder((String) null).header("message-id", "poison-1").build();
+            IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
 
-        deliverFailed(incoming.context("orders"), MessageBatch.create(rejected), mappingFailure);
+            deliverFailed(context, MessageBatch.create(rejected), mappingFailure);
 
-        assertThat(handlerCalls.get(), is(0));
-        assertThat(outgoing.messages().size(), is(1));
-        DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().getFirst();
-        assertThat(deadLetter.originalMessage(), sameInstance(rejected));
-        assertThat(deadLetter.attempts(), is(3));
-        assertThat(deadLetter.failureType(), is(mappingFailure.getClass().getName()));
-        assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+            assertThat(handlerCalls.get(), is(0));
+            assertThat(outgoing.messages().size(), is(1));
+            DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().getFirst();
+            assertThat(deadLetter.originalMessage(), sameInstance(rejected));
+            assertThat(deadLetter.attempts(), is(3));
+            assertThat(deadLetter.failureType(), is(mappingFailure.getClass().getName()));
+            assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+        } finally {
+            registry.close();
+        }
     }
 
     @Test
@@ -1423,6 +1494,58 @@ class ChannelRegistryFailurePolicyTest {
             @Override
             public void dispatch(MessageBatch<?> batch) {
                 consumer.accept(batch);
+            }
+        };
+    }
+
+    private static ProcessorRegistration passThroughProcessor(String incoming,
+                                                              String outgoing,
+                                                              AtomicInteger attempts) {
+        return new ProcessorRegistration() {
+            @Override
+            public String handlerId() {
+                return incoming + "->" + outgoing;
+            }
+
+            @Override
+            public String channel() {
+                return incoming;
+            }
+
+            @Override
+            public Class<?> payloadType() {
+                return String.class;
+            }
+
+            @Override
+            public GenericType<?> payloadGenericType() {
+                return new GenericType<String>() { };
+            }
+
+            @Override
+            public GenericType<?> envelopeGenericType() {
+                return new GenericType<Message<String>>() { };
+            }
+
+            @Override
+            public String outgoingChannel() {
+                return outgoing;
+            }
+
+            @Override
+            public GenericType<?> outgoingPayloadGenericType() {
+                return new GenericType<String>() { };
+            }
+
+            @Override
+            public GenericType<?> outgoingEnvelopeGenericType() {
+                return new GenericType<Message<String>>() { };
+            }
+
+            @Override
+            public MessageBatch<?> process(MessageBatch<?> batch) {
+                attempts.incrementAndGet();
+                return batch;
             }
         };
     }
