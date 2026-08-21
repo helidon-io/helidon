@@ -484,6 +484,7 @@ final class JdbcTxSupport implements TxSupport {
      */
     private void notifyListeners(ListenerAction action, String event) {
         Throwable failure = null;
+        // Continue after a listener fails so it cannot prevent later listeners from releasing their resources.
         for (TxLifeCycle listener : listeners) {
             try {
                 action.accept(listener);

@@ -72,7 +72,8 @@ final class JdbcPersistenceGenerator extends BasePersistenceGenerator {
                                                + "extend entity repository interfaces.",
                                        repositoryInfo.interfaceInfo().originatingElementValue());
         }
-        JdbcRepositoryClassGenerator.generate(roundContext,
+        JdbcRepositoryClassGenerator.generate(codegenContext,
+                                               roundContext,
                                                repositoryInfo,
                                                className,
                                                classModel);

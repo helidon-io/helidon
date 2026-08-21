@@ -64,6 +64,8 @@ final class JdbcTypeHierarchy {
         TypedElementInfo first = declarations.getFirst();
         for (int index = 1; index < declarations.size(); index++) {
             TypedElementInfo declaration = declarations.get(index);
+            // Conflicting inherited annotations would make one generated implementation method represent two
+            // contracts.
             if (!sameMethodAnnotations(first, declaration)) {
                 throw new CodegenException("Inherited repository method '" + signature.text()
                                                    + "' has conflicting JDBC or transaction annotations.",
@@ -93,6 +95,7 @@ final class JdbcTypeHierarchy {
         for (int index = 1; index < declarations.size(); index++) {
             TypedElementInfo declaration = declarations.get(index);
             ParameterBindingContract declarationContract = parameterBindingContract(declaration, sql.get());
+            // The same named SQL must bind the same logical parameter positions across inherited declarations.
             if (!firstContract.equals(declarationContract)) {
                 throw new CodegenException("Inherited repository method '" + signature.text()
                                                    + "' has incompatible named SQL parameter bindings.",

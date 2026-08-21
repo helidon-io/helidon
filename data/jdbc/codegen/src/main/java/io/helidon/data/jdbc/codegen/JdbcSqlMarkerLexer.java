@@ -82,6 +82,7 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
         if (end < source.length() && source.charAt(end) == '.') {
             throw malformed("Dotted named parameters are not supported", start);
         }
+        // The source substring is kept before rewriting so diagnostics and binding still use the Java parameter name.
         markers.add(source.substring(start + 1, end));
         named = true;
         jdbcSql.append('?');
@@ -89,6 +90,7 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
 
     @Override
     public void positionalMarker(int offset) {
+        // Positional statements only need a physical marker count, so an empty entry avoids storing SQL text.
         markers.add("");
         positional = true;
         jdbcSql.append('?');

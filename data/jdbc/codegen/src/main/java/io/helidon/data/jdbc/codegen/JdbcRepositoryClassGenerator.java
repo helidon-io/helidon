@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc.codegen;
 
+import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
@@ -42,12 +43,14 @@ final class JdbcRepositoryClassGenerator {
      * Defines the generated repository class and delegates its method body
      * generation to the JDBC provider.
      *
+     * @param codegenContext current code generation context
      * @param roundContext current generation round
      * @param repositoryInfo repository metadata
      * @param className generated class name
      * @param classModel generated class
      */
-    static void generate(RoundContext roundContext,
+    static void generate(CodegenContext codegenContext,
+                         RoundContext roundContext,
                          RepositoryInfo repositoryInfo,
                          TypeName className,
                          ClassModel.Builder classModel) {
@@ -71,9 +74,10 @@ final class JdbcRepositoryClassGenerator {
                         .isFinal(true)
                         .type(JdbcPersistenceTypes.JDBC_CLIENT));
 
-        JdbcMethodGenerator.generate(repositoryInfo,
-                                     classModel,
-                                     roundContext);
+        JdbcMethodGenerator.generate(codegenContext,
+                                     roundContext,
+                                     repositoryInfo,
+                                     classModel);
     }
 
     /**

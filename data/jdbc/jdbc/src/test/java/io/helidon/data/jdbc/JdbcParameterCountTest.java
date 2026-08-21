@@ -26,18 +26,39 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcParameterCountTest {
 
+    /**
+     * Verifies that portable punctuation stays visible to marker recognition
+     * while comments and separated subtraction operators remain unambiguous.
+     */
     @Test
     void appliesPortablePunctuationAndCommentRules() {
         String sql = """
                 select [question?], `question?`, ?, ??
                 from T
-                where BALANCE--? > 0 and ID = ?
+                where BALANCE - -? > 0 and ID = ?
                 -- ? ignored
                 /* ? ignored */
                 """;
 
         assertThat(JdbcOperation.parameterCount(sql), is(7));
         assertThat(JdbcOperation.parameterCount("select 1 -- ? ignored"), is(0));
+    }
+
+    /**
+     * Verifies that imperative statement creation rejects a no-whitespace
+     * double dash through the shared safe lexical diagnostic.
+     */
+    @Test
+    void rejectsAmbiguousDoubleDashSequences() {
+        String sql = "select PRIVATE_VALUE--comment";
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                         () -> JdbcOperation.parameterCount(sql));
+
+        assertThat(failure.getMessage(), containsString("Ambiguous double-dash SQL sequence"));
+        assertThat(failure.getMessage(), containsString("PORTABLE"));
+        assertThat(failure.getMessage(), endsWith("offset is 20."));
+        assertThat(failure.getMessage(), not(containsString("PRIVATE_VALUE")));
     }
 
     @Test

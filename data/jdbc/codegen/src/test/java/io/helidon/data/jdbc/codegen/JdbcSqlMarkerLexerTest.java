@@ -28,12 +28,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcSqlMarkerLexerTest {
 
+    /**
+     * Verifies that named and positional marker plans preserve portable
+     * punctuation, recognized comments, and separated subtraction operators.
+     */
     @Test
     void appliesPortablePunctuationAndCommentRules() {
         String sql = """
                 select VALUES_COLUMN[:index]
                 from T
-                where BALANCE--:delta > 0 and ID = :id
+                where BALANCE - -:delta > 0 and ID = :id
                 -- :ignored
                 """;
 
@@ -46,6 +50,23 @@ class JdbcSqlMarkerLexerTest {
         assertThat(named.markers(), is(List.of("index", "delta", "id")));
         assertThat(named.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
         assertThat(positional.markers(), is(List.of("", "", "")));
+    }
+
+    /**
+     * Verifies that declarative SQL rejects ambiguous double-dash input before
+     * named-marker rewriting can inspect database-comment text.
+     */
+    @Test
+    void rejectsAmbiguousDoubleDashSequences() {
+        String sql = "select PRIVATE_VALUE--:id";
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                         () -> JdbcSqlMarkerLexer.parse(sql));
+
+        assertThat(failure.getMessage(), containsString("Ambiguous double-dash SQL sequence"));
+        assertThat(failure.getMessage(), containsString("PORTABLE"));
+        assertThat(failure.getMessage(), endsWith("offset is 20."));
+        assertThat(failure.getMessage(), not(containsString("PRIVATE_VALUE")));
     }
 
     @Test

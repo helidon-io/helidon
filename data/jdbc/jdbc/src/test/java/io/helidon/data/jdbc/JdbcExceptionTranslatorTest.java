@@ -38,7 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class JdbcExceptionTranslatorTest {
 
     @Test
-    void exposesOnlySafeSqlIdentityAndDriverMetadata() {
+    void omitsSqlIdentityAndExposesOnlySafeDriverMetadata() {
         List<String> statements = List.of("SELECT 'private-name'",
                                           "SELECT 987654321",
                                           "SELECT X'DEADBEEF'",
@@ -54,15 +54,14 @@ class JdbcExceptionTranslatorTest {
             cause.addSuppressed(new SQLException("suppressed private-token", "08003", 92));
             cause.setNextException(new SQLException("next private-token", "08004", 93));
 
-            DataException failure = JdbcExceptionTranslator.translate("QUERY", sql, cause);
+            DataException failure = JdbcExceptionTranslator.translate("QUERY", cause);
             String messages = messages(failure);
 
             assertThat(failure.getMessage(), containsString("a syntax error or access-rule violation"));
             assertThat(failure.getMessage(), containsString("SQLSTATE '42000'"));
             assertThat(failure.getMessage(), not(containsString("SQLSTATE class")));
             assertThat(failure.getMessage(), containsString("vendor code 91"));
-            assertThat(failure.getMessage(),
-                       containsString("SQL fingerprint is '" + JdbcExceptionTranslator.fingerprint(sql) + "'"));
+            assertThat(failure.getMessage(), not(containsString("SQL fingerprint")));
             assertThat(failure.getMessage(),
                        containsString("Consult the JDBC driver documentation for details about this SQLSTATE "
                                               + "and vendor code."));
@@ -78,15 +77,29 @@ class JdbcExceptionTranslatorTest {
         }
     }
 
+    /**
+     * Verifies that SQL text cannot change the application-visible identity of
+     * otherwise equivalent JDBC failures.
+     */
     @Test
-    void createsStableBoundedFingerprints() {
-        String first = JdbcExceptionTranslator.fingerprint("SELECT 1");
-        String repeated = JdbcExceptionTranslator.fingerprint("SELECT 1");
-        String second = JdbcExceptionTranslator.fingerprint("SELECT 2");
+    void doesNotDeriveDiagnosticIdentityFromSql() {
+        JdbcOperation first = new JdbcOperation("SELECT 'first-private-value'",
+                                                new JdbcOperation.Bind[0],
+                                                JdbcPreparationPlan.query());
+        JdbcOperation second = new JdbcOperation("SELECT 'second-private-value'",
+                                                 new JdbcOperation.Bind[0],
+                                                 JdbcPreparationPlan.query());
 
-        assertThat(first, is(repeated));
-        assertThat(first.length(), is(24));
-        assertThat(first, not(is(second)));
+        String firstMessage = JdbcExceptionTranslator.translate(
+                first,
+                new SQLException("private driver message", "42000", 91)).getMessage();
+        String secondMessage = JdbcExceptionTranslator.translate(
+                second,
+                new SQLException("different private driver message", "42000", 91)).getMessage();
+
+        assertThat(firstMessage, is(secondMessage));
+        assertThat(firstMessage, not(containsString("private-value")));
+        assertThat(firstMessage, not(containsString("fingerprint")));
     }
 
     @Test
@@ -320,7 +333,7 @@ class JdbcExceptionTranslatorTest {
             current = next;
         }
 
-        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        DataException failure = JdbcExceptionTranslator.translate("query", first);
         List<Throwable> graph = exceptionGraph(failure.getCause());
 
         assertThat(graph.size(), is(16));
@@ -338,7 +351,7 @@ class JdbcExceptionTranslatorTest {
             current = next;
         }
 
-        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        DataException failure = JdbcExceptionTranslator.translate("query", first);
         List<Throwable> graph = exceptionGraph(failure.getCause());
 
         assertThat(graph.size(), is(16));
@@ -353,7 +366,7 @@ class JdbcExceptionTranslatorTest {
         first.initCause(shared);
         first.setNextException(shared);
 
-        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        DataException failure = JdbcExceptionTranslator.translate("query", first);
         SQLException sanitized = (SQLException) failure.getCause();
         SQLException sanitizedShared = (SQLException) sanitized.getCause();
         List<Throwable> graph = exceptionGraph(sanitized);
@@ -373,7 +386,7 @@ class JdbcExceptionTranslatorTest {
             first.addSuppressed(new SQLException("secret suppressed " + index, "42001", index));
         }
 
-        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        DataException failure = JdbcExceptionTranslator.translate("query", first);
         List<Throwable> graph = exceptionGraph(failure.getCause());
 
         assertThat(graph.size(), is(1));
@@ -388,7 +401,7 @@ class JdbcExceptionTranslatorTest {
         first.initCause(second);
         second.setNextException(first);
 
-        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", first);
+        DataException failure = JdbcExceptionTranslator.translate("query", first);
         SQLException sanitized = (SQLException) failure.getCause();
         SQLException sanitizedSecond = (SQLException) sanitized.getCause();
         List<Throwable> graph = exceptionGraph(sanitized);
@@ -404,7 +417,7 @@ class JdbcExceptionTranslatorTest {
         String secretState = "jdbc:test://user:password@host/db?token=private-token";
         SQLException cause = new SQLException("private driver message", secretState, 91);
 
-        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", cause);
+        DataException failure = JdbcExceptionTranslator.translate("query", cause);
         SQLException sanitized = (SQLException) failure.getCause();
 
         assertThat(failure.getMessage(), containsString("an error without a valid SQLSTATE"));
@@ -438,7 +451,7 @@ class JdbcExceptionTranslatorTest {
             }
         };
 
-        DataException failure = JdbcExceptionTranslator.translate("query", "SELECT 1", hostile);
+        DataException failure = JdbcExceptionTranslator.translate("query", hostile);
         SQLException sanitized = (SQLException) failure.getCause();
         List<Throwable> graph = exceptionGraph(sanitized);
 

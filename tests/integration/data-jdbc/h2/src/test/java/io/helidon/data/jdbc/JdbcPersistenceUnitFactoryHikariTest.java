@@ -15,9 +15,12 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
 
@@ -41,6 +44,10 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class JdbcPersistenceUnitFactoryHikariTest {
 
@@ -71,6 +78,47 @@ class JdbcPersistenceUnitFactoryHikariTest {
             assertThat(failure.getMessage(), containsString("Consult the JDBC driver documentation"));
             assertThat(failure.getCause(), instanceOf(java.sql.SQLException.class));
             assertThat(source.getHikariPoolMXBean().getActiveConnections(), is(0));
+        }
+    }
+
+    /**
+     * Proves a failed logical-handle close invalidates the physical connection
+     * and leaves the one-connection pool usable.
+     */
+    @Test
+    void invalidatesBootstrapConnectionWhenPoolHandleCloseFails() throws Exception {
+        try (HikariDataSource source = dataSource("bootstrap_close_failure", true)) {
+            Connection pooledConnection = source.getConnection();
+            Connection failingConnection = mock(Connection.class, delegatesTo(pooledConnection));
+            SQLException closeFailure = new SQLException("connection close failed", "08003", 57);
+            doThrow(closeFailure).doAnswer(invocation -> {
+                pooledConnection.close();
+                return null;
+            }).when(failingConnection).close();
+            AtomicBoolean firstBorrow = new AtomicBoolean(true);
+            DataSource dataSource = mock(DataSource.class);
+            when(dataSource.getConnection()).thenAnswer(invocation ->
+                    firstBorrow.getAndSet(false) ? failingConnection : source.getConnection());
+            Config config = Config.just(ConfigSources.create(Map.of(
+                    "data.persistence-units.jdbc.0.name", "bootstrap-close-failure",
+                    "data.persistence-units.jdbc.0.data-source", "bootstrap-close-failure-source",
+                    "data.persistence-units.jdbc.0.init-script.resource-path", "db/h2/jdbc-bootstrap-init.sql")));
+            JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                    () -> List.of(instance("bootstrap-close-failure-source", dataSource)),
+                    () -> config,
+                    new JdbcTransactionConnectionManager());
+
+            DataException failure = assertThrows(DataException.class, factory::services);
+
+            assertThat(failure.getCause().getMessage(), is("The JDBC driver reported a failure."));
+            try (var connection = source.getConnection();
+                 var statement = connection.createStatement();
+                 var resultSet = statement.executeQuery("SELECT COUNT(*) FROM SCRIPT_VALUE")) {
+                resultSet.next();
+                assertThat(resultSet.getLong(1), is(2L));
+            }
+            assertThat(source.getHikariPoolMXBean().getActiveConnections(), is(0));
+            assertThat(source.getHikariPoolMXBean().getTotalConnections(), is(1));
         }
     }
 

@@ -40,10 +40,12 @@ import io.helidon.data.DataException;
  * connection, but result sets and statements always close before the terminal
  * returns.
  * <p>
- * Warning handling is retained behind a compile-time policy for future use.
- * The disabled policy does not retrieve, clear, traverse, retain, or display
- * JDBC warnings. JDBC cleanup failures remain sanitized before attachment to
- * the application-visible failure tree.
+ * General warning handling is retained behind a compile-time policy for future
+ * use. The disabled policy does not capture, retain, or display ordinary JDBC
+ * warnings. Result-set warnings are inspected only to prevent read-side
+ * {@link java.sql.DataTruncation} from reaching the application as successful
+ * data. JDBC cleanup failures remain sanitized before attachment to the
+ * application-visible failure tree.
  */
 final class JdbcRunner {
 
@@ -506,6 +508,8 @@ final class JdbcRunner {
                                       PreparedStatement statement,
                                       JdbcConnectionLease lease,
                                       Throwable previousFailure) {
+        // SQL failures must enter the bounded sanitizer before cleanup is attached. Application and mapper failures
+        // keep their original identity.
         if (previousFailure instanceof SQLException) {
             Throwable failure = close(resultSet, "closing a result set", previousFailure);
             failure = close(statement, "closing a statement", failure);

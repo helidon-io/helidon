@@ -43,8 +43,18 @@ final class ClassModelFactory {
                            TypeName requestedTypeName,
                            ClassBase requestedType) {
 
+        TypeName rawTypeName = requestedTypeName.genericTypeName();
+        // A ClassModel may be queried in the same processing run before javac has created a TypeElement. Preserve its
+        // formal variables and bounds separately from the concrete use-site type so member resolution can substitute,
+        // for example, Box<T> components when the requested type is Box<String>.
+        TypeName declaredTypeName = TypeName.builder(rawTypeName)
+                .typeArguments(requestedType.genericArguments())
+                .build();
+
         var builder = TypeInfo.builder()
                 .typeName(requestedTypeName)
+                .rawType(rawTypeName)
+                .declaredType(declaredTypeName)
                 .kind(requestedType.kind())
                 .accessModifier(requestedType.accessModifier())
                 .description(String.join("\n", requestedType.description()));

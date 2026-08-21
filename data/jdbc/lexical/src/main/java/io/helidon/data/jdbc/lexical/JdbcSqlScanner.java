@@ -83,7 +83,13 @@ public final class JdbcSqlScanner {
                 ordinary();
                 bracketIdentifier();
                 protectedRegion(RegionKind.BRACKET_IDENTIFIER, start);
-            } else if (current == '-' && peek(1) == '-' && JdbcSqlLexicalRules.lineComment(source, index)) {
+            } else if (current == '-' && peek(1) == '-') {
+                if (!JdbcSqlLexicalRules.lineComment(source, index)) {
+                    // Databases disagree whether a no-whitespace double dash is subtraction or a comment. Rejecting
+                    // it keeps marker recognition deterministic instead of inspecting text a driver may ignore.
+                    throw malformed("Ambiguous double-dash SQL sequence; place whitespace after the second dash for "
+                                             + "a comment or separate consecutive subtraction operators");
+                }
                 int start = index;
                 ordinary();
                 lineComment();
