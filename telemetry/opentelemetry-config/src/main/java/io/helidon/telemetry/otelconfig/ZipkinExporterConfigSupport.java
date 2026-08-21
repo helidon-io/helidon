@@ -21,6 +21,10 @@ import io.helidon.common.LazyValue;
 
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporterBuilder;
 
+/**
+ * Compatibility support for the deprecated OpenTelemetry Zipkin exporter.
+ */
+@SuppressWarnings({"deprecation", "removal"})
 class ZipkinExporterConfigSupport {
 
     private ZipkinExporterConfigSupport() {

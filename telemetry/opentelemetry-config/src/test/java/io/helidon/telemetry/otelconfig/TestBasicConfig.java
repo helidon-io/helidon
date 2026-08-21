@@ -124,6 +124,17 @@ class TestBasicConfig {
     }
 
     @Test
+    @SuppressWarnings("removal")
+    void testZipkinExporterDeprecationMetadata() throws NoSuchFieldException {
+        assertThat("Zipkin exporter type is deprecated",
+                   SpanExporterType.class.getField("ZIPKIN").isAnnotationPresent(Deprecated.class),
+                   is(true));
+        assertThat("Zipkin exporter configuration is deprecated",
+                   ZipkinExporterConfig.class.isAnnotationPresent(Deprecated.class),
+                   is(true));
+    }
+
+    @Test
     void testDisabled() {
         /*
         The main point of this test is to make sure that we can build the OpenTelemetryConfig object without errors when

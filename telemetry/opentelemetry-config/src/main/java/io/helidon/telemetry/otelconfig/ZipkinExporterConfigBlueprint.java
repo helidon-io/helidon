@@ -29,9 +29,17 @@ import io.opentelemetry.api.metrics.MeterProvider;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.reporter.Sender;
 
+/**
+ * Configuration for the deprecated OpenTelemetry Zipkin exporter.
+ *
+ * @deprecated OpenTelemetry stopped publishing the Zipkin exporter in 1.65.0. This configuration is removed in
+ * Helidon 27. Use {@link OtlpExporterConfig} instead.
+ */
+@Deprecated(since = "4.5.4", forRemoval = true)
 @Prototype.Configured
 @Prototype.Blueprint(decorator = ZipkinExporterConfigSupport.BuilderDecorator.class)
-interface  ZipkinExporterConfigBlueprint {
+@Prototype.Annotated("java.lang.Deprecated(since = \"4.5.4\", forRemoval = true)")
+interface ZipkinExporterConfigBlueprint {
 
     /**
      * Collector endpoint to which this exporter should transmit.

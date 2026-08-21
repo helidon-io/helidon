@@ -439,8 +439,9 @@ an OpenTelemetry exporter as [described earlier](#otel-exporter-dependencies)
 and, as needed, configure its use. By default OpenTelemetry attempts to use the
 OTLP exporter so you do not need to add configuration to specify that choice. To
 use a different exporter set `otel.traces.exporter` in your configuration to the
-appropriate value: `zipkin`, `prometheus`, etc. See the [examples](#examples)
-section below.
+appropriate value. The `zipkin` value is deprecated because OpenTelemetry
+stopped publishing its Zipkin exporter in 1.65.0; use `otlp` for traces. See
+the [examples](#examples) section below.
 
 ### OpenTelemetry Java Agent
 
@@ -526,11 +527,12 @@ otel.service.name=greeting-service <3>
 Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name,
 which will be used to identify our service in the tracer.
 
-> [!NOTE]
-> For this example, you will use Jaeger to manage data tracing. If you prefer to
-> use Zipkin, please set `otel.traces.exporter` property to "zipkin". For more
-> information using about Zipkin, see <https://zipkin.io/>. Also, a
-> corresponding Maven dependency for the exporter should be added:
+> [!WARNING]
+> The OpenTelemetry Zipkin exporter is deprecated. OpenTelemetry stopped
+> publishing it in 1.65.0, and Helidon 27 removes support for it. Existing
+> Helidon 4 applications can continue using `otel.traces.exporter=zipkin` with
+> the corresponding dependency shown below, but should migrate to the OTLP
+> exporter:
 >
 >     <dependency>
 >         <groupId>io.opentelemetry</groupId>

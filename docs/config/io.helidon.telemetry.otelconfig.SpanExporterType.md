@@ -20,7 +20,8 @@ This type is an enumeration.
 </tr>
 <tr>
 <td><code>ZIPKIN</code></td>
-<td>Zipkin <code>io.<wbr>opentelemetry.<wbr>exporter.<wbr>zipkin.<wbr>Zipkin<wbr>Span<wbr>Exporter</code></td>
+<td><strong>Deprecated:</strong> OpenTelemetry stopped publishing the Zipkin exporter in 1.65.0, and Helidon 27
+removes support. Use <code>OTLP</code> instead.</td>
 </tr>
 <tr>
 <td><code>CONSOLE</code></td>

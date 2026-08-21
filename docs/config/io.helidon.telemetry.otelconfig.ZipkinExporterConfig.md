@@ -2,7 +2,9 @@
 
 ## Description
 
-<code>N/<wbr>A</code>
+Configuration for the deprecated OpenTelemetry Zipkin exporter. OpenTelemetry stopped publishing the exporter in
+1.65.0, and Helidon 27 removes this configuration. Use
+<a href="io.helidon.telemetry.otelconfig.OtlpExporterConfig.md"><code>Otlp<wbr>Exporter<wbr>Config</code></a> instead.
 
 ## Configuration options
 
