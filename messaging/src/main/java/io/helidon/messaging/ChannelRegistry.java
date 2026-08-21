@@ -1188,7 +1188,7 @@ class ChannelRegistry implements MessagingRuntime {
 
         @Override
         public int maxDeliveryMessages() {
-            return deliveryEngine.maxDeliveryMessages(channel);
+            return graph.maxDeliveryMessages(channel);
         }
 
         @Override

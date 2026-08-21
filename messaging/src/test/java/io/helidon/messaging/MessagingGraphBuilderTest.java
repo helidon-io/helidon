@@ -36,6 +36,8 @@ import java.util.stream.StreamSupport;
 import io.helidon.common.GenericType;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -59,6 +61,28 @@ class MessagingGraphBuilderTest {
 
             graph.start();
             emitter.emit("started");
+        }
+    }
+
+    @Test
+    void buildFinalizesRoutedDeliveryLimits() {
+        MessagingExecutionConfig sourceConfig = MessagingExecutionConfig.builder()
+                .maxPendingMessages(8)
+                .maxInFlightMessages(8)
+                .build();
+        MessagingExecutionConfig targetConfig = MessagingExecutionConfig.builder()
+                .maxPendingMessages(1)
+                .maxInFlightMessages(3)
+                .build();
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> source = builder.channel("source", GenericType.create(String.class), sourceConfig);
+        MessagingChannel<String> target = builder.channel("target", GenericType.create(String.class), targetConfig);
+        builder.route(source, target)
+                .payloadSink(target, ignored -> { });
+
+        try (MessagingGraph graph = builder.build()) {
+            assertThat(((DefaultMessagingGraph) graph).maxDeliveryMessages("source"), is(3));
+            assertThat(((DefaultMessagingGraph) graph).maxDeliveryMessages("target"), is(1));
         }
     }
 

@@ -222,6 +222,10 @@ final class DeliveryEngine implements AutoCloseable {
         return Math.min(config.maxInFlightMessages(), config.maxPendingMessages());
     }
 
+    int maxInFlightMessages(String channel) {
+        return dispatcher(channel).config.maxInFlightMessages();
+    }
+
     Optional<Duration> admissionTimeout(String channel) {
         return dispatcher(channel).config.admissionTimeout();
     }
