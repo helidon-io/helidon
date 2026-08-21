@@ -183,96 +183,19 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                     continue;
                 }
                 Config scriptConfig = unitConfig.get(scriptConfigKey(descriptor.role()));
-                // The effective limit is the smaller of the per resource limit and the remaining total budget.
-                int limit = budget.resourceLimit();
                 try {
                     if (sourceType == JdbcBootstrapResource.SourceType.CONFIGURED_TEXT) {
-                        String content = scriptConfig.get(CONTENT_PLAIN_CONFIG_KEY).asString().get();
-                        int encodedBytes = 0;
-                        // Count the bytes that String UTF-8 encoding would create without creating the byte array.
-                        for (int index = 0; index < content.length(); index++) {
-                            char character = content.charAt(index);
-                            int characterBytes;
-                            if (character <= 0x7f) {
-                                characterBytes = 1;
-                            } else if (character <= 0x7ff) {
-                                characterBytes = 2;
-                            } else if (Character.isHighSurrogate(character)
-                                    && index + 1 < content.length()
-                                    && Character.isLowSurrogate(content.charAt(index + 1))) {
-                                characterBytes = 4;
-                                index++;
-                            } else if (Character.isSurrogate(character)) {
-                                // String UTF-8 encoding replaces an unmatched surrogate with one byte.
-                                characterBytes = 1;
-                            } else {
-                                characterBytes = 3;
-                            }
-                            // Stop before allocating resource storage once the next character proves the limit is
-                            // exceeded.
-                            if (encodedBytes > limit - characterBytes) {
-                                throw inlineSizeFailure(unitName, descriptor, budget);
-                            }
-                            encodedBytes += characterBytes;
-                        }
-                        // Reserve the bytes so the next inline script sees the remaining aggregate budget.
-                        budget.addBytes(encodedBytes);
+                        preflightInlineContent(unitName,
+                                               descriptor,
+                                               budget,
+                                               sourceType,
+                                               scriptConfig.get(CONTENT_PLAIN_CONFIG_KEY).asString().get());
                     } else {
-                        String content = scriptConfig.get(CONTENT_CONFIG_KEY).asString().get();
-                        int symbols = 0;
-                        int padding = 0;
-                        boolean paddingStarted = false;
-                        int decodedBytes = 0;
-                        // Validate the basic Base64 alphabet while counting decoded groups without decoding the
-                        // payload.
-                        for (int index = 0; index < content.length(); index++) {
-                            char character = content.charAt(index);
-                            boolean alphabet = (character >= 'A' && character <= 'Z')
-                                    || (character >= 'a' && character <= 'z')
-                                    || (character >= '0' && character <= '9')
-                                    || character == '+'
-                                    || character == '/';
-                            if (alphabet && !paddingStarted) {
-                                symbols++;
-                                // Each complete group of four alphabet symbols contributes three decoded bytes.
-                                if (symbols % 4 == 0) {
-                                    if (decodedBytes > limit - 3) {
-                                        throw inlineSizeFailure(unitName, descriptor, budget);
-                                    }
-                                    decodedBytes += 3;
-                                }
-                            } else if (character == '=') {
-                                // Padding is valid only at the end and contains no more than two symbols.
-                                paddingStarted = true;
-                                padding++;
-                                if (padding > 2) {
-                                    throw invalidBase64Failure(unitName, descriptor);
-                                }
-                            } else {
-                                throw invalidBase64Failure(unitName, descriptor);
-                            }
-                        }
-                        // Validate the final partial group and determine its one or two decoded bytes.
-                        int remainder = symbols % 4;
-                        int finalBytes;
-                        if (padding == 0) {
-                            if (remainder == 1) {
-                                throw invalidBase64Failure(unitName, descriptor);
-                            }
-                            finalBytes = remainder == 0 ? 0 : remainder - 1;
-                        } else if (padding == 1 && remainder == 3 && (symbols + padding) % 4 == 0) {
-                            finalBytes = 2;
-                        } else if (padding == 2 && remainder == 2 && (symbols + padding) % 4 == 0) {
-                            finalBytes = 1;
-                        } else {
-                            throw invalidBase64Failure(unitName, descriptor);
-                        }
-                        if (decodedBytes > limit - finalBytes) {
-                            throw inlineSizeFailure(unitName, descriptor, budget);
-                        }
-                        decodedBytes += finalBytes;
-                        // Reserve the decoded bytes so the next inline script sees the remaining aggregate budget.
-                        budget.addBytes(decodedBytes);
+                        preflightInlineContent(unitName,
+                                               descriptor,
+                                               budget,
+                                               sourceType,
+                                               scriptConfig.get(CONTENT_CONFIG_KEY).asString().get());
                     }
                 } catch (DataException failure) {
                     throw failure;
@@ -313,6 +236,110 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
             result.add(Service.QualifiedInstance.create(client, named, PROVIDER_QUALIFIER));
         }
         return List.copyOf(result);
+    }
+
+    /**
+     * Validates inline script content and reserves its byte count before the
+     * common resource builder can allocate backing storage.
+     *
+     * @param unitName persistence-unit name
+     * @param descriptor safe bootstrap resource descriptor
+     * @param budget current bootstrap budget
+     * @param sourceType configured inline source type
+     * @param content configured inline content
+     */
+    private static void preflightInlineContent(String unitName,
+                                               JdbcBootstrapResource.Descriptor descriptor,
+                                               JdbcScriptRunner.BootstrapBudget budget,
+                                               JdbcBootstrapResource.SourceType sourceType,
+                                               String content) {
+        // The effective limit is the smaller of the per resource limit and the remaining total budget.
+        int limit = budget.resourceLimit();
+        if (sourceType == JdbcBootstrapResource.SourceType.CONFIGURED_TEXT) {
+            int encodedBytes = 0;
+            // Count the bytes that String UTF-8 encoding would create without creating the byte array.
+            for (int index = 0; index < content.length(); index++) {
+                char character = content.charAt(index);
+                int characterBytes;
+                if (character <= 0x7f) {
+                    characterBytes = 1;
+                } else if (character <= 0x7ff) {
+                    characterBytes = 2;
+                } else if (Character.isHighSurrogate(character)
+                        && index + 1 < content.length()
+                        && Character.isLowSurrogate(content.charAt(index + 1))) {
+                    characterBytes = 4;
+                    index++;
+                } else if (Character.isSurrogate(character)) {
+                    // String UTF-8 encoding replaces an unmatched surrogate with one byte.
+                    characterBytes = 1;
+                } else {
+                    characterBytes = 3;
+                }
+                // Stop before allocating resource storage once the next character proves the limit is exceeded.
+                if (encodedBytes > limit - characterBytes) {
+                    throw inlineSizeFailure(unitName, descriptor, budget);
+                }
+                encodedBytes += characterBytes;
+            }
+            // Reserve the bytes so the next inline script sees the remaining aggregate budget.
+            budget.addBytes(encodedBytes);
+            return;
+        }
+
+        int symbols = 0;
+        int padding = 0;
+        boolean paddingStarted = false;
+        int decodedBytes = 0;
+        // Validate the basic Base64 alphabet while counting decoded groups without decoding the payload.
+        for (int index = 0; index < content.length(); index++) {
+            char character = content.charAt(index);
+            boolean alphabet = (character >= 'A' && character <= 'Z')
+                    || (character >= 'a' && character <= 'z')
+                    || (character >= '0' && character <= '9')
+                    || character == '+'
+                    || character == '/';
+            if (alphabet && !paddingStarted) {
+                symbols++;
+                // Each complete group of four alphabet symbols contributes three decoded bytes.
+                if (symbols % 4 == 0) {
+                    if (decodedBytes > limit - 3) {
+                        throw inlineSizeFailure(unitName, descriptor, budget);
+                    }
+                    decodedBytes += 3;
+                }
+            } else if (character == '=') {
+                // Padding is valid only at the end and contains no more than two symbols.
+                paddingStarted = true;
+                padding++;
+                if (padding > 2) {
+                    throw invalidBase64Failure(unitName, descriptor);
+                }
+            } else {
+                throw invalidBase64Failure(unitName, descriptor);
+            }
+        }
+        // Validate the final partial group and determine its one or two decoded bytes.
+        int remainder = symbols % 4;
+        int finalBytes;
+        if (padding == 0) {
+            if (remainder == 1) {
+                throw invalidBase64Failure(unitName, descriptor);
+            }
+            finalBytes = remainder == 0 ? 0 : remainder - 1;
+        } else if (padding == 1 && remainder == 3 && (symbols + padding) % 4 == 0) {
+            finalBytes = 2;
+        } else if (padding == 2 && remainder == 2 && (symbols + padding) % 4 == 0) {
+            finalBytes = 1;
+        } else {
+            throw invalidBase64Failure(unitName, descriptor);
+        }
+        if (decodedBytes > limit - finalBytes) {
+            throw inlineSizeFailure(unitName, descriptor, budget);
+        }
+        decodedBytes += finalBytes;
+        // Reserve the decoded bytes so the next inline script sees the remaining aggregate budget.
+        budget.addBytes(decodedBytes);
     }
 
     /**

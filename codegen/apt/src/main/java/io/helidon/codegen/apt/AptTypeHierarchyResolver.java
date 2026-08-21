@@ -43,7 +43,11 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
- * Resolves hierarchy operations through the annotation processing type system.
+ * Adapts {@link TypeHierarchyResolver} to the annotation processing type system.
+ * <p>
+ * Uses compiler elements and types to resolve inherited generic method signatures, apply Java override and return type
+ * rules, and retain the actual type arguments of a requested supertype. When the compiler model cannot represent a
+ * query, the resolver returns an empty result so the base class can use its portable code generation type model.
  */
 final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
 
@@ -52,6 +56,7 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
     private final TypeMirror exceptionType;
     private final TypeMirror runtimeExceptionType;
 
+    // Retain the compiler utilities and exception types used by every hierarchy query for this processing environment.
     AptTypeHierarchyResolver(ProcessingEnvironment environment,
                              Function<TypeName, Optional<TypeInfo>> typeInfoLookup) {
         super(typeInfoLookup);
@@ -63,6 +68,8 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
         this.runtimeExceptionType = elements.getTypeElement(RuntimeException.class.getName()).asType();
     }
 
+    // Resolve an inherited declaration in the root interface's generic context, then copy the compiler-resolved
+    // signature back into the portable code generation model while retaining source annotations and vararg metadata.
     @Override
     protected Optional<TypedElementInfo> resolveEnvironmentMember(TypeInfo interfaceInfo,
                                                                   TypedElementInfo declaration) {
@@ -124,6 +131,7 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
                                    .build());
     }
 
+    // Ask the compiler to apply the Java override rules when all three model objects retain their originating elements.
     @Override
     protected Optional<Boolean> environmentOverrides(TypeInfo interfaceInfo,
                                                      TypedElementInfo overrider,
@@ -136,6 +144,8 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
         return Optional.empty();
     }
 
+    // Compare return types after the compiler has substituted the root interface's type arguments. Primitive and void
+    // returns require an exact match, while unresolved method type variables are left to the portable resolver.
     @Override
     protected Optional<Boolean> environmentReturnTypeAssignable(TypeInfo interfaceInfo,
                                                                 TypedElementInfo candidate,
@@ -165,6 +175,8 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
         return Optional.of(false);
     }
 
+    // Walk the type hierarchy, matching the requested declaration by erasure but returning the actual
+    // parameterized supertype encountered in the candidate's hierarchy.
     @Override
     protected Optional<TypeName> resolveEnvironmentSupertype(TypeName candidate, TypeName expected) {
         Optional<TypeMirror> candidateMirror = typeMirror(candidate);
@@ -190,6 +202,8 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
         return Optional.empty();
     }
 
+    // Project a source declaration into the inspected interface so inherited type arguments are substituted by the
+    // compiler.
     private Optional<ExecutableType> memberType(TypeInfo interfaceInfo, TypedElementInfo declaration) {
         if (!(interfaceInfo.originatingElementValue() instanceof TypeElement typeElement)
                 || !(typeElement.asType() instanceof DeclaredType declaredType)
@@ -202,6 +216,8 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
                 : Optional.empty();
     }
 
+    // Recreate compiler mirrors recursively for concrete model types. Type variables and wildcards need a declaration
+    // context that is not available here, so those shapes deliberately fall back to the portable type model.
     private Optional<TypeMirror> typeMirror(TypeName typeName) {
         if (typeName.array()) {
             return typeName.componentType()
@@ -229,6 +245,7 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
         return Optional.of(types.getDeclaredType(typeElement, arguments.toArray(TypeMirror[]::new)));
     }
 
+    // Convert the portable primitive name to the corresponding compiler type kind.
     private Optional<TypeMirror> primitiveType(TypeName typeName) {
         return switch (typeName.name()) {
             case "boolean" -> Optional.of(types.getPrimitiveType(TypeKind.BOOLEAN));
