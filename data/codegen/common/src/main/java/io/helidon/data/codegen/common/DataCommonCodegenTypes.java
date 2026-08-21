@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ class DataCommonCodegenTypes {
     static final TypeName SLICE = TypeName.create("io.helidon.data.Slice");
     static final TypeName PAGE = TypeName.create("io.helidon.data.Page");
     static final TypeName PROVIDER = TypeName.create("io.helidon.data.Data.Provider");
+    static final TypeName TRANSACTION_TYPE = TypeName.create("io.helidon.transaction.Tx.TransactionType");
 
     private DataCommonCodegenTypes() {
         throw new UnsupportedOperationException("No instances of HelidonDataTypes are allowed");

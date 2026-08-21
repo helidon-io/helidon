@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.ModuleTypeInfo;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -124,4 +125,18 @@ public interface RoundContext {
      * @return discovered type information, or empty if the type cannot be discovered
      */
     Optional<TypeInfo> typeInfo(TypeName typeName);
+
+    /**
+     * Returns the Java type hierarchy resolver for this processing round.
+     * <p>
+     * The resolver can see types generated earlier in the same processing run.
+     * Environment specific contexts may also delegate supported operations to
+     * their Java type system.
+     *
+     * @return type hierarchy resolver for this round
+     */
+    @Api.Internal
+    default TypeHierarchyResolver typeHierarchyResolver() {
+        return TypeHierarchyResolver.create(this::typeInfo);
+    }
 }
