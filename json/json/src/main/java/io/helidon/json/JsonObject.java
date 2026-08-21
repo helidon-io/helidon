@@ -17,40 +17,35 @@
 package io.helidon.json;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import io.helidon.common.Api;
 
 /**
  * Represents a JSON object value containing key-value pairs.
+ * Keys and values must not be {@code null}.
  */
 @Api.Preview
 public final class JsonObject extends JsonValue {
 
-    static final JsonObject EMPTY_OBJECT = JsonObject.create(List.of());
+    static final JsonObject EMPTY_OBJECT = new JsonObject(new LinkedHashMap<>());
 
-    private final List<Pair> pairs;
     private final LinkedHashMap<String, JsonValue> content;
-    private final boolean resolved;
-
-    private JsonObject(List<Pair> pairs) {
-        this.pairs = pairs;
-        this.content = new LinkedHashMap<>();
-        this.resolved = false;
-    }
+    private final Set<String> keys;
 
     private JsonObject(LinkedHashMap<String, JsonValue> content) {
         this.content = content;
-        this.pairs = new ArrayList<>();
-        this.resolved = true;
+        this.keys = Collections.unmodifiableSet(content.keySet());
     }
 
     /**
@@ -69,7 +64,13 @@ public final class JsonObject extends JsonValue {
      * @return a new JsonObject
      */
     public static JsonObject create(Map<String, JsonValue> content) {
-        return new JsonObject(new LinkedHashMap<>(content));
+        Objects.requireNonNull(content, "content cannot be null");
+        LinkedHashMap<String, JsonValue> copiedContent = new LinkedHashMap<>(content);
+        for (Map.Entry<String, JsonValue> entry : copiedContent.entrySet()) {
+            Objects.requireNonNull(entry.getKey(), "key cannot be null");
+            Objects.requireNonNull(entry.getValue(), "value cannot be null");
+        }
+        return new JsonObject(copiedContent);
     }
 
     /**
@@ -81,8 +82,8 @@ public final class JsonObject extends JsonValue {
         return EMPTY_OBJECT;
     }
 
-    static JsonObject create(List<Pair> pairs) {
-        return new JsonObject(pairs);
+    static JsonObject createFromOwnedMap(LinkedHashMap<String, JsonValue> content) {
+        return new JsonObject(content);
     }
 
     @Override
@@ -97,7 +98,7 @@ public final class JsonObject extends JsonValue {
      * @return true if the object contains the key, false otherwise
      */
     public boolean containsKey(String key) {
-        ensureResolvedKeys();
+        Objects.requireNonNull(key, "key cannot be null");
         return content.containsKey(key);
     }
 
@@ -109,8 +110,7 @@ public final class JsonObject extends JsonValue {
      * @return the value associated with the key, or the default value
      */
     public JsonValue value(String key, JsonValue defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -124,8 +124,7 @@ public final class JsonObject extends JsonValue {
      * @return the value associated with the key, or empty
      */
     public Optional<JsonValue> value(String key) {
-        ensureResolvedKeys();
-        return Optional.ofNullable(content.get(key));
+        return Optional.ofNullable(valueForKey(key));
     }
 
     /**
@@ -135,8 +134,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the boolean value, or empty if the key is not present
      */
     public Optional<Boolean> booleanValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -151,8 +149,7 @@ public final class JsonObject extends JsonValue {
      * @return the boolean value associated with the key, or the default value
      */
     public boolean booleanValue(String key, boolean defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -166,8 +163,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the JsonObject value, or empty if the key is not present
      */
     public Optional<JsonObject> objectValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -182,8 +178,7 @@ public final class JsonObject extends JsonValue {
      * @return the JsonObject value associated with the key, or the default value
      */
     public JsonObject objectValue(String key, JsonObject defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -197,8 +192,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the string value, or empty if the key is not present
      */
     public Optional<String> stringValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -213,8 +207,7 @@ public final class JsonObject extends JsonValue {
      * @return the string value associated with the key, or the default value
      */
     public String stringValue(String key, String defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -222,14 +215,76 @@ public final class JsonObject extends JsonValue {
     }
 
     /**
+     * Return the byte value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#byteValue()}.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the byte value, or empty if the key is not present
+     */
+    public Optional<Byte> byteValue(String key) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().byteValue());
+    }
+
+    /**
+     * Return the byte value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#byteValue()}.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the byte value associated with the key, or the default value
+     */
+    public byte byteValue(String key, byte defaultValue) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().byteValue();
+    }
+
+    /**
+     * Return the short value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#shortValue()}.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the short value, or empty if the key is not present
+     */
+    public Optional<Short> shortValue(String key) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().shortValue());
+    }
+
+    /**
+     * Return the short value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#shortValue()}.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the short value associated with the key, or the default value
+     */
+    public short shortValue(String key, short defaultValue) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().shortValue();
+    }
+
+    /**
      * Return the integer value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#intValue()}.
      *
      * @param key the key to look up
      * @return an Optional containing the integer value, or empty if the key is not present
      */
     public Optional<Integer> intValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -238,14 +293,14 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the integer value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#intValue()}.
      *
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present
      * @return the integer value associated with the key, or the default value
      */
     public int intValue(String key, int defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -253,14 +308,76 @@ public final class JsonObject extends JsonValue {
     }
 
     /**
+     * Return the long value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#longValue()}.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the long value, or empty if the key is not present
+     */
+    public Optional<Long> longValue(String key) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().longValue());
+    }
+
+    /**
+     * Return the long value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#longValue()}.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the long value associated with the key, or the default value
+     */
+    public long longValue(String key, long defaultValue) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().longValue();
+    }
+
+    /**
+     * Return the float value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#floatValue()}.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the float value, or empty if the key is not present
+     */
+    public Optional<Float> floatValue(String key) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().floatValue());
+    }
+
+    /**
+     * Return the float value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#floatValue()}.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the float value associated with the key, or the default value
+     */
+    public float floatValue(String key, float defaultValue) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().floatValue();
+    }
+
+    /**
      * Return the double value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#doubleValue()}.
      *
      * @param key the key to look up
      * @return an Optional containing the double value, or empty if the key is not present
      */
     public Optional<Double> doubleValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -269,18 +386,49 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the double value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#doubleValue()}.
      *
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present
      * @return the double value associated with the key, or the default value
      */
     public double doubleValue(String key, double defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
         return jsonValue.asNumber().doubleValue();
+    }
+
+    /**
+     * Return the BigInteger value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#bigIntegerValue()}.
+     *
+     * @param key the key to look up
+     * @return an Optional containing the BigInteger value, or empty if the key is not present
+     */
+    public Optional<BigInteger> bigIntegerValue(String key) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return Optional.empty();
+        }
+        return Optional.of(jsonValue.asNumber().bigIntegerValue());
+    }
+
+    /**
+     * Return the BigInteger value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#bigIntegerValue()}.
+     *
+     * @param key the key to look up
+     * @param defaultValue the value to return if the key is not present
+     * @return the BigInteger value associated with the key, or the default value
+     */
+    public BigInteger bigIntegerValue(String key, BigInteger defaultValue) {
+        JsonValue jsonValue = valueForKey(key);
+        if (jsonValue == null) {
+            return defaultValue;
+        }
+        return jsonValue.asNumber().bigIntegerValue();
     }
 
     /**
@@ -290,8 +438,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the BigDecimal value, or empty if the key is not present
      */
     public Optional<BigDecimal> numberValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -306,8 +453,7 @@ public final class JsonObject extends JsonValue {
      * @return the BigDecimal value associated with the key, or the default value
      */
     public BigDecimal numberValue(String key, BigDecimal defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -321,8 +467,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the JsonArray value, or empty if the key is not present
      */
     public Optional<JsonArray> arrayValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -337,8 +482,7 @@ public final class JsonObject extends JsonValue {
      * @return the JsonArray value associated with the key, or the default value
      */
     public JsonArray arrayValue(String key, JsonArray defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -351,22 +495,20 @@ public final class JsonObject extends JsonValue {
      * @return a set of JsonString keys
      */
     public Set<JsonString> keys() {
-        if (pairs.isEmpty() && !content.isEmpty()) {
-            content.forEach((key, value) -> {
-                pairs.add(new Pair(JsonString.create(key), value));
-            });
+        Set<JsonString> result = new LinkedHashSet<>(content.size());
+        for (String key : keys) {
+            result.add(JsonString.create(key));
         }
-        return pairs.stream().map(Pair::key).collect(Collectors.toSet());
+        return result;
     }
 
     /**
-     * Return a set of all keys in this object as String instances.
+     * Return an unmodifiable set of all keys in this object as String instances.
      *
-     * @return a set of String keys
+     * @return an unmodifiable set of String keys
      */
     public Set<String> keysAsStrings() {
-        ensureResolvedKeys();
-        return content.keySet();
+        return keys;
     }
 
     /**
@@ -375,7 +517,7 @@ public final class JsonObject extends JsonValue {
      * @return the size of this object
      */
     public int size() {
-        return pairs.size();
+        return content.size();
     }
 
     @Override
@@ -385,7 +527,6 @@ public final class JsonObject extends JsonValue {
 
     @Override
     public void toJson(JsonGenerator generator) {
-        ensureResolvedKeys();
         generator.writeObjectStart();
         for (var entry : content.entrySet()) {
             generator.write(entry.getKey(), entry.getValue());
@@ -395,8 +536,7 @@ public final class JsonObject extends JsonValue {
 
     @Override
     public int hashCode() {
-        ensureResolvedKeys();
-        return Objects.hash(content);
+        return content.hashCode();
     }
 
     @Override
@@ -408,24 +548,16 @@ public final class JsonObject extends JsonValue {
             return true;
         }
 
-        this.ensureResolvedKeys();
-        that.ensureResolvedKeys();
-
-        if (!this.content.keySet().containsAll(that.content.keySet())) {
-            return false;
-        }
-        return this.content.values().containsAll(that.content.values());
+        return content.equals(that.content);
     }
 
-    private void ensureResolvedKeys() {
-        if (!resolved) {
-            for (Pair pair : pairs) {
-                content.put(pair.key.value(), pair.value);
-            }
-        }
+    private JsonValue valueForKey(String key) {
+        Objects.requireNonNull(key, "key cannot be null");
+        return content.get(key);
     }
 
-    record Pair(JsonString key, JsonValue value) {
+    Iterator<Map.Entry<String, JsonValue>> entryIterator() {
+        return content.entrySet().iterator();
     }
 
     /**
@@ -455,7 +587,6 @@ public final class JsonObject extends JsonValue {
          */
         public Builder from(JsonObject object) {
             Objects.requireNonNull(object, "object cannot be null");
-            object.ensureResolvedKeys();
             values.putAll(object.content);
             return this;
         }
@@ -479,6 +610,7 @@ public final class JsonObject extends JsonValue {
          * @return this builder for method chaining
          */
         public Builder setNull(String key) {
+            Objects.requireNonNull(key, "key cannot be null");
             values.put(key, JsonNull.instance());
             return this;
         }
@@ -571,6 +703,34 @@ public final class JsonObject extends JsonValue {
         }
 
         /**
+         * Sets a byte value for the specified key.
+         *
+         * @param key the key to set
+         * @param value the byte value to set
+         * @return this builder for method chaining
+         */
+        public Builder set(String key, byte value) {
+            Objects.requireNonNull(key, "key cannot be null");
+
+            values.put(key, JsonNumber.create(value));
+            return this;
+        }
+
+        /**
+         * Sets a short value for the specified key.
+         *
+         * @param key the key to set
+         * @param value the short value to set
+         * @return this builder for method chaining
+         */
+        public Builder set(String key, short value) {
+            Objects.requireNonNull(key, "key cannot be null");
+
+            values.put(key, JsonNumber.create(value));
+            return this;
+        }
+
+        /**
          * Sets an int value for the specified key.
          *
          * @param key the key to set
@@ -593,6 +753,21 @@ public final class JsonObject extends JsonValue {
          */
         public Builder set(String key, long value) {
             Objects.requireNonNull(key, "key cannot be null");
+
+            values.put(key, JsonNumber.create(new BigDecimal(value)));
+            return this;
+        }
+
+        /**
+         * Sets a BigInteger value for the specified key.
+         *
+         * @param key the key to set
+         * @param value the BigInteger value to set
+         * @return this builder for method chaining
+         */
+        public Builder set(String key, BigInteger value) {
+            Objects.requireNonNull(key, "key cannot be null");
+            Objects.requireNonNull(value, "value cannot be null");
 
             values.put(key, JsonNumber.create(new BigDecimal(value)));
             return this;

@@ -27,6 +27,7 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webserver.CloseConnectionException;
@@ -143,6 +144,7 @@ class ErrorHandlersTest {
         ListenerContext listenerContext = mock(ListenerContext.class);
 
         when(res.resetEntity()).thenReturn(true);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",
                                                             "1.0",
@@ -202,6 +204,7 @@ class ErrorHandlersTest {
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
         when(res.resetEntity()).thenReturn(true);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
 
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",

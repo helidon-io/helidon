@@ -16,31 +16,22 @@
 
 package io.helidon.webserver.staticcontent;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiConsumer;
 
 import io.helidon.common.LruCache;
-import io.helidon.common.media.type.MediaType;
-import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpException;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
-import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import static io.helidon.webserver.staticcontent.StaticContentHandler.processPreconditions;
 
-record CachedHandlerInMemory(MediaType mediaType,
-                             Instant lastModified,
-                             BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
-                             byte[] bytes,
-                             int contentLength,
-                             Header contentLengthHeader) implements CachedHandler {
+record CachedHandlerInMemory(StaticContentMetadata metadata,
+                             byte[] bytes) implements CachedHandler {
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
@@ -49,22 +40,22 @@ record CachedHandlerInMemory(MediaType mediaType,
                           ServerResponse response,
                           String requestedResource) {
         // etag etc.
-        processPreconditions(lastModified == null ? null : String.valueOf(lastModified.toEpochMilli()),
-                             lastModified,
-                             request.headers(),
-                             response.headers(),
-                             setLastModifiedHeader);
+        processPreconditions(metadata, request.headers(), response.headers());
 
-        response.headers().contentType(mediaType);
+        metadata.setContentType(response.headers());
 
         if (method == Method.GET) {
             send(request, response);
         } else {
-            response.headers().set(contentLengthHeader());
+            metadata.setContentLength(response.headers());
             response.send();
         }
 
         return true;
+    }
+
+    int contentLength() {
+        return bytes.length;
     }
 
     private void send(ServerRequest request, ServerResponse response) {
@@ -103,7 +94,7 @@ record CachedHandlerInMemory(MediaType mediaType,
     }
 
     private void send(ServerResponse response) {
-        response.headers().set(contentLengthHeader());
+        metadata.setContentLength(response.headers());
         response.send(bytes());
     }
 }

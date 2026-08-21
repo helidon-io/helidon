@@ -75,6 +75,7 @@ class BuiltInMappers implements MapperProvider {
         addStringMapper(mappers, double.class, BuiltInMappers::asDouble);
         addStringMapper(mappers, Character.class, BuiltInMappers::asChar);
         addStringMapper(mappers, char.class, BuiltInMappers::asChar);
+        addStringMapper(mappers, char[].class, String::toCharArray);
         addStringMapper(mappers, Class.class, BuiltInMappers::asClass);
         //javax.math
         addStringMapper(mappers, BigDecimal.class, BigDecimal::new);

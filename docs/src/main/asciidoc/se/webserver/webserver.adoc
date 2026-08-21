@@ -1122,6 +1122,33 @@ server:
 
 See xref:{rootdir}/config/io_helidon_webserver_staticcontent_StaticContentFeature.adoc[Static Content Feature Configuration Reference] for details of configuration options.
 
+=== Resource Lifecycle
+
+Static content is intended for resources that remain unchanged while the service is running. Helidon does not cache missing
+file-system resources, so files added under a configured directory or at a configured single-file location can be discovered
+by later requests. For disk-backed resources whose content is not cached in memory, Helidon also verifies that the source
+still exists before using its cached location and metadata. A removed resource is no longer served, and adding it again after
+the removal has been observed creates a new cache record with current metadata for subsequent requests.
+
+Helidon does not detect modifications or replacements of an existing resource, including a resource deleted and recreated
+between requests without its absence being observed. Even when the absence is observed, invalidation affects only future cache
+lookups. A request that is already using the previous cache record can still apply its cached metadata to the recreated
+resource, such as its old ETag, last-modified time, or content length.
+
+To safely replace an existing disk-backed resource, use one of the following procedures:
+
+* Restart the service, replacing the resource while the service is stopped and before it accepts further static-content
+  requests.
+* Drain traffic and wait for in-flight requests to complete, delete the resource, request every static-content URL that can
+  resolve to the resource over HTTP on every service node and verify that none serves it, recreate the resource, and then
+  resume traffic.
+
+Retargeting an already-resolved symbolic link at runtime is not supported. Resources explicitly cached in memory are snapshots
+and continue to be served if their source file is removed.
+
+ETags are derived from the last-modified time and, when available, content length rather than from a hash of the resource bytes.
+If content is replaced between service lifetimes, make sure its observed millisecond timestamp or known length changes;
+otherwise the replacement can reuse the same ETag.
 
 == Media types support
 WebServer and WebClient share the HTTP media support of Helidon, and any supported media type can be used in both.

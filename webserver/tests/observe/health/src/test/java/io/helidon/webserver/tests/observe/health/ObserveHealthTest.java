@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.tests.observe.health;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -33,6 +34,7 @@ import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.health.HealthCheckResponse.Status.DOWN;
 import static io.helidon.health.HealthCheckResponse.Status.UP;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -63,7 +65,7 @@ class ObserveHealthTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), not(hasHeader(HeaderNames.CONTENT_LENGTH)));
         }
 
         healthCheck.status(DOWN);
@@ -80,7 +82,7 @@ class ObserveHealthTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), not(hasHeader(HeaderNames.CONTENT_LENGTH)));
         }
 
         healthCheck.status(DOWN);
@@ -88,7 +90,7 @@ class ObserveHealthTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), not(hasHeader(HeaderNames.CONTENT_LENGTH)));
         }
     }
 
@@ -98,7 +100,7 @@ class ObserveHealthTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), not(hasHeader(HeaderNames.CONTENT_LENGTH)));
         }
 
         healthCheck.status(DOWN);
@@ -106,7 +108,7 @@ class ObserveHealthTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), not(hasHeader(HeaderNames.CONTENT_LENGTH)));
         }
     }
 
@@ -116,7 +118,7 @@ class ObserveHealthTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), not(hasHeader(HeaderNames.CONTENT_LENGTH)));
         }
 
         healthCheck.status(DOWN);
@@ -133,7 +135,7 @@ class ObserveHealthTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), not(hasHeader(HeaderNames.CONTENT_LENGTH)));
         }
 
         healthCheck.status(DOWN);
@@ -150,7 +152,7 @@ class ObserveHealthTest {
                 .request()) {
 
             assertThat(response.status(), is(Status.NO_CONTENT_204));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), not(hasHeader(HeaderNames.CONTENT_LENGTH)));
         }
 
         healthCheck.status(DOWN);

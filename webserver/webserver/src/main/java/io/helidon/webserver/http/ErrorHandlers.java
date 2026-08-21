@@ -172,7 +172,10 @@ public final class ErrorHandlers {
         }
         ctx.listenerContext()
                 .directHandlers()
-                .handle(e, response, keepAlive);
+                .handle(e,
+                        DirectTransportRequest.create(request.prologue(), request.headers()),
+                        response,
+                        keepAlive);
 
         response.commit();
     }

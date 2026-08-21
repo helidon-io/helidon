@@ -44,9 +44,7 @@ import java.util.Set;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
-import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -81,9 +79,12 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         }
     }
 
-    static void send(ServerRequest request, ServerResponse response, SeekableByteChannel channel) throws IOException {
+    static void send(ServerRequest request,
+                     ServerResponse response,
+                     SeekableByteChannel channel,
+                     StaticContentMetadata metadata) throws IOException {
         ServerRequestHeaders headers = request.headers();
-        long contentLength = channel.size();
+        long contentLength = metadata.contentLength();
         if (headers.contains(HeaderNames.RANGE)) {
             List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
                                                                    response,
@@ -112,7 +113,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 }
             } else {
                 // multipart response not yet supported, send all
-                response.headers().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
+                metadata.setContentLength(response.headers());
                 // send the full file
                 channel.position(0);
                 try (InputStream in = Channels.newInputStream(channel); OutputStream out = response.outputStream()) {
@@ -120,7 +121,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                 }
             }
         } else {
-            response.headers().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength));
+            metadata.setContentLength(response.headers());
             // send the full file
             channel.position(0);
             try (InputStream in = Channels.newInputStream(channel); OutputStream out = response.outputStream()) {
@@ -249,15 +250,13 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         return Optional.ofNullable(customMediaTypes.get(fileSuffix));
     }
 
-    Optional<CachedHandler> fileHandler(Path path) {
+    Optional<CachedHandler> fileHandler(Path path) throws IOException {
         // we know the file exists and is a file
-        return Optional.of(new CachedHandlerPath(path,
-                                                 detectType(fileName(path)),
-                                                 FileBasedContentHandler::lastModified,
-                                                 ServerResponseHeaders::lastModified,
-                                                 Optional::of,
-                                                 true,
-                                                 it -> Optional.empty()));
+        return Optional.of(CachedHandlerPath.create(path,
+                                                    path,
+                                                    detectType(fileName(path)),
+                                                    true,
+                                                    null));
     }
 
     MediaType detectType(String fileName) {
