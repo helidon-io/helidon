@@ -21,26 +21,27 @@ import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.CharBuffer;
 import java.util.Base64;
 
-class JsonGeneratorWriter extends JsonGeneratorBase {
+import static java.util.Objects.requireNonNull;
+
+class JsonGeneratorAppendable extends JsonGeneratorBase {
 
     private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
-    private static final char[] TRUE = "true".toCharArray();
-    private static final char[] FALSE = "false".toCharArray();
-    private static final char[] NULL = "null".toCharArray();
+    private static final CharSequence INDENT_CS = CharBuffer.wrap(INDENT);
 
-    private final Writer writer;
+    private final Appendable appendable;
 
-    JsonGeneratorWriter(Writer writer, boolean prettyPrint) {
+    JsonGeneratorAppendable(Appendable appendable, boolean prettyPrint) {
         super(prettyPrint);
-        this.writer = writer;
+        this.appendable = requireNonNull(appendable, "appendable");
     }
 
     @Override
     protected void writeByteExact(byte value) {
         try {
-            writer.write(value);
+            appendable.append((char) value);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write byte value", e);
         }
@@ -49,8 +50,8 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     @Override
     protected void writeNewLineIndent(int indentLevel) {
         try {
-            writer.write('\n');
-            writer.write(INDENT, 0, indentLevel * INDENT_SIZE);
+            appendable.append('\n');
+            appendable.append(INDENT_CS, 0, indentLevel * INDENT_SIZE);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write indentation.", e);
         }
@@ -64,7 +65,7 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     @Override
     protected void writeLong(long value) {
         try {
-            writer.write(Long.toString(value));
+            appendable.append(Long.toString(value));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write long value.", e);
         }
@@ -83,7 +84,7 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
             return;
         }
         try {
-            writer.write(Float.toString(value));
+            appendable.append(Float.toString(value));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write float value.", e);
         }
@@ -102,7 +103,7 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
             return;
         }
         try {
-            writer.write(Double.toString(value));
+            appendable.append(Double.toString(value));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write double value.", e);
         }
@@ -111,7 +112,7 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     @Override
     protected void writeBigDecimal(BigDecimal value) {
         try {
-            writer.write(value.toString());
+            appendable.append(value.toString());
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write BigDecimal value.", e);
         }
@@ -120,7 +121,7 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     @Override
     protected void writeBigInteger(BigInteger value) {
         try {
-            writer.write(value.toString());
+            appendable.append(value.toString());
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write BigInteger value.", e);
         }
@@ -129,11 +130,11 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     @Override
     protected void writeString(String value) {
         try {
-            writer.write('\"');
+            appendable.append('\"');
             for (int i = 0; i < value.length(); i++) {
                 writeJsonChar(value.charAt(i));
             }
-            writer.write('\"');
+            appendable.append('\"');
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write String value.", e);
         }
@@ -142,7 +143,7 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     @Override
     protected void writeKeyName(JsonKey value) {
         try {
-            writer.write(value.quotedChars());
+            appendable.append(CharBuffer.wrap(value.quotedChars()));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write key value.", e);
         }
@@ -151,9 +152,9 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     @Override
     protected void writeChar(char value) {
         try {
-            writer.write('\"');
+            appendable.append('\"');
             writeJsonChar(value);
-            writer.write('\"');
+            appendable.append('\"');
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write char value.", e);
         }
@@ -163,9 +164,9 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     protected void writeBoolean(boolean value) {
         try {
             if (value) {
-                writer.write(TRUE);
+                appendable.append("true");
             } else {
-                writer.write(FALSE);
+                appendable.append("false");
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write boolean value.", e);
@@ -175,9 +176,9 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     @Override
     protected void writeBinaryArray(byte[] value) {
         try {
-            writer.write('\"');
-            writer.write(Base64.getEncoder().encodeToString(value));
-            writer.write('\"');
+            appendable.append('\"');
+            appendable.append(Base64.getEncoder().encodeToString(value));
+            appendable.append('\"');
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write binary data value.", e);
         }
@@ -186,7 +187,7 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     @Override
     protected void writeNullValue() {
         try {
-            writer.write(NULL);
+            appendable.append("null");
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write null value.", e);
         }
@@ -199,41 +200,41 @@ class JsonGeneratorWriter extends JsonGeneratorBase {
     private void writeJsonChar(char c) throws IOException {
         switch (c) {
         case '\b':
-            writer.write("\\b");
+            appendable.append("\\b");
             return;
         case '\f':
-            writer.write("\\f");
+            appendable.append("\\f");
             return;
         case '\n':
-            writer.write("\\n");
+            appendable.append("\\n");
             return;
         case '\r':
-            writer.write("\\r");
+            appendable.append("\\r");
             return;
         case '\t':
-            writer.write("\\t");
+            appendable.append("\\t");
             return;
         case '\\':
-            writer.write("\\\\");
+            appendable.append("\\\\");
             return;
         case '\"':
-            writer.write("\\\"");
+            appendable.append("\\\"");
             return;
         default:
             if (c < 0x20 || Character.isSurrogate(c)) {
                 writeUnicodeEscape(c);
             } else {
-                writer.write(c);
+                appendable.append(c);
             }
         }
     }
 
     private void writeUnicodeEscape(char c) throws IOException {
-        writer.write('\\');
-        writer.write('u');
-        writer.write(HEX_DIGITS[(c >> 12) & 0xF]);
-        writer.write(HEX_DIGITS[(c >> 8) & 0xF]);
-        writer.write(HEX_DIGITS[(c >> 4) & 0xF]);
-        writer.write(HEX_DIGITS[c & 0xF]);
+        appendable.append('\\');
+        appendable.append('u');
+        appendable.append(HEX_DIGITS[(c >> 12) & 0xF]);
+        appendable.append(HEX_DIGITS[(c >> 8) & 0xF]);
+        appendable.append(HEX_DIGITS[(c >> 4) & 0xF]);
+        appendable.append(HEX_DIGITS[c & 0xF]);
     }
 }
