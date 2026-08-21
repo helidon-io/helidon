@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.enterprise.context.Dependent;
@@ -28,6 +30,7 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
@@ -42,6 +45,13 @@ class MetricsBean {
     @Inject
     @Metric(name = "counter")
     private Counter counter;
+    private final CountDownLatch retryingBulkheadEntered = new CountDownLatch(1);
+    private final CountDownLatch retryingBulkheadRelease = new CountDownLatch(1);
+    private final CountDownLatch timedBulkheadEntered = new CountDownLatch(1);
+    private final CountDownLatch timedBulkheadRelease = new CountDownLatch(1);
+    private final CountDownLatch cancellableBulkheadEntered = new CountDownLatch(1);
+    private final CountDownLatch cancellableBulkheadRelease = new CountDownLatch(1);
+    private final AtomicInteger retryingBulkheadAttempts = new AtomicInteger();
 
     Counter getCounter() {
         return counter;
@@ -180,5 +190,80 @@ class MetricsBean {
             // falls through
         }
         return CompletableFuture.completedFuture("success");
+    }
+
+    @Asynchronous
+    @Retry(maxRetries = 1, delay = 10L, retryOn = TimeoutException.class)
+    @Timeout(value = 300, unit = ChronoUnit.MILLIS)
+    @Bulkhead(value = 1, waitingTaskQueue = 4)
+    CompletableFuture<String> retryingBulkhead(boolean block) {
+        int attempt = retryingBulkheadAttempts.incrementAndGet();
+        FaultToleranceTest.printStatus("MetricsBean::retryingBulkhead()", "attempt " + attempt);
+        if (block) {
+            retryingBulkheadEntered.countDown();
+            await(retryingBulkheadRelease);
+            return CompletableFuture.completedFuture("blocker");
+        }
+        return CompletableFuture.completedFuture("retry-" + attempt);
+    }
+
+    boolean awaitRetryingBulkheadEntered() throws InterruptedException {
+        return retryingBulkheadEntered.await(5, TimeUnit.SECONDS);
+    }
+
+    void releaseRetryingBulkhead() {
+        retryingBulkheadRelease.countDown();
+    }
+
+    @Asynchronous
+    @Timeout(value = 300, unit = ChronoUnit.MILLIS)
+    @Bulkhead(value = 1, waitingTaskQueue = 1)
+    CompletableFuture<String> timedBulkhead(boolean block) {
+        FaultToleranceTest.printStatus("MetricsBean::timedBulkhead()", block ? "block" : "success");
+        if (block) {
+            timedBulkheadEntered.countDown();
+            await(timedBulkheadRelease);
+            return CompletableFuture.completedFuture("blocker");
+        }
+        return CompletableFuture.completedFuture("queued");
+    }
+
+    boolean awaitTimedBulkheadEntered() throws InterruptedException {
+        return timedBulkheadEntered.await(5, TimeUnit.SECONDS);
+    }
+
+    void releaseTimedBulkhead() {
+        timedBulkheadRelease.countDown();
+    }
+
+    @Asynchronous
+    @Bulkhead(value = 1, waitingTaskQueue = 1)
+    CompletableFuture<String> cancellableBulkhead(boolean block) {
+        FaultToleranceTest.printStatus("MetricsBean::cancellableBulkhead()", block ? "block" : "success");
+        if (block) {
+            cancellableBulkheadEntered.countDown();
+            await(cancellableBulkheadRelease);
+            return CompletableFuture.completedFuture("blocker");
+        }
+        return CompletableFuture.completedFuture("queued");
+    }
+
+    boolean awaitCancellableBulkheadEntered() throws InterruptedException {
+        return cancellableBulkheadEntered.await(5, TimeUnit.SECONDS);
+    }
+
+    void releaseCancellableBulkhead() {
+        cancellableBulkheadRelease.countDown();
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            if (!latch.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Timed out waiting for controlled bulkhead release");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 }
