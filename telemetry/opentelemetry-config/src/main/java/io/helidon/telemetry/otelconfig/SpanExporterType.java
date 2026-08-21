@@ -35,11 +35,6 @@ public enum SpanExporterType {
     OTLP, // There are different defaults for the different subtypes of OTLP exporters.
 
     /**
-     * Zipkin {@link io.opentelemetry.exporter.zipkin.ZipkinSpanExporter}.
-     */
-    ZIPKIN,
-
-    /**
      * Console ({@link io.opentelemetry.exporter.logging.LoggingSpanExporter}.
      */
     CONSOLE,
