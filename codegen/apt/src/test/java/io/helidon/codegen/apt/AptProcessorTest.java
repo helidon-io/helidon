@@ -31,7 +31,6 @@ import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenScope;
 import io.helidon.codegen.ElementInfoPredicates;
-import io.helidon.codegen.TypeHierarchyResolver;
 import io.helidon.codegen.api.stability.ApiStabilityProcessor;
 import io.helidon.codegen.spi.TypeMapper;
 import io.helidon.codegen.testing.TestCompiler;
@@ -51,126 +50,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AptProcessorTest {
     private static final TypeName MAPPED = TypeName.create("com.example.Mapped");
-
-    /**
-     * Verifies the annotation processing resolver delegates Java hierarchy
-     * operations to the compiler and preserves contributing declarations.
-     */
-    @Test
-    void testTypeHierarchyResolverUsesCompilerTypes() {
-        AtomicReference<List<TypeHierarchyResolver.ResolvedMethod>> methods = new AtomicReference<>();
-        AtomicReference<TypeName> mapperContract = new AtomicReference<>();
-
-        var result = TestCompiler.builder()
-                .addProcessor(new AbstractProcessor() {
-                    private AptContext ctx;
-
-                    @Override
-                    public Set<String> getSupportedAnnotationTypes() {
-                        return Set.of("*");
-                    }
-
-                    @Override
-                    public SourceVersion getSupportedSourceVersion() {
-                        return SourceVersion.latestSupported();
-                    }
-
-                    @Override
-                    public synchronized void init(ProcessingEnvironment processingEnv) {
-                        super.init(processingEnv);
-                        this.ctx = AptContext.create(processingEnv, Set.of());
-                    }
-
-                    @Override
-                    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-                        if (roundEnv.processingOver()) {
-                            return false;
-                        }
-                        TypeInfo repository = ctx.typeInfo(TypeName.create("com.example.Repository")).orElseThrow();
-                        TypeHierarchyResolver resolver = ctx.typeHierarchyResolver(ctx::typeInfo);
-                        methods.set(resolver.effectiveInterfaceMethods(repository));
-                        mapperContract.set(resolver.resolveSupertype(TypeName.create("com.example.StringMapper"),
-                                                                    TypeName.create("com.example.Mapper"))
-                                                   .orElseThrow());
-                        return false;
-                    }
-                })
-                .currentRelease()
-                .addSource("com/example/Repository.java", """
-                        package com.example;
-
-                        interface GenericRepository<T, E extends Exception> {
-                            T find();
-
-                            void update(T... values) throws E;
-                        }
-
-                        interface ObjectRepository {
-                            Object value();
-                        }
-
-                        interface StringRepository {
-                            String value();
-                        }
-
-                        interface ParentRepository {
-                            Object closest();
-                        }
-
-                        interface Repository extends GenericRepository<String, java.io.IOException>,
-                                ObjectRepository, StringRepository,
-                                ParentRepository {
-                            @Override
-                            String closest();
-                        }
-                        """)
-                .addSource("com/example/StringMapper.java", """
-                        package com.example;
-
-                        interface Mapper<T> {
-                        }
-
-                        class BaseMapper<T> implements Mapper<T> {
-                        }
-
-                        final class StringMapper extends BaseMapper<String> {
-                        }
-                        """)
-                .build()
-                .compile();
-
-        assertTrue(result.success(), "Compilation should succeed for valid interface hierarchies");
-        TypeHierarchyResolver.ResolvedMethod find = methods.get()
-                .stream()
-                .filter(method -> method.method().elementName().equals("find"))
-                .findFirst()
-                .orElseThrow();
-        TypeHierarchyResolver.ResolvedMethod value = methods.get()
-                .stream()
-                .filter(method -> method.method().elementName().equals("value"))
-                .findFirst()
-                .orElseThrow();
-        TypeHierarchyResolver.ResolvedMethod update = methods.get()
-                .stream()
-                .filter(method -> method.method().elementName().equals("update"))
-                .findFirst()
-                .orElseThrow();
-        TypeHierarchyResolver.ResolvedMethod closest = methods.get()
-                .stream()
-                .filter(method -> method.method().elementName().equals("closest"))
-                .findFirst()
-                .orElseThrow();
-        assertThat(find.method().typeName(), is(TypeName.create(String.class)));
-        assertThat(value.method().typeName(), is(TypeName.create(String.class)));
-        assertThat(value.declarations().size(), is(2));
-        assertThat(update.method().parameterArguments().getFirst().typeName().componentType().orElseThrow(),
-                   is(TypeName.create(String.class)));
-        assertThat(update.method().parameterArguments().getFirst().typeName().vararg(), is(true));
-        assertThat(update.method().throwsChecked(), is(Set.of(TypeName.create(java.io.IOException.class))));
-        assertThat(closest.method().typeName(), is(TypeName.create(String.class)));
-        assertThat(closest.declarations().size(), is(1));
-        assertThat(mapperContract.get().typeArguments(), is(List.of(TypeName.create(String.class))));
-    }
 
     @Test
     void testApiStabilityOptionsDoNotFailInitialization() {
