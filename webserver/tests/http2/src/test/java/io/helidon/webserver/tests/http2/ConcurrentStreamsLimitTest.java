@@ -683,11 +683,16 @@ class ConcurrentStreamsLimitTest {
 
             for (int i = 0; i < 70; i++) {
                 BufferData continuation = BufferData.create(new byte[1024]);
-                h2conn.writer().write(new Http2FrameData(Http2FrameHeader.create(continuation.available(),
-                                                                                 Http2FrameTypes.CONTINUATION,
-                                                                                 Http2Flag.ContinuationFlags.create(0),
-                                                                                 1),
-                                                     continuation));
+                try {
+                    h2conn.writer().write(new Http2FrameData(Http2FrameHeader.create(continuation.available(),
+                                                                                     Http2FrameTypes.CONTINUATION,
+                                                                                     Http2Flag.ContinuationFlags.create(0),
+                                                                                     1),
+                                                         continuation));
+                } catch (UncheckedIOException _) {
+                    // The server may close after sending GOAWAY while this client is still writing the flood.
+                    break;
+                }
             }
 
             assertGoAwayError(h2conn, Http2ErrorCode.ENHANCE_YOUR_CALM);
