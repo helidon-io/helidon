@@ -19,6 +19,7 @@ package io.helidon.webclient.api;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -487,8 +488,50 @@ class ClientRequestBaseTest {
         assertThat(second.query().all("request"), is(List.of("value")));
     }
 
+    @Test
+    void selectedProxyRouteIsScopedToOneRequestInvocation() {
+        Proxy proxy = Proxy.builder().host("proxy.example").port(8181).build();
+        TestRequest request = new TestRequest(HttpClientConfig.builder().proxy(proxy).build(),
+                                              Method.GET,
+                                              "http://service.example");
+        ProxyRoute route = proxy.effectiveRoute("http", "service.example", 80, false);
+        request.selectedProxyRoute(route);
+
+        request.request();
+
+        assertThat(request.routeSeenByEndpoint, is(route));
+        assertThat(request.selectedProxyRoute(), is(Optional.empty()));
+    }
+
+    @Test
+    void selectedProxyRouteIsClearedWhenInvocationFails() {
+        Proxy proxy = Proxy.builder().host("proxy.example").port(8181).build();
+        TestRequest request = new TestRequest(HttpClientConfig.builder().proxy(proxy).build(),
+                                              Method.HEAD,
+                                              "http://service.example");
+        request.selectedProxyRoute(proxy.effectiveRoute("http", "service.example", 80, false));
+
+        assertThrows(IllegalArgumentException.class, () -> request.submit("entity"));
+
+        assertThat(request.selectedProxyRoute(), is(Optional.empty()));
+    }
+
+    @Test
+    void changingProxyClearsSelectedProxyRoute() {
+        Proxy first = Proxy.builder().host("first.example").port(8181).build();
+        TestRequest request = new TestRequest(HttpClientConfig.builder().proxy(first).build(),
+                                              Method.GET,
+                                              "http://service.example");
+        request.selectedProxyRoute(first.effectiveRoute("http", "service.example", 80, false));
+
+        request.proxy(Proxy.builder().host("second.example").port(8282).build());
+
+        assertThat(request.selectedProxyRoute(), is(Optional.empty()));
+    }
+
     private static final class TestRequest extends ClientRequestBase<TestRequest, HttpClientResponse> {
         private final AtomicInteger endpointCount = new AtomicInteger();
+        private ProxyRoute routeSeenByEndpoint;
 
         private TestRequest(Method method, String uri) {
             this(HttpClientConfig.builder().build(), method, uri);
@@ -516,6 +559,7 @@ class ClientRequestBaseTest {
         }
 
         private void invokeEndpoint() {
+            routeSeenByEndpoint = selectedProxyRoute().orElse(null);
             CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
             CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
             invokeServices(endpoint(), whenSent, whenComplete, resolvedUri());

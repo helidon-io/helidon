@@ -38,6 +38,14 @@
     </Match>
     <Match>
         <!--
+        The proxy only opens the selected transport socket. TLS is applied by the client connection implementation.
+        -->
+        <Class name="io.helidon.webclient.api.Proxy"/>
+        <Method name="tcpSocket"/>
+        <Bug pattern="UNENCRYPTED_SOCKET"/>
+    </Match>
+    <Match>
+        <!--
         Performance issue but not a DOS risk. Created issue https://github.com/oracle/helidon/issues/2870
         -->
         <Class name="io.helidon.webclient.api.Proxy"/>

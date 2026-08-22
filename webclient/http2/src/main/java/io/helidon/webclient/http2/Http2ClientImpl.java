@@ -102,6 +102,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     @Override
     public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
+        var selectedProxyRoute = clientRequest.selectedProxyRoute();
         Http2ClientRequestImpl request = new Http2ClientRequestImpl(this,
                                                                     clientRequest,
                                                                     clientRequest.method(),
@@ -113,8 +114,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
         clientRequest.pathParams().forEach(request::pathParam);
         clientRequest.address().ifPresent(request::address);
         clientRequest.sni().ifPresent(request::sni);
-
-        return request.readTimeout(clientRequest.readTimeout())
+        request.readTimeout(clientRequest.readTimeout())
                 .readContinueTimeout(clientRequest.readContinueTimeout())
                 .followRedirects(clientRequest.followRedirects())
                 .maxRedirects(clientRequest.maxRedirects())
@@ -122,6 +122,8 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                 .tls(clientRequest.tls())
                 .headers(clientRequest.headers())
                 .fragment(clientUri.fragment());
+        selectedProxyRoute.ifPresent(request::selectedProxyRoute);
+        return request;
     }
 
     @Override

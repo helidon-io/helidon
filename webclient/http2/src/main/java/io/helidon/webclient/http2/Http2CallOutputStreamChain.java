@@ -516,13 +516,12 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 try {
                     Http2ClientResponseImpl response;
                     if (sendEntity && !sendEmptyEntity) {
-                        response = (Http2ClientResponseImpl) clientRequest
-                                .outputStreamRedirect(true)
-                                .header(HeaderValues.EXPECT_100)
-                                .request();
+                        clientRequest.outputStreamRedirect(true)
+                                .header(HeaderValues.EXPECT_100);
+                        response = clientRequest.redirectProbe();
                     } else {
-                        response = (Http2ClientResponseImpl) clientRequest.outputStreamRedirect(false)
-                                .request();
+                        clientRequest.outputStreamRedirect(false);
+                        response = clientRequest.redirectProbe();
                     }
                     lastRequest = clientRequest;
 

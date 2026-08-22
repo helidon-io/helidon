@@ -352,6 +352,7 @@ public class Http2ClientConnection {
         } finally {
             reservedStreamsLock.unlock();
         }
+        finishRetirementIfDrained();
     }
 
     /**
@@ -383,7 +384,7 @@ public class Http2ClientConnection {
         } finally {
             lock.unlock();
         }
-
+        finishRetirementIfDrained();
     }
 
     Http2ClientStream tryStream(Http2StreamConfig config) {
@@ -471,6 +472,23 @@ public class Http2ClientConnection {
         closeConnection();
     }
 
+    void retire() {
+        initialSettingsLatch.countDown();
+        if (!clientPrefaceSent) {
+            closeConnection();
+            return;
+        }
+        reservedStreamsLock.lock();
+        try {
+            if (!state.compareAndSet(State.OPEN, State.RETIRING)) {
+                return;
+            }
+        } finally {
+            reservedStreamsLock.unlock();
+        }
+        finishRetirementIfDrained();
+    }
+
     /**
      * Immediately closes this connection without attempting to send an HTTP/2 GOAWAY frame.
      */
@@ -494,6 +512,49 @@ public class Http2ClientConnection {
                 closeListener.accept(this);
             }
         }
+    }
+
+    private void finishRetirement() {
+        if (!state.compareAndSet(State.RETIRING, State.GO_AWAY)) {
+            return;
+        }
+        try {
+            Http2Settings http2Settings = Http2Settings.create();
+            Http2GoAway frame = new Http2GoAway(0,
+                                                Http2ErrorCode.NO_ERROR,
+                                                "Connection target retired");
+            writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
+        } catch (Throwable e) {
+            ctx.log(LOGGER, TRACE, "Failed to send HTTP/2 GOAWAY while retiring connection.", e);
+        } finally {
+            closeConnection();
+        }
+    }
+
+    private void finishRetirementIfDrained() {
+        if (state.get() != State.RETIRING) {
+            return;
+        }
+
+        reservedStreamsLock.lock();
+        try {
+            if (reservedStreams != 0 || state.get() != State.RETIRING) {
+                return;
+            }
+        } finally {
+            reservedStreamsLock.unlock();
+        }
+
+        Lock lock = streamsLock.readLock();
+        lock.lock();
+        try {
+            if (!streams.isEmpty()) {
+                return;
+            }
+        } finally {
+            lock.unlock();
+        }
+        finishRetirement();
     }
 
     private void sendPreface(Http2ClientProtocolConfig config, boolean sendSettings) {
@@ -594,7 +655,7 @@ public class Http2ClientConnection {
     private boolean reserveStream() {
         reservedStreamsLock.lock();
         try {
-            if (reservedStreams >= peerMaxConcurrentStreams) {
+            if (state.get() != State.OPEN || reservedStreams >= peerMaxConcurrentStreams) {
                 return false;
             }
             reservedStreams++;
@@ -1009,6 +1070,7 @@ public class Http2ClientConnection {
     private enum State {
         CLOSED(true),
         GO_AWAY(true),
+        RETIRING(true),
         OPEN(false);
 
         private final boolean closed;

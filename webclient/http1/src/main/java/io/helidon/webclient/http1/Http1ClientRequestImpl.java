@@ -37,7 +37,7 @@ import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.Proxy;
-import io.helidon.webclient.api.Proxy.ProxyType;
+import io.helidon.webclient.api.ProxyRoute;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
@@ -105,15 +105,33 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
         tls(request.tls());
+        proxy(request.proxy());
         request.sni().ifPresent(this::sni);
         if (sameOrigin(request.resolvedUri(), clientUri)) {
             request.address().ifPresent(this::address);
+            request.selectedProxyRoute().ifPresent(this::selectedProxyRoute);
         }
         readTimeout(request.readTimeout());
         readContinueTimeout(request.readContinueTimeout());
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         outputStreamRedirect(request.outputStreamRedirect());
         outputStreamRedirects(request.outputStreamRedirects());
+    }
+
+    @Override
+    public void selectedProxyRoute(ProxyRoute proxyRoute) {
+        super.selectedProxyRoute(proxyRoute);
+        if (delegate != null) {
+            delegate.selectedProxyRoute(proxyRoute);
+        }
+    }
+
+    @Override
+    public void clearSelectedProxyRoute() {
+        super.clearSelectedProxyRoute();
+        if (delegate != null) {
+            delegate.clearSelectedProxyRoute();
+        }
     }
 
     @Override
@@ -179,63 +197,59 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     @Override
     public UpgradeResponse upgrade(String protocol) {
-        if (!headers().contains(HeaderNames.UPGRADE)) {
-            headers().set(HeaderNames.UPGRADE, protocol);
-        }
-        Header requestedUpgrade = headers().get(HeaderNames.UPGRADE);
-        Http1ClientResponseImpl response;
+        try {
+            if (!headers().contains(HeaderNames.UPGRADE)) {
+                headers().set(HeaderNames.UPGRADE, protocol);
+            }
+            Header requestedUpgrade = headers().get(HeaderNames.UPGRADE);
+            Http1ClientResponseImpl response;
 
-        if (followRedirects()) {
-            response = RedirectionProcessor.invokeWithFollowRedirects(this, BufferData.EMPTY_BYTES);
-        } else {
-            response = invokeRequestWithEntity(BufferData.EMPTY_BYTES);
-        }
+            if (followRedirects()) {
+                response = RedirectionProcessor.invokeWithFollowRedirects(this, BufferData.EMPTY_BYTES);
+            } else {
+                response = invokeRequestWithEntity(BufferData.EMPTY_BYTES);
+            }
 
-        if (response.status() == Status.SWITCHING_PROTOCOLS_101) {
-            // is the upgrade request successful?
-            if (upgradeSuccessful(requestedUpgrade, response.headers().get(HeaderNames.UPGRADE))) {
-                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                    response.connection()
-                            .helidonSocket().log(LOGGER,
-                                                 System.Logger.Level.TRACE,
-                                                 "Upgrading to %s",
-                                                 LogFormatter.escape(requestedUpgrade.get()));
+            if (response.status() == Status.SWITCHING_PROTOCOLS_101) {
+                // is the upgrade request successful?
+                if (upgradeSuccessful(requestedUpgrade, response.headers().get(HeaderNames.UPGRADE))) {
+                    if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                        response.connection()
+                                .helidonSocket().log(LOGGER,
+                                                     System.Logger.Level.TRACE,
+                                                     "Upgrading to %s",
+                                                     LogFormatter.escape(requestedUpgrade.get()));
+                    }
+                    // upgrade was a success
+                    return UpgradeResponse.success(response, response.connection());
+                } else {
+                    if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                        response.connection().helidonSocket().log(LOGGER,
+                                                                  System.Logger.Level.TRACE,
+                                                                  "Upgrade failed. Expected upgrade: %s, got headers: %s",
+                                                                  LogFormatter.escape(requestedUpgrade.get()),
+                                                                  http1Client.logFormatter().format(response.headers()));
+                    }
                 }
-                // upgrade was a success
-                return UpgradeResponse.success(response, response.connection());
             } else {
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                     response.connection().helidonSocket().log(LOGGER,
                                                               System.Logger.Level.TRACE,
-                                                              "Upgrade failed. Expected upgrade: %s, got headers: %s",
+                                                              "Upgrade failed. Tried upgrading to %s, got status: %s",
                                                               LogFormatter.escape(requestedUpgrade.get()),
-                                                              http1Client.logFormatter().format(response.headers()));
+                                                              response.status().codeText());
                 }
             }
-        } else {
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                response.connection().helidonSocket().log(LOGGER,
-                                                          System.Logger.Level.TRACE,
-                                                          "Upgrade failed. Tried upgrading to %s, got status: %s",
-                                                          LogFormatter.escape(requestedUpgrade.get()),
-                                                          response.status().codeText());
-            }
-        }
 
-        return UpgradeResponse.failure(response);
+            return UpgradeResponse.failure(response);
+        } finally {
+            clearSelectedProxyRoute();
+        }
     }
 
     @Override
     protected MediaContext mediaContext() {
         return super.mediaContext();
-    }
-
-    @Override
-    protected void additionalHeaders() {
-        super.additionalHeaders();
-        if (effectiveProxy().type() != ProxyType.NONE) {
-            header(PROXY_CONNECTION);
-        }
     }
 
     Proxy effectiveProxy() {
@@ -289,6 +303,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return invokeWithServices(callChain, whenSent, whenComplete);
     }
 
+    Http1ClientResponseImpl redirectProbe() {
+        return (Http1ClientResponseImpl) requestWithoutRouteCleanup();
+    }
+
     private Http1ClientResponseImpl invokeWithServices(Http1CallChainBase callChain,
                                                        CompletableFuture<WebClientServiceRequest> whenSent,
                                                        CompletableFuture<WebClientServiceResponse> whenComplete) {
@@ -339,6 +357,13 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     boolean outputStreamRedirect() {
         return outputStreamRedirect;
+    }
+
+    boolean ownsExplicitConnection() {
+        ClientConnection current = connection().orElse(null);
+        return delegate != null
+                && current != null
+                && delegate.connection().orElse(null) != current;
     }
 
     Http1ClientRequestImpl outputStreamRedirects(int outputStreamRedirects) {
