@@ -373,25 +373,6 @@ You can control how each exporter retries if a transmission to a backend fails.
 
 include::{rootdir}/config/io_helidon_telemetry_otelconfig_RetryPolicyConfig.adoc[tag=config, leveloffset=+4]
 
-OpenTelemetry also supports a Zipkin exporter which it has recently deprecated.
-
-====== Zipkin Exporter
-.Configuration for Zipkin exporters
-include::{rootdir}/config/io_helidon_telemetry_otelconfig_ZipkinExporterConfig.adoc[tag=config,leveloffset=+3]
-
-The link:https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters[OpenTelemetry documentation] describes the defaults; see the "Properties for Zipkin span exporters" section there.
-
-.OpenTelemetry defaults for Zipkin exporters
-[cols="1,4"]
-|====
-| Setting | OpenTelemetry default value
-
-| `compression` | `none`
-| `encoder` | `JSON_V2`
-| `endpoint` | http://localhost:9411/api/v2/spans
-| `timeout` | 10 seconds
-|====
-
 OpenTelemetry provides other exporters, often used for debugging:
 
 * `console`
@@ -427,8 +408,6 @@ In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
 .2+|
 `opentelemetry-exporter-otlp`
 |`OtlpHttp\{signal}Exporter`
-|xref:{rootdir}/config/io_helidon_telemetry_otelconfig_ZipkinExporterConfig.adoc[`zipkin`] | `ZipkinSpanExporter` a|
-`opentelemetry-exporter-zipkin`
 | `console` | `Logging\{signal}Exporter`
 .3+|
 `opentelemetry-exporter-logging`
@@ -481,7 +460,8 @@ telemetry:
   tracing:
     sampler: "always_off"
     exporters:
-      - type: zipkin
+      - type: otlp
+        protocol: http/proto
         compression: gzip
     processors:
       - type: batch
@@ -501,11 +481,10 @@ telemetry:
   tracing:
     sampler: "always_off"
     exporters:
-      - type: zipkin
-        compression: gzip
-        name: "compressed-zipkin"
+      - type: console
+        name: "console"
       - endpoint: "http://collect.com:4317"
-        name: "alternate-otlp""
+        name: "alternate-otlp"
     processors:
       - type: batch
         max-queue-size: 50

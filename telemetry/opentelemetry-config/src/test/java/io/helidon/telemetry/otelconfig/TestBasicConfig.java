@@ -23,8 +23,8 @@ import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
+import io.opentelemetry.exporter.logging.LoggingSpanExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -63,7 +63,7 @@ class TestBasicConfig {
                                 max-attempts: 4
                                 max-backoff: "PT1m"
                               name: my-otlp
-                            - type: zipkin
+                            - type: console
                           processors:
                             - max-queue-size: 21
                               type: batch
@@ -93,7 +93,7 @@ class TestBasicConfig {
         assertThat("Exporters",
                    openTelemetryTracingConfig.exporterConfigs().values(),
                    allOf(hasItems(instanceOf(OtlpHttpSpanExporter.class),
-                                  instanceOf(ZipkinSpanExporter.class)),
+                                  instanceOf(LoggingSpanExporter.class)),
                          iterableWithSize(2)));
 
         assertThat("Sampler",
