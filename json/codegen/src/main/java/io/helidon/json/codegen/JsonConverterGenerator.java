@@ -1248,13 +1248,45 @@ class JsonConverterGenerator {
         }
     }
 
-    private static String ensureUpperStart(TypeName typeName) {
-        String className = typeName.toString();
-        int index = className.lastIndexOf(".");
-        if (index > -1) {
-            className = className.substring(index + 1);
+    /**
+     * Build a Java identifier suffix for converter fields from a type name.
+     * {@link TypeName#toString()} includes generic syntax ({@code <...>}) and must not be used
+     * for generated field names.
+     *
+     * @param typeName type to convert to an identifier suffix
+     * @return capitalized identifier-safe suffix
+     */
+    static String ensureUpperStart(TypeName typeName) {
+        return capitalize(typeIdentifier(typeName));
+    }
+
+    private static String typeIdentifier(TypeName typeName) {
+        StringBuilder name = new StringBuilder();
+        for (String enclosing : typeName.enclosingNames()) {
+            name.append(identifierFragment(enclosing));
         }
-        return capitalize(className.replaceAll("\\[]", "Array"));
+        name.append(identifierFragment(typeName.className()));
+        if (typeName.array()) {
+            String current = name.toString();
+            if (!current.endsWith("Array")) {
+                name.append("Array");
+            }
+        }
+        for (TypeName arg : typeName.typeArguments()) {
+            name.append(typeIdentifier(arg));
+        }
+        return name.toString();
+    }
+
+    private static String identifierFragment(String fragment) {
+        if (fragment.isEmpty()) {
+            return fragment;
+        }
+        if ("?".equals(fragment)) {
+            return "Wildcard";
+        }
+        return fragment.replace("[]", "Array")
+                .replaceAll("[^A-Za-z0-9]", "");
     }
 
     private static int calculateNameHash(String name) {
