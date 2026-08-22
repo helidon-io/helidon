@@ -40,6 +40,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.infra.ThreadParams;
 
@@ -169,6 +170,10 @@ public class WebClientConnectionTargetBenchmark {
         return result;
     }
 
+    private static int targetCount(int prefilledTargetCount, BenchmarkParams benchmarkParams) {
+        return Math.max(prefilledTargetCount, benchmarkParams.getThreads() * TARGETS_PER_THREAD);
+    }
+
     private static InetAddress resolve(String host, ProxyMode proxyMode) {
         boolean proxyHost = "proxy.invalid".equals(host);
         if (proxyMode == ProxyMode.HTTP_FORWARD && !proxyHost) {
@@ -244,16 +249,16 @@ public class WebClientConnectionTargetBenchmark {
         private String[] targetUris;
 
         @Setup(Level.Trial)
-        public void setup(ServerState serverState) {
+        public void setup(ServerState serverState, BenchmarkParams benchmarkParams) {
             http1Client = Http1Client.builder()
                     .shareConnectionCache(false)
                     .servicesDiscoverServices(false)
                     .proxy(proxyMode.proxy(serverState.server.port()))
                     .dnsResolver((host, _) -> resolve(host, proxyMode))
                     .build();
-            targetUris = targetUris(prefilledTargetCount, serverState.server.port());
-            for (String targetUri : targetUris) {
-                try (var response = http1Client.get(targetUri).request()) {
+            targetUris = targetUris(targetCount(prefilledTargetCount, benchmarkParams), serverState.server.port());
+            for (int i = 0; i < prefilledTargetCount; i++) {
+                try (var response = http1Client.get(targetUris[i]).request()) {
                     response.entity().consume();
                     if (response.status().code() != 200) {
                         throw new IllegalStateException("Unexpected HTTP/1.1 status: " + response.status());
@@ -284,7 +289,7 @@ public class WebClientConnectionTargetBenchmark {
         private String[] targetUris;
 
         @Setup(Level.Trial)
-        public void setup(ServerState serverState) {
+        public void setup(ServerState serverState, BenchmarkParams benchmarkParams) {
             http2Client = Http2Client.builder()
                     .shareConnectionCache(false)
                     .servicesDiscoverServices(false)
@@ -292,8 +297,8 @@ public class WebClientConnectionTargetBenchmark {
                     .dnsResolver((host, _) -> resolve(host, proxyMode))
                     .protocolConfig(builder -> builder.priorKnowledge(proxyMode != ProxyMode.HTTP_FORWARD))
                     .build();
-            targetUris = targetUris(prefilledTargetCount, serverState.server.port());
-            for (int i = 0; i < targetUris.length; i++) {
+            targetUris = targetUris(targetCount(prefilledTargetCount, benchmarkParams), serverState.server.port());
+            for (int i = 0; i < prefilledTargetCount; i++) {
                 try (var response = http2Client.get(targetUris[i]).request()) {
                     response.entity().consume();
                     if (response.status().code() != 200) {
