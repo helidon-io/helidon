@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.tests.upgrade.test;
 
+import java.io.UncheckedIOException;
+
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
@@ -79,13 +81,7 @@ class SharedHttp2CacheTest {
                     .baseUri("http://localhost:" + port + "/versionspecific")
                     .build();
             try {
-                Integer firstReqClientPort;
-                try (var res = webClient.post().submit("WHATEVER")) {
-                    firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                    assertThat(res.status(), is(Status.OK_200));
-                    // Wait for the empty DATA frame carrying END_STREAM before closing the response.
-                    res.entity().consume();
-                }
+                int firstReqClientPort = requestClientPort(webClient, clientPortHeader);
 
                 if (param.restart()) {
                     // Test severing cached connections
@@ -97,11 +93,16 @@ class SharedHttp2CacheTest {
                             .start();
                 }
 
-                Integer secondReqClientPort;
-                try (var res = webClient.post().submit("WHATEVER")) {
-                    secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                    assertThat(res.status(), is(Status.OK_200));
-                    res.entity().consume();
+                int secondReqClientPort;
+                try {
+                    secondReqClientPort = requestClientPort(webClient, clientPortHeader);
+                } catch (UncheckedIOException e) {
+                    if (!param.restart()) {
+                        throw e;
+                    }
+                    // The connection can close after cache selection but before request headers are written.
+                    // Once that race is observed, the retry uses a fresh connection.
+                    secondReqClientPort = requestClientPort(webClient, clientPortHeader);
                 }
 
                 if (!param.restart()) {
@@ -117,6 +118,16 @@ class SharedHttp2CacheTest {
             if (webServer != null) {
                 webServer.stop();
             }
+        }
+    }
+
+    private static int requestClientPort(Http2Client webClient, HeaderName clientPortHeader) {
+        try (var res = webClient.post().submit("WHATEVER")) {
+            int clientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
+            assertThat(res.status(), is(Status.OK_200));
+            // Wait for the empty DATA frame carrying END_STREAM before closing the response.
+            res.entity().consume();
+            return clientPort;
         }
     }
 
