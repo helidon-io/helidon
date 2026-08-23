@@ -24,6 +24,7 @@ import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
+import io.helidon.webclient.http2.Http2ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.Http2Route;
@@ -81,7 +82,10 @@ class SharedHttp2CacheTest {
                     .baseUri("http://localhost:" + port + "/versionspecific")
                     .build();
             try {
-                int firstReqClientPort = requestClientPort(webClient, clientPortHeader);
+                int firstReqClientPort;
+                try (var res = webClient.post().submit("WHATEVER")) {
+                    firstReqClientPort = clientPort(res, clientPortHeader);
+                }
 
                 if (param.restart()) {
                     // Test severing cached connections
@@ -94,15 +98,8 @@ class SharedHttp2CacheTest {
                 }
 
                 int secondReqClientPort;
-                try {
-                    secondReqClientPort = requestClientPort(webClient, clientPortHeader);
-                } catch (UncheckedIOException e) {
-                    if (!param.restart()) {
-                        throw e;
-                    }
-                    // The connection can close after cache selection but before request headers are written.
-                    // Once that race is observed, the retry uses a fresh connection.
-                    secondReqClientPort = requestClientPort(webClient, clientPortHeader);
+                try (var res = submitWithRestartRetry(webClient, param.restart())) {
+                    secondReqClientPort = clientPort(res, clientPortHeader);
                 }
 
                 if (!param.restart()) {
@@ -121,14 +118,25 @@ class SharedHttp2CacheTest {
         }
     }
 
-    private static int requestClientPort(Http2Client webClient, HeaderName clientPortHeader) {
-        try (var res = webClient.post().submit("WHATEVER")) {
-            int clientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-            assertThat(res.status(), is(Status.OK_200));
-            // Wait for the empty DATA frame carrying END_STREAM before closing the response.
-            res.entity().consume();
-            return clientPort;
+    private static Http2ClientResponse submitWithRestartRetry(Http2Client webClient, boolean restart) {
+        try {
+            return webClient.post().submit("WHATEVER");
+        } catch (UncheckedIOException e) {
+            if (!restart) {
+                throw e;
+            }
+            // The connection can close after cache selection but before request headers are written.
+            // Once that race is observed, the retry uses a fresh connection.
+            return webClient.post().submit("WHATEVER");
         }
+    }
+
+    private static int clientPort(Http2ClientResponse response, HeaderName clientPortHeader) {
+        int clientPort = response.headers().get(clientPortHeader).get(Integer.TYPE);
+        assertThat(response.status(), is(Status.OK_200));
+        // Wait for the empty DATA frame carrying END_STREAM before closing the response.
+        response.entity().consume();
+        return clientPort;
     }
 
     record Param(boolean usePing, boolean priorKnowledge, boolean restart) {
