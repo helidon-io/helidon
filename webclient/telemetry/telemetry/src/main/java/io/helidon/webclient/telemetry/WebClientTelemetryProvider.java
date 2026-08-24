@@ -50,7 +50,7 @@ public class WebClientTelemetryProvider implements WebClientServiceProvider {
 
     @Override
     public WebClientService create(Config config, String name) {
-        return create(config, WebClientTelemetryTracing::create);
+        return create(config, WebClientTelemetryMetrics::create, WebClientTelemetryTracing::create);
     }
 
     @Override
@@ -59,14 +59,17 @@ public class WebClientTelemetryProvider implements WebClientServiceProvider {
         Objects.requireNonNull(name);
         Objects.requireNonNull(serviceRegistry);
         return create(config,
+                      metricsConfig -> WebClientTelemetryMetrics.create(metricsConfig, serviceRegistry),
                       tracingConfig -> WebClientTelemetryTracing.create(tracingConfig,
                                                                         serviceRegistry.get(Tracer.class)));
     }
 
-    private WebClientService create(Config config, Function<Config, WebClientService> tracingFactory) {
+    private WebClientService create(Config config,
+                                    Function<Config, WebClientService> metricsFactory,
+                                    Function<Config, WebClientService> tracingFactory) {
         List<WebClientService> subservices = new ArrayList<>();
         if (config.get("metrics").exists()) {
-            subservices.add(WebClientTelemetryMetrics.create(config.get("metrics")));
+            subservices.add(metricsFactory.apply(config.get("metrics")));
         }
         if (config.get("tracing").exists()) {
             subservices.add(tracingFactory.apply(config.get("tracing")));

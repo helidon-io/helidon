@@ -45,15 +45,62 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
 
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.metrics.DoubleHistogram;
+import io.opentelemetry.api.metrics.DoubleHistogramBuilder;
+import io.opentelemetry.api.metrics.Meter;
+import io.opentelemetry.api.metrics.MeterProvider;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 class WebClientTelemetryProviderTest {
+    private static final String OTEL_SERVICE = "owning-registry-service";
+    private static final Config METRICS_CONFIG = Config.just(ConfigSources.create(Map.of("metrics.enabled", "true")));
     private static final Config TRACING_CONFIG = Config.just(ConfigSources.create(Map.of("tracing.enabled", "true")));
+
+    @Test
+    void registryCreationUsesOwningRegistryTelemetry() {
+        OpenTelemetry openTelemetry = mock(OpenTelemetry.class);
+        MeterProvider meterProvider = mock(MeterProvider.class);
+        Meter meter = mock(Meter.class);
+        DoubleHistogramBuilder histogramBuilder = mock(DoubleHistogramBuilder.class);
+        DoubleHistogram histogram = mock(DoubleHistogram.class);
+        when(openTelemetry.getMeterProvider()).thenReturn(meterProvider);
+        when(meterProvider.get(OTEL_SERVICE)).thenReturn(meter);
+        when(meter.histogramBuilder("http.client.request.duration")).thenReturn(histogramBuilder);
+        when(histogramBuilder.setDescription("Outbound HTTP request duration")).thenReturn(histogramBuilder);
+        when(histogramBuilder.setUnit("s")).thenReturn(histogramBuilder);
+        when(histogramBuilder.setExplicitBucketBoundariesAdvice(any())).thenReturn(histogramBuilder);
+        when(histogramBuilder.build()).thenReturn(histogram);
+        Config rootConfig = Config.just(ConfigSources.create(Map.of("telemetry.service", OTEL_SERVICE)));
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Config.class, rootConfig)
+                                                                                .putContractInstance(OpenTelemetry.class,
+                                                                                                     openTelemetry)
+                                                                                .build());
+        try {
+            WebClientService service = new WebClientTelemetryProvider()
+                    .create(METRICS_CONFIG, "telemetry", manager.registry());
+            verifyNoMoreInteractions(openTelemetry);
+
+            service.handle(WebClientTelemetryProviderTest::response, request("http://localhost/metrics"));
+
+            verify(meterProvider).get(OTEL_SERVICE);
+            verify(histogram).record(anyDouble(), any());
+        } finally {
+            manager.shutdown();
+        }
+    }
 
     @Test
     void registryCreationUsesOwningRegistryTracer() {
