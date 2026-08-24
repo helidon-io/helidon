@@ -272,6 +272,169 @@ class MessagingGraphTest {
     }
 
     @Test
+    void shutdownTimeoutDoesNotBoundOutgoingStartup() throws Exception {
+        Duration shutdownTimeout = Duration.ofMillis(250);
+        StartupBlockingOutgoing outgoing = new StartupBlockingOutgoing();
+        DefaultMessagingGraph graph = graph(config(shutdownTimeout));
+        graph.addBinding(outgoing);
+
+        AsyncTask startup = async(graph::start);
+        try {
+            await(outgoing.starting());
+            assertPendingFor(startup, shutdownTimeout.multipliedBy(2));
+        } finally {
+            outgoing.releaseStartup();
+        }
+        try {
+            awaitSuccess(startup);
+            assertThat(graph.state(), is(DefaultMessagingGraph.State.RUNNING));
+            assertThat(outgoing.interrupted(), is(false));
+        } finally {
+            closeIfNotTerminal(graph);
+        }
+    }
+
+    @Test
+    void sequentialOutgoingStartsDoNotShareShutdownTimeout() throws Exception {
+        Duration shutdownTimeout = Duration.ofMillis(500);
+        Duration startupHold = Duration.ofMillis(300);
+        StartupBlockingOutgoing first = new StartupBlockingOutgoing();
+        StartupBlockingOutgoing second = new StartupBlockingOutgoing();
+        DefaultMessagingGraph graph = graph(config(shutdownTimeout));
+        graph.addBinding(first);
+        graph.addBinding(second);
+
+        AsyncTask startup = async(graph::start);
+        try {
+            await(first.starting());
+            assertPendingFor(startup, startupHold);
+            first.releaseStartup();
+            await(second.starting());
+            assertPendingFor(startup, startupHold);
+        } finally {
+            first.releaseStartup();
+            second.releaseStartup();
+        }
+        try {
+            awaitSuccess(startup);
+            assertThat(graph.state(), is(DefaultMessagingGraph.State.RUNNING));
+            assertThat(first.interrupted(), is(false));
+            assertThat(second.interrupted(), is(false));
+        } finally {
+            closeIfNotTerminal(graph);
+        }
+    }
+
+    @Test
+    void shutdownTimeoutDoesNotBoundIncomingReadiness() throws Exception {
+        Duration shutdownTimeout = Duration.ofMillis(250);
+        StartupBlockingSource source = new StartupBlockingSource();
+        DefaultMessagingGraph graph = graph(config(shutdownTimeout));
+        graph.addIncomingConnector("source", source);
+
+        AsyncTask startup = async(graph::start);
+        try {
+            await(source.running());
+            assertPendingFor(startup, shutdownTimeout.multipliedBy(2));
+        } finally {
+            source.releaseStartup();
+        }
+        try {
+            awaitSuccess(startup);
+            assertThat(graph.state(), is(DefaultMessagingGraph.State.RUNNING));
+        } finally {
+            closeIfNotTerminal(graph);
+        }
+    }
+
+    @Test
+    void delayedOutgoingStartupFailureUsesFreshRollbackDeadline() throws Exception {
+        Duration shutdownTimeout = Duration.ofSeconds(1);
+        IllegalStateException startupFailure = new IllegalStateException("outgoing is not ready");
+        CountDownLatch releaseForce = new CountDownLatch(1);
+        StartupBlockingOutgoing outgoing = new StartupBlockingOutgoing(startupFailure, releaseForce);
+        DefaultMessagingGraph graph = graph(config(shutdownTimeout));
+        graph.addBinding(outgoing);
+
+        AsyncTask startup = async(graph::start);
+        try {
+            await(outgoing.starting());
+            assertPendingFor(startup, shutdownTimeout.multipliedBy(2));
+            outgoing.releaseStartup();
+            await(outgoing.forceStarted());
+            assertPendingFor(startup, Duration.ofMillis(100));
+        } finally {
+            outgoing.releaseStartup();
+            releaseForce.countDown();
+        }
+
+        assertThat(failure(startup), sameInstance(startupFailure));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
+        assertThat(outgoing.forceCalls(), is(1));
+        assertThat(outgoing.closeCalls(), is(1));
+        graph.close();
+        assertThat(outgoing.forceCalls(), is(1));
+        assertThat(outgoing.closeCalls(), is(1));
+    }
+
+    @Test
+    void closeCancelsBlockedOutgoingStartupPromptly() throws Exception {
+        StartupBlockingOutgoing outgoing = new StartupBlockingOutgoing();
+        DefaultMessagingGraph graph = graph(config(Duration.ofSeconds(30)));
+        graph.addBinding(outgoing);
+        AsyncTask startup = async(graph::start);
+
+        try {
+            await(outgoing.starting());
+            awaitState(graph, DefaultMessagingGraph.State.STARTING);
+            AsyncTask closing = async(graph::close);
+            await(outgoing.forceStarted());
+            await(outgoing.startExited());
+            awaitSuccess(closing);
+        } finally {
+            outgoing.releaseStartup();
+        }
+
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
+        assertThat(outgoing.forced(), is(true));
+        assertThrows(ExecutionException.class,
+                     () -> startup.completion().get(WAIT.toNanos(), TimeUnit.NANOSECONDS));
+    }
+
+    @Test
+    void interruptedOutgoingStartupRollsBackBeforeRestoringInterrupt() throws Exception {
+        StartupBlockingOutgoing outgoing = new StartupBlockingOutgoing();
+        DefaultMessagingGraph graph = graph(config(Duration.ofSeconds(30)));
+        graph.addBinding(outgoing);
+        AtomicBoolean interruptedAtExit = new AtomicBoolean();
+        AsyncTask startup = async(() -> {
+            try {
+                graph.start();
+            } finally {
+                interruptedAtExit.set(Thread.currentThread().isInterrupted());
+            }
+        });
+
+        try {
+            await(outgoing.starting());
+            startup.thread().interrupt();
+            await(outgoing.startExited());
+            await(outgoing.forceStarted());
+        } finally {
+            outgoing.releaseStartup();
+        }
+        Throwable startupFailure = failure(startup);
+        assertThat(startupFailure, instanceOf(MessagingException.class));
+        assertThat(startupFailure.getCause(), instanceOf(InterruptedException.class));
+        assertThat(interruptedAtExit.get(), is(true));
+        assertThat(outgoing.interrupted(), is(true));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
+        assertThat(outgoing.forceCalls(), is(1));
+        assertThat(outgoing.closeCalls(), is(1));
+        graph.close();
+    }
+
+    @Test
     void outgoingStartFailurePreventsIncomingTasksAndRollsBackConnectors() {
         IllegalStateException startupFailure = new IllegalStateException("outgoing is not ready");
         AtomicInteger forceCalls = new AtomicInteger();
@@ -806,19 +969,23 @@ class MessagingGraphTest {
     }
 
     @Test
-    void closeCancelsSourceStartupWithoutWaitingForTheStartupDeadline() throws Exception {
-        DefaultMessagingGraph graph = graph(config(Duration.ofSeconds(2)));
+    void closeCancelsSourceStartupPromptly() throws Exception {
+        DefaultMessagingGraph graph = graph(config(Duration.ofSeconds(30)));
         StartupBlockingSource source = new StartupBlockingSource();
         graph.addIncomingConnector("blocked", source);
         AsyncTask startup = async(graph::start);
-        await(source.running());
-        awaitState(graph, DefaultMessagingGraph.State.STARTING);
 
-        long started = System.nanoTime();
-        graph.close();
-        long elapsed = System.nanoTime() - started;
+        try {
+            await(source.running());
+            awaitState(graph, DefaultMessagingGraph.State.STARTING);
+            AsyncTask closing = async(graph::close);
+            await(source.forceStarted());
+            await(source.runExited());
+            awaitSuccess(closing);
+        } finally {
+            source.releaseStartup();
+        }
 
-        assertThat("Close did not cancel startup promptly", elapsed < TimeUnit.SECONDS.toNanos(1), is(true));
         assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
         assertThat(source.forced(), is(true));
         assertThrows(ExecutionException.class,
@@ -1197,6 +1364,18 @@ class MessagingGraphTest {
         throw new AssertionError("Task did not enter a waiting state; last state was " + state);
     }
 
+    private static void assertPendingFor(AsyncTask task, Duration timeout) {
+        assertThrows(TimeoutException.class,
+                     () -> task.completion().get(timeout.toNanos(), TimeUnit.NANOSECONDS));
+    }
+
+    private static void closeIfNotTerminal(DefaultMessagingGraph graph) {
+        if (graph.state() != DefaultMessagingGraph.State.CLOSED
+                && graph.state() != DefaultMessagingGraph.State.FAILED) {
+            graph.close();
+        }
+    }
+
     private static MessagingRejectedException awaitShutdownRejection(DeliveryEngine engine, String channel) {
         long deadline = System.nanoTime() + WAIT.toNanos();
         while (System.nanoTime() < deadline) {
@@ -1480,23 +1659,29 @@ class MessagingGraphTest {
         private final CountDownLatch running = new CountDownLatch(1);
         private final CountDownLatch startupReleased = new CountDownLatch(1);
         private final CountDownLatch stopped = new CountDownLatch(1);
+        private final CountDownLatch forceStarted = new CountDownLatch(1);
+        private final CountDownLatch runExited = new CountDownLatch(1);
         private final AtomicBoolean forced = new AtomicBoolean();
         private final AtomicInteger runCalls = new AtomicInteger();
 
         @Override
         public void run(IncomingConnectorContext context) {
-            runCalls.incrementAndGet();
-            running.countDown();
             try {
-                if (!startupReleased.await(WAIT.toNanos(), TimeUnit.NANOSECONDS)) {
-                    throw new MessagingException("Test source startup timed out");
+                runCalls.incrementAndGet();
+                running.countDown();
+                try {
+                    if (!startupReleased.await(WAIT.toNanos(), TimeUnit.NANOSECONDS)) {
+                        throw new MessagingException("Test source startup timed out");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new MessagingException("Test source startup was interrupted", e);
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new MessagingException("Test source startup was interrupted", e);
-            }
-            if (context.awaitRunning()) {
-                await(stopped);
+                if (context.awaitRunning()) {
+                    await(stopped);
+                }
+            } finally {
+                runExited.countDown();
             }
         }
 
@@ -1508,6 +1693,7 @@ class MessagingGraphTest {
         @Override
         public void forceClose() {
             forced.set(true);
+            forceStarted.countDown();
             startupReleased.countDown();
             stopped.countDown();
         }
@@ -1525,12 +1711,114 @@ class MessagingGraphTest {
             return forced.get();
         }
 
+        private CountDownLatch forceStarted() {
+            return forceStarted;
+        }
+
+        private CountDownLatch runExited() {
+            return runExited;
+        }
+
         private void releaseStartup() {
             startupReleased.countDown();
         }
 
         private int runCalls() {
             return runCalls.get();
+        }
+    }
+
+    private static final class StartupBlockingOutgoing implements OutgoingConnector {
+        private final CountDownLatch starting = new CountDownLatch(1);
+        private final CountDownLatch startupReleased = new CountDownLatch(1);
+        private final CountDownLatch startExited = new CountDownLatch(1);
+        private final CountDownLatch forceStarted = new CountDownLatch(1);
+        private final RuntimeException startupFailure;
+        private final CountDownLatch forceReleased;
+        private final AtomicInteger forceCalls = new AtomicInteger();
+        private final AtomicInteger closeCalls = new AtomicInteger();
+        private final AtomicBoolean interrupted = new AtomicBoolean();
+
+        private StartupBlockingOutgoing() {
+            this(null, null);
+        }
+
+        private StartupBlockingOutgoing(RuntimeException startupFailure) {
+            this(startupFailure, null);
+        }
+
+        private StartupBlockingOutgoing(RuntimeException startupFailure, CountDownLatch forceReleased) {
+            this.startupFailure = startupFailure;
+            this.forceReleased = forceReleased;
+        }
+
+        @Override
+        public void start() {
+            starting.countDown();
+            try {
+                startupReleased.await();
+                if (startupFailure != null) {
+                    throw startupFailure;
+                }
+            } catch (InterruptedException e) {
+                interrupted.set(true);
+                Thread.currentThread().interrupt();
+                throw new MessagingException("Test outgoing startup was interrupted", e);
+            } finally {
+                startExited.countDown();
+            }
+        }
+
+        @Override
+        public void sendBatch(MessageBatch<?> batch) {
+        }
+
+        @Override
+        public void forceClose() {
+            forceCalls.incrementAndGet();
+            forceStarted.countDown();
+            startupReleased.countDown();
+            if (forceReleased != null) {
+                awaitUninterruptibly(forceReleased);
+            }
+        }
+
+        @Override
+        public void close() {
+            closeCalls.incrementAndGet();
+            startupReleased.countDown();
+        }
+
+        private CountDownLatch starting() {
+            return starting;
+        }
+
+        private CountDownLatch startExited() {
+            return startExited;
+        }
+
+        private CountDownLatch forceStarted() {
+            return forceStarted;
+        }
+
+        private void releaseStartup() {
+            startupReleased.countDown();
+        }
+
+        private boolean forced() {
+            return forceCalls.get() > 0;
+        }
+
+        private boolean interrupted() {
+            return interrupted.get();
+        }
+
+        private int forceCalls() {
+            return forceCalls.get();
+        }
+
+        private int closeCalls() {
+            return closeCalls.get();
         }
     }
 

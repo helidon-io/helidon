@@ -341,9 +341,10 @@ helidon:
 
 Admitted deliveries execute sequentially in FIFO order within each channel, so messaging methods handling that channel
 are never invoked concurrently. Different channels have independent dispatchers, so deliveries on different channels
-may execute at the same time. `shutdown-timeout` is runtime-wide and cannot be overridden per channel. Capacity,
-timeout, cancellation, and shutdown admission failures are reported as `MessagingRejectedException` with a typed
-reason.
+may execute at the same time. `shutdown-timeout` is runtime-wide, cannot be overridden per channel, and applies only to
+shutdown or failed-startup rollback; it does not bound connector startup or readiness. Configure transport connection
+and startup limits on the connector. Capacity, timeout, cancellation, and shutdown admission failures are reported as
+`MessagingRejectedException` with a typed reason.
 
 For generated receiver and emitter examples, see `ChannelMessagingTypes.java` in the
 [declarative messaging acceptance tests](../declarative/tests/messaging/).

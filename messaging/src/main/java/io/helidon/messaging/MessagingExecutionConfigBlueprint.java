@@ -92,9 +92,11 @@ interface MessagingExecutionConfigBlueprint {
     Optional<Duration> admissionTimeout();
 
     /**
-     * Maximum time to wait for admitted messaging work to finish during shutdown.
+     * Maximum time to wait for admitted messaging work to finish and graph-owned resources to close during shutdown
+     * or failed-startup rollback.
      * <p>
-     * This is a runtime-wide setting and cannot be overridden per channel.
+     * This does not bound connector startup or readiness. It is a runtime-wide setting and cannot be overridden per
+     * channel.
      *
      * @return shutdown timeout
      */

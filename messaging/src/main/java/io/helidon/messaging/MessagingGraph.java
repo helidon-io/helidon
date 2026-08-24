@@ -41,7 +41,11 @@ public interface MessagingGraph extends AutoCloseable {
     }
 
     /**
-     * Validate and start the complete graph.
+     * Validate and start the complete graph, waiting for outgoing connector startup and incoming connector readiness.
+     * <p>
+     * The core runtime does not impose a startup deadline. Connector transport configuration may define its own
+     * connection or readiness limits. Waiting in this method is interruptible; concurrent {@link #close()} cancels
+     * startup.
      */
     void start();
 

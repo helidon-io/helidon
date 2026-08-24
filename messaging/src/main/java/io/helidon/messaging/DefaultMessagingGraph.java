@@ -376,16 +376,15 @@ final class DefaultMessagingGraph implements MessagingGraph {
             return;
         }
 
-        long deadline = deadline(deliveryEngine.shutdownTimeout());
         try {
-            startOutgoingConnectors(deadline);
+            startOutgoingConnectors();
             for (SourceBinding source : sources.values()) {
                 requireStarting();
                 source.start(deliveryEngine);
             }
             for (SourceBinding source : sources.values()) {
                 requireStarting();
-                source.awaitReady(remaining(deadline));
+                source.awaitReady();
             }
             lifecycleLock.lock();
             try {
@@ -398,30 +397,36 @@ final class DefaultMessagingGraph implements MessagingGraph {
             }
             reportNormalSourceTerminations();
         } catch (RuntimeException | Error e) {
-            boolean cleanup;
-            lifecycleLock.lock();
+            boolean interrupted = Thread.interrupted();
             try {
-                startupCompletion.completeExceptionally(e);
-                cleanup = state == State.STARTING && transitionToFailed(e);
+                boolean cleanup;
+                lifecycleLock.lock();
+                try {
+                    startupCompletion.completeExceptionally(e);
+                    cleanup = state == State.STARTING && transitionToFailed(e);
+                } finally {
+                    lifecycleLock.unlock();
+                }
+                if (cleanup) {
+                    rollback(e, false);
+                } else if (state == State.FAILED) {
+                    awaitShutdown();
+                }
             } finally {
-                lifecycleLock.unlock();
-            }
-            if (cleanup) {
-                rollback(e, false);
-            } else if (state == State.FAILED) {
-                awaitShutdown();
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
             }
             throw e;
         }
     }
 
-    private void startOutgoingConnectors(long deadline) {
+    private void startOutgoingConnectors() {
         for (OutgoingConnector outgoing : outgoingConnectors) {
             requireStarting();
-            OperationResult result = invokeBounded("start outgoing connector "
-                                                           + outgoing.getClass().getName(),
-                                                   deadline,
-                                                   outgoing::start);
+            OperationResult result = invokeUnbounded("start outgoing connector "
+                                                             + outgoing.getClass().getName(),
+                                                     outgoing::start);
             if (result.failure() != null) {
                 throw result.failure();
             }
@@ -968,6 +973,37 @@ final class DefaultMessagingGraph implements MessagingGraph {
         return remaining > 0 && deliveryEngine.awaitTermination(Duration.ofNanos(remaining));
     }
 
+    private OperationResult invokeUnbounded(String operation, Runnable action) {
+        AtomicReference<Throwable> callbackFailure = new AtomicReference<>();
+        CountDownLatch completed = new CountDownLatch(1);
+        Thread thread;
+        try {
+            thread = Thread.ofVirtual()
+                    .name("helidon-messaging-lifecycle-" + LIFECYCLE_SEQUENCE.incrementAndGet())
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> {
+                        try {
+                            invokeLifecycleCallback(action);
+                        } catch (Throwable t) {
+                            callbackFailure.set(t);
+                        } finally {
+                            completed.countDown();
+                        }
+                    });
+        } catch (RuntimeException | Error e) {
+            return new OperationResult(new MessagingException("Cannot start task to " + operation, e));
+        }
+
+        try {
+            completed.await();
+        } catch (InterruptedException e) {
+            thread.interrupt();
+            Thread.currentThread().interrupt();
+            return new OperationResult(new MessagingException("Interrupted while attempting to " + operation, e));
+        }
+        return operationResult(operation, callbackFailure.get());
+    }
+
     private OperationResult invokeBounded(String operation, long deadline, Runnable action) {
         return invokeBounded(operation, deadline, action, false, new CompletableFuture<>(), true);
     }
@@ -1068,7 +1104,10 @@ final class DefaultMessagingGraph implements MessagingGraph {
             return new OperationResult(new MessagingException("Timed out while attempting to " + operation));
         }
 
-        Throwable callbackThrowable = callbackFailure.get();
+        return operationResult(operation, callbackFailure.get());
+    }
+
+    private OperationResult operationResult(String operation, Throwable callbackThrowable) {
         if (callbackThrowable == null) {
             return new OperationResult(null);
         }
@@ -1192,14 +1231,6 @@ final class DefaultMessagingGraph implements MessagingGraph {
             return Long.MAX_VALUE;
         }
         return result;
-    }
-
-    private static Duration remaining(long deadline) {
-        long remaining = deadline - System.nanoTime();
-        if (remaining <= 0) {
-            throw new MessagingException("Messaging graph startup timed out");
-        }
-        return Duration.ofNanos(remaining);
     }
 
     private static final class ForcedCleanupOrdering {
@@ -1336,8 +1367,8 @@ final class DefaultMessagingGraph implements MessagingGraph {
             }
         }
 
-        private void awaitReady(Duration timeout) {
-            if (incomingContext != null && !incomingContext.awaitReady(timeout)) {
+        private void awaitReady() {
+            if (incomingContext != null && !incomingContext.awaitReady()) {
                 sourceTask.failure().ifPresent(SourceBinding::rethrow);
                 throw new MessagingException("Managed messaging source stopped before reporting readiness: " + name);
             }
@@ -1453,11 +1484,9 @@ final class DefaultMessagingGraph implements MessagingGraph {
             return delegate.tryReserveDelivery();
         }
 
-        private boolean awaitReady(Duration timeout) {
+        private boolean awaitReady() {
             try {
-                if (!ready.await(timeout.toNanos(), TimeUnit.NANOSECONDS)) {
-                    throw new MessagingException("Messaging connector readiness timed out after " + timeout);
-                }
+                ready.await();
                 return !cancelled.get();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
