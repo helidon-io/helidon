@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -38,6 +39,7 @@ import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatchers;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
@@ -166,6 +168,7 @@ public class GrpcRouting implements Routing {
         private final Set<String> excludedServiceNames = new LinkedHashSet<>();
 
         private Config config;
+        private Optional<ServiceRegistry> serviceRegistry = Optional.empty();
         private Supplier<MeterRegistry> meterRegistry = DEFAULT_METER_REGISTRY;
 
         private Builder() {
@@ -223,7 +226,10 @@ public class GrpcRouting implements Routing {
                     .forEach(programmaticServerServiceTypes::add);
             for (GrpcServerService serverService : configuredServices.values()) {
                 if (!programmaticServerServiceTypes.contains(serverService.type())) {
-                    configuredInterceptors.merge(serverService.interceptors());
+                    WeightedBag<ServerInterceptor> serviceInterceptors = serviceRegistry
+                            .map(serverService::interceptors)
+                            .orElseGet(serverService::interceptors);
+                    configuredInterceptors.merge(serviceInterceptors);
                 }
             }
             WeightedBag<ServerInterceptor> routingInterceptors = configuredInterceptors.copyMe();
@@ -368,6 +374,11 @@ public class GrpcRouting implements Routing {
 
         Builder meterRegistry(Supplier<MeterRegistry> meterRegistry) {
             this.meterRegistry = Objects.requireNonNull(meterRegistry);
+            return this;
+        }
+
+        Builder serviceRegistry(ServiceRegistry serviceRegistry) {
+            this.serviceRegistry = Optional.of(Objects.requireNonNull(serviceRegistry));
             return this;
         }
 

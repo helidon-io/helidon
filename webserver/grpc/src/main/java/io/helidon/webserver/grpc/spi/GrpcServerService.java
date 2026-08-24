@@ -16,8 +16,11 @@
 
 package io.helidon.webserver.grpc.spi;
 
+import java.util.Objects;
+
 import io.helidon.config.NamedService;
 import io.helidon.grpc.core.WeightedBag;
+import io.helidon.service.registry.ServiceRegistry;
 
 import io.grpc.ServerInterceptor;
 
@@ -43,4 +46,15 @@ public interface GrpcServerService extends NamedService {
      * @return weighted bag of interceptors
      */
     WeightedBag<ServerInterceptor> interceptors();
+
+    /**
+     * Insert a list of server interceptors for a gRPC call, using the provided service registry for dependencies.
+     *
+     * @param serviceRegistry service registry to use for interceptor dependencies
+     * @return weighted bag of interceptors
+     */
+    default WeightedBag<ServerInterceptor> interceptors(ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(serviceRegistry);
+        return interceptors();
+    }
 }
