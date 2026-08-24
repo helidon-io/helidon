@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
@@ -89,6 +90,28 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                    ContentEncodingContext defaultContentEncodingContext,
                    DirectHandlers defaultDirectHandlers,
                    FatalListenerFailureHandler fatalListenerFailureHandler) {
+        this(socketName,
+             listenerConfig,
+             router,
+             serverContext,
+             idleConnectionTimer,
+             defaultMediaContext,
+             defaultContentEncodingContext,
+             defaultDirectHandlers,
+             () -> Services.get(MetricsFactory.class),
+             fatalListenerFailureHandler);
+    }
+
+    ServerListener(String socketName,
+                   ListenerConfig listenerConfig,
+                   Router router,
+                   Context serverContext,
+                   Timer idleConnectionTimer,
+                   MediaContext defaultMediaContext,
+                   ContentEncodingContext defaultContentEncodingContext,
+                   DirectHandlers defaultDirectHandlers,
+                   Supplier<MetricsFactory> metricsFactory,
+                   FatalListenerFailureHandler fatalListenerFailureHandler) {
 
         List<ProtocolConfig> protocolConfigs = listenerConfig.protocols();
         if (listenerConfig.maxConcurrentRequests() == -1) {
@@ -100,7 +123,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                     .build();
         }
 
-        InitializationContext limitContext = limitContext(socketName);
+        InitializationContext limitContext = limitContext(socketName, metricsFactory);
         if (listenerConfig.maxConnections() == -1 || listenerConfig.maxConnections() == 0) {
             this.connectionLimit = FixedLimit.create();
         } else {
@@ -346,12 +369,11 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         }
     }
 
-    private static InitializationContext limitContext(String socketName) {
+    private static InitializationContext limitContext(String socketName, Supplier<MetricsFactory> metricsFactory) {
         if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
             return InitializationContext.create(socketName);
         }
-        // we access service registry here, but this was already the case, it was just hidden behind a static method
-        Tag socketNameTag = Services.get(MetricsFactory.class).tagCreate("socketName", socketName);
+        Tag socketNameTag = metricsFactory.get().tagCreate("socketName", socketName);
         return InitializationContext.create(socketName, List.of(socketNameTag));
     }
 
