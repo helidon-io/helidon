@@ -69,17 +69,28 @@ switch code.
 <a id="chapter-2"></a>
 ## 2. Class member order
 
-<a id="rule-2-1"></a>**Rule 2.1 — Order field groups.** Place static fields before instance fields.
+<a id="rule-2-1"></a>**Rule 2.1 — Order class members consistently.** Declare class members in the following order,
+which matches the repository [IntelliJ IDEA code style](etc/codestyle/idea-code-style.xml):
 
-- <a id="rule-2-1-1"></a>**Rule 2.1.1.** Within each group, order fields by visibility: public, protected, package-private,
-  then private.
+1. Static final fields, ordered by visibility: public, protected, package-private, then private.
+2. Non-final static fields, ordered by visibility: public, protected, package-private, then private.
+3. Static initializer blocks.
+4. Final instance fields, ordered by visibility: public, protected, package-private, then private.
+5. Non-final instance fields, ordered by visibility: public, protected, package-private, then private.
+6. Any remaining fields.
+7. Instance initializer blocks.
+8. Constructors.
+9. Non-private static methods.
+10. Non-private instance methods.
+11. Private static methods.
+12. Private instance methods.
+13. Nested enums.
+14. Nested interfaces.
+15. Static nested classes.
+16. Non-static nested classes.
 
-<a id="rule-2-2"></a>**Rule 2.2 — Order public methods.** Place public static methods before public instance methods.
-
-<a id="rule-2-3"></a>**Rule 2.3 — Put nested types last.** Place nested member types after fields, initializer blocks,
-constructors, and methods.
-
-- <a id="rule-2-3-1"></a>**Rule 2.3.1.** Order nested types by visibility: public, protected, package-private, then private.
+Within one of these groups, no additional ordering by name or visibility is required unless the group explicitly defines
+a visibility order.
 
 <a id="chapter-3"></a>
 ## 3. Imports and Javadoc
@@ -216,8 +227,9 @@ follow these rules:
 - <a id="rule-8-4-4"></a>**Rule 8.4.4.** A builder may provide `builder(...)` overloads for mandatory or very common
   parameters.
     - <a id="rule-8-4-4-1"></a>**Rule 8.4.4.1.** Provide at most two `builder(...)` methods per class.
-- <a id="rule-8-4-5"></a>**Rule 8.4.5.** A no-argument `create()` factory may delegate to `builder().build()`.
-- <a id="rule-8-4-6"></a>**Rule 8.4.6.** A `create(io.helidon.config.Config)` factory may delegate to
+- <a id="rule-8-4-5"></a>**Rule 8.4.5.** A no-argument `create()` factory, when present, must delegate to
+  `builder().build()`.
+- <a id="rule-8-4-6"></a>**Rule 8.4.6.** A `create(io.helidon.config.Config)` factory, when present, must delegate to
   `builder().config(config).build()`.
 - <a id="rule-8-4-7"></a>**Rule 8.4.7.** Other factories for predefined instances must use the builder internally.
 - <a id="rule-8-4-8"></a>**Rule 8.4.8.** Name a nested builder class `Builder`.
