@@ -21,6 +21,7 @@ import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.ServerFeature;
@@ -31,12 +32,16 @@ class GrpcServerFeature implements ServerFeature {
     private static final System.Logger LOGGER = System.getLogger(GrpcServerFeature.class.getName());
 
     private final Config config;
+    private final Supplier<MeterRegistry> meterRegistry;
     private final Supplier<List<GrpcRouteRegistration>> routes;
     private final boolean enabled;
 
-    GrpcServerFeature(Config config, Supplier<List<GrpcRouteRegistration>> routes) {
+    GrpcServerFeature(Config config,
+                      Supplier<MeterRegistry> meterRegistry,
+                      Supplier<List<GrpcRouteRegistration>> routes) {
         this.config = config;
         this.enabled = config.get("server.features." + TYPE + ".enabled").asBoolean().orElse(true);
+        this.meterRegistry = meterRegistry;
         this.routes = routes;
     }
 
@@ -71,7 +76,9 @@ class GrpcServerFeature implements ServerFeature {
 
             RoutingBuilders routingBuilders = socketBuilders.routingBuilders();
             GrpcRouting.Builder builder = routingBuilders.routingBuilder(GrpcRouting.Builder.class,
-                                                                         () -> GrpcRouting.builder().config(config));
+                                                                         () -> GrpcRouting.builder()
+                                                                                 .config(config)
+                                                                                 .meterRegistry(meterRegistry));
             builder.service(route.descriptor());
         }
     }

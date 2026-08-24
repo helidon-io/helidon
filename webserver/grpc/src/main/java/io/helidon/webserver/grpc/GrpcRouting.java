@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
@@ -36,6 +37,7 @@ import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatchers;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
@@ -55,23 +57,27 @@ public class GrpcRouting implements Routing {
     private static final String SERVER_PROTOCOL_CONFIG_KEY = "server.protocols." + GrpcProtocolProvider.CONFIG_NAME;
     private static final Config DISCOVERY_DISABLED_CONFIG = Config.just(ConfigSources.create(
             Map.of("grpc-services-discover-services", "false")));
+    private static final Supplier<MeterRegistry> DEFAULT_METER_REGISTRY = () -> Services.get(MeterRegistry.class);
 
     static {
         WeightedBag<ServerInterceptor> interceptors = WeightedBag.create(InterceptorWeights.USER);
         interceptors.add(ContextSettingServerInterceptor.instance());
-        EMPTY = new GrpcRouting(List.of(), interceptors, Map.of());
+        EMPTY = new GrpcRouting(List.of(), interceptors, Map.of(), DEFAULT_METER_REGISTRY);
     }
 
     private final ArrayList<GrpcRoute> routes;
     private final WeightedBag<ServerInterceptor> interceptors;
     private final ArrayList<GrpcServiceDescriptor> services;
+    private final Supplier<MeterRegistry> meterRegistry;
 
     private GrpcRouting(List<GrpcRoute> routes,
                         WeightedBag<ServerInterceptor> interceptors,
-                        Map<String, GrpcServiceDescriptor> services) {
+                        Map<String, GrpcServiceDescriptor> services,
+                        Supplier<MeterRegistry> meterRegistry) {
         this.routes = new ArrayList<>(routes);
         this.interceptors = interceptors;
         this.services = new ArrayList<>(services.values());
+        this.meterRegistry = meterRegistry;
     }
 
     @Override
@@ -146,6 +152,10 @@ public class GrpcRouting implements Routing {
         return routes;
     }
 
+    MeterRegistry meterRegistry() {
+        return meterRegistry.get();
+    }
+
     /**
      * Fluent API builder for {@link GrpcRouting}.
      */
@@ -156,6 +166,7 @@ public class GrpcRouting implements Routing {
         private final Set<String> excludedServiceNames = new LinkedHashSet<>();
 
         private Config config;
+        private Supplier<MeterRegistry> meterRegistry = DEFAULT_METER_REGISTRY;
 
         private Builder() {
         }
@@ -218,7 +229,7 @@ public class GrpcRouting implements Routing {
             WeightedBag<ServerInterceptor> routingInterceptors = configuredInterceptors.copyMe();
             routingInterceptors.merge(interceptors);
             routeRegistrations.forEach(registration -> registration.register(routes, routingInterceptors));
-            return new GrpcRouting(routes, routingInterceptors, services);
+            return new GrpcRouting(routes, routingInterceptors, services, meterRegistry);
         }
 
         private static ConfiguredGrpcServices configuredServices(Config config) {
@@ -352,6 +363,11 @@ public class GrpcRouting implements Routing {
          */
         public Builder config(Config config) {
             this.config = Objects.requireNonNull(config);
+            return this;
+        }
+
+        Builder meterRegistry(Supplier<MeterRegistry> meterRegistry) {
+            this.meterRegistry = Objects.requireNonNull(meterRegistry);
             return this;
         }
 
