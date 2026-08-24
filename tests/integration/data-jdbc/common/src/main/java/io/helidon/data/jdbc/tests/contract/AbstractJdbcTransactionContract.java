@@ -33,6 +33,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.TestInstance;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -134,16 +135,20 @@ public abstract class AbstractJdbcTransactionContract {
         boolean expectedFailure = rejectedPolicy || context == TransactionContext.REQUIRED_ROLLBACK;
         if (expectedFailure) {
             assertThat(failure, notNullValue());
-            boolean transactionFailure = false;
-            for (Throwable current = failure;
-                    current != null && current != current.getCause();
-                    current = current.getCause()) {
-                if (current instanceof TxException) {
-                    transactionFailure = true;
-                    break;
+            if (rejectedPolicy) {
+                assertThat(failure, instanceOf(TxException.class));
+            } else {
+                boolean transactionFailure = false;
+                for (Throwable current = failure;
+                        current != null && current != current.getCause();
+                        current = current.getCause()) {
+                    if (current instanceof TxException) {
+                        transactionFailure = true;
+                        break;
+                    }
                 }
+                assertThat("Expected a transaction failure in the causal chain", transactionFailure, is(true));
             }
-            assertThat("Expected a transaction failure in the causal chain", transactionFailure, is(true));
         } else {
             assertThat(failure, nullValue());
         }

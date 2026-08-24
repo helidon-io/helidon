@@ -53,13 +53,14 @@ public interface JdbcClient {
      * from an explicit application allowlist.
      * <p>
      * Marker recognition uses a portable lexical policy. Question marks
-     * inside single-quoted strings, double-quoted identifiers, valid dollar or
-     * Oracle alternative strings, and conventional comments are ignored.
-     * Square brackets and backticks are ordinary punctuation, and each
-     * question mark in {@code ??} is a bind marker. A {@code --} comment
-     * requires following whitespace, a control character, or end-of-input;
-     * other double-dash sequences are rejected as dialect-ambiguous. Nested
-     * block comments are rejected.
+     * inside ordinary single-quoted strings, PostgreSQL escape and dollar
+     * quoted strings, double-quoted or backtick identifiers, Oracle
+     * alternative strings, and conventional comments are ignored. Square
+     * brackets are ordinary punctuation. A doubled question mark is preserved
+     * as driver escape syntax rather than counted as bind markers. A
+     * {@code --} comment requires following whitespace, a control character,
+     * or end-of-input; other double-dash sequences are rejected as
+     * dialect-ambiguous. Nested block comments are rejected.
      *
      * @param sql SQL containing zero or more {@code ?} markers
      * @return statement description

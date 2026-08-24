@@ -26,14 +26,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>helidon-data-tests-jdbc</artifactId>
-    <name>Helidon Data JDBC Tests</name>
-
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
-        <maven.sources.skip>true</maven.sources.skip>
-    </properties>
+    <artifactId>helidon-data-tests-mixed-provider</artifactId>
+    <name>Helidon Data Mixed Provider Tests</name>
 
     <dependencies>
         <dependency>
@@ -49,62 +43,24 @@
             <artifactId>helidon-data</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data.jdbc</groupId>
-            <artifactId>helidon-data-jdbc</artifactId>
+            <groupId>io.helidon.data.jakarta.persistence</groupId>
+            <artifactId>helidon-data-jakarta-persistence</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
+            <groupId>io.helidon.data.jdbc</groupId>
+            <artifactId>helidon-data-jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-apt</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-testing</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.codegen</groupId>
-            <artifactId>helidon-data-codegen</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.codegen</groupId>
-            <artifactId>helidon-data-codegen-common</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.jdbc</groupId>
-            <artifactId>helidon-data-jdbc-codegen</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.transaction</groupId>
-            <artifactId>helidon-transaction</artifactId>
-            <scope>test</scope>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -113,20 +69,9 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <configuration>
-                    <!-- Main sources need these JPMS modules through helidon-data-jdbc. -->
-                    <ignoredNonTestScopedDependencies>
-                        <dependency>io.helidon.config:helidon-config</dependency>
-                    </ignoredNonTestScopedDependencies>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs combine.children="append">
-                        <!-- This module intentionally exercises preview JDBC APIs; internal API use must still fail. -->
                         <arg>-Ahelidon.api.preview=ignore</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
@@ -156,22 +101,48 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
+                            <groupId>io.helidon.data.jakarta.persistence</groupId>
+                            <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.data.jdbc</groupId>
                             <artifactId>helidon-data-jdbc-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>default-testCompile</id>
-                        <configuration>
-                            <proc>none</proc>
-                            <useModulePath>false</useModulePath>
-                        </configuration>
-                    </execution>
-                </executions>
                 <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-api-stability</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.data.codegen</groupId>
+                        <artifactId>helidon-data-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.data.jakarta.persistence</groupId>
+                        <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
                     <dependency>
                         <groupId>io.helidon.data.jdbc</groupId>
                         <artifactId>helidon-data-jdbc-codegen</artifactId>
@@ -181,4 +152,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

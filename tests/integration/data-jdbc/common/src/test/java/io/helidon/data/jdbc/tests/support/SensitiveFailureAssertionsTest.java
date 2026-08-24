@@ -15,13 +15,17 @@
  */
 package io.helidon.data.jdbc.tests.support;
 
+import java.io.PrintWriter;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SensitiveFailureAssertionsTest {
+    private static final int SHARED_REFERENCE_COUNT = 257;
 
     /**
      * Proves a canary is found through cause, suppressed, and JDBC next-exception relationships.
@@ -38,32 +42,27 @@ class SensitiveFailureAssertionsTest {
     }
 
     /**
-     * Proves shared throwable nodes are visited by identity without duplicate traversal or false budget exhaustion.
+     * Proves identity traversal terminates cyclic cause graphs and visits a high-fan-out shared node only once.
      */
     @Test
-    void identityProtectsSharedFailureGraphs() {
-        IllegalStateException shared = new IllegalStateException("safe shared failure");
-        IllegalArgumentException failure = new IllegalArgumentException("safe outer failure", shared);
-        failure.addSuppressed(shared);
-
-        SensitiveFailureAssertions.assertNoSecrets(failure, "private-absent-canary");
-    }
-
-    /**
-     * Proves a malformed cyclic cause graph terminates while still inspecting every reachable throwable.
-     */
-    @Test
-    void cycleProtectsCauseGraphs() {
+    void identityProtectsCyclicAndSharedFailureGraphs() {
         CyclicFailure first = new CyclicFailure("safe first failure");
-        CyclicFailure second = new CyclicFailure("safe second failure");
-        first.cause(second);
-        second.cause(first);
+        CyclicFailure shared = new CyclicFailure("safe shared failure");
+        first.cause(shared);
+        shared.cause(first);
+        for (int i = 0; i < SHARED_REFERENCE_COUNT; i++) {
+            first.addSuppressed(shared);
+        }
 
         SensitiveFailureAssertions.assertNoSecrets(first, "private-absent-canary");
+
+        assertThat(first.causeReads(), is(1));
+        assertThat(shared.causeReads(), is(1));
     }
 
-    private static final class CyclicFailure extends RuntimeException {
+    private static final class CyclicFailure extends IllegalStateException {
         private Throwable cause;
+        private int causeReads;
 
         private CyclicFailure(String message) {
             super(message, null);
@@ -71,11 +70,24 @@ class SensitiveFailureAssertionsTest {
 
         @Override
         public synchronized Throwable getCause() {
+            causeReads++;
+            if (causeReads > 1) {
+                throw new AssertionError("Failure node was traversed more than once.");
+            }
             return cause;
+        }
+
+        @Override
+        public void printStackTrace(PrintWriter writer) {
+            writer.print(getMessage());
         }
 
         private void cause(Throwable cause) {
             this.cause = cause;
+        }
+
+        private int causeReads() {
+            return causeReads;
         }
     }
 }

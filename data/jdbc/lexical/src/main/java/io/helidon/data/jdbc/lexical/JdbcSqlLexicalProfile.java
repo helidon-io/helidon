@@ -28,12 +28,14 @@ public enum JdbcSqlLexicalProfile {
      * Portable marker rules used by generated repositories and imperative
      * JDBC clients.
      * <p>
-     * Square brackets and backticks remain ordinary punctuation. Each
-     * question mark is a bind marker. A no-whitespace double-dash sequence and
-     * nested block comments are rejected. Complete PostgreSQL dollar quoted
-     * strings and Oracle alternative quoted strings are protected regions.
+     * Square brackets remain ordinary punctuation. Backtick identifiers,
+     * PostgreSQL escape and dollar quoted strings, and Oracle alternative
+     * quoted strings are protected regions. A doubled question mark is
+     * preserved as driver escape syntax rather than reported as two bind
+     * markers. A no-whitespace double-dash sequence and nested block comments
+     * are rejected.
      */
-    PORTABLE(false, false, false, false, true, true);
+    PORTABLE(true, false, true, false, true, true);
 
     private final boolean backtickIdentifiers;
     private final boolean bracketIdentifiers;

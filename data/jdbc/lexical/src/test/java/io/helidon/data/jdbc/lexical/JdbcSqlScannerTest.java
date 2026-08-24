@@ -66,10 +66,44 @@ class JdbcSqlScannerTest {
 
         JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
 
-        assertThat(handler.positionalMarkers().size(), is(7));
+        assertThat(handler.positionalMarkers().size(), is(4));
         assertThat(handler.protectedRegions(),
-                   is(List.of(JdbcSqlScanHandler.RegionKind.LINE_COMMENT,
+                   is(List.of(JdbcSqlScanHandler.RegionKind.BACKTICK_IDENTIFIER,
+                              JdbcSqlScanHandler.RegionKind.LINE_COMMENT,
                               JdbcSqlScanHandler.RegionKind.BLOCK_COMMENT)));
+    }
+
+    /**
+     * Verifies that PostgreSQL escape strings protect marker-shaped text and
+     * retain backslash escaping across newline-separated string segments.
+     */
+    @Test
+    void protectsPostgreSqlEscapeStrings() {
+        String sql = "select E'first \\' ? :ignored'\n"
+                + "       'second \\' ? :ignored', ?";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+
+        assertThat(handler.source(), is(sql));
+        assertThat(handler.namedMarkers(), is(List.of()));
+        assertThat(handler.positionalMarkers(), is(List.of(sql.lastIndexOf('?'))));
+        assertThat(handler.protectedRegions(), is(List.of(JdbcSqlScanHandler.RegionKind.SINGLE_QUOTE)));
+    }
+
+    /**
+     * Verifies that a backslash does not change quote termination when an
+     * ordinary string has no PostgreSQL escape prefix.
+     */
+    @Test
+    void keepsOrdinarySingleQuoteSemantics() {
+        String sql = "select 'ends with \\', ?";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+
+        assertThat(handler.source(), is(sql));
+        assertThat(handler.positionalMarkers(), is(List.of(sql.lastIndexOf('?'))));
     }
 
     /**

@@ -13,17 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.jdbc.tests.imperative;
+package io.helidon.data.tests.mixed.provider;
 
-import io.helidon.data.jdbc.tests.application.transaction.TransactionMatrixOperations;
-import io.helidon.data.jdbc.tests.contract.AbstractJdbcTransactionContract;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 
 /**
- * Executes the transaction matrix through imperative transaction calls and the public JDBC client.
+ * Entity used by the Jakarta Persistence repository fixture.
  */
-class ImperativeJdbcTransactionTest extends AbstractJdbcTransactionContract {
-    @Override
-    protected Class<? extends TransactionMatrixOperations> operationsType() {
-        return ImperativeTransactionMatrixOperations.class;
+@Entity
+public class JakartaEntity {
+    @Id
+    private int id;
+
+    /**
+     * Creates an entity.
+     */
+    public JakartaEntity() {
+    }
+
+    /**
+     * Returns the entity identifier.
+     *
+     * @return entity identifier
+     */
+    public int id() {
+        return id;
+    }
+
+    /**
+     * Updates the entity identifier.
+     *
+     * @param id entity identifier
+     */
+    public void id(int id) {
+        this.id = id;
     }
 }

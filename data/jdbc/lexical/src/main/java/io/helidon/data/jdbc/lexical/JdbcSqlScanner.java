@@ -63,20 +63,30 @@ public final class JdbcSqlScanner {
     private void scan() {
         while (index < length) {
             char current = source.charAt(index);
-            if (current == '\'') {
+            if ((current == 'e' || current == 'E')
+                    && peek(1) == '\''
+                    && (index == 0 || !Character.isJavaIdentifierPart(source.charAt(index - 1)))) {
                 int start = index;
                 ordinary();
-                quoted('\'');
+                // PostgreSQL makes backslash significant only when E prefixes the literal. Keeping that decision at
+                // the opener preserves standard doubled-quote behavior for every ordinary single-quoted string.
+                index++;
+                quoted('\'', true);
+                protectedRegion(RegionKind.SINGLE_QUOTE, start);
+            } else if (current == '\'') {
+                int start = index;
+                ordinary();
+                quoted('\'', false);
                 protectedRegion(RegionKind.SINGLE_QUOTE, start);
             } else if (current == '"') {
                 int start = index;
                 ordinary();
-                quoted('"');
+                quoted('"', false);
                 protectedRegion(RegionKind.DOUBLE_QUOTE, start);
             } else if (current == '`' && profile.backtickIdentifiers()) {
                 int start = index;
                 ordinary();
-                quoted('`');
+                quoted('`', false);
                 protectedRegion(RegionKind.BACKTICK_IDENTIFIER, start);
             } else if (current == '[' && profile.bracketIdentifiers()) {
                 int start = index;
@@ -160,21 +170,50 @@ public final class JdbcSqlScanner {
         ordinaryStart = index;
     }
 
-    private void quoted(char delimiter) {
-        index++;
-        while (index < length) {
-            if (source.charAt(index) == delimiter) {
-                if (peek(1) == delimiter) {
-                    index += 2;
+    private void quoted(char delimiter, boolean postgresqlEscapeString) {
+        while (true) {
+            index++;
+            boolean closed = false;
+            while (index < length) {
+                char current = source.charAt(index);
+                if (postgresqlEscapeString && current == '\\') {
+                    // A backslash protects the next character in a PostgreSQL escape string, including a quote.
+                    index++;
+                    if (index < length) {
+                        index++;
+                    }
+                } else if (current == delimiter) {
+                    if (peek(1) == delimiter) {
+                        index += 2;
+                    } else {
+                        index++;
+                        closed = true;
+                        break;
+                    }
                 } else {
                     index++;
-                    return;
                 }
-            } else {
-                index++;
             }
+            if (!closed) {
+                throw malformed("Unterminated quoted SQL region");
+            }
+            if (!postgresqlEscapeString) {
+                return;
+            }
+
+            int continuation = index;
+            boolean lineBreak = false;
+            while (continuation < length && Character.isWhitespace(source.charAt(continuation))) {
+                char whitespace = source.charAt(continuation++);
+                lineBreak |= whitespace == '\n' || whitespace == '\r';
+            }
+            if (!lineBreak || continuation >= length || source.charAt(continuation) != '\'') {
+                return;
+            }
+
+            // PostgreSQL permits newline-separated escape-string segments without repeating the E prefix.
+            index = continuation;
         }
-        throw malformed("Unterminated quoted SQL region");
     }
 
     private void bracketIdentifier() {
