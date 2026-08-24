@@ -16,6 +16,11 @@ not renumber or reuse them when rule names, text, or chapter organization change
 <a id="rule-0-3"></a>**Rule 0.3 — Preserve removed rules.** When removing a rule, keep its identifier and anchor in place
 with the text `Removed. This identifier is reserved.` An optional note may identify replacement rules.
 
+<a id="rule-0-4"></a>**Rule 0.4 — Treat repository checks as guidelines.** A failure from the repository-configured
+Checkstyle or copyright validation is a guideline violation even when this document does not enumerate the underlying
+requirement.
+
+<a id="general-coding-rules"></a>
 <a id="chapter-1"></a>
 ## 1. General coding rules
 
@@ -85,6 +90,7 @@ type name unless a name conflict or Java syntax requires a fully qualified name.
 <a id="rule-3-2"></a>**Rule 3.2 — Do not import types only for Javadoc.** Use the fully qualified name in Javadoc
 instead.
 
+<a id="package-and-module-structure"></a>
 <a id="chapter-4"></a>
 ## 4. Package and module structure
 
@@ -117,6 +123,7 @@ different concerns separate.
   `io.helidon.${project_module}.${module_name}`, such as `io.helidon.security` or
   `io.helidon.security.providers.common`.
 
+<a id="configuration-and-programmatic-api"></a>
 <a id="chapter-5"></a>
 ## 5. Configuration and programmatic API
 
@@ -146,6 +153,7 @@ node containing the component's configuration, such as `ServerConfiguration` in 
 
 See [Builders](#chapter-8) and the [helidon-builder documentation](builder/README.md).
 
+<a id="getters-and-setters"></a>
 <a id="chapter-6"></a>
 ## 6. Getters and setters
 
@@ -160,6 +168,7 @@ use `port(int newPort)` and `int port()`.
 
 Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/providers/oidc/common/OidcConfig.java).
 
+<a id="fluent-api"></a>
 <a id="chapter-7"></a>
 ## 7. Fluent API
 
@@ -169,6 +178,7 @@ Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/provide
 - <a id="rule-7-1-2"></a>**Rule 7.1.2.** Use fluent APIs for control methods, such as
   `Server server = Server.create().start()`.
 
+<a id="builders"></a>
 <a id="chapter-8"></a>
 ## 8. Builders
 
@@ -216,6 +226,7 @@ follow these rules:
 
 Example: [io.helidon.faulttolerance.RetryConfigBlueprint](fault-tolerance/fault-tolerance/src/main/java/io/helidon/faulttolerance/RetryConfigBlueprint.java).
 
+<a id="jpms"></a>
 <a id="chapter-9"></a>
 ## 9. JPMS
 
@@ -229,6 +240,7 @@ Example: [io.helidon.faulttolerance.RetryConfigBlueprint](fault-tolerance/fault-
 <a id="rule-9-4"></a>**Rule 9.4 — Qualify service types.** Use fully qualified class names for provided and used
 services.
 
+<a id="testing"></a>
 <a id="chapter-10"></a>
 ## 10. Testing
 
@@ -283,6 +295,7 @@ Expected: a string containing "'list-1'"
 but: was "Requested value for configuration key 'list-1.1' is not present in the configuration."
 ```
 
+<a id="maven"></a>
 <a id="chapter-11"></a>
 ## 11. Maven
 
