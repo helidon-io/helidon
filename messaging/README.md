@@ -346,6 +346,13 @@ shutdown or failed-startup rollback; it does not bound connector startup or read
 and startup limits on the connector. Capacity, timeout, cancellation, and shutdown admission failures are reported as
 `MessagingRejectedException` with a typed reason.
 
+Synchronous work moved to a directly created child thread retains delivery ancestry when that thread inherits
+thread-local state. Its emissions use nested admission, so an emission back into any channel already on the active path
+fails instead of waiting on the parent delivery. Existing executor workers, common-pool tasks, and threads that disable
+inheritable state do not retain this ancestry and are indistinguishable from unrelated top-level callers. A handler
+must not wait for such work to emit to a channel on the handler's active delivery path; without an admission timeout,
+the parent and child could otherwise wait indefinitely.
+
 For generated receiver and emitter examples, see `ChannelMessagingTypes.java` in the
 [declarative messaging acceptance tests](../declarative/tests/messaging/).
 

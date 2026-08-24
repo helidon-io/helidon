@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Timeout;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1331,6 +1333,184 @@ class DeliveryEngineTest {
     }
 
     @Test
+    void joinedChildSameChannelEmissionIsRejected() {
+        for (ThreadFactory threadFactory : List.of(Thread.ofVirtual().factory(), Thread.ofPlatform().factory())) {
+            MessagingExecutionConfig config = configBuilder()
+                    .maxInFlightMessages(1)
+                    .admissionTimeout(Duration.ofMillis(100))
+                    .build();
+            try (DeliveryEngine engine = engine(config, "orders")) {
+                AtomicReference<Throwable> childFailure = new AtomicReference<>();
+                AtomicBoolean childActionRan = new AtomicBoolean();
+
+                dispatch(engine, "orders", List.of(message(1)), () -> {
+                    Thread child = threadFactory.newThread(() -> {
+                        try {
+                            dispatch(engine, "orders", List.of(message(2)), () -> childActionRan.set(true));
+                        } catch (Throwable t) {
+                            childFailure.set(t);
+                        }
+                    });
+                    child.start();
+                    join(child);
+                });
+
+                assertThat(childFailure.get(), instanceOf(MessagingException.class));
+                assertThat(childFailure.get().getMessage(), containsString("orders -> orders"));
+                assertThat(childActionRan.get(), is(false));
+            }
+        }
+    }
+
+    @Test
+    void joinedChildCrossChannelCycleIsRejected() {
+        for (ThreadFactory threadFactory : List.of(Thread.ofVirtual().factory(), Thread.ofPlatform().factory())) {
+            MessagingExecutionConfig config = configBuilder()
+                    .maxInFlightMessages(1)
+                    .admissionTimeout(Duration.ofMillis(100))
+                    .build();
+            try (DeliveryEngine engine = engine(config, "a", "b")) {
+                AtomicReference<Throwable> childFailure = new AtomicReference<>();
+                AtomicBoolean recursiveActionRan = new AtomicBoolean();
+
+                dispatch(engine, "a", List.of(message(1)), () -> {
+                    Thread child = threadFactory.newThread(() -> {
+                        try {
+                            dispatch(engine,
+                                     "b",
+                                     List.of(message(2)),
+                                     () -> dispatch(engine,
+                                                    "a",
+                                                    List.of(message(3)),
+                                                    () -> recursiveActionRan.set(true)));
+                        } catch (Throwable t) {
+                            childFailure.set(t);
+                        }
+                    });
+                    child.start();
+                    join(child);
+                });
+
+                assertThat(childFailure.get(), instanceOf(MessagingException.class));
+                assertThat(childFailure.get().getMessage(), containsString("a -> b -> a"));
+                assertThat(recursiveActionRan.get(), is(false));
+            }
+        }
+    }
+
+    @Test
+    void joinedChildDifferentChannelEmissionCompletes() {
+        for (ThreadFactory threadFactory : List.of(Thread.ofVirtual().factory(), Thread.ofPlatform().factory())) {
+            MessagingExecutionConfig config = configBuilder()
+                    .maxInFlightMessages(1)
+                    .admissionTimeout(Duration.ofMillis(100))
+                    .build();
+            try (DeliveryEngine engine = engine(config, "a", "b")) {
+                AtomicReference<Throwable> childFailure = new AtomicReference<>();
+                AtomicBoolean childActionRan = new AtomicBoolean();
+
+                dispatch(engine, "a", List.of(message(1)), () -> {
+                    Thread child = threadFactory.newThread(() -> {
+                        try {
+                            dispatch(engine, "b", List.of(message(2)), () -> childActionRan.set(true));
+                        } catch (Throwable t) {
+                            childFailure.set(t);
+                        }
+                    });
+                    child.start();
+                    join(child);
+                });
+
+                assertThat(childFailure.get(), nullValue());
+                assertThat(childActionRan.get(), is(true));
+            }
+        }
+    }
+
+    @Test
+    void childCreatedDuringDeliveryUsesTopLevelAdmissionAfterParentCompletes() {
+        for (ThreadFactory threadFactory : List.of(Thread.ofVirtual().factory(), Thread.ofPlatform().factory())) {
+            MessagingExecutionConfig config = configBuilder()
+                    .maxInFlightMessages(1)
+                    .admissionTimeout(Duration.ofMillis(100))
+                    .build();
+            try (DeliveryEngine engine = engine(config, "orders")) {
+                AtomicReference<Throwable> childFailure = new AtomicReference<>();
+                AtomicReference<Thread> childThread = new AtomicReference<>();
+                AtomicBoolean childActionRan = new AtomicBoolean();
+
+                dispatch(engine, "orders", List.of(message(1)), () -> childThread.set(threadFactory.newThread(() -> {
+                    try {
+                        dispatch(engine, "orders", List.of(message(2)), () -> childActionRan.set(true));
+                    } catch (Throwable t) {
+                        childFailure.set(t);
+                    }
+                })));
+
+                childThread.get().start();
+                join(childThread.get());
+
+                assertThat(childFailure.get(), nullValue());
+                assertThat(childActionRan.get(), is(true));
+            }
+        }
+    }
+
+    @Test
+    void joinedChildCannotSubmitConnectorDelivery() {
+        MessagingExecutionConfig config = configBuilder().build();
+        try (DeliveryEngine engine = engine(config, "a", "b")) {
+            AtomicReference<Throwable> childFailure = new AtomicReference<>();
+            AtomicBoolean connectorActionRan = new AtomicBoolean();
+
+            dispatch(engine, "a", List.of(message(1)), () -> {
+                Thread child = Thread.ofVirtual().start(() -> {
+                    try (ConnectorDelivery delivery = submitConnectorDelivery(engine,
+                                                                              "b",
+                                                                              List.of(message(2)),
+                                                                              () -> connectorActionRan.set(true))) {
+                        delivery.await();
+                    } catch (Throwable t) {
+                        childFailure.set(t);
+                    }
+                });
+                join(child);
+            });
+
+            assertThat(childFailure.get(), instanceOf(MessagingException.class));
+            assertThat(childFailure.get().getMessage(), containsString("cannot be submitted from messaging dispatch"));
+            assertThat(connectorActionRan.get(), is(false));
+        }
+    }
+
+    @Test
+    void joinedChildCannotBorrowConnectorDeliveryLease() throws Exception {
+        MessagingExecutionConfig config = configBuilder()
+                .maxInFlightMessages(1)
+                .admissionTimeout(Duration.ofMillis(100))
+                .build();
+        MessageBatch<?> retainedBatch = batch(List.of(message(1)));
+        try (DeliveryEngine engine = engine(config, "orders");
+             ConnectorDelivery delivery = engine.submitConnectorDelivery("orders", retainedBatch, () -> {
+                 AtomicReference<Throwable> childFailure = new AtomicReference<>();
+                 AtomicBoolean childActionRan = new AtomicBoolean();
+                 Thread child = Thread.ofVirtual().start(() -> {
+                     try {
+                         dispatch(engine, "orders", retainedBatch, () -> childActionRan.set(true));
+                     } catch (Throwable t) {
+                         childFailure.set(t);
+                     }
+                 });
+                 join(child);
+                 assertThat(childFailure.get(), instanceOf(MessagingException.class));
+                 assertThat(childFailure.get().getMessage(), containsString("orders -> orders"));
+                 assertThat(childActionRan.get(), is(false));
+             })) {
+            assertThat(delivery.await(WAIT), is(true));
+        }
+    }
+
+    @Test
     void connectorDeliveryCannotBeSubmittedFromMessagingDispatch() {
         MessagingExecutionConfig config = configBuilder().build();
         try (DeliveryEngine engine = engine(config, "a", "b")) {
@@ -1517,6 +1697,34 @@ class DeliveryEngineTest {
             Thread.onSpinWait();
         } while (System.nanoTime() < deadline);
         fail("task did not enter a waiting state; last state was " + state);
+    }
+
+    private static void join(Thread thread) {
+        boolean interrupted = false;
+        try {
+            thread.join(WAIT.toMillis());
+        } catch (InterruptedException e) {
+            interrupted = true;
+        }
+        boolean timedOut = thread.isAlive();
+        if (interrupted || timedOut) {
+            thread.interrupt();
+            try {
+                thread.join(WAIT.toMillis());
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while joining child thread");
+        }
+        if (thread.isAlive()) {
+            throw new AssertionError("Child thread did not terminate");
+        }
+        if (timedOut) {
+            throw new AssertionError("Child thread did not terminate without interruption");
+        }
     }
 
     private static Throwable failure(AsyncTask task) {

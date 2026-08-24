@@ -26,6 +26,12 @@ import io.helidon.service.registry.Service;
  * conveniences. A method returns only after every required channel output completes successfully. Outputs are invoked
  * sequentially and the first failure is propagated to the caller without invoking remaining outputs. An earlier output
  * may have completed before a later output fails, so retrying can deliver the same message more than once.
+ * <p>
+ * A directly created child thread that inherits thread-local state retains the current delivery ancestry until the
+ * originating handler returns. Its emissions use nested admission, and emissions back into any channel already on the
+ * active delivery path are rejected. Existing executor workers, common-pool tasks, and threads that disable inheritable
+ * state cannot retain that ancestry; a handler must not wait for their emission to a channel on its active delivery
+ * path.
  *
  * @param <T> payload type
  */

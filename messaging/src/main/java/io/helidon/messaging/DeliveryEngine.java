@@ -16,6 +16,7 @@
 
 package io.helidon.messaging;
 
+import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -47,6 +48,9 @@ import java.util.function.Consumer;
 final class DeliveryEngine implements AutoCloseable {
     private static final System.Logger LOGGER = System.getLogger(DeliveryEngine.class.getName());
     private static final ThreadLocal<DeliveryContext> CURRENT_DELIVERY = new ThreadLocal<>();
+    // Child threads inherit immutable ancestry, never the mutable connector lease held by CURRENT_DELIVERY.
+    private static final InheritableThreadLocal<WeakReference<DeliveryAncestry>> CURRENT_ANCESTRY =
+            new InheritableThreadLocal<>();
 
     private final Map<String, ChannelDispatcher> dispatchers = new ConcurrentHashMap<>();
     private final Set<Thread> sourceThreads = ConcurrentHashMap.newKeySet();
@@ -89,19 +93,20 @@ final class DeliveryEngine implements AutoCloseable {
         Objects.requireNonNull(action);
         ChannelDispatcher dispatcher = dispatcher(channel);
         DeliveryContext parent = CURRENT_DELIVERY.get();
+        DeliveryAncestry ancestry = currentAncestry();
         if (parent != null && parent.connectorLease(this, channel)) {
             parent.dispatchWithinLease(batch, action);
             return;
         }
-        if (parent != null && parent.path().contains(new DeliveryNode(this, channel))) {
+        if (ancestry != null && ancestry.path().contains(new DeliveryNode(this, channel))) {
             throw new MessagingException("Cyclic synchronous messaging emission: "
-                                                 + String.join(" -> ", parent.pathNames()) + " -> " + channel);
+                                                 + String.join(" -> ", ancestry.pathNames()) + " -> " + channel);
         }
         DeliveryTask task;
         try {
-            AdmissionMode admissionMode = parent == null ? AdmissionMode.WAIT : AdmissionMode.NESTED;
+            AdmissionMode admissionMode = ancestry == null ? AdmissionMode.WAIT : AdmissionMode.NESTED;
             task = dispatcher.submit(batch.size(),
-                                     parent == null ? List.of() : parent.path(),
+                                     ancestry == null ? List.of() : ancestry.path(),
                                      false,
                                      admissionMode,
                                      null,
@@ -112,7 +117,7 @@ final class DeliveryEngine implements AutoCloseable {
                                "Nested delivery cannot run immediately on channel " + channel);
             }
         } catch (MessagingRejectedException e) {
-            if (parent != null && canMarkNotAttempted(e)) {
+            if (ancestry != null && canMarkNotAttempted(e)) {
                 throw new PreDispatchRejectedException(e);
             }
             throw e;
@@ -126,8 +131,7 @@ final class DeliveryEngine implements AutoCloseable {
         Objects.requireNonNull(batch);
         Objects.requireNonNull(action);
         ChannelDispatcher dispatcher = dispatcher(channel);
-        DeliveryContext parent = CURRENT_DELIVERY.get();
-        if (parent != null) {
+        if (currentAncestry() != null) {
             throw new MessagingException("A connector delivery cannot be submitted from messaging dispatch");
         }
         return dispatcher.submit(batch.size(),
@@ -143,8 +147,7 @@ final class DeliveryEngine implements AutoCloseable {
                                                            Runnable action) {
         Objects.requireNonNull(batch);
         Objects.requireNonNull(action);
-        DeliveryContext parent = CURRENT_DELIVERY.get();
-        if (parent != null) {
+        if (currentAncestry() != null) {
             throw new MessagingException("A connector delivery cannot be submitted from messaging dispatch");
         }
         DeliveryTask task = dispatcher(channel).submit(batch.size(),
@@ -291,8 +294,8 @@ final class DeliveryEngine implements AutoCloseable {
     }
 
     boolean isCurrentDeliveryOrSourceThread() {
-        DeliveryContext delivery = CURRENT_DELIVERY.get();
-        return (delivery != null && delivery.path().stream().anyMatch(node -> node.owner() == this))
+        DeliveryAncestry ancestry = activeAncestry();
+        return (ancestry != null && ancestry.path().stream().anyMatch(node -> node.owner() == this))
                 || sourceThreads.contains(Thread.currentThread());
     }
 
@@ -359,7 +362,7 @@ final class DeliveryEngine implements AutoCloseable {
     }
 
     private void rejectConnectorReservationFromDispatch() {
-        if (CURRENT_DELIVERY.get() != null) {
+        if (currentAncestry() != null) {
             throw new MessagingException("A connector delivery cannot be reserved from messaging dispatch");
         }
     }
@@ -385,13 +388,17 @@ final class DeliveryEngine implements AutoCloseable {
 
     private Thread startDispatch(DeliveryTask task) {
         Thread thread = dispatchThreadFactory.newThread(() -> {
-            CURRENT_DELIVERY.set(task.context());
+            DeliveryContext context = task.context();
+            CURRENT_DELIVERY.set(context);
+            CURRENT_ANCESTRY.set(new WeakReference<>(context.ancestry()));
             Throwable failure = null;
             try {
                 task.action().run();
             } catch (Throwable t) {
                 failure = t;
             } finally {
+                context.ancestry().deactivate();
+                CURRENT_ANCESTRY.remove();
                 CURRENT_DELIVERY.remove();
                 try {
                     task.finished(failure);
@@ -529,10 +536,28 @@ final class DeliveryEngine implements AutoCloseable {
     }
 
     static void ensureCurrentDeliveryActive() {
-        DeliveryContext context = CURRENT_DELIVERY.get();
-        if (context != null) {
-            context.ensureActive();
+        currentAncestry();
+    }
+
+    private static DeliveryAncestry currentAncestry() {
+        DeliveryAncestry ancestry = activeAncestry();
+        if (ancestry != null) {
+            ancestry.ensureActive();
         }
+        return ancestry;
+    }
+
+    private static DeliveryAncestry activeAncestry() {
+        WeakReference<DeliveryAncestry> reference = CURRENT_ANCESTRY.get();
+        if (reference == null) {
+            return null;
+        }
+        DeliveryAncestry ancestry = reference.get();
+        if (ancestry == null || !ancestry.active()) {
+            CURRENT_ANCESTRY.remove();
+            return null;
+        }
+        return ancestry;
     }
 
     private static boolean canMarkNotAttempted(MessagingRejectedException failure) {
@@ -1666,10 +1691,9 @@ final class DeliveryEngine implements AutoCloseable {
     private static final class DeliveryContext {
         private final DeliveryEngine owner;
         private final String channel;
-        private final List<DeliveryNode> path;
+        private final DeliveryAncestry ancestry;
         private final boolean connectorLease;
         private final MessageBatch<?> retainedBatch;
-        private final AtomicReference<MessagingRejectedException> cancellationFailure = new AtomicReference<>();
         private int dispatchDepth;
 
         private DeliveryContext(DeliveryEngine owner,
@@ -1682,7 +1706,7 @@ final class DeliveryEngine implements AutoCloseable {
             List<DeliveryNode> path = new ArrayList<>(parentPath.size() + 1);
             path.addAll(parentPath);
             path.add(new DeliveryNode(owner, channel));
-            this.path = List.copyOf(path);
+            this.ancestry = new DeliveryAncestry(List.copyOf(path));
             this.connectorLease = connectorLease;
             this.retainedBatch = connectorLease ? Objects.requireNonNull(retainedBatch) : null;
         }
@@ -1695,14 +1719,11 @@ final class DeliveryEngine implements AutoCloseable {
         }
 
         private void cancel(MessagingRejectedException failure) {
-            cancellationFailure.compareAndSet(null, failure);
+            ancestry.cancel(failure);
         }
 
         private void ensureActive() {
-            MessagingRejectedException failure = cancellationFailure.get();
-            if (failure != null) {
-                throw failure;
-            }
+            ancestry.ensureActive();
         }
 
         private void dispatchWithinLease(MessageBatch<?> batch, Runnable action) {
@@ -1729,12 +1750,56 @@ final class DeliveryEngine implements AutoCloseable {
             return batch.isRetainedSubsetOf(retainedBatch);
         }
 
+        private List<String> pathNames() {
+            return ancestry.pathNames();
+        }
+
+        private DeliveryAncestry ancestry() {
+            return ancestry;
+        }
+    }
+
+    private static final class DeliveryAncestry {
+        private final List<DeliveryNode> path;
+        private final AtomicReference<MessagingRejectedException> cancellationFailure = new AtomicReference<>();
+        private final AtomicBoolean active = new AtomicBoolean(true);
+
+        private DeliveryAncestry(List<DeliveryNode> path) {
+            this.path = path;
+        }
+
         private List<DeliveryNode> path() {
             return path;
         }
 
         private List<String> pathNames() {
             return path.stream().map(DeliveryNode::channel).toList();
+        }
+
+        private boolean active() {
+            return active.get();
+        }
+
+        private void deactivate() {
+            active.set(false);
+        }
+
+        private void cancel(MessagingRejectedException failure) {
+            cancellationFailure.compareAndSet(null, failure);
+        }
+
+        private void ensureActive() {
+            MessagingRejectedException failure = cancellationFailure.get();
+            if (failure != null) {
+                throw failure;
+            }
+            if (!active()) {
+                DeliveryNode current = path.getLast();
+                throw current.owner().rejected(
+                        current.channel(),
+                        MessagingRejectedException.Reason.CANCELLED,
+                        "Messaging delivery context is no longer active on channel " + current.channel());
+            }
         }
     }
 
