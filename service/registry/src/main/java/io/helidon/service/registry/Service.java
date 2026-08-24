@@ -36,8 +36,9 @@ import io.helidon.common.types.TypeName;
 /**
  * A set of annotations (and APIs) required to declare a service.
  * <p>
- * A service must never call methods on {@link io.helidon.service.registry.Services}. Required dependencies must be
- * injected into the service. When programmatic lookup is required, inject
+ * A service managed by the service registry must never call methods on
+ * {@link io.helidon.service.registry.Services}. Required dependencies must be injected into the service. When
+ * programmatic lookup is required, inject
  * {@link io.helidon.service.registry.ServiceRegistry} instead. This restriction applies throughout the service lifecycle,
  * including construction, post-construct, business methods, and pre-destroy.
  */
