@@ -29,8 +29,11 @@ import java.util.concurrent.Executors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.LruCache;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Method;
+import io.helidon.service.registry.Service;
 import io.helidon.webclient.spi.ClientProtocolProvider;
 import io.helidon.webclient.spi.HttpClientSpi;
 import io.helidon.webclient.spi.HttpClientSpiProvider;
@@ -41,6 +44,8 @@ import io.helidon.webclient.spi.ProtocolConfig;
  * Base class for HTTP implementations of {@link WebClient}.
  */
 @SuppressWarnings("rawtypes")
+@Service.PerInstance(WebClientConfigBlueprint.class)
+@Weight(Weighted.DEFAULT_WEIGHT - 10)
 class LoomClient implements WebClient {
     static final LazyValue<ExecutorService> EXECUTOR =
             LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
@@ -75,6 +80,7 @@ class LoomClient implements WebClient {
      * @param config builder the subclass is built from
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
+    @Service.Inject
     protected LoomClient(WebClientConfig config) {
         this.config = config;
         this.protocolConfigs = ProtocolConfigs.create(config.protocolConfigs());
@@ -152,6 +158,7 @@ class LoomClient implements WebClient {
     }
 
     @Override
+    @Service.PreDestroy
     public void closeResource() {
         for (ProtocolSpi o : List.copyOf(clientSpiByProtocol.values())) {
             o.spi().releaseResource();

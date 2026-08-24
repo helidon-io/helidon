@@ -15,6 +15,10 @@
  */
 package io.helidon.config;
 
+import java.util.Objects;
+
+import io.helidon.service.registry.ServiceRegistry;
+
 /**
  * Providers that can be loaded from configuration should implement this interface.
  *
@@ -38,4 +42,21 @@ public interface ConfiguredProvider<T extends NamedService> {
      * @return a new instance created from this config node
      */
     T create(Config config, String name);
+
+    /**
+     * Create a new instance from configuration using services from the registry which owns the configured instance.
+     * <p>
+     * The default implementation delegates to {@link #create(Config, String)} for backward compatibility.
+     *
+     * @param config located at {@link #configKey()} node
+     * @param name name of the configured implementation
+     * @param serviceRegistry service registry which owns the configured instance
+     * @return a new instance created from this config node
+     */
+    default T create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        return create(config, name);
+    }
 }

@@ -16,10 +16,14 @@
 
 package io.helidon.webclient.tracing;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.tracing.Tracer;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
@@ -46,5 +50,13 @@ public class WebClientTracingProvider implements WebClientServiceProvider {
     @Override
     public WebClientService create(Config config, String name) {
         return WebClientTracing.create();
+    }
+
+    @Override
+    public WebClientService create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        return WebClientTracing.create(() -> serviceRegistry.get(Tracer.class));
     }
 }

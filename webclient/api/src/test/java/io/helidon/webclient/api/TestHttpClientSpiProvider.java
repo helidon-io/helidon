@@ -15,6 +15,8 @@
  */
 package io.helidon.webclient.api;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.helidon.webclient.spi.HttpClientSpi;
 import io.helidon.webclient.spi.HttpClientSpiProvider;
 import io.helidon.webclient.spi.ProtocolConfig;
@@ -48,8 +50,10 @@ public class TestHttpClientSpiProvider implements HttpClientSpiProvider<Protocol
 
         @Override
         public void closeResource() {
+            CLOSE_COUNT.incrementAndGet();
         }
     };
+    private static final AtomicInteger CLOSE_COUNT = new AtomicInteger();
 
     private static volatile IllegalStateException constructionFailure;
     private static volatile WebClientProtocolResponse protocolResponse;
@@ -102,9 +106,14 @@ public class TestHttpClientSpiProvider implements HttpClientSpiProvider<Protocol
         constructionFailure = null;
         protocolResponse = null;
         failResponseNotification = false;
+        CLOSE_COUNT.set(0);
     }
 
     static IllegalStateException constructionFailure() {
         return constructionFailure;
+    }
+
+    static int closeCount() {
+        return CLOSE_COUNT.get();
     }
 }

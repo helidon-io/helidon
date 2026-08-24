@@ -683,7 +683,7 @@ final class ProvidedUtil {
             }
             unusedProvidersByType.remove(typeAndName.type());
             if (service.enabled()) {
-                result.add(provider.create(service.serviceConfig(), typeAndName.name()));
+                result.add(serviceRegistry.create(provider, service.serviceConfig(), typeAndName.name()));
             }
         }
 
@@ -691,7 +691,7 @@ final class ProvidedUtil {
         if (allFromServiceLoader) {
             unusedProvidersByType.forEach((type, provider) -> {
                 if (ignoredServices.add(new TypeAndName(type, type))) {
-                    result.add(provider.create(Config.empty(), type));
+                    result.add(serviceRegistry.create(provider, Config.empty(), type));
                 }
             });
         }
@@ -730,7 +730,7 @@ final class ProvidedUtil {
                     // when there is no configuration, the name defaults to the type
                     String type = provider.configKey();
                     if (ignoredServices.add(new TypeAndName(type, type))) {
-                        result.add(provider.create(providersConfig.get(type), type));
+                        result.add(serviceRegistry.create(provider, providersConfig.get(type), type));
                     } else {
                         if (PROVIDER_LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                             PROVIDER_LOGGER.log(System.Logger.Level.DEBUG, "Service: " + new TypeAndName(type, type)
@@ -742,8 +742,9 @@ final class ProvidedUtil {
                 for (ConfiguredService configuredService : providerConfigs) {
                     if (configuredService.enabled()) {
                         if (ignoredServices.add(configuredService.typeAndName())) {
-                            result.add(provider.create(configuredService.serviceConfig(),
-                                                       configuredService.typeAndName().name()));
+                            result.add(serviceRegistry.create(provider,
+                                                              configuredService.serviceConfig(),
+                                                              configuredService.typeAndName().name()));
                         } else {
                             if (PROVIDER_LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                                 PROVIDER_LOGGER.log(System.Logger.Level.DEBUG, "Service: " + configuredService.typeAndName()
@@ -766,6 +767,8 @@ final class ProvidedUtil {
 
     private interface RegistryWrap {
         <T> List<T> all(Class<T> type);
+
+        <S extends NamedService, T extends ConfiguredProvider<S>> S create(T provider, Config config, String name);
     }
 
     private record TypeAndName(String type, String name) {
@@ -781,6 +784,11 @@ final class ProvidedUtil {
         public <T> List<T> all(Class<T> type) {
             return Services.all(type);
         }
+
+        @Override
+        public <S extends NamedService, T extends ConfiguredProvider<S>> S create(T provider, Config config, String name) {
+            return provider.create(config, name);
+        }
     }
 
     private static final class RealRegistry implements RegistryWrap {
@@ -793,6 +801,11 @@ final class ProvidedUtil {
         @Override
         public <T> List<T> all(Class<T> type) {
             return serviceRegistry.all(type);
+        }
+
+        @Override
+        public <S extends NamedService, T extends ConfiguredProvider<S>> S create(T provider, Config config, String name) {
+            return provider.create(config, name, serviceRegistry);
         }
     }
 }
