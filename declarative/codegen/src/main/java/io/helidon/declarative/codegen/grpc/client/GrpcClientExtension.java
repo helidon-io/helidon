@@ -61,6 +61,7 @@ import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_PR
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_SERVICE;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_SERVICE_CLIENT;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_SERVICE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.METER_REGISTRY_SUPPLIER;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.PROTO_FILE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.PROTO_MESSAGE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.RPC_CLIENT_ENDPOINT;
@@ -167,6 +168,9 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                               .addParameter(config -> config
                                                       .name("config")
                                                       .type(CONFIG))
+                                              .addParameter(meterRegistry -> meterRegistry
+                                                      .name("meterRegistry")
+                                                      .type(METER_REGISTRY_SUPPLIER))
                                               .addParameter(registryClient -> registryClient
                                                       .name(endpoint.clientName().isPresent()
                                                                     ? "registryClient"
@@ -506,6 +510,11 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                 .addContentLine("if (declarative__clientConfig.exists()) {")
                 .increaseContentPadding()
                 .addContentLine("declarative__clientBuilder.config(declarative__clientConfig);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (declarative__clientBuilder.enableMetrics()) {")
+                .increaseContentPadding()
+                .addContentLine("declarative__clientBuilder.meterRegistry(meterRegistry.get());")
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .addContentLine("declarative__clientBuilder.baseUri(uri);")

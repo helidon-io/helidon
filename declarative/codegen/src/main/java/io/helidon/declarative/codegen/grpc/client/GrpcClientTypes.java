@@ -18,9 +18,15 @@ package io.helidon.declarative.codegen.grpc.client;
 
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 final class GrpcClientTypes {
     static final TypeName GRPC_CLIENT = TypeName.create("io.helidon.webclient.grpc.GrpcClient");
+    static final TypeName METER_REGISTRY = TypeName.create("io.helidon.metrics.api.MeterRegistry");
+    static final TypeName METER_REGISTRY_SUPPLIER = TypeName.builder()
+            .from(TypeNames.SUPPLIER)
+            .addTypeArgument(METER_REGISTRY)
+            .build();
     static final TypeName RPC_CLIENT_ENDPOINT = TypeName.create("io.helidon.webclient.grpc.RpcClient.Endpoint");
     static final TypeName RPC_CLIENT_QUALIFIER = TypeName.create("io.helidon.webclient.grpc.RpcClient.Client");
     static final TypeName GRPC_CLIENT_METHOD_DESCRIPTOR =

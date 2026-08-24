@@ -31,7 +31,7 @@ import static org.hamcrest.Matchers.sameInstance;
 class GrpcChannelTest {
 
     @Test
-    void usesMeterRegistryOwningFactory() {
+    void directClientUsesStaticMeterRegistryOwningFactory() {
         ServiceRegistryManager ownerManager = ServiceRegistryManager.create();
         ServiceRegistryManager foreignManager = ServiceRegistryManager.create();
         try {
@@ -56,6 +56,34 @@ class GrpcChannelTest {
         } finally {
             foreignManager.shutdown();
             ownerManager.shutdown();
+        }
+    }
+
+    @Test
+    void managedClientUsesInjectedMeterRegistry() {
+        ServiceRegistryManager injectedManager = ServiceRegistryManager.create();
+        ServiceRegistryManager staticManager = ServiceRegistryManager.create();
+        try {
+            MeterRegistry injectedRegistry = injectedManager.registry().get(MeterRegistry.class);
+            MeterRegistry staticRegistry = staticManager.registry().get(MeterRegistry.class);
+            Services.set(MeterRegistry.class, staticRegistry);
+
+            GrpcChannel channel = (GrpcChannel) GrpcClient.builder()
+                    .baseUri("http://localhost")
+                    .enableMetrics(true)
+                    .meterRegistry(injectedRegistry)
+                    .build()
+                    .channel();
+
+            assertThat("Channel uses the injected meter registry",
+                       channel.meterRegistry(),
+                       sameInstance(injectedRegistry));
+            assertThat("Channel ignores the static meter registry",
+                       channel.meterRegistry(),
+                       not(sameInstance(staticRegistry)));
+        } finally {
+            staticManager.shutdown();
+            injectedManager.shutdown();
         }
     }
 }
