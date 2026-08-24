@@ -38,6 +38,7 @@ final class GrpcClientTypes {
     static final TypeName GRPC_PROTO_DESCRIPTOR = TypeName.create("io.helidon.grpc.api.Grpc.ProtoDescriptor");
     static final TypeName GRPC_SERVICE = TypeName.create("io.helidon.grpc.api.Grpc.GrpcService");
     static final TypeName SERVICE_INSTANCE = TypeName.create("io.helidon.service.registry.ServiceInstance");
+    static final TypeName SERVICE_REGISTRY = TypeName.create("io.helidon.service.registry.ServiceRegistry");
     static final TypeName PROTO_FILE_DESCRIPTOR = TypeName.create("com.google.protobuf.Descriptors.FileDescriptor");
     static final TypeName PROTO_MESSAGE_DESCRIPTOR = TypeName.create("com.google.protobuf.Descriptors.Descriptor");
 

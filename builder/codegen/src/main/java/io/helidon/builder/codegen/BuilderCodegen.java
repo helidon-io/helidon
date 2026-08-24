@@ -454,6 +454,9 @@ class BuilderCodegen implements CodegenExtension {
         if (!registrySupport) {
             return;
         }
+        if (FactoryPrototypeInfo.inheritedServiceRegistryAccessor(prototypeInfo.blueprint()).isPresent()) {
+            return;
+        }
 
         boolean style = prototypeInfo.recordStyle();
         String getter = style ? "serviceRegistry" : "getServiceRegistry";

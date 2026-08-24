@@ -24,6 +24,7 @@ module io.helidon.webclient.grpc.tracing {
     requires transitive io.helidon.webclient;
 
     requires io.helidon.grpc.core;
+    requires io.helidon.service.registry;
     requires io.helidon.tracing;
     requires io.helidon.webclient.grpc;
 

@@ -15,9 +15,14 @@
  */
 package io.helidon.webclient.grpc.tracing;
 
+import java.util.Objects;
+import java.util.function.Supplier;
+
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.WeightedBag;
+import io.helidon.service.registry.Services;
+import io.helidon.tracing.Tracer;
 import io.helidon.webclient.grpc.spi.GrpcClientService;
 
 import io.grpc.ClientInterceptor;
@@ -28,9 +33,15 @@ import io.grpc.ClientInterceptor;
 public class GrpcClientTracing implements GrpcClientService {
 
     private final Config config;
+    private final Supplier<Tracer> tracer;
 
     private GrpcClientTracing(Config config) {
+        this(config, () -> Services.get(Tracer.class));
+    }
+
+    private GrpcClientTracing(Config config, Supplier<Tracer> tracer) {
         this.config = config;
+        this.tracer = Objects.requireNonNull(tracer);
     }
 
     /**
@@ -43,6 +54,10 @@ public class GrpcClientTracing implements GrpcClientService {
         return new GrpcClientTracing(config);
     }
 
+    static GrpcClientTracing create(Config config, Supplier<Tracer> tracer) {
+        return new GrpcClientTracing(config, tracer);
+    }
+
     @Override
     public String type() {
         return "tracing";
@@ -51,7 +66,7 @@ public class GrpcClientTracing implements GrpcClientService {
     @Override
     public WeightedBag<ClientInterceptor> interceptors() {
         WeightedBag<ClientInterceptor> interceptors = WeightedBag.create();
-        interceptors.add(new GrpcClientTracingInterceptor(), Weighted.DEFAULT_WEIGHT + 100);
+        interceptors.add(new GrpcClientTracingInterceptor(tracer), Weighted.DEFAULT_WEIGHT + 100);
         return interceptors;
     }
 }

@@ -410,9 +410,6 @@ final class GenerateAbstractBuilder {
                 classBuilder.addField(builder -> builder.type(Types.CONFIG).name("config"));
             }
         }
-        if (isBuilder && prototypeInfo.registrySupport()) {
-            classBuilder.addField(builder -> builder.type(Types.SERVICE_REGISTRY).name("serviceRegistry"));
-        }
         for (OptionHandler optionHandler : options) {
             if (!isBuilder && optionHandler.option().builderOptionOnly()) {
                 continue;
@@ -490,15 +487,21 @@ final class GenerateAbstractBuilder {
 
             if (configured && hasConfiguredRegistryServiceOrProvider(options)) {
                 // need to have a non-null config instance
-                preBuildBuilder.addContent("var config = config().orElseGet(")
+                String configAccessor = FactoryPrototypeInfo.inheritedConfigAccessor(prototypeInfo.blueprint())
+                        .orElseGet(() -> prototypeInfo.recordStyle() ? "config" : "getConfig");
+                preBuildBuilder.addContent("var config = ")
+                        .addContent(configAccessor)
+                        .addContent("().orElseGet(")
                         .addContent(CONFIG)
                         .addContentLine("::empty);");
             }
 
             if (prototypeInfo.registrySupport() || hasRegistryService) {
+                String registryAccessor = FactoryPrototypeInfo.inheritedServiceRegistryAccessor(prototypeInfo.blueprint())
+                        .orElseGet(() -> prototypeInfo.recordStyle() ? "serviceRegistry" : "getServiceRegistry");
                 preBuildBuilder.addContent("var registry = ")
-                        .addContent(Optional.class)
-                        .addContentLine(".ofNullable(this.serviceRegistry);");
+                        .addContent(registryAccessor)
+                        .addContentLine("();");
             }
 
             for (OptionHandler optionHandler : options) {

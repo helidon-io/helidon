@@ -578,9 +578,103 @@ final class FactoryPrototypeInfo {
     }
 
     private static boolean registrySupport(TypeInfo blueprint) {
-        return blueprint.findAnnotation(Types.PROTOTYPE_SERVICE_REGISTRY)
+        Optional<Annotation> annotation = blueprint.findAnnotation(Types.PROTOTYPE_SERVICE_REGISTRY);
+        if (annotation.isPresent()) {
+            return annotation.get().booleanValue().orElse(true);
+        }
+        return superBlueprintDefinition(blueprint)
+                .map(FactoryPrototypeInfo::registrySupport)
+                .orElse(false);
+    }
+
+    static Optional<String> inheritedServiceRegistryAccessor(TypeInfo blueprint) {
+        return superBlueprintDefinition(blueprint)
+                .flatMap(FactoryPrototypeInfo::serviceRegistryOwner)
+                .map(FactoryPrototypeInfo::serviceRegistryAccessor);
+    }
+
+    static Optional<String> inheritedConfigAccessor(TypeInfo blueprint) {
+        return superBlueprintDefinition(blueprint)
+                .flatMap(FactoryPrototypeInfo::configOwner)
+                .map(FactoryPrototypeInfo::configAccessor);
+    }
+
+    private static Optional<TypeInfo> serviceRegistryOwner(TypeInfo blueprint) {
+        Optional<TypeInfo> inheritedOwner = superBlueprintDefinition(blueprint)
+                .flatMap(FactoryPrototypeInfo::serviceRegistryOwner);
+        if (inheritedOwner.isPresent()) {
+            return inheritedOwner;
+        }
+        return declaresServiceRegistry(blueprint) ? Optional.of(blueprint) : Optional.empty();
+    }
+
+    private static Optional<TypeInfo> configOwner(TypeInfo blueprint) {
+        Optional<TypeInfo> inheritedOwner = superBlueprintDefinition(blueprint)
+                .flatMap(FactoryPrototypeInfo::configOwner);
+        if (inheritedOwner.isPresent()) {
+            return inheritedOwner;
+        }
+        return blueprint.hasAnnotation(PROTOTYPE_CONFIGURED) ? Optional.of(blueprint) : Optional.empty();
+    }
+
+    private static String serviceRegistryAccessor(TypeInfo owner) {
+        return recordStyleAccessors(blueprintAnnotation(owner)) ? "serviceRegistry" : "getServiceRegistry";
+    }
+
+    private static String configAccessor(TypeInfo owner) {
+        return recordStyleAccessors(blueprintAnnotation(owner)) ? "config" : "getConfig";
+    }
+
+    private static Optional<TypeInfo> superBlueprintDefinition(TypeInfo blueprint) {
+        return superBlueprintDefinition(blueprint, new HashSet<>());
+    }
+
+    private static Optional<TypeInfo> superBlueprintDefinition(TypeInfo inProgress, Set<TypeName> processed) {
+        for (TypeInfo superInterface : inProgress.interfaceTypeInfo()) {
+            if (!processed.add(superInterface.typeName())) {
+                continue;
+            }
+            if (superInterface.hasAnnotation(PROTOTYPE_BLUEPRINT)) {
+                return Optional.of(superInterface);
+            }
+            Optional<TypeInfo> prototypeBlueprint = superInterface.interfaceTypeInfo()
+                    .stream()
+                    .filter(it -> it.hasAnnotation(PROTOTYPE_BLUEPRINT))
+                    .findFirst();
+            if (prototypeBlueprint.isPresent()) {
+                return prototypeBlueprint;
+            }
+            Optional<TypeInfo> inheritedBlueprint = superBlueprintDefinition(superInterface, processed);
+            if (inheritedBlueprint.isPresent()) {
+                return inheritedBlueprint;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean declaresServiceRegistry(TypeInfo blueprint) {
+        boolean registrySupport = blueprint.findAnnotation(Types.PROTOTYPE_SERVICE_REGISTRY)
                 .flatMap(Annotation::booleanValue)
                 .orElse(false);
+        return registrySupport || hasRegistryServiceOption(blueprint, new HashSet<>());
+    }
+
+    private static boolean hasRegistryServiceOption(TypeInfo inProgress, Set<TypeName> processed) {
+        if (!processed.add(inProgress.typeName())) {
+            return false;
+        }
+        if (inProgress.elementInfo()
+                .stream()
+                .anyMatch(it -> it.hasAnnotation(Types.OPTION_REGISTRY_SERVICE))) {
+            return true;
+        }
+        return inProgress.interfaceTypeInfo()
+                .stream()
+                .filter(it -> !it.hasAnnotation(PROTOTYPE_BLUEPRINT))
+                .filter(it -> it.interfaceTypeInfo()
+                        .stream()
+                        .noneMatch(parent -> parent.typeName().equals(PROTOTYPE_API)))
+                .anyMatch(it -> hasRegistryServiceOption(it, processed));
     }
 
     private static boolean createEmptyPublic(Annotation blueprintAnnotation) {

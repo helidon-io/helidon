@@ -36,6 +36,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.grpc.GrpcClient;
@@ -88,6 +89,7 @@ class GrpcClientCodegenTest {
             RpcClient.class,
             Service.class,
             ServiceDescriptor.class,
+            ServiceRegistry.class,
             StreamObserver.class,
             Tls.class,
             WebClient.class
@@ -225,6 +227,12 @@ class GrpcClientCodegenTest {
         assertThat(client, containsString(".noneMatch(qualifier -> qualifier.typeName().equals(Service.Named.TYPE))"));
         assertThat(client, containsString(".map(ServiceInstance::get)"));
         assertThat(client, containsString("Supplier<MeterRegistry> meterRegistry"));
+        assertThat(client, containsString("ServiceRegistry serviceRegistry"));
+        assertThat(client, containsString(".serviceRegistry(serviceRegistry);"));
+        assertThat("service registry is assigned only to the fallback client",
+                   client.indexOf(".serviceRegistry(serviceRegistry)")
+                           > client.indexOf("if (declarative__client == null)"),
+                   is(true));
         assertThat(client, containsString("declarative__clientBuilder.config(declarative__clientConfig);"));
         assertThat(client, containsString("if (declarative__clientBuilder.enableMetrics())"));
         assertThat(client, containsString("declarative__clientBuilder.meterRegistry(meterRegistry.get());"));
