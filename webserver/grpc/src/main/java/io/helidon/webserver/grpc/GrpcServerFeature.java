@@ -30,10 +30,12 @@ class GrpcServerFeature implements ServerFeature {
     private static final String TYPE = "grpc-route-registration";
     private static final System.Logger LOGGER = System.getLogger(GrpcServerFeature.class.getName());
 
+    private final Config config;
     private final Supplier<List<GrpcRouteRegistration>> routes;
     private final boolean enabled;
 
     GrpcServerFeature(Config config, Supplier<List<GrpcRouteRegistration>> routes) {
+        this.config = config;
         this.enabled = config.get("server.features." + TYPE + ".enabled").asBoolean().orElse(true);
         this.routes = routes;
     }
@@ -69,7 +71,7 @@ class GrpcServerFeature implements ServerFeature {
 
             RoutingBuilders routingBuilders = socketBuilders.routingBuilders();
             GrpcRouting.Builder builder = routingBuilders.routingBuilder(GrpcRouting.Builder.class,
-                                                                         GrpcRouting::builder);
+                                                                         () -> GrpcRouting.builder().config(config));
             builder.service(route.descriptor());
         }
     }
