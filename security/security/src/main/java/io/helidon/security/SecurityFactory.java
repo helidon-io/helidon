@@ -21,13 +21,15 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
+import io.helidon.tracing.Tracer;
 
 @Service.Singleton
 class SecurityFactory implements Supplier<Security> {
     private final LazyValue<Security> delegate;
 
-    SecurityFactory(Config config) {
+    SecurityFactory(Config config, Tracer tracer) {
         this.delegate = LazyValue.create(() -> Security.builder()
+                .tracer(tracer)
                 .config(config.get("security"))
                 .build());
     }

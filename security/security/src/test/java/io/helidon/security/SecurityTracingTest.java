@@ -16,19 +16,53 @@
 
 package io.helidon.security;
 
+import java.util.Map;
+
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.security.providers.ProviderForTesting;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 import io.helidon.tracing.Tracer;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 
 @Testing.Test(perMethod = true)
 class SecurityTracingTest {
+    @Test
+    void managedSecurityUsesOwningRegistryTracer() {
+        Tracer tracer = mock(Tracer.class);
+        ServiceRegistryManager manager = manager(tracer, true);
+        try {
+            Security security = manager.registry().get(Security.class);
+
+            assertThat("Security tracer", security.tracer(), sameInstance(tracer));
+            assertThat("Security context tracer", security.contextBuilder("unitTest").build().tracer(), sameInstance(tracer));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void managedSecurityHonorsDisabledTracing() {
+        Tracer tracer = mock(Tracer.class);
+        ServiceRegistryManager manager = manager(tracer, false);
+        try {
+            Security security = manager.registry().get(Security.class);
+
+            assertThat("Disabled security tracer", security.tracer(), not(sameInstance(tracer)));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
     @Test
     void defaultTracerComesFromServiceRegistry() {
         Tracer tracer = mock(Tracer.class);
@@ -43,5 +77,14 @@ class SecurityTracingTest {
 
         assertThat("Security tracer", security.tracer(), sameInstance(tracer));
         assertThat("Security context tracer", security.contextBuilder("unitTest").build().tracer(), sameInstance(tracer));
+    }
+
+    private static ServiceRegistryManager manager(Tracer tracer, boolean tracingEnabled) {
+        Config config = Config.just(ConfigSources.create(Map.of("security.tracing.enabled",
+                                                                 Boolean.toString(tracingEnabled))));
+        return ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                     .putContractInstance(Config.class, config)
+                                                     .putContractInstance(Tracer.class, tracer)
+                                                     .build());
     }
 }
