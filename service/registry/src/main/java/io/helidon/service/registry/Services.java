@@ -26,9 +26,10 @@ import io.helidon.common.types.TypeName;
 /**
  * Static access to the service registry.
  * <p>
- * <strong>Service implementation restriction:</strong> A service managed by the service registry must never call methods on
- * this class. Required dependencies must be injected into the service. When programmatic lookup is required, inject
- * {@link io.helidon.service.registry.ServiceRegistry} instead. This restriction applies throughout the service lifecycle.
+ * <strong>Service implementation restriction:</strong> Any service instance created by the service registry must never call
+ * methods on this class. Required dependencies must be injected into the service. When programmatic lookup is required during
+ * normal operation, inject {@link io.helidon.service.registry.ServiceRegistry} instead. This restriction applies throughout
+ * the service lifecycle.
  * <p>
  * <b>Note: </b> Using any methods on this class makes the service registry throw away optimization created via
  * the Helidon Service Registry Maven Plugin (code generated binding) for services that use the contracts configured.
