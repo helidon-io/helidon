@@ -18,9 +18,13 @@ package io.helidon.webclient.telemetry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.tracing.Tracer;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -32,9 +36,6 @@ import io.helidon.webclient.telemetry.tracing.WebClientTelemetryTracing;
  * Provider for a grouping service which gathers telemetry-related webclient services.
  */
 public class WebClientTelemetryProvider implements WebClientServiceProvider {
-
-    private final List<WebClientService> subservices = new ArrayList<>();
-
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
@@ -49,11 +50,26 @@ public class WebClientTelemetryProvider implements WebClientServiceProvider {
 
     @Override
     public WebClientService create(Config config, String name) {
+        return create(config, WebClientTelemetryTracing::create);
+    }
+
+    @Override
+    public WebClientService create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        return create(config,
+                      tracingConfig -> WebClientTelemetryTracing.create(tracingConfig,
+                                                                        serviceRegistry.get(Tracer.class)));
+    }
+
+    private WebClientService create(Config config, Function<Config, WebClientService> tracingFactory) {
+        List<WebClientService> subservices = new ArrayList<>();
         if (config.get("metrics").exists()) {
             subservices.add(WebClientTelemetryMetrics.create(config.get("metrics")));
         }
         if (config.get("tracing").exists()) {
-            subservices.add(WebClientTelemetryTracing.create(config.get("tracing")));
+            subservices.add(tracingFactory.apply(config.get("tracing")));
         }
 
         return subservices.isEmpty()

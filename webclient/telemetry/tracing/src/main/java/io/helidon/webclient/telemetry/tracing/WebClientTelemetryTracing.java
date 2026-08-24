@@ -17,8 +17,10 @@
 package io.helidon.webclient.telemetry.tracing;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
@@ -53,8 +55,12 @@ public class WebClientTelemetryTracing implements WebClientService {
     private final Function<Context, Tracer> tracerFunction;
 
     private WebClientTelemetryTracing() {
+        this(() -> Services.get(Tracer.class));
+    }
+
+    private WebClientTelemetryTracing(Supplier<Tracer> tracer) {
         tracerFunction = ctx -> ctx.get(Tracer.class)
-                .orElseGet(() -> Services.get(Tracer.class));
+                .orElseGet(tracer);
     }
 
     /**
@@ -76,6 +82,20 @@ public class WebClientTelemetryTracing implements WebClientService {
      */
     public static WebClientTelemetryTracing create(Config config) {
         return create();
+    }
+
+    /**
+     * Creates a new service instance to emit tracing spans compliant with OpenTelemetry semantic conventions
+     * for clients using the provided configuration and tracer.
+     *
+     * @param config telemetry tracing config
+     * @param tracer fallback tracer when the request context does not contain one
+     * @return new tracing semantic conventions implementation
+     */
+    public static WebClientTelemetryTracing create(Config config, Tracer tracer) {
+        Objects.requireNonNull(config);
+        Tracer fallbackTracer = Objects.requireNonNull(tracer);
+        return new WebClientTelemetryTracing(() -> fallbackTracer);
     }
 
     @Override

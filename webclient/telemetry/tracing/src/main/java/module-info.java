@@ -27,7 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Preview
 module io.helidon.webclient.telemetry.tracing {
     requires io.helidon.webclient.api;
-    requires io.helidon.tracing;
+    requires transitive io.helidon.tracing;
     requires io.helidon.config;
 
     requires static io.helidon.common.features.api;
