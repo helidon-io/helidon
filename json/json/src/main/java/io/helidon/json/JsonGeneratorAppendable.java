@@ -18,7 +18,6 @@ package io.helidon.json;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
