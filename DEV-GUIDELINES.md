@@ -1,206 +1,333 @@
-Development Guidelines
-------------
+# Development Guidelines
 
-This document provides a list of rules and best practices followed by project Helidon.
-Please follow these rules when contributing to the project, when refactoring existing code and when
-reviewing changes done by others.
+This document defines the rules and best practices followed by project Helidon. Follow these rules when contributing,
+refactoring existing code, and reviewing changes made by others.
 
-Some of these rules are enforced by checkstyle, some are checked during code reviews.
+Some rules are enforced by Checkstyle; others are checked during code review.
 
-**Exceptions to these rules should be documented clearly.**
+<a id="chapter-0"></a>
+## 0. Rule governance
 
-# General coding rules
-1. Use unchecked Throwables - descendants of RuntimeException in API
-    1. Never use RuntimeException directly - always create a descendant appropriate for your module, or
-       use an existing exception declared in the module
-    2. Our APIs should never throw a checked exception unless enforced by implemented/extended interface - e.g. when
-       we implement a java.io.Closeable, we must declare the checked exception.
-    3. In some cases we may use existing runtime exceptions if they fit the problem (`NoSuchElementException`, `IllegalStateException`)
-2. Usage of `null` is discouraged and should not exist in any public APIs of Helidon
-    1. If a method accepts a `null`, refactor it to a different approach
-        - a setter: create a method to remove the field value rather than setting a `null` value 
-            (such as `host(String)` to set a host, and `unsetHost()` to revert to default value)
-        - other methods:
-            - if there is a low number of combinations (up to 2), create another method without the parameter
-            - otherwise create a parameter object that uses a builder to configure optional parameters
-        - never use `java.util.Optional` as a parameter type
-    2. If a method would return `null`, return `java.util.Optional` instead
+<a id="rule-0-1"></a>**Rule 0.1 — Document exceptions.** Exceptions to these rules must be documented clearly.
 
+<a id="rule-0-2"></a>**Rule 0.2 — Preserve identifiers.** Rule identifiers and their explicit anchors are permanent. Do
+not renumber or reuse them when rule names, text, or chapter organization changes.
 
-# Package and module structure
-1. We use flat package structure
-    1. Each module (maven and jigsaw) has a single implementation package
-        1. Each maven jar packaging module used outside of testing is also a jigsaw module 
-    2. Module may have an additional package "spi" for classes related to service provider interface (extensibility)
-    3. Unit testing is enabled through package local access (not public!)
-    4. Be aware that any public class and its public methods are part of Helidon API and will require careful maintenance
-    5. Do not rely on java module system (JPMS/Jigsaw) to enforce visibility
-    6. If a set of classes seems to require a separate package, it is a good candidate for a separate module
-        1. Example: _there could be a package for each "abac" module in "abac" security provider. Even though these modules 
-            are mostly very small, these were extracted to standalone modules, not to break the rule of flat package 
-            structure. In general this helps enforce the rule of separation of concerns - if you feel you need a new package, 
-            in most cases you are putting together different concerns in a single module._
-2. Naming conventions of maven modules, maven module directories and package names are connected:
-    1. Directories: name of the directory is module name (referred to as ${module_name} further in this document)
-        1. For pom packaging, the module is a "project module" (considering modules that serve as aggregators for sub-modules 
-            into a common reactor)
-    2. Maven coordinates:
-        1. Group id: io.helidon.${project_module}* - such as io.helidon.reactive.webserver; io.helidon.config
-        2. Artifact id: helidon-${module_name}(-project)? - such as "helidon-security", "helicon-security-project", 
-            where project modules use the suffix "-project"
-        3. Version: always inherited
-    3. Package names:
-        1. io.helidon.${project_module}*.${module_name} - e.g. io.helidon.security, io.helidon.security.providers.common
+<a id="rule-0-3"></a>**Rule 0.3 — Preserve removed rules.** When removing a rule, keep its identifier and anchor in place
+with the text `Removed. This identifier is reserved.` An optional note may identify replacement rules.
 
-# Configuration and programmatic API
-1. **Everything that can be done using config, must be possible using programmatic approach through builders**
-    1. Exceptions:
-        1. components that can only be code generated and must use inversion of control
-2. Everything that can be done using builders should be possible also using configuration, 
-        except for cases that would mandate usage of reflection 
-        (such an exception may be configuration of Routing in WebServer - nevertheless we still may support 
-            it (emphasis on "may" rather than "should"), or configuration of security for Jersey resources)
-3. When accepting config as a parameter, we should expect the config is located on the node that contains our configuration
-    (such as in ServerConfiguration in WebServer)
-4. Config keys:
-    1. Use lower case words separated by dashes 
-        (e.g. "token-endpoint-uri", NOT "tokenEndpointUri")
-    2. May be nested in a tree structure (e.g. outbound-token.name, outbound-token.algorithm)
-    3. The following properties may be used by a component:
-        1. Required: component will fail to build when such a configuration property is missing
-        2. Default: component has a well defined and documented default value for such a property
-        3. Optional: component behaves in a well defined and documented manner if such a property is not 
-            configured (e.g. a component may expect tracing endpoint - if not defined, tracing may be disabled)         
-5. We have introduced `helidon-builder` module, see [Builders](#Builders)
+<a id="chapter-1"></a>
+## 1. General coding rules
 
-# Getters and Setters
-1. We do not use the verb, e.g. when a property "port" exists, the following methods are used:  
-    1. port(int newPort)
-    2. int port()
-2. Boolean depends on how well understood the method is
-    1. Default is without a verb (e.g. authenticate(boolean atn), boolean authenticate())
-    2. If this would be ambiguous, we can use verb to clear the meaning (e.g. isAuthenticated() or shouldAuthenticate())      
+<a id="rule-1-1"></a>**Rule 1.1 — Use unchecked throwables in APIs.** API exceptions should extend
+`RuntimeException`.
 
-Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/providers/oidc/common/OidcConfig.java) 
+- <a id="rule-1-1-1"></a>**Rule 1.1.1.** Never use `RuntimeException` directly. Create a module-appropriate descendant or
+  use an existing exception declared in the module.
+- <a id="rule-1-1-2"></a>**Rule 1.1.2.** Do not declare a checked exception unless an implemented or extended contract
+  requires it, such as `java.io.Closeable`.
+- <a id="rule-1-1-3"></a>**Rule 1.1.3.** Existing runtime exceptions such as `NoSuchElementException` and
+  `IllegalStateException` may be used when they fit the problem.
 
-# Fluent API
-1. We use fluent API where applicable
-    1. In builders (see builders section below)
-    2. When using control methods (such as Server server = Server.create().start())
-    
-# Builders
-We have introduced code generation for builders that enforces the rules mentioned below.
+<a id="rule-1-2"></a>**Rule 1.2 — Keep Helidon public APIs and SPIs non-null.** Helidon public APIs and SPIs must not
+accept or return `null`.
 
-See [helidon-builder](builder/README.md) for more details about modules, and [helidon-builder-api](builder/api/README.md) for explanation of APIs and naming rules. The `Blueprint` approach should be used for all builders (and the API of the prototype). Exceptions must be consulted with project architect (this may result in either changing the processor to support the required feature, or in removing such feature and redesigning the problem, or in an exception (documented) to the rule).
+- <a id="rule-1-2-1"></a>**Rule 1.2.1.** Refactor a public API or SPI method that accepts `null`.
+    - <a id="rule-1-2-1-1"></a>**Rule 1.2.1.1.** For a setter, provide an explicit operation that removes the value, such as
+      `host(String)` and `unsetHost()`.
+    - <a id="rule-1-2-1-2"></a>**Rule 1.2.1.2.** For a small number of combinations, up to two, provide an overload without
+      the optional parameter.
+    - <a id="rule-1-2-1-3"></a>**Rule 1.2.1.3.** For more combinations, use a parameter object configured through a builder.
+    - <a id="rule-1-2-1-4"></a>**Rule 1.2.1.4.** Never use `java.util.Optional` as a public API or SPI parameter type.
+- <a id="rule-1-2-2"></a>**Rule 1.2.2.** Validate non-null public API and SPI parameters at the boundary, normally using
+  `Objects.requireNonNull(...)` or an existing precondition helper.
+- <a id="rule-1-2-3"></a>**Rule 1.2.3.** If a public API or SPI method would return `null`, use the most appropriate
+  non-null representation, such as an overload, documented default, empty collection, no-op implementation, or
+  `java.util.Optional`.
 
+<a id="rule-1-3"></a>**Rule 1.3 — Do not introduce public records.** Do not introduce records as Helidon public API or
+SPI types; use regular classes or interfaces instead.
 
-1. We use builders to create instances that need any parameters for construction
-    1. **This implies that there are no public API classes that would use public constructors**
-    2. Allowed exceptions to this rule:
-        1. Integration APIs that follow rules of integrated solution, e.g. Jersey SecurityFeature
-        2. APIs that must be capable of reflection instantiation by tools that only support 
-            public constructors
-        3. Exceptions with constructors for string, and string and a throwable
-2. Class or interface using a builder (let's call ours "FooBar" for the purpose of this document)
-    1. Must have:   
-        1. Hidden constructor (private or protected) - this is to allow us to switch to interface if needed
-        2. method _public static Builder builder()_             
-        3. all fields obtained from builder declared as final (immutable)
-    2. May have:
-        1. method _public static Builder builder(?)_ - builder with mandatory or very commonly used parameters
-            - there should be a very small number of "builder(*)" methods - up to two per class
-        2. Factory method _public static FooBar create()_ that is implemented as "return builder().build()"
-        3. Factory method _public static create(io.helidon.config.Config config)_ that is implemented as 
-            "return builder().config(config).build()"
-        4. Other factory methods that build specific (predefined) instances, such as "fail(String cause)", 
-            "success(Subject subject)" etc. - **these methods MUST use builder to build the instance internally**
-        5. An internal class named "Builder" that is building instances of the containing class
-            1. it is allowed to have the builder as a top level class, in such a case the name must reflect the class it is 
-                building (e.g. FooBarBuilder)
-        
-Example: [io.helidon.faulttolerance.RetryConfigBlueprint](nima/fault-tolerance/fault-tolerance/src/main/java/io/helidon/nima/faulttolerance/RetryConfigBlueprint.java)
+<a id="rule-1-4"></a>**Rule 1.4 — Avoid intrinsic monitor locking.** Do not use `synchronized` in Helidon-owned Java
+code unless a third-party contract specifically requires monitor locking.
 
-# JPMS
-1. Each java module that is released has a `module-info.java`
-2. Provided services of released modules are declared ONLY in `module-info.java`, `META-INF/services` is generated  
-        automatically by a Maven plugin. `META-INF/services` in sources of released modules will fail the build
-3. Javadoc is using modules, so do not forget to add javadoc to `module-info.java`
-4. Provided and used services should be always using fully qualified class names
-    
-# Testing
+- <a id="rule-1-4-1"></a>**Rule 1.4.1.** Use explicit locks or atomic types instead.
 
-We use JUnit 5 with Hamcrest assertions.
+<a id="rule-1-5"></a>**Rule 1.5 — Use unnamed bindings.** Use `_` for deliberately unused local, lambda, exception,
+loop, or pattern bindings.
 
-The Hamcrest assertion API differs a lot from JUnit assertion API and when both are used,
- the tests are hard to read.
- 
-We have chosen the Hamcrest approach:
-- assertThat(actualValue, assertion(expectedValue))
+<a id="rule-1-6"></a>**Rule 1.6 — Prefer enhanced switches.** Prefer switch expressions and arrow labels for new
+switch code.
 
-Main import: `import static org.hamcrest.MatcherAssert.assertThat;` - the main method to be used
+- <a id="rule-1-6-1"></a>**Rule 1.6.1.** Make switches exhaustive for enums and sealed hierarchies.
 
-Most commonly used assertions are available in `org.hamcrest.CoreMatchers`:
-1. is() - assertion of equality: `assertThat(value, is(true)))`
-2. notNullValue() - assertion of a non-null value: `assertThat(value, notNullValue())`
-3. nullValue() - assertion of null value: `assertThat(value, nullValue())`
-4. startsWith(String) - assertion that string is prefixed: `assertThat(value, startWith("a"))`
-5. endsWith(String) - assertion that string is suffixed: `assertThat(value, endsWith("b"))`
+<a id="chapter-2"></a>
+## 2. Class member order
 
-For other nice assertions see the CoreMatchers class or google ;)
+<a id="rule-2-1"></a>**Rule 2.1 — Order field groups.** Place static fields before instance fields.
 
-The following assertions may be used from JUnit 5:
-1. `import static org.junit.jupiter.api.Assertions.assertAll;` - doing multiple assertions at once (more than one may fail)
-2. `import static org.junit.jupiter.api.Assertions.assertThrows;` - asserting that an expression throws an exception
+- <a id="rule-2-1-1"></a>**Rule 2.1.1.** Within each group, order fields by visibility: public, protected, package-private,
+  then private.
 
+<a id="rule-2-2"></a>**Rule 2.2 — Order public methods.** Place public static methods before public instance methods.
 
-**Example of why we have this rule:**
+<a id="rule-2-3"></a>**Rule 2.3 — Put nested types last.** Place nested member types after fields, initializer blocks,
+constructors, and methods.
 
-Original assertion:
+- <a id="rule-2-3-1"></a>**Rule 2.3.1.** Order nested types by visibility: public, protected, package-private, then private.
+
+<a id="chapter-3"></a>
+## 3. Imports and Javadoc
+
+<a id="rule-3-1"></a>**Rule 3.1 — Use imported simple names outside Javadoc.** Outside Javadoc, use an imported simple
+type name unless a name conflict or Java syntax requires a fully qualified name.
+
+<a id="rule-3-2"></a>**Rule 3.2 — Do not import types only for Javadoc.** Use the fully qualified name in Javadoc
+instead.
+
+<a id="chapter-4"></a>
+## 4. Package and module structure
+
+<a id="rule-4-1"></a>**Rule 4.1 — Use a flat package structure.**
+
+- <a id="rule-4-1-1"></a>**Rule 4.1.1.** Do not introduce `internal`, `private`, or equivalent hidden package layers.
+- <a id="rule-4-1-2"></a>**Rule 4.1.2.** Each Maven and JPMS module has a single implementation package.
+    - <a id="rule-4-1-2-1"></a>**Rule 4.1.2.1.** Each Maven JAR module used outside testing is also a JPMS module.
+- <a id="rule-4-1-3"></a>**Rule 4.1.3.** A module may have an additional `spi` package for service-provider interfaces.
+- <a id="rule-4-1-4"></a>**Rule 4.1.4.** Do not relax production member visibility solely to make it accessible to tests.
+- <a id="rule-4-1-5"></a>**Rule 4.1.5.** Treat every public class and public method as maintained Helidon API.
+- <a id="rule-4-1-6"></a>**Rule 4.1.6.** Do not rely on JPMS to enforce visibility.
+- <a id="rule-4-1-7"></a>**Rule 4.1.7.** If a set of classes needs a separate package, consider moving that concern to a
+  separate module.
+
+For example, the ABAC security providers are separate modules instead of separate packages in one module. This helps keep
+different concerns separate.
+
+<a id="rule-4-2"></a>**Rule 4.2 — Keep directory, module, and package naming connected.**
+
+- <a id="rule-4-2-1"></a>**Rule 4.2.1.** Use the module name as the module directory name.
+    - <a id="rule-4-2-1-1"></a>**Rule 4.2.1.1.** A POM-packaging aggregator is a project module.
+- <a id="rule-4-2-2"></a>**Rule 4.2.2 — Maven coordinates.**
+    - <a id="rule-4-2-2-1"></a>**Rule 4.2.2.1.** Use a group ID in the `io.helidon.${project_module}` hierarchy, such as
+      `io.helidon.reactive.webserver` or `io.helidon.config`.
+    - <a id="rule-4-2-2-2"></a>**Rule 4.2.2.2.** Use artifact ID `helidon-${module_name}`; project modules use
+      `helidon-${module_name}-project`.
+    - <a id="rule-4-2-2-3"></a>**Rule 4.2.2.3.** Always inherit the version.
+- <a id="rule-4-2-3"></a>**Rule 4.2.3.** Use package name
+  `io.helidon.${project_module}.${module_name}`, such as `io.helidon.security` or
+  `io.helidon.security.providers.common`.
+
+<a id="chapter-5"></a>
+## 5. Configuration and programmatic API
+
+<a id="rule-5-1"></a>**Rule 5.1 — Provide programmatic configuration.** Everything configurable must also be
+available programmatically through builders.
+
+- <a id="rule-5-1-1"></a>**Rule 5.1.1.** Components that can only be code-generated and must use inversion of control are
+  exempt.
+
+<a id="rule-5-2"></a>**Rule 5.2 — Provide configuration for builder capabilities.** Everything available through
+builders should also be available through configuration, except when that would require runtime reflection.
+
+<a id="rule-5-3"></a>**Rule 5.3 — Accept component-node configuration.** A `Config` parameter should represent the
+node containing the component's configuration, such as `ServerConfiguration` in WebServer.
+
+<a id="rule-5-4"></a>**Rule 5.4 — Follow configuration-key conventions.**
+
+- <a id="rule-5-4-1"></a>**Rule 5.4.1.** Use lowercase words separated by dashes, such as `token-endpoint-uri`, not
+  `tokenEndpointUri`.
+- <a id="rule-5-4-2"></a>**Rule 5.4.2.** Keys may be nested, such as `outbound-token.name` and
+  `outbound-token.algorithm`.
+- <a id="rule-5-4-3"></a>**Rule 5.4.3.** Classify component properties as required, defaulted, or optional.
+    - <a id="rule-5-4-3-1"></a>**Rule 5.4.3.1 — Required.** The component fails to build when the property is missing.
+    - <a id="rule-5-4-3-2"></a>**Rule 5.4.3.2 — Defaulted.** The property has a well-defined and documented default value.
+    - <a id="rule-5-4-3-3"></a>**Rule 5.4.3.3 — Optional.** The component has well-defined and documented behavior when the
+      property is absent, such as disabling tracing when no endpoint is configured.
+
+See [Builders](#chapter-8) and the [helidon-builder documentation](builder/README.md).
+
+<a id="chapter-6"></a>
+## 6. Getters and setters
+
+<a id="rule-6-1"></a>**Rule 6.1 — Omit accessor verbs.** Property accessors do not use a verb. For a `port` property,
+use `port(int newPort)` and `int port()`.
+
+<a id="rule-6-2"></a>**Rule 6.2 — Prefer verb-free boolean accessors.** Use names such as `authenticate(boolean)` and
+`boolean authenticate()` by default.
+
+- <a id="rule-6-2-1"></a>**Rule 6.2.1.** Use a verb such as `isAuthenticated()` or `shouldAuthenticate()` when needed for
+  clarity.
+
+Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/providers/oidc/common/OidcConfig.java).
+
+<a id="chapter-7"></a>
+## 7. Fluent API
+
+<a id="rule-7-1"></a>**Rule 7.1 — Use fluent APIs where applicable.**
+
+- <a id="rule-7-1-1"></a>**Rule 7.1.1.** Use fluent APIs in builders.
+- <a id="rule-7-1-2"></a>**Rule 7.1.2.** Use fluent APIs for control methods, such as
+  `Server server = Server.create().start()`.
+
+<a id="chapter-8"></a>
+## 8. Builders
+
+See [helidon-builder](builder/README.md) for module details and
+[helidon-builder-api](builder/api/README.md) for API and naming rules.
+
+<a id="rule-8-1"></a>**Rule 8.1 — Use Blueprint.** Use `@Prototype.Blueprint` for all builders and prototype APIs.
+
+- <a id="rule-8-1-1"></a>**Rule 8.1.1.** Consult the project architect about an exception. The outcome may be processor
+  support, redesign, or a documented exception.
+
+<a id="rule-8-2"></a>**Rule 8.2 — Keep implementation details out of Blueprint interfaces.** Do not declare
+constants, fields, or implementation helpers in a `@Prototype.Blueprint` interface because its members and nested types
+become public API.
+
+- <a id="rule-8-2-1"></a>**Rule 8.2.1.** Put such implementation details in a package-private support class in the same
+  package.
+
+<a id="rule-8-3"></a>**Rule 8.3 — Use builders for parameterized construction.** Use builders to create instances
+that need construction parameters.
+
+- <a id="rule-8-3-1"></a>**Rule 8.3.1.** Do not use public constructors for Helidon public API classes.
+- <a id="rule-8-3-2"></a>**Rule 8.3.2 — Constructor exceptions.**
+    - <a id="rule-8-3-2-1"></a>**Rule 8.3.2.1.** A public constructor may be required by a documented external API, SPI, or
+      integration contract.
+    - <a id="rule-8-3-2-2"></a>**Rule 8.3.2.2.** Exception types may follow normal exception constructor conventions.
+
+<a id="rule-8-4"></a>**Rule 8.4 — Follow builder-backed type conventions.** A class or interface using a builder must
+follow these rules:
+
+- <a id="rule-8-4-1"></a>**Rule 8.4.1.** Use a hidden constructor, private or protected, preserving the option to switch
+  to an interface.
+- <a id="rule-8-4-2"></a>**Rule 8.4.2.** Provide `public static Builder builder()`.
+- <a id="rule-8-4-3"></a>**Rule 8.4.3.** Declare every field obtained from the builder as `final`.
+- <a id="rule-8-4-4"></a>**Rule 8.4.4.** A builder may provide `builder(...)` overloads for mandatory or very common
+  parameters.
+    - <a id="rule-8-4-4-1"></a>**Rule 8.4.4.1.** Provide at most two `builder(...)` methods per class.
+- <a id="rule-8-4-5"></a>**Rule 8.4.5.** A no-argument `create()` factory may delegate to `builder().build()`.
+- <a id="rule-8-4-6"></a>**Rule 8.4.6.** A `create(io.helidon.config.Config)` factory may delegate to
+  `builder().config(config).build()`.
+- <a id="rule-8-4-7"></a>**Rule 8.4.7.** Other factories for predefined instances must use the builder internally.
+- <a id="rule-8-4-8"></a>**Rule 8.4.8.** Name a nested builder class `Builder`.
+    - <a id="rule-8-4-8-1"></a>**Rule 8.4.8.1.** A top-level builder name must identify the built type, such as
+      `FooBarBuilder`.
+
+Example: [io.helidon.faulttolerance.RetryConfigBlueprint](fault-tolerance/fault-tolerance/src/main/java/io/helidon/faulttolerance/RetryConfigBlueprint.java).
+
+<a id="chapter-9"></a>
+## 9. JPMS
+
+<a id="rule-9-1"></a>**Rule 9.1 — Describe released Java modules.** Each released Java module has a `module-info.java`.
+
+<a id="rule-9-2"></a>**Rule 9.2 — Declare provided services only in `module-info.java`.** A Maven plugin generates
+`META-INF/services`; checked-in service descriptors in released modules fail the build.
+
+<a id="rule-9-3"></a>**Rule 9.3 — Document modules.** Add Javadoc to `module-info.java`.
+
+<a id="rule-9-4"></a>**Rule 9.4 — Qualify service types.** Use fully qualified class names for provided and used
+services.
+
+<a id="chapter-10"></a>
+## 10. Testing
+
+<a id="rule-10-1"></a>**Rule 10.1 — Test observable behavior.** Tests must verify observable behavior rather than
+implementation details.
+
+- <a id="rule-10-1-1"></a>**Rule 10.1.1.** Structural assertions are appropriate only when the structure itself is the
+  contract under test.
+
+<a id="rule-10-2"></a>**Rule 10.2 — Do not reflect into private state.** Tests must not use reflection to access private
+implementation state.
+
+<a id="rule-10-3"></a>**Rule 10.3 — Keep test scaffolding out of production code.** Do not add members or classes to
+production code solely to support tests, except in modules whose published purpose is test support.
+
+<a id="rule-10-4"></a>**Rule 10.4 — Use JUnit 5 with Hamcrest assertions.**
+
+<a id="rule-10-5"></a>**Rule 10.5 — Use the Hamcrest assertion approach.** Hamcrest assertions provide clearer failure
+diagnostics than boolean JUnit assertions.
+
+- <a id="rule-10-5-1"></a>**Rule 10.5.1.** Use `assertThat(actualValue, matcher(expectedValue))`.
+- <a id="rule-10-5-2"></a>**Rule 10.5.2.** Use the main static import
+  `org.hamcrest.MatcherAssert.assertThat`.
+
+Common matchers from `org.hamcrest.CoreMatchers` include:
+
+- `is()` for equality, such as `assertThat(value, is(true))`
+- `notNullValue()`
+- `nullValue()`
+- `startsWith(String)`
+- `endsWith(String)`
+
+<a id="rule-10-6"></a>**Rule 10.6 — Limit JUnit assertion exceptions.** The following JUnit 5 assertions may be used:
+
+- <a id="rule-10-6-1"></a>**Rule 10.6.1.** `assertAll` for multiple assertions where more than one may fail.
+- <a id="rule-10-6-2"></a>**Rule 10.6.2.** `assertThrows` for an expected exception.
+
+For example, this assertion provides little diagnostic information:
+
 ```java
 assertTrue(ex.getMessage().contains("'" + config.key() + "'"));
 ```
-The output of the test was:
-`Expected: true, actual: false`
 
-Refactored assertion:
+Its failure reports only `Expected: true, actual: false`. A Hamcrest assertion provides the expected and actual text:
+
 ```java
 assertThat(ex.getMessage(), containsString("'" + config.key() + "'"));
 ```
 
-New output:
-```
+```text
 Expected: a string containing "'list-1'"
 but: was "Requested value for configuration key 'list-1.1' is not present in the configuration."
 ```
 
-# Maven
-1. All third party versions are managed
-    1. Plugins
-    2. Dependencies (`dependencies/pom.xml`)
-2. Adding a new third party dependency (or upgrading to a newer version) requires an 
-    internal process to be carried out. In such cases a delay is to be expected when merging.
-3. There is no need to use a version when referencing other modules, as all modules are managed in bom/pom.xml, and that is
-    part of the maven tree
-4. In pom.xml of a module, always define a "name" tag and follow naming conventions already used
-    1. For project module: Helidon ${module_name} Project
-    2. For java module: Helidon ${module_name}
-    3. The name should be "reactor" friendly - it should not overflow
-    4. The name is a name, not a sentence - it does not have to be grammatically correct 
-5. All java modules that are expected to be used by our users MUST be defined in our [bom pom](bom/pom.xml)
-6. Bundles may be created, though we still must give our users the freedom to pick and choose modules directly
-    1. Avoid bundling third party dependencies that may bring unexpected libraries in (e.g. Google Login provider)
-    2. $root/bundles - SE bundles (groupId: io.helidon.bundles)
-    3. keep bundle directories scoped to active Helidon bundle families
-    4. Bundles are for end users, not for internal use
-7. Third-party specification APIs should be in "provided" scope unless you are implementing
-    the specification itself
-    1. Analyze the dependencies of your module and choose the correct maven scope and module-info.java dependency declaration
-    2. Mapping to module-info.java
-        1. compile -> requires
-        2. optional -> requires static
-        3. provided -> requires
-        4. runtime -> "requires" or "requires static" depending on requirements
-                    note that "requires static" only works if the module is required by any other module used, otherwise
-                    it does not end up on module path even if it is on the class path 
-    3. Use transitive in module-info.java for your dependencies that are part of public API of the module
-8. Carefully choose scope for dependencies on other helidon modules, especially for optional integrations
+<a id="chapter-11"></a>
+## 11. Maven
+
+<a id="rule-11-1"></a>**Rule 11.1 — Manage all third-party versions.**
+
+- <a id="rule-11-1-1"></a>**Rule 11.1.1.** Manage plugin versions.
+- <a id="rule-11-1-2"></a>**Rule 11.1.2.** Manage dependency versions in `dependencies/pom.xml`.
+
+<a id="rule-11-2"></a>**Rule 11.2 — Follow the third-party update process.** Adding or upgrading a third-party
+dependency requires an internal process and can delay merging.
+
+<a id="rule-11-3"></a>**Rule 11.3 — Omit managed Helidon versions.** Do not specify a version when referencing another
+Helidon module; `bom/pom.xml` manages those versions.
+
+<a id="rule-11-4"></a>**Rule 11.4 — Name every module POM.** Every module `pom.xml` defines a `name`.
+
+- <a id="rule-11-4-1"></a>**Rule 11.4.1.** Name a project module `Helidon ${module_name} Project`.
+- <a id="rule-11-4-2"></a>**Rule 11.4.2.** Name a Java module `Helidon ${module_name}`.
+- <a id="rule-11-4-3"></a>**Rule 11.4.3.** Keep the name short enough for readable reactor output.
+- <a id="rule-11-4-4"></a>**Rule 11.4.4.** Treat the value as a name, not a sentence.
+
+<a id="rule-11-5"></a>**Rule 11.5 — Include user-facing Java modules in the BOM.** Add every Java module expected to
+be used by users to [bom/pom.xml](bom/pom.xml).
+
+<a id="rule-11-6"></a>**Rule 11.6 — Preserve direct module choice when adding bundles.**
+
+- <a id="rule-11-6-1"></a>**Rule 11.6.1.** Avoid bundling third-party dependencies that may add unexpected libraries,
+  such as the Google Login provider.
+- <a id="rule-11-6-2"></a>**Rule 11.6.2.** Put SE bundles under `bundles/` with group ID `io.helidon.bundles`.
+- <a id="rule-11-6-3"></a>**Rule 11.6.3.** Keep bundle directories scoped to active Helidon bundle families.
+- <a id="rule-11-6-4"></a>**Rule 11.6.4.** Bundles are for end users, not internal use.
+
+<a id="rule-11-7"></a>**Rule 11.7 — Use `provided` scope for third-party specification APIs.** The exception is a
+module that implements the specification.
+
+- <a id="rule-11-7-1"></a>**Rule 11.7.1.** Analyze module dependencies and choose the matching Maven scope and
+  `module-info.java` declaration.
+- <a id="rule-11-7-2"></a>**Rule 11.7.2 — Map Maven scopes to JPMS declarations.**
+    - <a id="rule-11-7-2-1"></a>**Rule 11.7.2.1.** `compile` maps to `requires`.
+    - <a id="rule-11-7-2-2"></a>**Rule 11.7.2.2.** `optional` maps to `requires static`.
+    - <a id="rule-11-7-2-3"></a>**Rule 11.7.2.3.** `provided` maps to `requires`.
+    - <a id="rule-11-7-2-4"></a>**Rule 11.7.2.4.** `runtime` maps to `requires` or `requires static` according to the runtime
+      requirement. `requires static` only works when another used module requires the dependency; otherwise it is absent
+      from the module path even when present on the class path.
+- <a id="rule-11-7-3"></a>**Rule 11.7.3.** Use `transitive` for dependencies that appear in the module's public API.
+
+<a id="rule-11-8"></a>**Rule 11.8 — Scope Helidon-module dependencies carefully.** Pay particular attention to
+optional integrations.
