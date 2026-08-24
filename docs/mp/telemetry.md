@@ -501,12 +501,12 @@ should be added to project’s pom.xml file.
     </dependency>
     <dependency>
         <groupId>io.opentelemetry</groupId>
-        <artifactId>opentelemetry-exporter-jaeger</artifactId>  <!-- (2) -->
+        <artifactId>opentelemetry-exporter-otlp</artifactId>  <!-- (2) -->
     </dependency>
 </dependencies>
 ```
 1. Helidon Telemetry dependency.
-2. OpenTelemetry Jaeger exporter.
+2. OpenTelemetry OTLP exporter.
 <!--@mdc :: -->
 
 Add these lines to `META-INF/microprofile-config.properties`:
@@ -516,15 +516,15 @@ MicroProfile Telemetry properties:
 <!--@mdc ::code-callout -->
 ```properties
 otel.sdk.disabled=false     <1>
-otel.traces.exporter=jaeger <2>
+otel.traces.exporter=otlp <2>
 otel.service.name=greeting-service <3>
 ```
 1. Enable MicroProfile Telemetry.
-2. Set exporter to Jaeger.
+2. Set exporter to OTLP.
 3. Name of our service.
 <!--@mdc :: -->
 
-Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name,
+Here we enable MicroProfile Telemetry, set tracer to "otlp" and give a name,
 which will be used to identify our service in the tracer.
 
 > [!WARNING]
