@@ -32,6 +32,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -42,6 +43,31 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ChannelRegistryFailurePolicyTest {
+    private final List<ChannelRegistry> startedRegistries = new ArrayList<>();
+
+    @AfterEach
+    void closeStartedRegistries() {
+        Throwable closeFailure = null;
+        for (int i = startedRegistries.size() - 1; i >= 0; i--) {
+            try {
+                startedRegistries.get(i).close();
+            } catch (RuntimeException | Error e) {
+                if (closeFailure == null) {
+                    closeFailure = e;
+                } else if (closeFailure != e) {
+                    closeFailure.addSuppressed(e);
+                }
+            }
+        }
+        startedRegistries.clear();
+        if (closeFailure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (closeFailure instanceof Error error) {
+            throw error;
+        }
+    }
+
     @Test
     void testGlobalAndChannelExecutionConfigurationMerge() {
         Config config = yaml("""
@@ -218,7 +244,7 @@ class ChannelRegistryFailurePolicyTest {
                                 connector: test-in
                         """),
                 List.of(incoming));
-        registry.start();
+        start(registry);
         try {
             IncomingConnectorContext context = incoming.context("source");
             int advertised = context.maxDeliveryMessages();
@@ -266,7 +292,7 @@ class ChannelRegistryFailurePolicyTest {
                                             connector: test-in
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
         IncomingConnectorContext context = incoming.context("orders");
 
         try (ConnectorDeliveryReservation held = context.reserveDelivery()) {
@@ -311,7 +337,7 @@ class ChannelRegistryFailurePolicyTest {
                                             connector: test-out
                                     """),
                             List.of(incoming, outgoing));
-        registry.start();
+        start(registry);
         Message<String> original = Message.builder("order-1").header("trace-id", "trace-1").build();
 
         deliver(incoming.context("orders"), MessageBatch.create(original));
@@ -363,7 +389,7 @@ class ChannelRegistryFailurePolicyTest {
                                             connector: test-out
                                     """),
                             List.of(incoming, outgoing));
-        registry.start();
+        start(registry);
         try {
             IncomingConnectorContext context = incoming.context("orders");
             assertThat(context.maxDeliveryMessages(), is(1));
@@ -403,7 +429,7 @@ class ChannelRegistryFailurePolicyTest {
                                               on-exhausted: DROP
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
         IncomingConnectorContext context = incoming.context("orders");
 
         deliverFailed(context,
@@ -438,7 +464,7 @@ class ChannelRegistryFailurePolicyTest {
                                             connector: test-out
                                     """),
                             List.of(incoming, outgoing));
-        registry.start();
+        start(registry);
         Message<String> first = customMessage("order-1");
         Message<String> second = customMessage("order-2");
 
@@ -483,7 +509,7 @@ class ChannelRegistryFailurePolicyTest {
                                             connector: test-out
                                     """),
                             List.of(incoming, outgoing));
-        registry.start();
+        start(registry);
 
         deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("first"),
                                                                         Message.create("poison"),
@@ -531,7 +557,7 @@ class ChannelRegistryFailurePolicyTest {
                                               on-exhausted: DROP
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
 
         deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("first"),
                                                                         Message.create("deferred"))));
@@ -580,7 +606,7 @@ class ChannelRegistryFailurePolicyTest {
                                                 max-attempts: 3
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
         MessageBatch<String> root = MessageBatch.<String>builder()
                 .id("root-delivery")
                 .messages(List.of(Message.create("zero"),
@@ -624,7 +650,7 @@ class ChannelRegistryFailurePolicyTest {
                                               on-exhausted: DROP
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
 
         deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("poison"),
                                                                         Message.create("deferred"))));
@@ -656,7 +682,7 @@ class ChannelRegistryFailurePolicyTest {
                                               on-exhausted: DROP
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
 
         deliver(incoming.context("orders"), MessageBatch.create(List.of(Message.create("one"),
                                                                         Message.create("two"))));
@@ -687,7 +713,7 @@ class ChannelRegistryFailurePolicyTest {
                                                 max-attempts: 1
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
         MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"),
                                                                  Message.create("poison"),
                                                                  Message.create("deferred")));
@@ -826,7 +852,7 @@ class ChannelRegistryFailurePolicyTest {
                                             connector: test-out
                                     """),
                             List.of(incoming, outgoing));
-        registry.start();
+        start(registry);
 
         BatchDeliveryException result = assertThrows(
                 BatchDeliveryException.class,
@@ -872,7 +898,7 @@ class ChannelRegistryFailurePolicyTest {
                                                 channel: orders-dlq
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
         MessageBatch<String> policyBatch = MessageBatch.create(List.of(Message.create("first"),
                                                                        Message.create("second"),
                                                                        Message.create("third")));
@@ -914,7 +940,7 @@ class ChannelRegistryFailurePolicyTest {
                                             connector: test-in
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
 
         try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
              ConnectorDelivery delivery = reservation.start(MessageBatch.create(Message.create("order-1")))) {
@@ -965,7 +991,7 @@ class ChannelRegistryFailurePolicyTest {
                                                 channel: orders-dlq
                                     """),
                             List.of(incoming));
-        registry.start();
+        start(registry);
 
         try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
              ConnectorDelivery delivery = reservation.start(
@@ -1407,6 +1433,11 @@ class ChannelRegistryFailurePolicyTest {
 
     private static Config yaml(String yaml) {
         return Config.just(yaml, MediaTypes.APPLICATION_YAML);
+    }
+
+    private void start(ChannelRegistry registry) {
+        startedRegistries.add(registry);
+        registry.start();
     }
 
     private static void deliver(IncomingConnectorContext context,
