@@ -15,8 +15,12 @@
  */
 package io.helidon.webclient.metrics;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
@@ -39,6 +43,14 @@ public class WebClientMetricsProvider implements WebClientServiceProvider {
     @Override
     public WebClientService create(Config config, String name) {
         return WebClientMetrics.create(config);
+    }
+
+    @Override
+    public WebClientService create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        return WebClientMetrics.create(config, serviceRegistry.get(MeterRegistry.class));
     }
 
 }

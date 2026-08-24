@@ -28,6 +28,7 @@ module io.helidon.webclient.metrics {
 
     requires io.helidon.common.features.api;
     requires io.helidon.metrics.api;
+    requires io.helidon.service.registry;
     requires io.helidon.webclient;
 
     requires transitive io.helidon.config;

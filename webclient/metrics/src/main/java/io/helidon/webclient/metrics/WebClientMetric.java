@@ -18,6 +18,7 @@ package io.helidon.webclient.metrics;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -43,7 +44,9 @@ abstract class WebClientMetric implements WebClientService {
     private final boolean errors;
 
     WebClientMetric(Builder builder) {
-        this.registry = Services.get(MeterRegistry.class);
+        this.registry = builder.meterRegistry == null
+                ? Services.get(MeterRegistry.class)
+                : builder.meterRegistry;
         this.metricsFactory = registry.metricsFactory();
         this.methods = builder.methods;
         this.nameFormat = builder.nameFormat;
@@ -141,6 +144,7 @@ abstract class WebClientMetric implements WebClientService {
         private String description;
         private boolean success = true;
         private boolean errors = true;
+        private MeterRegistry meterRegistry;
 
         private Builder(WebClientMetricType type) {
             this.type = type;
@@ -225,6 +229,11 @@ abstract class WebClientMetric implements WebClientService {
          */
         public Builder errors(boolean errors) {
             this.errors = errors;
+            return this;
+        }
+
+        Builder meterRegistry(MeterRegistry meterRegistry) {
+            this.meterRegistry = Objects.requireNonNull(meterRegistry);
             return this;
         }
 
