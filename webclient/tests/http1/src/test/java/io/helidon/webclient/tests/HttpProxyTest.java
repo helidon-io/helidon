@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package io.helidon.webclient.tests;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientRequest;
@@ -40,8 +45,6 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ServerTest
 class HttpProxyTest {
@@ -51,7 +54,7 @@ class HttpProxyTest {
     private HttpProxy httpProxy;
 
     private final HttpClient<?> clientHttp1;
-    private final HttpClient<?> clientHttp2;
+    private final Http2Client clientHttp2;
 
     HttpProxyTest(WebServer server) {
         String uri = "http://localhost:" + server.port();
@@ -67,7 +70,9 @@ class HttpProxyTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(GET, "/get", Routes::get);
+        router.route(GET, "/get", (request, response) -> {
+            response.send("Hello|" + request.headers().contains(ClientRequestBase.PROXY_CONNECTION.headerName()));
+        });
     }
 
     @BeforeEach
@@ -189,12 +194,52 @@ class HttpProxyTest {
         }
     }
 
+    @Test
+    void reusedHttp2RequestReselectsSystemProxyPerInvocation() {
+        ProxySelector original = ProxySelector.getDefault();
+        AtomicInteger httpSelections = new AtomicInteger();
+        ProxySelector.setDefault(new ProxySelector() {
+            @Override
+            public List<java.net.Proxy> select(URI uri) {
+                if (!"http".equals(uri.getScheme())) {
+                    return List.of(java.net.Proxy.NO_PROXY);
+                }
+                if (httpSelections.getAndIncrement() == 0) {
+                    return List.of(java.net.Proxy.NO_PROXY);
+                }
+                return List.of(new java.net.Proxy(java.net.Proxy.Type.HTTP,
+                                                  InetSocketAddress.createUnresolved(PROXY_HOST, proxyPort)));
+            }
+
+            @Override
+            public void connectFailed(URI uri, SocketAddress address, IOException failure) {
+            }
+        });
+        try {
+            ClientRequest<?> request = clientHttp2.get("/get").proxy(Proxy.create());
+            try (HttpClientResponse response = request.request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
+            }
+            assertThat(httpSelections.get(), is(1));
+            assertThat(httpProxy.counter(), is(0));
+            try (HttpClientResponse response = request.request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
+            }
+            assertThat(httpSelections.get(), is(2));
+            assertThat(httpProxy.counter(), is(1));
+        } finally {
+            ProxySelector.setDefault(original);
+        }
+    }
+
     private void noHosts(HttpClient<?> client) {
         Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).addNoProxy(PROXY_HOST).build();
         try (HttpClientResponse response = client.get("/get").proxy(proxy).request()) {
             assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
+            assertThat(entity, is("Hello|false"));
         }
         assertThat(httpProxy.counter(), is(0));
     }
@@ -204,13 +249,7 @@ class HttpProxyTest {
         try (HttpClientResponse response = request.request()) {
             assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
-        }
-        boolean proxyConnection = request.headers().contains(ClientRequestBase.PROXY_CONNECTION);
-        if (client == clientHttp1) {
-            assertTrue(proxyConnection, "HTTP1 requires Proxy-Connection header");
-        } else {
-            assertFalse(proxyConnection, "HTTP2 does not allow Proxy-Connection header");
+            assertThat(entity, is("Hello|false"));
         }
         assertThat(httpProxy.counter(), is(1));
     }
@@ -219,14 +258,8 @@ class HttpProxyTest {
         try (HttpClientResponse response = client.get("/get").request()) {
             assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
+            assertThat(entity, is("Hello|false"));
         }
         assertThat(httpProxy.counter(), is(0));
-    }
-
-    private static class Routes {
-        private static String get() {
-            return "Hello";
-        }
     }
 }

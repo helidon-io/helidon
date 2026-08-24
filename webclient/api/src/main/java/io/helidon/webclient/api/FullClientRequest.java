@@ -19,8 +19,10 @@ package io.helidon.webclient.api;
 import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Method;
 
@@ -117,6 +119,38 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      * @return proxy
      */
     Proxy proxy();
+
+    /**
+     * Effective proxy route already selected during the current top-level request invocation.
+     * The route may be shared with protocol fallbacks and other internal handoffs in that invocation.
+     *
+     * @return selected proxy route, or empty when this request still needs route selection
+     */
+    @Api.Internal
+    default Optional<ProxyRoute> selectedProxyRoute() {
+        return Optional.empty();
+    }
+
+    /**
+     * Retain an effective proxy route while handing a request between protocol implementations in the current
+     * top-level request invocation.
+     * The default implementation validates and otherwise ignores the route.
+     *
+     * @param proxyRoute selected proxy route
+     */
+    @Api.Internal
+    default void selectedProxyRoute(ProxyRoute proxyRoute) {
+        Objects.requireNonNull(proxyRoute, "proxyRoute");
+    }
+
+    /**
+     * Clear retained route state after the current top-level request invocation, or when it no longer matches a
+     * finalized request target.
+     * The default implementation has no effect.
+     */
+    @Api.Internal
+    default void clearSelectedProxyRoute() {
+    }
 
     /**
      * Whether to use keep-alive connection (if relevant for the used HTTP version).

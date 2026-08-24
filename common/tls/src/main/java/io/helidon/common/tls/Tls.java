@@ -215,6 +215,24 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     }
 
     /**
+     * Create a TLS socket using a logical peer identity and the configured server names.
+     *
+     * @param alpnProtocols protocol(s) to use (order is significant)
+     * @param socket existing socket
+     * @param tlsPeerHost TLS peer host for SNI and endpoint identification
+     * @param tlsPeerPort TLS peer port for endpoint identification
+     * @return a new socket ready for TLS communication
+     */
+    @Api.Internal
+    public SSLSocket createSocket(List<String> alpnProtocols,
+                                  Socket socket,
+                                  String tlsPeerHost,
+                                  int tlsPeerPort) {
+        Objects.requireNonNull(tlsPeerHost, "tlsPeerHost");
+        return createSocketInternal(alpnProtocols, socket, tlsPeerHost, tlsPeerPort, null);
+    }
+
+    /**
      * Create a SSLSocket for the chosen protocol and the given socket.
      *
      * @param alpnProtocols       protocol(s) to use (order is significant)

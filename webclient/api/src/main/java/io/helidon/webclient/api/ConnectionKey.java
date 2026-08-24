@@ -21,9 +21,11 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.net.ssl.SNIServerName;
+import javax.net.ssl.SSLParameters;
 
 import io.helidon.common.Api;
 import io.helidon.common.tls.Tls;
+import io.helidon.common.uri.UriAuthority;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.webclient.spi.DnsResolver;
 
@@ -33,6 +35,7 @@ import io.helidon.webclient.spi.DnsResolver;
 public final class ConnectionKey {
     private final String scheme;
     private final String host;
+    private final String routingHost;
     private final int port;
     private final Tls tls;
     private final DnsResolver dnsResolver;
@@ -83,6 +86,9 @@ public final class ConnectionKey {
                           SniSupport.Selection sni) {
         this.scheme = scheme;
         this.host = host;
+        this.routingHost = host.startsWith("[") && host.endsWith("]")
+                ? UriAuthority.create(host).host().value()
+                : host;
         this.port = port;
         this.tls = tls;
         this.dnsResolver = dnsResolver;
@@ -348,7 +354,8 @@ public final class ConnectionKey {
      *
      * @return TLS peer host
      */
-    String tlsPeerHost() {
+    @Api.Internal
+    public String tlsPeerHost() {
         return tlsPeerHost;
     }
 
@@ -357,8 +364,27 @@ public final class ConnectionKey {
      *
      * @return TLS peer port
      */
-    int tlsPeerPort() {
+    @Api.Internal
+    public int tlsPeerPort() {
         return tlsPeerPort;
+    }
+
+    /**
+     * Apply effective server names to SSL parameters when first-class SNI configuration overrides the TLS defaults.
+     *
+     * @param sslParameters SSL parameters to update
+     */
+    @Api.Internal
+    public void applyServerNames(SSLParameters sslParameters) {
+        SSLParameters parameters = Objects.requireNonNull(sslParameters, "sslParameters");
+        List<SNIServerName> serverNames = serverNamesOverride();
+        if (serverNames != null) {
+            parameters.setServerNames(serverNames);
+        }
+    }
+
+    String routingHost() {
+        return routingHost;
     }
 
     List<SNIServerName> serverNamesOverride() {

@@ -59,6 +59,7 @@ class Http1CallEntityChain extends Http1CallChainBase {
         writeHeaders(connection,
                      headers,
                      writeBuffer,
+                     forwardProxy(),
                      protocolConfig().validateRequestHeaders(),
                      sendListener());
         // we have completed writing the headers

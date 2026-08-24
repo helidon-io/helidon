@@ -241,6 +241,42 @@ class ConnectionKeySniTest {
     }
 
     @Test
+    void rawIpv6HostTextRemainsConnectionIdentity() {
+        SniConfig sni = explicit("service.example");
+        ClientRequestHeaders headers = emptyHeaders();
+        ClientUri compact = ClientUri.create()
+                .scheme("https")
+                .host("[::1]")
+                .port(443);
+        ClientUri expanded = ClientUri.create()
+                .scheme("https")
+                .host("[0:0:0:0:0:0:0:1]")
+                .port(443);
+        ConnectionKey compactKey = ConnectionKey.create(compact,
+                                                         sni,
+                                                         TLS,
+                                                         DNS_RESOLVER,
+                                                         DNS_LOOKUP,
+                                                         NO_PROXY,
+                                                         headers);
+        ConnectionKey expandedKey = ConnectionKey.create(expanded,
+                                                          sni,
+                                                          TLS,
+                                                          DNS_RESOLVER,
+                                                          DNS_LOOKUP,
+                                                          NO_PROXY,
+                                                          headers);
+
+        assertThat(compactKey.host(), is("[::1]"));
+        assertThat(expandedKey.host(), is("[0:0:0:0:0:0:0:1]"));
+        assertThat(compactKey.routingHost(), is("::1"));
+        assertThat(expandedKey.routingHost(), is("::1"));
+        assertThat(compactKey.tlsPeerHost(), is("service.example"));
+        assertThat(expandedKey.tlsPeerHost(), is("service.example"));
+        assertThat(compactKey, not(expandedKey));
+    }
+
+    @Test
     void rawTlsServerNamesRemainConfiguredWhenNoSniConfigIsPresent() {
         SSLParameters parameters = new SSLParameters();
         parameters.setServerNames(List.of(new SNIHostName("configured.example")));

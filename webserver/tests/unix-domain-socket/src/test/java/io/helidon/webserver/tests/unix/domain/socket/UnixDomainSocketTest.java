@@ -18,8 +18,11 @@ package io.helidon.webserver.tests.unix.domain.socket;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.ProxySelector;
+import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.StandardProtocolFamily;
+import java.net.URI;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
@@ -30,6 +33,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +52,7 @@ import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.ConnectedSocketChannelInfo;
 import io.helidon.webclient.api.ConnectedSocketInfo;
 import io.helidon.webclient.api.ConnectionListener;
+import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
@@ -336,6 +341,69 @@ public class UnixDomainSocketTest {
                            "HTTP/2 TCP target");
         } finally {
             http2Client.closeResource();
+            targetServer.stop();
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    public void http2UnixSocketHttp1FallbackRedirectSelectsSystemProxyForTcpTarget() {
+        var address = UnixDomainSocketAddress.of(newSocketPath("helidon-http1-fallback-redirect"));
+        WebServer targetServer = startPlainServer("HTTP/1 TCP target", false);
+        try {
+            URI targetUri = URI.create("http://127.0.0.1:" + targetServer.port());
+            WebServerConfig.Builder sourceBuilder = WebServer.builder();
+            configureUdsBinding(sourceBuilder, address);
+            WebServer sourceServer = sourceBuilder
+                    .protocolsDiscoverServices(false)
+                    .addConnectionSelector(Http1ConnectionSelector.builder()
+                                                   .config(Http1Config.builder().build())
+                                                   .build())
+                    .routing(rules -> rules.get("/redirect", (req, res) -> res.status(Status.FOUND_302)
+                            .header(HeaderNames.LOCATION, targetUri.resolve("/target").toString())
+                            .send()))
+                    .build()
+                    .start();
+            try {
+                ProxySelector previousSelector = ProxySelector.getDefault();
+                List<URI> selectedUris = new CopyOnWriteArrayList<>();
+                ProxySelector.setDefault(new ProxySelector() {
+                    @Override
+                    public List<java.net.Proxy> select(URI uri) {
+                        if ("http".equals(uri.getScheme())) {
+                            selectedUris.add(uri);
+                        }
+                        return List.of(java.net.Proxy.NO_PROXY);
+                    }
+
+                    @Override
+                    public void connectFailed(URI uri, SocketAddress address, IOException failure) {
+                    }
+                });
+                try {
+                    Http2Client http2Client = Http2Client.builder()
+                            .shareConnectionCache(false)
+                            .baseUri(LOGICAL_PLAIN_BASE_URI)
+                            .proxy(Proxy.create())
+                            .protocolConfig(it -> it.priorKnowledge(false))
+                            .build();
+                    try {
+                        assertResponse(http2Client.get()
+                                               .address(address)
+                                               .path("/redirect")
+                                               .request(String.class),
+                                       "HTTP/1 TCP target");
+                        assertThat(selectedUris, is(List.of(targetUri)));
+                    } finally {
+                        http2Client.closeResource();
+                    }
+                } finally {
+                    ProxySelector.setDefault(previousSelector);
+                }
+            } finally {
+                sourceServer.stop();
+            }
+        } finally {
             targetServer.stop();
         }
     }

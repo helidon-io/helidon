@@ -96,19 +96,19 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         // this is HTTP/1.1 - it should support any and all HTTP requests
         // this method is called from the "generic" HTTP client, that can support any version (that is on classpath).
         // usually HTTP/1.1 is either the only available, or a fallback if other versions cannot be used
-        Http1ClientRequest request = new Http1ClientRequestImpl(this,
-                                                                clientRequest,
-                                                                clientRequest.method(),
-                                                                clientUri,
-                                                                clientRequest.sendExpectContinue().orElse(null),
-                                                                clientRequest.properties());
+        var selectedProxyRoute = clientRequest.selectedProxyRoute();
+        Http1ClientRequestImpl request = new Http1ClientRequestImpl(this,
+                                                                    clientRequest,
+                                                                    clientRequest.method(),
+                                                                    clientUri,
+                                                                    clientRequest.sendExpectContinue().orElse(null),
+                                                                    clientRequest.properties());
 
         clientRequest.connection().ifPresent(request::connection);
         clientRequest.pathParams().forEach(request::pathParam);
         clientRequest.address().ifPresent(request::address);
         clientRequest.sni().ifPresent(request::sni);
-
-        return request.readTimeout(clientRequest.readTimeout())
+        request.readTimeout(clientRequest.readTimeout())
                 .readContinueTimeout(clientRequest.readContinueTimeout())
                 .followRedirects(clientRequest.followRedirects())
                 .maxRedirects(clientRequest.maxRedirects())
@@ -117,6 +117,8 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
                 .tls(clientRequest.tls())
                 .headers(clientRequest.headers())
                 .fragment(clientUri.fragment());
+        selectedProxyRoute.ifPresent(request::selectedProxyRoute);
+        return request;
     }
 
     @Override

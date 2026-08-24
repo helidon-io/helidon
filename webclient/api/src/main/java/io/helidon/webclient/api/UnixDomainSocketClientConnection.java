@@ -53,6 +53,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(UnixDomainSocketClientConnection.class.getName());
 
     private final WebClient webClient;
+    private final long tlsGeneration;
     private final Tls tls;
     private final UnixDomainSocketAddress address;
     private final List<String> alpnId;
@@ -72,6 +73,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
 
     private UnixDomainSocketClientConnection(WebClient webClient,
                                              Tls tls,
+                                             long tlsGeneration,
                                              UnixDomainSocketAddress address,
                                              List<String> alpnId,
                                              String tlsPeerHost,
@@ -81,6 +83,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                                              Consumer<UnixDomainSocketClientConnection> closeConsumer) {
         this.webClient = Objects.requireNonNull(webClient, "webClient");
         this.tls = Objects.requireNonNull(tls, "tls");
+        this.tlsGeneration = tlsGeneration;
         this.address = Objects.requireNonNull(address, "address");
         this.alpnId = Objects.requireNonNull(alpnId, "alpnId");
         this.tlsPeerHost = tlsPeerHost;
@@ -114,6 +117,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                                                           Consumer<UnixDomainSocketClientConnection> closeConsumer) {
         return new UnixDomainSocketClientConnection(webClient,
                                                     tls,
+                                                    tls.generation(),
                                                     address,
                                                     tcpProtocolIds,
                                                     null,
@@ -148,6 +152,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                                                           Consumer<UnixDomainSocketClientConnection> closeConsumer) {
         return new UnixDomainSocketClientConnection(webClient,
                                                     tls,
+                                                    tls.generation(),
                                                     address,
                                                     tcpProtocolIds,
                                                     Objects.requireNonNull(tlsPeerHost, "tlsPeerHost"),
@@ -176,8 +181,45 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                                                           UnixDomainSocketAddress address,
                                                           Function<UnixDomainSocketClientConnection, Boolean> releaseFunction,
                                                           Consumer<UnixDomainSocketClientConnection> closeConsumer) {
+        Tls tls = connectionKey.tls();
+        return new UnixDomainSocketClientConnection(webClient,
+                                                    tls,
+                                                    tls.generation(),
+                                                    address,
+                                                    tcpProtocolIds,
+                                                    connectionKey.tlsPeerHost(),
+                                                    connectionKey.tlsPeerPort(),
+                                                    connectionKey.serverNamesOverride(),
+                                                    releaseFunction,
+                                                    closeConsumer);
+    }
+
+    /**
+     * Create a new UNIX domain socket connection from a logical connection target.
+     *
+     * @param webClient webclient, to get configuration
+     * @param connectionTarget logical connection target
+     * @param tcpProtocolIds protocol IDs for ALPN
+     * @param releaseFunction release callback
+     * @param closeConsumer close callback
+     * @return a new unconnected UNIX domain socket connection
+     */
+    @Api.Internal
+    public static UnixDomainSocketClientConnection create(WebClient webClient,
+                                                          ClientConnectionTarget connectionTarget,
+                                                          List<String> tcpProtocolIds,
+                                                          Function<UnixDomainSocketClientConnection, Boolean> releaseFunction,
+                                                          Consumer<UnixDomainSocketClientConnection> closeConsumer) {
+        ClientConnectionTarget target = Objects.requireNonNull(connectionTarget, "connectionTarget");
+        ConnectionKey connectionKey = target.connectionKey();
+        UnixDomainSocketAddress address = target.transportAddress()
+                .filter(UnixDomainSocketAddress.class::isInstance)
+                .map(UnixDomainSocketAddress.class::cast)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Connection target must contain a UNIX domain socket address"));
         return new UnixDomainSocketClientConnection(webClient,
                                                     connectionKey.tls(),
+                                                    target.tlsGeneration(),
                                                     address,
                                                     tcpProtocolIds,
                                                     connectionKey.tlsPeerHost(),
@@ -283,6 +325,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
      */
     @Override
     public UnixDomainSocketClientConnection connect() {
+        validateTlsGeneration();
         try {
             this.channel = SocketChannel.open(StandardProtocolFamily.UNIX);
             this.channel.connect(this.address);
@@ -326,11 +369,26 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
             throw e;
         }
 
+        validateTlsGeneration();
         this.reader = DataReader.create(this.socket);
         int writeBufferSize = this.webClient.prototype().writeBufferSize();
         this.writer = new TcpClientConnection.BufferedDataWriter(this.socket, writeBufferSize);
 
         return this;
+    }
+
+    private void validateTlsGeneration() {
+        if (tlsGeneration == tls.generation()) {
+            return;
+        }
+        IllegalStateException failure =
+                new IllegalStateException("TLS configuration was reloaded during connection setup");
+        try {
+            closeResource();
+        } catch (RuntimeException | Error closeFailure) {
+            failure.addSuppressed(closeFailure);
+        }
+        throw failure;
     }
 
     private static SocketTimeoutException timeoutException(Duration readTimeout, Throwable cause, DeadlineGuard guard) {
