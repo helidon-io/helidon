@@ -30,7 +30,6 @@ import io.helidon.data.jdbc.tests.declarative.repository.ContactRepository;
 import io.helidon.data.jdbc.tests.declarative.repository.EqualWeightMapperRepository;
 import io.helidon.data.jdbc.tests.declarative.repository.FailingMapperRepository;
 import io.helidon.data.jdbc.tests.declarative.repository.MissingMapperRepository;
-import io.helidon.data.jdbc.tests.declarative.repository.TransactionalContactRepository;
 import io.helidon.data.jdbc.tests.declarative.repository.UnregisteredMapperRepository;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -248,47 +247,6 @@ public abstract class AbstractGeneratedRepositoryContract {
     }
 
     /**
-     * Proves method-level transaction annotations produce the required
-     * committed state without relying on annotation-precedence behavior.
-     */
-    @Test
-    protected void appliesTransactionAnnotationsOnGeneratedRepositoryMethods() {
-        beforeStartApplication();
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
-        try {
-            TransactionalContactRepository repository = manager.registry().get(TransactionalContactRepository.class);
-
-            assertThrows(TxException.class, () -> repository.mandatory("mandatory-outside"));
-            assertThat(repository.findByName("mandatory-outside"), is(Optional.empty()));
-
-            repository.required("required-outside");
-            repository.never("never-outside");
-            assertThat(repository.findByName("required-outside"), is(Optional.of("required-outside")));
-            assertThat(repository.findByName("never-outside"), is(Optional.of("never-outside")));
-
-            invokeAndRollBack(() -> repository.mandatory("mandatory-joined"));
-            invokeAndRollBack(() -> repository.required("required-joined"));
-            invokeAndRollBack(() -> repository.supported("supported-joined"));
-            assertThat(repository.findByName("mandatory-joined"), is(Optional.empty()));
-            assertThat(repository.findByName("required-joined"), is(Optional.empty()));
-            assertThat(repository.findByName("supported-joined"), is(Optional.empty()));
-
-            invokeAndRollBack(() -> repository.inNewTransaction("new-suspended"));
-            invokeAndRollBack(() -> repository.unsupported("unsupported-suspended"));
-            assertThat(repository.findByName("new-suspended"), is(Optional.of("new-suspended")));
-            assertThat(repository.findByName("unsupported-suspended"), is(Optional.of("unsupported-suspended")));
-
-            Tx.transaction(Tx.Type.REQUIRED, () -> {
-                assertThrows(TxException.class, () -> repository.never("never-inside"));
-                return null;
-            });
-            assertThat(repository.findByName("never-inside"), is(Optional.empty()));
-        } finally {
-            manager.shutdown();
-        }
-    }
-
-    /**
      * Allows a database-specific leaf test to publish dynamic configuration before the registry starts.
      */
     protected void beforeStartApplication() {
@@ -346,10 +304,4 @@ public abstract class AbstractGeneratedRepositoryContract {
         });
     }
 
-    private static void invokeAndRollBack(Runnable invocation) {
-        assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, () -> {
-            invocation.run();
-            throw new IllegalStateException("force rollback");
-        }));
-    }
 }

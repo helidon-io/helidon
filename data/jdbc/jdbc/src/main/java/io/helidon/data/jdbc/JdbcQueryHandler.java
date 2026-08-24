@@ -314,11 +314,21 @@ final class JdbcQueryHandler {
             SQLWarning warning = JdbcExceptionTranslator.invoke("reading JDBC result warnings",
                                                                 resultSet::getWarnings);
             if (warning != null) {
-                // Drivers may return a cyclic warning chain, so follow links by identity while looking for truncation.
+                // Warning links can cycle, so inspect each warning instance once.
                 IdentityHashMap<SQLWarning, Boolean> visited = new IdentityHashMap<>();
-                while (warning != null && visited.put(warning, Boolean.TRUE) == null) {
+                while (warning != null) {
+                    if (visited.containsKey(warning)) {
+                        break;
+                    }
+                    if (visited.size() == JdbcExceptionTranslator.MAX_WARNINGS_PER_OWNER) {
+                        // An unvisited warning may report truncation, so fail rather than return the mapped value.
+                        // The fixed limit also bounds work while the JDBC resources remain owned.
+                        throw new DataException(
+                                "The JDBC provider returned more result set warnings than can be inspected safely.");
+                    }
+                    visited.put(warning, Boolean.TRUE);
                     if (warning instanceof DataTruncation truncation) {
-                        // Sanitize the driver-owned warning before normal resource cleanup begins.
+                        // Sanitize the warning provided by the driver before normal resource cleanup begins.
                         throw JdbcExceptionTranslator.translate(scope.operation(), truncation);
                     }
                     SQLWarning current = warning;

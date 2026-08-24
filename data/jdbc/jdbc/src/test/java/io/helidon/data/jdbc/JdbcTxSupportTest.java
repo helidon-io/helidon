@@ -513,7 +513,9 @@ class JdbcTxSupportTest {
     }
 
     private static class RecordingLifeCycle implements TxLifeCycle {
-        /** Events recorded in delivery order. */
+        /**
+         * Events recorded in delivery order.
+         */
         private final List<String> events = new ArrayList<>();
 
         @Override
@@ -574,11 +576,17 @@ class JdbcTxSupportTest {
         }
     }
 
-    /** Listener which fails one selected event exactly once. */
+    /**
+     * Listener which fails one selected event exactly once.
+     */
     private static final class OneShotFailingLifeCycle extends RecordingLifeCycle {
-        /** Event which fails on its first delivery. */
+        /**
+         * Event which fails on its first delivery.
+         */
         private final String failingEvent;
-        /** Whether the configured failure has already occurred. */
+        /**
+         * Whether the configured failure has already occurred.
+         */
         private boolean failed;
 
         private OneShotFailingLifeCycle(String failingEvent) {

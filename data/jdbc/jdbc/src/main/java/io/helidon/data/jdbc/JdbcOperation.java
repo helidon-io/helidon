@@ -63,11 +63,12 @@ final class JdbcOperation {
      * Counts positional markers for a statement stage.
      *
      * <p>The scanner is deliberately lexical rather than a SQL parser. The
-     * portable profile protects unambiguous quoted values, quoted identifiers,
-     * and comments while treating every question mark as a bind marker.
-     * Declarative named markers have already been rewritten by the annotation
-     * processor. A runtime named marker is rejected because this client stage
-     * accepts positional JDBC SQL.</p>
+     * portable profile protects supported quoted values, quoted identifiers,
+     * comments, and doubled question-mark escapes while reporting every other
+     * unprotected question mark as a bind marker. Declarative named markers
+     * have already been rewritten by the annotation processor. A runtime named
+     * marker is rejected because this client stage accepts positional JDBC
+     * SQL.</p>
      *
      * @param sql SQL text to scan
      * @return number of positional bind markers

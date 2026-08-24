@@ -152,6 +152,24 @@ class JdbcScriptRunnerFailureTest {
         verify(connection).close();
     }
 
+    /**
+     * Verifies that an unchecked failure from the pre-commit statement close
+     * is rebuilt before bootstrap reports it and still permits transaction and
+     * connection cleanup.
+     */
+    @Test
+    void sanitizesRuntimeFailureFromBootstrapStatementClose() throws Exception {
+        IllegalStateException statementClose = driverRuntimeFailure("private bootstrap statement close detail");
+        doThrow(statementClose).when(statement).close();
+
+        assertSanitizedBootstrapRuntime(statementClose, "closing a bootstrap statement");
+
+        InOrder order = inOrder(statement, connection);
+        order.verify(statement).close();
+        order.verify(connection).rollback();
+        order.verify(connection).close();
+    }
+
     @Test
     void usesBaselineAdvancementAndSanitizesDriverFailures() throws Exception {
         IllegalStateException advancementFailure = driverRuntimeFailure("private bootstrap result detail");
@@ -341,6 +359,26 @@ class JdbcScriptRunnerFailureTest {
         assertSafeSqlCause(failure.getCause(), connectionClose);
         InOrder order = inOrder(statement, connection);
         order.verify(statement).close();
+        order.verify(connection).close();
+        order.verify(connection).abort(any());
+        order.verify(connection).close();
+    }
+
+    /**
+     * Verifies that an unchecked bootstrap connection-close failure is rebuilt
+     * before reporting and still causes abort followed by the final close
+     * fallback.
+     */
+    @Test
+    void sanitizesRuntimeFailureFromBootstrapConnectionClose() throws Exception {
+        IllegalStateException connectionClose = driverRuntimeFailure("private bootstrap connection close detail");
+        doThrow(connectionClose).doNothing().when(connection).close();
+
+        assertSanitizedBootstrapRuntime(connectionClose, "closing a bootstrap connection");
+
+        InOrder order = inOrder(statement, connection);
+        order.verify(statement).close();
+        order.verify(connection).commit();
         order.verify(connection).close();
         order.verify(connection).abort(any());
         order.verify(connection).close();

@@ -411,6 +411,74 @@ class JdbcRunnerFailureTest {
         order.verify(connection).close();
     }
 
+    /**
+     * Verifies that unchecked statement and connection close failures are
+     * rebuilt before they become application-visible, while a failed
+     * connection close still triggers invalidation in ownership order.
+     */
+    @Test
+    void sanitizesRuntimeFailuresFromStatementAndConnectionCleanup() throws Exception {
+        prepareSuccessfulUpdate();
+        IllegalStateException statementCloseFailure = driverRuntimeFailure("private statement close detail");
+        doThrow(statementCloseFailure).when(statement).close();
+
+        assertSanitizedRuntimeFailure(() -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute(),
+                                      statementCloseFailure,
+                                      "closing a statement");
+        InOrder statementCleanup = inOrder(statement, connection);
+        statementCleanup.verify(statement).close();
+        statementCleanup.verify(connection).close();
+
+        setUp();
+        prepareSuccessfulUpdate();
+        IllegalStateException connectionCloseFailure = driverRuntimeFailure("private connection close detail");
+        doThrow(connectionCloseFailure).doNothing().when(connection).close();
+
+        assertSanitizedRuntimeFailure(() -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute(),
+                                      connectionCloseFailure,
+                                      "closing a connection lease");
+        InOrder connectionCleanup = inOrder(statement, connection);
+        connectionCleanup.verify(statement).close();
+        connectionCleanup.verify(connection).close();
+        connectionCleanup.verify(connection).abort(any());
+        connectionCleanup.verify(connection).close();
+    }
+
+    /**
+     * Verifies that an application mapper failure retains its identity while
+     * an unchecked result-set cleanup failure is attached only in sanitized
+     * form.
+     */
+    @Test
+    void preservesMapperFailureWhenRuntimeCleanupFails() throws Exception {
+        ResultSet resultSet = prepareSuccessfulQuery();
+        IllegalStateException closeFailure = driverRuntimeFailure("private mapper cleanup detail");
+        doThrow(closeFailure).when(resultSet).close();
+        IllegalStateException mapperFailure = new IllegalStateException("mapper failed");
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                     () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                             .map(row -> {
+                                                                 throw mapperFailure;
+                                                             })
+                                                             .one());
+
+        assertThat(failure, sameInstance(mapperFailure));
+        assertThat(failure.getSuppressed().length, is(1));
+        Throwable cleanup = failure.getSuppressed()[0];
+        assertThat(cleanup, not(sameInstance(closeFailure)));
+        assertThat(cleanup.getMessage(),
+                   is("The JDBC provider encountered an exception of type 'java.lang.IllegalStateException' while "
+                              + "closing a result set."));
+        assertThat(cleanup.getMessage(), not(containsString("private")));
+        assertThat(cleanup.getCause(), nullValue());
+        assertThat(cleanup.getSuppressed().length, is(0));
+        InOrder order = inOrder(resultSet, statement, connection);
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
     @Test
     void reportsEveryOrdinaryUpdateCleanupFailure() throws Exception {
         SQLException statementClose = new SQLException("update statement close failed");
@@ -628,16 +696,23 @@ class JdbcRunnerFailureTest {
         verify(connection).close();
     }
 
+    /**
+     * Verifies that a cycle which closes after 64 distinct ordinary warnings
+     * terminates normally instead of being mistaken for a chain beyond the
+     * inspection limit.
+     */
     @Test
     void ignoresCyclicOrdinaryResultWarnings() throws Exception {
         ResultSet resultSet = prepareSuccessfulQuery();
-        SQLWarning ordinary = new SQLWarning("private cyclic warning", "01000", 19) {
+        SQLWarning first = ordinaryWarningChain(63);
+        SQLWarning last = new SQLWarning("private cyclic warning", "01000", 64) {
             @Override
             public SQLWarning getNextWarning() {
-                return this;
+                return first;
             }
         };
-        when(resultSet.getWarnings()).thenReturn(ordinary);
+        lastWarning(first, 63).setNextWarning(last);
+        when(resultSet.getWarnings()).thenReturn(first);
 
         String value = client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).one();
 
@@ -646,6 +721,83 @@ class JdbcRunnerFailureTest {
         verify(resultSet, never()).clearWarnings();
         verify(statement).close();
         verify(connection).close();
+    }
+
+    /**
+     * Verifies that a mapped value is returned when the driver provides
+     * exactly 64 distinct ordinary warnings for the current row.
+     */
+    @Test
+    void acceptsMaximumOrdinaryResultWarnings() throws Exception {
+        ResultSet resultSet = prepareSuccessfulQuery();
+        when(resultSet.getWarnings()).thenReturn(ordinaryWarningChain(64));
+
+        String value = client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).one();
+
+        assertThat(value, is("value"));
+        verify(resultSet).getWarnings();
+        verify(resultSet, never()).clearWarnings();
+        verify(statement).close();
+        verify(connection).close();
+    }
+
+    /**
+     * Verifies that a truncation reported by warning number 64 is translated
+     * before the mapped value can reach the application.
+     */
+    @Test
+    void rejectsDataTruncationAtWarningInspectionLimit() throws Exception {
+        ResultSet resultSet = prepareSuccessfulQuery();
+        SQLWarning first = ordinaryWarningChain(63);
+        DataTruncation truncation = new DataTruncation(1,
+                                                       false,
+                                                       true,
+                                                       48,
+                                                       16,
+                                                       new IllegalStateException("private boundary cause"));
+        lastWarning(first, 63).setNextWarning(truncation);
+        when(resultSet.getWarnings()).thenReturn(first);
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                     .map(String.class)
+                                                     .one());
+
+        assertSafeDataTruncation(failure, truncation);
+        verify(resultSet, times(1)).next();
+        verify(resultSet, never()).clearWarnings();
+        InOrder order = inOrder(resultSet, statement, connection);
+        order.verify(resultSet).getWarnings();
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    /**
+     * Verifies that warning number 65 fails safely before the mapped value is
+     * returned and that every owned JDBC resource is released in order.
+     */
+    @Test
+    void rejectsTooManyResultWarningsAndClosesResources() throws Exception {
+        ResultSet resultSet = prepareSuccessfulQuery();
+        when(resultSet.getWarnings()).thenReturn(ordinaryWarningChain(65));
+
+        DataException failure = assertThrows(DataException.class,
+                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
+                                                     .map(String.class)
+                                                     .one());
+
+        assertThat(failure.getMessage(),
+                   is("The JDBC provider returned more result set warnings than can be inspected safely."));
+        assertThat(failure.getCause(), nullValue());
+        assertThat(failure.getSuppressed().length, is(0));
+        verify(resultSet, times(1)).next();
+        verify(resultSet, never()).clearWarnings();
+        InOrder order = inOrder(resultSet, statement, connection);
+        order.verify(resultSet).getWarnings();
+        order.verify(resultSet).close();
+        order.verify(statement).close();
+        order.verify(connection).close();
     }
 
     @Test
@@ -1082,6 +1234,25 @@ class JdbcRunnerFailureTest {
                 .generatedKeys()
                 .map(row -> row.required(1, Long.class))
                 .one();
+    }
+
+    private static SQLWarning ordinaryWarningChain(int warningCount) {
+        SQLWarning first = new SQLWarning("private ordinary warning 1", "01000", 1);
+        SQLWarning current = first;
+        for (int index = 2; index <= warningCount; index++) {
+            SQLWarning next = new SQLWarning("private ordinary warning " + index, "01000", index);
+            current.setNextWarning(next);
+            current = next;
+        }
+        return first;
+    }
+
+    private static SQLWarning lastWarning(SQLWarning first, int warningCount) {
+        SQLWarning current = first;
+        for (int index = 2; index <= warningCount; index++) {
+            current = current.getNextWarning();
+        }
+        return current;
     }
 
     private static void assertCleanupFailure(ThrowingInvocation invocation, SQLException expected) {

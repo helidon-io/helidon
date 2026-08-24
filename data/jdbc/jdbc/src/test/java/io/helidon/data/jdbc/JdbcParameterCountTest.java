@@ -40,8 +40,20 @@ class JdbcParameterCountTest {
                 /* ? ignored */
                 """;
 
-        assertThat(JdbcOperation.parameterCount(sql), is(7));
+        assertThat(JdbcOperation.parameterCount(sql), is(4));
         assertThat(JdbcOperation.parameterCount("select 1 -- ? ignored"), is(0));
+    }
+
+    /**
+     * Verifies that imperative marker counting protects the extended portable
+     * regions while retaining ordinary single-quote behavior.
+     */
+    @Test
+    void protectsExtendedPortableRegions() {
+        assertThat(JdbcOperation.parameterCount("select PAYLOAD @?? ? from T"), is(1));
+        assertThat(JdbcOperation.parameterCount("select `identifier?` from T where ID = ?"), is(1));
+        assertThat(JdbcOperation.parameterCount("select E'value \\' ? ignored', ?"), is(1));
+        assertThat(JdbcOperation.parameterCount("select 'ends with \\', ?"), is(1));
     }
 
     /**

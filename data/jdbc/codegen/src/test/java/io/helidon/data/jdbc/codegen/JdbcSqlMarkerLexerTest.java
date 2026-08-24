@@ -49,7 +49,7 @@ class JdbcSqlMarkerLexerTest {
                                             .replace(":id", "?")));
         assertThat(named.markers(), is(List.of("index", "delta", "id")));
         assertThat(named.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
-        assertThat(positional.markers(), is(List.of("", "", "")));
+        assertThat(positional.markers(), is(List.of("", "")));
     }
 
     /**
@@ -89,22 +89,50 @@ class JdbcSqlMarkerLexerTest {
         assertThat(several.markers(), is(List.of("", "")));
     }
 
+    /**
+     * Verifies that a doubled question mark is preserved without contributing
+     * physical bind positions to a generated statement.
+     */
     @Test
-    void treatsDoubledQuestionMarksAsPortableMarkers() {
+    void protectsDoubledQuestionMarkEscape() {
         String sql = "select ??";
 
         JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
 
         assertThat(result.sql(), is(sql));
-        assertThat(result.markers(), is(List.of("", "")));
-        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL));
+        assertThat(result.markers(), is(List.of()));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NONE));
     }
 
+    /**
+     * Verifies that a doubled question mark can coexist with declarative named
+     * markers without being mistaken for positional syntax.
+     */
     @Test
-    void rejectsDoubledQuestionMarksMixedWithNamedMarkers() {
+    void acceptsDoubledQuestionMarkEscapeWithNamedMarkers() {
         String sql = "select PAYLOAD @?? '$.items[*]' from T where ID = :id";
 
-        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse(sql));
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.sql(), is("select PAYLOAD @?? '$.items[*]' from T where ID = ?"));
+        assertThat(result.markers(), is(List.of("id")));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+    }
+
+    /**
+     * Verifies that named-marker rewriting ignores PostgreSQL escape strings
+     * and MySQL backtick identifiers while preserving their exact source.
+     */
+    @Test
+    void protectsExtendedPortableRegions() {
+        String sql = "select E'value \\' :ignored', `identifier:ignored` from T where ID = :id";
+
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.sql(),
+                   is("select E'value \\' :ignored', `identifier:ignored` from T where ID = ?"));
+        assertThat(result.markers(), is(List.of("id")));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
     }
 
     @Test

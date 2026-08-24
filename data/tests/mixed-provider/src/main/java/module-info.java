@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.jdbc.tests.declarative;
-
-import io.helidon.data.jdbc.tests.application.ContactOperations;
-import io.helidon.data.jdbc.tests.contract.AbstractJdbcApplicationContract;
 
 /**
- * Executes the shared application contract through a generated repository.
+ * Mixed provider code generation tests.
  */
-class DeclarativeJdbcContractTest extends AbstractJdbcApplicationContract {
-    @Override
-    protected Class<? extends ContactOperations> operationsType() {
-        return DeclarativeContactOperations.class;
-    }
+module io.helidon.data.tests.mixed.provider {
+    requires jakarta.persistence;
+    requires io.helidon.common;
+    requires io.helidon.data;
+    requires io.helidon.data.jakarta.persistence;
+    requires io.helidon.data.jdbc;
+    requires io.helidon.service.registry;
+
+    exports io.helidon.data.tests.mixed.provider;
 }

@@ -29,16 +29,24 @@ import io.helidon.data.DataException;
  * Creates application-visible JDBC diagnostics without retaining confidential
  * SQL, driver, or environment text.
  * <p>
- * Driver-owned throwables never cross this boundary by reference. SQL
- * exceptions are rebuilt from SQL state and vendor code, non-SQL failures are
- * represented by a stable provider operation and throwable class, and warning
- * chains and exception graphs are copied with explicit cycle and size limits.
- * Provider-owned safe diagnostic types make repeated sanitization idempotent.
+ * Driver-owned {@link SQLException} and {@link RuntimeException} instances
+ * never cross this boundary by reference. SQL exceptions are rebuilt from SQL
+ * state and vendor code, non-SQL failures are represented by a stable provider
+ * operation and throwable class, and warning chains and exception graphs are
+ * copied with explicit cycle and size limits. Provider-owned safe diagnostic
+ * types make repeated sanitization idempotent.
+ * <p>
+ * Fatal {@link Error} instances deliberately remain outside this diagnostic
+ * boundary and propagate unchanged. Rebuilding an error could hide a JVM
+ * integrity failure or require allocation while the VM is reporting resource
+ * exhaustion. Callers sanitize nonfatal failures at the JDBC invocation which
+ * establishes driver ownership, allowing application and mapper failures to
+ * retain their identity.
  */
 final class JdbcExceptionTranslator {
 
-    // Retain at most 64 warnings from one JDBC resource to bound traversal work and suppressed diagnostics.
-    private static final int MAX_WARNINGS_PER_OWNER = 64;
+    // Maximum number of warnings inspected or retained for one JDBC resource.
+    static final int MAX_WARNINGS_PER_OWNER = 64;
 
     // Retain at most 16 nodes in a sanitized graph, including its root.
     private static final int MAX_EXCEPTION_GRAPH_NODES = 16;

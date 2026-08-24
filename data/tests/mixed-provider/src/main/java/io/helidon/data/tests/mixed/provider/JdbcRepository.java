@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.jdbc.tests.declarative;
+package io.helidon.data.tests.mixed.provider;
 
-import io.helidon.data.jdbc.tests.application.transaction.TransactionMatrixOperations;
-import io.helidon.data.jdbc.tests.contract.AbstractJdbcTransactionContract;
+import io.helidon.data.Data;
+import io.helidon.data.jdbc.Jdbc;
 
 /**
- * Executes the transaction matrix through generated method annotations.
+ * Repository generated only by the explicitly selected JDBC provider.
  */
-class DeclarativeJdbcTransactionTest extends AbstractJdbcTransactionContract {
-    @Override
-    protected Class<? extends TransactionMatrixOperations> operationsType() {
-        return DeclarativeTransactionMatrixOperations.class;
-    }
+@Data.Repository
+@Data.Provider("jdbc")
+public interface JdbcRepository {
+
+    /**
+     * Reads a scalar value.
+     *
+     * @return scalar value
+     */
+    @Jdbc.Statement("SELECT VALUE FROM TEST_VALUE")
+    String value();
 }

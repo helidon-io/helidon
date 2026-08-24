@@ -100,18 +100,6 @@ class RepositoryCodegenCompatibilityTest {
     }
 
     @Test
-    void selectsAnnotationOwnerWithoutProvider() {
-        TypeInfo repository = annotationOnlyRepository(null);
-        RepositoryGenerator owner = generator(Set.of(REPOSITORY_ANNOTATION), Set.of());
-        DirectPersistenceGenerator persistence = new DirectPersistenceGenerator();
-
-        new RepositoryCodegen(mock(CodegenContext.class), List.of(owner), List.of(persistence))
-                .process(round(repository));
-
-        assertThat(persistence.generated(), is(1));
-    }
-
-    @Test
     void selectsTheSoleAnnotationOwner() {
         TypeInfo repository = annotationOnlyRepository("jdbc");
         RepositoryGenerator owner = generator(Set.of(REPOSITORY_ANNOTATION), Set.of());

@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.jdbc.tests.declarative.h2;
+package io.helidon.data.tests.mixed.provider;
 
-import javax.sql.DataSource;
-
-import io.helidon.data.jdbc.AbstractJdbcBootstrapDiagnosticTest;
+import io.helidon.data.Data;
 
 /**
- * Runs the portable bootstrap diagnostic contract in the declarative H2 leaf.
+ * Repository generated only by the explicitly selected Jakarta Persistence provider.
  */
-class H2DeclarativeBootstrapDiagnosticTest extends AbstractJdbcBootstrapDiagnosticTest {
-    @Override
-    protected DataSource dataSource() {
-        return driverManagerDataSource("jdbc:h2:mem:declarative_bootstrap_diagnostics;DB_CLOSE_DELAY=-1",
-                                       null,
-                                       null);
-    }
+@Data.Repository
+@Data.Provider("jakarta")
+public interface JakartaRepository extends Data.CrudRepository<JakartaEntity, Integer> {
 }
