@@ -1276,6 +1276,38 @@ class DeliveryEngineTest {
     }
 
     @Test
+    void sourceCompletionListenerRunsAfterDeregistrationWithPublishedFailure() throws Exception {
+        IllegalStateException sourceFailure = new IllegalStateException("source failed");
+        CountDownLatch sourceStarted = new CountDownLatch(1);
+        CountDownLatch releaseSource = new CountDownLatch(1);
+        CountDownLatch completionObserved = new CountDownLatch(1);
+        AtomicReference<Throwable> observedFailure = new AtomicReference<>();
+        AtomicBoolean trackedDuringCompletion = new AtomicBoolean();
+        try (DeliveryEngine engine = engine(configBuilder().build())) {
+            DeliveryEngine.SourceTask sourceTask = engine.startSource("source", () -> {
+                sourceStarted.countDown();
+                await(releaseSource);
+                throw sourceFailure;
+            });
+            await(sourceStarted);
+            sourceTask.onCompletion(failure -> {
+                observedFailure.set(failure.orElse(null));
+                trackedDuringCompletion.set(engine.isCurrentDeliveryOrSourceThread());
+                completionObserved.countDown();
+            });
+
+            releaseSource.countDown();
+            await(completionObserved);
+
+            assertThat(observedFailure.get(), sameInstance(sourceFailure));
+            assertThat(sourceTask.failure().orElseThrow(), sameInstance(sourceFailure));
+            assertThat(trackedDuringCompletion.get(), is(false));
+            assertThat(sourceTask.await(WAIT), is(true));
+            assertThat(engine.awaitTermination(WAIT), is(true));
+        }
+    }
+
+    @Test
     void nestedChannelDispatchWorksAndSameChannelRecursionIsRejected() {
         MessagingExecutionConfig config = configBuilder().build();
         try (DeliveryEngine engine = engine(config, "a", "b")) {

@@ -263,8 +263,11 @@ final class DeliveryEngine implements AutoCloseable {
                     failure = t;
                     throw t;
                 } finally {
+                    // Publish failure before deregistration so shutdown cannot observe termination without its cause.
+                    // Notify listeners only after deregistration so their cleanup never waits on this source thread.
+                    sourceTask.recordFailure(failure);
                     sourceThreads.remove(Thread.currentThread());
-                    sourceTask.complete(failure);
+                    sourceTask.signalCompletion();
                 }
             });
             sourceTask.thread(thread);
@@ -272,8 +275,9 @@ final class DeliveryEngine implements AutoCloseable {
             try {
                 thread.start();
             } catch (RuntimeException | Error e) {
+                sourceTask.recordFailure(e);
                 sourceThreads.remove(thread);
-                sourceTask.complete(e);
+                sourceTask.signalCompletion();
                 throw e;
             }
             return sourceTask;
@@ -1331,12 +1335,18 @@ final class DeliveryEngine implements AutoCloseable {
             this.thread = thread;
         }
 
-        private void complete(Throwable failure) {
-            if (failure == null) {
+        private void recordFailure(Throwable failure) {
+            if (failure != null) {
+                this.failure.compareAndSet(null, failure);
+            }
+        }
+
+        private void signalCompletion() {
+            Throwable currentFailure = failure.get();
+            if (currentFailure == null) {
                 completion.complete(null);
             } else {
-                this.failure.compareAndSet(null, failure);
-                completion.completeExceptionally(failure);
+                completion.completeExceptionally(currentFailure);
             }
         }
     }

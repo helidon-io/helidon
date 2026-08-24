@@ -885,6 +885,7 @@ class MessagingGraphTest {
         Throwable graphFailure = graph.failure().orElseThrow();
         assertThat(graphFailure.getMessage(), containsString("source failed"));
         assertThat(graphFailure.getCause(), sameInstance(runtimeFailure));
+        assertThat(graphFailure.getSuppressed().length, is(0));
         assertThat(lifecycleEvents(events),
                    is(List.of("force-source", "force-resource", "close-source", "close-resource")));
         assertThrows(IllegalStateException.class, graph::ensureRunning);
@@ -902,6 +903,9 @@ class MessagingGraphTest {
         IllegalStateException failure = assertThrows(IllegalStateException.class, graph::close);
 
         assertThat(failure, sameInstance(sourceFailure));
+        assertThat(failure.getSuppressed().length, is(1));
+        assertThat(failure.getSuppressed()[0].getMessage(), containsString("forced shutdown was requested"));
+        assertThat(failure.getSuppressed()[0].getMessage().contains("timed out"), is(false));
         assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
         assertThat(graph.failure().orElseThrow(), sameInstance(sourceFailure));
         assertThat(assertThrows(IllegalStateException.class, graph::close), sameInstance(failure));
