@@ -815,6 +815,12 @@ throws, do not acknowledge or commit the transport delivery. Either leave it ava
 apply a documented transport-specific negative acknowledgement. A connector that needs heartbeats while processing
 can call timed `await(Duration)` and perform transport maintenance between waits.
 
+If transport-to-message mapping fails before dispatch, create a metadata-only envelope and call
+`reservation.startFailed(batch, failure)`. The runtime does not own the native transport record or mapper, so it cannot
+repeat mapping. Bounded policies retain their configured failure-attempt accounting. An unlimited policy treats the
+mapping failure as exhausted after its initial attempt so `await()` always terminates; with `FAIL`, leave the transport
+delivery available for redelivery so the connector can map it again.
+
 A normal return from `await()` may mean normal handler completion, `DROP`, or successful dead-letter delivery; all are
 settled runtime outcomes and the complete source delivery may then be committed. The conservative outline above
 abandons the complete transport batch on failure. A connector that supports partial settlement may align a

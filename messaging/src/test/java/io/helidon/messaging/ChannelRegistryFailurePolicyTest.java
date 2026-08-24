@@ -361,6 +361,59 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
+    void testUnlimitedPreDispatchFailureTerminatesAndRetainsCapacityUntilClose() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+                                handled.add((String) message.entity());
+                            })),
+                            yaml("""
+                                    helidon:
+                                      messaging:
+                                        channel:
+                                          orders:
+                                            execution:
+                                              queue-capacity: 0
+                                              max-pending-messages: 2
+                                              max-in-flight-messages: 1
+                                        incoming:
+                                          orders:
+                                            connector: test-in
+                                            failure:
+                                              retry:
+                                                delay: PT1H
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        IncomingConnectorContext context = incoming.context("orders");
+        MessageBatch<String> failedBatch = MessageBatch.create(
+                Message.builder("unmapped").header("message-id", "poison-1").build());
+        MessageBatch<String> goodBatch = MessageBatch.create(Message.create("good"));
+        IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
+
+        try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
+             ConnectorDelivery delivery = reservation.startFailed(failedBatch, mappingFailure)) {
+            BatchDeliveryException terminalFailure = assertThrows(
+                    BatchDeliveryException.class,
+                    () -> delivery.await(Duration.ofSeconds(2)));
+            assertThat(delivery.isDone(), is(true));
+            assertThat(terminalFailure.batch(), sameInstance(failedBatch));
+            assertThat(terminalFailure.getCause(), sameInstance(mappingFailure));
+            assertThat(handled, is(List.of()));
+
+            try (ConnectorDeliveryReservation blocked = context.reserveDelivery()) {
+                assertThat(blocked.tryStart(goodBatch).isEmpty(), is(true));
+                delivery.close();
+                try (ConnectorDelivery goodDelivery = blocked.tryStart(goodBatch).orElseThrow()) {
+                    assertThat(goodDelivery.await(Duration.ofSeconds(2)), is(true));
+                }
+            }
+        }
+
+        assertThat(handled, is(List.of("good")));
+    }
+
+    @Test
     void testPreDispatchFailureRetriesThenDeadLettersWithoutInvokingHandlers() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         TestOutgoingConnector outgoing = new TestOutgoingConnector();

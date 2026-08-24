@@ -1318,7 +1318,7 @@ class ChannelRegistry implements MessagingRuntime {
             MessageBatch<?> failedBatch = current.batch().subset(failedIndexes);
             BatchDeliveryException policyFailure = batchFailure(failedBatch, alignedFailure);
             int failedAttempt = current.failedAttempts() + 1;
-            if (failurePolicy.maxAttempts() == 0 || failedAttempt < failurePolicy.maxAttempts()) {
+            if (shouldRetry(current, failedAttempt)) {
                 awaitRetry();
                 pending.addFirst(new PendingDelivery(failedBatch,
                                                      failedAttempt,
@@ -1351,6 +1351,13 @@ class ChannelRegistry implements MessagingRuntime {
             default -> throw new IllegalStateException("Unsupported failure disposition: "
                                                                + failurePolicy.onExhausted());
             }
+        }
+
+        private boolean shouldRetry(PendingDelivery current, int failedAttempt) {
+            int maxAttempts = failurePolicy.maxAttempts();
+            return maxAttempts == 0
+                    ? current.preDispatchFailure() == null
+                    : failedAttempt < maxAttempts;
         }
 
         private void awaitRetry() {

@@ -83,7 +83,9 @@ public final class Messaging {
 
         /**
          * Maximum total delivery attempts, including the initial attempt. Zero means unlimited attempts and is only
-         * valid with {@link FailureDisposition#FAIL}.
+         * valid with {@link FailureDisposition#FAIL}. An unlimited pre-dispatch mapping failure reported through
+         * {@link ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)} is treated as exhausted
+         * after its initial attempt because the runtime cannot repeat transport mapping.
          *
          * @return maximum delivery attempts, or zero for unlimited attempts
          */

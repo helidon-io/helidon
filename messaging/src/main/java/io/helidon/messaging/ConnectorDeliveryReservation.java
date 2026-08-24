@@ -57,10 +57,13 @@ public interface ConnectorDeliveryReservation extends AutoCloseable {
      * Start a retained connector delivery whose transport-to-message mapping failed before dispatch.
      * <p>
      * Runtime implementations can apply the channel failure policy without invoking application handlers. The
+     * runtime cannot repeat transport mapping because it does not own the native transport record or mapper. Bounded
+     * policies retain their configured failure-attempt accounting; an unlimited policy treats the mapping failure as
+     * exhausted after its initial attempt so that the returned delivery always terminates. The
      * default implementation closes this reservation and rethrows the supplied failure so implementations compiled
      * against an earlier version fail safely instead of dispatching an invalid batch.
      *
-     * @param batch retained delivery metadata used for retry, drop, or dead-letter handling
+     * @param batch retained delivery metadata used for failure accounting, drop, or dead-letter handling
      * @param failure pre-dispatch mapping failure
      * @return admitted delivery task and settlement lease
      * @throws RuntimeException the supplied failure when this operation is not implemented by the runtime
