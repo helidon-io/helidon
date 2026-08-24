@@ -28,7 +28,7 @@ import dev.langchain4j.model.openai.OpenAiImageModel;
 interface OpenAiImageLc4jProvider {
 
     /**
-     * Legacy image style option retained for configuration compatibility.
+     * Legacy image style option retained for configuration compatibility; this option is ignored.
      *
      * @return configured image style
      * @deprecated this option is no longer supported by LangChain4j and is ignored
@@ -39,7 +39,7 @@ interface OpenAiImageLc4jProvider {
     Optional<String> style();
 
     /**
-     * Legacy image response format option retained for configuration compatibility.
+     * Legacy image response format option retained for configuration compatibility; this option is ignored.
      *
      * @return configured image response format
      * @deprecated this option is no longer supported by LangChain4j and is ignored

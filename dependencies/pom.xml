@@ -105,6 +105,7 @@
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
         <version.lib.jgit>7.3.0.202506031305-r</version.lib.jgit>
+        <version.lib.jna>5.17.0</version.lib.jna>
         <version.lib.junit>5.12.2</version.lib.junit>
         <version.lib.kafka>3.9.2</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
@@ -1273,6 +1274,12 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${version.lib.google-findbugs-jsr305}</version>
+            </dependency>
+            <!-- For dependency convergence -->
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${version.lib.jna}</version>
             </dependency>
             <!-- For upgrade. Transitive dependency of langchain4j -->
             <dependency>

@@ -199,6 +199,18 @@ Configuration for LangChain4j model OciGenAiStreamingChatModel
 </tr>
 <tr>
 <td>
+<code>gen-<wbr>ai-async-<wbr>client-<wbr>discover-<wbr>services</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>gen-<wbr>ai-async-<wbr>client</code></td>
+</tr>
+<tr>
+<td>
 <code>top-<wbr>k</code>
 </td>
 <td>
@@ -207,6 +219,17 @@ Configuration for LangChain4j model OciGenAiStreamingChatModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>topK(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
+</tr>
+<tr>
+<td>
+<code>gen-<wbr>ai-async-<wbr>client</code>
+</td>
+<td>
+<code>Generative<wbr>AiInference<wbr>Async<wbr>Client</code>
+</td>
+<td>
+</td>
+<td>Custom asynchronous OCI GenAI client</td>
 </tr>
 <tr>
 <td>
@@ -241,6 +264,17 @@ Configuration for LangChain4j model OciGenAiStreamingChatModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>stop(<wbr>java.<wbr>util.<wbr>List)</code></td>
+</tr>
+<tr>
+<td>
+<code>executor-<wbr>service</code>
+</td>
+<td>
+<code>Executor<wbr>Service</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>OciGen<wbr>AiStreaming<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>executor<wbr>Service(<wbr>java.<wbr>util.<wbr>concurrent.<wbr>Executor<wbr>Service)</code></td>
 </tr>
 <tr>
 <td>

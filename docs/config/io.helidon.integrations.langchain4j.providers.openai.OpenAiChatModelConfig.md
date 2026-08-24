@@ -131,6 +131,17 @@ Configuration for LangChain4j model OpenAiChatModel
 </tr>
 <tr>
 <td>
+<code>logprobs</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiChat<wbr>Model.<wbr>Open<wbr>AiChat<wbr>Model<wbr>Builder#<wbr>logprobs(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
+</tr>
+<tr>
+<td>
 <code>service-<wbr>tier</code>
 </td>
 <td>
@@ -139,6 +150,17 @@ Configuration for LangChain4j model OpenAiChatModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiChat<wbr>Model.<wbr>Open<wbr>AiChat<wbr>Model<wbr>Builder#<wbr>service<wbr>Tier(<wbr>java.<wbr>lang.<wbr>String)</code></td>
+</tr>
+<tr>
+<td>
+<code>use-<wbr>input-<wbr>image-<wbr>format</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiChat<wbr>Model.<wbr>Open<wbr>AiChat<wbr>Model<wbr>Builder#<wbr>useInput<wbr>Image<wbr>Format(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
@@ -430,6 +452,17 @@ Configuration for LangChain4j model OpenAiChatModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiChat<wbr>Model.<wbr>Open<wbr>AiChat<wbr>Model<wbr>Builder#<wbr>stop(<wbr>java.<wbr>util.<wbr>List)</code></td>
+</tr>
+<tr>
+<td>
+<code>top-<wbr>logprobs</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiChat<wbr>Model.<wbr>Open<wbr>AiChat<wbr>Model<wbr>Builder#<wbr>topLogprobs(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>

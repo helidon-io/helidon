@@ -52,6 +52,17 @@ Configuration for LangChain4j model OpenAiEmbeddingModel
 </tr>
 <tr>
 <td>
+<code>listeners</code>
+</td>
+<td>
+<code>List&lt;<wbr>Embedding<wbr>Model<wbr>Listener&gt;</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiEmbedding<wbr>Model.<wbr>Open<wbr>AiEmbedding<wbr>Model<wbr>Builder#<wbr>listeners(<wbr>java.<wbr>util.<wbr>List)</code></td>
+</tr>
+<tr>
+<td>
 <code>custom-<wbr>headers</code>
 </td>
 <td>
@@ -116,6 +127,17 @@ Configuration for LangChain4j model OpenAiEmbeddingModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiEmbedding<wbr>Model.<wbr>Open<wbr>AiEmbedding<wbr>Model<wbr>Builder#<wbr>timeout(<wbr>java.<wbr>time.<wbr>Duration)</code></td>
+</tr>
+<tr>
+<td>
+<code>custom-<wbr>parameters</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Object&gt;</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiEmbedding<wbr>Model.<wbr>Open<wbr>AiEmbedding<wbr>Model<wbr>Builder#<wbr>custom<wbr>Parameters(<wbr>java.<wbr>util.<wbr>Map)</code></td>
 </tr>
 <tr>
 <td>

@@ -85,6 +85,17 @@ Configuration for LangChain4j model OpenAiImageModel
 </tr>
 <tr>
 <td>
+<code>output-<wbr>format</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiImage<wbr>Model.<wbr>Open<wbr>AiImage<wbr>Model<wbr>Builder#<wbr>output<wbr>Format(<wbr>java.<wbr>lang.<wbr>String)</code></td>
+</tr>
+<tr>
+<td>
 <code>log-<wbr>responses</code>
 </td>
 <td>
@@ -93,17 +104,6 @@ Configuration for LangChain4j model OpenAiImageModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiImage<wbr>Model.<wbr>Open<wbr>AiImage<wbr>Model<wbr>Builder#<wbr>logResponses(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
-</tr>
-<tr>
-<td>
-<code>response-<wbr>format</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Enable a "JSON mode" in the model configuration</td>
 </tr>
 <tr>
 <td>
@@ -138,6 +138,17 @@ Configuration for LangChain4j model OpenAiImageModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiImage<wbr>Model.<wbr>Open<wbr>AiImage<wbr>Model<wbr>Builder#<wbr>quality(<wbr>java.<wbr>lang.<wbr>String)</code></td>
+</tr>
+<tr>
+<td>
+<code>output-<wbr>compression</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiImage<wbr>Model.<wbr>Open<wbr>AiImage<wbr>Model<wbr>Builder#<wbr>output<wbr>Compression(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
@@ -186,6 +197,28 @@ Configuration for LangChain4j model OpenAiImageModel
 </tr>
 <tr>
 <td>
+<code>background</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiImage<wbr>Model.<wbr>Open<wbr>AiImage<wbr>Model<wbr>Builder#<wbr>background(<wbr>java.<wbr>lang.<wbr>String)</code></td>
+</tr>
+<tr>
+<td>
+<code>moderation</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiImage<wbr>Model.<wbr>Open<wbr>AiImage<wbr>Model<wbr>Builder#<wbr>moderation(<wbr>java.<wbr>lang.<wbr>String)</code></td>
+</tr>
+<tr>
+<td>
 <code>model-<wbr>name</code>
 </td>
 <td>
@@ -205,17 +238,6 @@ Configuration for LangChain4j model OpenAiImageModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiImage<wbr>Model.<wbr>Open<wbr>AiImage<wbr>Model<wbr>Builder#<wbr>organization<wbr>Id(java.<wbr>lang.<wbr>String)</code></td>
-</tr>
-<tr>
-<td>
-<code>style</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>openai.<wbr>Open<wbr>AiImage<wbr>Model.<wbr>Open<wbr>AiImage<wbr>Model<wbr>Builder#<wbr>style(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
@@ -242,6 +264,39 @@ Configuration for LangChain4j model OpenAiImageModel
 </tbody>
 </table>
 
+
+### Deprecated Options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>response-<wbr>format</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Legacy image response format option retained for configuration compatibility; this option is ignored</td>
+</tr>
+<tr>
+<td>
+<code>style</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Legacy image style option retained for configuration compatibility; this option is ignored</td>
+</tr>
+</tbody>
+</table>
 
 
 ---

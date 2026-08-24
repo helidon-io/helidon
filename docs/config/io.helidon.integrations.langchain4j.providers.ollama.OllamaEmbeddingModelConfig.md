@@ -64,6 +64,17 @@ Configuration for LangChain4j model OllamaEmbeddingModel
 </tr>
 <tr>
 <td>
+<code>listeners</code>
+</td>
+<td>
+<code>List&lt;<wbr>Embedding<wbr>Model<wbr>Listener&gt;</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>listeners(<wbr>java.<wbr>util.<wbr>List)</code></td>
+</tr>
+<tr>
+<td>
 <code>custom-<wbr>headers</code>
 </td>
 <td>
@@ -128,6 +139,17 @@ Configuration for LangChain4j model OllamaEmbeddingModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>timeout(<wbr>java.<wbr>time.<wbr>Duration)</code></td>
+</tr>
+<tr>
+<td>
+<code>dimensions</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>dimensions(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 </tbody>
 </table>

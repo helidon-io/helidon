@@ -88,6 +88,17 @@ Merged configuration for langchain4j.providers.oci-gen-ai
 </tr>
 <tr>
 <td>
+<code>executor-<wbr>service</code>
+</td>
+<td>
+<code>Executor<wbr>Service</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>OciGen<wbr>AiStreaming<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>executor<wbr>Service(<wbr>java.<wbr>util.<wbr>concurrent.<wbr>Executor<wbr>Service)</code></td>
+</tr>
+<tr>
+<td>
 <code>frequency-<wbr>penalty</code>
 </td>
 <td>
@@ -96,6 +107,29 @@ Merged configuration for langchain4j.providers.oci-gen-ai
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>frequency<wbr>Penalty(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
+</tr>
+<tr>
+<td>
+<code>gen-<wbr>ai-async-<wbr>client</code>
+</td>
+<td>
+<code>Generative<wbr>AiInference<wbr>Async<wbr>Client</code>
+</td>
+<td>
+</td>
+<td>Custom asynchronous OCI GenAI client</td>
+</tr>
+<tr>
+<td>
+<code>gen-<wbr>ai-async-<wbr>client-<wbr>discover-<wbr>services</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>gen-<wbr>ai-async-<wbr>client</code></td>
 </tr>
 <tr>
 <td>
