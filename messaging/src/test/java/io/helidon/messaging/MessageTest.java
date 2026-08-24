@@ -20,7 +20,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessageTest {
@@ -34,9 +35,9 @@ class MessageTest {
         Message<String> message = builder.build();
         builder.header("trace", "after-build");
 
-        assertEquals(Map.of("trace", "last", "Trace", "case-sensitive"), message.headers());
-        assertEquals("last", message.header("trace").orElseThrow());
-        assertEquals("case-sensitive", message.header("Trace").orElseThrow());
+        assertThat(message.headers(), is(Map.of("trace", "last", "Trace", "case-sensitive")));
+        assertThat(message.header("trace").orElseThrow(), is("last"));
+        assertThat(message.header("Trace").orElseThrow(), is("case-sensitive"));
         assertThrows(UnsupportedOperationException.class, () -> message.headers().put("new", "value"));
     }
 }

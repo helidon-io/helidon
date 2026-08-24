@@ -31,8 +31,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DefaultMessagingChannelTest {
@@ -96,7 +96,7 @@ class DefaultMessagingChannelTest {
                     () -> graph.emitter(channel).emitBatch(batch));
 
             assertThat(firstOutputInvocations.get(), is(1));
-            assertSame(batch, failure.batch());
+            assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcome(0).status(), is(BatchItemStatus.INDETERMINATE));
         }
     }
@@ -134,7 +134,7 @@ class DefaultMessagingChannelTest {
 
             assertThat(firstOutputInvocations.get(), is(1));
             assertThat(laterOutputInvocations.get(), is(0));
-            assertSame(batch, failure.batch());
+            assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
                        is(List.of(BatchItemStatus.INDETERMINATE,
                                   BatchItemStatus.INDETERMINATE,
@@ -164,7 +164,7 @@ class DefaultMessagingChannelTest {
                     BatchDeliveryException.class,
                     () -> graph.emitter(source).emitBatch(batch));
 
-            assertSame(batch, failure.batch());
+            assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
                        is(List.of(BatchItemStatus.NOT_ATTEMPTED, BatchItemStatus.NOT_ATTEMPTED)));
             assertThat(targetInvocations.get(), is(0));
@@ -196,7 +196,7 @@ class DefaultMessagingChannelTest {
                     BatchDeliveryException.class,
                     () -> graph.emitter(source).emitBatch(batch));
 
-            assertSame(batch, failure.batch());
+            assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
                        is(List.of(BatchItemStatus.INDETERMINATE, BatchItemStatus.INDETERMINATE)));
             assertThat(earlierOutputInvocations.get(), is(1));
@@ -227,7 +227,7 @@ class DefaultMessagingChannelTest {
                     BatchDeliveryException.class,
                     () -> graph.emitter(source).emitBatch(batch));
 
-            assertSame(batch, failure.batch());
+            assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcome(0).status(), is(BatchItemStatus.INDETERMINATE));
             assertThat(targetInvocations.get(), is(1));
         }
@@ -260,7 +260,7 @@ class DefaultMessagingChannelTest {
                     BatchDeliveryException.class,
                     () -> graph.emitter(source).emitBatch(batch));
 
-            assertSame(batch, failure.batch());
+            assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcome(0).status(), is(BatchItemStatus.INDETERMINATE));
             assertThat(sourceSideEffects.get(), is(1));
             assertThat(targetInvocations.get(), is(0));
@@ -292,7 +292,7 @@ class DefaultMessagingChannelTest {
                     BatchDeliveryException.class,
                     () -> graph.emitter(source).emitBatch(batch));
 
-            assertSame(batch, failure.batch());
+            assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
                        is(List.of(BatchItemStatus.INDETERMINATE, BatchItemStatus.INDETERMINATE)));
             assertThat(processorInvocations.get(), is(2));
@@ -346,7 +346,7 @@ class DefaultMessagingChannelTest {
 
         MessagingRejectedException thrown = assertThrows(MessagingRejectedException.class, source::run);
 
-        assertSame(rejection, thrown);
+        assertThat(thrown, sameInstance(rejection));
     }
 
     @Test

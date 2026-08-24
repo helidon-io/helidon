@@ -39,8 +39,8 @@ import io.helidon.service.registry.ServiceInstance;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessagingEntryPointsImplTest {
@@ -76,12 +76,12 @@ class MessagingEntryPointsImplTest {
                 (ignored, incoming) -> Optional.of(incoming));
         Optional<Message<?>> result = handler.handle(service, message);
 
-        assertSame(message, result.orElseThrow());
+        assertThat(result.orElseThrow(), sameInstance(message));
         assertThat(interceptor.invocations(), is(1));
-        assertSame(DESCRIPTOR, interceptor.context().serviceInfo());
-        assertSame(METHOD, interceptor.context().elementInfo());
-        assertSame(service, interceptor.context().serviceInstance().orElseThrow());
-        assertSame(message, interceptor.arguments()[0]);
+        assertThat(interceptor.context().serviceInfo(), sameInstance(DESCRIPTOR));
+        assertThat(interceptor.context().elementInfo(), sameInstance(METHOD));
+        assertThat(interceptor.context().serviceInstance().orElseThrow(), sameInstance(service));
+        assertThat(interceptor.arguments()[0], sameInstance(message));
 
         RuntimeException expected = new RuntimeException("handler failed");
         MessagingEntryPoint.Handler<Object> failing = entryPoints.handler(
@@ -93,7 +93,7 @@ class MessagingEntryPointsImplTest {
                     throw expected;
                 });
         RuntimeException actual = assertThrows(RuntimeException.class, () -> failing.handle(service, message));
-        assertSame(expected, actual);
+        assertThat(actual, sameInstance(expected));
     }
 
     @Test
@@ -119,11 +119,11 @@ class MessagingEntryPointsImplTest {
         handler.handle(service, batch);
 
         assertThat(interceptor.invocations(), is(1));
-        assertSame(service, interceptor.context().serviceInstance().orElseThrow());
-        assertSame(service, receivedService.get());
+        assertThat(interceptor.context().serviceInstance().orElseThrow(), sameInstance(service));
+        assertThat(receivedService.get(), sameInstance(service));
         assertThat(interceptor.arguments().length, is(1));
-        assertSame(batch, interceptor.arguments()[0]);
-        assertSame(batch, received.get());
+        assertThat(interceptor.arguments()[0], sameInstance(batch));
+        assertThat(received.get(), sameInstance(batch));
         assertThat(received.get(), is(interceptor.arguments()[0]));
         assertThat(received.get().size(), is(2));
         assertThat(handlerInvocations.get(), is(1));
@@ -155,7 +155,7 @@ class MessagingEntryPointsImplTest {
                                  (ignoredService, batch) -> received.set(batch))
                 .handle(service, MessageBatch.create(List.of(Message.create("original"))));
 
-        assertSame(replacement.get(), received.get());
+        assertThat(received.get(), sameInstance(replacement.get()));
         assertThrows(UnsupportedOperationException.class, () -> received.get().messages().clear());
     }
 
@@ -195,12 +195,12 @@ class MessagingEntryPointsImplTest {
 
         Optional<Message<?>> result = handler.handle(service, message);
 
-        assertSame(message, result.orElseThrow());
+        assertThat(result.orElseThrow(), sameInstance(message));
         assertThat(attempts.get(), is(2));
         assertThat(invocationTargets.size(), is(2));
-        assertSame(service, interceptedService.get());
-        assertSame(service, invocationTargets.get(0));
-        assertSame(service, invocationTargets.get(1));
+        assertThat(interceptedService.get(), sameInstance(service));
+        assertThat(invocationTargets.get(0), sameInstance(service));
+        assertThat(invocationTargets.get(1), sameInstance(service));
     }
 
     private static ServiceInstance<Interception.EntryPointInterceptor> serviceInstance(

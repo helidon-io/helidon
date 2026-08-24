@@ -31,12 +31,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @Timeout(value = 10)
@@ -65,13 +64,13 @@ class DeliveryEngineTest {
 
             await(entered);
             Thread dispatchThread = runtimeThread.get();
-            assertTrue(dispatchThread.isVirtual());
-            assertTrue(dispatchThread.getName().startsWith("helidon-messaging-dispatch-"));
-            assertFalse(caller.completion().isDone());
+            assertThat(dispatchThread.isVirtual(), is(true));
+            assertThat(dispatchThread.getName().startsWith("helidon-messaging-dispatch-"), is(true));
+            assertThat(caller.completion().isDone(), is(false));
 
             release.countDown();
             await(caller);
-            assertTrue(callerObservedCompletion.get());
+            assertThat(callerObservedCompletion.get(), is(true));
         }
     }
 
@@ -117,16 +116,16 @@ class DeliveryEngineTest {
                                                                  paymentStarted::countDown);
 
             await(paymentStarted);
-            assertEquals(1, secondOrderStarted.getCount());
-            assertFalse(secondOrder.isDone());
-            assertEquals(1, maximumActiveOrders.get());
+            assertThat(secondOrderStarted.getCount(), is(1L));
+            assertThat(secondOrder.isDone(), is(false));
+            assertThat(maximumActiveOrders.get(), is(1));
 
             releaseFirstOrder.countDown();
             await(firstOrder);
             await(secondOrder);
             await(payment);
-            assertEquals(0, secondOrderStarted.getCount());
-            assertEquals(1, maximumActiveOrders.get());
+            assertThat(secondOrderStarted.getCount(), is(0L));
+            assertThat(maximumActiveOrders.get(), is(1));
         }
     }
 
@@ -146,11 +145,11 @@ class DeliveryEngineTest {
                     () -> dispatch(engine, "orders",
                                           List.of(message(1), message(1), message(1)),
                                           invocations::incrementAndGet));
-            assertEquals(MessagingRejectedException.Reason.OVERSIZED, messageLimit.reason());
-            assertEquals(1, invocations.get());
+            assertThat(messageLimit.reason(), is(MessagingRejectedException.Reason.OVERSIZED));
+            assertThat(invocations.get(), is(1));
 
             dispatch(engine, "orders", exact, invocations::incrementAndGet);
-            assertEquals(2, invocations.get());
+            assertThat(invocations.get(), is(2));
         }
     }
 
@@ -176,13 +175,13 @@ class DeliveryEngineTest {
                                                            List.of(message(1)),
                                                            secondStarted::countDown));
             awaitWaiting(second);
-            assertFalse(second.completion().isDone());
-            assertEquals(1, secondStarted.getCount());
+            assertThat(second.completion().isDone(), is(false));
+            assertThat(secondStarted.getCount(), is(1L));
 
             releaseFirst.countDown();
             await(first);
             await(second);
-            assertEquals(0, secondStarted.getCount());
+            assertThat(secondStarted.getCount(), is(0L));
         }
 
         MessagingExecutionConfig timeoutConfig = configBuilder()
@@ -204,7 +203,7 @@ class DeliveryEngineTest {
                 MessagingRejectedException failure = assertThrows(
                         MessagingRejectedException.class,
                         () -> dispatch(engine, "orders", List.of(message(1)), () -> { }));
-                assertEquals(MessagingRejectedException.Reason.TIMEOUT, failure.reason());
+                assertThat(failure.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
             } finally {
                 releaseFirst.countDown();
             }
@@ -239,7 +238,7 @@ class DeliveryEngineTest {
             MessagingRejectedException saturated = assertThrows(
                     MessagingRejectedException.class,
                     () -> dispatch(engine, "orders", List.of(message(1)), () -> { }));
-            assertEquals(MessagingRejectedException.Reason.SATURATED, saturated.reason());
+            assertThat(saturated.reason(), is(MessagingRejectedException.Reason.SATURATED));
 
             releaseActive.countDown();
             await(active);
@@ -259,7 +258,7 @@ class DeliveryEngineTest {
              ConnectorDeliveryReservation ignored = engine.reserveConnectorDelivery("orders", 1)) {
             AtomicBoolean delivered = new AtomicBoolean();
             dispatch(engine, "orders", List.of(message(1)), () -> delivered.set(true));
-            assertTrue(delivered.get());
+            assertThat(delivered.get(), is(true));
         }
     }
 
@@ -282,7 +281,7 @@ class DeliveryEngineTest {
                 MessagingRejectedException rejection = assertThrows(
                         MessagingRejectedException.class,
                         () -> dispatch(engine, "orders", List.of(message(1)), () -> { }));
-                assertEquals(MessagingRejectedException.Reason.SATURATED, rejection.reason());
+                assertThat(rejection.reason(), is(MessagingRejectedException.Reason.SATURATED));
             } finally {
                 releaseLock.countDown();
                 await(lockHolder);
@@ -290,7 +289,7 @@ class DeliveryEngineTest {
 
             AtomicBoolean admitted = new AtomicBoolean();
             dispatch(engine, "orders", List.of(message(1)), () -> admitted.set(true));
-            assertTrue(admitted.get());
+            assertThat(admitted.get(), is(true));
         }
     }
 
@@ -313,7 +312,7 @@ class DeliveryEngineTest {
                 MessagingRejectedException rejection = assertThrows(
                         MessagingRejectedException.class,
                         () -> engine.reserveConnectorDelivery("orders", 1));
-                assertEquals(MessagingRejectedException.Reason.SATURATED, rejection.reason());
+                assertThat(rejection.reason(), is(MessagingRejectedException.Reason.SATURATED));
             } finally {
                 releaseLock.countDown();
                 await(lockHolder);
@@ -333,7 +332,7 @@ class DeliveryEngineTest {
                 .build();
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation full = engine.reserveConnectorDelivery("orders", 2);
-            assertTrue(engine.tryReserveConnectorDelivery("orders", 1).isEmpty());
+            assertThat(engine.tryReserveConnectorDelivery("orders", 1).isEmpty(), is(true));
 
             full.close();
             ConnectorDeliveryReservation recovered = engine.tryReserveConnectorDelivery("orders", 2)
@@ -372,7 +371,7 @@ class DeliveryEngineTest {
             MessagingRejectedException timeout = assertThrows(
                     MessagingRejectedException.class,
                     () -> engine.reserveConnectorDelivery("orders", 1));
-            assertEquals(MessagingRejectedException.Reason.TIMEOUT, timeout.reason());
+            assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
 
             first.close();
             ConnectorDeliveryReservation recovered = engine.tryReserveConnectorDelivery("orders", 1)
@@ -391,11 +390,11 @@ class DeliveryEngineTest {
             MessagingRejectedException oversized = assertThrows(
                     MessagingRejectedException.class,
                     () -> start(reservation, List.of(message(1), message(1)), () -> { }));
-            assertEquals(MessagingRejectedException.Reason.OVERSIZED, oversized.reason());
+            assertThat(oversized.reason(), is(MessagingRejectedException.Reason.OVERSIZED));
             MessagingRejectedException closed = assertThrows(
                     MessagingRejectedException.class,
                     () -> start(reservation, List.of(message(1)), () -> { }));
-            assertEquals(MessagingRejectedException.Reason.CANCELLED, closed.reason());
+            assertThat(closed.reason(), is(MessagingRejectedException.Reason.CANCELLED));
 
             ConnectorDeliveryReservation recovered = engine.tryReserveConnectorDelivery("orders", 1)
                     .orElseThrow();
@@ -412,14 +411,14 @@ class DeliveryEngineTest {
         try (DeliveryEngine engine = engine(config, "orders")) {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 2);
             ConnectorDelivery delivery = start(reservation, List.of(message(1)), () -> { });
-            assertTrue(delivery.await(WAIT));
+            assertThat(delivery.await(WAIT), is(true));
 
             ConnectorDeliveryReservation pendingCapacity = engine.tryReserveConnectorDelivery("orders", 2)
                     .orElseThrow();
             pendingCapacity.close();
-            assertTrue(trySubmitConnectorDelivery(engine, "orders",
-                                                         List.of(message(2), message(2)),
-                                                         () -> { }).isEmpty());
+            assertThat(trySubmitConnectorDelivery(engine, "orders",
+                                                  List.of(message(2), message(2)),
+                                                  () -> { }).isEmpty(), is(true));
 
             delivery.close();
             ConnectorDelivery fullDelivery = trySubmitConnectorDelivery(engine, "orders",
@@ -455,12 +454,12 @@ class DeliveryEngineTest {
             try {
                 awaitWaiting(waiting);
                 Thread.sleep(150);
-                assertTrue(waiting.completion().isDone(),
-                           "reservation start did not return when admission lock wait timed out");
+                assertThat("reservation start did not return when admission lock wait timed out",
+                           waiting.completion().isDone(), is(true));
                 MessagingRejectedException timeout = assertInstanceOf(
                         MessagingRejectedException.class,
                         failure(waiting));
-                assertEquals(MessagingRejectedException.Reason.TIMEOUT, timeout.reason());
+                assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
             } finally {
                 releaseLock.countDown();
                 await(lockHolder);
@@ -472,7 +471,7 @@ class DeliveryEngineTest {
                 recovered = engine.tryReserveConnectorDelivery("orders", 1).orElse(null);
                 Thread.onSpinWait();
             }
-            assertTrue(recovered != null, "deferred reservation cleanup did not restore capacity");
+            assertThat("deferred reservation cleanup did not restore capacity", recovered != null, is(true));
             recovered.close();
         }
     }
@@ -503,8 +502,8 @@ class DeliveryEngineTest {
             await(shutdown);
             await(registration);
 
-            assertFalse(cleanupStarted.get(), "cleanup thread started after shutdown began");
-            assertFalse(cleanupRan.get(), "cleanup ran after shutdown");
+            assertThat("cleanup thread started after shutdown began", cleanupStarted.get(), is(false));
+            assertThat("cleanup ran after shutdown", cleanupRan.get(), is(false));
         } finally {
             releaseRegistry.countDown();
             if (!shutdown.completion().isDone()) {
@@ -540,7 +539,7 @@ class DeliveryEngineTest {
             MessagingRejectedException timeout = assertThrows(
                     MessagingRejectedException.class,
                     () -> start(reservation, List.of(message(1)), () -> { }));
-            assertEquals(MessagingRejectedException.Reason.TIMEOUT, timeout.reason());
+            assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
             ConnectorDeliveryReservation recovered = engine.tryReserveConnectorDelivery("orders", 1)
                     .orElseThrow();
             recovered.close();
@@ -569,8 +568,8 @@ class DeliveryEngineTest {
                     });
             await(activeStarted);
 
-            assertTrue(tryStart(reservation, List.of(message(1)), () -> { }).isEmpty());
-            assertTrue(engine.tryReserveConnectorDelivery("orders", 1).isEmpty());
+            assertThat(tryStart(reservation, List.of(message(1)), () -> { }).isEmpty(), is(true));
+            assertThat(engine.tryReserveConnectorDelivery("orders", 1).isEmpty(), is(true));
 
             releaseActive.countDown();
             await(active);
@@ -601,11 +600,11 @@ class DeliveryEngineTest {
             ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery("orders", 1);
             MessageBatch<Object> batch = batch(List.of(message(2)));
 
-            assertTrue(reservation.tryStart(batch).isEmpty());
+            assertThat(reservation.tryStart(batch).isEmpty(), is(true));
             Thread.sleep(150);
             MessagingRejectedException timeout = assertThrows(MessagingRejectedException.class,
                                                                () -> reservation.tryStart(batch));
-            assertEquals(MessagingRejectedException.Reason.TIMEOUT, timeout.reason());
+            assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
 
             releaseActive.countDown();
             await(active);
@@ -639,7 +638,7 @@ class DeliveryEngineTest {
             MessagingRejectedException cancelled = assertInstanceOf(
                     MessagingRejectedException.class,
                     failure(waiting));
-            assertEquals(MessagingRejectedException.Reason.CANCELLED, cancelled.reason());
+            assertThat(cancelled.reason(), is(MessagingRejectedException.Reason.CANCELLED));
             ConnectorDeliveryReservation recovered = engine.tryReserveConnectorDelivery("orders", 1)
                     .orElseThrow();
             recovered.close();
@@ -676,7 +675,7 @@ class DeliveryEngineTest {
             MessagingRejectedException cancelled = assertInstanceOf(
                     MessagingRejectedException.class,
                     failure(firstStart));
-            assertEquals(MessagingRejectedException.Reason.CANCELLED, cancelled.reason());
+            assertThat(cancelled.reason(), is(MessagingRejectedException.Reason.CANCELLED));
 
             releaseActive.countDown();
             await(active);
@@ -764,10 +763,10 @@ class DeliveryEngineTest {
             MessagingRejectedException timedOut = assertInstanceOf(
                     MessagingRejectedException.class,
                     failure(waiting));
-            assertEquals(MessagingRejectedException.Reason.TIMEOUT, timedOut.reason());
+            assertThat(timedOut.reason(), is(MessagingRejectedException.Reason.TIMEOUT));
             long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
-            assertTrue(elapsedMillis < 700,
-                       () -> "reserve and start used separate timeout budgets: " + elapsedMillis + "ms");
+            assertThat("reserve and start used separate timeout budgets: " + elapsedMillis + "ms",
+                       elapsedMillis < 700, is(true));
 
             releaseActive.countDown();
             await(active);
@@ -787,14 +786,14 @@ class DeliveryEngineTest {
         MessagingRejectedException cancelled = assertThrows(
                 MessagingRejectedException.class,
                 () -> start(closedReservation, List.of(message(1)), () -> { }));
-        assertEquals(MessagingRejectedException.Reason.CANCELLED, cancelled.reason());
+        assertThat(cancelled.reason(), is(MessagingRejectedException.Reason.CANCELLED));
 
         ConnectorDeliveryReservation shutdownReservation = engine.reserveConnectorDelivery("orders", 1);
         engine.close();
         MessagingRejectedException shutdown = assertThrows(
                 MessagingRejectedException.class,
                 () -> start(shutdownReservation, List.of(message(1)), () -> { }));
-        assertEquals(MessagingRejectedException.Reason.SHUTDOWN, shutdown.reason());
+        assertThat(shutdown.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
     }
 
     @Test
@@ -804,7 +803,7 @@ class DeliveryEngineTest {
                 .maxInFlightMessages(5)
                 .build();
         try (DeliveryEngine engine = engine(config, "orders")) {
-            assertEquals(3, engine.maxDeliveryMessages("orders"));
+            assertThat(engine.maxDeliveryMessages("orders"), is(3));
         }
     }
 
@@ -843,20 +842,20 @@ class DeliveryEngineTest {
                 .admissionTimeout(Duration.ofNanos(1))
                 .shutdownTimeout(Duration.ofNanos(1))
                 .build();
-        assertEquals(0, minimums.queueCapacity());
-        assertEquals(1, minimums.maxPendingAdmissions());
-        assertEquals(1, minimums.maxPendingMessages());
-        assertEquals(1, minimums.maxInFlightMessages());
-        assertEquals(Duration.ofNanos(1), minimums.admissionTimeout().orElseThrow());
-        assertEquals(Duration.ofNanos(1), minimums.shutdownTimeout());
+        assertThat(minimums.queueCapacity(), is(0));
+        assertThat(minimums.maxPendingAdmissions(), is(1));
+        assertThat(minimums.maxPendingMessages(), is(1));
+        assertThat(minimums.maxInFlightMessages(), is(1));
+        assertThat(minimums.admissionTimeout().orElseThrow(), is(Duration.ofNanos(1)));
+        assertThat(minimums.shutdownTimeout(), is(Duration.ofNanos(1)));
 
         MessagingExecutionConfig defaults = MessagingExecutionConfig.builder().build();
-        assertEquals(0, defaults.queueCapacity());
-        assertEquals(64, defaults.maxPendingAdmissions());
-        assertEquals(1024, defaults.maxPendingMessages());
-        assertEquals(1024, defaults.maxInFlightMessages());
-        assertTrue(defaults.admissionTimeout().isEmpty());
-        assertEquals(Duration.ofSeconds(10), defaults.shutdownTimeout());
+        assertThat(defaults.queueCapacity(), is(0));
+        assertThat(defaults.maxPendingAdmissions(), is(64));
+        assertThat(defaults.maxPendingMessages(), is(1024));
+        assertThat(defaults.maxInFlightMessages(), is(1024));
+        assertThat(defaults.admissionTimeout().isEmpty(), is(true));
+        assertThat(defaults.shutdownTimeout(), is(Duration.ofSeconds(10)));
     }
 
     @Test
@@ -885,12 +884,12 @@ class DeliveryEngineTest {
                                                                       List.of(message(1)),
                                                                       () -> order.add(3));
 
-            assertEquals(List.of(1), order);
+            assertThat(order, is(List.of(1)));
             releaseFirst.countDown();
             await(first);
             await(second);
             await(third);
-            assertEquals(List.of(1, 2, 3), order);
+            assertThat(order, is(List.of(1, 2, 3)));
         }
     }
 
@@ -921,9 +920,9 @@ class DeliveryEngineTest {
             Throwable waitingFailure = failure(waiting);
             MessagingRejectedException rejection =
                     assertInstanceOf(MessagingRejectedException.class, waitingFailure);
-            assertEquals(MessagingRejectedException.Reason.CANCELLED, rejection.reason());
-            assertTrue(waiting.thread().isInterrupted());
-            assertFalse(rejectedActionRan.get());
+            assertThat(rejection.reason(), is(MessagingRejectedException.Reason.CANCELLED));
+            assertThat(waiting.thread().isInterrupted(), is(true));
+            assertThat(rejectedActionRan.get(), is(false));
 
             releaseFirst.countDown();
             await(first);
@@ -945,16 +944,16 @@ class DeliveryEngineTest {
             MessagingRejectedException cancellation = assertThrows(
                     MessagingRejectedException.class,
                     () -> active.await(WAIT));
-            assertEquals(MessagingRejectedException.Reason.CANCELLED, cancellation.reason());
+            assertThat(cancellation.reason(), is(MessagingRejectedException.Reason.CANCELLED));
             await(interrupted);
 
-            assertTrue(trySubmitConnectorDelivery(engine, "orders",
-                                                         List.of(message(1)),
-                                                         () -> { }).isEmpty());
+            assertThat(trySubmitConnectorDelivery(engine, "orders",
+                                                  List.of(message(1)),
+                                                  () -> { }).isEmpty(), is(true));
             active.close();
             AtomicBoolean nextRan = new AtomicBoolean();
             dispatch(engine, "orders", List.of(message(1)), () -> nextRan.set(true));
-            assertTrue(nextRan.get());
+            assertThat(nextRan.get(), is(true));
         }
     }
 
@@ -972,11 +971,11 @@ class DeliveryEngineTest {
                     () -> dispatch(engine, "orders", List.of(message(1)), () -> {
                         throw expected;
                     }));
-            assertSame(expected, actual);
+            assertThat(actual, sameInstance(expected));
 
             AtomicBoolean nextRan = new AtomicBoolean();
             dispatch(engine, "orders", List.of(message(1)), () -> nextRan.set(true));
-            assertTrue(nextRan.get());
+            assertThat(nextRan.get(), is(true));
         }
     }
 
@@ -1012,12 +1011,12 @@ class DeliveryEngineTest {
                                                                    competitorStarted.countDown();
                                                                }));
             awaitWaiting(competitor);
-            assertEquals(1, competitorStarted.getCount());
+            assertThat(competitorStarted.getCount(), is(1L));
 
             allowRetry.countDown();
             await(delivery);
             await(competitor);
-            assertEquals(List.of("attempt-1", "attempt-2", "competitor"), order);
+            assertThat(order, is(List.of("attempt-1", "attempt-2", "competitor")));
         }
     }
 
@@ -1047,15 +1046,15 @@ class DeliveryEngineTest {
                         MessagingRejectedException failure = assertThrows(
                                 MessagingRejectedException.class,
                                 () -> dispatch(engine, "orders", replacementBatch, () -> { }));
-                        assertEquals(MessagingRejectedException.Reason.OVERSIZED, failure.reason());
+                        assertThat(failure.reason(), is(MessagingRejectedException.Reason.OVERSIZED));
                         MessagingRejectedException rebuiltFailure = assertThrows(
                                 MessagingRejectedException.class,
                                 () -> dispatch(engine, "orders", rebuiltBatch, () -> { }));
-                        assertEquals(MessagingRejectedException.Reason.OVERSIZED, rebuiltFailure.reason());
+                        assertThat(rebuiltFailure.reason(), is(MessagingRejectedException.Reason.OVERSIZED));
                     });
 
             await(delivery);
-            assertTrue(subsetEmitted.get());
+            assertThat(subsetEmitted.get(), is(true));
         }
     }
 
@@ -1068,18 +1067,18 @@ class DeliveryEngineTest {
             ConnectorDelivery delivery = submitConnectorDelivery(engine, "orders",
                                                                          List.of(message(1)),
                                                                          () -> { });
-            assertTrue(delivery.await(WAIT));
+            assertThat(delivery.await(WAIT), is(true));
 
             CountDownLatch competitorStarted = new CountDownLatch(1);
             AsyncTask competitor = async(() -> dispatch(engine, "orders",
                                                                List.of(message(1)),
                                                                competitorStarted::countDown));
             awaitWaiting(competitor);
-            assertEquals(1, competitorStarted.getCount());
+            assertThat(competitorStarted.getCount(), is(1L));
 
             delivery.close();
             await(competitor);
-            assertEquals(0, competitorStarted.getCount());
+            assertThat(competitorStarted.getCount(), is(0L));
         }
     }
 
@@ -1106,10 +1105,10 @@ class DeliveryEngineTest {
             MessagingRejectedException saturated = assertThrows(
                     MessagingRejectedException.class,
                     () -> dispatch(engine, "orders", List.of(message(1)), () -> { }));
-            assertEquals(MessagingRejectedException.Reason.SATURATED, saturated.reason());
-            assertTrue(trySubmitConnectorDelivery(engine, "orders",
-                                                         List.of(message(1)),
-                                                         () -> { }).isEmpty());
+            assertThat(saturated.reason(), is(MessagingRejectedException.Reason.SATURATED));
+            assertThat(trySubmitConnectorDelivery(engine, "orders",
+                                                  List.of(message(1)),
+                                                  () -> { }).isEmpty(), is(true));
 
             releaseActive.countDown();
             await(active);
@@ -1155,8 +1154,8 @@ class DeliveryEngineTest {
                     assertInstanceOf(MessagingRejectedException.class, failure(first));
             MessagingRejectedException secondFailure =
                     assertInstanceOf(MessagingRejectedException.class, failure(second));
-            assertEquals(MessagingRejectedException.Reason.SATURATED, firstFailure.reason());
-            assertEquals(MessagingRejectedException.Reason.SATURATED, secondFailure.reason());
+            assertThat(firstFailure.reason(), is(MessagingRejectedException.Reason.SATURATED));
+            assertThat(secondFailure.reason(), is(MessagingRejectedException.Reason.SATURATED));
         }
     }
 
@@ -1179,10 +1178,10 @@ class DeliveryEngineTest {
             AsyncTask first = async(() -> dispatch(firstEngine, "a", List.of(message(1)), aToB));
             AsyncTask second = async(() -> dispatch(secondEngine, "b", List.of(message(1)), bToA));
 
-            assertEquals(MessagingRejectedException.Reason.SATURATED,
-                         assertInstanceOf(MessagingRejectedException.class, failure(first)).reason());
-            assertEquals(MessagingRejectedException.Reason.SATURATED,
-                         assertInstanceOf(MessagingRejectedException.class, failure(second)).reason());
+            assertThat(assertInstanceOf(MessagingRejectedException.class, failure(first)).reason(),
+                       is(MessagingRejectedException.Reason.SATURATED));
+            assertThat(assertInstanceOf(MessagingRejectedException.class, failure(second)).reason(),
+                       is(MessagingRejectedException.Reason.SATURATED));
         }
     }
 
@@ -1198,7 +1197,7 @@ class DeliveryEngineTest {
                 MessagingRejectedException failure = assertThrows(
                         MessagingRejectedException.class,
                         () -> delivery.await(WAIT));
-                assertEquals(MessagingRejectedException.Reason.OVERSIZED, failure.reason());
+                assertThat(failure.reason(), is(MessagingRejectedException.Reason.OVERSIZED));
             } finally {
                 delivery.close();
             }
@@ -1217,7 +1216,7 @@ class DeliveryEngineTest {
                     retainedBatch,
                     () -> dispatch(engine, "orders", retainedBatch, () -> emitted.set(true)));
             await(delivery);
-            assertTrue(emitted.get());
+            assertThat(emitted.get(), is(true));
         }
     }
 
@@ -1259,12 +1258,12 @@ class DeliveryEngineTest {
                 MessagingRejectedException.class,
                 () -> active.await(WAIT));
         active.close();
-        assertEquals(MessagingRejectedException.Reason.SHUTDOWN, activeFailure.reason());
+        assertThat(activeFailure.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
         MessagingRejectedException queuedFailure = assertThrows(
                 MessagingRejectedException.class,
                 () -> queued.await(WAIT));
-        assertEquals(MessagingRejectedException.Reason.SHUTDOWN, queuedFailure.reason());
-        assertFalse(queuedRan.get());
+        assertThat(queuedFailure.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
+        assertThat(queuedRan.get(), is(false));
 
         MessagingRejectedException dispatchFailure = assertThrows(
                 MessagingRejectedException.class,
@@ -1272,8 +1271,8 @@ class DeliveryEngineTest {
         MessagingRejectedException sourceFailure = assertThrows(
                 MessagingRejectedException.class,
                 () -> engine.startSource("new-source", () -> { }));
-        assertEquals(MessagingRejectedException.Reason.SHUTDOWN, dispatchFailure.reason());
-        assertEquals(MessagingRejectedException.Reason.SHUTDOWN, sourceFailure.reason());
+        assertThat(dispatchFailure.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
+        assertThat(sourceFailure.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
     }
 
     @Test
@@ -1286,7 +1285,7 @@ class DeliveryEngineTest {
                             () -> dispatch(engine, "b",
                                                   List.of(message(1)),
                                                   () -> nestedRan.set(true)));
-            assertTrue(nestedRan.get());
+            assertThat(nestedRan.get(), is(true));
 
             MessagingException failure = assertThrows(
                     MessagingException.class,
@@ -1326,7 +1325,7 @@ class DeliveryEngineTest {
                                  () -> dispatch(secondEngine, "orders",
                                                              List.of(message(1)),
                                                              () -> nestedRan.set(true)));
-            assertTrue(nestedRan.get());
+            assertThat(nestedRan.get(), is(true));
 
             MessagingException cycle = assertThrows(
                     MessagingException.class,
@@ -1447,7 +1446,7 @@ class DeliveryEngineTest {
 
     private static void await(ConnectorDelivery delivery) throws InterruptedException {
         try {
-            assertTrue(delivery.await(WAIT), "delivery did not complete");
+            assertThat("delivery did not complete", delivery.await(WAIT), is(true));
         } finally {
             delivery.close();
         }
@@ -1455,7 +1454,7 @@ class DeliveryEngineTest {
 
     private static void await(CountDownLatch latch) {
         try {
-            assertTrue(latch.await(WAIT.toMillis(), TimeUnit.MILLISECONDS), "latch did not open");
+            assertThat("latch did not open", latch.await(WAIT.toMillis(), TimeUnit.MILLISECONDS), is(true));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new AssertionError("interrupted while awaiting latch", e);
@@ -1496,7 +1495,7 @@ class DeliveryEngineTest {
     }
 
     private static <T> T assertInstanceOf(Class<T> type, Object value) {
-        assertTrue(type.isInstance(value), () -> "expected " + type.getName() + " but got " + value);
+        assertThat(value, is(instanceOf(type)));
         return type.cast(value);
     }
 

@@ -36,14 +36,13 @@ import java.util.stream.StreamSupport;
 import io.helidon.common.GenericType;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MessagingGraphBuilderTest {
     private static final Duration SHORT_SHUTDOWN_TIMEOUT = Duration.ofMillis(100);
@@ -54,7 +53,7 @@ class MessagingGraphBuilderTest {
         MessagingChannel<String> channel = builder.channel("events", String.class);
         builder.payloadSink(channel, ignored -> { });
 
-        assertFalse(channel instanceof Emitter<?>);
+        assertThat(channel instanceof Emitter<?>, is(false));
         try (MessagingGraph graph = builder.build()) {
             Emitter<String> emitter = graph.emitter(channel);
             assertThrows(IllegalStateException.class, () -> emitter.emit("too-early"));
@@ -104,11 +103,12 @@ class MessagingGraphBuilderTest {
 
         try (MessagingGraph graph = builder.build()) {
             graph.start();
-            assertTrue(delivery.await(5, TimeUnit.SECONDS),
-                       "Delivered messages: " + delivered.stream().map(Message::entity).toList());
+            assertThat("Delivered messages: " + delivered.stream().map(Message::entity).toList(),
+                       delivery.await(5, TimeUnit.SECONDS),
+                       is(true));
         }
 
-        assertEquals(List.of(1, 2), delivered.stream().map(Message::entity).sorted().toList());
+        assertThat(delivered.stream().map(Message::entity).sorted().toList(), is(List.of(1, 2)));
     }
 
     @Test
@@ -136,9 +136,9 @@ class MessagingGraphBuilderTest {
             graph.emitter(messageInput).emitMessage(Message.builder("hello").header("trace", "123").build());
         }
 
-        assertEquals(List.of(4), deliveredLengths);
-        assertEquals("HELLO", deliveredMessage.get().entity());
-        assertEquals("123", deliveredMessage.get().header("trace").orElseThrow());
+        assertThat(deliveredLengths, is(List.of(4)));
+        assertThat(deliveredMessage.get().entity(), is("HELLO"));
+        assertThat(deliveredMessage.get().header("trace").orElseThrow(), is("123"));
     }
 
     @Test
@@ -164,16 +164,16 @@ class MessagingGraphBuilderTest {
             graph.emitter(processorInput).emit("process");
         }
 
-        assertSame(messagePayload, delivered.get(0).entity());
-        assertTrue(delivered.get(0).headers().isEmpty());
-        assertSame(direct, delivered.get(1));
-        assertSame(batched, delivered.get(2));
-        assertSame(processed, delivered.get(3));
-        assertEquals(List.of("one", "two", "three"),
-                     delivered.subList(1, 4)
-                             .stream()
-                             .map(message -> message.header("trace").orElseThrow())
-                             .toList());
+        assertThat(delivered.get(0).entity(), sameInstance(messagePayload));
+        assertThat(delivered.get(0).headers().isEmpty(), is(true));
+        assertThat(delivered.get(1), sameInstance(direct));
+        assertThat(delivered.get(2), sameInstance(batched));
+        assertThat(delivered.get(3), sameInstance(processed));
+        assertThat(delivered.subList(1, 4)
+                           .stream()
+                           .map(message -> message.header("trace").orElseThrow())
+                           .toList(),
+                   is(List.of("one", "two", "three")));
     }
 
     @Test
@@ -193,10 +193,10 @@ class MessagingGraphBuilderTest {
 
         try (MessagingGraph graph = builder.build()) {
             graph.start();
-            assertTrue(delivery.await(5, TimeUnit.SECONDS));
+            assertThat(delivery.await(5, TimeUnit.SECONDS), is(true));
         }
 
-        assertSame(payload, delivered.get());
+        assertThat(delivered.get(), sameInstance(payload));
     }
 
     @Test
@@ -230,7 +230,7 @@ class MessagingGraphBuilderTest {
             graph.emitter(channel).emit("event");
         }
 
-        assertEquals(List.of("first", "connector", "last"), outputs);
+        assertThat(outputs, is(List.of("first", "connector", "last")));
     }
 
     @Test
@@ -244,8 +244,8 @@ class MessagingGraphBuilderTest {
 
         builder.close();
 
-        assertTrue(streamClosed.get());
-        assertTrue(connector.closed.get());
+        assertThat(streamClosed.get(), is(true));
+        assertThat(connector.closed.get(), is(true));
         assertThrows(IllegalStateException.class, builder::build);
     }
 
@@ -264,8 +264,8 @@ class MessagingGraphBuilderTest {
 
         MessagingException failure = assertThrows(MessagingException.class, builder::close);
 
-        assertSame(closeError, failure.getCause());
-        assertTrue(secondStreamClosed.get());
+        assertThat(failure.getCause(), sameInstance(closeError));
+        assertThat(secondStreamClosed.get(), is(true));
     }
 
     @Test
@@ -290,22 +290,27 @@ class MessagingGraphBuilderTest {
 
         Thread closeThread = Thread.ofVirtual().start(() -> runCapturing(builder::close, closeFailure));
         try {
-            assertTrue(closeEntered.await(5, TimeUnit.SECONDS));
+            assertThat(closeEntered.await(5, TimeUnit.SECONDS), is(true));
             closeThread.join(TimeUnit.SECONDS.toMillis(2));
 
-            assertFalse(closeThread.isAlive(), "Builder close exceeded its shutdown timeout");
-            assertTrue(closeFailure.get() instanceof MessagingException, String.valueOf(closeFailure.get()));
-            assertTrue(closeFailure.get().getMessage().contains("Timed out"), closeFailure.get().getMessage());
-            assertTrue(connector.forceAttempted.await(5, TimeUnit.SECONDS),
-                       "Connector force close was not attempted after stream cleanup timed out");
-            assertTrue(connector.closeAttempted.await(5, TimeUnit.SECONDS),
-                       "Connector close was not attempted after stream cleanup timed out");
-            assertFalse(connector.closeInterrupted.get(),
-                        "Post-deadline connector close started with its interrupt status set");
-            assertEquals(List.of("force", "close"), connector.lifecycle);
+            assertThat("Builder close exceeded its shutdown timeout", closeThread.isAlive(), is(false));
+            assertThat(String.valueOf(closeFailure.get()), closeFailure.get(), instanceOf(MessagingException.class));
+            assertThat(closeFailure.get().getMessage(),
+                       closeFailure.get().getMessage(),
+                       containsString("Timed out"));
+            assertThat("Connector force close was not attempted after stream cleanup timed out",
+                       connector.forceAttempted.await(5, TimeUnit.SECONDS),
+                       is(true));
+            assertThat("Connector close was not attempted after stream cleanup timed out",
+                       connector.closeAttempted.await(5, TimeUnit.SECONDS),
+                       is(true));
+            assertThat("Post-deadline connector close started with its interrupt status set",
+                       connector.closeInterrupted.get(),
+                       is(false));
+            assertThat(connector.lifecycle, is(List.of("force", "close")));
         } finally {
             releaseClose.countDown();
-            assertTrue(closeExited.await(5, TimeUnit.SECONDS));
+            assertThat(closeExited.await(5, TimeUnit.SECONDS), is(true));
             closeThread.join(TimeUnit.SECONDS.toMillis(5));
         }
     }
@@ -320,7 +325,7 @@ class MessagingGraphBuilderTest {
 
         builder.close();
 
-        assertEquals(List.of("force", "close"), lifecycle);
+        assertThat(lifecycle, is(List.of("force", "close")));
     }
 
     @Test
@@ -342,20 +347,24 @@ class MessagingGraphBuilderTest {
 
         Thread buildThread = Thread.ofVirtual().start(() -> runCapturing(builder::build, buildFailure));
         try {
-            assertTrue(closeEntered.await(5, TimeUnit.SECONDS));
+            assertThat(closeEntered.await(5, TimeUnit.SECONDS), is(true));
             buildThread.join(TimeUnit.SECONDS.toMillis(2));
 
-            assertFalse(buildThread.isAlive(), "Failed build cleanup exceeded its shutdown timeout");
-            assertTrue(buildFailure.get() instanceof IllegalArgumentException, String.valueOf(buildFailure.get()));
-            assertTrue(buildFailure.get().getMessage().contains("has no required output"),
-                       buildFailure.get().getMessage());
-            assertTrue(List.of(buildFailure.get().getSuppressed()).stream()
+            assertThat("Failed build cleanup exceeded its shutdown timeout", buildThread.isAlive(), is(false));
+            assertThat(String.valueOf(buildFailure.get()),
+                       buildFailure.get(),
+                       instanceOf(IllegalArgumentException.class));
+            assertThat(buildFailure.get().getMessage(),
+                       buildFailure.get().getMessage(),
+                       containsString("has no required output"));
+            assertThat("Suppressed failures: " + List.of(buildFailure.get().getSuppressed()),
+                       List.of(buildFailure.get().getSuppressed()).stream()
                                .anyMatch(failure -> failure instanceof MessagingException
                                        && failure.getMessage().contains("Timed out")),
-                       "Suppressed failures: " + List.of(buildFailure.get().getSuppressed()));
+                       is(true));
         } finally {
             releaseClose.countDown();
-            assertTrue(closeExited.await(5, TimeUnit.SECONDS));
+            assertThat(closeExited.await(5, TimeUnit.SECONDS), is(true));
             buildThread.join(TimeUnit.SECONDS.toMillis(5));
         }
     }
@@ -370,7 +379,7 @@ class MessagingGraphBuilderTest {
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
                                                          () -> builder.payloadSource(channel, Stream.of("second")));
 
-        assertTrue(failure.getMessage().contains("merged already has a stream source"));
+        assertThat(failure.getMessage(), containsString("merged already has a stream source"));
         try (MessagingGraph graph = builder.build()) {
             graph.start();
         }
@@ -392,9 +401,9 @@ class MessagingGraphBuilderTest {
 
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, builder::build);
 
-        assertTrue(failure.getMessage().contains("fan-in to channel merged-target is not supported"));
-        assertTrue(firstClosed.get());
-        assertTrue(secondClosed.get());
+        assertThat(failure.getMessage(), containsString("fan-in to channel merged-target is not supported"));
+        assertThat(firstClosed.get(), is(true));
+        assertThat(secondClosed.get(), is(true));
     }
 
     @Test
@@ -420,21 +429,21 @@ class MessagingGraphBuilderTest {
 
         Thread emission = Thread.ofVirtual().start(() -> runCapturing(
                 () -> graph.emitter(input).emit("event"), emissionFailure));
-        assertTrue(handlerEntered.await(5, TimeUnit.SECONDS));
+        assertThat(handlerEntered.await(5, TimeUnit.SECONDS), is(true));
         Thread close = Thread.ofVirtual().start(() -> runCapturing(graph::close, closeFailure));
         awaitState((DefaultMessagingGraph) graph, DefaultMessagingGraph.State.DRAINING);
         MessagingRejectedException externalRejection = assertThrows(MessagingRejectedException.class,
                                                                       () -> nestedEmitter.get().emit("external"));
-        assertEquals(MessagingRejectedException.Reason.SHUTDOWN, externalRejection.reason());
+        assertThat(externalRejection.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
         releaseHandler.countDown();
         emission.join(TimeUnit.SECONDS.toMillis(5));
         close.join(TimeUnit.SECONDS.toMillis(5));
 
-        assertFalse(emission.isAlive());
-        assertFalse(close.isAlive());
-        assertNull(emissionFailure.get());
-        assertNull(closeFailure.get());
-        assertEquals("event-nested", delivered.get());
+        assertThat(emission.isAlive(), is(false));
+        assertThat(close.isAlive(), is(false));
+        assertThat(emissionFailure.get(), nullValue());
+        assertThat(closeFailure.get(), nullValue());
+        assertThat(delivered.get(), is("event-nested"));
     }
 
     @Test
@@ -452,9 +461,9 @@ class MessagingGraphBuilderTest {
 
         MessagingException failure = assertThrows(MessagingException.class, graph::close);
 
-        assertTrue(failure.getMessage().contains("failing-stream-source"));
-        assertTrue(failure.getCause() instanceof BatchDeliveryException);
-        assertSame(sourceFailure, failure.getCause().getCause());
+        assertThat(failure.getMessage(), containsString("failing-stream-source"));
+        assertThat(failure.getCause(), instanceOf(BatchDeliveryException.class));
+        assertThat(failure.getCause().getCause(), sameInstance(sourceFailure));
     }
 
     @Test
@@ -503,18 +512,18 @@ class MessagingGraphBuilderTest {
                 .payloadSink(channel, ignored -> { });
         MessagingGraph graph = builder.build();
         graph.start();
-        assertTrue(iterationEntered.await(5, TimeUnit.SECONDS));
+        assertThat(iterationEntered.await(5, TimeUnit.SECONDS), is(true));
 
         Thread closeThread = Thread.ofVirtual().start(() -> runCapturing(graph::close, closeFailure));
         try {
             closeThread.join(TimeUnit.SECONDS.toMillis(2));
 
-            assertFalse(closeThread.isAlive(), "Graph close exceeded its shutdown timeout");
-            assertNull(closeFailure.get());
-            assertTrue(iterationInterrupted.await(5, TimeUnit.SECONDS));
-            assertTrue(streamClosed.get());
-            assertFalse(streamCloseInterrupted.get());
-            assertEquals(DefaultMessagingGraph.State.CLOSED, ((DefaultMessagingGraph) graph).state());
+            assertThat("Graph close exceeded its shutdown timeout", closeThread.isAlive(), is(false));
+            assertThat(closeFailure.get(), nullValue());
+            assertThat(iterationInterrupted.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(streamClosed.get(), is(true));
+            assertThat(streamCloseInterrupted.get(), is(false));
+            assertThat(((DefaultMessagingGraph) graph).state(), is(DefaultMessagingGraph.State.CLOSED));
         } finally {
             releaseIteration.countDown();
             closeThread.join(TimeUnit.SECONDS.toMillis(5));
@@ -558,18 +567,18 @@ class MessagingGraphBuilderTest {
                 .payloadSink(channel, ignored -> { });
         MessagingGraph graph = builder.build();
         graph.start();
-        assertTrue(iterationEntered.await(5, TimeUnit.SECONDS));
+        assertThat(iterationEntered.await(5, TimeUnit.SECONDS), is(true));
 
         Thread closeThread = Thread.ofVirtual().start(() -> runCapturing(graph::close, closeFailure));
         try {
-            assertTrue(drainInterruptObserved.await(5, TimeUnit.SECONDS));
+            assertThat(drainInterruptObserved.await(5, TimeUnit.SECONDS), is(true));
             releaseFailure.countDown();
             closeThread.join(TimeUnit.SECONDS.toMillis(5));
 
-            assertFalse(closeThread.isAlive());
-            assertSame(iteratorFailure, closeFailure.get());
-            assertTrue(streamClosed.get());
-            assertEquals(DefaultMessagingGraph.State.FAILED, ((DefaultMessagingGraph) graph).state());
+            assertThat(closeThread.isAlive(), is(false));
+            assertThat(closeFailure.get(), sameInstance(iteratorFailure));
+            assertThat(streamClosed.get(), is(true));
+            assertThat(((DefaultMessagingGraph) graph).state(), is(DefaultMessagingGraph.State.FAILED));
         } finally {
             releaseFailure.countDown();
             closeThread.join(TimeUnit.SECONDS.toMillis(5));
@@ -594,17 +603,17 @@ class MessagingGraphBuilderTest {
                 });
         MessagingGraph graph = builder.build();
         graph.start();
-        assertTrue(sinkEntered.await(5, TimeUnit.SECONDS));
+        assertThat(sinkEntered.await(5, TimeUnit.SECONDS), is(true));
 
         Thread close = Thread.ofVirtual().start(() -> runCapturing(graph::close, closeFailure));
         awaitState((DefaultMessagingGraph) graph, DefaultMessagingGraph.State.DRAINING);
         releaseSink.countDown();
         close.join(TimeUnit.SECONDS.toMillis(5));
 
-        assertFalse(close.isAlive());
-        assertTrue(closeFailure.get() instanceof BatchDeliveryException);
-        assertSame(rejection, closeFailure.get().getCause());
-        assertEquals(DefaultMessagingGraph.State.FAILED, ((DefaultMessagingGraph) graph).state());
+        assertThat(close.isAlive(), is(false));
+        assertThat(closeFailure.get(), instanceOf(BatchDeliveryException.class));
+        assertThat(closeFailure.get().getCause(), sameInstance(rejection));
+        assertThat(((DefaultMessagingGraph) graph).state(), is(DefaultMessagingGraph.State.FAILED));
     }
 
     @Test
@@ -625,10 +634,10 @@ class MessagingGraphBuilderTest {
             graph.emitter(channel).emitBatch(batch);
         }
 
-        assertSame(batch, received.get());
-        assertEquals("explicit-batch", received.get().id());
-        assertEquals(List.of("first", "second"), received.get().payloads());
-        assertEquals(List.of(first, second), received.get().messages());
+        assertThat(received.get(), sameInstance(batch));
+        assertThat(received.get().id(), is("explicit-batch"));
+        assertThat(received.get().payloads(), is(List.of("first", "second")));
+        assertThat(received.get().messages(), is(List.of(first, second)));
         assertThrows(UnsupportedOperationException.class, () -> received.get().payloads().add("third"));
         assertThrows(UnsupportedOperationException.class,
                      () -> received.get().messages().add(Message.create("third")));
@@ -658,13 +667,13 @@ class MessagingGraphBuilderTest {
                                     Message.create("second"),
                                     Message.create("third")))));
 
-            assertEquals(List.of(BatchItemStatus.INDETERMINATE,
-                                 BatchItemStatus.INDETERMINATE,
-                                 BatchItemStatus.NOT_ATTEMPTED),
-                         failure.outcomes().stream().map(BatchItemOutcome::status).toList());
+            assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                       is(List.of(BatchItemStatus.INDETERMINATE,
+                                  BatchItemStatus.INDETERMINATE,
+                                  BatchItemStatus.NOT_ATTEMPTED)));
         }
-        assertEquals(2, invocations.get());
-        assertNull(received.get());
+        assertThat(invocations.get(), is(2));
+        assertThat(received.get(), nullValue());
     }
 
     @Test
@@ -675,8 +684,8 @@ class MessagingGraphBuilderTest {
         builder.payloadSink(channel, ignored -> { });
 
         try (MessagingGraph ignored = builder.build()) {
-            assertSame(payloadType, channel.payloadType());
-            assertEquals("lists", channel.name());
+            assertThat(channel.payloadType(), sameInstance(payloadType));
+            assertThat(channel.name(), is("lists"));
         }
     }
 
@@ -712,9 +721,9 @@ class MessagingGraphBuilderTest {
 
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, builder::build);
 
-        assertTrue(failure.getMessage().contains("Cyclic synchronous messaging route"));
-        assertTrue(closed.get());
-        assertTrue(connector.closed.get());
+        assertThat(failure.getMessage(), containsString("Cyclic synchronous messaging route"));
+        assertThat(closed.get(), is(true));
+        assertThat(connector.closed.get(), is(true));
         assertThrows(IllegalStateException.class, builder::build);
     }
 
@@ -737,7 +746,7 @@ class MessagingGraphBuilderTest {
             IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
                                                              () -> builder.channel("primitive", int.class));
 
-            assertTrue(failure.getMessage().contains("must not be primitive"));
+            assertThat(failure.getMessage(), containsString("must not be primitive"));
         }
     }
 
@@ -748,7 +757,7 @@ class MessagingGraphBuilderTest {
 
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, builder::build);
 
-        assertTrue(failure.getMessage().contains("discarded has no required output"));
+        assertThat(failure.getMessage(), containsString("discarded has no required output"));
         assertThrows(IllegalStateException.class, builder::build);
     }
 
@@ -783,7 +792,7 @@ class MessagingGraphBuilderTest {
         while (graph.state() != expected && System.nanoTime() < deadline) {
             Thread.onSpinWait();
         }
-        assertEquals(expected, graph.state());
+        assertThat(graph.state(), is(expected));
     }
 
     private static void runCapturing(Runnable task, AtomicReference<Throwable> failure) {

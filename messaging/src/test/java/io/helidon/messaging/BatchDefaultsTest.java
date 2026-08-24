@@ -21,8 +21,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class BatchDefaultsTest {
     @Test
@@ -33,8 +34,8 @@ class BatchDefaultsTest {
 
         emitter.emitMessage(message);
 
-        assertEquals(1, received.get().size());
-        assertSame(message, received.get().get(0));
+        assertThat(received.get().size(), is(1));
+        assertThat(received.get().get(0), sameInstance(message));
     }
 
     @Test
@@ -52,9 +53,9 @@ class BatchDefaultsTest {
 
         runtime.emit("orders", message);
 
-        assertEquals("orders", receivedChannel.get());
-        assertEquals(1, received.get().size());
-        assertSame(message, received.get().get(0));
+        assertThat(receivedChannel.get(), is("orders"));
+        assertThat(received.get().size(), is(1));
+        assertThat(received.get().get(0), sameInstance(message));
     }
 
     @Test
@@ -82,8 +83,8 @@ class BatchDefaultsTest {
 
         connector.send(message);
 
-        assertEquals(1, received.get().size());
-        assertSame(message, received.get().get(0));
+        assertThat(received.get().size(), is(1));
+        assertThat(received.get().get(0), sameInstance(message));
     }
 
     @Test
@@ -109,7 +110,7 @@ class BatchDefaultsTest {
 
         registration.dispatch(batch);
 
-        assertSame(batch, received.get());
+        assertThat(received.get(), sameInstance(batch));
     }
 
     private static MessageBatch<String> batch() {

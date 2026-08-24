@@ -78,14 +78,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("helidon:api:internal")
@@ -725,9 +725,9 @@ class DeclarativeMessagingTest {
         List<Object> intercepted = TestEntryPointInterceptor.serviceInstances(PerLookupInterceptedConsumer.class);
         assertThat(targets, hasSize(2));
         assertThat(intercepted, hasSize(2));
-        assertSame(targets.get(0), intercepted.get(0));
-        assertSame(targets.get(1), intercepted.get(1));
-        assertNotSame(targets.get(0), targets.get(1));
+        assertThat(intercepted.get(0), sameInstance(targets.get(0)));
+        assertThat(intercepted.get(1), sameInstance(targets.get(1)));
+        assertThat(targets.get(1), not(sameInstance(targets.get(0))));
     }
 
     @Test
@@ -859,7 +859,8 @@ class DeclarativeMessagingTest {
     }
 
     private static BatchDeliveryException assertBatchFailure(Throwable expectedFailure, Throwable actualFailure) {
-        BatchDeliveryException batchFailure = assertInstanceOf(BatchDeliveryException.class, actualFailure);
+        assertThat(actualFailure, instanceOf(BatchDeliveryException.class));
+        BatchDeliveryException batchFailure = (BatchDeliveryException) actualFailure;
         assertSingleIndeterminateOutcome(batchFailure);
         Throwable cause = batchFailure;
         while (cause != null) {

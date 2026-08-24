@@ -45,10 +45,9 @@ import io.helidon.service.registry.Service;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class MessagingExtensionTest {
     private static final List<Class<?>> COMPILER_CLASSPATH = List.of(
@@ -65,18 +64,20 @@ class MessagingExtensionTest {
                 .build();
         TypeName typeVariable = TypeName.createFromGenericDeclaration("T");
 
-        assertTrue(MessagingExtension.isConcretePayloadType(listOfInteger));
-        assertFalse(MessagingExtension.isConcretePayloadType(TypeNames.WILDCARD));
-        assertFalse(MessagingExtension.isConcretePayloadType(typeVariable));
-        assertFalse(MessagingExtension.isConcretePayloadType(TypeName.builder(TypeNames.LIST)
+        assertThat(MessagingExtension.isConcretePayloadType(listOfInteger), is(true));
+        assertThat(MessagingExtension.isConcretePayloadType(TypeNames.WILDCARD), is(false));
+        assertThat(MessagingExtension.isConcretePayloadType(typeVariable), is(false));
+        assertThat(MessagingExtension.isConcretePayloadType(TypeName.builder(TypeNames.LIST)
                                                                       .addTypeArgument(TypeNames.WILDCARD)
-                                                                      .build()));
-        assertFalse(MessagingExtension.isConcretePayloadType(TypeName.builder(TypeNames.LIST)
+                                                                      .build()),
+                   is(false));
+        assertThat(MessagingExtension.isConcretePayloadType(TypeName.builder(TypeNames.LIST)
                                                                       .addTypeArgument(typeVariable)
-                                                                      .build()));
+                                                                      .build()),
+                   is(false));
 
-        assertFalse(MessagingExtension.hasUnresolvedTypeVariable(TypeNames.WILDCARD));
-        assertTrue(MessagingExtension.hasUnresolvedTypeVariable(typeVariable));
+        assertThat(MessagingExtension.hasUnresolvedTypeVariable(TypeNames.WILDCARD), is(false));
+        assertThat(MessagingExtension.hasUnresolvedTypeVariable(typeVariable), is(true));
     }
 
     @Test
@@ -196,18 +197,19 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String generatedSource = generatedSource(result, "GenericMetadataConsumer__MessagingConsumer_");
-        assertTrue(generatedSource.contains("payloadGenericType()"), generatedSource);
-        assertTrue(generatedSource.contains("private static final GenericType<List<Integer>> PAYLOAD_GENERIC_TYPE"),
-                   generatedSource);
-        assertTrue(generatedSource.contains("new GenericType<List<Integer>>()"), generatedSource);
-        assertTrue(generatedSource.contains("return PAYLOAD_GENERIC_TYPE;"), generatedSource);
-        assertTrue(generatedSource.contains("envelopeGenericType()"), generatedSource);
-        assertTrue(generatedSource.contains("private static final GenericType<KeyedMessage<String, List<Integer>>> "
+        assertThat(generatedSource, generatedSource.contains("payloadGenericType()"), is(true));
+        assertThat(generatedSource,
+                   generatedSource.contains("private static final GenericType<List<Integer>> PAYLOAD_GENERIC_TYPE"),
+                   is(true));
+        assertThat(generatedSource, generatedSource.contains("new GenericType<List<Integer>>()"), is(true));
+        assertThat(generatedSource, generatedSource.contains("return PAYLOAD_GENERIC_TYPE;"), is(true));
+        assertThat(generatedSource, generatedSource.contains("envelopeGenericType()"), is(true));
+        assertThat(generatedSource,
+                   generatedSource.contains("private static final GenericType<KeyedMessage<String, List<Integer>>> "
                                                     + "ENVELOPE_GENERIC_TYPE"),
-                   generatedSource);
-        assertTrue(generatedSource.contains("new GenericType<KeyedMessage<String, List<Integer>>>()"),
-                   generatedSource);
-        assertTrue(generatedSource.contains("return ENVELOPE_GENERIC_TYPE;"), generatedSource);
+                   is(true));
+        assertThat(generatedSource, generatedSource.contains("new GenericType<KeyedMessage<String, List<Integer>>>()"), is(true));
+        assertThat(generatedSource, generatedSource.contains("return ENVELOPE_GENERIC_TYPE;"), is(true));
     }
 
     @Test
@@ -228,8 +230,8 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String generatedSource = generatedSource(result, "PrimitiveConsumer__MessagingConsumer_");
-        assertTrue(generatedSource.contains("return PAYLOAD_GENERIC_TYPE.rawType();"), generatedSource);
-        assertTrue(generatedSource.contains("new GenericType<Integer>()"), generatedSource);
+        assertThat(generatedSource, generatedSource.contains("return PAYLOAD_GENERIC_TYPE.rawType();"), is(true));
+        assertThat(generatedSource, generatedSource.contains("new GenericType<Integer>()"), is(true));
     }
 
     @Test
@@ -261,7 +263,7 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String generatedSource = generatedSource(result, "PrimitiveOverloadConsumer__MessagingConsumer_");
-        assertTrue(generatedSource.contains("consumerInstance.consume((int) typedMessage.entity());"), generatedSource);
+        assertThat(generatedSource, generatedSource.contains("consumerInstance.consume((int) typedMessage.entity());"), is(true));
 
         try (URLClassLoader classLoader = new URLClassLoader(new URL[] {
                 result.classOutput().toUri().toURL()
@@ -277,7 +279,7 @@ class MessagingExtensionTest {
 
             registration.dispatch(MessageBatch.create(Message.create(42)));
 
-            assertEquals("primitive:42", invoke(consumer, "invocation"));
+            assertThat(invoke(consumer, "invocation"), is("primitive:42"));
         }
     }
 
@@ -355,20 +357,22 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String entitySource = generatedSource(result, "EntityPayloadConsumer__MessagingConsumer_");
-        assertTrue(entitySource.contains("new GenericType<MessagePayload>()"), entitySource);
-        assertTrue(entitySource.contains("new GenericType<Message<MessagePayload>>()"), entitySource);
-        assertTrue(entitySource.contains("var typedMessage = (Message<MessagePayload>) message;"), entitySource);
-        assertTrue(entitySource.contains("consumerInstance.consume(typedMessage.entity(), "
+        assertThat(entitySource, entitySource.contains("new GenericType<MessagePayload>()"), is(true));
+        assertThat(entitySource, entitySource.contains("new GenericType<Message<MessagePayload>>()"), is(true));
+        assertThat(entitySource, entitySource.contains("var typedMessage = (Message<MessagePayload>) message;"), is(true));
+        assertThat(entitySource,
+                   entitySource.contains("consumerInstance.consume(typedMessage.entity(), "
                                                 + "typedMessage.header(\"tenant\").orElseThrow"),
-                   entitySource);
+                   is(true));
 
         String envelopeSource = generatedSource(result, "EnvelopeConsumer__MessagingConsumer_");
-        assertTrue(envelopeSource.contains("new GenericType<String>()"), envelopeSource);
-        assertTrue(envelopeSource.contains("new GenericType<MessagePayload>()"), envelopeSource);
-        assertTrue(envelopeSource.contains("var typedMessage = (MessagePayload) message;"), envelopeSource);
-        assertTrue(envelopeSource.contains("consumerInstance.consume(typedMessage, "
+        assertThat(envelopeSource, envelopeSource.contains("new GenericType<String>()"), is(true));
+        assertThat(envelopeSource, envelopeSource.contains("new GenericType<MessagePayload>()"), is(true));
+        assertThat(envelopeSource, envelopeSource.contains("var typedMessage = (MessagePayload) message;"), is(true));
+        assertThat(envelopeSource,
+                   envelopeSource.contains("consumerInstance.consume(typedMessage, "
                                                   + "typedMessage.header(\"tenant\").orElseThrow"),
-                   envelopeSource);
+                   is(true));
 
         try (URLClassLoader classLoader = new URLClassLoader(new URL[] {
                 result.classOutput().toUri().toURL()
@@ -387,15 +391,15 @@ class MessagingExtensionTest {
                     (Supplier<Object>) () -> entityConsumer,
                     passthroughEntryPoints());
 
-            assertSame(payloadType, entityRegistration.payloadType());
-            assertSame(Message.class, entityRegistration.envelopeType());
+            assertThat(entityRegistration.payloadType(), sameInstance(payloadType));
+            assertThat(entityRegistration.envelopeType(), sameInstance(Message.class));
 
             entityRegistration.dispatch(MessageBatch.create(Message.builder(payload)
                                                                       .header("tenant", "outer")
                                                                       .build()));
 
-            assertSame(payload, invoke(entityConsumer, "received"));
-            assertEquals("outer", invoke(entityConsumer, "tenant"));
+            assertThat(invoke(entityConsumer, "received"), sameInstance(payload));
+            assertThat(invoke(entityConsumer, "tenant"), is("outer"));
 
             Class<?> envelopeConsumerType = classLoader.loadClass("com.example.EnvelopeConsumer");
             var envelopeConsumerConstructor = envelopeConsumerType.getDeclaredConstructor();
@@ -406,13 +410,13 @@ class MessagingExtensionTest {
                     (Supplier<Object>) () -> envelopeConsumer,
                     passthroughEntryPoints());
 
-            assertSame(String.class, envelopeRegistration.payloadType());
-            assertSame(payloadType, envelopeRegistration.envelopeType());
+            assertThat(envelopeRegistration.payloadType(), sameInstance(String.class));
+            assertThat(envelopeRegistration.envelopeType(), sameInstance(payloadType));
 
             envelopeRegistration.dispatch(MessageBatch.create((Message<?>) payload));
 
-            assertSame(payload, invoke(envelopeConsumer, "received"));
-            assertEquals("inner", invoke(envelopeConsumer, "tenant"));
+            assertThat(invoke(envelopeConsumer, "received"), sameInstance(payload));
+            assertThat(invoke(envelopeConsumer, "tenant"), is("inner"));
         }
     }
 
@@ -522,26 +526,26 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "InterceptedConsumer__MessagingConsumer_");
-        assertTrue(source.contains("Supplier<InterceptedConsumer> consumer"), source);
-        assertTrue(source.contains("EntryPoints entryPoints"), source);
-        assertTrue(source.contains("entryPoints.handler("), source);
-        assertTrue(source.contains("descriptor.qualifiers()"), source);
-        assertTrue(source.contains("InterceptedConsumer__ServiceDescriptor.ANNOTATIONS"), source);
-        assertTrue(source.contains("InterceptedConsumer__ServiceDescriptor.METHOD_"), source);
-        assertTrue(source.contains("this::invoke"), source);
-        assertTrue(source.contains("Handler<InterceptedConsumer> handler"), source);
-        assertTrue(source.contains("void dispatch(MessageBatch<?> messages)"), source);
-        assertTrue(source.contains("dispatchMessage(messages.get(index));"), source);
-        assertTrue(source.contains("BatchDeliveryException.sequential("), source);
-        assertTrue(source.contains("handler.handle(consumer.get(), message)"), source);
-        assertTrue(source.contains("invoke(InterceptedConsumer consumerInstance,"), source);
-        assertTrue(source.contains("consumerInstance.consume("), source);
-        assertFalse(source.contains("consumer.get().consume("), source);
+        assertThat(source, source.contains("Supplier<InterceptedConsumer> consumer"), is(true));
+        assertThat(source, source.contains("EntryPoints entryPoints"), is(true));
+        assertThat(source, source.contains("entryPoints.handler("), is(true));
+        assertThat(source, source.contains("descriptor.qualifiers()"), is(true));
+        assertThat(source, source.contains("InterceptedConsumer__ServiceDescriptor.ANNOTATIONS"), is(true));
+        assertThat(source, source.contains("InterceptedConsumer__ServiceDescriptor.METHOD_"), is(true));
+        assertThat(source, source.contains("this::invoke"), is(true));
+        assertThat(source, source.contains("Handler<InterceptedConsumer> handler"), is(true));
+        assertThat(source, source.contains("void dispatch(MessageBatch<?> messages)"), is(true));
+        assertThat(source, source.contains("dispatchMessage(messages.get(index));"), is(true));
+        assertThat(source, source.contains("BatchDeliveryException.sequential("), is(true));
+        assertThat(source, source.contains("handler.handle(consumer.get(), message)"), is(true));
+        assertThat(source, source.contains("invoke(InterceptedConsumer consumerInstance,"), is(true));
+        assertThat(source, source.contains("consumerInstance.consume("), is(true));
+        assertThat(source, source.contains("consumer.get().consume("), is(false));
         assertSingleOccurrence(source, "consumer.get()");
-        assertTrue(source.contains("typedMessage.header(\"required\").orElseThrow"), source);
-        assertTrue(source.contains("typedMessage.header(\"optional\")"), source);
-        assertTrue(source.contains("catch (RuntimeException | Error e)"), source);
-        assertTrue(source.contains("catch (Exception e)"), source);
+        assertThat(source, source.contains("typedMessage.header(\"required\").orElseThrow"), is(true));
+        assertThat(source, source.contains("typedMessage.header(\"optional\")"), is(true));
+        assertThat(source, source.contains("catch (RuntimeException | Error e)"), is(true));
+        assertThat(source, source.contains("catch (Exception e)"), is(true));
     }
 
     @Test
@@ -568,13 +572,13 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "FailurePolicyConsumer__MessagingConsumer_");
-        assertTrue(source.contains("private static final FailurePolicy DECLARED_FAILURE_POLICY"), source);
-        assertTrue(source.contains(".retryDelay(Duration.parse(\"PT0.25S\"))"), source);
-        assertTrue(source.contains(".maxAttempts(3)"), source);
-        assertTrue(source.contains(".onExhausted(FailureDisposition.DEAD_LETTER)"), source);
-        assertTrue(source.contains(".deadLetterChannel(\"orders-dlq\")"), source);
-        assertTrue(source.contains("Optional<FailurePolicy> declaredFailurePolicy()"), source);
-        assertTrue(source.contains("return Optional.of(DECLARED_FAILURE_POLICY);"), source);
+        assertThat(source, source.contains("private static final FailurePolicy DECLARED_FAILURE_POLICY"), is(true));
+        assertThat(source, source.contains(".retryDelay(Duration.parse(\"PT0.25S\"))"), is(true));
+        assertThat(source, source.contains(".maxAttempts(3)"), is(true));
+        assertThat(source, source.contains(".onExhausted(FailureDisposition.DEAD_LETTER)"), is(true));
+        assertThat(source, source.contains(".deadLetterChannel(\"orders-dlq\")"), is(true));
+        assertThat(source, source.contains("Optional<FailurePolicy> declaredFailurePolicy()"), is(true));
+        assertThat(source, source.contains("return Optional.of(DECLARED_FAILURE_POLICY);"), is(true));
 
         try (URLClassLoader classLoader = new URLClassLoader(new URL[] {
                 result.classOutput().toUri().toURL()
@@ -588,12 +592,11 @@ class MessagingExtensionTest {
                     passthroughEntryPoints());
             Optional<?> declared = (Optional<?>) invoke(registration, "declaredFailurePolicy");
             Object policy = declared.orElseThrow();
-            assertEquals(Duration.ofMillis(250), invoke(policy, "retryDelay"));
-            assertEquals(3, invoke(policy, "maxAttempts"));
-            assertEquals("DEAD_LETTER", invoke(policy, "onExhausted").toString());
-            assertEquals(Optional.of("orders-dlq"), invoke(policy, "deadLetterChannel"));
-            assertSame(policy,
-                       ((Optional<?>) invoke(registration, "declaredFailurePolicy")).orElseThrow());
+            assertThat(invoke(policy, "retryDelay"), is(Duration.ofMillis(250)));
+            assertThat(invoke(policy, "maxAttempts"), is(3));
+            assertThat(invoke(policy, "onExhausted").toString(), is("DEAD_LETTER"));
+            assertThat(invoke(policy, "deadLetterChannel"), is(Optional.of("orders-dlq")));
+            assertThat(((Optional<?>) invoke(registration, "declaredFailurePolicy")).orElseThrow(), sameInstance(policy));
         }
     }
 
@@ -623,14 +626,14 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String annotatedSource = generatedSource(result, "BareFailurePolicyConsumer__MessagingConsumer_");
-        assertTrue(annotatedSource.contains("DECLARED_FAILURE_POLICY"), annotatedSource);
-        assertTrue(annotatedSource.contains(".retryDelay(Duration.parse(\"PT1S\"))"), annotatedSource);
-        assertTrue(annotatedSource.contains(".maxAttempts(0)"), annotatedSource);
-        assertTrue(annotatedSource.contains(".onExhausted(FailureDisposition.FAIL)"), annotatedSource);
+        assertThat(annotatedSource, annotatedSource.contains("DECLARED_FAILURE_POLICY"), is(true));
+        assertThat(annotatedSource, annotatedSource.contains(".retryDelay(Duration.parse(\"PT1S\"))"), is(true));
+        assertThat(annotatedSource, annotatedSource.contains(".maxAttempts(0)"), is(true));
+        assertThat(annotatedSource, annotatedSource.contains(".onExhausted(FailureDisposition.FAIL)"), is(true));
 
         String unannotatedSource = generatedSource(result, "UnannotatedConsumer__MessagingConsumer_");
-        assertFalse(unannotatedSource.contains("DECLARED_FAILURE_POLICY"), unannotatedSource);
-        assertFalse(unannotatedSource.contains("declaredFailurePolicy()"), unannotatedSource);
+        assertThat(unannotatedSource, unannotatedSource.contains("DECLARED_FAILURE_POLICY"), is(false));
+        assertThat(unannotatedSource, unannotatedSource.contains("declaredFailurePolicy()"), is(false));
 
         try (URLClassLoader classLoader = new URLClassLoader(new URL[] {
                 result.classOutput().toUri().toURL()
@@ -641,16 +644,16 @@ class MessagingExtensionTest {
                     passthroughEntryPoints());
             Optional<?> declared = (Optional<?>) invoke(annotated, "declaredFailurePolicy");
             Object policy = declared.orElseThrow();
-            assertEquals(Duration.ofSeconds(1), invoke(policy, "retryDelay"));
-            assertEquals(0, invoke(policy, "maxAttempts"));
-            assertEquals("FAIL", invoke(policy, "onExhausted").toString());
-            assertEquals(Optional.empty(), invoke(policy, "deadLetterChannel"));
+            assertThat(invoke(policy, "retryDelay"), is(Duration.ofSeconds(1)));
+            assertThat(invoke(policy, "maxAttempts"), is(0));
+            assertThat(invoke(policy, "onExhausted").toString(), is("FAIL"));
+            assertThat(invoke(policy, "deadLetterChannel"), is(Optional.empty()));
 
             Object unannotated = newRegistration(
                     generatedClass(classLoader, result, "UnannotatedConsumer__MessagingConsumer_"),
                     (Supplier<Object>) () -> null,
                     passthroughEntryPoints());
-            assertEquals(Optional.empty(), invoke(unannotated, "declaredFailurePolicy"));
+            assertThat(invoke(unannotated, "declaredFailurePolicy"), is(Optional.empty()));
         }
     }
 
@@ -813,23 +816,23 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "PayloadProcessor__MessagingConsumer_");
-        assertTrue(source.contains("implements ProcessorRegistration"), source);
-        assertTrue(source.contains("String outgoingChannel()"), source);
-        assertTrue(source.contains("return \"audit\";"), source);
-        assertTrue(source.contains("new GenericType<Integer>()"), source);
-        assertTrue(source.contains("new GenericType<Message<Integer>>()"), source);
-        assertTrue(source.contains("MessageBatch<?> process(MessageBatch<?> messages)"), source);
-        assertTrue(source.contains("processedMessages.add(processMessage(messages.get(index)));"), source);
-        assertTrue(source.contains("return messages.derive(processedMessages);"), source);
-        assertTrue(source.contains("BatchDeliveryException.attemptedPrefix("), source);
-        assertTrue(source.contains("Handler<PayloadProcessor> handler"), source);
-        assertTrue(source.contains("handler.handle(consumer.get(), message)"), source);
-        assertTrue(source.contains("invoke(PayloadProcessor consumerInstance,"), source);
-        assertTrue(source.contains("consumerInstance.process("), source);
-        assertFalse(source.contains("consumer.get().process("), source);
+        assertThat(source, source.contains("implements ProcessorRegistration"), is(true));
+        assertThat(source, source.contains("String outgoingChannel()"), is(true));
+        assertThat(source, source.contains("return \"audit\";"), is(true));
+        assertThat(source, source.contains("new GenericType<Integer>()"), is(true));
+        assertThat(source, source.contains("new GenericType<Message<Integer>>()"), is(true));
+        assertThat(source, source.contains("MessageBatch<?> process(MessageBatch<?> messages)"), is(true));
+        assertThat(source, source.contains("processedMessages.add(processMessage(messages.get(index)));"), is(true));
+        assertThat(source, source.contains("return messages.derive(processedMessages);"), is(true));
+        assertThat(source, source.contains("BatchDeliveryException.attemptedPrefix("), is(true));
+        assertThat(source, source.contains("Handler<PayloadProcessor> handler"), is(true));
+        assertThat(source, source.contains("handler.handle(consumer.get(), message)"), is(true));
+        assertThat(source, source.contains("invoke(PayloadProcessor consumerInstance,"), is(true));
+        assertThat(source, source.contains("consumerInstance.process("), is(true));
+        assertThat(source, source.contains("consumer.get().process("), is(false));
         assertSingleOccurrence(source, "consumer.get()");
-        assertTrue(source.contains("Objects.requireNonNull("), source);
-        assertTrue(source.contains("Message.create(result)"), source);
+        assertThat(source, source.contains("Objects.requireNonNull("), is(true));
+        assertThat(source, source.contains("Message.create(result)"), is(true));
     }
 
     @Test
@@ -853,9 +856,9 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "EnvelopeProcessor__MessagingConsumer_");
-        assertTrue(source.contains("new GenericType<Message<Integer>>()"), source);
-        assertTrue(source.contains("return Optional.of(result);"), source);
-        assertFalse(source.contains("Message.create(result)"), source);
+        assertThat(source, source.contains("new GenericType<Message<Integer>>()"), is(true));
+        assertThat(source, source.contains("return Optional.of(result);"), is(true));
+        assertThat(source, source.contains("Message.create(result)"), is(false));
     }
 
     @Test
@@ -889,14 +892,14 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "ArrayEnvelopeProcessor__MessagingConsumer_");
-        assertTrue(source.contains("new GenericType<String[][]>()"), source);
-        assertTrue(source.contains("new GenericType<ArrayMessage<String>>()"), source);
+        assertThat(source, source.contains("new GenericType<String[][]>()"), is(true));
+        assertThat(source, source.contains("new GenericType<ArrayMessage<String>>()"), is(true));
 
         String consumerSource = generatedSource(result, "ArrayPayloadConsumer__MessagingConsumer_");
-        assertTrue(consumerSource.contains("return PAYLOAD_GENERIC_TYPE.rawType();"), consumerSource);
-        assertTrue(consumerSource.contains("new GenericType<String[][]>()"), consumerSource);
-        assertTrue(consumerSource.contains("return ENVELOPE_GENERIC_TYPE.rawType();"), consumerSource);
-        assertTrue(consumerSource.contains("new GenericType<Message<String[][]>>()"), consumerSource);
+        assertThat(consumerSource, consumerSource.contains("return PAYLOAD_GENERIC_TYPE.rawType();"), is(true));
+        assertThat(consumerSource, consumerSource.contains("new GenericType<String[][]>()"), is(true));
+        assertThat(consumerSource, consumerSource.contains("return ENVELOPE_GENERIC_TYPE.rawType();"), is(true));
+        assertThat(consumerSource, consumerSource.contains("new GenericType<Message<String[][]>>()"), is(true));
     }
 
     @Test
@@ -917,8 +920,8 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "ArrayEmitterProducer__MessagingEmitter_");
-        assertTrue(source.contains("new GenericType<String[][]>()"), source);
-        assertTrue(source.contains("new GenericType<Message<String[][]>>()"), source);
+        assertThat(source, source.contains("new GenericType<String[][]>()"), is(true));
+        assertThat(source, source.contains("new GenericType<Message<String[][]>>()"), is(true));
     }
 
     @Test
@@ -942,19 +945,19 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "BatchConsumer__MessagingConsumer_");
-        assertTrue(source.contains("BatchHandler<BatchConsumer> batchHandler"), source);
-        assertTrue(source.contains("entryPoints.batchHandler("), source);
-        assertTrue(source.contains("this::invokeBatch"), source);
-        assertTrue(source.contains("void dispatch(MessageBatch<?> messages)"), source);
-        assertFalse(source.contains("dispatchBatch("), source);
-        assertFalse(source.contains("batchType()"), source);
-        assertFalse(source.contains("batchGenericType()"), source);
-        assertFalse(source.contains("boolean batch()"), source);
-        assertTrue(source.contains("batchHandler.handle(consumer.get(), messages);"), source);
-        assertTrue(source.contains("invokeBatch(BatchConsumer consumerInstance,"), source);
-        assertTrue(source.contains("var typedMessages = (MessageBatch<String>) messages;"), source);
-        assertTrue(source.contains("consumerInstance.consume(typedMessages);"), source);
-        assertFalse(source.contains("consumer.get().consume("), source);
+        assertThat(source, source.contains("BatchHandler<BatchConsumer> batchHandler"), is(true));
+        assertThat(source, source.contains("entryPoints.batchHandler("), is(true));
+        assertThat(source, source.contains("this::invokeBatch"), is(true));
+        assertThat(source, source.contains("void dispatch(MessageBatch<?> messages)"), is(true));
+        assertThat(source, source.contains("dispatchBatch("), is(false));
+        assertThat(source, source.contains("batchType()"), is(false));
+        assertThat(source, source.contains("batchGenericType()"), is(false));
+        assertThat(source, source.contains("boolean batch()"), is(false));
+        assertThat(source, source.contains("batchHandler.handle(consumer.get(), messages);"), is(true));
+        assertThat(source, source.contains("invokeBatch(BatchConsumer consumerInstance,"), is(true));
+        assertThat(source, source.contains("var typedMessages = (MessageBatch<String>) messages;"), is(true));
+        assertThat(source, source.contains("consumerInstance.consume(typedMessages);"), is(true));
+        assertThat(source, source.contains("consumer.get().consume("), is(false));
         assertSingleOccurrence(source, "consumer.get()");
     }
 
@@ -1043,15 +1046,15 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "MetadataEmitterProducer__MessagingEmitter_");
-        assertTrue(source.contains("Emitter<List<String>>, EmitterRegistration"), source);
-        assertTrue(source.contains("String channel()"), source);
-        assertTrue(source.contains("return \"orders\";"), source);
-        assertTrue(source.contains("String producerId()"), source);
-        assertTrue(source.contains("com.example.MetadataEmitterProducer#emitter:orders"), source);
-        assertTrue(source.contains("new GenericType<List<String>>()"), source);
-        assertTrue(source.contains("new GenericType<Message<List<String>>>()"), source);
-        assertTrue(source.contains("void emitBatch(MessageBatch<? extends List<String>> messages)"), source);
-        assertFalse(source.contains("void emitMessage("), source);
+        assertThat(source, source.contains("Emitter<List<String>>, EmitterRegistration"), is(true));
+        assertThat(source, source.contains("String channel()"), is(true));
+        assertThat(source, source.contains("return \"orders\";"), is(true));
+        assertThat(source, source.contains("String producerId()"), is(true));
+        assertThat(source, source.contains("com.example.MetadataEmitterProducer#emitter:orders"), is(true));
+        assertThat(source, source.contains("new GenericType<List<String>>()"), is(true));
+        assertThat(source, source.contains("new GenericType<Message<List<String>>>()"), is(true));
+        assertThat(source, source.contains("void emitBatch(MessageBatch<? extends List<String>> messages)"), is(true));
+        assertThat(source, source.contains("void emitMessage("), is(false));
     }
 
     @Test
@@ -1507,10 +1510,10 @@ class MessagingExtensionTest {
             long descriptors = generatedFiles.stream()
                     .filter(name -> name.contains("__ServiceDescriptor"))
                     .count();
-            assertTrue(registrations == 2,
-                       "Expected two distinct generated emitter registrations, found " + registrations);
-            assertTrue(descriptors == 2,
-                       "Expected two generated emitter service descriptors, found " + descriptors);
+            assertThat("Expected two distinct generated emitter registrations, found " + registrations,
+                       registrations == 2,
+                       is(true));
+            assertThat("Expected two generated emitter service descriptors, found " + descriptors, descriptors == 2, is(true));
         }
     }
 
@@ -1558,8 +1561,8 @@ class MessagingExtensionTest {
         assertCompilationSucceeded(result);
         String consumerSource = generatedSource(result, "JavadocChannelService__MessagingConsumer_");
         String emitterSource = generatedSource(result, "JavadocChannelService__MessagingEmitter_");
-        assertTrue(consumerSource.contains("channel <code>orders*&#47;x</code>."), consumerSource);
-        assertTrue(emitterSource.contains("channel <code>orders*&#47;x</code>."), emitterSource);
+        assertThat(consumerSource, consumerSource.contains("channel <code>orders*&#47;x</code>."), is(true));
+        assertThat(emitterSource, emitterSource.contains("channel <code>orders*&#47;x</code>."), is(true));
     }
 
     @Test
@@ -1586,8 +1589,8 @@ class MessagingExtensionTest {
         assertCompilationSucceeded(result);
         String consumerSource = generatedSource(result, "UnicodeJavadocChannelService__MessagingConsumer_");
         String emitterSource = generatedSource(result, "UnicodeJavadocChannelService__MessagingEmitter_");
-        assertTrue(consumerSource.contains("channel <code>&#92;u002a&#92;u002f</code>."), consumerSource);
-        assertTrue(emitterSource.contains("channel <code>&#92;u002a&#92;u002f</code>."), emitterSource);
+        assertThat(consumerSource, consumerSource.contains("channel <code>&#92;u002a&#92;u002f</code>."), is(true));
+        assertThat(emitterSource, emitterSource.contains("channel <code>&#92;u002a&#92;u002f</code>."), is(true));
     }
 
     @Test
@@ -1615,8 +1618,8 @@ class MessagingExtensionTest {
         Path consumerSource = generatedSourcePath(result, "InlineTagJavadocChannelService__MessagingConsumer_");
         Path emitterSource = generatedSourcePath(result, "InlineTagJavadocChannelService__MessagingEmitter_");
         String escapedChannel = "channel <code>x&#125;&#123;@value&amp;&lt;&gt;</code>.";
-        assertTrue(Files.readString(consumerSource).contains(escapedChannel));
-        assertTrue(Files.readString(emitterSource).contains(escapedChannel));
+        assertThat(Files.readString(consumerSource).contains(escapedChannel), is(true));
+        assertThat(Files.readString(emitterSource).contains(escapedChannel), is(true));
         Path javadocs = generateJavadocs(result, consumerSource, emitterSource);
         assertRenderedJavadoc(javadocs, consumerSource, "Messaging consumer registration for " + escapedChannel);
         assertRenderedJavadoc(javadocs, emitterSource, "Messaging emitter service for " + escapedChannel);
@@ -1745,10 +1748,10 @@ class MessagingExtensionTest {
             long descriptors = generatedFiles.stream()
                     .filter(name -> name.contains("__ServiceDescriptor"))
                     .count();
-            assertTrue(registrations == 2,
-                       "Expected two distinct generated consumer registrations, found " + registrations);
-            assertTrue(descriptors == 2,
-                       "Expected two generated consumer service descriptors, found " + descriptors);
+            assertThat("Expected two distinct generated consumer registrations, found " + registrations,
+                       registrations == 2,
+                       is(true));
+            assertThat("Expected two generated consumer service descriptors, found " + descriptors, descriptors == 2, is(true));
         }
     }
 
@@ -1809,8 +1812,8 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "ThrowableConsumer__MessagingConsumer_");
-        assertTrue(source.contains("catch (Throwable t)"), source);
-        assertTrue(source.contains("threw a checked Throwable outside Exception"), source);
+        assertThat(source, source.contains("catch (Throwable t)"), is(true));
+        assertThat(source, source.contains("threw a checked Throwable outside Exception"), is(true));
     }
 
     private TestCompiler.Result compile(String source) {
@@ -1864,7 +1867,7 @@ class MessagingExtensionTest {
                                                        output.toString()),
                                                fileManager.getJavaFileObjects(sources))
                     .call();
-            assertTrue(success, diagnostics.toString());
+            assertThat(diagnostics.toString(), success, is(true));
         }
         return output;
     }
@@ -1873,14 +1876,15 @@ class MessagingExtensionTest {
         String sourceFile = source.getFileName().toString();
         String htmlFile = sourceFile.substring(0, sourceFile.length() - ".java".length()) + ".html";
         String html = Files.readString(output.resolve("com/example").resolve(htmlFile));
-        assertTrue(html.contains(expected), html);
+        assertThat(html, html.contains(expected), is(true));
     }
 
     private void assertSingleOccurrence(String source, String expected) {
         int first = source.indexOf(expected);
-        assertTrue(first >= 0, "Generated source does not contain " + expected + ":\n" + source);
-        assertTrue(source.indexOf(expected, first + expected.length()) < 0,
-                   "Generated source contains more than one " + expected + ":\n" + source);
+        assertThat("Generated source does not contain " + expected + ":\n" + source, first >= 0, is(true));
+        assertThat("Generated source contains more than one " + expected + ":\n" + source,
+                   source.indexOf(expected, first + expected.length()) < 0,
+                   is(true));
     }
 
     private Path generatedSourcePath(TestCompiler.Result result, String filePrefix) throws IOException {
@@ -1902,14 +1906,15 @@ class MessagingExtensionTest {
                     .filter(path -> path.getFileName().toString().contains(generatedTypeMarker))
                     .filter(path -> path.getFileName().toString().endsWith(".java"))
                     .toList();
-            assertFalse(generatedTypes.isEmpty(), "No generated types found for " + generatedTypeMarker);
+            assertThat("No generated types found for " + generatedTypeMarker, generatedTypes.isEmpty(), is(false));
             for (Path generatedType : generatedTypes) {
                 String fileName = generatedType.getFileName().toString();
                 String typeName = fileName.substring(0, fileName.length() - ".java".length());
                 int typeNameBytes = typeName.getBytes(StandardCharsets.UTF_8).length;
-                assertTrue(typeNameBytes <= 255 - ".class".length(),
-                           "Generated type name cannot be represented by a portable class filename: " + fileName
-                                   + " (" + typeNameBytes + " bytes)");
+                assertThat("Generated type name cannot be represented by a portable class filename: " + fileName
+                                   + " (" + typeNameBytes + " bytes)",
+                           typeNameBytes <= 255 - ".class".length(),
+                           is(true));
             }
         }
     }
@@ -1931,12 +1936,14 @@ class MessagingExtensionTest {
             long descriptors = generatedFiles.stream()
                     .filter(name -> name.contains("__ServiceDescriptor"))
                     .count();
-            assertTrue(registrations == expectedRegistrations,
-                       "Expected " + expectedRegistrations + " generated registrations for " + generatedTypeMarker
-                               + ", found " + registrations + ": " + generatedFiles);
-            assertTrue(descriptors == expectedDescriptors,
-                       "Expected " + expectedDescriptors + " generated descriptors for " + generatedTypeMarker
-                               + ", found " + descriptors + ": " + generatedFiles);
+            assertThat("Expected " + expectedRegistrations + " generated registrations for " + generatedTypeMarker
+                               + ", found " + registrations + ": " + generatedFiles,
+                       registrations == expectedRegistrations,
+                       is(true));
+            assertThat("Expected " + expectedDescriptors + " generated descriptors for " + generatedTypeMarker
+                               + ", found " + descriptors + ": " + generatedFiles,
+                       descriptors == expectedDescriptors,
+                       is(true));
         }
     }
 
@@ -1953,8 +1960,9 @@ class MessagingExtensionTest {
     private Object newRegistration(Class<?> registrationType,
                                    Object... arguments) throws ReflectiveOperationException {
         var constructors = registrationType.getDeclaredConstructors();
-        assertTrue(constructors.length == 1,
-                   "Expected one generated registration constructor for " + registrationType.getName());
+        assertThat("Expected one generated registration constructor for " + registrationType.getName(),
+                   constructors.length == 1,
+                   is(true));
         var constructor = constructors[0];
         constructor.setAccessible(true);
         return constructor.newInstance(arguments);
@@ -1972,8 +1980,8 @@ class MessagingExtensionTest {
                                           String genericMethod,
                                           String rawMethod) throws ReflectiveOperationException {
         Object genericType = invoke(registration, genericMethod);
-        assertSame(genericType, invoke(registration, genericMethod));
-        assertSame(invoke(genericType, "rawType"), invoke(registration, rawMethod));
+        assertThat(invoke(registration, genericMethod), sameInstance(genericType));
+        assertThat(invoke(registration, rawMethod), sameInstance(invoke(genericType, "rawType")));
     }
 
     private Object invoke(Object target, String methodName) throws ReflectiveOperationException {
@@ -1992,11 +2000,11 @@ class MessagingExtensionTest {
 
     private void assertDiagnostic(TestCompiler.Result result, String expected) {
         String diagnostics = String.join("\n", result.diagnostics());
-        assertFalse(result.success(), "Compilation unexpectedly succeeded");
-        assertTrue(diagnostics.contains(expected), "Missing diagnostic '" + expected + "':\n" + diagnostics);
+        assertThat("Compilation unexpectedly succeeded", result.success(), is(false));
+        assertThat("Missing diagnostic '" + expected + "':\n" + diagnostics, diagnostics.contains(expected), is(true));
     }
 
     private void assertCompilationSucceeded(TestCompiler.Result result) {
-        assertTrue(result.success(), "Compilation failed:\n" + String.join("\n", result.diagnostics()));
+        assertThat("Compilation failed:\n" + String.join("\n", result.diagnostics()), result.success(), is(true));
     }
 }

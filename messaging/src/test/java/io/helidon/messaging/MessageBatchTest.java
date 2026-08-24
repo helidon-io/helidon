@@ -21,11 +21,10 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MessageBatchTest {
     @Test
@@ -40,12 +39,12 @@ class MessageBatchTest {
                 .build();
         source.clear();
 
-        assertEquals("batch-1", batch.id());
-        assertEquals(2, batch.size());
-        assertSame(first, batch.get(0));
-        assertSame(second, batch.get(1));
-        assertEquals(List.of("one", "two"), batch.payloads());
-        assertEquals(batch.messages(), toList(batch));
+        assertThat(batch.id(), is("batch-1"));
+        assertThat(batch.size(), is(2));
+        assertThat(batch.get(0), sameInstance(first));
+        assertThat(batch.get(1), sameInstance(second));
+        assertThat(batch.payloads(), is(List.of("one", "two")));
+        assertThat(toList(batch), is(batch.messages()));
         assertThrows(UnsupportedOperationException.class, () -> batch.messages().clear());
         assertThrows(UnsupportedOperationException.class, () -> batch.payloads().clear());
     }
@@ -70,15 +69,15 @@ class MessageBatchTest {
                 .messages(original.messages())
                 .build();
 
-        assertTrue(original.sameDelivery(derived));
-        assertFalse(original.sameDelivery(copiedIdentity));
-        assertFalse(original.sameDelivery(retry));
-        assertTrue(retry.sameDelivery(derivedRetry));
-        assertTrue(retry.isRetainedSubsetOf(original));
-        assertFalse(copiedIdentity.isRetainedSubsetOf(original));
-        assertFalse(derivedRetry.isRetainedSubsetOf(original));
-        assertEquals(List.of("one", "three"), retry.payloads());
-        assertEquals("batch-1", retry.id());
+        assertThat(original.sameDelivery(derived), is(true));
+        assertThat(original.sameDelivery(copiedIdentity), is(false));
+        assertThat(original.sameDelivery(retry), is(false));
+        assertThat(retry.sameDelivery(derivedRetry), is(true));
+        assertThat(retry.isRetainedSubsetOf(original), is(true));
+        assertThat(copiedIdentity.isRetainedSubsetOf(original), is(false));
+        assertThat(derivedRetry.isRetainedSubsetOf(original), is(false));
+        assertThat(retry.payloads(), is(List.of("one", "three")));
+        assertThat(retry.id(), is("batch-1"));
         assertThrows(IllegalArgumentException.class, () -> original.derive(List.of(Message.create(1))));
         assertThrows(IllegalArgumentException.class, () -> original.subset(List.of(2, 1)));
         assertThrows(IllegalArgumentException.class, () -> original.subset(List.of(1, 1)));
@@ -94,11 +93,11 @@ class MessageBatchTest {
         MessageBatch<String> selected = original.subset(List.of(0, 2));
         MessageBatch<String> completeSelection = original.subset(List.of(0, 1, 2));
 
-        assertEquals(List.of("one", "three"), selected.payloads());
-        assertSame(first, selected.get(0));
-        assertSame(third, selected.get(1));
-        assertTrue(selected.isRetainedSubsetOf(original));
-        assertTrue(completeSelection.sameDelivery(original));
+        assertThat(selected.payloads(), is(List.of("one", "three")));
+        assertThat(selected.get(0), sameInstance(first));
+        assertThat(selected.get(1), sameInstance(third));
+        assertThat(selected.isRetainedSubsetOf(original), is(true));
+        assertThat(completeSelection.sameDelivery(original), is(true));
     }
 
     @Test
@@ -126,28 +125,28 @@ class MessageBatchTest {
 
         BatchDeliveryException sequential = BatchDeliveryException.sequential("send", batch, 1, failure);
 
-        assertSame(batch, sequential.batch());
-        assertSame(failure, sequential.getCause());
-        assertEquals(BatchItemStatus.SUCCEEDED, sequential.outcome(0).status());
-        assertEquals(BatchItemStatus.INDETERMINATE, sequential.outcome(1).status());
-        assertSame(failure, sequential.outcome(1).failure().orElseThrow());
-        assertEquals(BatchItemStatus.NOT_ATTEMPTED, sequential.outcome(2).status());
-        assertFalse(sequential.outcome(2).failure().isPresent());
+        assertThat(sequential.batch(), sameInstance(batch));
+        assertThat(sequential.getCause(), sameInstance(failure));
+        assertThat(sequential.outcome(0).status(), is(BatchItemStatus.SUCCEEDED));
+        assertThat(sequential.outcome(1).status(), is(BatchItemStatus.INDETERMINATE));
+        assertThat(sequential.outcome(1).failure().orElseThrow(), sameInstance(failure));
+        assertThat(sequential.outcome(2).status(), is(BatchItemStatus.NOT_ATTEMPTED));
+        assertThat(sequential.outcome(2).failure().isPresent(), is(false));
         assertThrows(UnsupportedOperationException.class, () -> sequential.outcomes().clear());
 
         BatchDeliveryException indeterminate = BatchDeliveryException.indeterminate("send", batch, failure);
-        assertTrue(indeterminate.outcomes().stream()
-                           .allMatch(outcome -> outcome.status() == BatchItemStatus.INDETERMINATE));
+        assertThat(indeterminate.outcomes().stream()
+                           .allMatch(outcome -> outcome.status() == BatchItemStatus.INDETERMINATE), is(true));
 
         BatchDeliveryException attemptedPrefix = BatchDeliveryException.attemptedPrefix("process", batch, 1, failure);
-        assertEquals(List.of(BatchItemStatus.INDETERMINATE,
-                             BatchItemStatus.INDETERMINATE,
-                             BatchItemStatus.NOT_ATTEMPTED),
-                     attemptedPrefix.outcomes().stream().map(BatchItemOutcome::status).toList());
+        assertThat(attemptedPrefix.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                   is(List.of(BatchItemStatus.INDETERMINATE,
+                              BatchItemStatus.INDETERMINATE,
+                              BatchItemStatus.NOT_ATTEMPTED)));
 
         BatchDeliveryException notAttempted = BatchDeliveryException.notAttempted("send", batch, failure);
-        assertTrue(notAttempted.outcomes().stream()
-                           .allMatch(outcome -> outcome.status() == BatchItemStatus.NOT_ATTEMPTED));
+        assertThat(notAttempted.outcomes().stream()
+                           .allMatch(outcome -> outcome.status() == BatchItemStatus.NOT_ATTEMPTED), is(true));
     }
 
     @Test

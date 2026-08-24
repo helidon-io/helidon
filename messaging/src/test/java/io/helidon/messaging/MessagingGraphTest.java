@@ -36,14 +36,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Timeout(10)
 class MessagingGraphTest {
@@ -65,17 +63,17 @@ class MessagingGraphTest {
         graph.start();
         awaitCondition(() -> events.contains("admit-first") && events.contains("admit-second"));
 
-        assertEquals(DefaultMessagingGraph.State.RUNNING, graph.state());
-        assertTrue(first.prepared());
-        assertTrue(second.prepared());
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.RUNNING));
+        assertThat(first.prepared(), is(true));
+        assertThat(second.prepared(), is(true));
         int lastReady = Math.max(events.indexOf("ready-first"), events.indexOf("ready-second"));
-        assertTrue(lastReady < events.indexOf("admit-first"), events.toString());
-        assertTrue(lastReady < events.indexOf("admit-second"), events.toString());
+        assertThat(events.toString(), lastReady < events.indexOf("admit-first"), is(true));
+        assertThat(events.toString(), lastReady < events.indexOf("admit-second"), is(true));
 
         graph.close();
         graph.close();
-        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
-        assertEquals(List.of("close-second", "close-first"), lifecycleEvents(events));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
+        assertThat(lifecycleEvents(events), is(List.of("close-second", "close-first")));
     }
 
     @Test
@@ -155,11 +153,11 @@ class MessagingGraphTest {
         graph.start();
         awaitCondition(() -> events.contains("admit-incoming"));
 
-        assertEquals(List.of("start-outgoing",
-                             "run-incoming",
-                             "ready-incoming",
-                             "admit-incoming"),
-                     List.copyOf(events));
+        assertThat(List.copyOf(events),
+                   is(List.of("start-outgoing",
+                              "run-incoming",
+                              "ready-incoming",
+                              "admit-incoming")));
 
         AsyncTask delivery = async(() -> engine.dispatch("orders",
                                                          MessageBatch.create(List.of(message("order"))),
@@ -174,24 +172,26 @@ class MessagingGraphTest {
         AsyncTask closing = async(graph::close);
         await(admissionStopped);
 
-        assertFalse(events.contains("checkpoint-incoming"), "Incoming connector checkpointed before runtime drain");
+        assertThat("Incoming connector checkpointed before runtime drain",
+                   events.contains("checkpoint-incoming"),
+                   is(false));
 
         releaseDelivery.countDown();
         awaitSuccess(delivery);
         awaitSuccess(closing);
 
-        assertEquals(List.of("start-outgoing",
-                             "run-incoming",
-                             "ready-incoming",
-                             "admit-incoming",
-                             "delivery-start",
-                             "stop-incoming",
-                             "delivery-end",
-                             "checkpoint-incoming",
-                             "close-incoming",
-                             "close-outgoing"),
-                     events);
-        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
+        assertThat(events,
+                   is(List.of("start-outgoing",
+                              "run-incoming",
+                              "ready-incoming",
+                              "admit-incoming",
+                              "delivery-start",
+                              "stop-incoming",
+                              "delivery-end",
+                              "checkpoint-incoming",
+                              "close-incoming",
+                              "close-outgoing")));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
     }
 
     @Test
@@ -204,8 +204,8 @@ class MessagingGraphTest {
         graph.start();
         graph.close();
 
-        assertEquals(List.of("outgoing-start", "close"), events);
-        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
+        assertThat(events, is(List.of("outgoing-start", "close")));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
     }
 
     @Test
@@ -219,14 +219,14 @@ class MessagingGraphTest {
         awaitCondition(() -> events.contains("incoming-admit"));
         graph.close();
 
-        assertEquals(List.of("incoming-run",
-                             "incoming-ready",
-                             "incoming-admit",
-                             "incoming-stop",
-                             "incoming-checkpoint",
-                             "close"),
-                     events);
-        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
+        assertThat(events,
+                   is(List.of("incoming-run",
+                              "incoming-ready",
+                              "incoming-admit",
+                              "incoming-stop",
+                              "incoming-checkpoint",
+                              "close")));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
     }
 
     @Test
@@ -238,7 +238,7 @@ class MessagingGraphTest {
 
         outgoingGraph.close();
 
-        assertEquals(List.of("force-close", "close"), outgoingEvents);
+        assertThat(outgoingEvents, is(List.of("force-close", "close")));
 
         List<String> incomingEvents = new CopyOnWriteArrayList<>();
         DualConnector incoming = new DualConnector(incomingEvents);
@@ -247,7 +247,7 @@ class MessagingGraphTest {
 
         incomingGraph.close();
 
-        assertEquals(List.of("force-close", "close"), incomingEvents);
+        assertThat(incomingEvents, is(List.of("force-close", "close")));
     }
 
     @Test
@@ -266,8 +266,8 @@ class MessagingGraphTest {
         awaitSuccess(owner);
         awaitSuccess(waiter);
 
-        assertEquals(DefaultMessagingGraph.State.RUNNING, graph.state());
-        assertEquals(1, source.runCalls());
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.RUNNING));
+        assertThat(source.runCalls(), is(1));
         graph.close();
     }
 
@@ -301,13 +301,13 @@ class MessagingGraphTest {
         graph.addBinding(outgoing);
         graph.addIncomingConnector("incoming", incoming);
 
-        assertSame(startupFailure, assertThrows(IllegalStateException.class, graph::start));
+        assertThat(assertThrows(IllegalStateException.class, graph::start), sameInstance(startupFailure));
 
-        assertEquals(0, incoming.runCalls());
-        assertTrue(incoming.forced());
-        assertEquals(1, forceCalls.get());
-        assertEquals(1, closeCalls.get());
-        assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
+        assertThat(incoming.runCalls(), is(0));
+        assertThat(incoming.forced(), is(true));
+        assertThat(forceCalls.get(), is(1));
+        assertThat(closeCalls.get(), is(1));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
         graph.close();
     }
 
@@ -359,15 +359,15 @@ class MessagingGraphTest {
         releaseReadiness.countDown();
         await(forceStarted);
 
-        assertFalse(waiter.completion().isDone(), "startup waiter returned before rollback completed");
+        assertThat("startup waiter returned before rollback completed", waiter.completion().isDone(), is(false));
         releaseForce.countDown();
 
-        assertSame(startupFailure, failure(owner));
-        assertSame(startupFailure, failure(waiter));
-        assertSame(startupFailure, graph.failure().orElseThrow());
-        assertEquals(1, forceCalls.get());
-        assertEquals(1, startupFailure.getSuppressed().length);
-        assertSame(cleanupFailure, startupFailure.getSuppressed()[0]);
+        assertThat(failure(owner), sameInstance(startupFailure));
+        assertThat(failure(waiter), sameInstance(startupFailure));
+        assertThat(graph.failure().orElseThrow(), sameInstance(startupFailure));
+        assertThat(forceCalls.get(), is(1));
+        assertThat(startupFailure.getSuppressed().length, is(1));
+        assertThat(startupFailure.getSuppressed()[0], sameInstance(cleanupFailure));
         graph.close();
     }
 
@@ -397,13 +397,13 @@ class MessagingGraphTest {
         AsyncTask waiter = async(graph::close);
         awaitWaiting(waiter);
 
-        assertFalse(waiter.completion().isDone(), "close waiter returned before connector cleanup completed");
+        assertThat("close waiter returned before connector cleanup completed", waiter.completion().isDone(), is(false));
         releaseClose.countDown();
         awaitSuccess(owner);
         awaitSuccess(waiter);
 
-        assertEquals(1, closeCalls.get());
-        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
+        assertThat(closeCalls.get(), is(1));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
     }
 
     @Test
@@ -418,17 +418,17 @@ class MessagingGraphTest {
 
         IllegalStateException thrown = assertThrows(IllegalStateException.class, graph::start);
 
-        assertSame(startupFailure, thrown);
-        assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
-        assertSame(startupFailure, graph.failure().orElseThrow());
-        assertEquals(List.of("force-second", "force-first", "close-second", "close-first"),
-                     lifecycleEvents(events));
+        assertThat(thrown, sameInstance(startupFailure));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
+        assertThat(graph.failure().orElseThrow(), sameInstance(startupFailure));
+        assertThat(lifecycleEvents(events),
+                   is(List.of("force-second", "force-first", "close-second", "close-first")));
         assertThrows(IllegalStateException.class, graph::start);
         assertThrows(IllegalStateException.class, graph::ensureRunning);
 
         graph.close();
-        assertEquals(List.of("force-second", "force-first", "close-second", "close-first"),
-                     lifecycleEvents(events));
+        assertThat(lifecycleEvents(events),
+                   is(List.of("force-second", "force-first", "close-second", "close-first")));
     }
 
     @Test
@@ -445,11 +445,13 @@ class MessagingGraphTest {
         awaitState(graph, DefaultMessagingGraph.State.FAILED);
         awaitCondition(() -> lifecycleEvents(events).size() == 4);
 
-        assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
-        assertSame(startupFailure, graph.failure().orElseThrow().getCause());
-        assertTrue(events.indexOf("admit-first") < events.indexOf("admission-fail-second"), events.toString());
-        assertEquals(List.of("force-second", "force-first", "close-second", "close-first"),
-                     lifecycleEvents(events));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
+        assertThat(graph.failure().orElseThrow().getCause(), sameInstance(startupFailure));
+        assertThat(events.toString(),
+                   events.indexOf("admit-first") < events.indexOf("admission-fail-second"),
+                   is(true));
+        assertThat(lifecycleEvents(events),
+                   is(List.of("force-second", "force-first", "close-second", "close-first")));
         assertThrows(IllegalStateException.class, graph::start);
         assertThrows(MessagingException.class, graph::close);
     }
@@ -477,13 +479,13 @@ class MessagingGraphTest {
         AsyncTask closing = async(graph::close);
 
         MessagingRejectedException rejected = awaitShutdownRejection(engine, "upstream");
-        assertEquals(MessagingRejectedException.Reason.SHUTDOWN, rejected.reason());
+        assertThat(rejected.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
 
         allowNested.countDown();
         await(nestedCompleted);
         awaitSuccess(admitted);
         awaitSuccess(closing);
-        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
     }
 
     @Test
@@ -513,18 +515,18 @@ class MessagingGraphTest {
         await(closeReturned);
         AsyncTask shutdownWaiter = async(graph::close);
         try {
-            assertNull(closeFailure.get());
-            assertEquals(DefaultMessagingGraph.State.DRAINING, ((DefaultMessagingGraph) graph).state());
+            assertThat(closeFailure.get(), nullValue());
+            assertThat(((DefaultMessagingGraph) graph).state(), is(DefaultMessagingGraph.State.DRAINING));
             awaitWaiting(shutdownWaiter);
-            assertFalse(delivery.completion().isDone(), "Delivery completed before its sink returned");
+            assertThat("Delivery completed before its sink returned", delivery.completion().isDone(), is(false));
         } finally {
             releaseSink.countDown();
         }
 
         awaitSuccess(delivery);
         awaitSuccess(shutdownWaiter);
-        assertEquals(DefaultMessagingGraph.State.CLOSED, ((DefaultMessagingGraph) graph).state());
-        assertTrue(((DefaultMessagingGraph) graph).failure().isEmpty());
+        assertThat(((DefaultMessagingGraph) graph).state(), is(DefaultMessagingGraph.State.CLOSED));
+        assertThat(((DefaultMessagingGraph) graph).failure().isEmpty(), is(true));
     }
 
     @Test
@@ -559,8 +561,8 @@ class MessagingGraphTest {
         await(closeReturned);
         AsyncTask shutdownWaiter = async(parentGraph::close);
         try {
-            assertNull(closeFailure.get());
-            assertEquals(DefaultMessagingGraph.State.DRAINING, parentGraph.state());
+            assertThat(closeFailure.get(), nullValue());
+            assertThat(parentGraph.state(), is(DefaultMessagingGraph.State.DRAINING));
             awaitWaiting(shutdownWaiter);
         } finally {
             releaseChild.countDown();
@@ -568,8 +570,8 @@ class MessagingGraphTest {
 
         awaitSuccess(delivery);
         awaitSuccess(shutdownWaiter);
-        assertEquals(DefaultMessagingGraph.State.CLOSED, parentGraph.state());
-        assertTrue(parentGraph.failure().isEmpty());
+        assertThat(parentGraph.state(), is(DefaultMessagingGraph.State.CLOSED));
+        assertThat(parentGraph.failure().isEmpty(), is(true));
         childGraph.close();
     }
 
@@ -620,16 +622,16 @@ class MessagingGraphTest {
         await(drainRequested);
         AsyncTask shutdownWaiter = async(graph::close);
         try {
-            assertNull(closeFailure.get());
-            assertEquals(DefaultMessagingGraph.State.DRAINING, graph.state());
+            assertThat(closeFailure.get(), nullValue());
+            assertThat(graph.state(), is(DefaultMessagingGraph.State.DRAINING));
             awaitWaiting(shutdownWaiter);
         } finally {
             releaseSource.countDown();
         }
 
         awaitSuccess(shutdownWaiter);
-        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
-        assertTrue(graph.failure().isEmpty());
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
+        assertThat(graph.failure().isEmpty(), is(true));
     }
 
     @Test
@@ -655,9 +657,9 @@ class MessagingGraphTest {
 
         graph.close();
 
-        assertEquals(1, connectorCloseCalls.get());
-        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
-        assertTrue(graph.failure().isEmpty());
+        assertThat(connectorCloseCalls.get(), is(1));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
+        assertThat(graph.failure().isEmpty(), is(true));
     }
 
     @Test
@@ -693,8 +695,8 @@ class MessagingGraphTest {
 
             assertThat(failure.getMessage(), containsString("drain timed out"));
             await(interrupted);
-            assertEquals(List.of("force-second", "force-first", "close-second", "close-first"), events);
-            assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
+            assertThat(events, is(List.of("force-second", "force-first", "close-second", "close-first")));
+            assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
             assertThrows(MessagingException.class, graph::close);
         } finally {
             releaseDelivery.countDown();
@@ -719,12 +721,12 @@ class MessagingGraphTest {
 
         Throwable graphFailure = graph.failure().orElseThrow();
         assertThat(graphFailure.getMessage(), containsString("source failed"));
-        assertSame(runtimeFailure, graphFailure.getCause());
-        assertEquals(List.of("force-source", "force-resource", "close-source", "close-resource"),
-                     lifecycleEvents(events));
+        assertThat(graphFailure.getCause(), sameInstance(runtimeFailure));
+        assertThat(lifecycleEvents(events),
+                   is(List.of("force-source", "force-resource", "close-source", "close-resource")));
         assertThrows(IllegalStateException.class, graph::ensureRunning);
-        assertSame(graphFailure, assertThrows(MessagingException.class, graph::close));
-        assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
+        assertThat(assertThrows(MessagingException.class, graph::close), sameInstance(graphFailure));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
     }
 
     @Test
@@ -736,10 +738,10 @@ class MessagingGraphTest {
 
         IllegalStateException failure = assertThrows(IllegalStateException.class, graph::close);
 
-        assertSame(sourceFailure, failure);
-        assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
-        assertSame(sourceFailure, graph.failure().orElseThrow());
-        assertSame(failure, assertThrows(IllegalStateException.class, graph::close));
+        assertThat(failure, sameInstance(sourceFailure));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
+        assertThat(graph.failure().orElseThrow(), sameInstance(sourceFailure));
+        assertThat(assertThrows(IllegalStateException.class, graph::close), sameInstance(failure));
     }
 
     @Test
@@ -770,11 +772,11 @@ class MessagingGraphTest {
         DefaultMessagingGraph graph = graph(config(SHUTDOWN_TIMEOUT));
         graph.addIncomingConnector("shared-failure", source);
 
-        assertSame(sharedFailure, assertThrows(IllegalStateException.class, graph::start));
-        assertEquals(0, sharedFailure.getSuppressed().length);
+        assertThat(assertThrows(IllegalStateException.class, graph::start), sameInstance(sharedFailure));
+        assertThat(sharedFailure.getSuppressed().length, is(0));
 
         graph.close();
-        assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
     }
 
     @Test
@@ -799,7 +801,7 @@ class MessagingGraphTest {
             await(streamDelivered);
             graph.emitter(upstream).emitMessage(message("from-upstream"));
 
-            assertEquals(List.of("from-stream", "from-upstream"), delivered);
+            assertThat(delivered, is(List.of("from-stream", "from-upstream")));
         }
     }
 
@@ -816,9 +818,9 @@ class MessagingGraphTest {
         graph.close();
         long elapsed = System.nanoTime() - started;
 
-        assertTrue(elapsed < TimeUnit.SECONDS.toNanos(1), "Close did not cancel startup promptly");
-        assertEquals(DefaultMessagingGraph.State.CLOSED, graph.state());
-        assertTrue(source.forced());
+        assertThat("Close did not cancel startup promptly", elapsed < TimeUnit.SECONDS.toNanos(1), is(true));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
+        assertThat(source.forced(), is(true));
         assertThrows(ExecutionException.class,
                      () -> startup.completion().get(WAIT.toNanos(), TimeUnit.NANOSECONDS));
     }
@@ -835,7 +837,7 @@ class MessagingGraphTest {
         Throwable graphFailure = graph.failure().orElseThrow();
         assertThat(graphFailure.getMessage(), containsString("ending failed"));
         assertThrows(IllegalStateException.class, graph::ensureRunning);
-        assertSame(graphFailure, assertThrows(MessagingException.class, graph::close));
+        assertThat(assertThrows(MessagingException.class, graph::close), sameInstance(graphFailure));
     }
 
     @Test
@@ -877,20 +879,22 @@ class MessagingGraphTest {
             Throwable closeFailure = failure(closing);
             long elapsed = System.nanoTime() - started;
 
-            assertTrue(closeFailure instanceof MessagingException, closeFailure.toString());
+            assertThat(closeFailure.toString(), closeFailure, instanceOf(MessagingException.class));
             assertThat(closeFailure.getMessage(), containsString("Timed out while attempting to force close"));
-            assertTrue(elapsed < TimeUnit.SECONDS.toNanos(1), "Forced cleanup exceeded its absolute deadline");
-            assertFalse(forced.get());
-            assertEquals(1L, closeStarted.getCount(), "Normal close entered before force close returned");
+            assertThat("Forced cleanup exceeded its absolute deadline",
+                       elapsed < TimeUnit.SECONDS.toNanos(1),
+                       is(true));
+            assertThat(forced.get(), is(false));
+            assertThat("Normal close entered before force close returned", closeStarted.getCount(), is(1L));
         } finally {
             releaseForce.countDown();
         }
 
         await(forceFinished);
         await(closeStarted);
-        assertFalse(closeBeforeForce.get());
-        assertFalse(closeInterrupted.get(), "Deferred close inherited the force timeout interruption");
-        assertEquals(List.of("force-start", "force-end", "close"), events);
+        assertThat(closeBeforeForce.get(), is(false));
+        assertThat("Deferred close inherited the force timeout interruption", closeInterrupted.get(), is(false));
+        assertThat(events, is(List.of("force-start", "force-end", "close")));
     }
 
     @Test
@@ -921,14 +925,14 @@ class MessagingGraphTest {
 
             Throwable closeFailure = failure(closing);
 
-            assertTrue(closeFailure instanceof MessagingException, closeFailure.toString());
+            assertThat(closeFailure.toString(), closeFailure, instanceOf(MessagingException.class));
             assertThat(closeFailure.getMessage(), containsString("Timed out while attempting to close"));
         } finally {
             releaseClose.countDown();
         }
 
         await(closeFinished);
-        assertFalse(closeInterrupted.get(), "Post-force close inherited the lifecycle timeout interruption");
+        assertThat("Post-force close inherited the lifecycle timeout interruption", closeInterrupted.get(), is(false));
     }
 
     @Test
@@ -963,9 +967,11 @@ class MessagingGraphTest {
 
         await(closeStarted);
         assertThat(failure.getMessage(), containsString("Timed out while attempting to close connector binding"));
-        assertTrue(elapsed < TimeUnit.SECONDS.toNanos(1), "Connector close exceeded the bounded cleanup phase");
-        assertTrue(forceRequested.get());
-        assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
+        assertThat("Connector close exceeded the bounded cleanup phase",
+                   elapsed < TimeUnit.SECONDS.toNanos(1),
+                   is(true));
+        assertThat(forceRequested.get(), is(true));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
         assertThrows(MessagingException.class, graph::close);
     }
 
@@ -997,9 +1003,9 @@ class MessagingGraphTest {
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, graph::prepare);
 
         assertThat(failure.getMessage(), containsString("Unknown messaging route target missing"));
-        assertFalse(source.prepared());
-        assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
-        assertEquals(List.of("force-source", "close-source"), lifecycleEvents(events));
+        assertThat(source.prepared(), is(false));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
+        assertThat(lifecycleEvents(events), is(List.of("force-source", "close-source")));
     }
 
     @Test
@@ -1085,9 +1091,9 @@ class MessagingGraphTest {
         IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, graph::prepare);
 
         assertThat(failure.getMessage(), containsString("first -> second -> first"));
-        assertFalse(source.prepared());
-        assertEquals(DefaultMessagingGraph.State.FAILED, graph.state());
-        assertEquals(List.of("force-source", "close-source"), lifecycleEvents(events));
+        assertThat(source.prepared(), is(false));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.FAILED));
+        assertThat(lifecycleEvents(events), is(List.of("force-source", "close-source")));
     }
 
     private static DefaultMessagingGraph graph(MessagingExecutionConfig config) {
@@ -1135,7 +1141,9 @@ class MessagingGraphTest {
 
     private static void await(CountDownLatch latch) {
         try {
-            assertTrue(latch.await(WAIT.toNanos(), TimeUnit.NANOSECONDS), "Timed out waiting for test signal");
+            assertThat("Timed out waiting for test signal",
+                       latch.await(WAIT.toNanos(), TimeUnit.NANOSECONDS),
+                       is(true));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new AssertionError("Interrupted while waiting for test signal", e);
@@ -1162,7 +1170,7 @@ class MessagingGraphTest {
         while (graph.state() != expected && System.nanoTime() < deadline) {
             Thread.onSpinWait();
         }
-        assertEquals(expected, graph.state());
+        assertThat(graph.state(), is(expected));
     }
 
     private static void awaitCondition(BooleanSupplier condition) {
@@ -1170,7 +1178,7 @@ class MessagingGraphTest {
         while (!condition.getAsBoolean() && System.nanoTime() < deadline) {
             Thread.onSpinWait();
         }
-        assertTrue(condition.getAsBoolean(), "Timed out waiting for test condition");
+        assertThat("Timed out waiting for test condition", condition.getAsBoolean(), is(true));
     }
 
     private static void awaitWaiting(AsyncTask task) {

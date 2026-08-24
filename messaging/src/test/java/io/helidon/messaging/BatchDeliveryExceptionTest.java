@@ -20,9 +20,10 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class BatchDeliveryExceptionTest {
     @Test
@@ -47,16 +48,16 @@ class BatchDeliveryExceptionTest {
 
         RuntimeException result = BatchDeliveryException.align(policyBatch, failure);
 
-        assertTrue(result instanceof BatchDeliveryException);
+        assertThat(result, is(instanceOf(BatchDeliveryException.class)));
         BatchDeliveryException aligned = (BatchDeliveryException) result;
-        assertSame(policyBatch, aligned.batch());
-        assertSame(secondFailure, aligned.getCause());
-        assertEquals(List.of(0, 1), aligned.outcomes().stream().map(BatchItemOutcome::index).toList());
-        assertEquals(List.of(BatchItemStatus.FAILED, BatchItemStatus.INDETERMINATE),
-                     aligned.outcomes().stream().map(BatchItemOutcome::status).toList());
-        assertSame(secondFailure, aligned.outcome(0).failure().orElseThrow());
-        assertSame(fourthFailure, aligned.outcome(1).failure().orElseThrow());
-        assertEquals(List.of(cleanupFailure), List.of(aligned.getSuppressed()));
+        assertThat(aligned.batch(), sameInstance(policyBatch));
+        assertThat(aligned.getCause(), sameInstance(secondFailure));
+        assertThat(aligned.outcomes().stream().map(BatchItemOutcome::index).toList(), is(List.of(0, 1)));
+        assertThat(aligned.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                   is(List.of(BatchItemStatus.FAILED, BatchItemStatus.INDETERMINATE)));
+        assertThat(aligned.outcome(0).failure().orElseThrow(), sameInstance(secondFailure));
+        assertThat(aligned.outcome(1).failure().orElseThrow(), sameInstance(fourthFailure));
+        assertThat(List.of(aligned.getSuppressed()), is(List.of(cleanupFailure)));
     }
 
     @Test
@@ -65,16 +66,16 @@ class BatchDeliveryExceptionTest {
         IllegalStateException itemFailure = new IllegalStateException("failed");
         BatchDeliveryException failure = BatchDeliveryException.sequential("Delivery", batch, 0, itemFailure);
 
-        assertSame(failure, BatchDeliveryException.align(batch, failure));
+        assertThat(BatchDeliveryException.align(batch, failure), sameInstance(failure));
 
         MessageBatch<String> derived = batch.derive(List.of(Message.create("mapped-first"),
                                                             Message.create("mapped-second")));
         BatchDeliveryException aligned = (BatchDeliveryException) BatchDeliveryException.align(derived, failure);
 
-        assertSame(derived, aligned.batch());
-        assertEquals(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
-                     aligned.outcomes().stream().map(BatchItemOutcome::status).toList());
-        assertSame(itemFailure, aligned.outcome(0).failure().orElseThrow());
+        assertThat(aligned.batch(), sameInstance(derived));
+        assertThat(aligned.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                   is(failure.outcomes().stream().map(BatchItemOutcome::status).toList()));
+        assertThat(aligned.outcome(0).failure().orElseThrow(), sameInstance(itemFailure));
     }
 
     @Test
@@ -89,10 +90,10 @@ class BatchDeliveryExceptionTest {
 
         BatchDeliveryException aligned = (BatchDeliveryException) BatchDeliveryException.align(target, failure);
 
-        assertSame(target, aligned.batch());
-        assertSame(failure, aligned.getCause());
-        assertTrue(aligned.outcomes().stream()
-                           .allMatch(outcome -> outcome.status() == BatchItemStatus.INDETERMINATE));
+        assertThat(aligned.batch(), sameInstance(target));
+        assertThat(aligned.getCause(), sameInstance(failure));
+        assertThat(aligned.outcomes().stream()
+                           .allMatch(outcome -> outcome.status() == BatchItemStatus.INDETERMINATE), is(true));
     }
 
     @Test
@@ -108,9 +109,9 @@ class BatchDeliveryExceptionTest {
 
         BatchDeliveryException aligned = (BatchDeliveryException) BatchDeliveryException.align(succeededOnly, failure);
 
-        assertSame(succeededOnly, aligned.batch());
-        assertSame(failure, aligned.getCause());
-        assertEquals(BatchItemStatus.INDETERMINATE, aligned.outcome(0).status());
+        assertThat(aligned.batch(), sameInstance(succeededOnly));
+        assertThat(aligned.getCause(), sameInstance(failure));
+        assertThat(aligned.outcome(0).status(), is(BatchItemStatus.INDETERMINATE));
     }
 
     @Test
@@ -118,6 +119,6 @@ class BatchDeliveryExceptionTest {
         MessageBatch<String> batch = MessageBatch.create(Message.create("message"));
         IllegalStateException failure = new IllegalStateException("failed");
 
-        assertSame(failure, BatchDeliveryException.align(batch, failure));
+        assertThat(BatchDeliveryException.align(batch, failure), sameInstance(failure));
     }
 }

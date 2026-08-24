@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
@@ -55,6 +56,7 @@ class ChannelRegistry implements MessagingRuntime {
     private Map<String, MessagingChannel<?>> channels = Map.of();
     private final DeliveryEngine deliveryEngine;
     private final DefaultMessagingGraph graph;
+    private final LongSupplier nanoTime;
 
     @Service.Inject
     ChannelRegistry(List<ConsumerRegistration> consumerRegistrations,
@@ -62,6 +64,21 @@ class ChannelRegistry implements MessagingRuntime {
                     Config config,
                     List<ConnectorProvider> connectorProviders,
                     MessagingLifecycleGuard lifecycleGuard) {
+        this(consumerRegistrations,
+             emitterRegistrations,
+             config,
+             connectorProviders,
+             lifecycleGuard,
+             System::nanoTime);
+    }
+
+    ChannelRegistry(List<ConsumerRegistration> consumerRegistrations,
+                    List<EmitterRegistration> emitterRegistrations,
+                    Config config,
+                    List<ConnectorProvider> connectorProviders,
+                    MessagingLifecycleGuard lifecycleGuard,
+                    LongSupplier nanoTime) {
+        this.nanoTime = Objects.requireNonNull(nanoTime);
         MessagingExecutionConfig defaultExecutionConfig = executionConfig(config, null);
         this.deliveryEngine = new DeliveryEngine(defaultExecutionConfig);
         this.graph = new DefaultMessagingGraph(deliveryEngine);
@@ -1202,7 +1219,7 @@ class ChannelRegistry implements MessagingRuntime {
 
         @Override
         public synchronized Optional<ConnectorDeliveryReservation> tryReserveDelivery() {
-            long started = System.nanoTime();
+            long started = nanoTime.getAsLong();
             long timeout = deliveryEngine.admissionTimeout(channel)
                     .map(Duration::toNanos)
                     .orElse(Long.MAX_VALUE);
@@ -1227,7 +1244,7 @@ class ChannelRegistry implements MessagingRuntime {
                 reservationDeadline = Long.MIN_VALUE;
             } else if (reservationDeadline == Long.MIN_VALUE && timeout != Long.MAX_VALUE) {
                 reservationDeadline = saturatedAdd(started, timeout);
-                if (reservationDeadline - System.nanoTime() <= 0) {
+                if (reservationDeadline - nanoTime.getAsLong() <= 0) {
                     throw new MessagingRejectedException(
                             channel,
                             MessagingRejectedException.Reason.TIMEOUT,

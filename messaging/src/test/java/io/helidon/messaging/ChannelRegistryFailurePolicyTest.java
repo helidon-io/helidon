@@ -26,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import io.helidon.common.GenericType;
@@ -275,31 +276,36 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testRepeatedTryReserveCallsShareAdmissionTimeoutBudget() throws InterruptedException {
+    void testRepeatedTryReserveCallsShareAdmissionTimeoutBudget() {
         TestIncomingConnector incoming = new TestIncomingConnector();
-        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> { })),
-                            yaml("""
-                                    helidon:
-                                      messaging:
-                                        channel:
-                                          orders:
-                                            execution:
-                                              max-pending-messages: 1
-                                              max-in-flight-messages: 1
-                                              admission-timeout: PT0.15S
-                                        incoming:
-                                          orders:
-                                            connector: test-in
-                                    """),
-                            List.of(incoming));
+        AtomicLong nanoTime = new AtomicLong();
+        ChannelRegistry registry = new ChannelRegistry(
+                List.of(registration("orders", ignored -> { })),
+                List.of(),
+                yaml("""
+                        helidon:
+                          messaging:
+                            channel:
+                              orders:
+                                execution:
+                                  max-pending-messages: 1
+                                  max-in-flight-messages: 1
+                                  admission-timeout: PT0.15S
+                            incoming:
+                              orders:
+                                connector: test-in
+                        """),
+                List.of(incoming),
+                new MessagingLifecycleGuard(),
+                nanoTime::get);
         start(registry);
         IncomingConnectorContext context = incoming.context("orders");
 
         try (ConnectorDeliveryReservation held = context.reserveDelivery()) {
             assertThat(context.tryReserveDelivery().isEmpty(), is(true));
-            Thread.sleep(60);
+            nanoTime.set(Duration.ofMillis(60).toNanos());
             assertThat(context.tryReserveDelivery().isEmpty(), is(true));
-            Thread.sleep(110);
+            nanoTime.set(Duration.ofMillis(150).toNanos());
             MessagingRejectedException timeout = assertThrows(MessagingRejectedException.class,
                                                                context::tryReserveDelivery);
             assertThat(timeout.reason(), is(MessagingRejectedException.Reason.TIMEOUT));

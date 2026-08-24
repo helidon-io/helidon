@@ -33,9 +33,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DeclarativeRegistrationTest {
@@ -390,8 +389,8 @@ class DeclarativeRegistrationTest {
         ChannelRegistry registry = new ChannelRegistry(List.of(processor, target), Config.empty(), List.of());
         try {
             registry.emit("orders", Message.create("test"));
-            assertSame(processed, received.get());
-            assertSame(entity, received.get().entity());
+            assertThat(received.get(), sameInstance(processed));
+            assertThat(received.get().entity(), sameInstance(entity));
         } finally {
             registry.close();
         }
@@ -443,7 +442,7 @@ class DeclarativeRegistrationTest {
                     () -> failingRegistry.emit("orders", Message.create("two")));
             assertThat(actual.outcome(0).status(), is(BatchItemStatus.INDETERMINATE));
             assertThat(actual.getCause(), is(instanceOf(BatchDeliveryException.class)));
-            assertSame(expected, actual.getCause().getCause());
+            assertThat(actual.getCause().getCause(), sameInstance(expected));
         } finally {
             failingRegistry.close();
         }
@@ -472,7 +471,7 @@ class DeclarativeRegistrationTest {
                     () -> registry.emitBatch("orders", input));
 
             assertThat(failure.getCause().getMessage(), containsString("did not preserve batch delivery lineage"));
-            assertFalse(targetInvoked.get());
+            assertThat(targetInvoked.get(), is(false));
         } finally {
             registry.close();
         }
