@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,8 @@ import static org.hamcrest.Matchers.is;
 @AddExtension(ConfigCdiExtension.class)
 @Path("/test/internal")
 public class LraDisabledDiscoveryResourceTest {
+    private static final int CANCELLATION_RETRY_COUNT = 100;
+    private static final long CANCELLATION_RETRY_DELAY_MILLIS = 100;
 
     private final WebTarget target;
     private final Set<String> completedLras;
@@ -106,7 +108,7 @@ public class LraDisabledDiscoveryResourceTest {
     }
 
     @Test
-    public void testLraCompensate() {
+    public void testLraCompensate() throws InterruptedException {
         try (Response res = target
                 .path("/test/internal/withdraw")
                 .request()
@@ -114,8 +116,22 @@ public class LraDisabledDiscoveryResourceTest {
             assertThat(res.getStatus(), is(500));
             String lraId = res.getHeaderString(LRA.LRA_HTTP_CONTEXT_HEADER);
             Lra lra = coordinator.lra(lraId);
+            awaitCancellation(lra, lraId);
             assertThat(lra.status(), is(LRAStatus.Cancelled));
             assertThat(cancelledLras, contains(lraId));
+        }
+    }
+
+    private void awaitCancellation(Lra lra, String lraId) throws InterruptedException {
+        for (int i = 0; i < CANCELLATION_RETRY_COUNT; i++) {
+            LRAStatus status = lra.status();
+            if (status == LRAStatus.Cancelled && cancelledLras.contains(lraId)) {
+                return;
+            }
+            if (status != LRAStatus.Cancelling && status != LRAStatus.Cancelled) {
+                return;
+            }
+            Thread.sleep(CANCELLATION_RETRY_DELAY_MILLIS);
         }
     }
 }
