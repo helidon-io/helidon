@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MeterRegistry;
@@ -84,9 +85,9 @@ public class WebClientMetrics implements WebClientService {
         return create(config, WebClientMetric::builder);
     }
 
-    static WebClientMetrics create(Config config, MeterRegistry meterRegistry) {
+    static WebClientMetrics create(Config config, Supplier<MeterRegistry> meterRegistry) {
         Objects.requireNonNull(meterRegistry);
-        return create(config, type -> WebClientMetric.builder(type).meterRegistry(meterRegistry));
+        return create(config, type -> WebClientMetric.builder(type).meterRegistry(meterRegistry.get()));
     }
 
     private static WebClientMetrics create(Config config,

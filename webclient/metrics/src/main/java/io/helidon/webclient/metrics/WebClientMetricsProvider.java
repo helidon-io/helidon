@@ -50,7 +50,7 @@ public class WebClientMetricsProvider implements WebClientServiceProvider {
         Objects.requireNonNull(config);
         Objects.requireNonNull(name);
         Objects.requireNonNull(serviceRegistry);
-        return WebClientMetrics.create(config, serviceRegistry.get(MeterRegistry.class));
+        return WebClientMetrics.create(config, serviceRegistry.supply(MeterRegistry.class));
     }
 
 }

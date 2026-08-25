@@ -16,11 +16,14 @@
 
 package io.helidon.webclient.metrics;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.webclient.spi.WebClientService;
@@ -29,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,6 +40,22 @@ import static org.mockito.Mockito.when;
 
 class WebClientMetricsProviderTest {
     private static final Config METRICS_CONFIG = metricsConfig();
+
+    @Test
+    void emptyConfigurationDoesNotResolveMeterRegistry() {
+        AtomicBoolean resolved = new AtomicBoolean();
+        ServiceRegistry serviceRegistry = mock(ServiceRegistry.class);
+        when(serviceRegistry.supply(MeterRegistry.class)).thenReturn(() -> {
+            resolved.set(true);
+            return mock(MeterRegistry.class);
+        });
+
+        WebClientService service = new WebClientMetricsProvider()
+                .create(Config.empty(), "metrics", serviceRegistry);
+
+        assertThat(service, instanceOf(WebClientMetrics.class));
+        assertThat(resolved.get(), is(false));
+    }
 
     @Test
     void registryCreationUsesOwningMeterRegistry() {
