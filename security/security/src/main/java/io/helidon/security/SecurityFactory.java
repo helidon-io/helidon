@@ -27,11 +27,16 @@ import io.helidon.tracing.Tracer;
 class SecurityFactory implements Supplier<Security> {
     private final LazyValue<Security> delegate;
 
-    SecurityFactory(Config config, Tracer tracer) {
-        this.delegate = LazyValue.create(() -> Security.builder()
-                .tracer(tracer)
-                .config(config.get("security"))
-                .build());
+    SecurityFactory(Config config, Supplier<Tracer> tracer) {
+        Config securityConfig = config.get("security");
+        this.delegate = LazyValue.create(() -> {
+            Security.Builder builder = Security.builder()
+                    .config(securityConfig);
+            if (securityConfig.get("tracing.enabled").asBoolean().orElse(true)) {
+                builder.tracer(tracer.get());
+            }
+            return builder.build();
+        });
     }
 
     @Override

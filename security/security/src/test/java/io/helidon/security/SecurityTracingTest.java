@@ -17,10 +17,17 @@
 package io.helidon.security;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.types.ResolvedType;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.security.providers.ProviderForTesting;
+import io.helidon.service.registry.DependencyContext;
+import io.helidon.service.registry.InterceptionMetadata;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
@@ -29,6 +36,7 @@ import io.helidon.tracing.Tracer;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,6 +72,26 @@ class SecurityTracingTest {
     }
 
     @Test
+    void disabledManagedSecurityDoesNotInstantiateTracer() {
+        AtomicBoolean tracerInstantiated = new AtomicBoolean();
+        Tracer tracer = mock(Tracer.class);
+        Config config = Config.just(ConfigSources.create(Map.of("security.tracing.enabled", "false")));
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Config.class, config)
+                                                                                .addServiceDescriptor(new TracerDescriptor(tracer,
+                                                                                                                           tracerInstantiated))
+                                                                                .build());
+        try {
+            Security security = manager.registry().get(Security.class);
+
+            assertThat("Disabled security tracer", security.tracer().enabled(), is(false));
+            assertThat("Tracer instantiated", tracerInstantiated.get(), is(false));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
     void defaultTracerComesFromServiceRegistry() {
         Tracer tracer = mock(Tracer.class);
         Services.set(Tracer.class, tracer);
@@ -86,5 +114,44 @@ class SecurityTracingTest {
                                                      .putContractInstance(Config.class, config)
                                                      .putContractInstance(Tracer.class, tracer)
                                                      .build());
+    }
+
+    private static final class TracerDescriptor implements ServiceDescriptor<Tracer> {
+        private static final TypeName SERVICE_TYPE = TypeName.create(Tracer.class);
+        private static final TypeName DESCRIPTOR_TYPE = TypeName.create(TracerDescriptor.class);
+
+        private final Tracer tracer;
+        private final AtomicBoolean instantiated;
+
+        private TracerDescriptor(Tracer tracer, AtomicBoolean instantiated) {
+            this.tracer = tracer;
+            this.instantiated = instantiated;
+        }
+
+        @Override
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
+            instantiated.set(true);
+            return tracer;
+        }
+
+        @Override
+        public TypeName serviceType() {
+            return SERVICE_TYPE;
+        }
+
+        @Override
+        public TypeName descriptorType() {
+            return DESCRIPTOR_TYPE;
+        }
+
+        @Override
+        public Set<ResolvedType> contracts() {
+            return Set.of(ResolvedType.create(SERVICE_TYPE));
+        }
+
+        @Override
+        public double weight() {
+            return 1000;
+        }
     }
 }
