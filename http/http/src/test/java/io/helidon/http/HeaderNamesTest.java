@@ -40,6 +40,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class HeaderNamesTest {
     private static final Class<HeaderNames> clazz = HeaderNames.class;
+    private static final List<HeaderName> NON_INDEXED_HEADERS = List.of(HeaderNames.ACCEPT_CHARSET,
+                                                                        HeaderNames.PUBLIC_KEY_PINS,
+                                                                        HeaderNames.SET_COOKIE2,
+                                                                        HeaderNames.TSV,
+                                                                        HeaderNames.WARNING);
     private static final Set<String> constants = Stream.of(clazz.getDeclaredFields())
             .filter(it -> Modifier.isStatic(it.getModifiers()))
             .filter(it -> Modifier.isFinal(it.getModifiers()))
@@ -78,11 +83,44 @@ class HeaderNamesTest {
             assertAll(
                     () -> assertThat(value, notNullValue()),
                     () -> assertThat(value.defaultCase(), notNullValue()),
-                    () -> assertThat(value.lowerCase(), notNullValue()),
-                    () -> assertThat(value.index(), not(-1))
+                    () -> assertThat(value.lowerCase(), notNullValue())
             );
 
+            if (value instanceof HeaderNameEnum) {
+                assertThat(value.index(), not(-1));
+            }
+
         }
+    }
+
+    @Test
+    void testNonIndexedHeaders() {
+        for (HeaderName headerName : NON_INDEXED_HEADERS) {
+            assertAll(headerName.defaultCase(),
+                      () -> assertThat(headerName.index(), is(-1)),
+                      () -> assertThat(HeaderNames.create(headerName.defaultCase()), equalTo(headerName)),
+                      () -> assertThat(HeaderNames.createFromLowercase(headerName.lowerCase()), equalTo(headerName)));
+        }
+    }
+
+    @Test
+    void testNonIndexedHeadersInWritableHeaders() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+
+        for (HeaderName headerName : NON_INDEXED_HEADERS) {
+            headers.set(HeaderValues.create(headerName, headerName.lowerCase()));
+        }
+
+        assertThat(headers.size(), is(NON_INDEXED_HEADERS.size()));
+
+        for (HeaderName headerName : NON_INDEXED_HEADERS) {
+            HeaderName equivalentName = HeaderNames.create(headerName.defaultCase());
+            assertThat(headers.get(equivalentName).get(), is(headerName.lowerCase()));
+            headers.remove(equivalentName);
+            assertThat(headers.contains(headerName), is(false));
+        }
+
+        assertThat(headers.size(), is(0));
     }
 
     @Test
