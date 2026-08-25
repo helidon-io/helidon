@@ -35,6 +35,12 @@ import io.helidon.common.types.TypeName;
 
 /**
  * A set of annotations (and APIs) required to declare a service.
+ * <p>
+ * Any service instance created by the service registry must never call methods on
+ * {@link io.helidon.service.registry.Services}. Required dependencies must be injected into the service. When
+ * programmatic lookup is required during normal operation, inject
+ * {@link io.helidon.service.registry.ServiceRegistry} instead. This restriction applies throughout the service lifecycle,
+ * including construction, post-construct, business methods, and pre-destroy.
  */
 public final class Service {
     private Service() {
@@ -157,6 +163,11 @@ public final class Service {
      * is created once, and pre-destroy is called when the registry is shut down.
      * This also implies that instances that are NOT created within a scope cannot have their pre-destroy methods
      * invoked, as we do not control their lifecycle.
+     * <p>
+     * A pre-destroy method is intended to release resources held by the service instance, not to interact with other services.
+     * It must not invoke methods that may instantiate another service. For example, it must not obtain a value from an
+     * injected {@link java.util.function.Supplier} or call an instance lookup method on an injected
+     * {@link io.helidon.service.registry.ServiceRegistry}.
      * <p>
      * The method must not have any parameters and must be accessible (not {@code private}).
      */
