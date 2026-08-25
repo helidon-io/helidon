@@ -42,11 +42,11 @@ import io.helidon.webclient.spi.ProtocolConfig;
  */
 @SuppressWarnings("rawtypes")
 class LoomClient implements WebClient {
-    private static final System.Logger LOGGER = System.getLogger(LoomClient.class.getName());
     static final LazyValue<ExecutorService> EXECUTOR =
             LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                             .name("helidon-client-", 0)
                                                                             .factory()));
+    private static final System.Logger LOGGER = System.getLogger(LoomClient.class.getName());
     private static final List<HttpClientSpiProvider> PROVIDERS =
             HelidonServiceLoader.create(ServiceLoader.load(HttpClientSpiProvider.class))
                     .asList();
