@@ -73,7 +73,7 @@ public interface Headers extends Iterable<Header> {
      * {@code Connection}, {@code TE}, or {@code Transfer-Encoding}.
      *
      * @param value expected header name and tokenized value(s)
-    * @return {@code true} if all expected tokens are present, ignoring case and surrounding whitespace
+     * @return {@code true} if all expected tokens are present, ignoring case and surrounding whitespace
      */
     default boolean containsToken(Header value) {
         if (!contains(value.headerName())) {
