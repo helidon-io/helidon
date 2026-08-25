@@ -582,7 +582,7 @@ public final class AcmeConnectorProvider
     public IncomingConnector createIncomingConnector(Config config) {
         AcmeConnectorConfig connectorConfig =
                 AcmeConnectorConfig.create(Objects.requireNonNull(config));
-        requireDirection(connectorConfig, ConnectorConfig.Direction.INCOMING);
+        requireDirection(connectorConfig, ConnectorDirection.INCOMING);
         return new AcmeIncomingConnector(connectorConfig);
     }
 
@@ -590,12 +590,12 @@ public final class AcmeConnectorProvider
     public OutgoingConnector createOutgoingConnector(Config config) {
         AcmeConnectorConfig connectorConfig =
                 AcmeConnectorConfig.create(Objects.requireNonNull(config));
-        requireDirection(connectorConfig, ConnectorConfig.Direction.OUTGOING);
+        requireDirection(connectorConfig, ConnectorDirection.OUTGOING);
         return new AcmeOutgoingConnector(connectorConfig);
     }
 
     private static void requireDirection(AcmeConnectorConfig config,
-                                         ConnectorConfig.Direction expected) {
+                                         ConnectorDirection expected) {
         if (config.direction() != expected) {
             throw new IllegalArgumentException("Unexpected connector direction " + config.direction());
         }

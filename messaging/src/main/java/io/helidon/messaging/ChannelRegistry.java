@@ -899,7 +899,7 @@ class ChannelRegistry implements MessagingRuntime {
 
             Config connectorConfig = connectorConfig(root,
                                                      channelConfig,
-                                                     ConnectorConfig.Direction.OUTGOING,
+                                                     ConnectorDirection.OUTGOING,
                                                      channel,
                                                      connectorType);
             bindings.add(new OutgoingBinding(channel, connectorType, outgoingProvider, connectorConfig));
@@ -930,7 +930,7 @@ class ChannelRegistry implements MessagingRuntime {
 
             Config connectorConfig = connectorConfig(root,
                                                      channelConfig,
-                                                     ConnectorConfig.Direction.INCOMING,
+                                                     ConnectorDirection.INCOMING,
                                                      channel,
                                                      connectorType);
             FailurePolicy failurePolicy = failurePolicy(channel,
@@ -1167,7 +1167,7 @@ class ChannelRegistry implements MessagingRuntime {
 
     private Config connectorConfig(Config root,
                                    Config channelConfig,
-                                   ConnectorConfig.Direction direction,
+                                   ConnectorDirection direction,
                                    String channel,
                                    String connector) {
         Map<String, String> properties = connectorProperties(root, channelConfig, connector);

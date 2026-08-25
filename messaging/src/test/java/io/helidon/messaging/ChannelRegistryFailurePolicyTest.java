@@ -1762,13 +1762,13 @@ class ChannelRegistryFailurePolicyTest {
     private interface TestSpecialMessage<T> extends Message<T> {
     }
 
-    public record TestConnectorConfig(ConnectorConfig.Direction direction,
+    public record TestConnectorConfig(ConnectorDirection direction,
                                       String channel,
                                       String connector,
                                       Map<String, String> properties) implements ConnectorConfig {
         private static TestConnectorConfig from(Config config) {
             return new TestConnectorConfig(
-                    ConnectorConfig.Direction.valueOf(config.get("direction").asString().orElseThrow()),
+                    ConnectorDirection.valueOf(config.get("direction").asString().orElseThrow()),
                     config.get(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE).asString().orElseThrow(),
                     config.get(ConnectorConfig.CONNECTOR_ATTRIBUTE).asString().orElseThrow(),
                     Map.copyOf(config.detach().asMap().orElse(Map.of())));

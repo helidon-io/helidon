@@ -58,7 +58,7 @@ interface ConnectorConfigBlueprint {
      * @return direction
      */
     @Option.Configured("direction")
-    Direction direction();
+    ConnectorDirection direction();
 
     /**
      * Channel name.
@@ -76,18 +76,4 @@ interface ConnectorConfigBlueprint {
     @Option.Configured(CONNECTOR_ATTRIBUTE)
     String connector();
 
-    /**
-     * Connector channel direction.
-     */
-    enum Direction {
-        /**
-         * Incoming/source direction.
-         */
-        INCOMING,
-
-        /**
-         * Outgoing/sink direction.
-         */
-        OUTGOING
-    }
 }
