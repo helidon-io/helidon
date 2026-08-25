@@ -45,6 +45,8 @@ import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.ResolvedClientTarget;
+import io.helidon.webclient.api.SniConfig;
+import io.helidon.webclient.api.SniMode;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.http1.Http1Client;
@@ -163,6 +165,15 @@ class Http2AltSvcClientTest {
 
             assertThat(context.client.supports(context.request, context.uri),
                        is(HttpClientSpi.SupportLevel.SUPPORTED));
+        }
+    }
+
+    @Test
+    void supportsAlternativeWithHostHeaderSni() {
+        try (TestContext context = TestContext.createHostHeaderSni(ClientAltSvcConfig.create())) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri), is(HttpClientSpi.SupportLevel.SUPPORTED));
         }
     }
 
@@ -332,6 +343,18 @@ class Http2AltSvcClientTest {
         }
 
         private TestContext(Optional<ClientAltSvcConfig> altSvc, Tls tls, String scheme) {
+            this(altSvc,
+                 tls,
+                 scheme,
+                 Optional.empty(),
+                 ClientRequestHeaders.create(WritableHeaders.create()));
+        }
+
+        private TestContext(Optional<ClientAltSvcConfig> altSvc,
+                            Tls tls,
+                            String scheme,
+                            Optional<SniConfig> sni,
+                            ClientRequestHeaders requestHeaders) {
             Http2ClientConfig.Builder configBuilder = Http2ClientConfig.builder()
                     .shareConnectionCache(false)
                     .dnsResolver((_, _) -> InetAddress.getLoopbackAddress())
@@ -341,16 +364,15 @@ class Http2AltSvcClientTest {
             Http2ClientConfig clientConfig = configBuilder.buildPrototype();
             client = new Http2ClientImpl(mock(WebClient.class), clientConfig);
             uri = ClientUri.create(URI.create(scheme + "://origin.example/resource"));
-            ClientRequestHeaders requestHeaders = ClientRequestHeaders.create(WritableHeaders.create());
             request = mock(FullClientRequest.class);
             when(request.address()).thenReturn(Optional.empty());
-            when(request.sni()).thenReturn(Optional.empty());
+            when(request.sni()).thenReturn(sni);
             when(request.tls()).thenReturn(tls);
             when(request.proxy()).thenReturn(Proxy.noProxy());
             when(request.headers()).thenReturn(requestHeaders);
             when(request.connection()).thenReturn(Optional.empty());
             when(request.selectedProxyRoute()).thenReturn(Optional.empty());
-            connectionKey = Http2ConnectionKeys.create(uri, request, clientConfig);
+            connectionKey = Http2ConnectionKeys.create(uri, request, clientConfig, requestHeaders);
             target = ClientConnectionTarget.create(connectionKey, uri, requestHeaders);
             resolvedTarget = target.resolve();
         }
@@ -369,6 +391,19 @@ class Http2AltSvcClientTest {
 
         private static TestContext createPlain(ClientAltSvcConfig altSvc) {
             return new TestContext(Optional.of(altSvc), Tls.builder().build(), "http");
+        }
+
+        private static TestContext createHostHeaderSni(ClientAltSvcConfig altSvc) {
+            WritableHeaders<?> headers = WritableHeaders.create();
+            headers.set(HeaderNames.HOST, "service.example");
+            SniConfig sni = SniConfig.builder()
+                    .mode(SniMode.HOST_HEADER)
+                    .build();
+            return new TestContext(Optional.of(altSvc),
+                                   Tls.builder().build(),
+                                   "https",
+                                   Optional.of(sni),
+                                   ClientRequestHeaders.create(headers));
         }
 
         private WebClientProtocolResponse directResponse(String protocolId,

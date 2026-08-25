@@ -38,6 +38,7 @@ import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.ProxyRoute;
+import io.helidon.webclient.api.SniMode;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.api.WebClientCookieManager;
@@ -132,6 +133,12 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                 return SupportLevel.NOT_SUPPORTED;
             }
             ClientRequestHeaders headers = clientRequest.headers();
+            if (clientRequest.sni()
+                    .or(clientConfig::sni)
+                    .filter(sni -> sni.mode() == SniMode.HOST_HEADER)
+                    .isPresent()) {
+                connectionKey = Http2ConnectionKeys.create(clientUri, clientRequest, clientConfig, headers);
+            }
             Optional<ProxyRoute> selectedRoute = clientRequest.selectedProxyRoute();
             boolean alternativeAvailable;
             if (selectedRoute.isPresent()) {
