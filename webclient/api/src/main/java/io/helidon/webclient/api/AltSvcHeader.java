@@ -149,15 +149,16 @@ public final class AltSvcHeader {
     }
 
     private static GrammarResult parseGrammarSnapshot(List<String> fieldLines) {
+        if (fieldLines.size() == 1 && "clear".equals(trimOws(fieldLines.getFirst()))) {
+            return CLEAR_GRAMMAR;
+        }
+
         List<String> encodedAlternatives = new ArrayList<>();
         boolean malformed = false;
         boolean tooMany = false;
         int emptyElements = 0;
         for (String headerValue : fieldLines) {
             AlternativeListResult result = splitAlternatives(headerValue, encodedAlternatives, emptyElements);
-            if (result.clear()) {
-                return CLEAR_GRAMMAR;
-            }
             malformed |= result.malformed();
             tooMany |= result.tooMany();
             emptyElements = result.emptyElements();
@@ -422,7 +423,6 @@ public final class AltSvcHeader {
         int emptyElements = initialEmptyElements;
         boolean quoted = false;
         boolean escaped = false;
-        boolean clear = false;
         boolean tooMany = false;
         for (int index = 0; index <= value.length(); index++) {
             if (index < value.length()) {
@@ -443,17 +443,15 @@ public final class AltSvcHeader {
                     continue;
                 }
             } else if (quoted || escaped) {
-                return new AlternativeListResult(false, true, tooMany, emptyElements);
+                return new AlternativeListResult(true, tooMany, emptyElements);
             }
 
             String element = trimOws(value.substring(elementStart, index));
             if (element.isEmpty()) {
                 emptyElements++;
                 if (emptyElements > MAX_EMPTY_LIST_ELEMENTS) {
-                    return new AlternativeListResult(false, true, tooMany, emptyElements);
+                    return new AlternativeListResult(true, tooMany, emptyElements);
                 }
-            } else if ("clear".equals(element)) {
-                clear = true;
             } else if (result.size() == MAX_ALTERNATIVES) {
                 tooMany = true;
             } else {
@@ -461,7 +459,7 @@ public final class AltSvcHeader {
             }
             elementStart = index + 1;
         }
-        return new AlternativeListResult(clear, false, tooMany, emptyElements);
+        return new AlternativeListResult(false, tooMany, emptyElements);
     }
 
     private static Optional<List<String>> splitValues(String value, char delimiter) {
@@ -669,7 +667,7 @@ public final class AltSvcHeader {
     private record AlternativeTemplate(String protocolId, String host, int port, long maxAge, boolean persist) {
     }
 
-    private record AlternativeListResult(boolean clear, boolean malformed, boolean tooMany, int emptyElements) {
+    private record AlternativeListResult(boolean malformed, boolean tooMany, int emptyElements) {
     }
 
     private record DateMemo(String value, Instant parsedDate) {

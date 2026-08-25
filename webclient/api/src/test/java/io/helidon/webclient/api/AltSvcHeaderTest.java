@@ -42,10 +42,10 @@ class AltSvcHeaderTest {
         assertThat(AltSvcHeader.parse(responseHeaders("CLEAR"), RECEIVED_AT).isEmpty(), is(true));
         assertThat(AltSvcHeader.parse(responseHeaders("h3=:443"), RECEIVED_AT).isEmpty(), is(true));
 
-        AltSvcHeader clear = AltSvcHeader.parse(responseHeaders("h3=\"unterminated", "clear"), RECEIVED_AT)
-                .orElseThrow();
+        AltSvcHeader clear = AltSvcHeader.parse(responseHeaders(" \tclear\t "), RECEIVED_AT).orElseThrow();
         assertThat(clear.clear(), is(true));
         assertThat(clear.alternatives(), is(empty()));
+        assertThat(AltSvcHeader.parse(responseHeaders("h3=\"unterminated", "clear"), RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
@@ -83,11 +83,14 @@ class AltSvcHeaderTest {
     }
 
     @Test
-    void ignoresEmptyElementsAroundClear() {
-        AltSvcHeader clear = AltSvcHeader.parse(responseHeaders(",, \tclear\t, ,"), RECEIVED_AT).orElseThrow();
+    void requiresClearAsCompleteFieldValue() {
+        AltSvcHeader clear = AltSvcHeader.parse(responseHeaders(" \tclear\t "), RECEIVED_AT).orElseThrow();
 
         assertThat(clear.clear(), is(true));
         assertThat(clear.alternatives(), is(empty()));
+        assertThat(AltSvcHeader.parse(responseHeaders(",, \tclear\t, ,"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.parse(responseHeaders("h2=\":8443\", clear"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.parse(responseHeaders("clear", "h2=\":8443\""), RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
@@ -264,7 +267,7 @@ class AltSvcHeaderTest {
         assertThat(AltSvcHeader.parse(malformed, RECEIVED_AT).isEmpty(), is(true));
         assertThat(AltSvcHeader.parse(malformed, RECEIVED_AT).isEmpty(), is(true));
 
-        ClientResponseHeaders clearHeaders = responseHeaders(", clear,");
+        ClientResponseHeaders clearHeaders = responseHeaders(" \tclear\t ");
         AltSvcHeader firstClear = AltSvcHeader.parse(clearHeaders, RECEIVED_AT).orElseThrow();
         AltSvcHeader secondClear = AltSvcHeader.parse(clearHeaders, RECEIVED_AT).orElseThrow();
         assertThat(firstClear.clear(), is(true));
@@ -291,17 +294,13 @@ class AltSvcHeaderTest {
 
     @Test
     void preservesFieldLineBoundariesAcrossMemoReplacement() {
-        AltSvcHeader clear = AltSvcHeader.parse(
-                responseHeaders("h3=\"unterminated", "clear"),
-                RECEIVED_AT).orElseThrow();
+        ClientResponseHeaders malformed = responseHeaders("h3=\"unterminated", "clear");
+        assertThat(AltSvcHeader.parse(malformed, RECEIVED_AT).isEmpty(), is(true));
+
+        AltSvcHeader clear = AltSvcHeader.parse(responseHeaders("clear"), RECEIVED_AT).orElseThrow();
         assertThat(clear.clear(), is(true));
 
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\"unterminated,clear"), RECEIVED_AT).isEmpty(), is(true));
-
-        AltSvcHeader restored = AltSvcHeader.parse(
-                responseHeaders("h3=\"unterminated", "clear"),
-                RECEIVED_AT).orElseThrow();
-        assertThat(restored.clear(), is(true));
+        assertThat(AltSvcHeader.parse(malformed, RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
@@ -400,9 +399,7 @@ class AltSvcHeaderTest {
         assertThat(AltSvcHeader.parse(responseHeaders(String.join(",", alternatives)), RECEIVED_AT).isEmpty(),
                    is(true));
         alternatives.add("clear");
-        assertThat(AltSvcHeader.parse(responseHeaders(String.join(",", alternatives)), RECEIVED_AT)
-                           .orElseThrow()
-                           .clear(),
+        assertThat(AltSvcHeader.parse(responseHeaders(String.join(",", alternatives)), RECEIVED_AT).isEmpty(),
                    is(true));
     }
 
