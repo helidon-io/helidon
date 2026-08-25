@@ -142,6 +142,50 @@ final class FactoryPrototypeInfo {
         return prototype.build();
     }
 
+    static List<Annotation> annotations(Annotated it) {
+        List<Annotation> annotations = new ArrayList<>();
+
+        // annotations to be added to generated code
+        it.findAnnotation(Types.PROTOTYPE_ANNOTATED)
+                .flatMap(Annotation::stringValues)
+                .orElseGet(List::of)
+                .stream()
+                .map(String::trim) // to remove spaces after commas when used
+                .filter(Predicate.not(String::isBlank)) // we do not care about blank values
+                .map(io.helidon.codegen.classmodel.Annotation::parse)
+                .map(io.helidon.codegen.classmodel.Annotation::toTypesAnnotation)
+                .forEach(annotations::add);
+
+        for (var annotation : it.allAnnotations()) {
+            if (isApiAnnotation(annotation)) {
+                // this is an API annotation, add them all (stability, maybe Since) to the generated prototype
+                annotations.add(annotation);
+            }
+        }
+
+        return annotations;
+    }
+
+    static boolean isApiAnnotation(Annotation annotation) {
+        var annotationType = annotation.typeName();
+        List<String> enclosingNames = annotationType.enclosingNames();
+        return enclosingNames.size() == 1
+                && Api.class.getSimpleName().equals(enclosingNames.getFirst())
+                && Api.class.getPackageName().equals(annotationType.packageName());
+    }
+
+    static Optional<String> inheritedServiceRegistryAccessor(TypeInfo blueprint) {
+        return superBlueprintDefinition(blueprint)
+                .flatMap(FactoryPrototypeInfo::serviceRegistryOwner)
+                .map(FactoryPrototypeInfo::serviceRegistryAccessor);
+    }
+
+    static Optional<String> inheritedConfigAccessor(TypeInfo blueprint) {
+        return superBlueprintDefinition(blueprint)
+                .flatMap(FactoryPrototypeInfo::configOwner)
+                .map(FactoryPrototypeInfo::configAccessor);
+    }
+
     private static List<TypedElementInfo> defaultMethodsNotOptions(TypeInfo blueprint,
                                                                    Predicate<String> defaultMethodsPredicate) {
         return blueprint.elementInfo()
@@ -400,38 +444,6 @@ final class FactoryPrototypeInfo {
                 .toList();
     }
 
-    static List<Annotation> annotations(Annotated it) {
-        List<Annotation> annotations = new ArrayList<>();
-
-        // annotations to be added to generated code
-        it.findAnnotation(Types.PROTOTYPE_ANNOTATED)
-                .flatMap(Annotation::stringValues)
-                .orElseGet(List::of)
-                .stream()
-                .map(String::trim) // to remove spaces after commas when used
-                .filter(Predicate.not(String::isBlank)) // we do not care about blank values
-                .map(io.helidon.codegen.classmodel.Annotation::parse)
-                .map(io.helidon.codegen.classmodel.Annotation::toTypesAnnotation)
-                .forEach(annotations::add);
-
-        for (var annotation : it.allAnnotations()) {
-            if (isApiAnnotation(annotation)) {
-                // this is an API annotation, add them all (stability, maybe Since) to the generated prototype
-                annotations.add(annotation);
-            }
-        }
-
-        return annotations;
-    }
-
-    static boolean isApiAnnotation(Annotation annotation) {
-        var annotationType = annotation.typeName();
-        List<String> enclosingNames = annotationType.enclosingNames();
-        return enclosingNames.size() == 1
-                && Api.class.getSimpleName().equals(enclosingNames.getFirst())
-                && Api.class.getPackageName().equals(annotationType.packageName());
-    }
-
     private static Optional<TypeInfo> customMethodsTypeInfo(RoundContext ctx,
                                                             TypeInfo blueprint) {
         // first check the blueprint
@@ -585,18 +597,6 @@ final class FactoryPrototypeInfo {
         return superBlueprintDefinition(blueprint)
                 .map(FactoryPrototypeInfo::registrySupport)
                 .orElse(false);
-    }
-
-    static Optional<String> inheritedServiceRegistryAccessor(TypeInfo blueprint) {
-        return superBlueprintDefinition(blueprint)
-                .flatMap(FactoryPrototypeInfo::serviceRegistryOwner)
-                .map(FactoryPrototypeInfo::serviceRegistryAccessor);
-    }
-
-    static Optional<String> inheritedConfigAccessor(TypeInfo blueprint) {
-        return superBlueprintDefinition(blueprint)
-                .flatMap(FactoryPrototypeInfo::configOwner)
-                .map(FactoryPrototypeInfo::configAccessor);
     }
 
     private static Optional<TypeInfo> serviceRegistryOwner(TypeInfo blueprint) {
