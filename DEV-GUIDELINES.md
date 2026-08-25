@@ -96,7 +96,8 @@ a visibility order.
 ## 3. Imports and Javadoc
 
 <a id="rule-3-1"></a>**Rule 3.1 — Use imported simple names outside Javadoc.** Outside Javadoc, use an imported simple
-type name unless a name conflict or Java syntax requires a fully qualified name.
+type name unless a name conflict or Java syntax requires a fully qualified name. The `uses` and `provides` directives in
+`module-info.java` are an explicit exception and must use fully qualified service types under [Rule 9.4](#rule-9-4).
 
 <a id="rule-3-2"></a>**Rule 3.2 — Do not import types only for Javadoc.** Use the fully qualified name in Javadoc
 instead.
@@ -236,7 +237,7 @@ follow these rules:
     - <a id="rule-8-4-8-1"></a>**Rule 8.4.8.1.** A top-level builder name must identify the built type, such as
       `FooBarBuilder`.
 
-Example: [io.helidon.faulttolerance.RetryConfigBlueprint](fault-tolerance/fault-tolerance/src/main/java/io/helidon/faulttolerance/RetryConfigBlueprint.java).
+Example: [io.helidon.common.mapper.MappersConfigBlueprint](common/mapper/src/main/java/io/helidon/common/mapper/MappersConfigBlueprint.java).
 
 <a id="jpms"></a>
 <a id="chapter-9"></a>
