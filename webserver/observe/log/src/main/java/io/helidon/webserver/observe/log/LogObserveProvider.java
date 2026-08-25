@@ -18,6 +18,7 @@ package io.helidon.webserver.observe.log;
 
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
@@ -29,6 +30,7 @@ import io.helidon.webserver.observe.spi.Observer;
  *  anywhere).
  * In Helidon, most loggers are referenced for the duration of the application, so this should not impact Helidon components.
  */
+@Service.Singleton
 public class LogObserveProvider implements ObserveProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

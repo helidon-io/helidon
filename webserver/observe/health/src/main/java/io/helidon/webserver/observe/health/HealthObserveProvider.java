@@ -18,12 +18,17 @@ package io.helidon.webserver.observe.health;
 
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.spi.HealthCheckProvider;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for health observe provider.
  */
+@Service.Singleton
 public class HealthObserveProvider implements ObserveProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
@@ -43,5 +48,17 @@ public class HealthObserveProvider implements ObserveProvider {
                 .config(config)
                 .name(name)
                 .build();
+    }
+
+    @Override
+    public Observer create(Config config, String name, ServiceRegistry serviceRegistry) {
+        var observerConfig = HealthObserverConfig.builder()
+                .config(config)
+                .name(name)
+                .buildPrototype();
+        return new HealthObserver(observerConfig,
+                                  serviceRegistry.supply(Config.class),
+                                  serviceRegistry.supplyAll(HealthCheckProvider.class),
+                                  serviceRegistry.supplyAll(HealthCheck.class));
     }
 }

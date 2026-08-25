@@ -29,6 +29,7 @@ module io.helidon.webserver.observe.config {
     requires static io.helidon.config.metadata;
 
     requires io.helidon.json;
+    requires io.helidon.service.registry;
     requires io.helidon.webserver;
 
     requires transitive io.helidon.config;

@@ -18,12 +18,14 @@ package io.helidon.webserver.observe.info;
 
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for application information observe provider.
  */
+@Service.Singleton
 public class InfoObserveProvider implements ObserveProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

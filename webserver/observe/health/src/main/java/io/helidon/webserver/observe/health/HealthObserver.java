@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -46,21 +47,28 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
     private final List<HealthCheck> all;
 
     private HealthObserver(HealthObserverConfig config) {
+        this(config,
+             () -> config.config().orElseGet(Config::empty),
+             HealthObserver::loadHealthCheckProviders,
+             () -> Services.all(HealthCheck.class));
+    }
+
+    HealthObserver(HealthObserverConfig config,
+                   Supplier<Config> rootConfig,
+                   Supplier<List<HealthCheckProvider>> healthCheckProviders,
+                   Supplier<List<HealthCheck>> healthChecks) {
         this.config = config;
 
         List<HealthCheck> checks = new ArrayList<>(config.healthChecks());
         if (config.useSystemServices()) {
-            Config cfg = config.config().orElseGet(Config::empty);
-            HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class))
-                    .asList()
+            Config configRoot = rootConfig.get();
+            healthCheckProviders.get()
                     .stream()
-                    .map(provider -> provider.healthChecks(cfg))
+                    .map(provider -> provider.healthChecks(configRoot))
                     .flatMap(Collection::stream)
                     .forEach(checks::add);
 
-            // also lookup all health check from the service registry
-            // our own implementation are currently not services, so this should not duplicate them
-            checks.addAll(Services.all(HealthCheck.class));
+            checks.addAll(healthChecks.get());
         }
         // Omit any checks requested to be excluded by name.
         this.all = checks.stream()
@@ -144,6 +152,10 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
     // primarily for testing
     List<HealthCheck> all() {
         return Collections.unmodifiableList(all);
+    }
+
+    private static List<HealthCheckProvider> loadHealthCheckProviders() {
+        return HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class)).asList();
     }
 
     private static class HealthHttpFeature implements HttpFeature {

@@ -32,6 +32,7 @@ module io.helidon.webserver.observe.info {
 
     requires io.helidon.http.media.json;
     requires io.helidon.json;
+    requires io.helidon.service.registry;
     requires io.helidon.webserver;
 
     requires transitive io.helidon.config;

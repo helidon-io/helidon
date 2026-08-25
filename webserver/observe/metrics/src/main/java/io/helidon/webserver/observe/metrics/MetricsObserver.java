@@ -20,10 +20,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpFeature;
@@ -59,11 +63,23 @@ import io.helidon.webserver.spi.ServerFeature;
  */
 public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserverConfig> {
     private final MetricsObserverConfig config;
-    private MetricsFeature metricsFeature;
+    private final LazyValue<MetricsFeature> metricsFeature;
+    private final Supplier<List<AutoHttpMetricsProvider>> autoHttpMetricsProviders;
 
     private MetricsObserver(MetricsObserverConfig config) {
+        this(config,
+             () -> Services.get(MeterRegistry.class),
+             () -> Services.all(MeterRegistryFormatterProvider.class),
+             () -> Services.all(AutoHttpMetricsProvider.class));
+    }
+
+    MetricsObserver(MetricsObserverConfig config,
+                    Supplier<MeterRegistry> meterRegistry,
+                    Supplier<List<MeterRegistryFormatterProvider>> formatterProviders,
+                    Supplier<List<AutoHttpMetricsProvider>> autoHttpMetricsProviders) {
         this.config = config;
-        this.metricsFeature = new MetricsFeature(config);
+        this.metricsFeature = LazyValue.create(() -> new MetricsFeature(config, meterRegistry, formatterProviders));
+        this.autoHttpMetricsProviders = autoHttpMetricsProviders;
     }
 
     /**
@@ -138,7 +154,7 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
         if (config.enabled()) {
             for (HttpRouting.Builder routing : observeEndpointRouting) {
                 // register the service itself
-                routing.addFeature(new MetricsHttpFeature(endpoint, metricsFeature));
+                routing.addFeature(new MetricsHttpFeature(endpoint, metricsFeature.get()));
 
                 prepareAutoMetrics(featureContext);
             }
@@ -155,7 +171,7 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
      * @param rules rules to use
      */
     public void configureVendorMetrics(HttpRouting.Builder rules) {
-        metricsFeature.configureVendorMetrics(rules);
+        metricsFeature.get().configureVendorMetrics(rules);
     }
 
     private void prepareAutoMetrics(ServerFeature.ServerFeatureContext featureContext) {
@@ -172,7 +188,7 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
         }
 
         for (String socketName : socketNamesForAutoMetrics) {
-            for (AutoHttpMetricsProvider metricsProvider : Services.all(AutoHttpMetricsProvider.class)) {
+            for (AutoHttpMetricsProvider metricsProvider : autoHttpMetricsProviders.get()) {
                 metricsProvider.filter(config)
                         .ifPresent(filter -> featureContext.socket(socketName)
                                 .httpRouting()

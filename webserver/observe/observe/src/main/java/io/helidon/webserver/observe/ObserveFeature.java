@@ -201,6 +201,10 @@ public class ObserveFeature implements ServerFeature, Weighted, RuntimeType.Api<
         return weight;
     }
 
+    List<Observer> observers() {
+        return observers;
+    }
+
     private static UnaryOperator<String> endpoint(String observeEndpoint) {
         return observerEndpoint -> {
             if (observerEndpoint.startsWith("/")) {

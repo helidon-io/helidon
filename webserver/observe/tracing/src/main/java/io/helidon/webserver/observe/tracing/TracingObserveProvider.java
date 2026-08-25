@@ -19,15 +19,19 @@ package io.helidon.webserver.observe.tracing;
 import io.helidon.common.Api;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.observe.tracing.spi.TracingSemanticConventionsProvider;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for tracing observe provider.
  */
+@Service.Singleton
 public class TracingObserveProvider implements ObserveProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
@@ -61,5 +65,19 @@ public class TracingObserveProvider implements ObserveProvider {
                 .config(config) // update with server.features.observe.tracing
                 .name(name)
                 .build();
+    }
+
+    @Override
+    public Observer create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Config tracingConfig = config.root().get("tracing");
+        TracingObserverConfig observerConfig = TracingObserverConfig.builder()
+                .tracer(serviceRegistry.get(Tracer.class))
+                .config(tracingConfig) // read from root `tracing`
+                .config(config) // update with server.features.observe.tracing
+                .name(name)
+                .buildPrototype();
+
+        return TracingObserver.create(observerConfig,
+                                      serviceRegistry.supply(TracingSemanticConventionsProvider.class));
     }
 }

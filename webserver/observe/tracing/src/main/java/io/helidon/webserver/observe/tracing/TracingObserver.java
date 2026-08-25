@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
@@ -64,9 +65,16 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
     private static final String CONTENT_READ_SPAN_NAME = "content-read";
     private static final String CONTENT_WRITE_SPAN_NAME = "content-write";
     private final TracingObserverConfig config;
+    private final Supplier<TracingSemanticConventionsProvider> tracingSemanticConventionsProvider;
 
     private TracingObserver(TracingObserverConfig config) {
+        this(config, () -> Services.get(TracingSemanticConventionsProvider.class));
+    }
+
+    private TracingObserver(TracingObserverConfig config,
+                            Supplier<TracingSemanticConventionsProvider> tracingSemanticConventionsProvider) {
         this.config = config;
+        this.tracingSemanticConventionsProvider = tracingSemanticConventionsProvider;
     }
 
     /**
@@ -112,6 +120,11 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
         return new TracingObserver(config);
     }
 
+    static TracingObserver create(TracingObserverConfig config,
+                                  Supplier<TracingSemanticConventionsProvider> tracingSemanticConventionsProvider) {
+        return new TracingObserver(config, tracingSemanticConventionsProvider);
+    }
+
     /**
      * Create a new Tracing observer customizing its configuration.
      *
@@ -139,7 +152,9 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
             for (String socket : sockets) {
                 featureContext.socket(socket)
                         .httpRouting()
-                        .addFeature(new TracingFeature(config, DEFAULT_SOCKET_NAME.equals(socket) ? "" : socket));
+                        .addFeature(new TracingFeature(config,
+                                                       DEFAULT_SOCKET_NAME.equals(socket) ? "" : socket,
+                                                       tracingSemanticConventionsProvider));
             }
         }
     }
@@ -167,13 +182,14 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                       TracingConfig envConfig,
                       boolean waitTracingEnabled,
                       List<PathTracingConfig> pathConfigs,
-                      String socketTag) {
+                      String socketTag,
+                      Supplier<TracingSemanticConventionsProvider> tracingSemanticConventionsProvider) {
             this.tracer = tracer;
             this.envConfig = envConfig;
             this.waitTracingEnabled = waitTracingEnabled;
             this.pathConfigs = pathConfigs;
             this.socketTag = socketTag;
-            this.tracingSemanticConventionsProvider = Services.get(TracingSemanticConventionsProvider.class);
+            this.tracingSemanticConventionsProvider = tracingSemanticConventionsProvider.get();
 
         }
 
@@ -603,10 +619,14 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
     private static class TracingFeature implements HttpFeature, Weighted {
         private final TracingObserverConfig config;
         private final String socketTag;
+        private final Supplier<TracingSemanticConventionsProvider> tracingSemanticConventionsProvider;
 
-        TracingFeature(TracingObserverConfig config, String socketTag) {
+        TracingFeature(TracingObserverConfig config,
+                       String socketTag,
+                       Supplier<TracingSemanticConventionsProvider> tracingSemanticConventionsProvider) {
             this.config = config;
             this.socketTag = socketTag;
+            this.tracingSemanticConventionsProvider = tracingSemanticConventionsProvider;
         }
 
         @Override
@@ -620,7 +640,8 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                                                 config.envConfig(),
                                                 config.waitTracingEnabled(),
                                                 config.pathConfigs(),
-                                                socketTag));
+                                                socketTag,
+                                                tracingSemanticConventionsProvider));
         }
     }
 }

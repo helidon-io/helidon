@@ -30,6 +30,7 @@ module io.helidon.webserver.observe {
     requires static io.helidon.config.metadata;
 
     requires io.helidon.http;
+    requires io.helidon.service.registry;
     requires io.helidon.webserver;
 
     requires transitive io.helidon.builder.api;

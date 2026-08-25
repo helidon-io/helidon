@@ -66,15 +66,23 @@ class MetricsFeature {
     private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     MetricsFeature(MetricsObserverConfig config) {
+        this(config,
+             () -> Services.get(MeterRegistry.class),
+             () -> Services.all(MeterRegistryFormatterProvider.class));
+    }
+
+    MetricsFeature(MetricsObserverConfig config,
+                   Supplier<MeterRegistry> meterRegistry,
+                   Supplier<List<MeterRegistryFormatterProvider>> formatterProviders) {
         this.metricsObserverConfig = config;
         Optional<MeterRegistry> configuredMeterRegistry = config.meterRegistry();
-        this.meterRegistry = configuredMeterRegistry.orElseGet(() -> Services.get(MeterRegistry.class));
+        this.meterRegistry = configuredMeterRegistry.orElseGet(meterRegistry);
         if (configuredMeterRegistry.isPresent()) {
             this.metricsConfig = config.metricsConfig();
         } else {
-            this.metricsConfig = meterRegistry.metricsFactory().metricsConfig();
+            this.metricsConfig = this.meterRegistry.metricsFactory().metricsConfig();
         }
-        this.formatterProviders = Services.all(MeterRegistryFormatterProvider.class);
+        this.formatterProviders = formatterProviders.get();
     }
 
     /**

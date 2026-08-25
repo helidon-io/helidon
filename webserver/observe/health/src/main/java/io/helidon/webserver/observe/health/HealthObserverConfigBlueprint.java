@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,8 +67,10 @@ interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
     List<HealthCheck> healthChecks();
 
     /**
-     * Whether to use services discovered by {@link java.util.ServiceLoader}.
-     * By default, all {@link io.helidon.health.spi.HealthCheckProvider} based health checks are added.
+     * Whether to use discovered health-check services.
+     * By default, all {@link io.helidon.health.spi.HealthCheckProvider} and
+     * {@link io.helidon.health.HealthCheck} services are added. A directly created observer discovers services using
+     * {@link java.util.ServiceLoader} and the global service registry. A registry-managed observer uses its owning registry.
      *
      * @return set to {@code false} to disable discovery
      */

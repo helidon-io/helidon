@@ -85,11 +85,9 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * <p>
      * A custom meter registry passed to an observer remains caller-owned. Close it after all observers using it have stopped.
      * <p>
-     * If this method is not called,
-     * {@link MetricsObserver} uses the shared
-     * instance as provided by
-     * {@link io.helidon.service.registry.Services#get(java.lang.Class)
-     * Services.get(MeterRegistry.class)}.
+     * If this method is not called, a registry-managed {@link MetricsObserver} uses the shared instance from its owning
+     * {@link io.helidon.service.registry.ServiceRegistry}. A directly created observer uses the global shared instance as
+     * provided by {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MeterRegistry.class)}.
      *
      * @return meterRegistry to use in this metric support
      */
