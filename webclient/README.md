@@ -33,10 +33,10 @@ in such a case we use `prior-knowledge` and fail if we cannot switch to HTTP/2.
 
 When using TLS, the client will use ALPN (protocol negotiation) to use appropriate HTTP version (either 1.1, or 2).
 
-Client Alt-Svc use is opt-in through the optional common `ClientAltSvcConfig` (`alt-svc`) configuration. Within a
-present configuration, `enabled` defaults to `true`; an empty `protocols` list allows every available supporting
-provider, while a non-empty list is an exact, case-sensitive ALPN protocol filter. The current HTTP/2 provider uses the
-`h2` protocol ID.
+Client Alt-Svc support is a preview feature and is opt-in through the optional common `ClientAltSvcConfig` (`alt-svc`)
+configuration. Within a present configuration, `enabled` defaults to `true`; an empty `protocols` list allows every
+available supporting provider, while a non-empty list is an exact, case-sensitive ALPN protocol filter. The current
+HTTP/2 provider uses the `h2` protocol ID.
 
 Initial Alt-Svc support accepts advertisements only from HTTPS origins and only for alternatives on the same host,
 although the port may differ. Using an alternative changes only the connection endpoint; the request scheme and

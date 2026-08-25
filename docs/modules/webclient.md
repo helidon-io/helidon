@@ -71,13 +71,13 @@ WebClient client = WebClient.builder()
 
 ### Alt-Svc Discovery
 
-WebClient uses alternative services only when the optional common
-`ClientAltSvcConfig` (`alt-svc`) configuration is present. Within a present
-configuration, `enabled` defaults to `true`; setting it to `false` provides an
-explicit override without removing the configuration. An empty `protocols`
-list allows every available client protocol provider that supports Alt-Svc.
-Otherwise, the list is an exact, case-sensitive ALPN protocol filter. The
-HTTP/2 protocol ID is `h2`.
+Client Alt-Svc support is a preview feature. WebClient uses alternative
+services only when the optional common `ClientAltSvcConfig` (`alt-svc`)
+configuration is present. Within a present configuration, `enabled` defaults
+to `true`; setting it to `false` provides an explicit override without removing
+the configuration. An empty `protocols` list allows every available client
+protocol provider that supports Alt-Svc. Otherwise, the list is an exact,
+case-sensitive ALPN protocol filter. The HTTP/2 protocol ID is `h2`.
 
 Initial client support accepts advertisements only from `https` origins and
 only for alternatives on the same host; the alternative port may differ. Using

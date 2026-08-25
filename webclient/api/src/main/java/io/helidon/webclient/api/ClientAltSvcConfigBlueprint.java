@@ -23,7 +23,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
 
 /**
- * Client policy for accepting and using HTTP {@code Alt-Svc} response advertisements.
+ * Preview client policy for accepting and using HTTP {@code Alt-Svc} response advertisements.
  * <p>
  * Alternative service handling is opt-in through {@link HttpClientConfig#altSvc()}. Supporting client protocols use
  * this policy only for HTTPS origins and same-host alternative authorities. Clear-text HTTP origins, including an
