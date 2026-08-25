@@ -49,6 +49,8 @@ public interface GrpcServerService extends NamedService {
 
     /**
      * Insert a list of server interceptors for a gRPC call, using the provided service registry for dependencies.
+     * The default implementation validates the registry and delegates to {@link #interceptors()}. Implementations that
+     * resolve dependencies from the owning registry must override this method.
      *
      * @param serviceRegistry service registry to use for interceptor dependencies
      * @return weighted bag of interceptors
