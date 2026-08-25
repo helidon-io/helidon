@@ -63,7 +63,7 @@ sections below.
 You can configure a custom extension in two ways:
 
 1.  Manual configuration with builder
-2.  Automatic configuration using a Java service loader
+2.  Automatic discovery
 
 ### Manual Configuration with Builder
 
@@ -83,20 +83,29 @@ Config config = Config.builder()
         .build();
 ```
 
-### Automatic Configuration Using a Service Loader
+### Automatic Discovery
 
-The following extensions are loaded using a service loader for any configuration
-instance, and do not require an explicit setup:
+For a directly constructed `Config`, the following extensions are loaded using a
+service loader and do not require an explicit setup:
 
 - `ConfigParser` - each config parser on the classpath that implements
   `ConfigParserProvider` as a Java service loader service
 - `ConfigFilter` - each filter on the classpath that implements `ConfigFilter`
   as a Java service loader service
 
-Other extensions are only used from Java service loader when you use config
-profiles. Mapping is done through the type configured in config profile, and the
-type defined by the extension provider interface. For example for config
-sources, the interface defines the following methods (only subset shown):
+Other extensions are selected using the type configured in a config profile and
+the types defined by the extension provider interface.
+
+Config sources listed in meta-configuration or a config profile are resolved
+from the selected service registry. A registry-managed `Config` uses its owning
+registry, and an imperative builder can select a registry using
+`Config.Builder.serviceRegistry`. The registry can provide a
+`ConfigSourceProvider` or a named `ConfigSource`. Existing Java service loader
+providers remain compatible when service loader discovery is enabled for the
+registry.
+
+For example for config sources, the interface defines the following methods
+(only subset shown):
 
 ```java
 boolean supports(String type);
@@ -113,12 +122,11 @@ sources:
       my-config: "configuration"
 ```
 
-The config system would iterate through all `ConfigSourceProvider`
-implementations found through Java `ServiceLoader` based on their
-[weight][weight]. First provider that returns `true` when `supports("my-type")`
-is called would be used, and an instance of a `ConfigSource` created using
-`create("my-type", config)`, where `config` is located on the node of
-`properties` from config profile.
+The config system iterates through all `ConfigSourceProvider` implementations in
+the selected registry based on their [weight][weight]. The first provider that
+returns `true` when `supports("my-type")` is called is used, and an instance of a
+`ConfigSource` is created using `create("my-type", config)`, where `config` is
+located on the node of `properties` from the config profile.
 
 ### About Priority
 
