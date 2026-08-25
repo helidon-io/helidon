@@ -31,6 +31,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.ConfigBuilderSupport.ProviderSettings;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.Services;
 
 @SuppressWarnings("ALL")
 final class ProvidedUtil {
@@ -227,7 +228,7 @@ final class ProvidedUtil {
 
         ProviderSource<S, T> providerSource = serviceRegistry
                 .<ProviderSource<S, T>>map(registry -> new RegistryProviderSource<>(registry, providerType))
-                .orElseGet(() -> new ServiceLoaderProviderSource<>(HelidonServiceLoader.create(providerType)));
+                .orElseGet(() -> new StaticProviderSource<>(providerType));
         return discoverServices(config,
                                 configKey,
                                 providerSource,
@@ -652,6 +653,30 @@ final class ProvidedUtil {
         @Override
         public List<T> all() {
             return serviceLoader.asList();
+        }
+
+        @Override
+        public S create(T provider, Config config, String name) {
+            return provider.create(config, name);
+        }
+    }
+
+    private static final class StaticProviderSource<S extends NamedService, T extends ConfiguredProvider<S>>
+            implements ProviderSource<S, T> {
+        private final Class<T> providerType;
+
+        private StaticProviderSource(Class<T> providerType) {
+            this.providerType = providerType;
+        }
+
+        @Override
+        public List<T> all() {
+            Map<String, T> providers = new LinkedHashMap<>();
+            HelidonServiceLoader.create(providerType)
+                    .forEach(provider -> providers.putIfAbsent(provider.configKey(), provider));
+            Services.all(providerType)
+                    .forEach(provider -> providers.putIfAbsent(provider.configKey(), provider));
+            return List.copyOf(providers.values());
         }
 
         @Override

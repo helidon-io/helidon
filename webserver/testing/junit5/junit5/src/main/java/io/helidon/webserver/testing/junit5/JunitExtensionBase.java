@@ -20,13 +20,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.testing.junit5.TestJunitExtension;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.WebServerService__ServiceDescriptor;
 import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -114,7 +117,12 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
     }
 
     static void setupWebServerFromRegistry(WebServerConfig.Builder serverBuilder) {
-        Object o = GlobalServiceRegistry.registry()
+        var serviceRegistry = GlobalServiceRegistry.registry();
+        serverBuilder.serviceRegistry(serviceRegistry);
+        Set<String> providedServerFeatureTypes = new HashSet<>();
+        serviceRegistry.all(ServerFeatureProvider.class)
+                .forEach(provider -> providedServerFeatureTypes.add(provider.configKey()));
+        Object o = serviceRegistry
                 .get(WebServerService__ServiceDescriptor.INSTANCE)
                 .orElseThrow(() -> {
                     return new IllegalStateException("Could not discover WebServerService in service registry, both "
@@ -124,9 +132,11 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
         // the service is package local
         Class<?> clazz = o.getClass();
         try {
-            Method method = clazz.getDeclaredMethod("updateServerBuilder", WebServerConfig.BuilderBase.class);
+            Method method = clazz.getDeclaredMethod("updateServerBuilder",
+                                                    WebServerConfig.BuilderBase.class,
+                                                    Set.class);
             method.setAccessible(true);
-            method.invoke(o, serverBuilder);
+            method.invoke(o, serverBuilder, providedServerFeatureTypes);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Failed to get service registry specific method on WebServerService", e);
         }

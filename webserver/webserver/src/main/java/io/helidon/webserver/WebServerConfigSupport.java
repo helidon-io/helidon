@@ -23,10 +23,12 @@ import java.net.StandardSocketOptions;
 import java.net.UnixDomainSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.Prototype;
@@ -117,19 +119,21 @@ class WebServerConfigSupport {
             }
 
             List<ServerFeature> features = target.features();
-            Map<FeatureId, ServerFeature> uniqueFeatures = new LinkedHashMap<>();
+            List<ServerFeature> uniqueFeatures = new ArrayList<>();
+            Set<FeatureId> registeredFeatures = new HashSet<>();
             for (ServerFeature feature : features) {
-                FeatureId featureId = new FeatureId(feature.type(), feature.name());
-                if (uniqueFeatures.put(featureId, feature) != null) {
+                if (registeredFeatures.add(new FeatureId(feature.type(), feature.name()))) {
+                    uniqueFeatures.add(feature);
+                } else {
                     if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                         LOGGER.log(System.Logger.Level.DEBUG, "Feature (type, name): ("
                                 + feature.type() + ", " + feature.name()
-                                + ") is already registered with server; the last registration wins (typically an explicit "
-                                + "builder registration replacing a discovered feature).");
+                                + ") is already registered with server, and will be ignored (probably one registered through "
+                                + "builder, the other through service loader. Builder wins.");
                     }
                 }
             }
-            target.features(new ArrayList<>(uniqueFeatures.values()));
+            target.features(uniqueFeatures);
 
             Optional<HttpRouting.Builder> routing = target.routing();
 
