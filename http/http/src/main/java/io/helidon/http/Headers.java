@@ -76,6 +76,10 @@ public interface Headers extends Iterable<Header> {
      * @return {@code true} if all expected tokens are present, ignoring case and surrounding whitespace
      */
     default boolean containsToken(Header value) {
+        if (!contains(value.headerName())) {
+            return false;
+        }
+
         List<String> actualValues = values(value.headerName());
         if (actualValues.isEmpty()) {
             return false;
