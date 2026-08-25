@@ -448,7 +448,7 @@ public final class HeaderNames {
      * <p>
      * This infrequently used header is not part of the indexed known-header set.
      */
-    public static final HeaderName ALT_USED = create(ALT_USED_NAME);
+    public static final HeaderName ALT_USED = createNonIndexed(ALT_USED_NAME);
     /**
      * The {@value} header name.
      * Tells all caching mechanisms from server to client whether they may cache this object. It is measured in seconds.
