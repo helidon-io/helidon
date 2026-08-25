@@ -382,6 +382,12 @@ The interaction is as follows:
 4.  You can also define a `ConfigSourceProvider` as a registry service (and this
     will work the same as in Helidon imperative code)
 
+For a registry-managed `Config`, each source listed in the profile is resolved
+using the owning service registry. The requested type can be provided by a
+`ConfigSourceProvider` or by a named `ConfigSource`; built-in source types remain
+available. The same resolution applies when an explicit registry is configured
+using `Config.Builder.serviceRegistry` in the Helidon imperative model.
+
 ### Designing a config source that integrates with profiles and default config
 
 Note that this approach will only work if you get a `Config` instance from the
