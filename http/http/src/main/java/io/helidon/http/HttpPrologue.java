@@ -302,23 +302,6 @@ public class HttpPrologue {
                 + "fragment=" + fragment() + ']';
     }
 
-    private HttpPrologue copy(String rawProtocol,
-                              String protocol,
-                              String protocolVersion,
-                              Method method,
-                              UriPath uriPath) {
-        HttpPrologue prologue = new HttpPrologue(rawProtocol,
-                                                 protocol,
-                                                 protocolVersion,
-                                                 method,
-                                                 uriPath,
-                                                 rawQuery,
-                                                 rawFragment);
-        prologue.query = query;
-        prologue.fragment = fragment;
-        return prologue;
-    }
-
     private static void validateRequestTarget(Method method, String rawPath) {
         if (rawPath.isEmpty() || rawPath.charAt(0) == '/') {
             return;
@@ -349,5 +332,22 @@ public class HttpPrologue {
             return false;
         }
         return true;
+    }
+
+    private HttpPrologue copy(String rawProtocol,
+                              String protocol,
+                              String protocolVersion,
+                              Method method,
+                              UriPath uriPath) {
+        HttpPrologue prologue = new HttpPrologue(rawProtocol,
+                                                 protocol,
+                                                 protocolVersion,
+                                                 method,
+                                                 uriPath,
+                                                 rawQuery,
+                                                 rawFragment);
+        prologue.query = query;
+        prologue.fragment = fragment;
+        return prologue;
     }
 }

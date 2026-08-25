@@ -368,6 +368,42 @@ public class HeadersServerTest {
     }
 
     @Test
+    void relativeRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            Http2Headers invalidHeaders = Http2Headers.create(WritableHeaders.create());
+            invalidHeaders.method(GET);
+            invalidHeaders.path("boards/");
+            invalidHeaders.scheme(connection.clientUri().scheme());
+            invalidHeaders.authority(connection.clientUri().authority());
+            connection.writer()
+                    .writeHeaders(invalidHeaders,
+                                  1,
+                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                  FlowControl.Outbound.NOOP);
+
+            connection.assertSettings(TIMEOUT);
+            connection.assertWindowsUpdate(0, TIMEOUT);
+            connection.assertSettings(TIMEOUT);
+
+            Http2RstStream rstStream = connection.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.PROTOCOL));
+
+            Http2Headers validHeaders = Http2Headers.create(WritableHeaders.create());
+            validHeaders.method(GET);
+            validHeaders.path("/ping");
+            validHeaders.scheme(connection.clientUri().scheme());
+            validHeaders.authority(connection.clientUri().authority());
+            connection.writer()
+                    .writeHeaders(validHeaders,
+                                  3,
+                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                  FlowControl.Outbound.NOOP);
+
+            assertThat(connection.assertHeaders(3, TIMEOUT).status(), is(Status.OK_200));
+        }
+    }
+
+    @Test
     void invalidResponseHeaderCanBeWrittenWhenValidationIsDisabled() {
         ClientResponseTyped<String> res = responseValidationDisabledClient
                 .get("/invalid-response-header")

@@ -872,12 +872,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         if (newStream) {
             activateStream(streamId);
         }
-        HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
-                                                        PROTOCOL,
-                                                        PROTOCOL_VERSION,
-                                                        method,
-                                                        path,
-                                                        http2Config.validatePath());
+        HttpPrologue httpPrologue;
+        try {
+            httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
+                                               PROTOCOL,
+                                               PROTOCOL_VERSION,
+                                               method,
+                                               path,
+                                               http2Config.validatePath());
+        } catch (IllegalArgumentException ignored) {
+            stream.resetProtocolError(0, endOfStream);
+            state = State.READ_FRAME;
+            return;
+        }
         stream.prologue(httpPrologue);
         stream.requestLimit(limit);
         stream.headers(headers, endOfStream);
