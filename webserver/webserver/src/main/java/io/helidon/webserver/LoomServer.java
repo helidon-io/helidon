@@ -53,6 +53,7 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 import io.helidon.spi.HelidonShutdownHandler;
 import io.helidon.webserver.http.DirectHandlers;
@@ -78,9 +79,10 @@ class LoomServer implements WebServer, Resumable {
     private volatile boolean alreadyStarted = false;
 
     @Service.Inject
-    LoomServer(WebServerService service, Supplier<MetricsFactory> metricsFactory) {
+    LoomServer(WebServerService service, Supplier<MetricsFactory> metricsFactory, ServiceRegistry serviceRegistry) {
         // only for service registry
         this(WebServerConfig.builder()
+                     .serviceRegistry(serviceRegistry)
                      .update(service::updateServerBuilder)
                      .buildPrototype(),
              metricsFactory);
