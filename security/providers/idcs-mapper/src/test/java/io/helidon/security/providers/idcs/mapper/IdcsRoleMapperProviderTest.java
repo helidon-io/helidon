@@ -47,6 +47,7 @@ import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
 import io.helidon.security.Subject;
+import io.helidon.security.SubjectType;
 import io.helidon.security.integration.common.RoleMapTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.jwt.Jwt;
@@ -119,6 +120,45 @@ class IdcsRoleMapperProviderTest {
         assertThat("Expecting the same role, as it should have been cached", counted2, is(counted));
         Role additionalCounted2 = findAdditionalCounted(grants);
         assertThat("Additional roles should not be cached", additionalCounted2, not(additionalCounted));
+    }
+
+    @Test
+    void serviceMapsToService() {
+        ProviderRequest request = Mockito.mock(ProviderRequest.class);
+        TestProvider serviceProvider = new TestProvider(roleMapperBuilder(SubjectType.SERVICE));
+        String serviceName = "test-service";
+        AuthenticationResponse response = serviceProvider.map(
+                request,
+                AuthenticationResponse.builder()
+                        .service(Subject.builder()
+                                         .principal(Principal.create(serviceName))
+                                         .build())
+                        .build());
+
+        assertThat(response.user(), is(Optional.empty()));
+        Subject service = response.service().orElseThrow();
+        assertThat(service.principal().id(), is(serviceName));
+        assertThat(service.grants(Role.class),
+                   hasItems(Role.create("fixed"), Role.create(serviceName), Role.create("additional-fixed")));
+    }
+
+    @Test
+    void unsupportedUserRemainsUser() {
+        ProviderRequest request = Mockito.mock(ProviderRequest.class);
+        TestProvider serviceProvider = new TestProvider(roleMapperBuilder(SubjectType.SERVICE));
+        String username = "test-user-not-mapped";
+        AuthenticationResponse response = serviceProvider.map(
+                request,
+                AuthenticationResponse.builder()
+                        .user(Subject.builder()
+                                      .principal(Principal.create(username))
+                                      .build())
+                        .build());
+
+        Subject user = response.user().orElseThrow();
+        assertThat(user.principal().id(), is(username));
+        assertThat(user.grants(Role.class), iterableWithSize(0));
+        assertThat(response.service(), is(Optional.empty()));
     }
 
     @Test
@@ -569,7 +609,7 @@ class IdcsRoleMapperProviderTest {
         return false;
     }
 
-    private static IdcsRoleMapperProvider.Builder<?> roleMapperBuilder() {
+    private static IdcsRoleMapperProvider.Builder<?> roleMapperBuilder(SubjectType... subjectTypes) {
         IdcsRoleMapperProvider.Builder<?> builder = IdcsRoleMapperProvider.builder();
         builder.oidcConfig(OidcConfig.builder()
                                    .oidcMetadataWellKnown(false)
@@ -581,7 +621,8 @@ class IdcsRoleMapperProviderTest {
                                    .build())
                 .roleCache(EvictableCache.<String, List<Grant>>builder()
                                    .maxSize(2)
-                                   .build());
+                                   .build())
+                .subjectTypes(subjectTypes);
         return builder;
     }
 
