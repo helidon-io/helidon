@@ -43,6 +43,8 @@ import java.util.stream.Collectors;
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.MergingStrategy;
 import io.helidon.service.registry.Service;
 
 /**
@@ -1179,22 +1181,95 @@ class ChannelRegistry implements MessagingRuntime {
                                    ConnectorDirection direction,
                                    String channel,
                                    String connector) {
-        Map<String, String> properties = connectorProperties(root, channelConfig, connector);
-        properties.put(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE, channel);
-        properties.put(ConnectorConfig.CONNECTOR_ATTRIBUTE, connector);
-        properties.put("direction", direction.name());
-        return Config.just(ConfigSources.create(properties));
+        Config connectorDefaults = root.get(ConnectorConfig.CONNECTOR_PREFIX + Config.Key.escapeName(connector));
+        return Config.builder(ConfigSources.create(configObjectNode(channelConfig)),
+                              ConfigSources.create(configObjectNode(connectorDefaults)))
+                .mergingStrategy(nodes -> mergeConnectorConfig(nodes, direction, channel, connector))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
     }
 
-    private Map<String, String> connectorProperties(Config root, Config channelConfig, String connector) {
-        Map<String, String> properties = new LinkedHashMap<>();
-        root.get(ConnectorConfig.CONNECTOR_PREFIX + Config.Key.escapeName(connector))
-                .detach()
-                .asMap()
-                .ifPresent(properties::putAll);
-        channelConfig.detach().asMap().ifPresent(properties::putAll);
-        properties.keySet().removeIf(key -> key.equals("failure") || key.startsWith("failure."));
-        return properties;
+    private ConfigNode.ObjectNode mergeConnectorConfig(List<ConfigNode.ObjectNode> nodes,
+                                                       ConnectorDirection direction,
+                                                       String channel,
+                                                       String connector) {
+        ConfigNode.ObjectNode merged = MergingStrategy.fallback().merge(nodes.stream()
+                                                                                .map(this::connectorPropertiesNode)
+                                                                                .toList());
+        ConfigNode.ObjectNode.Builder result = ConfigNode.ObjectNode.builder();
+        merged.value().ifPresent(result::value);
+        merged.forEach(result::addNode);
+        return result.addValue(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE, channel)
+                .addValue(ConnectorConfig.CONNECTOR_ATTRIBUTE, connector)
+                .addValue("direction", direction.name())
+                .build();
+    }
+
+    private ConfigNode.ObjectNode connectorPropertiesNode(ConfigNode.ObjectNode source) {
+        ConfigNode.ObjectNode.Builder result = ConfigNode.ObjectNode.builder();
+        source.value().ifPresent(result::value);
+        source.forEach((key, node) -> {
+            if (!reservedConnectorProperty(key)) {
+                result.addNode(key, node);
+            }
+        });
+        return result.build();
+    }
+
+    private boolean reservedConnectorProperty(String key) {
+        return key.equals("failure")
+                || key.startsWith("failure.")
+                || key.equals(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE)
+                || key.startsWith(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE + ".")
+                || key.equals(ConnectorConfig.CONNECTOR_ATTRIBUTE)
+                || key.startsWith(ConnectorConfig.CONNECTOR_ATTRIBUTE + ".")
+                || key.equals("direction")
+                || key.startsWith("direction.");
+    }
+
+    private ConfigNode.ObjectNode configObjectNode(Config config) {
+        if (!config.exists()) {
+            return ConfigNode.ObjectNode.empty();
+        }
+        if (config.type() != Config.Type.OBJECT) {
+            throw new IllegalArgumentException("Connector configuration must be an object: " + config.key());
+        }
+        ConfigNode.ObjectNode.Builder result = ConfigNode.ObjectNode.builder();
+        if (config.hasValue()) {
+            result.value(config.asString().orElseThrow());
+        }
+        config.asNodeList().orElse(List.of()).forEach(child -> result.addNode(
+                Config.Key.escapeName(child.name()),
+                configNode(child)));
+        return result.build();
+    }
+
+    private ConfigNode.ListNode configListNode(Config config) {
+        ConfigNode.ListNode.Builder result = ConfigNode.ListNode.builder();
+        if (config.hasValue()) {
+            result.value(config.asString().orElseThrow());
+        }
+        config.asNodeList().orElse(List.of()).stream()
+                .map(this::configNode)
+                .forEach(node -> {
+                    switch (node.nodeType()) {
+                    case OBJECT -> result.addObject((ConfigNode.ObjectNode) node);
+                    case LIST -> result.addList((ConfigNode.ListNode) node);
+                    case VALUE -> result.addValue((ConfigNode.ValueNode) node);
+                    default -> throw new IllegalStateException("Unsupported configuration node type: " + node.nodeType());
+                    }
+                });
+        return result.build();
+    }
+
+    private ConfigNode configNode(Config config) {
+        return switch (config.type()) {
+        case OBJECT -> configObjectNode(config);
+        case LIST -> configListNode(config);
+        case VALUE -> ConfigNode.ValueNode.create(config.asString().orElseThrow());
+        case MISSING -> throw new IllegalStateException("Cannot copy missing configuration node " + config.key());
+        };
     }
 
     private final class RegistryIncomingConnectorContext implements IncomingConnectorContext {
@@ -1321,7 +1396,7 @@ class ChannelRegistry implements MessagingRuntime {
             } else if (!deferredIndexes.isEmpty()) {
                 pending.addFirst(new PendingDelivery(current.batch().subset(deferredIndexes),
                                                      current.failedAttempts(),
-                                                     current.preDispatchFailure()));
+                                                     null));
             }
 
             MessageBatch<?> failedBatch = current.batch().subset(failedIndexes);

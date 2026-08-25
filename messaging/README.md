@@ -834,6 +834,13 @@ repeat mapping. Bounded policies retain their configured failure-attempt account
 mapping failure as exhausted after its initial attempt so `await()` always terminates; with `FAIL`, leave the transport
 delivery available for redelivery so the connector can map it again.
 
+For a partially mapped native batch, pass a root-aligned `BatchDeliveryException`: use `FAILED` or `INDETERMINATE` for
+unmappable items and `NOT_ATTEMPTED` for mapped siblings that have not reached application handlers. Never mark an
+undispatched item `SUCCEEDED`. The runtime settles the failed subset first. Successful `DROP` or dead-letter settlement
+then releases the `NOT_ATTEMPTED` subset into normal dispatch; `FAIL` or failed dead-letter routing terminates before
+those deferred items run. Terminal batch outcomes remain aligned to the original retained batch so connectors can
+settle native records by original index.
+
 A normal return from `await()` may mean normal handler completion, `DROP`, or successful dead-letter delivery; all are
 settled runtime outcomes and the complete source delivery may then be committed. The conservative outline above
 abandons the complete transport batch on failure. A connector that supports partial settlement may align a

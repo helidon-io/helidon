@@ -32,6 +32,8 @@ import java.util.function.Consumer;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigNode;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -181,40 +183,115 @@ class ChannelRegistryFailurePolicyTest {
         TestIncomingConnector incoming = new TestIncomingConnector("acme.v1");
         ChannelRegistry registry = new ChannelRegistry(
                 List.of(registration("inherited", ignored -> { }),
-                        registration("overridden", ignored -> { })),
+                        registration("overridden", ignored -> { }),
+                        registration("empty", ignored -> { })),
                 yaml("""
                         helidon:
                           messaging:
                             connector:
                               acme~1v1:
                                 endpoint: https://default.example.test
+                                items: [a, b, c]
                                 authentication:
                                   username: connector-user
                                   password: connector-password
+                                failure: [ignored]
                             incoming:
                               inherited:
                                 connector: acme.v1
                               overridden:
                                 connector: acme.v1
                                 endpoint: https://channel.example.test
+                                items: [x]
                                 authentication:
                                   username: channel-user
+                                failure:
+                                  retry:
+                                    max-attempts: 1
+                              empty:
+                                connector: acme.v1
+                                items: []
                         """),
                 List.of(incoming));
         try {
-            assertThat(incoming.createdCount(), is(2));
+            assertThat(incoming.createdCount(), is(3));
 
             TestConnectorConfig inherited = incoming.config("inherited");
             assertThat(inherited.connector(), is("acme.v1"));
             assertThat(inherited.properties().get("endpoint"), is("https://default.example.test"));
             assertThat(inherited.properties().get("authentication.username"), is("connector-user"));
             assertThat(inherited.properties().get("authentication.password"), is("connector-password"));
+            assertThat(inherited.config().get("items").asList(String.class).get(), is(List.of("a", "b", "c")));
+            assertThat(inherited.config().get("failure").exists(), is(false));
 
             TestConnectorConfig overridden = incoming.config("overridden");
             assertThat(overridden.connector(), is("acme.v1"));
             assertThat(overridden.properties().get("endpoint"), is("https://channel.example.test"));
             assertThat(overridden.properties().get("authentication.username"), is("channel-user"));
             assertThat(overridden.properties().get("authentication.password"), is("connector-password"));
+            assertThat(overridden.config().get("items").asList(String.class).get(), is(List.of("x")));
+            assertThat(overridden.config().get("failure").exists(), is(false));
+
+            Config emptyItems = incoming.config("empty").config().get("items");
+            assertThat(emptyItems.exists(), is(true));
+            assertThat(emptyItems.type(), is(Config.Type.LIST));
+            assertThat(emptyItems.asList(String.class).get(), is(List.of()));
+            assertThat(incoming.config("empty").config().get("failure").exists(), is(false));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testConnectorConfigMergePreservesHybridValues() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        ConfigNode.ObjectNode defaultConnector = ConfigNode.ObjectNode.builder()
+                .addObject("settings", ConfigNode.ObjectNode.builder()
+                        .value("default")
+                        .addValue("child", "nested")
+                        .build())
+                .addList("items", ConfigNode.ListNode.builder()
+                        .value("default-list")
+                        .addValue("a")
+                        .addValue("b")
+                        .build())
+                .build();
+        ConfigNode.ObjectNode channel = ConfigNode.ObjectNode.builder()
+                .addValue("connector", "test-in")
+                .addObject("settings", ConfigNode.ObjectNode.builder()
+                        .value("channel")
+                        .build())
+                .addList("items", ConfigNode.ListNode.builder()
+                        .value("channel-list")
+                        .addValue("x")
+                        .build())
+                .build();
+        ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
+                .addObject("helidon", ConfigNode.ObjectNode.builder()
+                        .addObject("messaging", ConfigNode.ObjectNode.builder()
+                                .addObject("connector", ConfigNode.ObjectNode.builder()
+                                        .addObject("test-in", defaultConnector)
+                                        .build())
+                                .addObject("incoming", ConfigNode.ObjectNode.builder()
+                                        .addObject("orders", channel)
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+        Config config = Config.just(ConfigSources.create(root));
+        ChannelRegistry registry = new ChannelRegistry(
+                List.of(registration("orders", ignored -> { })),
+                config,
+                List.of(incoming));
+        try {
+            Config settings = incoming.config("orders").config().get("settings");
+            assertThat(settings.type(), is(Config.Type.OBJECT));
+            assertThat(settings.asString().get(), is("channel"));
+            assertThat(settings.get("child").asString().get(), is("nested"));
+            Config items = incoming.config("orders").config().get("items");
+            assertThat(items.type(), is(Config.Type.LIST));
+            assertThat(items.asString().get(), is("channel-list"));
+            assertThat(items.asList(String.class).get(), is(List.of("x")));
         } finally {
             registry.close();
         }
@@ -497,6 +574,136 @@ class ChannelRegistryFailurePolicyTest {
         deliver(context, MessageBatch.create(Message.create("good")));
 
         assertThat(handled, is(List.of("good")));
+    }
+
+    @Test
+    void testStructuredPreDispatchFailureDeadLettersBeforeDispatchingDeferredSiblings() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        AtomicBoolean failureSettledBeforeDeferred = new AtomicBoolean();
+        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+                                handled.add((String) message.entity());
+                                failureSettledBeforeDeferred.compareAndSet(false, outgoing.messages().size() == 1);
+                            })),
+                            yaml("""
+                                    helidon:
+                                      messaging:
+                                        incoming:
+                                          orders:
+                                            connector: test-in
+                                            failure:
+                                              retry:
+                                                max-attempts: 1
+                                              on-exhausted: DEAD_LETTER
+                                              dead-letter:
+                                                channel: orders-dlq
+                                        outgoing:
+                                          orders-dlq:
+                                            connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"),
+                                                                 Message.create("unmapped"),
+                                                                 Message.create("third")));
+        IllegalStateException mappingFailure = new IllegalStateException("mapping failed");
+
+        deliverFailed(incoming.context("orders"), root, mixedPreDispatchFailure(root, mappingFailure));
+
+        assertThat(handled, is(List.of("first", "third")));
+        assertThat(failureSettledBeforeDeferred.get(), is(true));
+        assertThat(outgoing.messages().size(), is(1));
+        DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().getFirst();
+        assertThat(deadLetter.originalMessage(), sameInstance(root.get(1)));
+        assertThat(deadLetter.attempts(), is(1));
+        assertThat(deadLetter.failureType(), is(mappingFailure.getClass().getName()));
+        assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+    }
+
+    @Test
+    void testStructuredPreDispatchFailStopsBeforeDeferredSiblings() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        List<String> handled = new CopyOnWriteArrayList<>();
+        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
+                                handled.add((String) message.entity());
+                            })),
+                            yaml("""
+                                    helidon:
+                                      messaging:
+                                        incoming:
+                                          orders:
+                                            connector: test-in
+                                            failure:
+                                              retry:
+                                                max-attempts: 1
+                                    """),
+                            List.of(incoming));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"),
+                                                                 Message.create("unmapped"),
+                                                                 Message.create("third")));
+        IllegalStateException mappingFailure = new IllegalStateException("mapping failed");
+
+        BatchDeliveryException terminal = assertThrows(
+                BatchDeliveryException.class,
+                () -> deliverFailed(incoming.context("orders"), root, mixedPreDispatchFailure(root, mappingFailure)));
+
+        assertThat(terminal.batch(), sameInstance(root));
+        assertThat(terminal.outcomes().stream().map(BatchItemOutcome::status).toList(),
+                   is(List.of(BatchItemStatus.NOT_ATTEMPTED,
+                              BatchItemStatus.FAILED,
+                              BatchItemStatus.NOT_ATTEMPTED)));
+        assertThat(terminal.outcome(1).failure().orElseThrow(), sameInstance(mappingFailure));
+        assertThat(handled, is(List.of()));
+    }
+
+    @Test
+    void testAllNotAttemptedPreDispatchFailureConsumesAttemptsAndDeadLetters() throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        AtomicInteger handlerCalls = new AtomicInteger();
+        ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> {
+                                handlerCalls.incrementAndGet();
+                            })),
+                            yaml("""
+                                    helidon:
+                                      messaging:
+                                        incoming:
+                                          orders:
+                                            connector: test-in
+                                            failure:
+                                              retry:
+                                                delay: PT0.001S
+                                                max-attempts: 2
+                                              on-exhausted: DEAD_LETTER
+                                              dead-letter:
+                                                channel: orders-dlq
+                                        outgoing:
+                                          orders-dlq:
+                                            connector: test-out
+                                    """),
+                            List.of(incoming, outgoing));
+        start(registry);
+        MessageBatch<String> root = MessageBatch.create(List.of(Message.create("first"), Message.create("second")));
+        IllegalStateException mappingFailure = new IllegalStateException("mapping failed before dispatch");
+
+        try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
+             ConnectorDelivery delivery = reservation.startFailed(
+                     root,
+                     BatchDeliveryException.notAttempted("Mapping", root, mappingFailure))) {
+            assertThat(delivery.await(Duration.ofSeconds(2)), is(true));
+        }
+
+        assertThat(handlerCalls.get(), is(0));
+        assertThat(outgoing.messages().size(), is(2));
+        for (int i = 0; i < root.size(); i++) {
+            DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().get(i);
+            assertThat(deadLetter.originalMessage(), sameInstance(root.get(i)));
+            assertThat(deadLetter.attempts(), is(2));
+            assertThat(deadLetter.failureType(), is(mappingFailure.getClass().getName()));
+            assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+        }
     }
 
     @Test
@@ -1558,6 +1765,17 @@ class ChannelRegistryFailurePolicyTest {
         }
     }
 
+    private static BatchDeliveryException mixedPreDispatchFailure(MessageBatch<?> batch,
+                                                                  RuntimeException mappingFailure) {
+        return new BatchDeliveryException(
+                "Partial mapping failure",
+                batch,
+                List.of(BatchItemOutcome.notAttempted(0),
+                        BatchItemOutcome.failed(1, mappingFailure),
+                        BatchItemOutcome.notAttempted(2)),
+                mappingFailure);
+    }
+
     private static Message<String> customMessage(String entity) {
         return new Message<>() {
             @Override
@@ -1807,13 +2025,15 @@ class ChannelRegistryFailurePolicyTest {
     public record TestConnectorConfig(ConnectorDirection direction,
                                       String channel,
                                       String connector,
-                                      Map<String, String> properties) implements ConnectorConfig {
+                                      Map<String, String> properties,
+                                      Config config) implements ConnectorConfig {
         private static TestConnectorConfig from(Config config) {
             return new TestConnectorConfig(
                     ConnectorDirection.valueOf(config.get("direction").asString().orElseThrow()),
                     config.get(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE).asString().orElseThrow(),
                     config.get(ConnectorConfig.CONNECTOR_ATTRIBUTE).asString().orElseThrow(),
-                    Map.copyOf(config.detach().asMap().orElse(Map.of())));
+                    Map.copyOf(config.detach().asMap().orElse(Map.of())),
+                    config.detach());
         }
     }
 

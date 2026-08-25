@@ -59,12 +59,21 @@ public interface ConnectorDeliveryReservation extends AutoCloseable {
     /**
      * Start a retained connector delivery whose transport-to-message mapping failed before dispatch.
      * <p>
-     * Runtime implementations can apply the channel failure policy without invoking application handlers. The
-     * runtime cannot repeat transport mapping because it does not own the native transport record or mapper. Bounded
-     * policies retain their configured failure-attempt accounting; an unlimited policy treats the mapping failure as
-     * exhausted after its initial attempt so that the returned delivery always terminates. The
-     * default implementation closes this reservation and rethrows the supplied failure so implementations compiled
-     * against an earlier version fail safely instead of dispatching an invalid batch.
+     * Runtime implementations can apply the channel failure policy to failed items without invoking application
+     * handlers for those items. The runtime cannot repeat transport mapping because it does not own the native
+     * transport record or mapper. Bounded policies retain their configured failure-attempt accounting; an unlimited
+     * policy treats the mapping failure as exhausted after its initial attempt so that the returned delivery always
+     * terminates.
+     * <p>
+     * A structured {@link BatchDeliveryException} aligned to {@code batch} can identify unmappable items as
+     * {@link BatchItemStatus#FAILED} or {@link BatchItemStatus#INDETERMINATE} and mapped but undispatched siblings as
+     * {@link BatchItemStatus#NOT_ATTEMPTED}. The runtime settles the failed subset first, then dispatches the deferred
+     * subset only after successful drop or dead-letter settlement. A terminal {@link BatchDeliveryException} remains
+     * aligned to the original retained batch. An undispatched item must not be marked
+     * {@link BatchItemStatus#SUCCEEDED}.
+     * <p>
+     * The default implementation closes this reservation and rethrows the supplied failure so implementations
+     * compiled against an earlier version fail safely instead of dispatching an invalid batch.
      *
      * @param batch retained delivery metadata used for failure accounting, drop, or dead-letter handling
      * @param failure pre-dispatch mapping failure

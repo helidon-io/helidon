@@ -17,6 +17,7 @@
 package io.helidon.messaging;
 
 import io.helidon.common.Api;
+import io.helidon.service.registry.Service;
 
 /**
  * Stateless factory for one connector type.
@@ -27,6 +28,7 @@ import io.helidon.common.Api;
  *
  */
 @Api.Preview
+@Service.Contract
 public interface ConnectorProvider {
     /**
      * Connector type used to select this provider.
