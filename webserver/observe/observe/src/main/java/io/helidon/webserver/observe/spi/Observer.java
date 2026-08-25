@@ -43,9 +43,9 @@ public interface Observer extends NamedService {
     ObserverConfigBase prototype();
 
     /**
-     * Type of this observer, to make sure we do not configure an observer both from {@link java.util.ServiceLoader} and
-     * using programmatic approach.
-     * If it is desired to have more than one observer of the same type, always use programmatic approach
+     * Type of this observer, to make sure we do not configure an observer both through provider discovery and using a
+     * programmatic approach.
+     * If it is desired to have more than one observer of the same type, always use a programmatic approach.
      *
      * @return type of this observer, should match {@link io.helidon.webserver.observe.spi.ObserveProvider#type()}
      */

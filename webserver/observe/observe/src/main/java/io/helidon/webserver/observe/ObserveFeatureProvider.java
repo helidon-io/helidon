@@ -31,7 +31,8 @@ import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for observe feature for {@link io.helidon.webserver.WebServer}.
+ * Provider implementation for the observe feature for {@link io.helidon.webserver.WebServer}, discoverable through
+ * {@link io.helidon.service.registry.ServiceRegistry} and {@link java.util.ServiceLoader}.
  */
 @Weight(ObserveFeature.WEIGHT)
 @Service.Singleton

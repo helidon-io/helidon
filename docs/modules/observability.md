@@ -77,9 +77,22 @@ code.
 
 ### Discovery
 
-`ObserveProvider` instances are discovered using `ServiceLoader`. In case an
-explicit `Observer` is registered with the same `type` as a provider, the
-provider will not be used (so we do not duplicate services).
+When an application is bootstrapped using `ServiceRegistryManager`, the observe
+feature and `ObserveProvider` instances are discovered from the owning service
+registry. Providers loaded using `ServiceLoader` are bridged into the registry
+when service loader discovery is enabled, which preserves compatibility with
+existing providers.
+
+When an `ObserveFeature` is built directly, `ObserveProvider` instances are
+discovered using `ServiceLoader`. In this case, an explicitly configured
+`Observer` with the same `type` as a provider takes precedence so the observer
+is not duplicated.
+
+For fully manual registry setup, set `server.features-discover-services` to
+`false` to disable automatic server feature discovery, including the observe
+feature. Set `server.features.observe.observers-discover-services` to `false`
+to disable automatic observer discovery. The application can then register the
+`ObserveFeature` and its `Observer` instances explicitly.
 
 ### Feature Weight and Endpoint Conflicts
 
