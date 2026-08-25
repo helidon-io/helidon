@@ -188,6 +188,55 @@ class ObserveRegistryBootstrapTest {
         }
     }
 
+    @Test
+    void defaultManualFeatureSuppressesAutomaticGraph() {
+        ServiceRegistry previousGlobal = GlobalServiceRegistry.registry();
+        var provider = new CountingObserveProvider();
+        InfoObserver observer = InfoObserver.builder()
+                .name("manual")
+                .endpoint("manual")
+                .putValue("source", "manual")
+                .build();
+        ObserveFeature feature = ObserveFeature.builder()
+                .name("observe")
+                .endpoint("/manual-default-observe")
+                .observersDiscoverServices(false)
+                .addObserver(observer)
+                .build();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "declarative.ignore-incubating", "true",
+                "server.port", "0")));
+        ServiceRegistryConfig registryConfig = ServiceRegistryConfig.builder()
+                .putContractInstance(Config.class, config)
+                .putContractInstance(ObserveProvider.class, provider)
+                .putContractInstance(Observer.class, observer)
+                .putContractInstance(ObserveFeature.class, feature)
+                .putContractInstance(ServerFeature.class, feature)
+                .discoverServicesFromServiceLoader(false)
+                .build();
+        ServiceRegistryManager manager = null;
+
+        try {
+            manager = ServiceRegistryManager.start(registryConfig);
+            ServiceRegistry registry = manager.registry();
+            WebServer server = registry.get(WebServer.class);
+
+            assertThat(provider.createCount, is(0));
+            assertThat(registry.all(ObserveFeature.class), contains(sameInstance(feature)));
+            assertThat(registry.all(Observer.class), contains(sameInstance(observer)));
+
+            ClientResponseTyped<JsonObject> response = client(server).get("/manual-default-observe/manual/source")
+                    .request(JsonObject.class);
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().stringValue("value").orElseThrow(), is("manual"));
+        } finally {
+            if (manager != null) {
+                manager.shutdown();
+            }
+            GlobalServiceRegistry.registry(previousGlobal);
+        }
+    }
+
     private static ServiceRegistryConfig registryConfig(Config config) {
         return ServiceRegistryConfig.builder()
                 .putContractInstance(Config.class, config)
@@ -244,5 +293,28 @@ class ObserveRegistryBootstrapTest {
 
     private static void assertStatus(ClientResponseTyped<String> response, Status expectedStatus) {
         assertThat(response.status(), is(expectedStatus));
+    }
+
+    private static final class CountingObserveProvider implements ObserveProvider {
+        private int createCount;
+
+        @Override
+        public String configKey() {
+            return "counting";
+        }
+
+        @Override
+        public Observer create(Config config, String name) {
+            throw new AssertionError("Managed observer creation must use the owning registry");
+        }
+
+        @Override
+        public Observer create(Config config, String name, ServiceRegistry serviceRegistry) {
+            createCount++;
+            return InfoObserver.builder()
+                    .name(name)
+                    .endpoint(name)
+                    .build();
+        }
     }
 }

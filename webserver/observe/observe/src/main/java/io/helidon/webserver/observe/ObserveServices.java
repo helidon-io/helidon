@@ -19,6 +19,7 @@ package io.helidon.webserver.observe;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -61,6 +62,7 @@ class ObserveServices {
         boolean discoverFeatures = serverConfig.get("features-discover-services")
                 .asBoolean()
                 .orElse(true);
+        Optional<ObserveFeature> activeFeature = serviceRegistry.firstActive(ObserveFeature.class);
 
         LazyValue<ServerFeatureProvider<ObserveFeature>> featureProvider = LazyValue.create(() -> featureProviders.get()
                 .stream()
@@ -82,6 +84,9 @@ class ObserveServices {
                                                   + ": type \"" + OBSERVE
                                                   + "\", name \"" + configuredFeature.name() + "\"");
             }
+            if (activeFeature.filter(feature -> sameIdentity(feature, configuredFeature.name())).isPresent()) {
+                continue;
+            }
             if (configuredFeature.enabled()) {
                 features.add(featureProvider.get().create(configuredFeature.config(),
                                                           configuredFeature.name(),
@@ -89,7 +94,9 @@ class ObserveServices {
             }
         }
 
-        if (discoverFeatures && !observeConfigured) {
+        if (discoverFeatures
+                && !observeConfigured
+                && activeFeature.filter(feature -> sameIdentity(feature, OBSERVE)).isEmpty()) {
             features.add(featureProvider.get().create(featuresConfig.get(OBSERVE), OBSERVE, serviceRegistry));
         }
 
@@ -106,6 +113,10 @@ class ObserveServices {
             }
         }
         return new Graph(List.copyOf(features), List.copyOf(observers));
+    }
+
+    private static boolean sameIdentity(ObserveFeature feature, String name) {
+        return OBSERVE.equals(feature.type()) && name.equals(feature.name());
     }
 
     private static List<ConfiguredFeature> configuredFeatures(Config featuresConfig) {
