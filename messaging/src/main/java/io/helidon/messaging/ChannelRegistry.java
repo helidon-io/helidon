@@ -602,7 +602,11 @@ class ChannelRegistry implements MessagingRuntime {
                                                      + " but returned " + message.getClass().getName());
             }
             Object entity = message.entity();
-            if (entity != null && !outgoingPayloadType.isInstance(entity)) {
+            if (entity == null) {
+                throw new MessagingException("Messaging processor " + processor.handlerId()
+                                                     + " returned a null payload");
+            }
+            if (!outgoingPayloadType.isInstance(entity)) {
                 throw new MessagingException("Messaging processor " + processor.handlerId()
                                                      + " declared outgoing payload type "
                                                      + outgoingPayloadType.getName()
@@ -858,7 +862,10 @@ class ChannelRegistry implements MessagingRuntime {
                                                        + " but received " + message.getClass().getName());
         }
         Object entity = message.entity();
-        if (entity != null && !consumer.payloadType().isInstance(entity)) {
+        if (entity == null) {
+            throw new IllegalArgumentException("Channel " + consumer.channel() + " received a null payload");
+        }
+        if (!consumer.payloadType().isInstance(entity)) {
             throw new IllegalArgumentException("Channel " + consumer.channel()
                                                        + " expected payload type "
                                                        + consumer.payloadType().getName()
@@ -883,10 +890,7 @@ class ChannelRegistry implements MessagingRuntime {
         List<OutgoingBinding> bindings = new ArrayList<>();
         for (String channel : configuredChannels(root, ConnectorConfig.OUTGOING_PREFIX)) {
             Config channelConfig = channelConfig(root, ConnectorConfig.OUTGOING_PREFIX, channel);
-            String connectorType = channelConfig.get(ConnectorConfig.CONNECTOR_ATTRIBUTE).asString().orElse(null);
-            if (connectorType == null) {
-                continue;
-            }
+            String connectorType = requireConnectorType(channelConfig, "outgoing", channel);
             ConnectorProvider provider = providers.get(connectorType);
             if (provider == null) {
                 throw new IllegalArgumentException("No connector provider of type " + connectorType
@@ -914,10 +918,7 @@ class ChannelRegistry implements MessagingRuntime {
         List<IncomingDescriptor> descriptors = new ArrayList<>();
         for (String channel : configuredChannels(root, ConnectorConfig.INCOMING_PREFIX)) {
             Config channelConfig = channelConfig(root, ConnectorConfig.INCOMING_PREFIX, channel);
-            String connectorType = channelConfig.get(ConnectorConfig.CONNECTOR_ATTRIBUTE).asString().orElse(null);
-            if (connectorType == null) {
-                continue;
-            }
+            String connectorType = requireConnectorType(channelConfig, "incoming", channel);
             ConnectorProvider provider = providers.get(connectorType);
             if (provider == null) {
                 throw new IllegalArgumentException("No connector provider of type " + connectorType
@@ -1163,6 +1164,14 @@ class ChannelRegistry implements MessagingRuntime {
 
     private static Config channelConfig(Config root, String prefix, String channel) {
         return root.get(prefix + Config.Key.escapeName(channel));
+    }
+
+    private static String requireConnectorType(Config channelConfig, String direction, String channel) {
+        return channelConfig.get(ConnectorConfig.CONNECTOR_ATTRIBUTE)
+                .asString()
+                .filter(connector -> !connector.isBlank())
+                .orElseThrow(() -> new IllegalArgumentException("Configured " + direction + " channel " + channel
+                                                                        + " must declare a non-blank connector"));
     }
 
     private Config connectorConfig(Config root,

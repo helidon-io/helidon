@@ -49,7 +49,8 @@ public interface OutgoingConnector extends Connector {
     /**
      * Send a payload-only message.
      *
-     * @param entity payload
+     * @param entity non-null payload
+     * @throws NullPointerException if {@code entity} is {@code null}
      * @throws RuntimeException if sending fails or its outcome is indeterminate
      */
     default void send(Object entity) {

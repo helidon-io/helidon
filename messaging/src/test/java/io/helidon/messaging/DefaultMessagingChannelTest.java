@@ -18,12 +18,16 @@ package io.helidon.messaging;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.GenericType;
 
@@ -347,6 +351,63 @@ class DefaultMessagingChannelTest {
         MessagingRejectedException thrown = assertThrows(MessagingRejectedException.class, source::run);
 
         assertThat(thrown, sameInstance(rejection));
+    }
+
+    @Test
+    void streamSourcePreservesConsumerFailureWhenCloseFails() {
+        RuntimeException processingFailure = new RuntimeException("consumer failed");
+        RuntimeException closeFailure = new RuntimeException("stream close failed");
+        Runnable source = DefaultMessagingChannel.streamSource(
+                Stream.of("message").onClose(() -> {
+                    throw closeFailure;
+                }),
+                ignored -> {
+                    throw processingFailure;
+                });
+
+        RuntimeException thrown = assertThrows(RuntimeException.class, source::run);
+
+        assertThat(thrown, sameInstance(processingFailure));
+        assertThat(thrown.getSuppressed().length, is(1));
+        assertThat(thrown.getSuppressed()[0], sameInstance(closeFailure));
+    }
+
+    @Test
+    void streamSourcePreservesIteratorFailureWhenCloseFails() {
+        RuntimeException processingFailure = new RuntimeException("iterator failed");
+        RuntimeException closeFailure = new RuntimeException("stream close failed");
+        Spliterator<String> spliterator = new Spliterators.AbstractSpliterator<>(1, Spliterator.ORDERED) {
+            @Override
+            public boolean tryAdvance(Consumer<? super String> action) {
+                throw processingFailure;
+            }
+        };
+        Runnable source = DefaultMessagingChannel.streamSource(
+                StreamSupport.stream(spliterator, false).onClose(() -> {
+                    throw closeFailure;
+                }),
+                ignored -> { });
+
+        RuntimeException thrown = assertThrows(RuntimeException.class, source::run);
+
+        assertThat(thrown, sameInstance(processingFailure));
+        assertThat(thrown.getSuppressed().length, is(1));
+        assertThat(thrown.getSuppressed()[0], sameInstance(closeFailure));
+    }
+
+    @Test
+    void streamSourcePropagatesCloseFailureWithoutProcessingFailure() {
+        RuntimeException closeFailure = new RuntimeException("stream close failed");
+        Runnable source = DefaultMessagingChannel.streamSource(
+                Stream.empty().onClose(() -> {
+                    throw closeFailure;
+                }),
+                ignored -> { });
+
+        RuntimeException thrown = assertThrows(RuntimeException.class, source::run);
+
+        assertThat(thrown, sameInstance(closeFailure));
+        assertThat(thrown.getSuppressed().length, is(0));
     }
 
     @Test

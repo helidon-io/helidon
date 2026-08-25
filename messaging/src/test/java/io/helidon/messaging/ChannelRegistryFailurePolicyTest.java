@@ -452,7 +452,7 @@ class ChannelRegistryFailurePolicyTest {
         try {
             IncomingConnectorContext context = incoming.context("orders");
             assertThat(context.maxDeliveryMessages(), is(1));
-            Message<String> rejected = Message.builder((String) null).header("message-id", "poison-1").build();
+            Message<String> rejected = Message.builder("unmapped").header("message-id", "poison-1").build();
             IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
 
             deliverFailed(context, MessageBatch.create(rejected), mappingFailure);
@@ -492,7 +492,7 @@ class ChannelRegistryFailurePolicyTest {
         IncomingConnectorContext context = incoming.context("orders");
 
         deliverFailed(context,
-                      MessageBatch.create(Message.<String>create(null)),
+                      MessageBatch.create(Message.create("unmapped")),
                       new IllegalStateException("message mapping failed"));
         deliver(context, MessageBatch.create(Message.create("good")));
 
@@ -1231,6 +1231,48 @@ class ChannelRegistryFailurePolicyTest {
                                                   """),
                                           List.of()));
         assertThat(outgoingFailure.getMessage(), containsString("No connector provider of type missing-out"));
+    }
+
+    @Test
+    void testConfiguredIncomingChannelRequiresConnector() {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> new ChannelRegistry(List.of(registration("orders", ignored -> { })),
+                                          yaml("""
+                                                  helidon:
+                                                    messaging:
+                                                      incoming:
+                                                        orders:
+                                                          destination: orders
+                                                  """),
+                                          List.of(incoming)));
+
+        assertThat(failure.getMessage(),
+                   containsString("Configured incoming channel orders must declare a non-blank connector"));
+        assertThat(incoming.createdCount(), is(0));
+    }
+
+    @Test
+    void testConfiguredOutgoingChannelRequiresConnector() {
+        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class,
+                () -> new ChannelRegistry(List.of(registration("orders", ignored -> { })),
+                                          yaml("""
+                                                  helidon:
+                                                    messaging:
+                                                      outgoing:
+                                                        orders:
+                                                          destination: orders
+                                                  """),
+                                          List.of(outgoing)));
+
+        assertThat(failure.getMessage(),
+                   containsString("Configured outgoing channel orders must declare a non-blank connector"));
+        assertThat(outgoing.createdCount(), is(0));
     }
 
     @Test

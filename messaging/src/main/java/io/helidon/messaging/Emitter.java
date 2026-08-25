@@ -44,8 +44,9 @@ public interface Emitter<T> {
      * A successful return means end-to-end delivery to all required outputs completed. A thrown exception means
      * delivery failed or its outcome is indeterminate.
      *
-     * @param entity payload
+     * @param entity non-null payload
      * @throws MessagingException if the target channel does not exist
+     * @throws NullPointerException if {@code entity} is {@code null}
      * @throws RuntimeException if a handler or outgoing connector fails
      */
     default void emit(T entity) {

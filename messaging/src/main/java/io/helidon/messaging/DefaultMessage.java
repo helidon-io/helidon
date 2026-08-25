@@ -17,6 +17,7 @@
 package io.helidon.messaging;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Default immutable message implementation.
@@ -28,7 +29,7 @@ final class DefaultMessage<T> implements Message<T> {
     private final Map<String, String> headers;
 
     DefaultMessage(T entity, Map<String, String> headers) {
-        this.entity = entity;
+        this.entity = Objects.requireNonNull(entity, "entity");
         this.headers = Map.copyOf(headers);
     }
 

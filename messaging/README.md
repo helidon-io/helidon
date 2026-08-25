@@ -166,7 +166,7 @@ after all of them succeed. One service cannot declare two receivers for the same
 
 ### Create messages and batches
 
-`Message<T>` contains a payload and immutable, single-valued portable headers:
+`Message<T>` contains a required, non-null payload and immutable, single-valued portable headers:
 
 ```java
 Message<Order> message = Message.builder(order)
@@ -928,6 +928,8 @@ concurrently with an active send.
 
 - Convert each incoming transport record to an immutable `Message<T>` and copy portable headers into the
   single-valued `Map<String, String>` contract.
+- Reject or translate a null transport payload before creating its message envelope; the core `Message` contract does
+  not permit null payloads.
 - Use a connector-specific immutable `Message<T>` subtype when applications need native keys, offsets, destinations,
   or other metadata. Document which locally emitted messages are accepted by handlers requiring that subtype.
 - Outgoing mapping must accept ordinary core `Message` instances; treat a connector-specific subtype as an optional

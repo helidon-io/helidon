@@ -130,17 +130,13 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Message<T> toMessage(Object value) {
         Message<?> message = (Message<?>) value;
-        if (isExpectedPayload(message)) {
+        Object entity = Objects.requireNonNull(message.entity(), "Message entity");
+        if (payloadType.rawType().isInstance(entity)) {
             return (Message<T>) message;
         }
         throw new IllegalArgumentException("Channel expected payload type "
                                                    + payloadType.getTypeName()
-                                                   + " but received " + message.entity().getClass().getName());
-    }
-
-    private boolean isExpectedPayload(Message<?> message) {
-        Object entity = message.entity();
-        return entity == null || payloadType.rawType().isInstance(entity);
+                                                   + " but received " + entity.getClass().getName());
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -316,6 +312,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
             if (!claimOwner(current)) {
                 return;
             }
+            Throwable processingFailure = null;
             try {
                 Iterator<?> iterator;
                 try {
@@ -357,13 +354,16 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
                         endDelivery();
                     }
                 }
+            } catch (RuntimeException | Error e) {
+                processingFailure = e;
+                throw e;
             } finally {
                 closed.set(true);
                 releaseOwner(current);
                 // Graceful drain may have interrupted this thread; lifecycle cleanup closes the stream
                 // on a clean thread.
                 if (!drainRequested.get() && !forceCloseRequested.get()) {
-                    closeStream();
+                    closeStream(processingFailure);
                 }
             }
         }
@@ -464,6 +464,19 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         private void closeStream() {
             if (streamClosed.compareAndSet(false, true)) {
                 stream.close();
+            }
+        }
+
+        private void closeStream(Throwable processingFailure) {
+            try {
+                closeStream();
+            } catch (RuntimeException | Error closeFailure) {
+                if (processingFailure == null) {
+                    throw closeFailure;
+                }
+                if (processingFailure != closeFailure) {
+                    processingFailure.addSuppressed(closeFailure);
+                }
             }
         }
     }

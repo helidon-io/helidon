@@ -18,12 +18,13 @@ package io.helidon.messaging;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
 
 /**
- * Message envelope with a payload and portable headers.
+ * Message envelope with a non-null payload and portable headers.
  * <p>
  * Portable headers are single-valued and keyed by exact, case-sensitive names. Implementations must be immutable
  * snapshots and must return an immutable map from {@link #headers()}. Connector-specific message subtypes may expose
@@ -36,9 +37,10 @@ public interface Message<T> {
     /**
      * Create a message builder.
      *
-     * @param entity payload
+     * @param entity non-null payload
      * @param <T> payload type
      * @return builder
+     * @throws NullPointerException if {@code entity} is {@code null}
      */
     static <T> Builder<T> builder(T entity) {
         return new Builder<>(entity);
@@ -47,9 +49,10 @@ public interface Message<T> {
     /**
      * Create a payload-only message.
      *
-     * @param entity payload
+     * @param entity non-null payload
      * @param <T> payload type
      * @return message
+     * @throws NullPointerException if {@code entity} is {@code null}
      */
     static <T> Message<T> create(T entity) {
         return builder(entity).build();
@@ -58,7 +61,7 @@ public interface Message<T> {
     /**
      * Payload.
      *
-     * @return payload
+     * @return non-null payload
      */
     T entity();
 
@@ -91,7 +94,7 @@ public interface Message<T> {
         private final Map<String, String> headers = new LinkedHashMap<>();
 
         private Builder(T entity) {
-            this.entity = entity;
+            this.entity = Objects.requireNonNull(entity, "entity");
         }
 
         /**

@@ -301,6 +301,17 @@ class DeclarativeRegistrationTest {
                                                      STRING_TYPE,
                                                      STRING_MESSAGE_TYPE,
                                                      Function.identity());
+        IncomingConnectorProvider incomingProvider = new IncomingConnectorProvider() {
+            @Override
+            public String connectorType() {
+                return "test-in";
+            }
+
+            @Override
+            public IncomingConnector createIncomingConnector(Config config) {
+                throw new AssertionError("Output validation must run before connector creation");
+            }
+        };
         IllegalArgumentException outputFailure = assertThrows(
                 IllegalArgumentException.class,
                 () -> new ChannelRegistry(List.of(outputless),
@@ -309,9 +320,9 @@ class DeclarativeRegistrationTest {
                                                     messaging:
                                                       incoming:
                                                         audit:
-                                                          placeholder: true
+                                                          connector: test-in
                                                   """),
-                                          List.of()));
+                                          List.of(incomingProvider)));
         assertThat(outputFailure.getMessage(), containsString("processor target channel audit has no outputs"));
     }
 

@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.messaging;
+
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class MessageNullPayloadTest {
+    @Test
+    void publicFactoriesRejectNullPayloads() {
+        assertThrows(NullPointerException.class, () -> Message.create(null));
+        assertThrows(NullPointerException.class, () -> Message.builder(null));
+    }
+
+    @Test
+    void defaultMessageRejectsNullPayload() {
+        assertThrows(NullPointerException.class, () -> new DefaultMessage<>(null, Map.of()));
+    }
+
+    @Test
+    void channelRejectsNullPayloadFromCustomMessage() {
+        Message<String> nullMessage = new Message<>() {
+            @Override
+            public String entity() {
+                return null;
+            }
+
+            @Override
+            public Map<String, String> headers() {
+                return Map.of();
+            }
+        };
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("messages", String.class);
+        builder.payloadSink(channel, ignored -> { });
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+
+            NullPointerException failure = assertThrows(NullPointerException.class,
+                                                        () -> graph.emitter(channel).emitMessage(nullMessage));
+
+            assertThat(failure.getMessage(), is("Message entity"));
+        }
+    }
+
+    @Test
+    void imperativePayloadProcessorRejectsNullResult() {
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> source = builder.channel("source", String.class);
+        MessagingChannel<String> target = builder.channel("target", String.class);
+        builder.payloadProcessor(source, target, ignored -> null)
+                .payloadSink(target, ignored -> { });
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+            BatchDeliveryException failure = assertThrows(BatchDeliveryException.class,
+                                                          () -> graph.emitter(source).emit("payload"));
+
+            assertThat(failure.getCause(), instanceOf(NullPointerException.class));
+            assertThat(failure.outcome(0).status(), is(BatchItemStatus.INDETERMINATE));
+        }
+    }
+}
