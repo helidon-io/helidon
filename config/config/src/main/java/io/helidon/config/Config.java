@@ -1816,7 +1816,8 @@ public interface Config {
         Builder config(Config metaConfig);
 
         /**
-         * Configure an explicit service registry to use to discover services (config sources, parsers etc.).
+         * Configure an explicit service registry to use when resolving config sources declared by the
+         * {@linkplain #config(Config) meta-configuration}. Other builder service discovery is not affected.
          *
          * @param serviceRegistry registry to use
          * @return updated builder instance
