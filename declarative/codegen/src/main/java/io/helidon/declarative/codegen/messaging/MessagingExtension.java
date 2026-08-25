@@ -117,6 +117,8 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .packageName(typeInfo.typeName().packageName())
                 .className(consumerClassName(typeInfo, element))
                 .build();
+        boolean singleton = typeInfo.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON);
+        TypeName consumerInjectionType = singleton ? typeInfo.typeName() : supplierType(typeInfo.typeName());
 
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(GENERATOR, typeInfo.typeName(), generatedType))
@@ -133,7 +135,7 @@ class MessagingExtension implements RegistryCodegenExtension {
         classModel.addField(consumer -> consumer
                 .accessModifier(AccessModifier.PRIVATE)
                 .isFinal(true)
-                .type(supplierType(typeInfo.typeName()))
+                .type(consumerInjectionType)
                 .name("consumer"));
 
         classModel.addField(handler -> handler
@@ -150,7 +152,7 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addParameter(consumer -> consumer
-                        .type(supplierType(typeInfo.typeName()))
+                        .type(consumerInjectionType)
                         .name("consumer"))
                 .addParameter(entryPoints -> entryPoints
                         .type(MessagingTypes.MESSAGING_ENTRY_POINTS)
@@ -209,9 +211,9 @@ class MessagingExtension implements RegistryCodegenExtension {
 
         if (consumerMethod.processor()) {
             addProcessorMetadata(classModel, consumerMethod);
-            addProcessMethod(classModel, typeInfo, element);
+            addProcessMethod(classModel, typeInfo, element, singleton);
         } else {
-            addDispatchMethod(classModel, typeInfo, element, consumerMethod.explicitBatchHandler());
+            addDispatchMethod(classModel, typeInfo, element, consumerMethod.explicitBatchHandler(), singleton);
         }
         addInvocationMethod(roundContext, classModel, typeInfo, element, consumerMethod);
 
@@ -278,7 +280,8 @@ class MessagingExtension implements RegistryCodegenExtension {
     private void addDispatchMethod(ClassModel.Builder classModel,
                                    TypeInfo typeInfo,
                                    TypedElementInfo element,
-                                   boolean explicitBatchHandler) {
+                                   boolean explicitBatchHandler,
+                                   boolean singleton) {
         if (explicitBatchHandler) {
             classModel.addMethod(dispatch -> dispatch
                     .addAnnotation(Annotations.OVERRIDE)
@@ -288,7 +291,7 @@ class MessagingExtension implements RegistryCodegenExtension {
                     .addParameter(messages -> messages
                             .type(messageBatchWildcardType())
                             .name("messages"))
-                    .update(method -> addBatchHandlerInvocation(method, typeInfo, element)));
+                    .update(method -> addBatchHandlerInvocation(method, typeInfo, element, singleton)));
             return;
         }
 
@@ -325,12 +328,13 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .addParameter(message -> message
                         .type(messageWildcardType())
                         .name("message"))
-                .update(method -> addHandlerInvocation(method, typeInfo, element)));
+                .update(method -> addHandlerInvocation(method, typeInfo, element, singleton)));
     }
 
     private void addProcessMethod(ClassModel.Builder classModel,
                                   TypeInfo typeInfo,
-                                  TypedElementInfo element) {
+                                  TypedElementInfo element,
+                                  boolean singleton) {
         classModel.addMethod(process -> process
                 .addAnnotation(Annotations.OVERRIDE)
                 .accessModifier(AccessModifier.PUBLIC)
@@ -370,17 +374,20 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .addParameter(message -> message
                         .type(messageWildcardType())
                         .name("message"))
-                .update(method -> addHandlerInvocation(method, typeInfo, element)));
+                .update(method -> addHandlerInvocation(method, typeInfo, element, singleton)));
     }
 
     private void addHandlerInvocation(Method.Builder method,
                                       TypeInfo typeInfo,
-                                      TypedElementInfo element) {
+                                      TypedElementInfo element,
+                                      boolean singleton) {
         String description = handlerId(typeInfo, element);
         method.addContentLine("try {")
                 .increaseContentPadding();
         if (element.hasAnnotation(MessagingTypes.SEND_TO)) {
-            method.addContentLine("return handler.handle(consumer.get(), message)")
+            method.addContent("return handler.handle(")
+                    .addContent(singleton ? "consumer" : "consumer.get()")
+                    .addContentLine(", message)")
                     .increaseContentPadding()
                     .addContent(".orElseThrow(() -> new ")
                     .addContent(MessagingTypes.MESSAGING_EXCEPTION)
@@ -389,7 +396,9 @@ class MessagingExtension implements RegistryCodegenExtension {
                     .addContentLine("));")
                     .decreaseContentPadding();
         } else {
-            method.addContentLine("handler.handle(consumer.get(), message);");
+            method.addContent("handler.handle(")
+                    .addContent(singleton ? "consumer" : "consumer.get()")
+                    .addContentLine(", message);");
         }
         method.decreaseContentPadding()
                 .addContentLine("} catch (RuntimeException | Error e) {")
@@ -409,11 +418,14 @@ class MessagingExtension implements RegistryCodegenExtension {
 
     private void addBatchHandlerInvocation(Method.Builder method,
                                            TypeInfo typeInfo,
-                                           TypedElementInfo element) {
+                                           TypedElementInfo element,
+                                           boolean singleton) {
         String description = handlerId(typeInfo, element);
         method.addContentLine("try {")
                 .increaseContentPadding()
-                .addContentLine("batchHandler.handle(consumer.get(), messages);")
+                .addContent("batchHandler.handle(")
+                .addContent(singleton ? "consumer" : "consumer.get()")
+                .addContentLine(", messages);")
                 .decreaseContentPadding()
                 .addContentLine("} catch (RuntimeException | Error e) {")
                 .increaseContentPadding()

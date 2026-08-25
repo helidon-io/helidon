@@ -274,7 +274,7 @@ class MessagingExtensionTest {
             Object consumer = constructor.newInstance();
             ConsumerRegistration registration = (ConsumerRegistration) newRegistration(
                     generatedClass(classLoader, result, "PrimitiveOverloadConsumer__MessagingConsumer_"),
-                    (Supplier<Object>) () -> consumer,
+                    consumer,
                     passthroughEntryPoints());
 
             registration.dispatch(MessageBatch.create(Message.create(42)));
@@ -388,7 +388,7 @@ class MessagingExtensionTest {
             Object entityConsumer = entityConsumerConstructor.newInstance();
             ConsumerRegistration entityRegistration = (ConsumerRegistration) newRegistration(
                     generatedClass(classLoader, result, "EntityPayloadConsumer__MessagingConsumer_"),
-                    (Supplier<Object>) () -> entityConsumer,
+                    entityConsumer,
                     passthroughEntryPoints());
 
             assertThat(entityRegistration.payloadType(), sameInstance(payloadType));
@@ -407,7 +407,7 @@ class MessagingExtensionTest {
             Object envelopeConsumer = envelopeConsumerConstructor.newInstance();
             ConsumerRegistration envelopeRegistration = (ConsumerRegistration) newRegistration(
                     generatedClass(classLoader, result, "EnvelopeConsumer__MessagingConsumer_"),
-                    (Supplier<Object>) () -> envelopeConsumer,
+                    envelopeConsumer,
                     passthroughEntryPoints());
 
             assertThat(envelopeRegistration.payloadType(), sameInstance(String.class));
@@ -526,7 +526,8 @@ class MessagingExtensionTest {
 
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "InterceptedConsumer__MessagingConsumer_");
-        assertThat(source, source.contains("Supplier<InterceptedConsumer> consumer"), is(true));
+        assertThat(source, source.contains("private final InterceptedConsumer consumer;"), is(true));
+        assertThat(source, source.contains("Supplier<InterceptedConsumer>"), is(false));
         assertThat(source, source.contains("EntryPoints entryPoints"), is(true));
         assertThat(source, source.contains("entryPoints.handler("), is(true));
         assertThat(source, source.contains("descriptor.qualifiers()"), is(true));
@@ -537,15 +538,65 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("void dispatch(MessageBatch<?> messages)"), is(true));
         assertThat(source, source.contains("dispatchMessage(messages.get(index));"), is(true));
         assertThat(source, source.contains("BatchDeliveryException.sequential("), is(true));
-        assertThat(source, source.contains("handler.handle(consumer.get(), message)"), is(true));
+        assertThat(source, source.contains("handler.handle(consumer, message)"), is(true));
         assertThat(source, source.contains("invoke(InterceptedConsumer consumerInstance,"), is(true));
         assertThat(source, source.contains("consumerInstance.consume("), is(true));
         assertThat(source, source.contains("consumer.get().consume("), is(false));
-        assertSingleOccurrence(source, "consumer.get()");
+        assertThat(source, source.contains("consumer.get()"), is(false));
         assertThat(source, source.contains("typedMessage.header(\"required\").orElseThrow"), is(true));
         assertThat(source, source.contains("typedMessage.header(\"optional\")"), is(true));
         assertThat(source, source.contains("catch (RuntimeException | Error e)"), is(true));
         assertThat(source, source.contains("catch (Exception e)"), is(true));
+    }
+
+    @Test
+    void generatedNonSingletonConsumersRetainSupplierLookup() throws IOException {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import java.lang.annotation.ElementType;
+                import java.lang.annotation.Retention;
+                import java.lang.annotation.RetentionPolicy;
+                import java.lang.annotation.Target;
+
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.PerLookup
+                class PerLookupConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(String value) {
+                    }
+                }
+
+                class ImplicitPerLookupConsumer {
+                    @Service.Inject
+                    ImplicitPerLookupConsumer() {
+                    }
+
+                    @Messaging.ReceiveFrom("audit")
+                    void consume(String value) {
+                    }
+                }
+
+                @Service.Scope
+                @Retention(RetentionPolicy.CLASS)
+                @Target(ElementType.TYPE)
+                @interface CustomScope {
+                }
+
+                @CustomScope
+                class CustomScopedConsumer {
+                    @Messaging.ReceiveFrom("notifications")
+                    void consume(String value) {
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        assertSupplierConsumer(result, "PerLookupConsumer");
+        assertSupplierConsumer(result, "ImplicitPerLookupConsumer");
+        assertSupplierConsumer(result, "CustomScopedConsumer");
     }
 
     @Test
@@ -588,7 +639,7 @@ class MessagingExtensionTest {
                                                        "FailurePolicyConsumer__MessagingConsumer_");
             Object registration = newRegistration(
                     registrationType,
-                    (Supplier<Object>) () -> null,
+                    (Object) null,
                     passthroughEntryPoints());
             Optional<?> declared = (Optional<?>) invoke(registration, "declaredFailurePolicy");
             Object policy = declared.orElseThrow();
@@ -640,7 +691,7 @@ class MessagingExtensionTest {
         }, getClass().getClassLoader())) {
             Object annotated = newRegistration(
                     generatedClass(classLoader, result, "BareFailurePolicyConsumer__MessagingConsumer_"),
-                    (Supplier<Object>) () -> null,
+                    (Object) null,
                     passthroughEntryPoints());
             Optional<?> declared = (Optional<?>) invoke(annotated, "declaredFailurePolicy");
             Object policy = declared.orElseThrow();
@@ -651,7 +702,7 @@ class MessagingExtensionTest {
 
             Object unannotated = newRegistration(
                     generatedClass(classLoader, result, "UnannotatedConsumer__MessagingConsumer_"),
-                    (Supplier<Object>) () -> null,
+                    (Object) null,
                     passthroughEntryPoints());
             assertThat(invoke(unannotated, "declaredFailurePolicy"), is(Optional.empty()));
         }
@@ -826,11 +877,11 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("return messages.derive(processedMessages);"), is(true));
         assertThat(source, source.contains("BatchDeliveryException.attemptedPrefix("), is(true));
         assertThat(source, source.contains("Handler<PayloadProcessor> handler"), is(true));
-        assertThat(source, source.contains("handler.handle(consumer.get(), message)"), is(true));
+        assertThat(source, source.contains("handler.handle(consumer, message)"), is(true));
         assertThat(source, source.contains("invoke(PayloadProcessor consumerInstance,"), is(true));
         assertThat(source, source.contains("consumerInstance.process("), is(true));
         assertThat(source, source.contains("consumer.get().process("), is(false));
-        assertSingleOccurrence(source, "consumer.get()");
+        assertThat(source, source.contains("consumer.get()"), is(false));
         assertThat(source, source.contains("Objects.requireNonNull("), is(true));
         assertThat(source, source.contains("Message.create(result)"), is(true));
     }
@@ -953,12 +1004,12 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("batchType()"), is(false));
         assertThat(source, source.contains("batchGenericType()"), is(false));
         assertThat(source, source.contains("boolean batch()"), is(false));
-        assertThat(source, source.contains("batchHandler.handle(consumer.get(), messages);"), is(true));
+        assertThat(source, source.contains("batchHandler.handle(consumer, messages);"), is(true));
         assertThat(source, source.contains("invokeBatch(BatchConsumer consumerInstance,"), is(true));
         assertThat(source, source.contains("var typedMessages = (MessageBatch<String>) messages;"), is(true));
         assertThat(source, source.contains("consumerInstance.consume(typedMessages);"), is(true));
         assertThat(source, source.contains("consumer.get().consume("), is(false));
-        assertSingleOccurrence(source, "consumer.get()");
+        assertThat(source, source.contains("consumer.get()"), is(false));
     }
 
     @Test
@@ -1092,7 +1143,7 @@ class MessagingExtensionTest {
                                                      "CachedMetadataService__MessagingConsumer_");
             Object processor = newRegistration(
                     processorType,
-                    (Supplier<Object>) () -> null,
+                    (Object) null,
                     passthroughEntryPoints());
             assertCachedTypeMetadata(processor, "payloadGenericType", "payloadType");
             assertCachedTypeMetadata(processor, "envelopeGenericType", "envelopeType");
@@ -1885,6 +1936,14 @@ class MessagingExtensionTest {
         assertThat("Generated source contains more than one " + expected + ":\n" + source,
                    source.indexOf(expected, first + expected.length()) < 0,
                    is(true));
+    }
+
+    private void assertSupplierConsumer(TestCompiler.Result result, String consumerType) throws IOException {
+        String source = generatedSource(result, consumerType + "__MessagingConsumer_");
+        assertThat(source, source.contains("private final Supplier<" + consumerType + "> consumer;"), is(true));
+        assertThat(source, source.contains("Supplier<" + consumerType + "> consumer,"), is(true));
+        assertThat(source, source.contains("handler.handle(consumer.get(), message)"), is(true));
+        assertSingleOccurrence(source, "consumer.get()");
     }
 
     private Path generatedSourcePath(TestCompiler.Result result, String filePrefix) throws IOException {

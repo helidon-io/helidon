@@ -296,6 +296,41 @@ class DeliveryEngineTest {
     }
 
     @Test
+    void drainWinsOverDispatcherContention() throws Exception {
+        MessagingExecutionConfig config = configBuilder()
+                .maxPendingAdmissions(1)
+                .maxPendingMessages(1)
+                .maxInFlightMessages(1)
+                .build();
+        try (DeliveryEngine engine = engine(config, "orders")) {
+            CountDownLatch lockHeld = new CountDownLatch(1);
+            CountDownLatch releaseLock = new CountDownLatch(1);
+            AtomicBoolean delivered = new AtomicBoolean();
+            AsyncTask lockHolder = async(() -> engine.runWithChannelAdmissionLock("orders", () -> {
+                lockHeld.countDown();
+                await(releaseLock);
+            }));
+            await(lockHeld);
+            AsyncTask drain = async(engine::beginDrain);
+            try {
+                awaitWaiting(drain);
+
+                MessagingRejectedException rejection = assertThrows(
+                        MessagingRejectedException.class,
+                        () -> dispatch(engine, "orders", List.of(message(1)), () -> delivered.set(true)));
+
+                assertThat(rejection.reason(), is(MessagingRejectedException.Reason.SHUTDOWN));
+                assertThat(engine.ownsShutdownRejection(rejection), is(true));
+                assertThat(delivered.get(), is(false));
+            } finally {
+                releaseLock.countDown();
+                await(lockHolder);
+                await(drain);
+            }
+        }
+    }
+
+    @Test
     void reservationRejectsDispatcherContentionWithoutLeakingPendingBudget() throws Exception {
         MessagingExecutionConfig config = configBuilder()
                 .maxPendingAdmissions(1)

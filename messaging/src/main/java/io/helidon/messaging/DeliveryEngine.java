@@ -659,12 +659,12 @@ final class DeliveryEngine implements AutoCloseable {
                 if (immediate != null) {
                     return immediate;
                 }
-                throw pendingSaturated("Messaging pending-admission limit reached");
+                throw pendingRejection("Messaging pending-admission limit reached");
             }
             try {
                 // Parking for this mutex would retain the caller's delivery before its message count is reserved.
                 if (!lock.tryLock()) {
-                    throw pendingSaturated("Messaging dispatcher is busy");
+                    throw pendingRejection("Messaging dispatcher is busy");
                 }
                 try {
                     rejectIfNotAccepting();
@@ -673,7 +673,7 @@ final class DeliveryEngine implements AutoCloseable {
                         return task;
                     }
                     if (!canReservePending(messageCount)) {
-                        throw pendingSaturated("Messaging pending message limit reached");
+                        throw pendingRejection("Messaging pending message limit reached");
                     }
                     reservePending(messageCount);
                     pendingReserved = true;
@@ -751,7 +751,7 @@ final class DeliveryEngine implements AutoCloseable {
                 if (admissionMode == AdmissionMode.TRY) {
                     return null;
                 }
-                throw pendingSaturated("Messaging pending-admission limit reached");
+                throw pendingRejection("Messaging pending-admission limit reached");
             }
 
             boolean transferPermit = false;
@@ -764,7 +764,7 @@ final class DeliveryEngine implements AutoCloseable {
                 } else {
                     // Parking here would retain the requested transport capacity before it is accounted as pending.
                     if (!lock.tryLock()) {
-                        throw pendingSaturated("Messaging dispatcher is busy");
+                        throw pendingRejection("Messaging dispatcher is busy");
                     }
                 }
                 try {
@@ -1086,7 +1086,12 @@ final class DeliveryEngine implements AutoCloseable {
             }
         }
 
-        private MessagingRejectedException pendingSaturated(String message) {
+        private MessagingRejectedException pendingRejection(String message) {
+            if (!accepting.get()) {
+                return rejected(channel,
+                                MessagingRejectedException.Reason.SHUTDOWN,
+                                "Messaging runtime is draining");
+            }
             return rejected(channel,
                             MessagingRejectedException.Reason.SATURATED,
                             message + " on channel " + channel);

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -68,6 +69,8 @@ import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.Producer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.RequiredHeaderConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.SecondChannelOneConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownConsumer;
+import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownSingletonConsumer;
+import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownSingletonProbe;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.TestConnectorObserver;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.TestEntryPointInterceptor;
 import io.helidon.service.registry.ServiceRegistry;
@@ -718,8 +721,8 @@ class DeclarativeMessagingTest {
         TestEntryPointInterceptor.reset();
         PerLookupInterceptedConsumer.reset();
 
-        runtime.emit(ChannelMessagingTypes.PER_LOOKUP_INTERCEPTED_CHANNEL, Message.create("first"));
-        runtime.emit(ChannelMessagingTypes.PER_LOOKUP_INTERCEPTED_CHANNEL, Message.create("second"));
+        runtime.emitBatch(ChannelMessagingTypes.PER_LOOKUP_INTERCEPTED_CHANNEL,
+                          MessageBatch.create(List.of(Message.create("first"), Message.create("second"))));
 
         List<PerLookupInterceptedConsumer> targets = PerLookupInterceptedConsumer.instances();
         List<Object> intercepted = TestEntryPointInterceptor.serviceInstances(PerLookupInterceptedConsumer.class);
@@ -765,6 +768,32 @@ class DeclarativeMessagingTest {
         registryManager.shutdown();
 
         assertThat(ShutdownConsumer.events(), is(List.of("source-start", "source-stop", "consumer-close")));
+    }
+
+    @Test
+    void testShutdownDrainsAdmittedSingletonConsumer() throws Exception {
+        ShutdownSingletonConsumer.reset();
+        ShutdownSingletonProbe.reset();
+        useConfig(Map.of("helidon.messaging.execution.shutdown-timeout", "PT1S"));
+        MessagingRuntime runtime = registry.get(MessagingRuntime.class);
+        registry.get(ShutdownSingletonProbe.class);
+        CompletableFuture<Void> emission = async(() -> runtime.emitBatch(
+                ChannelMessagingTypes.SHUTDOWN_SINGLETON_CHANNEL,
+                MessageBatch.create(List.of(Message.create("first"), Message.create("second")))));
+        assertThat(ShutdownSingletonConsumer.awaitFirst(), is(true));
+
+        CompletableFuture<Void> shutdown = async(registryManager::shutdown);
+        try {
+            assertThat(ShutdownSingletonProbe.awaitShutdown(), is(true));
+        } finally {
+            ShutdownSingletonConsumer.releaseFirst();
+        }
+
+        emission.get(5, TimeUnit.SECONDS);
+        shutdown.get(5, TimeUnit.SECONDS);
+        assertThat(ShutdownSingletonConsumer.invocations(), is(2));
+        assertThat(ShutdownSingletonConsumer.events(),
+                   is(List.of("first-enter", "first-exit", "second", "consumer-close")));
     }
 
     @Test
@@ -883,6 +912,19 @@ class DeclarativeMessagingTest {
         while (result.getCause() != null) {
             result = result.getCause();
         }
+        return result;
+    }
+
+    private static CompletableFuture<Void> async(Runnable action) {
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        Thread.ofVirtual().start(() -> {
+            try {
+                action.run();
+                result.complete(null);
+            } catch (Throwable t) {
+                result.completeExceptionally(t);
+            }
+        });
         return result;
     }
 }

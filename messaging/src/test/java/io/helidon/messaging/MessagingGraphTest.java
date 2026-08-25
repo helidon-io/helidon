@@ -798,6 +798,59 @@ class MessagingGraphTest {
     }
 
     @Test
+    void streamContentionAfterDrainStartsClosesGracefully() throws Exception {
+        CountDownLatch firstDelivered = new CountDownLatch(1);
+        CountDownLatch secondRequested = new CountDownLatch(1);
+        CountDownLatch releaseSecond = new CountDownLatch(1);
+        CountDownLatch streamClosed = new CountDownLatch(1);
+        CountDownLatch lockHeld = new CountDownLatch(1);
+        CountDownLatch releaseLock = new CountDownLatch(1);
+        AtomicInteger produced = new AtomicInteger();
+        AtomicInteger delivered = new AtomicInteger();
+        MessagingGraph.Builder builder = MessagingGraph.builder().executionConfig(config(SHUTDOWN_TIMEOUT));
+        MessagingChannel<Integer> channel = builder.channel("stream", Integer.class);
+        DefaultMessagingGraph graph = (DefaultMessagingGraph) builder.payloadSource(
+                        channel,
+                        Stream.generate(() -> {
+                            int next = produced.incrementAndGet();
+                            if (next == 2) {
+                                secondRequested.countDown();
+                                await(releaseSecond);
+                            }
+                            return next;
+                        }).onClose(streamClosed::countDown))
+                .messageSink(channel, ignored -> {
+                    delivered.incrementAndGet();
+                    firstDelivered.countDown();
+                })
+                .build();
+        graph.start();
+        await(firstDelivered);
+        await(secondRequested);
+
+        AsyncTask lockHolder = async(() -> graph.deliveryEngine().runWithChannelAdmissionLock("stream", () -> {
+            lockHeld.countDown();
+            await(releaseLock);
+        }));
+        await(lockHeld);
+        AsyncTask closing = async(graph::close);
+        try {
+            awaitWaiting(closing);
+            releaseSecond.countDown();
+            await(streamClosed);
+        } finally {
+            releaseSecond.countDown();
+            releaseLock.countDown();
+        }
+
+        awaitSuccess(lockHolder);
+        awaitSuccess(closing);
+        assertThat(delivered.get(), is(1));
+        assertThat(graph.state(), is(DefaultMessagingGraph.State.CLOSED));
+        assertThat(graph.failure().isEmpty(), is(true));
+    }
+
+    @Test
     void connectorCloseCanReenterGraphClose() {
         AtomicInteger connectorCloseCalls = new AtomicInteger();
         AtomicReference<DefaultMessagingGraph> graphReference = new AtomicReference<>();

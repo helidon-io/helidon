@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.messaging.DeadLetterMessage;
 import io.helidon.messaging.Emitter;
@@ -64,6 +65,7 @@ class ChannelMessagingTypes {
     static final String TEST_CONNECTOR = "test";
     static final String SHUTDOWN_CHANNEL = "shutdown-channel";
     static final String SHUTDOWN_CONNECTOR = "shutdown-test";
+    static final String SHUTDOWN_SINGLETON_CHANNEL = "shutdown-singleton-channel";
 
     private ChannelMessagingTypes() {
     }
@@ -529,6 +531,76 @@ class ChannelMessagingTypes {
 
         static List<String> events() {
             return EVENTS;
+        }
+    }
+
+    @Service.Singleton
+    static class ShutdownSingletonConsumer {
+        private static final List<String> EVENTS = new CopyOnWriteArrayList<>();
+        private static final AtomicInteger INVOCATIONS = new AtomicInteger();
+        private static final AtomicReference<CountDownLatch> FIRST_ENTERED = new AtomicReference<>();
+        private static final AtomicReference<CountDownLatch> RELEASE_FIRST = new AtomicReference<>();
+
+        @Messaging.ReceiveFrom(SHUTDOWN_SINGLETON_CHANNEL)
+        void consume(String ignored) {
+            int invocation = INVOCATIONS.incrementAndGet();
+            if (invocation == 1) {
+                EVENTS.add("first-enter");
+                FIRST_ENTERED.get().countDown();
+                await(RELEASE_FIRST.get());
+                EVENTS.add("first-exit");
+            } else {
+                EVENTS.add("second");
+            }
+        }
+
+        @Service.PreDestroy
+        void close() {
+            EVENTS.add("consumer-close");
+        }
+
+        static void reset() {
+            EVENTS.clear();
+            INVOCATIONS.set(0);
+            FIRST_ENTERED.set(new CountDownLatch(1));
+            RELEASE_FIRST.set(new CountDownLatch(1));
+        }
+
+        static boolean awaitFirst() throws InterruptedException {
+            return FIRST_ENTERED.get().await(5, TimeUnit.SECONDS);
+        }
+
+        static void releaseFirst() {
+            RELEASE_FIRST.get().countDown();
+        }
+
+        static int invocations() {
+            return INVOCATIONS.get();
+        }
+
+        static List<String> events() {
+            return List.copyOf(EVENTS);
+        }
+    }
+
+    @Weight(0)
+    @Service.Singleton
+    @Service.RunLevel(Double.MAX_VALUE)
+    static class ShutdownSingletonProbe {
+        private static final AtomicReference<CountDownLatch> SHUTDOWN_STARTED =
+                new AtomicReference<>(new CountDownLatch(0));
+
+        @Service.PreDestroy
+        void close() {
+            SHUTDOWN_STARTED.get().countDown();
+        }
+
+        static void reset() {
+            SHUTDOWN_STARTED.set(new CountDownLatch(1));
+        }
+
+        static boolean awaitShutdown() throws InterruptedException {
+            return SHUTDOWN_STARTED.get().await(5, TimeUnit.SECONDS);
         }
     }
 
