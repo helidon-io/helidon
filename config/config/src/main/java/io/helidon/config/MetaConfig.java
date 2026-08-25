@@ -127,6 +127,10 @@ public final class MetaConfig {
         return MetaConfigFinder.findMetaConfig(SUPPORTED_MEDIA_TYPES::contains, SUPPORTED_SUFFIXES);
     }
 
+    static Optional<Config> metaConfig(ServiceRegistry serviceRegistry) {
+        return MetaConfigFinder.findMetaConfig(SUPPORTED_MEDIA_TYPES::contains, SUPPORTED_SUFFIXES, serviceRegistry);
+    }
+
     /**
      * Load a polling strategy based on its meta configuration.
      *
