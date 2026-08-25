@@ -273,16 +273,18 @@ public class WebClientConnectionTargetBenchmark {
         ACTIVE,
         DIRECT_H2_ALTERNATIVE_REPEATED_AD,
         ACTIVE_REPEATED_AD,
+        EXPIRED_ESTABLISHED_REUSE,
         DISABLED_CAPTURE;
 
         private boolean headOnly() {
-            return this == ACTIVE || this == ACTIVE_REPEATED_AD;
+            return this == ACTIVE || this == ACTIVE_REPEATED_AD || this == EXPIRED_ESTABLISHED_REUSE;
         }
 
         private boolean configuresAltSvc() {
             return this == ENABLED_NO_ENTRY
                     || this == ACTIVE
                     || this == ACTIVE_REPEATED_AD
+                    || this == EXPIRED_ESTABLISHED_REUSE
                     || this == DISABLED_CAPTURE;
         }
 
@@ -434,9 +436,10 @@ public class WebClientConnectionTargetBenchmark {
         private String originAuthority;
         private String alternativeAuthority;
         private String altSvcValue;
+        private String expiredAltSvcValue;
         private String expectedProtocol;
         private volatile ExpectedRequest expectedRequest;
-        private volatile boolean advertise;
+        private volatile String responseAltSvc;
 
         @Setup(Level.Trial)
         public void setup() {
@@ -473,6 +476,7 @@ public class WebClientConnectionTargetBenchmark {
             originUri = "https://" + originAuthority + PATH;
             alternativeUri = "https://" + alternativeAuthority + PATH;
             altSvcValue = "h2=\":%d\"; ma=3600".formatted(server.port(ALTERNATIVE_SOCKET));
+            expiredAltSvcValue = "h2=\":%d\"; ma=0".formatted(server.port(ALTERNATIVE_SOCKET));
 
             var builder = WebClient.builder()
                     .shareConnectionCache(false)
@@ -505,6 +509,13 @@ public class WebClientConnectionTargetBenchmark {
                     primeOrigin(true);
                     primeActiveAlternative(true);
                 }
+                case EXPIRED_ESTABLISHED_REUSE -> {
+                    primeOrigin(true);
+                    primeActiveAlternative(false);
+                    primeActiveAlternative(expiredAltSvcValue);
+                    // The ma=0 response is setup-only; measured responses do not mutate Alt-Svc state.
+                    responseAltSvc = null;
+                }
                 case DISABLED_CAPTURE -> {
                     primeAlternative(false, true);
                     primeAlternative(false, true);
@@ -514,11 +525,18 @@ public class WebClientConnectionTargetBenchmark {
 
         @TearDown(Level.Trial)
         public void tearDown() {
-            if (webClient != null) {
-                webClient.closeResource();
-            }
-            if (server != null) {
-                server.stop();
+            try {
+                if (webClient != null) {
+                    // Re-check the final protocol, physical socket, authority, and Alt-Used expectation.
+                    request();
+                }
+            } finally {
+                if (webClient != null) {
+                    webClient.closeResource();
+                }
+                if (server != null) {
+                    server.stop();
+                }
             }
         }
 
@@ -564,7 +582,7 @@ public class WebClientConnectionTargetBenchmark {
             prime(originUri,
                   new ExpectedRequest(SocketKind.ORIGIN, originAuthority, ""),
                   Http1Client.PROTOCOL_ID,
-                  advertiseAltSvc);
+                  advertiseAltSvc ? altSvcValue : null);
         }
 
         private void primeAlternative(boolean synthetic, boolean advertiseAltSvc) {
@@ -573,23 +591,27 @@ public class WebClientConnectionTargetBenchmark {
             prime(alternativeUri,
                   new ExpectedRequest(SocketKind.ALTERNATIVE, expectedAuthority, expectedAltUsed),
                   Http2Client.PROTOCOL_ID,
-                  advertiseAltSvc);
+                  advertiseAltSvc ? altSvcValue : null);
         }
 
         private void primeActiveAlternative(boolean advertiseAltSvc) {
+            primeActiveAlternative(advertiseAltSvc ? altSvcValue : null);
+        }
+
+        private void primeActiveAlternative(String advertisedAltSvc) {
             prime(originUri,
                   new ExpectedRequest(SocketKind.ALTERNATIVE, originAuthority, alternativeAuthority),
                   Http2Client.PROTOCOL_ID,
-                  advertiseAltSvc);
+                  advertisedAltSvc);
         }
 
         private void prime(String uri,
                            ExpectedRequest requestExpectation,
                            String protocol,
-                           boolean advertiseAltSvc) {
+                           String advertisedAltSvc) {
             requestUri = uri;
             expectedProtocol = protocol;
-            advertise = advertiseAltSvc;
+            responseAltSvc = advertisedAltSvc;
             expectedRequest = requestExpectation;
             request();
         }
@@ -631,9 +653,10 @@ public class WebClientConnectionTargetBenchmark {
                 response.status(WRONG_ALT_USED).send(BODY);
                 return;
             }
-            if (advertise) {
-                // Repeated-ad rows emit this same value on every measured response.
-                response.header(HeaderNames.ALT_SVC, altSvcValue);
+            String advertisedAltSvc = responseAltSvc;
+            if (advertisedAltSvc != null) {
+                // Repeated-ad rows leave this enabled; the expiration row clears its setup-only ma=0 response.
+                response.header(HeaderNames.ALT_SVC, advertisedAltSvc);
             }
             response.send(BODY);
         }

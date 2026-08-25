@@ -51,8 +51,6 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
     private final ReentrantLock cacheLock = new ReentrantLock();
     private final Http2AltSvcCache altSvc;
     private final Predicate<Http2AltSvcCache.Selection> establishedAlternative = this::hasEstablishedAlternative;
-    private final Predicate<Http2AltSvcCache.Generation> establishedAlternativeGeneration =
-            this::hasEstablishedAlternative;
 
     private Http2ConnectionCache(boolean shared) {
         super(shared);
@@ -127,21 +125,19 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
     boolean alternativeAvailable(ClientConnectionTarget connectionTarget, boolean explicitConnection) {
         return altSvc.available(connectionTarget,
                                 explicitConnection,
-                                establishedAlternative,
-                                establishedAlternativeGeneration);
+                                establishedAlternative);
     }
 
     Http2AltSvcCache.Candidate currentAlternative(ClientConnectionTarget.LookupKey lookupKey,
                                                   boolean explicitConnection) {
-        return altSvc.selectRoute(lookupKey, explicitConnection, establishedAlternativeGeneration);
+        return altSvc.selectRoute(lookupKey, explicitConnection);
     }
 
     Http2AltSvcCache.Selection currentAlternative(ClientConnectionTarget connectionTarget,
                                                    boolean explicitConnection) {
         return altSvc.select(connectionTarget,
                              explicitConnection,
-                             establishedAlternative,
-                             establishedAlternativeGeneration);
+                             establishedAlternative);
     }
 
     void recordAlternative(ClientConnectionTarget connectionTarget,
@@ -420,22 +416,6 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
     private boolean hasEstablishedAlternative(Http2AltSvcCache.Selection selection) {
         Http2ClientConnectionHandler handler = cache.get(selection.originTarget());
         return handler != null && handler.hasAlternative(selection);
-    }
-
-    private boolean hasEstablishedAlternative(Http2AltSvcCache.Generation generation) {
-        List<Http2ClientConnectionHandler> handlers;
-        cacheLock.lock();
-        try {
-            handlers = List.copyOf(insertionOrder.values());
-        } finally {
-            cacheLock.unlock();
-        }
-        for (Http2ClientConnectionHandler handler : handlers) {
-            if (handler.hasAlternative(generation)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void retireAlternative(Http2AltSvcCache.Selection selection) {

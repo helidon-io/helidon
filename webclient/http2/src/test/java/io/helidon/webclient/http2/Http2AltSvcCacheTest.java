@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
@@ -76,7 +77,7 @@ class Http2AltSvcCacheTest {
                      false, clock.nextObservation());
 
         Http2AltSvcCache.Selection byTarget = cache.select(target, false, _ -> false);
-        Http2AltSvcCache.Candidate byLookup = cache.selectRoute(target.lookupKey(), false, _ -> false);
+        Http2AltSvcCache.Candidate byLookup = cache.selectRoute(target.lookupKey(), false);
 
         assertThat(byLookup, notNullValue());
         assertThat(byLookup.proxyRoute(), is(target.proxyRoute()));
@@ -85,7 +86,7 @@ class Http2AltSvcCacheTest {
         assertThat(byTarget.port(), is(8443));
         assertThat(byTarget.networkGeneration(), is(0L));
         assertThat(byTarget.establishAllowed(), is(true));
-        assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), sameInstance(byLookup));
+        assertThat(cache.selectRoute(target.lookupKey(), false), sameInstance(byLookup));
         assertThat(cache.select(target, false, _ -> false), sameInstance(byTarget));
         assertThat(invalidations, is(empty()));
 
@@ -112,7 +113,7 @@ class Http2AltSvcCacheTest {
         assertThat(cache.select(upper, false, _ -> false), sameInstance(upperSelection));
         assertThat(cache.select(lower, false, _ -> false), sameInstance(lowerSelection));
         assertThat(cache.mayContain("EXAMPLE.COM"), is(true));
-        assertThat(cache.selectRoute(lower.lookupKey(), false, _ -> false), notNullValue());
+        assertThat(cache.selectRoute(lower.lookupKey(), false), notNullValue());
 
         cache.record(lower, header(clock, "h2=\":8443\"; ma=7200"), true, false, clock.nextObservation());
 
@@ -128,13 +129,13 @@ class Http2AltSvcCacheTest {
 
         cache.recordFailure(reverse);
 
-        assertThat(cache.select(lower, false, _ -> true, _ -> true), nullValue());
+        assertThat(cache.select(lower, false, _ -> true), nullValue());
 
         clock.advance(Duration.ofMinutes(5));
         Http2AltSvcCache.Selection retry = cache.select(lower, false, _ -> false);
         cache.recordMisdirected(retry);
 
-        assertThat(cache.select(upper, false, _ -> true, _ -> true), nullValue());
+        assertThat(cache.select(upper, false, _ -> true), nullValue());
 
         cache.close();
     }
@@ -175,17 +176,75 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache.Selection establishedUpper = cache.select(upper, false, _ -> false);
         clock.advance(Duration.ofSeconds(2));
 
-        assertThat(cache.select(lower, false, _ -> false, _ -> true), nullValue());
+        AtomicInteger exactEstablishedChecks = new AtomicInteger();
+        assertThat(cache.select(lower, false, _ -> {
+            exactEstablishedChecks.incrementAndGet();
+            return false;
+        }), nullValue());
+        assertThat(exactEstablishedChecks.get(), is(1));
         assertThat(invalidations, is(empty()));
         assertThat(cache.select(upper,
                                 false,
-                                candidate -> candidate.sameRouteGeneration(establishedUpper),
-                                _ -> true),
+                                candidate -> {
+                                    exactEstablishedChecks.incrementAndGet();
+                                    return candidate == establishedUpper;
+                                }),
                    sameInstance(establishedUpper));
+        assertThat(exactEstablishedChecks.get(), is(2));
 
-        assertThat(cache.select(lower, false, _ -> false, _ -> false), nullValue());
+        assertThat(cache.select(lower, false, _ -> false), nullValue());
+        assertThat(cache.selectRoute(lower.lookupKey(), false), notNullValue());
+        assertThat(cache.mayContain("EXAMPLE.COM"), is(true));
+        assertThat(invalidations, is(empty()));
+
+        cache.close();
+    }
+
+    @Test
+    void repeatedExpiredRouteLookupDoesNotProbeExactPoolsAndMetadataIsEvictable() {
+        MutableClock clock = new MutableClock(START);
+        List<Http2AltSvcCache.Generation> invalidations = new ArrayList<>();
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
+        Tls tls = Tls.builder().trustAll(true).build();
+        ClientConnectionTarget expiredTarget = target(tls, "expired.example");
+
+        cache.record(expiredTarget, header(clock, "h2=\":8443\"; ma=1"), true, false, clock.nextObservation());
+        Http2AltSvcCache.Selection expiredSelection = cache.select(expiredTarget, false, _ -> false);
+        Http2AltSvcCache.Candidate expiredCandidate = cache.selectRoute(expiredTarget.lookupKey(), false);
+        clock.advance(Duration.ofSeconds(2));
+
+        AtomicInteger exactEstablishedChecks = new AtomicInteger();
+        for (int index = 0; index < 3; index++) {
+            assertThat(cache.selectRoute(expiredTarget.lookupKey(), false), sameInstance(expiredCandidate));
+        }
+        assertThat(exactEstablishedChecks.get(), is(0));
+
+        assertThat(cache.select(expiredTarget, false, candidate -> {
+            exactEstablishedChecks.incrementAndGet();
+            return candidate == expiredSelection;
+        }), sameInstance(expiredSelection));
+        assertThat(cache.select(expiredTarget, false, _ -> {
+            exactEstablishedChecks.incrementAndGet();
+            return false;
+        }), nullValue());
+        assertThat(exactEstablishedChecks.get(), is(2));
+        assertThat(cache.selectRoute(expiredTarget.lookupKey(), false), sameInstance(expiredCandidate));
+        assertThat(exactEstablishedChecks.get(), is(2));
+        assertThat(cache.current(expiredSelection), is(true));
+        assertThat(cache.mayContain("expired.example"), is(true));
+        assertThat(invalidations, is(empty()));
+
+        AltSvcHeader advertisement = header(clock, "h2=\":9443\"; ma=60");
+        for (int index = 0; index < 1_000; index++) {
+            ClientConnectionTarget target = target(tls, "capacity-" + index + ".example");
+            cache.record(target, advertisement, true, false, clock.nextObservation());
+        }
+
+        assertThat(cache.selectRoute(expiredTarget.lookupKey(), false), nullValue());
+        assertThat(cache.mayContain("expired.example"), is(false));
+        assertThat(cache.current(expiredSelection), is(false));
         assertThat(invalidations, hasSize(1));
-        assertThat(establishedUpper.sameGeneration(invalidations.getFirst()), is(true));
+        assertThat(expiredSelection.sameGeneration(invalidations.getFirst()), is(true));
 
         cache.close();
     }
@@ -199,11 +258,11 @@ class Http2AltSvcCacheTest {
         cache.record(target, header(clock, "h2=\":8443\"; ma=3600"), true, false, clock.nextObservation());
         cache.recordFailure(cache.select(target, false, _ -> false));
 
-        assertThat(cache.selectRoute(target.lookupKey(), false, _ -> true), nullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), nullValue());
 
         clock.advance(Duration.ofMinutes(5));
 
-        assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
 
         cache.close();
     }
@@ -262,7 +321,7 @@ class Http2AltSvcCacheTest {
         cache.record(target, header(clock, "h2=\":8443\"; ma=120; persist=1"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), sameInstance(selection));
-        assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
         assertThat(selection.establishAllowed(), is(true));
         assertThat(selection.authority().toString(), is("origin.example:8443"));
         assertThat(selection.authority(), sameInstance(selection.authority()));
@@ -283,8 +342,9 @@ class Http2AltSvcCacheTest {
         assertThat(invalidations, is(empty()));
 
         assertThat(cache.select(target, false, _ -> false), nullValue());
-        assertThat(cache.mayContain(target.connectionKey().host()), is(false));
-        assertThat(invalidations, hasSize(1));
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
+        assertThat(cache.mayContain(target.connectionKey().host()), is(true));
+        assertThat(invalidations, is(empty()));
 
         cache.close();
     }
@@ -312,7 +372,7 @@ class Http2AltSvcCacheTest {
         cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), sameInstance(persistentSelection));
-        assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
 
         cache.networkChanged();
         clock.advance(Duration.ofNanos(1));
@@ -352,7 +412,7 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache.Selection retry = cache.select(target, false, _ -> false);
         assertThat(retry, not(sameInstance(failed)));
         assertThat(cache.current(retry), is(true));
-        assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
         assertThat(invalidations, hasSize(1));
 
         cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
@@ -380,7 +440,7 @@ class Http2AltSvcCacheTest {
         cache.record(equalTarget, header(clock, "h2=\":8443\"; ma=120"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), sameInstance(first));
-        assertThat(cache.selectRoute(equalTarget.lookupKey(), false, _ -> false), notNullValue());
+        assertThat(cache.selectRoute(equalTarget.lookupKey(), false), notNullValue());
 
         cache.record(equalTarget, header(clock, "h2=\":9443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection replacement = cache.select(target, false, _ -> false);
@@ -401,7 +461,7 @@ class Http2AltSvcCacheTest {
 
         assertThat(revived, not(sameInstance(replacement)));
         assertThat(cache.select(target, false, _ -> false), sameInstance(revived));
-        assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
         assertThat(invalidations, hasSize(2));
 
         cache.close();
@@ -431,7 +491,7 @@ class Http2AltSvcCacheTest {
         cache.record(expired, header(clock, "h2=\":8443\"; ma=1"), true, false, clock.nextObservation());
         clock.advance(Duration.ofSeconds(2));
         assertThat(cache.select(expired, false, _ -> false), nullValue());
-        assertThat(cache.mayContain("expired.example"), is(false));
+        assertThat(cache.mayContain("expired.example"), is(true));
 
         cache.record(staleTls, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         reloadedTls.reload(TlsMaterial.builder().trustAll(true).build());
@@ -447,6 +507,7 @@ class Http2AltSvcCacheTest {
 
         cache.close();
 
+        assertThat(cache.mayContain("expired.example"), is(false));
         assertThat(cache.mayContain("persistent.example"), is(false));
     }
 
@@ -541,7 +602,7 @@ class Http2AltSvcCacheTest {
     }
 
     @Test
-    void expiredAdvertisementReusesOnlyExactEstablishedGeneration() {
+    void expiredAdvertisementReusesOnlyExactEstablishedSelection() {
         MutableClock clock = new MutableClock(START);
         List<Http2AltSvcCache.Generation> invalidations = new ArrayList<>();
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
@@ -707,7 +768,7 @@ class Http2AltSvcCacheTest {
             assertThat(expired.establishAllowed(), is(true));
             assertThat(cache.current(expired), is(true));
             assertThat(cache.select(target, false, _ -> false), sameInstance(expired));
-            assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
+            assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
         } finally {
             cache.close();
         }
@@ -757,7 +818,7 @@ class Http2AltSvcCacheTest {
     }
 
     @Test
-    void replacementClearAndZeroMaximumAgeInvalidateMatchingGeneration() {
+    void replacementAndClearInvalidateButZeroMaximumAgeRetainsGeneration() {
         MutableClock clock = new MutableClock(START);
         List<Http2AltSvcCache.Generation> invalidations = new ArrayList<>();
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
@@ -789,7 +850,9 @@ class Http2AltSvcCacheTest {
         assertThat(zeroAgeReuse, sameInstance(replacement));
         assertThat(zeroAgeReuse.establishAllowed(), is(false));
         assertThat(cache.select(target, false, _ -> false), nullValue());
-        assertThat(invalidations, hasSize(2));
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
+        assertThat(cache.current(replacement), is(true));
+        assertThat(invalidations, hasSize(1));
 
         cache.record(target, header(clock, "h2=\":10443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection beforeClear = cache.select(target, false, _ -> false);
@@ -824,7 +887,7 @@ class Http2AltSvcCacheTest {
         assertThat(retry.establishAllowed(), is(true));
         assertThat(cache.current(retry), is(true));
         assertThat(cache.select(target, false, _ -> false), sameInstance(retry));
-        assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
 
         cache.close();
     }
@@ -899,7 +962,7 @@ class Http2AltSvcCacheTest {
         tls.reload(TlsMaterial.builder().trustAll(true).build());
 
         assertThat(cache.current(selection), is(false));
-        assertThat(cache.selectRoute(target.lookupKey(), false, _ -> true), nullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), nullValue());
         assertThat(invalidations, hasSize(1));
         assertThat(selection.sameGeneration(invalidations.getFirst()), is(true));
 
@@ -1144,15 +1207,21 @@ class Http2AltSvcCacheTest {
     }
 
     @Test
-    void naturalExpiryRetainsOnlyTheAdvertisementObservation() {
+    void naturalExpiryRetainsRouteWithoutBlockingNewerObservation() {
         MutableClock clock = new MutableClock(START);
-        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        List<Http2AltSvcCache.Generation> invalidations = new ArrayList<>();
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
         cache.record(target, header(START, "h2=\":8443\"; ma=1"), true, false, START);
+        Http2AltSvcCache.Selection expired = cache.select(target, false, _ -> false);
         clock.advance(Duration.ofSeconds(2));
 
         assertThat(cache.select(target, false, _ -> false), nullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
+        assertThat(cache.current(expired), is(true));
+        assertThat(cache.mayContain("origin.example"), is(true));
+        assertThat(invalidations, is(empty()));
 
         Instant delayedNewer = START.plusMillis(500);
         cache.record(target,
@@ -1167,6 +1236,8 @@ class Http2AltSvcCacheTest {
                      START);
 
         assertThat(cache.select(target, false, _ -> false).port(), is(9443));
+        assertThat(invalidations, hasSize(1));
+        assertThat(expired.sameGeneration(invalidations.getFirst()), is(true));
 
         cache.close();
     }

@@ -87,16 +87,13 @@ final class Http2AltSvcCache implements AutoCloseable {
 
     boolean available(ClientConnectionTarget target,
                       boolean explicitConnection,
-                      Predicate<Selection> established,
-                      Predicate<Generation> establishedGeneration) {
-        return select(target, explicitConnection, established, establishedGeneration) != null;
+                      Predicate<Selection> established) {
+        return select(target, explicitConnection, established) != null;
     }
 
     Candidate selectRoute(ClientConnectionTarget.LookupKey lookupKey,
-                          boolean explicitConnection,
-                          Predicate<Generation> established) {
+                          boolean explicitConnection) {
         Objects.requireNonNull(lookupKey, "lookupKey");
-        Objects.requireNonNull(established, "established");
         if (explicitConnection) {
             return null;
         }
@@ -121,21 +118,11 @@ final class Http2AltSvcCache implements AutoCloseable {
                         continue;
                     }
                     Candidate candidate = state.candidate;
-                    if (fresh(state, now)) {
-                        if (stable(version) && current(candidate)) {
-                            return candidate;
-                        }
-                        slowPath = true;
-                        break;
+                    if (stable(version) && current(candidate)) {
+                        return candidate;
                     }
-                    boolean generationEstablished = established.test(state.generation);
-                    if (stable(version)) {
-                        if (generationEstablished && current(candidate)) {
-                            return candidate;
-                        }
-                        slowPath = true;
-                        break;
-                    }
+                    slowPath = true;
+                    break;
                 }
                 if (!slowPath && stable(version)) {
                     return null;
@@ -144,22 +131,14 @@ final class Http2AltSvcCache implements AutoCloseable {
                 return null;
             }
         }
-        return selectRouteSlow(originKey, established);
+        return selectRouteSlow(originKey);
     }
 
     Selection select(ClientConnectionTarget target,
                      boolean explicitConnection,
                      Predicate<Selection> established) {
-        return select(target, explicitConnection, established, _ -> false);
-    }
-
-    Selection select(ClientConnectionTarget target,
-                     boolean explicitConnection,
-                     Predicate<Selection> established,
-                     Predicate<Generation> establishedGeneration) {
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(established, "established");
-        Objects.requireNonNull(establishedGeneration, "establishedGeneration");
         if (explicitConnection) {
             return null;
         }
@@ -208,20 +187,14 @@ final class Http2AltSvcCache implements AutoCloseable {
                         }
                     } else {
                         boolean exactEstablished = established.test(selection);
-                        if (stable(version) && exactEstablished && current(selection)) {
-                            return selection;
-                        }
                         if (stable(version)) {
-                            boolean anyEstablished = establishedGeneration.test(state.generation);
-                            if (stable(version) && anyEstablished) {
-                                return null;
-                            }
+                            return exactEstablished && current(selection) ? selection : null;
                         }
                     }
                 }
             }
         }
-        return selectSlow(target, routeKey, established, establishedGeneration);
+        return selectSlow(target, routeKey, established);
     }
 
     void record(ClientConnectionTarget target,
@@ -507,112 +480,58 @@ final class Http2AltSvcCache implements AutoCloseable {
         return normalized.toLowerCase(Locale.ROOT);
     }
 
-    private Candidate selectRouteSlow(ClientConnectionTarget.LookupKey originKey,
-                                      Predicate<Generation> established) {
+    private Candidate selectRouteSlow(ClientConnectionTarget.LookupKey originKey) {
         if (!originKey.currentTlsGeneration()) {
             removeStale(originKey);
             return null;
         }
 
-        while (true) {
-            List<OriginRouteKey> indexedRoutes;
-            lock.lock();
-            try {
-                if (closed) {
-                    return null;
-                }
-                indexedRoutes = lookupIndex.get(originKey);
-                if (indexedRoutes == null) {
-                    return null;
-                }
-            } finally {
-                lock.unlock();
+        lock.lock();
+        try {
+            if (closed) {
+                return null;
             }
-
-            boolean retry = false;
+            List<OriginRouteKey> indexedRoutes = lookupIndex.get(originKey);
+            if (indexedRoutes == null) {
+                return null;
+            }
             for (int index = indexedRoutes.size() - 1; index >= 0; index--) {
                 OriginRouteKey routeKey = indexedRoutes.get(index);
-                RouteState state;
-                boolean freshAdvertisement;
-                lock.lock();
-                try {
-                    if (closed) {
-                        return null;
+                RouteState state = routes.get(routeKey);
+                if (state == null) {
+                    beginMutation();
+                    try {
+                        removeIndexLocked(routeKey);
+                    } finally {
+                        endMutation();
                     }
-                    state = routes.get(routeKey);
-                    if (state == null) {
-                        beginMutation();
-                        try {
-                            removeIndexLocked(routeKey);
-                        } finally {
-                            endMutation();
-                        }
-                        continue;
-                    }
-                    Instant now = clock.instant();
-                    if (expiredNegative(state, now)) {
-                        beginMutation();
-                        try {
-                            state.negativeUntil = null;
-                        } finally {
-                            endMutation();
-                        }
-                    } else if (negative(state, now)) {
-                        continue;
-                    }
-                    freshAdvertisement = fresh(state, now);
-                } finally {
-                    lock.unlock();
+                    continue;
                 }
-
+                Instant now = clock.instant();
+                if (expiredNegative(state, now)) {
+                    beginMutation();
+                    try {
+                        state.negativeUntil = null;
+                    } finally {
+                        endMutation();
+                    }
+                } else if (negative(state, now)) {
+                    continue;
+                }
                 Candidate candidate = state.candidate;
-                if (freshAdvertisement) {
-                    return current(candidate) ? candidate : null;
+                if (current(candidate)) {
+                    return candidate;
                 }
-                boolean generationEstablished = established.test(state.generation);
-                List<Generation> invalidations = new ArrayList<>();
-                boolean stateChanged;
-                lock.lock();
-                try {
-                    stateChanged = routes.get(routeKey) != state;
-                    if (!stateChanged) {
-                        Instant now = clock.instant();
-                        stateChanged = negative(state, now) || fresh(state, now);
-                        if (!stateChanged) {
-                            if (generationEstablished && current(candidate)) {
-                                return candidate;
-                            }
-                            beginMutation();
-                            try {
-                                removeWithTombstone(routeKey,
-                                                    state,
-                                                    state.observedAt,
-                                                    invalidations);
-                            } finally {
-                                endMutation();
-                            }
-                        }
-                    }
-                } finally {
-                    lock.unlock();
-                    notifyInvalidations(invalidations);
-                }
-                if (stateChanged) {
-                    retry = true;
-                    break;
-                }
-            }
-            if (retry) {
-                continue;
             }
             return null;
+        } finally {
+            lock.unlock();
         }
     }
 
     private Selection selectSlow(ClientConnectionTarget target,
                                  OriginRouteKey suppliedRouteKey,
-                                 Predicate<Selection> established,
-                                 Predicate<Generation> establishedGeneration) {
+                                 Predicate<Selection> established) {
         OriginRouteKey routeKey = suppliedRouteKey == null ? originRouteKey(target) : suppliedRouteKey;
         while (true) {
             RouteState state;
@@ -664,8 +583,6 @@ final class Http2AltSvcCache implements AutoCloseable {
                 return current(selection) ? selection : null;
             }
             boolean exactEstablished = established.test(selection);
-            boolean anyEstablished = !exactEstablished && establishedGeneration.test(state.generation);
-            List<Generation> invalidations = new ArrayList<>();
             lock.lock();
             try {
                 if (routes.get(routeKey) != state) {
@@ -681,19 +598,9 @@ final class Http2AltSvcCache implements AutoCloseable {
                 if (exactEstablished && current(selection)) {
                     return selection;
                 }
-                if (anyEstablished) {
-                    return null;
-                }
-                beginMutation();
-                try {
-                    removeWithTombstone(routeKey, state, state.observedAt, invalidations);
-                } finally {
-                    endMutation();
-                }
                 return null;
             } finally {
                 lock.unlock();
-                notifyInvalidations(invalidations);
             }
         }
     }

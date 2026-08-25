@@ -149,6 +149,7 @@ class WebClientConnectionTargetJmhRunnerTest {
                 "ACTIVE",
                 "DIRECT_H2_ALTERNATIVE_REPEATED_AD",
                 "ACTIVE_REPEATED_AD",
+                "EXPIRED_ESTABLISHED_REUSE",
                 "DISABLED_CAPTURE"
         };
     }
