@@ -473,12 +473,6 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         return recvListener;
     }
 
-    private WebClientProtocolResponse takeProtocolResponse() {
-        WebClientProtocolResponse response = pendingProtocolResponse;
-        pendingProtocolResponse = null;
-        return response;
-    }
-
     static boolean statusAllowsEntity(Status responseStatus) {
         int statusCode = responseStatus.code();
         return responseStatus.family() != Status.Family.INFORMATIONAL
@@ -598,6 +592,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         String rawFragment = fragment.rawValue();
         int fragmentLength = requestTarget.endsWith(rawFragment) ? rawFragment.length() : fragment.value().length();
         return requestTarget.substring(0, requestTarget.length() - fragmentLength - 1);
+    }
+
+    private WebClientProtocolResponse takeProtocolResponse() {
+        WebClientProtocolResponse response = pendingProtocolResponse;
+        pendingProtocolResponse = null;
+        return response;
     }
 
     private ClientConnection obtainConnection(ClientConnectionTarget connectionTarget,
