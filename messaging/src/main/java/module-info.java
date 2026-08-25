@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Preview
 module io.helidon.messaging {
     requires transitive io.helidon.common;
+    requires io.helidon.common.context;
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.config;

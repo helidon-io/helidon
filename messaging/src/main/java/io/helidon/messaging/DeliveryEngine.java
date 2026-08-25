@@ -42,6 +42,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+
 /**
  * Runtime-owned delivery and source task engine.
  */
@@ -105,10 +108,12 @@ final class DeliveryEngine implements AutoCloseable {
         DeliveryTask task;
         try {
             AdmissionMode admissionMode = ancestry == null ? AdmissionMode.WAIT : AdmissionMode.NESTED;
+            Context helidonContext = localDeliveryContext(ancestry);
             task = dispatcher.submit(batch.size(),
                                      ancestry == null ? List.of() : ancestry.path(),
                                      false,
                                      admissionMode,
+                                     helidonContext,
                                      null,
                                      action);
             if (task == null) {
@@ -138,6 +143,7 @@ final class DeliveryEngine implements AutoCloseable {
                                  List.of(),
                                  true,
                                  AdmissionMode.WAIT,
+                                 Context.create(),
                                  batch,
                                  action);
     }
@@ -154,6 +160,7 @@ final class DeliveryEngine implements AutoCloseable {
                                                        List.of(),
                                                        true,
                                                        AdmissionMode.TRY,
+                                                       Context.create(),
                                                        batch,
                                                        action);
         return Optional.ofNullable(task);
@@ -387,7 +394,7 @@ final class DeliveryEngine implements AutoCloseable {
     }
 
     private Thread startDispatch(DeliveryTask task) {
-        Thread thread = dispatchThreadFactory.newThread(() -> {
+        Thread thread = dispatchThreadFactory.newThread(() -> Contexts.runInContext(task.helidonContext(), () -> {
             DeliveryContext context = task.context();
             CURRENT_DELIVERY.set(context);
             CURRENT_ANCESTRY.set(new WeakReference<>(context.ancestry()));
@@ -406,7 +413,7 @@ final class DeliveryEngine implements AutoCloseable {
                     dispatchThreads.remove(Thread.currentThread());
                 }
             }
-        });
+        }));
         task.thread(thread);
         dispatchThreads.add(thread);
         try {
@@ -560,6 +567,11 @@ final class DeliveryEngine implements AutoCloseable {
         return ancestry;
     }
 
+    private static Context localDeliveryContext(DeliveryAncestry ancestry) {
+        return Contexts.context()
+                .orElseGet(() -> ancestry == null ? Context.create() : ancestry.helidonContext());
+    }
+
     private static boolean canMarkNotAttempted(MessagingRejectedException failure) {
         return switch (failure.reason()) {
         case OVERSIZED, SATURATED -> true;
@@ -597,6 +609,7 @@ final class DeliveryEngine implements AutoCloseable {
                                     List<DeliveryNode> parentPath,
                                     boolean connectorLease,
                                     AdmissionMode admissionMode,
+                                    Context helidonContext,
                                     MessageBatch<?> connectorBatch,
                                     Runnable action) {
             validateMessageCount(messageCount);
@@ -606,7 +619,8 @@ final class DeliveryEngine implements AutoCloseable {
                                                                      channel,
                                                                      parentPath,
                                                                      connectorLease,
-                                                                     connectorBatch),
+                                                                     connectorBatch,
+                                                                     helidonContext),
                                                  connectorLease,
                                                  action);
             if (admissionMode == AdmissionMode.NESTED || admissionMode == AdmissionMode.TRY) {
@@ -832,7 +846,8 @@ final class DeliveryEngine implements AutoCloseable {
                                                                      channel,
                                                                      List.of(),
                                                                      true,
-                                                                     connectorBatch),
+                                                                     connectorBatch,
+                                                                     Context.create()),
                                                  true,
                                                  action);
             Object admissionToken = null;
@@ -1676,6 +1691,10 @@ final class DeliveryEngine implements AutoCloseable {
             return action;
         }
 
+        private Context helidonContext() {
+            return context.helidonContext();
+        }
+
         private void rethrow(ExecutionException exception) {
             Throwable cause = exception.getCause();
             if (cause instanceof RuntimeException runtimeException) {
@@ -1700,13 +1719,14 @@ final class DeliveryEngine implements AutoCloseable {
                                 String channel,
                                 List<DeliveryNode> parentPath,
                                 boolean connectorLease,
-                                MessageBatch<?> retainedBatch) {
+                                MessageBatch<?> retainedBatch,
+                                Context helidonContext) {
             this.owner = owner;
             this.channel = channel;
             List<DeliveryNode> path = new ArrayList<>(parentPath.size() + 1);
             path.addAll(parentPath);
             path.add(new DeliveryNode(owner, channel));
-            this.ancestry = new DeliveryAncestry(List.copyOf(path));
+            this.ancestry = new DeliveryAncestry(List.copyOf(path), helidonContext);
             this.connectorLease = connectorLease;
             this.retainedBatch = connectorLease ? Objects.requireNonNull(retainedBatch) : null;
         }
@@ -1757,15 +1777,21 @@ final class DeliveryEngine implements AutoCloseable {
         private DeliveryAncestry ancestry() {
             return ancestry;
         }
+
+        private Context helidonContext() {
+            return ancestry.helidonContext();
+        }
     }
 
     private static final class DeliveryAncestry {
         private final List<DeliveryNode> path;
+        private final Context helidonContext;
         private final AtomicReference<MessagingRejectedException> cancellationFailure = new AtomicReference<>();
         private final AtomicBoolean active = new AtomicBoolean(true);
 
-        private DeliveryAncestry(List<DeliveryNode> path) {
+        private DeliveryAncestry(List<DeliveryNode> path, Context helidonContext) {
             this.path = path;
+            this.helidonContext = Objects.requireNonNull(helidonContext);
         }
 
         private List<DeliveryNode> path() {
@@ -1774,6 +1800,10 @@ final class DeliveryEngine implements AutoCloseable {
 
         private List<String> pathNames() {
             return path.stream().map(DeliveryNode::channel).toList();
+        }
+
+        private Context helidonContext() {
+            return helidonContext;
         }
 
         private boolean active() {

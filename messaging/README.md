@@ -346,6 +346,11 @@ shutdown or failed-startup rollback; it does not bound connector startup or read
 and startup limits on the connector. Capacity, timeout, cancellation, and shutdown admission failures are reported as
 `MessagingRejectedException` with a typed reason.
 
+Every delivery runs with a Helidon context. A local emitter captures the caller's active context, or creates a fresh
+one when none is active. Connector and stream-source deliveries always receive a fresh context; connector deliveries
+never inherit a context accidentally bound to the connector source thread. Synchronous processors, routes, handlers,
+interceptors, retries, dead-letter routing, and outgoing sends retain the same delivery context.
+
 Synchronous work moved to a directly created child thread retains delivery ancestry when that thread inherits
 thread-local state. Its emissions use nested admission, so an emission back into any channel already on the active path
 fails instead of waiting on the parent delivery. Existing executor workers, common-pool tasks, and threads that disable

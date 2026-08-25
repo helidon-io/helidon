@@ -35,6 +35,9 @@ import io.helidon.common.Api;
  * failure once, or closed. Closing is idempotent and releases capacity exactly once. After a successful start,
  * ownership transfers to the returned {@link ConnectorDelivery}; closing this reservation no longer releases the
  * delivery lease.
+ * <p>
+ * Each started connector delivery runs in a fresh Helidon context. The connector source thread's context is not
+ * inherited by application handlers, processors, interceptors, routes, or outgoing connectors.
  */
 @Api.Preview
 public interface ConnectorDeliveryReservation extends AutoCloseable {

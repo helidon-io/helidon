@@ -24,6 +24,8 @@ import io.helidon.common.Api;
  * Each implementation defines and documents its external send-completion point. A send method must not return before
  * that success point is reached. It must throw if sending failed or its outcome is indeterminate, preserving the
  * underlying cause when one is available.
+ * <p>
+ * Runtime-invoked sends execute with the current delivery's Helidon context bound to the calling thread.
  */
 @Api.Preview
 public interface OutgoingConnector extends Connector {

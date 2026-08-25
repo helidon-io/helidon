@@ -32,6 +32,10 @@ import io.helidon.service.registry.Service;
  * active delivery path are rejected. Existing executor workers, common-pool tasks, and threads that disable inheritable
  * state cannot retain that ancestry; a handler must not wait for their emission to a channel on its active delivery
  * path.
+ * <p>
+ * An emission captures the caller's active Helidon context. The runtime binds that same context while invoking every
+ * synchronous processor, route, handler, interceptor, and outgoing connector in the delivery. When the caller has no
+ * active context, the runtime creates a fresh context for that delivery.
  *
  * @param <T> payload type
  */
