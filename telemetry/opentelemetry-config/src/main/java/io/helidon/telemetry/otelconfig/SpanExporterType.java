@@ -35,8 +35,13 @@ public enum SpanExporterType {
     OTLP, // There are different defaults for the different subtypes of OTLP exporters.
 
     /**
-     * Zipkin {@link io.opentelemetry.exporter.zipkin.ZipkinSpanExporter}.
+     * The OpenTelemetry Zipkin exporter ({@link io.opentelemetry.exporter.zipkin.ZipkinSpanExporter}) is deprecated;
+     * OpenTelemetry stopped publishing it in 1.65.0, Helidon 27 removes support, and users should use OTLP instead.
+     *
+     * @deprecated OpenTelemetry stopped publishing the Zipkin exporter in 1.65.0, and Helidon 27 removes support.
+     * Use {@link #OTLP} instead.
      */
+    @Deprecated(since = "4.5.4", forRemoval = true)
     ZIPKIN,
 
     /**
