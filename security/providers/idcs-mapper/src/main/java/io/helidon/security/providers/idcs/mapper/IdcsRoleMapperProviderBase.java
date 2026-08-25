@@ -132,14 +132,14 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
                 Subject subject = enhance(authenticatedRequest, previousResponse, maybeUser.get());
                 builder.user(subject);
             } else {
-                builder.service(maybeUser.get());
+                builder.user(maybeUser.get());
             }
         }
 
         if (maybeService.isPresent()) {
             if (supportedTypes.contains(SubjectType.SERVICE)) {
                 Subject subject = enhance(authenticatedRequest, previousResponse, maybeService.get());
-                builder.user(subject);
+                builder.service(subject);
             } else {
                 builder.service(maybeService.get());
             }
