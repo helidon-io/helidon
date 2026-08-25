@@ -86,10 +86,11 @@ authority. WebClient does not support `h2c` alternatives. It also does not
 upgrade a plain `http` origin to TLS-based HTTP/2 because the RFC 8164
 `/.well-known/http-opportunistic` opt-in is not implemented.
 
-Alternative-service routing preserves the configured proxy policy and never
-bypasses a selected proxy. The current HTTP/2 provider uses alternatives only
-for a direct route that is not pinned to a resolved address; otherwise,
-WebClient continues with the selected route.
+Alternative-service routing never bypasses the configured proxy policy. The
+current HTTP/2 provider uses alternatives only when proxying is disabled. When
+any proxy policy is configured, including a `no-proxy` exception that selected
+a direct route for the origin, WebClient ignores the advertisement and
+continues with the selected route.
 
 WebClient honors the configured TLS policy as-is when connecting to an
 alternative. This includes custom TLS managers, custom SSL contexts, disabled

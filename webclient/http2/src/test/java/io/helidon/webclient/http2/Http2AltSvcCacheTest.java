@@ -473,6 +473,21 @@ class Http2AltSvcCacheTest {
         cache.record(proxyTarget, advertisement, true, false);
         assertThat(cache.select(proxyTarget, false, _ -> false), nullValue());
 
+        Proxy portScopedNoProxy = Proxy.builder()
+                .host("proxy.example")
+                .port(8181)
+                .addNoProxy("origin.example:443")
+                .build();
+        ClientConnectionTarget portScopedNoProxyTarget = target(tls,
+                                                                 "https",
+                                                                 "origin.example",
+                                                                 portScopedNoProxy,
+                                                                 DNS);
+        assertThat(portScopedNoProxyTarget.proxyRoute().direct(), is(true));
+        assertThat(portScopedNoProxyTarget.proxyRoute().addressBound(), is(false));
+        cache.record(portScopedNoProxyTarget, advertisement, true, false);
+        assertThat(cache.select(portScopedNoProxyTarget, false, _ -> false), nullValue());
+
         Proxy noProxy = Proxy.builder()
                 .host("proxy.example")
                 .port(8181)

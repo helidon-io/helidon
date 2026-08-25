@@ -35,6 +35,7 @@ import io.helidon.common.uri.UriAuthority;
 import io.helidon.common.uri.UriHost;
 import io.helidon.webclient.api.AltSvcHeader;
 import io.helidon.webclient.api.ClientConnectionTarget;
+import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.ProxyRoute;
 
 final class Http2AltSvcCache implements AutoCloseable {
@@ -446,6 +447,7 @@ final class Http2AltSvcCache implements AutoCloseable {
         return target.currentTlsGeneration()
                 && "https".equals(target.scheme())
                 && target.connectionKey().tls().enabled()
+                && target.connectionKey().proxy().type() == Proxy.ProxyType.NONE
                 && target.transportAddress().isEmpty()
                 && target.proxyRoute().direct()
                 && !target.proxyRoute().addressBound();
