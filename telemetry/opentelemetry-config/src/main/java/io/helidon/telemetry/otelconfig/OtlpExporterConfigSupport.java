@@ -36,8 +36,6 @@ import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporterBuilder;
 import io.opentelemetry.sdk.common.export.ProxyOptions;
 import io.opentelemetry.sdk.common.export.RetryPolicy;
 import io.opentelemetry.sdk.logs.export.LogRecordExporter;
@@ -63,7 +61,6 @@ class OtlpExporterConfigSupport {
             SpanExporterConfig exporterConfig = SpanExporterConfig.create(config);
 
             return switch (exporterConfig.type()) {
-                case SpanExporterType.ZIPKIN -> createZipkinSpanExporter(config);
                 case SpanExporterType.CONSOLE -> LoggingSpanExporter.create();
                 case SpanExporterType.LOGGING_OTLP -> OtlpJsonLoggingSpanExporter.create();
                 case SpanExporterType.OTLP -> createOtlpSpanExporter(config);
@@ -112,22 +109,6 @@ class OtlpExporterConfigSupport {
                 case HTTP_PROTO -> createHttpProtobufLogRecordExporter(OtlpHttpExporterConfig.create(config));
                 case GRPC -> createGrpcLogRecordExporter(exporterConfig);
             };
-        }
-
-        static ZipkinSpanExporter createZipkinSpanExporter(Config config) {
-            ZipkinSpanExporterBuilder builder = ZipkinSpanExporter.builder();
-
-            var zipkinConfig = ZipkinExporterConfig.create(config);
-
-            zipkinConfig.compression().map(CompressionType::lowerCase).ifPresent(builder::setCompression);
-            zipkinConfig.encoder().ifPresent(builder::setEncoder);
-            zipkinConfig.endpoint().map(URI::toASCIIString).ifPresent(builder::setEndpoint);
-            zipkinConfig.timeout().ifPresent(builder::setReadTimeout);
-            zipkinConfig.sender().ifPresent(builder::setSender);
-            zipkinConfig.localIpAddressSupplier().ifPresent(builder::setLocalIpAddressSupplier);
-            zipkinConfig.meterProvider().ifPresent(builder::setMeterProvider);
-
-            return builder.build();
         }
 
         @SuppressWarnings("checkstyle:ParameterNumber") // we need all of them
