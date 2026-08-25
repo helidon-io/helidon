@@ -124,15 +124,6 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         markSupported(connectionTarget, handler);
     }
 
-    private void markSupported(ClientConnectionTarget connectionTarget,
-                               Http2ClientConnectionHandler expectedHandler) {
-        Http2ClientConnectionHandler handler = cache.get(connectionTarget);
-        if (handler == expectedHandler && handler != null) {
-            handler.markDirectHttp2Supported();
-            markSupported(connectionTarget.connectionKey());
-        }
-    }
-
     boolean alternativeAvailable(ClientConnectionTarget connectionTarget, boolean explicitConnection) {
         return altSvc.available(connectionTarget,
                                 explicitConnection,
@@ -308,6 +299,19 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
         return result;
     }
 
+    private static IllegalStateException staleTlsGeneration() {
+        return new IllegalStateException("TLS configuration was reloaded before connection-pool acquisition");
+    }
+
+    private void markSupported(ClientConnectionTarget connectionTarget,
+                               Http2ClientConnectionHandler expectedHandler) {
+        Http2ClientConnectionHandler handler = cache.get(connectionTarget);
+        if (handler == expectedHandler && handler != null) {
+            handler.markDirectHttp2Supported();
+            markSupported(connectionTarget.connectionKey());
+        }
+    }
+
     private Http2ClientConnectionHandler acquireHandler(Http2ClientImpl http2Client,
                                                         ClientConnectionTarget connectionTarget) {
         List<Http2ClientConnectionHandler> retiredHandlers = null;
@@ -382,10 +386,6 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
                 }
             }
         }
-    }
-
-    private static IllegalStateException staleTlsGeneration() {
-        return new IllegalStateException("TLS configuration was reloaded before connection-pool acquisition");
     }
 
     private void retireOldestTarget(List<Http2ClientConnectionHandler> retiredHandlers) {
