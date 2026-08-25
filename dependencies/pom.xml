@@ -70,8 +70,6 @@
         <version.lib.jakarta.transaction-api>2.0.1</version.lib.jakarta.transaction-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
-        <version.lib.jaxb-core>4.0.5</version.lib.jaxb-core>
-        <version.lib.jaxb-impl>4.0.5</version.lib.jaxb-impl>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
@@ -157,24 +155,6 @@
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${version.lib.jakarta.xml.bind-api}</version>
-            </dependency>
-            <!--
-                "Old JAXB Core". (See
-                https://github.com/eclipse-ee4j/jaxb-ri/blob/1120e83b8bac6dfd1636e19269a36a8ccaad94e4/jaxb-ri/bundles/core/pom.xml#L25-L30.)
-            -->
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-core</artifactId>
-                <version>${version.lib.jaxb-core}</version>
-            </dependency>
-            <!--
-                "Old JAXB Runtime". (See
-                https://github.com/eclipse-ee4j/jaxb-ri/blob/1120e83b8bac6dfd1636e19269a36a8ccaad94e4/jaxb-ri/bundles/runtime/pom.xml#L25-L30.)
-            -->
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${version.lib.jaxb-impl}</version>
             </dependency>
             <!--
                 "JAXB Runtime"/"JAXB (JSR 222) Reference Implementation". (See
