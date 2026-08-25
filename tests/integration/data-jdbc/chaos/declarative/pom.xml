@@ -96,7 +96,6 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <groups>${data.jdbc.chaos.groups}</groups>
-                    <excludedGroups>${data.jdbc.chaos.excludedGroups}</excludedGroups>
                     <includes>
                         <include>io/helidon/data/jdbc/tests/chaos/declarative/*/**/*Test.class</include>
                     </includes>

@@ -9,8 +9,8 @@ databases and through both supported application styles:
 
 The tests are intentionally integration-level. They validate provider behavior
 against real JDBC drivers, database dialect differences, transaction behavior,
-generated keys, bootstrap diagnostics, resource ownership, SQL/bind handling,
-and chaos/fault-injection scenarios.
+generated keys, bootstrap diagnostics, resource ownership, and SQL/bind
+handling.
 
 ## Supported databases and JDBC drivers
 
@@ -27,6 +27,48 @@ also changed.
 
 External database tests require a working Docker/Testcontainers environment.
 H2 tests do not require Docker.
+
+## Test database credentials
+
+The regular container tests use fixed credentials from the test source code.
+These credentials are intended only for temporary databases that
+Testcontainers creates for this suite. Do not use them for a shared database
+or for any other environment.
+
+The MySQL username is `test`, and its password is `mysql123`. To change these
+values, update the `withUsername` and `withPassword` calls in
+`common/src/mysql/java/io/helidon/data/jdbc/tests/database/MySqlDatabase.java`.
+
+The PostgreSQL username is `test`, and its password is `pgsql123`. To change
+these values, update the password passed to `withPassword` and the default
+username in
+`common/src/pgsql/java/io/helidon/data/jdbc/tests/database/PostgreSqlDatabase.java`.
+Also update the fallback username and password in
+`common/src/pgsql/docker/entrypoint.sh`.
+
+The Oracle Database password is `oracle123`. The tests use it for the built-in
+`system` account and for each generated integration test schema. To change this
+password, update the `PASSWORD` constant in
+`common/src/oracle/java/io/helidon/data/jdbc/tests/database/OracleDatabase.java`.
+That constant supplies the container password, the JDBC password, and the
+generated schema password.
+
+Choose strong and unique passwords before running the container tests on a
+machine where other users or systems can reach the mapped database ports. Keep
+each password consistent across the files listed above. Use values that satisfy
+the password rules of the selected database image. Do not replace these test
+values with production credentials, and do not commit private credentials to
+the repository.
+
+The H2 test
+`h2/src/test/java/io/helidon/data/jdbc/JdbcPersistenceUnitFactoryTest.java`
+contains the fixed username `owner` and the fixed password `correct-password`.
+It uses them only to create an authenticated database in memory. The same test
+uses `private-username-canary` and `private-password-canary` as deliberately
+invalid credentials and verifies that errors do not reveal them. These values
+do not provide access to an external database. If local policy requires a
+stronger H2 test password, update the value passed to `owner.setPassword` in
+that test. Keep the canary values distinct from the valid H2 credentials.
 
 ## Directory layout
 
@@ -49,7 +91,7 @@ tests/integration/data-jdbc/
     mysql/
     oracle/
     pgsql/                Generated repository tests by database.
-  chaos/                  Explicitly activated chaos and fault-injection tests.
+  chaos/                  See chaos/README.md.
 ```
 
 The imperative and declarative database leaves add the appropriate
@@ -94,77 +136,7 @@ mvn -f tests/integration/data-jdbc/pom.xml -pl h2 -am verify
 
 ## Chaos and fault-injection tests
 
-Chaos tests are under `tests/integration/data-jdbc/chaos` and are not part of
-the normal integration run. They are enabled only when the parent reactor is run
-with:
-
-```bash
--Ddata.jdbc.chaos=true
-```
-
-Chaos test goals:
-
-- catch resource leaks after failures;
-- verify failed operations do not poison the persistence unit;
-- verify transaction rollback behavior after JDBC failures;
-- verify generated-key and conversion failure recovery;
-- verify diagnostics are sanitized and do not expose SQL or bind-value canaries;
-- provide deterministic H2 fault injection for provider lifecycle boundaries
-  that are hard to reproduce reliably with real database outages.
-
-Chaos test categories are selected with `data.jdbc.chaos.mode`:
-
-| Mode | Meaning |
-| --- | --- |
-| `smoke` | Supported-database representative smoke tests. This is the default. |
-| `full` | Smoke tests plus the H2 deterministic fault-injection matrix. |
-| `disruption` | Vendor-specific disruption tests only. Reserved for deferred tests; not PR-default. |
-| `all` | All chaos categories. Currently smoke plus H2 deterministic tests until vendor disruption tests are added. |
-
-Invalid `data.jdbc.chaos.mode` values fail fast during Maven validation.
-
-Run the default chaos smoke suite:
-
-```bash
-mvn -f tests/integration/data-jdbc/pom.xml -Ddata.jdbc.chaos=true verify
-```
-
-Run only H2 chaos smoke tests:
-
-```bash
-mvn -f tests/integration/data-jdbc/pom.xml -Ddata.jdbc.chaos=true -pl chaos/imperative/h2,chaos/declarative/h2 -am verify
-```
-
-Run H2 deterministic fault injection plus H2 smoke tests:
-
-```bash
-mvn -f tests/integration/data-jdbc/pom.xml -Ddata.jdbc.chaos=true -Ddata.jdbc.chaos.mode=full -pl chaos/h2,chaos/imperative/h2,chaos/declarative/h2 -am verify
-```
-
-Run the full chaos mode from the JDBC integration parent:
-
-```bash
-mvn -f tests/integration/data-jdbc/pom.xml -Ddata.jdbc.chaos=true -Ddata.jdbc.chaos.mode=full verify
-```
-
-Run all chaos categories from the chaos project directly:
-
-```bash
-mvn -f tests/integration/data-jdbc/chaos/pom.xml -Ddata.jdbc.chaos.mode=all verify
-```
-
-Run one chaos database leaf:
-
-```bash
-mvn -f tests/integration/data-jdbc/pom.xml -Ddata.jdbc.chaos=true -pl chaos/imperative/mysql -am verify
-mvn -f tests/integration/data-jdbc/pom.xml -Ddata.jdbc.chaos=true -pl chaos/declarative/pgsql -am verify
-mvn -f tests/integration/data-jdbc/pom.xml -Ddata.jdbc.chaos=true -pl chaos/imperative/oracle -am verify
-```
-
-Vendor disruption tests are documented as a later phase in
-`docs/codex/chaos-fault-injection-test-plan.md`. They should remain isolated
-from normal PR CI unless they become deterministic and bounded in the target CI
-environment.
+See the [chaos test README](chaos/README.md).
 
 ## Test design notes
 
@@ -177,9 +149,3 @@ environment.
   operation returned its connection lease.
 - Do not let application-visible failures expose configured SQL, secret bind
   values, driver diagnostic canaries, or raw next-exception details.
-- Keep chaos tests deterministic. Prefer H2 fault-injection wrappers for
-  provider lifecycle edges and reserve real network/session/container
-  disruptions for explicitly selected vendor disruption tests.
-- Avoid committing failing chaos tests to the main branch. If a chaos test
-  exposes a product issue, keep it enabled on the feature branch and fix the
-  product behavior or update the documented contract before merge.

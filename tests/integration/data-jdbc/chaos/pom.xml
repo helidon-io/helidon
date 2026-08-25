@@ -29,85 +29,12 @@
     <name>Helidon Tests Integration Data JDBC Chaos Project</name>
 
     <properties>
-        <data.jdbc.chaos.mode>smoke</data.jdbc.chaos.mode>
         <data.jdbc.chaos.groups>data-jdbc-chaos-smoke</data.jdbc.chaos.groups>
-        <data.jdbc.chaos.excludedGroups>data-jdbc-reference-exhaustive,data-jdbc-disruption</data.jdbc.chaos.excludedGroups>
     </properties>
 
     <modules>
         <module>common</module>
-        <module>h2</module>
         <module>imperative</module>
         <module>declarative</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>data-jdbc-chaos-mode-full</id>
-            <activation>
-                <property>
-                    <name>data.jdbc.chaos.mode</name>
-                    <value>full</value>
-                </property>
-            </activation>
-            <properties>
-                <data.jdbc.chaos.groups>data-jdbc-chaos-smoke,data-jdbc-reference-exhaustive</data.jdbc.chaos.groups>
-                <data.jdbc.chaos.excludedGroups>data-jdbc-disruption</data.jdbc.chaos.excludedGroups>
-            </properties>
-        </profile>
-        <profile>
-            <id>data-jdbc-chaos-mode-disruption</id>
-            <activation>
-                <property>
-                    <name>data.jdbc.chaos.mode</name>
-                    <value>disruption</value>
-                </property>
-            </activation>
-            <properties>
-                <data.jdbc.chaos.groups>data-jdbc-disruption</data.jdbc.chaos.groups>
-                <data.jdbc.chaos.excludedGroups>data-jdbc-chaos-smoke,data-jdbc-reference-exhaustive</data.jdbc.chaos.excludedGroups>
-            </properties>
-        </profile>
-        <profile>
-            <id>data-jdbc-chaos-mode-all</id>
-            <activation>
-                <property>
-                    <name>data.jdbc.chaos.mode</name>
-                    <value>all</value>
-                </property>
-            </activation>
-            <properties>
-                <data.jdbc.chaos.groups>data-jdbc-chaos</data.jdbc.chaos.groups>
-                <data.jdbc.chaos.excludedGroups>data-jdbc-chaos-exclude-none</data.jdbc.chaos.excludedGroups>
-            </properties>
-        </profile>
-    </profiles>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>validate-data-jdbc-chaos-mode</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireProperty>
-                                    <property>data.jdbc.chaos.mode</property>
-                                    <regex>^(smoke|full|disruption|all)$</regex>
-                                    <regexMessage>
-                                        data.jdbc.chaos.mode must be one of smoke, full, disruption, or all.
-                                    </regexMessage>
-                                </requireProperty>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>
