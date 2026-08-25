@@ -111,7 +111,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private volatile Thread myThread;
     private volatile boolean canRun = true;
     private volatile boolean closeInterrupt;
-    private volatile boolean closingConnection;
     private volatile boolean currentlyReadingPrologue;
     private volatile ZonedDateTime lastRequestTimestamp;
     private volatile ServerConnection upgradeConnection;
@@ -146,7 +145,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     @Override
     public boolean canInterrupt() {
         if (upgradeConnection == null) {
-            return currentlyReadingPrologue || closingConnection;
+            return currentlyReadingPrologue;
         }
         return true;
     }
@@ -564,13 +563,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void flushBeforeClose() {
-        closingConnection = true;
         try {
             writer.flush();
         } catch (RuntimeException e) {
             throw new CloseConnectionException("Failed to flush closing response", e);
-        } finally {
-            closingConnection = false;
         }
     }
 
