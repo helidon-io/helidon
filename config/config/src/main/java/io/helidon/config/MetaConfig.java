@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.RetryPolicy;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Meta configuration.
@@ -182,28 +183,11 @@ public final class MetaConfig {
      * @see Config.Builder#config(Config)
      */
     public static List<ConfigSource> configSource(Config sourceMetaConfig) {
-        String type = sourceMetaConfig.get("type").asString().get();
-        boolean multiSource = sourceMetaConfig.get("multi-source").asBoolean().orElse(false);
+        return configSource(sourceMetaConfig, Optional.empty());
+    }
 
-        Config sourceProperties = sourceMetaConfig.get("properties");
-
-        if (multiSource) {
-            List<ConfigSource> sources = MetaProviders.configSources(type, sourceProperties);
-
-            if (LOGGER.isLoggable(Level.TRACE)) {
-                LOGGER.log(Level.TRACE, "Loaded sources of type \"" + type + "\", values: " + sources);
-            }
-
-            return sources;
-        } else {
-            ConfigSource source = MetaProviders.configSource(type, sourceProperties);
-
-            if (LOGGER.isLoggable(Level.TRACE)) {
-                LOGGER.log(Level.TRACE, "Loaded source of type \"" + type + "\", class: " + source.getClass().getName());
-            }
-
-            return List.of(source);
-        }
+    static List<ConfigSource> configSource(Config sourceMetaConfig, ServiceRegistry serviceRegistry) {
+        return configSource(sourceMetaConfig, Optional.of(serviceRegistry));
     }
 
     // override config source
@@ -237,6 +221,36 @@ public final class MetaConfig {
      */
     public Config metaConfiguration() {
         return this.metaConfig;
+    }
+
+    private static List<ConfigSource> configSource(Config sourceMetaConfig,
+                                                   Optional<ServiceRegistry> serviceRegistry) {
+        String type = sourceMetaConfig.get("type").asString().get();
+        boolean multiSource = sourceMetaConfig.get("multi-source").asBoolean().orElse(false);
+
+        Config sourceProperties = sourceMetaConfig.get("properties");
+
+        if (multiSource) {
+            List<ConfigSource> sources = serviceRegistry
+                    .map(it -> MetaProviders.configSources(type, sourceProperties, it))
+                    .orElseGet(() -> MetaProviders.configSources(type, sourceProperties));
+
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Loaded sources of type \"" + type + "\", values: " + sources);
+            }
+
+            return sources;
+        } else {
+            ConfigSource source = serviceRegistry
+                    .map(it -> MetaProviders.configSource(type, sourceProperties, it))
+                    .orElseGet(() -> MetaProviders.configSource(type, sourceProperties));
+
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Loaded source of type \"" + type + "\", class: " + source.getClass().getName());
+            }
+
+            return List.of(source);
+        }
     }
 
     private static Config createDefault() {

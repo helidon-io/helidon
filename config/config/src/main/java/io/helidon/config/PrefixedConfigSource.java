@@ -27,6 +27,7 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.EventConfigSource;
 import io.helidon.config.spi.NodeConfigSource;
 import io.helidon.config.spi.RetryPolicy;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * {@link ConfigSource} implementation wraps another config source and add key prefix to original one.
@@ -64,6 +65,13 @@ public final class PrefixedConfigSource implements ConfigSource,
     public static PrefixedConfigSource create(Config metaConfig) {
         String prefix = metaConfig.get(KEY_KEY).asString().orElse("");
         ConfigSource configSource = MetaConfig.configSource(metaConfig).get(0);
+
+        return create(prefix, configSource);
+    }
+
+    static PrefixedConfigSource create(Config metaConfig, ServiceRegistry serviceRegistry) {
+        String prefix = metaConfig.get(KEY_KEY).asString().orElse("");
+        ConfigSource configSource = MetaConfig.configSource(metaConfig, serviceRegistry).get(0);
 
         return create(prefix, configSource);
     }

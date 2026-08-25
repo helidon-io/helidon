@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.PollingStrategyProvider;
 import io.helidon.config.spi.RetryPolicy;
 import io.helidon.config.spi.RetryPolicyProvider;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 
 /**
@@ -109,33 +110,21 @@ final class MetaProviders {
     }
 
     static ConfigSource configSource(String type, Config config) {
-        var all = allProviders();
-        var supported = all.stream()
-                .map(ConfigSourceProvider::supported)
-                .flatMap(Set::stream)
-                .collect(Collectors.toUnmodifiableSet());
+        return configSource(type, config, Optional.empty());
+    }
 
-        return all.stream()
-                .filter(provider -> provider.supports(type))
-                .findFirst()
-                .map(provider -> provider.create(type, config))
-                .or(() -> findSourceFromRegistry(type))
-                .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
-                                                                   + " Supported types: " + supported));
+    static ConfigSource configSource(String type, Config config, ServiceRegistry serviceRegistry) {
+        return configSource(type, config, Optional.of(serviceRegistry));
     }
 
     static List<ConfigSource> configSources(String type, Config sourceProperties) {
-        var all = allProviders();
-        var supported = all.stream()
-                .map(ConfigSourceProvider::supported)
-                .flatMap(Set::stream)
-                .collect(Collectors.toUnmodifiableSet());
-        return all.stream()
-                .filter(provider -> provider.supports(type))
-                .findFirst()
-                .map(provider -> provider.createMulti(type, sourceProperties))
-                .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
-                                                                   + " Supported types: " + supported));
+        return configSources(type, sourceProperties, Optional.empty());
+    }
+
+    static List<ConfigSource> configSources(String type,
+                                            Config sourceProperties,
+                                            ServiceRegistry serviceRegistry) {
+        return configSources(type, sourceProperties, Optional.of(serviceRegistry));
     }
 
     static OverrideSource overrideSource(String type, Config config) {
@@ -165,13 +154,55 @@ final class MetaProviders {
                                                                    + " Supported types: " + SUPPORTED_RETRY_POLICIES));
     }
 
-    private static Optional<ConfigSource> findSourceFromRegistry(String type) {
+    private static ConfigSource configSource(String type,
+                                             Config config,
+                                             Optional<ServiceRegistry> serviceRegistry) {
+        var all = allProviders(serviceRegistry);
+        var supported = all.stream()
+                .map(ConfigSourceProvider::supported)
+                .flatMap(Set::stream)
+                .collect(Collectors.toUnmodifiableSet());
+
+        return all.stream()
+                .filter(provider -> provider.supports(type))
+                .findFirst()
+                .map(provider -> provider.create(type, config))
+                .or(() -> findSource(type, serviceRegistry))
+                .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
+                                                                   + " Supported types: " + supported));
+    }
+
+    private static List<ConfigSource> configSources(String type,
+                                                    Config sourceProperties,
+                                                    Optional<ServiceRegistry> serviceRegistry) {
+        var all = allProviders(serviceRegistry);
+        var supported = all.stream()
+                .map(ConfigSourceProvider::supported)
+                .flatMap(Set::stream)
+                .collect(Collectors.toUnmodifiableSet());
+        return all.stream()
+                .filter(provider -> provider.supports(type))
+                .findFirst()
+                .map(provider -> provider.createMulti(type, sourceProperties))
+                .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
+                                                                   + " Supported types: " + supported));
+    }
+
+    private static Optional<ConfigSource> findSource(String type, Optional<ServiceRegistry> serviceRegistry) {
+        if (serviceRegistry.isPresent()) {
+            return serviceRegistry.get().firstNamed(ConfigSource.class, type);
+        }
         return Services.firstNamed(ConfigSource.class, type);
     }
 
-    private static List<ConfigSourceProvider> allProviders() {
-        var result = new ArrayList<>(Services.all(ConfigSourceProvider.class));
-        result.add(new BuiltInConfigSourcesProvider());
+    private static List<ConfigSourceProvider> allProviders(Optional<ServiceRegistry> serviceRegistry) {
+        List<ConfigSourceProvider> result;
+        if (serviceRegistry.isPresent()) {
+            result = new ArrayList<>(serviceRegistry.get().all(ConfigSourceProvider.class));
+        } else {
+            result = new ArrayList<>(Services.all(ConfigSourceProvider.class));
+        }
+        result.add(new BuiltInConfigSourcesProvider(serviceRegistry));
         return result;
     }
 
@@ -281,6 +312,8 @@ final class MetaProviders {
 
         private static final Map<String, Function<Config, ConfigSource>> BUILT_INS = new HashMap<>();
 
+        private final Optional<ServiceRegistry> serviceRegistry;
+
         static {
             BUILT_INS.put(SYSTEM_PROPERTIES_TYPE, config -> ConfigSources.systemProperties().config(config).build());
             BUILT_INS.put(ENVIRONMENT_VARIABLES_TYPE, config -> ConfigSources.environmentVariables());
@@ -293,6 +326,10 @@ final class MetaProviders {
             BUILT_INS.put(INLINED_TYPE, InlinedConfigSource::create);
         }
 
+        private BuiltInConfigSourcesProvider(Optional<ServiceRegistry> serviceRegistry) {
+            this.serviceRegistry = serviceRegistry;
+        }
+
         @Override
         public boolean supports(String type) {
             return BUILT_INS.containsKey(type);
@@ -300,6 +337,9 @@ final class MetaProviders {
 
         @Override
         public ConfigSource create(String type, Config metaConfig) {
+            if (PREFIXED_TYPE.equals(type) && serviceRegistry.isPresent()) {
+                return PrefixedConfigSource.create(metaConfig, serviceRegistry.get());
+            }
             return BUILT_INS.get(type).apply(metaConfig);
         }
 

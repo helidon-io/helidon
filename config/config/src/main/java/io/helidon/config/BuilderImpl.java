@@ -90,6 +90,7 @@ class BuilderImpl implements Config.Builder {
      * Other configuration.
      */
     private OverrideSource overrideSource;
+    private Optional<ServiceRegistry> serviceRegistry;
 
     /*
      * Other switches
@@ -104,6 +105,7 @@ class BuilderImpl implements Config.Builder {
 
     BuilderImpl() {
         overrideSource = OverrideSources.empty();
+        serviceRegistry = Optional.empty();
         mapperProviders = MapperProviders.create();
         mapperServicesEnabled = true;
         parsers = new ArrayList<>();
@@ -363,7 +365,7 @@ class BuilderImpl implements Config.Builder {
 
     @Override
     public Config.Builder serviceRegistry(ServiceRegistry serviceRegistry) {
-        // not yet implemented
+        this.serviceRegistry = Optional.of(serviceRegistry);
         return this;
     }
 
@@ -392,7 +394,7 @@ class BuilderImpl implements Config.Builder {
 
         metaConfig.get("sources")
                 .asNodeList()
-                .ifPresent(list -> list.forEach(it -> sourceList.addAll(MetaConfig.configSource(it))));
+                .ifPresent(list -> list.forEach(it -> sourceList.addAll(configSources(it))));
 
         sourceList.forEach(this::addSource);
         sourceList.clear();
@@ -575,6 +577,13 @@ class BuilderImpl implements Config.Builder {
                 .stream()
                 .map(LoadedFilterProvider::new)
                 .forEach(this::addFilter);
+    }
+
+    private List<ConfigSource> configSources(Config metaConfig) {
+        if (serviceRegistry.isPresent()) {
+            return MetaConfig.configSource(metaConfig, serviceRegistry.get());
+        }
+        return MetaConfig.configSource(metaConfig);
     }
 
     private interface PrioritizedMapperProvider extends Weighted,
