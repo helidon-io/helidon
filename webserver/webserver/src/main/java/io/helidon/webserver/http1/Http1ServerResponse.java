@@ -538,8 +538,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     }
 
     private boolean resolveKeepConnectionOpen() {
-        return keepAlive
-                && (!headers.contains(HeaderNames.CONNECTION) || !headers.containsToken(HeaderValues.CONNECTION_CLOSE));
+        return keepAlive && !headers.containsToken(HeaderValues.CONNECTION_CLOSE);
     }
 
     static class BlockingOutputStream extends OutputStream {
