@@ -70,6 +70,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private final ServerResponseTrailers trailers;
     private final boolean keepAlive;
     private final boolean sendKeepAliveHeader;
+    private final boolean validateHeaders;
 
     private boolean keepConnectionOpen;
     private boolean streamingEntity;
@@ -78,7 +79,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private long bytesWritten;
     private String streamResult = "";
     private boolean isNoEntityStatus;
-    private final boolean validateHeaders;
 
     private UnaryOperator<OutputStream> outputStreamFilter;
 
@@ -523,11 +523,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         return keepConnectionOpen;
     }
 
-    private boolean resolveKeepConnectionOpen() {
-        return keepAlive
-                && (!headers.contains(HeaderNames.CONNECTION) || !headers.containsToken(HeaderValues.CONNECTION_CLOSE));
-    }
-
     private static Status noEntityInternalError(Status status) {
         LOGGER.log(System.Logger.Level.ERROR, "Attempt to send status " + status.text() + " with entity."
                 + " Server responded with Internal Server Error. Please fix your routing, this is not allowed "
@@ -540,6 +535,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         return code == Status.NO_CONTENT_204.code()
                 || code == Status.RESET_CONTENT_205.code()
                 || code == Status.NOT_MODIFIED_304.code();
+    }
+
+    private boolean resolveKeepConnectionOpen() {
+        return keepAlive
+                && (!headers.contains(HeaderNames.CONNECTION) || !headers.containsToken(HeaderValues.CONNECTION_CLOSE));
     }
 
     static class BlockingOutputStream extends OutputStream {
