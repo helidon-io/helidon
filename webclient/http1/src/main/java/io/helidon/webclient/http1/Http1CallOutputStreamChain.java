@@ -108,9 +108,11 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         ResponseHead responseHead = readResponseHead(connection, reader);
         Status responseStatus = responseHead.status();
         ClientResponseHeaders responseHeaders = responseHead.headers();
+        captureProtocolResponse(connection, responseStatus, responseHeaders);
 
         if (originalRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
+            publishProtocolResponse();
             checkRedirectHeaders(responseHeaders);
             URI newUri = URI.create(responseHeaders.get(HeaderNames.LOCATION).get());
             ClientUri redirectUri = ClientUri.create(newUri);
@@ -480,8 +482,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
                 if (responseStatus.code() != Status.CONTINUE_100.code()) {
                     ClientResponseHeaders responseHeaders = responseHead.headers();
+                    callChain.captureProtocolResponse(connection, responseStatus, responseHeaders);
 
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
+                        callChain.publishProtocolResponse();
                         // redirect as needed
                         // Discard any remaining data from the response
                         reader.skip(reader.available());

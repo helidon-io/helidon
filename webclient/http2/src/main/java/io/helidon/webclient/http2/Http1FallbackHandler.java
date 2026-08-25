@@ -32,6 +32,7 @@ final class Http1FallbackHandler {
     private final Function<Http1ClientRequest, Http1ClientResponse> responseFunction;
     private final boolean upgradeFailureResponseAllowed;
     private volatile String actualProtocolId = Http2Client.PROTOCOL_ID;
+    private volatile boolean explicitConnection;
 
     Http1FallbackHandler(CompletableFuture<WebClientServiceRequest> whenSent,
                          Function<Http1ClientRequest, Http1ClientResponse> responseFunction,
@@ -69,6 +70,14 @@ final class Http1FallbackHandler {
 
     boolean upgradeFailureResponseAllowed() {
         return upgradeFailureResponseAllowed;
+    }
+
+    void explicitConnection(boolean explicitConnection) {
+        this.explicitConnection = explicitConnection;
+    }
+
+    boolean explicitConnection() {
+        return explicitConnection;
     }
 
     String actualProtocolId() {

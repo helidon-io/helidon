@@ -33,9 +33,28 @@ in such a case we use `prior-knowledge` and fail if we cannot switch to HTTP/2.
 
 When using TLS, the client will use ALPN (protocol negotiation) to use appropriate HTTP version (either 1.1, or 2).
 
-Once (and if) HTTP/3 is supported, it cannot follow the same approach (as it is UDP and not TCP based). For such cases, we
-plan to support `Alt-Svc` header, with which the server can tell us to use a different protocol version, and the next request
-to the same authority would switch to that version.
+Client Alt-Svc use is opt-in through the optional common `ClientAltSvcConfig` (`alt-svc`) configuration. Within a
+present configuration, `enabled` defaults to `true`; an empty `protocols` list allows every available supporting
+provider, while a non-empty list is an exact, case-sensitive ALPN protocol filter. The current HTTP/2 provider uses the
+`h2` protocol ID.
+
+Initial Alt-Svc support accepts advertisements only from HTTPS origins and only for alternatives on the same host,
+although the port may differ. Using an alternative changes only the connection endpoint; the request scheme and
+authority remain unchanged, and WebClient adds `Alt-Used` only to the alternative request. `h2c` alternatives are not
+supported. Plain HTTP origins cannot be upgraded to TLS-based HTTP/2 until the RFC 8164
+`/.well-known/http-opportunistic` opt-in is implemented.
+
+Alt-Svc never bypasses a selected proxy. The current HTTP/2 provider uses alternatives only for a direct route that is
+not pinned to a resolved address. The configured TLS policy is honored as-is for the alternative, including an explicit
+`SSLContext`, a custom TLS manager, disabled endpoint identification, and `trust-all`. An unsafe or permissive TLS
+policy makes Alt-Svc steering equally unsafe or permissive.
+
+The HTTP/2 provider applies `ma`, `Age`, `Date`, `clear`, and `persist` to its connection-cache discovery state. Shared
+connection caches share that state; disabling connection-cache sharing isolates it. `persist` does not make discovery
+state durable across a process or beyond the cache lifecycle.
+
+HTTP/3 cannot use TCP ALPN or an HTTP/1.1 upgrade because it runs over QUIC. The common client policy, response
+notification, and parsed `Alt-Svc` model can also support an HTTP/3 provider.
 
 To provide HTTP version support extension, the implementation must provide `webclient.spi.HttpClientSpiProvider`.
 

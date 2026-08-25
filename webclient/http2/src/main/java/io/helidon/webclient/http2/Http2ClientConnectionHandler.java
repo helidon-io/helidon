@@ -24,10 +24,13 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
@@ -41,12 +44,14 @@ import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.ResolvedClientTarget;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
+import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.http1.UpgradeResponse;
 import io.helidon.webclient.http2.Http2ConnectionAttemptResult.Result;
 
@@ -67,7 +72,7 @@ class Http2ClientConnectionHandler {
     private final Map<ClientConnection, Http2ClientConnection> h2ConnByConn =
             Collections.synchronizedMap(new IdentityHashMap<>());
 
-    private final Map<Http2ClientConnection, ClientConnectionTarget> allConnections =
+    private final Map<Http2ClientConnection, ConnectionRoute> allConnections =
             Collections.synchronizedMap(new IdentityHashMap<>());
     private final Set<Http2ClientConnection> pendingUpgradedConnections =
             Collections.newSetFromMap(new IdentityHashMap<>());
@@ -76,18 +81,26 @@ class Http2ClientConnectionHandler {
     private final AtomicReference<Http2ClientConnection> activeConnection = new AtomicReference<>();
     private final ReentrantLock lock = new ReentrantLock();
     private final ReentrantLock lifecycleLock = new ReentrantLock();
+    private final AtomicBoolean directHttp2Supported = new AtomicBoolean();
     private final AtomicReference<Result> result = new AtomicReference<>(Result.UNKNOWN);
     private final int connectionCacheSize;
+    private final Predicate<Http2AltSvcCache.Selection> currentAlternative;
     private boolean closed;
     private boolean retired;
     private boolean connectionsRetired;
     private int leases;
 
     Http2ClientConnectionHandler(int connectionCacheSize) {
+        this(connectionCacheSize, _ -> true);
+    }
+
+    Http2ClientConnectionHandler(int connectionCacheSize,
+                                 Predicate<Http2AltSvcCache.Selection> currentAlternative) {
         if (connectionCacheSize < 1) {
             throw new IllegalArgumentException("Connection cache size must be greater than zero");
         }
         this.connectionCacheSize = connectionCacheSize;
+        this.currentAlternative = Objects.requireNonNull(currentAlternative, "currentAlternative");
     }
 
     boolean acquire() {
@@ -101,6 +114,14 @@ class Http2ClientConnectionHandler {
         } finally {
             lifecycleLock.unlock();
         }
+    }
+
+    boolean directHttp2Supported() {
+        return directHttp2Supported.get();
+    }
+
+    void markDirectHttp2Supported() {
+        directHttp2Supported.set(true);
     }
 
     void release() {
@@ -141,6 +162,82 @@ class Http2ClientConnectionHandler {
         if (retireConnections) {
             retireConnections();
         }
+    }
+
+    boolean hasAlternative(Http2AltSvcCache.Selection selection) {
+        lifecycleLock.lock();
+        try {
+            for (Http2ClientConnection connection : selectableConnections) {
+                ConnectionRoute route = allConnections.get(connection);
+                if (route != null && route.matches(selection)) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    boolean hasAlternative(Http2AltSvcCache.Generation generation) {
+        lifecycleLock.lock();
+        try {
+            for (Http2ClientConnection connection : selectableConnections) {
+                ConnectionRoute route = allConnections.get(connection);
+                if (route != null && route.matches(generation)) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    void retire(Http2AltSvcCache.Selection selection) {
+        Set<Http2ClientConnection> toRetire = new HashSet<>();
+        lock.lock();
+        try {
+            lifecycleLock.lock();
+            try {
+                for (Http2ClientConnection connection : List.copyOf(allConnections.keySet())) {
+                    ConnectionRoute route = allConnections.get(connection);
+                    if (route != null && route.matches(selection)) {
+                        allConnections.remove(connection, route);
+                        removeSelectableConnection(connection);
+                        toRetire.add(connection);
+                    }
+                }
+            } finally {
+                lifecycleLock.unlock();
+            }
+        } finally {
+            lock.unlock();
+        }
+        toRetire.forEach(Http2ClientConnection::retire);
+    }
+
+    void retire(Http2AltSvcCache.Generation generation) {
+        Set<Http2ClientConnection> toRetire = new HashSet<>();
+        lock.lock();
+        try {
+            lifecycleLock.lock();
+            try {
+                for (Http2ClientConnection connection : List.copyOf(allConnections.keySet())) {
+                    ConnectionRoute route = allConnections.get(connection);
+                    if (route != null && route.matches(generation)) {
+                        allConnections.remove(connection, route);
+                        removeSelectableConnection(connection);
+                        toRetire.add(connection);
+                    }
+                }
+            } finally {
+                lifecycleLock.unlock();
+            }
+        } finally {
+            lock.unlock();
+        }
+        toRetire.forEach(Http2ClientConnection::retire);
     }
 
     void close() {
@@ -192,7 +289,6 @@ class Http2ClientConnectionHandler {
                 return http1(http2Client,
                              requestTarget,
                              request,
-                             initialUri,
                              serviceRequest,
                              http1FallbackHandler,
                              this);
@@ -206,7 +302,6 @@ class Http2ClientConnectionHandler {
                     yield http1(http2Client,
                                 requestTarget,
                                 request,
-                                initialUri,
                                 serviceRequest,
                                 http1FallbackHandler,
                                 this);
@@ -225,6 +320,20 @@ class Http2ClientConnectionHandler {
         }
     }
 
+    Http2ConnectionAttemptResult newAlternativeStream(Http2ClientImpl http2Client,
+                                                      Http2AltSvcCache.Selection selection,
+                                                      Http2ClientRequestImpl request,
+                                                      Http1FallbackHandler http1FallbackHandler) {
+        try {
+            return alternativeHttp2(http2Client, selection, request);
+        } catch (AlternativeConnectionException e) {
+            throw e;
+        } catch (RuntimeException | Error e) {
+            http1FallbackHandler.completeSentExceptionally(e);
+            throw e;
+        }
+    }
+
     Http2ConnectionAttemptResult reuseStream(Http2ClientImpl http2Client,
                                              Http2ClientRequestImpl request) {
         if (result.get() != Result.HTTP_2) {
@@ -236,7 +345,7 @@ class Http2ClientConnectionHandler {
             throw new IllegalStateException("Interrupted", e);
         }
         try {
-            ExistingStream existingStream = existingStream(http2Client, request);
+            ExistingStream existingStream = existingStream(http2Client, request, null);
             if (existingStream == null) {
                 return null;
             }
@@ -244,7 +353,9 @@ class Http2ClientConnectionHandler {
                                                     existingStream.stream(),
                                                     null,
                                                     this,
-                                                    existingStream.connectionTarget());
+                                                    existingStream.route().logicalTarget(),
+                                                    existingStream.route().physicalTarget,
+                                                    null);
         } finally {
             lock.unlock();
         }
@@ -263,7 +374,7 @@ class Http2ClientConnectionHandler {
         }
         try {
             // read/write lock to obtain a stream or create a new connection
-            ExistingStream existingStream = existingStream(http2Client, request);
+            ExistingStream existingStream = existingStream(http2Client, request, null);
             if (existingStream == null) {
                 Http2ClientConnection connection;
                 try {
@@ -284,26 +395,156 @@ class Http2ClientConnectionHandler {
                 result.set(Result.HTTP_2);
                 // we must assume that a new connection can handle a new stream
                 Http2ClientStream stream = createStreamOnNewConnection(http2Client, connection, request);
-                return new Http2ConnectionAttemptResult(Result.HTTP_2, stream, null, this, requestTarget);
+                ConnectionRoute route = connectionRoute(connection, requestTarget);
+                return new Http2ConnectionAttemptResult(Result.HTTP_2,
+                                                        stream,
+                                                        null,
+                                                        this,
+                                                        requestTarget,
+                                                        route.physicalTarget,
+                                                        null);
             }
 
             return new Http2ConnectionAttemptResult(Result.HTTP_2,
                                                     existingStream.stream(),
                                                     null,
                                                     this,
-                                                    existingStream.connectionTarget());
+                                                    existingStream.route().logicalTarget(),
+                                                    existingStream.route().physicalTarget,
+                                                    null);
         } finally {
             lock.unlock();
         }
     }
 
-    private ExistingStream existingStream(Http2ClientImpl http2Client, Http2ClientRequestImpl request) {
+    private Http2ConnectionAttemptResult alternativeHttp2(Http2ClientImpl http2Client,
+                                                          Http2AltSvcCache.Selection selection,
+                                                          Http2ClientRequestImpl request) {
+        try {
+            lock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted", e);
+        }
+        try {
+            ensureAlternativeCurrent(selection);
+            ExistingStream existingStream = existingStream(http2Client, request, selection);
+            if (existingStream != null) {
+                try {
+                    ensureAlternativeCurrent(selection);
+                } catch (RuntimeException | Error e) {
+                    try {
+                        existingStream.stream().close();
+                    } catch (RuntimeException | Error closeFailure) {
+                        if (closeFailure != e) {
+                            e.addSuppressed(closeFailure);
+                        }
+                    }
+                    throw e;
+                }
+                return new Http2ConnectionAttemptResult(Result.HTTP_2,
+                                                        existingStream.stream(),
+                                                        null,
+                                                        this,
+                                                        existingStream.route().logicalTarget(),
+                                                        existingStream.route().physicalTarget,
+                                                        selection);
+            }
+            ensureAlternativeCanEstablish(selection);
+
+            ClientConnection clientConnection = null;
+            Http2ClientConnection connection = null;
+            try {
+                ResolvedClientTarget resolvedTarget = selection.originTarget()
+                        .resolve(selection.host(), selection.port(), selection.networkGeneration());
+                clientConnection = connectAlternative(http2Client.webClient(), resolvedTarget);
+                requireHttp2(clientConnection);
+                connection = createHttp2Connection(http2Client, clientConnection, true);
+                ensureAlternativeCurrent(selection);
+                activateConnection(selection.originTarget(), clientConnection, connection, selection);
+                ensureAlternativeCurrent(selection);
+            } catch (AlternativeConnectionException e) {
+                if (connection != null) {
+                    discardConnection(connection);
+                } else if (clientConnection != null) {
+                    closeClientConnection(clientConnection);
+                }
+                throw e;
+            } catch (RuntimeException e) {
+                if (connection != null) {
+                    discardConnection(connection);
+                } else if (clientConnection != null) {
+                    closeClientConnection(clientConnection);
+                }
+                AlternativeConnectionException.Reason reason = alternativeAvailable(selection)
+                        ? AlternativeConnectionException.Reason.PRE_SEND_FAILURE
+                        : AlternativeConnectionException.Reason.STALE;
+                throw new AlternativeConnectionException(selection, reason, e);
+            }
+
+            Http2ClientStream stream;
+            try {
+                stream = createStreamOnNewConnection(http2Client, connection, request);
+            } catch (RuntimeException e) {
+                AlternativeConnectionException.Reason reason = alternativeAvailable(selection)
+                        ? AlternativeConnectionException.Reason.PRE_SEND_FAILURE
+                        : AlternativeConnectionException.Reason.STALE;
+                throw new AlternativeConnectionException(selection, reason, e);
+            }
+            ConnectionRoute route = connectionRoute(connection, selection.originTarget());
+            return new Http2ConnectionAttemptResult(Result.HTTP_2,
+                                                    stream,
+                                                    null,
+                                                    this,
+                                                    route.logicalTarget(),
+                                                    route.physicalTarget,
+                                                    selection);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void ensureAlternativeCanEstablish(Http2AltSvcCache.Selection selection) {
+        ensureAlternativeCurrent(selection);
+        if (!selection.establishAllowed()) {
+            throw staleAlternative(selection, "Expired HTTP/2 alternative has no reusable connection");
+        }
+    }
+
+    private void ensureAlternativeCurrent(Http2AltSvcCache.Selection selection) {
+        if (!alternativeAvailable(selection)) {
+            throw staleAlternative(selection, "HTTP/2 alternative route selection is stale");
+        }
+    }
+
+    private boolean alternativeAvailable(Http2AltSvcCache.Selection selection) {
+        if (!currentAlternative.test(selection)) {
+            return false;
+        }
+        lifecycleLock.lock();
+        try {
+            return !closed && !retired;
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    private static AlternativeConnectionException staleAlternative(Http2AltSvcCache.Selection selection,
+                                                                    String message) {
+        return new AlternativeConnectionException(selection,
+                                                  AlternativeConnectionException.Reason.STALE,
+                                                  new IllegalStateException(message));
+    }
+
+    private ExistingStream existingStream(Http2ClientImpl http2Client,
+                                          Http2ClientRequestImpl request,
+                                          Http2AltSvcCache.Selection selectedAlternative) {
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
         Http2ClientConnection connection = activeConnection.get();
         if (connection != null) {
-            ClientConnectionTarget connectionTarget = allConnections.get(connection);
-            if (connectionTarget != null
-                    && (request.priorKnowledge() || !connectionTarget.proxyRoute().forwardProxy())) {
+            ConnectionRoute route = allConnections.get(connection);
+            if (route != null
+                    && route.matches(selectedAlternative)
+                    && (request.priorKnowledge() || !route.logicalTarget().proxyRoute().forwardProxy())) {
                 if (connection.closed(protocolConfig)) {
                     discardConnection(connection);
                 } else {
@@ -312,7 +553,7 @@ class Http2ClientConnectionHandler {
                                                                     http2Client.sendListener(),
                                                                     http2Client.recvListener());
                     if (stream != null) {
-                        return new ExistingStream(stream, connectionTarget);
+                        return new ExistingStream(stream, route);
                     }
                 }
             }
@@ -329,11 +570,11 @@ class Http2ClientConnectionHandler {
             if (candidate == connection) {
                 continue;
             }
-            ClientConnectionTarget connectionTarget = allConnections.get(candidate);
-            if (connectionTarget == null) {
+            ConnectionRoute route = allConnections.get(candidate);
+            if (route == null || !route.matches(selectedAlternative)) {
                 continue;
             }
-            if (!request.priorKnowledge() && connectionTarget.proxyRoute().forwardProxy()) {
+            if (!request.priorKnowledge() && route.logicalTarget().proxyRoute().forwardProxy()) {
                 continue;
             }
             if (candidate.closed(protocolConfig)) {
@@ -356,7 +597,7 @@ class Http2ClientConnectionHandler {
                 } finally {
                     lifecycleLock.unlock();
                 }
-                return new ExistingStream(stream, connectionTarget);
+                return new ExistingStream(stream, route);
             }
         }
         return null;
@@ -386,7 +627,7 @@ class Http2ClientConnectionHandler {
                         Http2ClientConnection connection = createHttp2Connection(http2Client,
                                                                                  clientConnection,
                                                                                  true);
-                        activateConnection(requestTarget, clientConnection, connection);
+                        activateConnection(requestTarget, clientConnection, connection, null);
                         return http2(http2Client,
                                      requestTarget,
                                      request,
@@ -426,7 +667,7 @@ class Http2ClientConnectionHandler {
                     Http2ClientConnection connection = createHttp2Connection(http2Client,
                                                                              clientConnection,
                                                                              true);
-                    activateConnection(requestTarget, clientConnection, connection);
+                    activateConnection(requestTarget, clientConnection, connection, null);
                     return http2(http2Client,
                                  requestTarget,
                                  request,
@@ -466,7 +707,7 @@ class Http2ClientConnectionHandler {
                 result.set(Result.HTTP_2);
                 ClientConnection connection = upgradeResponse.connection();
                 Http2ClientConnection conn = createUpgradedHttp2Connection(http2Client, connection);
-                activateConnection(requestTarget, connection, conn);
+                activateConnection(requestTarget, connection, conn, null);
                 return http2(http2Client,
                              requestTarget,
                              request,
@@ -516,10 +757,10 @@ class Http2ClientConnectionHandler {
             return http1(http2Client,
                          requestTarget,
                          request,
-                         initialUri,
                          serviceRequest,
                          http1FallbackHandler,
-                         this);
+                         this,
+                         resolvedTarget(clientConnection));
         } catch (RuntimeException | Error e) {
             closeClientConnection(clientConnection);
             throw e;
@@ -566,10 +807,10 @@ class Http2ClientConnectionHandler {
             return http1(http2Client,
                          requestTarget,
                          request,
-                         initialUri,
                          serviceRequest,
                          http1FallbackHandler,
-                         this);
+                         this,
+                         resolvedTarget(clientConnection));
         }
         return http2ExplicitConnection(http2Client, requestTarget, request, clientConnection);
     }
@@ -602,17 +843,20 @@ class Http2ClientConnectionHandler {
             }
             if (ownsExplicitConnection) {
                 result.set(Result.HTTP_2);
-                activateConnection(requestTarget, clientConnection, connection);
+                activateConnection(requestTarget, clientConnection, connection, null);
             }
 
-            return new Http2ConnectionAttemptResult(Result.HTTP_2,
-                                                    connection.createStream(request,
-                                                                            http2Client.clientConfig(),
-                                                                            http2Client.sendListener(),
-                                                                            http2Client.recvListener()),
-                                                    null,
-                                                    this,
-                                                    requestTarget);
+            return new Http2ConnectionAttemptResult(
+                    Result.HTTP_2,
+                    connection.createStream(request,
+                                            http2Client.clientConfig(),
+                                            http2Client.sendListener(),
+                                            http2Client.recvListener()),
+                    null,
+                    this,
+                    requestTarget,
+                    connection.resolvedTarget().orElse(null),
+                    null);
         } finally {
             lock.unlock();
         }
@@ -634,20 +878,38 @@ class Http2ClientConnectionHandler {
     static Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,
                                               ClientConnectionTarget requestTarget,
                                               Http2ClientRequestImpl request,
-                                              ClientUri initialUri,
                                               WebClientServiceRequest serviceRequest,
                                               Http1FallbackHandler http1FallbackHandler,
                                               Http2ClientConnectionHandler resultHandler) {
+        return http1(http2Client,
+                     requestTarget,
+                     request,
+                     serviceRequest,
+                     http1FallbackHandler,
+                     resultHandler,
+                     null);
+    }
+
+    private static Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,
+                                                       ClientConnectionTarget requestTarget,
+                                                       Http2ClientRequestImpl request,
+                                                       WebClientServiceRequest serviceRequest,
+                                                       Http1FallbackHandler http1FallbackHandler,
+                                                       Http2ClientConnectionHandler resultHandler,
+                                                       ResolvedClientTarget resolvedTarget) {
         try {
             Http1ClientRequest http1Request = http1Request(http2Client.http1FallbackClient(),
                                                            requestTarget,
                                                            request,
-                                                           initialUri);
+                                                           serviceRequest.uri());
+            Http1ClientResponse fallbackResponse = http1FallbackHandler.apply(http1Request, serviceRequest);
             return new Http2ConnectionAttemptResult(Result.HTTP_1,
                                                     null,
-                                                    http1FallbackHandler.apply(http1Request, serviceRequest),
+                                                    fallbackResponse,
                                                     resultHandler,
-                                                    requestTarget);
+                                                    requestTarget,
+                                                    resolvedTarget,
+                                                    null);
         } catch (RuntimeException | Error e) {
             http1FallbackHandler.completeSentExceptionally(e);
             throw e;
@@ -751,7 +1013,7 @@ class Http2ClientConnectionHandler {
             }
 
             // only set these for requests that do not have an explicit connection defined
-            activateConnection(requestTarget, connection, usedConnection);
+            activateConnection(requestTarget, connection, usedConnection, null);
         }
 
         return usedConnection;
@@ -802,9 +1064,18 @@ class Http2ClientConnectionHandler {
         }
     }
 
+    private ConnectionRoute connectionRoute(Http2ClientConnection connection,
+                                            ClientConnectionTarget fallbackTarget) {
+        ConnectionRoute route = allConnections.get(connection);
+        return route == null
+                ? new ConnectionRoute(fallbackTarget, connection.resolvedTarget().orElse(null), null)
+                : route;
+    }
+
     private void activateConnection(ClientConnectionTarget connectionTarget,
                                     ClientConnection clientConnection,
-                                    Http2ClientConnection connection) {
+                                    Http2ClientConnection connection,
+                                    Http2AltSvcCache.Selection selectedAlternative) {
         Http2ClientConnection displacedConnection = null;
         boolean closeConnection;
         lifecycleLock.lock();
@@ -812,7 +1083,10 @@ class Http2ClientConnectionHandler {
             pendingUpgradedConnections.remove(connection);
             closeConnection = closed;
             if (!closeConnection) {
-                allConnections.put(connection, connectionTarget);
+                allConnections.put(connection,
+                                   ConnectionRoute.create(connectionTarget,
+                                                          clientConnection,
+                                                          selectedAlternative));
                 h2ConnByConn.put(clientConnection, connection);
                 boolean alreadySelectable = false;
                 for (Http2ClientConnection selectableConnection : selectableConnections) {
@@ -876,6 +1150,12 @@ class Http2ClientConnectionHandler {
         toRetire.forEach(Http2ClientConnection::retire);
     }
 
+    private static ResolvedClientTarget resolvedTarget(ClientConnection clientConnection) {
+        return clientConnection instanceof TcpClientConnection tcpConnection
+                ? tcpConnection.resolvedTarget().orElse(null)
+                : null;
+    }
+
     private static void closeClientConnection(ClientConnection clientConnection) {
         try {
             clientConnection.closeResource();
@@ -914,6 +1194,22 @@ class Http2ClientConnectionHandler {
         return request.priorKnowledge() ? List.of(Http2Client.PROTOCOL_ID) : request.tcpProtocolIds();
     }
 
+    private ClientConnection connectAlternative(WebClient webClient, ResolvedClientTarget resolvedTarget) {
+        return TcpClientConnection.create(webClient,
+                                          resolvedTarget,
+                                          List.of(Http2Client.PROTOCOL_ID),
+                                          _ -> false,
+                                          this::removeClientConnection)
+                .connect();
+    }
+
+    private static void requireHttp2(ClientConnection clientConnection) {
+        if (!clientConnection.helidonSocket().protocolNegotiated()
+                || !Http2Client.PROTOCOL_ID.equals(clientConnection.helidonSocket().protocol())) {
+            throw new IllegalStateException("HTTP/2 alternative did not negotiate h2");
+        }
+    }
+
     private ClientConnection connectClient(WebClient webClient,
                                            ClientConnectionTarget requestTarget,
                                            Http2ClientRequestImpl request,
@@ -950,7 +1246,46 @@ class Http2ClientConnectionHandler {
         }
     }
 
-    private record ExistingStream(Http2ClientStream stream, ClientConnectionTarget connectionTarget) {
+    private record ExistingStream(Http2ClientStream stream, ConnectionRoute route) {
+    }
+
+    private static final class ConnectionRoute {
+        private final ClientConnectionTarget logicalTarget;
+        private final ResolvedClientTarget physicalTarget;
+        private final Http2AltSvcCache.Selection selectedAlternative;
+
+        private ConnectionRoute(ClientConnectionTarget logicalTarget,
+                                ResolvedClientTarget physicalTarget,
+                                Http2AltSvcCache.Selection selectedAlternative) {
+            this.logicalTarget = Objects.requireNonNull(logicalTarget, "logicalTarget");
+            this.physicalTarget = selectedAlternative == null
+                    ? physicalTarget
+                    : Objects.requireNonNull(physicalTarget, "alternative physicalTarget");
+            this.selectedAlternative = selectedAlternative;
+        }
+
+        private static ConnectionRoute create(ClientConnectionTarget logicalTarget,
+                                              ClientConnection clientConnection,
+                                              Http2AltSvcCache.Selection selectedAlternative) {
+            return new ConnectionRoute(logicalTarget,
+                                       resolvedTarget(clientConnection),
+                                       selectedAlternative);
+        }
+
+        private ClientConnectionTarget logicalTarget() {
+            return logicalTarget;
+        }
+
+        private boolean matches(Http2AltSvcCache.Selection selection) {
+            if (selection == null) {
+                return selectedAlternative == null;
+            }
+            return selectedAlternative != null && selectedAlternative.sameRouteGeneration(selection);
+        }
+
+        private boolean matches(Http2AltSvcCache.Generation generation) {
+            return selectedAlternative != null && selectedAlternative.sameGeneration(generation);
+        }
     }
 
     private static class Http1FallbackResponse extends RuntimeException {

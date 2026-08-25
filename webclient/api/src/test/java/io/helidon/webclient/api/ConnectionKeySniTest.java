@@ -16,8 +16,10 @@
 
 package io.helidon.webclient.api;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
@@ -38,6 +40,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ConnectionKeySniTest {
@@ -340,6 +343,139 @@ class ConnectionKeySniTest {
 
         assertThat(key.tlsPeerHost(), is("[::1]"));
         assertThat(key.serverNamesOverride(), is(empty()));
+    }
+
+    @Test
+    void altSvcOriginKeyCanonicalizesDnsCaseWithoutChangingConnectionIdentity() {
+        AtomicReference<String> resolvedHost = new AtomicReference<>();
+        DnsResolver resolver = (host, _) -> {
+            resolvedHost.set(host);
+            return InetAddress.getLoopbackAddress();
+        };
+        ConnectionKey mixedCase = ConnectionKey.create("HTTPS",
+                                                       "Example.COM.",
+                                                       443,
+                                                       TLS,
+                                                       resolver,
+                                                       DNS_LOOKUP,
+                                                       NO_PROXY);
+        ConnectionKey lowerCase = ConnectionKey.create("https",
+                                                       "example.com.",
+                                                       443,
+                                                       TLS,
+                                                       resolver,
+                                                       DNS_LOOKUP,
+                                                       NO_PROXY);
+
+        assertThat(mixedCase, not(lowerCase));
+        assertThat(mixedCase.scheme(), is("HTTPS"));
+        assertThat(mixedCase.host(), is("Example.COM."));
+        assertThat(mixedCase.tlsPeerHost(), is("Example.COM."));
+        assertThat(mixedCase.altSvcOriginKey(), is(lowerCase));
+        assertThat(lowerCase.altSvcOriginKey(), is(mixedCase.altSvcOriginKey()));
+        assertThat(mixedCase.altSvcOriginKey().hashCode(), is(lowerCase.hashCode()));
+        assertThat(lowerCase.altSvcOriginKey(), sameInstance(lowerCase));
+
+        ClientConnectionTarget.create(mixedCase, "https").resolve();
+        assertThat(resolvedHost.get(), is("Example.COM."));
+    }
+
+    @Test
+    void altSvcOriginKeyDoesNotBroadenHostNormalization() {
+        ConnectionKey trailingDot = ConnectionKey.create("https",
+                                                         "Example.COM.",
+                                                         443,
+                                                         TLS,
+                                                         DNS_RESOLVER,
+                                                         DNS_LOOKUP,
+                                                         NO_PROXY);
+        ConnectionKey noTrailingDot = ConnectionKey.create("https",
+                                                           "example.com",
+                                                           443,
+                                                           TLS,
+                                                           DNS_RESOLVER,
+                                                           DNS_LOOKUP,
+                                                           NO_PROXY);
+        ConnectionKey unicode = ConnectionKey.create("https",
+                                                     "B\u00dcCHER.example",
+                                                     443,
+                                                     TLS,
+                                                     DNS_RESOLVER,
+                                                     DNS_LOOKUP,
+                                                     NO_PROXY);
+        ConnectionKey punycode = ConnectionKey.create("https",
+                                                      "xn--bcher-kva.example",
+                                                      443,
+                                                      TLS,
+                                                      DNS_RESOLVER,
+                                                      DNS_LOOKUP,
+                                                      NO_PROXY);
+        ConnectionKey upperIpv6 = ConnectionKey.create("https",
+                                                       "[2001:DB8::1]",
+                                                       443,
+                                                       TLS,
+                                                       DNS_RESOLVER,
+                                                       DNS_LOOKUP,
+                                                       NO_PROXY);
+        ConnectionKey lowerIpv6 = ConnectionKey.create("https",
+                                                       "[2001:db8::1]",
+                                                       443,
+                                                       TLS,
+                                                       DNS_RESOLVER,
+                                                       DNS_LOOKUP,
+                                                       NO_PROXY);
+
+        assertThat(trailingDot.altSvcOriginKey(), not(noTrailingDot.altSvcOriginKey()));
+        assertThat(unicode.altSvcOriginKey(), not(punycode.altSvcOriginKey()));
+        assertThat(upperIpv6.altSvcOriginKey(), sameInstance(upperIpv6));
+        assertThat(upperIpv6.altSvcOriginKey(), not(lowerIpv6.altSvcOriginKey()));
+    }
+
+    @Test
+    void altSvcOriginKeyPreservesEffectiveSniPartitions() {
+        ClientRequestHeaders headers = emptyHeaders();
+        ConnectionKey defaults = key("https://Service.EXAMPLE:443", null, TLS, headers).altSvcOriginKey();
+        ConnectionKey uriHost = key("https://Service.EXAMPLE:443",
+                                    SniConfig.create(),
+                                    TLS,
+                                    headers).altSvcOriginKey();
+        ConnectionKey lowerUriHost = key("https://service.example:443",
+                                         SniConfig.create(),
+                                         TLS,
+                                         headers);
+        ConnectionKey explicit = key("https://Service.EXAMPLE:443",
+                                     explicit("SERVICE.EXAMPLE"),
+                                     TLS,
+                                     headers).altSvcOriginKey();
+        ConnectionKey otherExplicit = key("https://Service.EXAMPLE:443",
+                                          explicit("other.example"),
+                                          TLS,
+                                          headers).altSvcOriginKey();
+        ConnectionKey emptySni = key("https://Service.EXAMPLE:443",
+                                     explicit("127.0.0.1"),
+                                     TLS,
+                                     headers).altSvcOriginKey();
+        ConnectionKey ipv6 = key("https://Service.EXAMPLE:443",
+                                 explicit("[2001:DB8::1]"),
+                                 TLS,
+                                 headers).altSvcOriginKey();
+        ConnectionKey disabled = key("https://Service.EXAMPLE:443",
+                                     SniConfig.builder().mode(SniMode.DISABLED).build(),
+                                     TLS,
+                                     headers).altSvcOriginKey();
+
+        assertThat(uriHost, is(explicit));
+        assertThat(uriHost, is(lowerUriHost));
+        assertThat(uriHost.hashCode(), is(explicit.hashCode()));
+        assertThat(lowerUriHost.altSvcOriginKey(), sameInstance(lowerUriHost));
+        assertThat(serverName(uriHost), is("service.example"));
+        assertThat(defaults, not(uriHost));
+        assertThat(otherExplicit, not(uriHost));
+        assertThat(emptySni, not(disabled));
+        assertThat(emptySni.serverNamesOverride(), is(empty()));
+        assertThat(ipv6.tlsPeerHost(), is("2001:db8::1"));
+        assertThat(ipv6.serverNamesOverride(), is(empty()));
+        assertThat(disabled.serverNamesOverride(), is(empty()));
     }
 
     private static ConnectionKey key(String uri,

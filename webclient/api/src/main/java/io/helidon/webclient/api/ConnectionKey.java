@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.net.UnixDomainSocketAddress;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import javax.net.ssl.SNIServerName;
@@ -26,6 +27,7 @@ import javax.net.ssl.SSLParameters;
 import io.helidon.common.Api;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriAuthority;
+import io.helidon.common.uri.UriHost;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.webclient.spi.DnsResolver;
 
@@ -391,6 +393,28 @@ public final class ConnectionKey {
         return SniSupport.serverNamesOverride(sni);
     }
 
+    ConnectionKey altSvcOriginKey() {
+        String canonicalScheme = scheme.toLowerCase(Locale.ROOT);
+        String canonicalHost = canonicalDnsHost(host);
+        String canonicalTlsPeerHost = canonicalDnsHost(tlsPeerHost);
+        SniSupport.State canonicalSni = canonicalSni(sni);
+        if (scheme.equals(canonicalScheme)
+                && host.equals(canonicalHost)
+                && tlsPeerHost.equals(canonicalTlsPeerHost)
+                && sni.equals(canonicalSni)) {
+            return this;
+        }
+        return new ConnectionKey(canonicalScheme,
+                                 canonicalHost,
+                                 port,
+                                 tls,
+                                 dnsResolver,
+                                 dnsAddressLookup,
+                                 proxy,
+                                 transport,
+                                 new SniSupport.Selection(canonicalTlsPeerHost, tlsPeerPort, canonicalSni));
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) {
@@ -441,6 +465,32 @@ public final class ConnectionKey {
                 .scheme(scheme)
                 .host(host)
                 .port(port);
+    }
+
+    private static String canonicalDnsHost(String host) {
+        String canonical = host.toLowerCase(Locale.ROOT);
+        if (host.equals(canonical)) {
+            return host;
+        }
+        if (host.indexOf(':') >= 0) {
+            return host;
+        }
+        try {
+            return UriHost.create(host).kind() == UriHost.Kind.DNS ? canonical : host;
+        } catch (IllegalArgumentException _) {
+            return host;
+        }
+    }
+
+    private static SniSupport.State canonicalSni(SniSupport.State sni) {
+        if (sni.kind() != SniSupport.Kind.HOST && sni.kind() != SniSupport.Kind.EMPTY) {
+            return sni;
+        }
+        String canonicalHost = canonicalDnsHost(sni.host());
+        if (sni.host().equals(canonicalHost)) {
+            return sni;
+        }
+        return new SniSupport.State(sni.kind(), canonicalHost);
     }
 
     private record Transport(String type, String value) {

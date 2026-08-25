@@ -1,0 +1,362 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.webclient.http2;
+
+import java.net.InetAddress;
+import java.net.URI;
+import java.security.GeneralSecurityException;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
+
+import io.helidon.common.tls.Tls;
+import io.helidon.common.tls.TlsConfig;
+import io.helidon.common.tls.TlsManager;
+import io.helidon.common.uri.UriAuthority;
+import io.helidon.common.uri.UriHost;
+import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
+import io.helidon.webclient.api.ClientAltSvcConfig;
+import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientConnectionTarget;
+import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.ConnectionKey;
+import io.helidon.webclient.api.FullClientRequest;
+import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.ResolvedClientTarget;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientProtocolResponse;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.spi.HttpClientSpi;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class Http2AltSvcClientTest {
+    @Test
+    void ignoresAdvertisementWhenAltSvcIsAbsent() {
+        try (TestContext context = TestContext.create()) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    @Test
+    void noEntrySkipsFinalTargetResolution() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            clearInvocations((Object) context.request);
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+            verify(context.request, never()).headers();
+            verify(context.request, never()).selectedProxyRoute();
+        }
+    }
+
+    @Test
+    void explicitConnectionSkipsAdvertisedHost() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+            when(context.request.connection()).thenReturn(Optional.of(mock(ClientConnection.class)));
+            clearInvocations((Object) context.request);
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+            verify(context.request, never()).headers();
+            verify(context.request, never()).selectedProxyRoute();
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("tcpProtocolIds")
+    void learnsH2AlternativeFromHttpsResponse(String protocolId) {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            assertThat(context.client.connectionCache().supports(context.connectionKey), is(false));
+
+            context.client.responseReceived(context.directResponse(protocolId, false, Status.OK_200));
+
+            assertThat(context.client.connectionCache().supports(context.connectionKey), is(false));
+            assertThat(context.client.supports(context.request, context.uri), is(HttpClientSpi.SupportLevel.SUPPORTED));
+
+            when(context.request.selectedProxyRoute()).thenReturn(Optional.of(context.target.proxyRoute()));
+            assertThat(context.client.supports(context.request, context.uri), is(HttpClientSpi.SupportLevel.SUPPORTED));
+        }
+    }
+
+    @Test
+    void ignoresAdvertisementFromPlainHttpOrigin() {
+        try (TestContext context = TestContext.createPlain(ClientAltSvcConfig.create())) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    @Test
+    void ignoresAdvertisementWhenDisabled() {
+        ClientAltSvcConfig altSvc = ClientAltSvcConfig.builder()
+                .enabled(false)
+                .build();
+        try (TestContext context = TestContext.create(altSvc)) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("disallowedProtocols")
+    void ignoresAdvertisementWhenH2IsNotAllowed(String protocol) {
+        ClientAltSvcConfig altSvc = ClientAltSvcConfig.builder()
+                .addProtocol(protocol)
+                .build();
+        try (TestContext context = TestContext.create(altSvc)) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    @Test
+    void learnsAdvertisementWhenH2IsAllowed() {
+        ClientAltSvcConfig altSvc = ClientAltSvcConfig.builder()
+                .addProtocol(Http2Client.PROTOCOL_ID)
+                .build();
+        try (TestContext context = TestContext.create(altSvc)) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.SUPPORTED));
+        }
+    }
+
+    @Test
+    void ignoresAdvertisementFromExplicitConnection() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            context.client.responseReceived(context.directResponse(Http2Client.PROTOCOL_ID, true, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    @Test
+    void ignoresAdvertisementFromUnsupportedResponseProtocol() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            context.client.responseReceived(context.directResponse("h3", false, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("userConfiguredTls")
+    void learnsAdvertisementWithUserConfiguredTls(Tls tls) {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create(), tls)) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.SUPPORTED));
+        }
+    }
+
+    @Test
+    void misdirectedAlternativeDoesNotReadvertiseItself() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+            Http2AltSvcCache.Selection selection = context.client.connectionCache()
+                    .currentAlternative(context.target, false);
+            assertThat(selection, notNullValue());
+            context.client.connectionCache().recordAlternativeMisdirected(selection);
+
+            ResolvedClientTarget alternativeTarget = context.target.resolve(selection.host(), selection.port(), 0);
+            WebClientProtocolResponse response = WebClientProtocolResponse.createAlternative(
+                    alternativeTarget,
+                    false,
+                    Http2Client.PROTOCOL_ID,
+                    Status.MISDIRECTED_REQUEST_421,
+                    responseHeaders(),
+                    Instant.now(),
+                    UriAuthority.create(UriHost.create(selection.host()), selection.port()));
+
+            context.client.responseReceived(response);
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    private static Stream<String> tcpProtocolIds() {
+        return Stream.of(Http1Client.PROTOCOL_ID, Http2Client.PROTOCOL_ID);
+    }
+
+    private static Stream<String> disallowedProtocols() {
+        return Stream.of("H2", "h3");
+    }
+
+    private static Stream<Tls> userConfiguredTls() {
+        return Stream.of(Tls.builder().trustAll(true).build(),
+                         Tls.builder()
+                                 .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                                 .build(),
+                         Tls.builder().sslContext(defaultSslContext()).build(),
+                         Tls.builder().manager(new TestTlsManager()).build());
+    }
+
+    private static SSLContext defaultSslContext() {
+        try {
+            return SSLContext.getDefault();
+        } catch (GeneralSecurityException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private static ClientResponseHeaders responseHeaders() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.set(HeaderNames.ALT_SVC, "h2=\":8443\"; ma=3600");
+        return ClientResponseHeaders.create(headers);
+    }
+
+    private static final class TestTlsManager implements TlsManager {
+        private final SSLContext sslContext = defaultSslContext();
+
+        @Override
+        public void init(TlsConfig tls) {
+        }
+
+        @Override
+        public SSLContext sslContext() {
+            return sslContext;
+        }
+
+        @Override
+        public Optional<X509KeyManager> keyManager() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<X509TrustManager> trustManager() {
+            return Optional.empty();
+        }
+
+        @Override
+        public String name() {
+            return "test";
+        }
+
+        @Override
+        public String type() {
+            return "test";
+        }
+    }
+
+    private static final class TestContext implements AutoCloseable {
+        private final Http2ClientImpl client;
+        private final FullClientRequest<?> request;
+        private final ClientUri uri;
+        private final ConnectionKey connectionKey;
+        private final ClientConnectionTarget target;
+        private final ResolvedClientTarget resolvedTarget;
+
+        private TestContext(Optional<ClientAltSvcConfig> altSvc) {
+            this(altSvc, Tls.builder().build(), "https");
+        }
+
+        private TestContext(Optional<ClientAltSvcConfig> altSvc, Tls tls) {
+            this(altSvc, tls, "https");
+        }
+
+        private TestContext(Optional<ClientAltSvcConfig> altSvc, Tls tls, String scheme) {
+            Http2ClientConfig.Builder configBuilder = Http2ClientConfig.builder()
+                    .shareConnectionCache(false)
+                    .dnsResolver((_, _) -> InetAddress.getLoopbackAddress())
+                    .tls(tls)
+                    .protocolConfig(Http2ClientProtocolConfig.create());
+            altSvc.ifPresent(configBuilder::altSvc);
+            Http2ClientConfig clientConfig = configBuilder.buildPrototype();
+            client = new Http2ClientImpl(mock(WebClient.class), clientConfig);
+            uri = ClientUri.create(URI.create(scheme + "://origin.example/resource"));
+            ClientRequestHeaders requestHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+            request = mock(FullClientRequest.class);
+            when(request.address()).thenReturn(Optional.empty());
+            when(request.sni()).thenReturn(Optional.empty());
+            when(request.tls()).thenReturn(tls);
+            when(request.proxy()).thenReturn(Proxy.noProxy());
+            when(request.headers()).thenReturn(requestHeaders);
+            when(request.connection()).thenReturn(Optional.empty());
+            when(request.selectedProxyRoute()).thenReturn(Optional.empty());
+            connectionKey = Http2ConnectionKeys.create(uri, request, clientConfig);
+            target = ClientConnectionTarget.create(connectionKey, uri, requestHeaders);
+            resolvedTarget = target.resolve();
+        }
+
+        private static TestContext create() {
+            return new TestContext(Optional.empty());
+        }
+
+        private static TestContext create(ClientAltSvcConfig altSvc) {
+            return new TestContext(Optional.of(altSvc));
+        }
+
+        private static TestContext create(ClientAltSvcConfig altSvc, Tls tls) {
+            return new TestContext(Optional.of(altSvc), tls);
+        }
+
+        private static TestContext createPlain(ClientAltSvcConfig altSvc) {
+            return new TestContext(Optional.of(altSvc), Tls.builder().build(), "http");
+        }
+
+        private WebClientProtocolResponse directResponse(String protocolId,
+                                                         boolean explicitConnection,
+                                                         Status status) {
+            return WebClientProtocolResponse.create(resolvedTarget,
+                                                    explicitConnection,
+                                                    protocolId,
+                                                    status,
+                                                    responseHeaders(),
+                                                    Instant.now());
+        }
+
+        @Override
+        public void close() {
+            client.closeResource();
+        }
+    }
+}

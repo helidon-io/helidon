@@ -146,11 +146,22 @@ public class TcpClientConnection implements ClientConnection {
                                        closeConsumer);
     }
 
-    static TcpClientConnection create(WebClient webClient,
-                                      ResolvedClientTarget resolvedTarget,
-                                      List<String> tcpProtocolIds,
-                                      Function<TcpClientConnection, Boolean> releaseFunction,
-                                      Consumer<TcpClientConnection> closeConsumer) {
+    /**
+     * Create a TCP connection from a resolved physical target.
+     *
+     * @param webClient webclient, may be used to create proxy connections
+     * @param resolvedTarget resolved physical target
+     * @param tcpProtocolIds protocol IDs for ALPN
+     * @param releaseFunction release callback
+     * @param closeConsumer close callback
+     * @return a new unconnected TCP connection
+     */
+    @Api.Internal
+    public static TcpClientConnection create(WebClient webClient,
+                                             ResolvedClientTarget resolvedTarget,
+                                             List<String> tcpProtocolIds,
+                                             Function<TcpClientConnection, Boolean> releaseFunction,
+                                             Consumer<TcpClientConnection> closeConsumer) {
         ResolvedClientTarget target = Objects.requireNonNull(resolvedTarget, "resolvedTarget");
         return new TcpClientConnection(webClient,
                                        target.logicalTarget().connectionKey(),

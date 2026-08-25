@@ -94,6 +94,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                                  Http2ClientStream stream) {
         boolean interrupted = false;
         ClientOutputStream outputStream = new ClientOutputStream(client,
+                                                                 this,
                                                                  stream,
                                                                  headers,
                                                                  clientConfig(),
@@ -115,15 +116,22 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             //This is a fallback mechanism to correctly handle such a situations.
             redirectedResponse = outputStream.response;
             stream(outputStream.stream);
-            return outputStream.serviceResponse();
+            WebClientServiceResponse serviceResponse = outputStream.serviceResponse();
+            if (redirectedResponse == null) {
+                captureProtocolResponse(serviceResponse.status(), serviceResponse.headers());
+            }
+            return serviceResponse;
         } else if (!outputStream.closed()) {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
         Http2Headers responseHeaders = readHeaders(outputStream.stream);
+        ClientResponseHeaders clientResponseHeaders = ClientResponseHeaders.create(responseHeaders.httpHeaders());
+        captureProtocolResponse(responseHeaders.status(), clientResponseHeaders);
 
         if (clientRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseHeaders.status())) {
+            publishProtocolResponse();
             checkRedirectHeaders(responseHeaders);
             URI newUri = URI.create(responseHeaders.httpHeaders().get(HeaderNames.LOCATION).get());
             ClientUri redirectUri = ClientUri.create(newUri);
@@ -180,7 +188,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                      outputStream.stream,
                                      whenComplete(),
                                      responseHeaders.status(),
-                                     ClientResponseHeaders.create(responseHeaders.httpHeaders()));
+                                     clientResponseHeaders);
     }
 
     @Override
@@ -320,6 +328,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         private final HttpClientConfig clientConfig;
         private final WritableHeaders<?> headers;
         private final long contentLength;
+        private final Http2CallOutputStreamChain callChain;
 
         private long bytesWritten;
         private boolean hasEntity;
@@ -334,6 +343,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         private WebClientServiceResponse serviceResponse;
 
         private ClientOutputStream(Http2ClientImpl client,
+                                   Http2CallOutputStreamChain callChain,
                                    Http2ClientStream stream,
                                    WritableHeaders<?> headers,
                                    HttpClientConfig clientConfig,
@@ -342,6 +352,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                    CompletableFuture<WebClientServiceRequest> whenSent,
                                    CompletableFuture<WebClientServiceResponse> whenComplete) {
             this.client = client;
+            this.callChain = callChain;
             this.stream = stream;
             this.headers = headers;
             this.clientConfig = clientConfig;
@@ -448,8 +459,12 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 if (status != Status.CONTINUE_100) {
                     Http2Headers responseHeaders = readHeaders(stream);
                     Status responseStatus = responseHeaders.status();
+                    ClientResponseHeaders clientResponseHeaders = ClientResponseHeaders.create(
+                            responseHeaders.httpHeaders());
+                    callChain.captureProtocolResponse(responseStatus, clientResponseHeaders);
 
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
+                        callChain.publishProtocolResponse();
                         checkRedirectHeaders(responseHeaders);
                         redirect(responseStatus, responseHeaders.httpHeaders());
                     } else {
@@ -460,8 +475,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                                                                      stream,
                                                                      whenComplete,
                                                                      responseHeaders.status(),
-                                                                     ClientResponseHeaders.create(
-                                                                             responseHeaders.httpHeaders()));
+                                                                     clientResponseHeaders);
                         //we are not sending anything by this OS, we need to interrupt it.
                         throw new OutputStreamInterruptedException();
                     }

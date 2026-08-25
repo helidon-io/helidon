@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -67,6 +68,8 @@ import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ResolvedClientTarget;
+import io.helidon.webclient.api.TcpClientConnection;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -96,6 +99,7 @@ public class Http2ClientConnection {
     private final PendingInboundHeaders pendingInboundHeaders;
     private final Http2ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
+    private final ResolvedClientTarget resolvedTarget;
     private final SocketContext ctx;
     private final Http2ConnectionWriter writer;
     private final DataReader reader;
@@ -152,6 +156,9 @@ public class Http2ClientConnection {
                 .blockTimeout(protocolConfig.flowControlBlockTimeout())
                 .build();
         this.connection = connection;
+        this.resolvedTarget = connection instanceof TcpClientConnection tcpConnection
+                ? tcpConnection.resolvedTarget().orElse(null)
+                : null;
         this.ctx = connection.helidonSocket();
         this.dataWriter = connection.writer();
         this.reader = connection.reader();
@@ -278,6 +285,10 @@ public class Http2ClientConnection {
     private static BufferData pingData(long pingId) {
         return BufferData.create(Long.BYTES)
                 .writeInt64(pingId);
+    }
+
+    Optional<ResolvedClientTarget> resolvedTarget() {
+        return Optional.ofNullable(resolvedTarget);
     }
 
     Http2ConnectionWriter writer() {

@@ -617,7 +617,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                       CompletableFuture<WebClientServiceRequest> whenSent,
                                                       CompletableFuture<WebClientServiceResponse> whenComplete,
                                                       ClientUri usedUri) {
-        return invokeServices(httpCallChain, whenSent, whenComplete, usedUri, protocolId, null);
+        return invokeServices(null, httpCallChain, whenSent, whenComplete, usedUri, protocolId, null);
     }
 
     /**
@@ -634,7 +634,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                       CompletableFuture<WebClientServiceRequest> whenSent,
                                                       CompletableFuture<WebClientServiceResponse> whenComplete,
                                                       ClientUri usedUri) {
-        return invokeServices(httpCallChain,
+        return invokeServices(null,
+                              httpCallChain,
                               whenSent,
                               whenComplete,
                               usedUri,
@@ -642,7 +643,29 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                               Objects.requireNonNull(httpCallChain));
     }
 
-    private WebClientServiceResponse invokeServices(WebClientService.Chain httpCallChain,
+    /**
+     * Invoke configured client services and publish applicable transport response context before they unwind.
+     *
+     * @param webClient client that owns the transport protocols
+     * @param httpCallChain invocation of the HTTP request (the actual network call)
+     * @param whenSent completable future to be completed when the request is sent over the network
+     * @param whenComplete completable future to be completed when the request/response interaction finishes
+     * @param usedUri URI configured on the request, combined with the base URI of the client
+     * @return web client service response
+     */
+    @Api.Internal
+    protected WebClientServiceResponse invokeServices(WebClient webClient,
+                                                      WebClientService.TransportChain httpCallChain,
+                                                      CompletableFuture<WebClientServiceRequest> whenSent,
+                                                      CompletableFuture<WebClientServiceResponse> whenComplete,
+                                                      ClientUri usedUri) {
+        WebClient client = Objects.requireNonNull(webClient, "webClient");
+        WebClientService.TransportChain chain = Objects.requireNonNull(httpCallChain, "httpCallChain");
+        return invokeServices(client, chain, whenSent, whenComplete, usedUri, null, chain);
+    }
+
+    private WebClientServiceResponse invokeServices(WebClient webClient,
+                                                    WebClientService.Chain httpCallChain,
                                                     CompletableFuture<WebClientServiceRequest> whenSent,
                                                     CompletableFuture<WebClientServiceResponse> whenComplete,
                                                     ClientUri usedUri,
@@ -665,7 +688,14 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
         WebClientService.Chain last = request -> {
             ClientRequestHeaderSupport.validate(request.headers());
-            return httpCallChain.proceed(request);
+            WebClientServiceResponse response = httpCallChain.proceed(request);
+            if (webClient != null && wireProtocolChain instanceof WebClientService.TransportChain transportChain) {
+                Optional<WebClientProtocolResponse> protocolResponse = transportChain.protocolResponse(response);
+                if (protocolResponse.isPresent()) {
+                    webClient.responseReceived(protocolResponse.get());
+                }
+            }
+            return response;
         };
 
         List<WebClientService> services = clientConfig.services();

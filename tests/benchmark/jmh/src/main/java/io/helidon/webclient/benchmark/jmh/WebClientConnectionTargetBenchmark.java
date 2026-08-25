@@ -17,13 +17,26 @@
 package io.helidon.webclient.benchmark.jmh;
 
 import java.net.InetAddress;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.Keys;
+import io.helidon.common.tls.Tls;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2ConnectionSelector;
@@ -50,6 +63,13 @@ public class WebClientConnectionTargetBenchmark {
     private static final int REQUESTS_PER_INVOCATION = 16;
     private static final int TARGETS_PER_THREAD = 4;
     private static final String PATH = "/target";
+    private static final String BODY = "ok";
+    private static final String ALTERNATIVE_SOCKET = "alt-svc-h2";
+    private static final String CLIENT_ALT_SVC_CONFIG = "io.helidon.webclient.api.ClientAltSvcConfig";
+    private static final HeaderName ALT_USED = HeaderNames.create("Alt-Used");
+    private static final Status WRONG_SOCKET = Status.create(590, "Wrong benchmark socket");
+    private static final Status WRONG_AUTHORITY = Status.create(591, "Wrong benchmark authority");
+    private static final Status WRONG_ALT_USED = Status.create(592, "Wrong benchmark Alt-Used");
 
     @Benchmark
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
@@ -131,6 +151,15 @@ public class WebClientConnectionTargetBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void altSvcMatched(AltSvcMatchedState state, Blackhole blackhole) {
+        // One request loop keeps the base/head and scenario comparisons mechanically identical.
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            blackhole.consume(state.request());
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http2DistinctTargetPerThread(Http2State state, ThreadParams threadParams, Blackhole blackhole) {
         int targetIndex = threadParams.getThreadIndex() * TARGETS_PER_THREAD;
         for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
@@ -174,6 +203,28 @@ public class WebClientConnectionTargetBenchmark {
         return Math.max(prefilledTargetCount, benchmarkParams.getThreads() * TARGETS_PER_THREAD);
     }
 
+    private static Tls clientTls() {
+        return Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
+                .build();
+    }
+
+    private static Tls serverTls() {
+        Keys keys = Keys.builder()
+                .keystore(store -> store
+                        .keystore(Resource.create("server.p12"))
+                        .passphrase("password"))
+                .build();
+        return Tls.builder()
+                .privateKey(keys)
+                .privateKeyCertChain(keys)
+                .build();
+    }
+
     private static InetAddress resolve(String host, ProxyMode proxyMode) {
         boolean proxyHost = "proxy.invalid".equals(host);
         if (proxyMode == ProxyMode.HTTP_FORWARD && !proxyHost) {
@@ -207,6 +258,49 @@ public class WebClientConnectionTargetBenchmark {
                         .build();
             };
         }
+    }
+
+    public enum ExpectedImplementation {
+        BASE,
+        HEAD
+    }
+
+    public enum AltSvcScenario {
+        TLS_H1,
+        TLS_H2,
+        DIRECT_H2_ALTERNATIVE,
+        ENABLED_NO_ENTRY,
+        ACTIVE,
+        DIRECT_H2_ALTERNATIVE_REPEATED_AD,
+        ACTIVE_REPEATED_AD,
+        DISABLED_CAPTURE;
+
+        private boolean headOnly() {
+            return this == ACTIVE || this == ACTIVE_REPEATED_AD;
+        }
+
+        private boolean configuresAltSvc() {
+            return this == ENABLED_NO_ENTRY
+                    || this == ACTIVE
+                    || this == ACTIVE_REPEATED_AD
+                    || this == DISABLED_CAPTURE;
+        }
+
+        private boolean altSvcEnabled() {
+            return this != DISABLED_CAPTURE;
+        }
+
+        private boolean syntheticAlternative() {
+            return this == DIRECT_H2_ALTERNATIVE || this == DIRECT_H2_ALTERNATIVE_REPEATED_AD;
+        }
+    }
+
+    private enum SocketKind {
+        ORIGIN,
+        ALTERNATIVE
+    }
+
+    private record ExpectedRequest(SocketKind socket, String authority, String altUsed) {
     }
 
     @State(Scope.Benchmark)
@@ -307,7 +401,8 @@ public class WebClientConnectionTargetBenchmark {
                     if (i == 0
                             && proxyMode == ProxyMode.HTTP_FORWARD
                             && !Http1Client.PROTOCOL_ID.equals(response.protocolId())) {
-                        throw new IllegalStateException("Unexpected HTTP forward proxy protocol: " + response.protocolId());
+                        throw new IllegalStateException(
+                                "Unexpected HTTP forward proxy protocol: " + response.protocolId());
                     }
                 }
             }
@@ -320,6 +415,227 @@ public class WebClientConnectionTargetBenchmark {
 
         private String targetUri(int index) {
             return targetUris[index];
+        }
+    }
+
+    @State(Scope.Benchmark)
+    public static class AltSvcMatchedState {
+        @Param({"BASE", "HEAD"})
+        public ExpectedImplementation expectedImplementation;
+
+        @Param({"TLS_H1", "TLS_H2"})
+        public AltSvcScenario scenario;
+
+        private WebServer server;
+        private WebClient webClient;
+        private String originUri;
+        private String alternativeUri;
+        private String requestUri;
+        private String originAuthority;
+        private String alternativeAuthority;
+        private String altSvcValue;
+        private String expectedProtocol;
+        private volatile ExpectedRequest expectedRequest;
+        private volatile boolean advertise;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            Class<?> altSvcConfigClass = expectedAltSvcConfigClass();
+            if (scenario.headOnly() && expectedImplementation != ExpectedImplementation.HEAD) {
+                throw new IllegalStateException("Scenario " + scenario + " requires the HEAD implementation");
+            }
+
+            Tls serverTls = serverTls();
+            server = WebServer.builder()
+                    .host("localhost")
+                    .port(-1)
+                    .tls(serverTls)
+                    .protocolsDiscoverServices(false)
+                    .addConnectionSelector(Http1ConnectionSelector.builder()
+                                                   .config(Http1Config.create())
+                                                   .build())
+                    .putSocket(ALTERNATIVE_SOCKET, socket -> socket
+                            .host("localhost")
+                            .port(-1)
+                            .tls(serverTls)
+                            .protocolsDiscoverServices(false)
+                            .addConnectionSelector(Http2ConnectionSelector.builder()
+                                                           .http2Config(Http2Config.create())
+                                                           .build()))
+                    .routing(HttpRouting.builder().get(PATH, this::originResponse))
+                    .routing(ALTERNATIVE_SOCKET,
+                             HttpRouting.builder().get(PATH, this::alternativeResponse))
+                    .build()
+                    .start();
+
+            originAuthority = "localhost:" + server.port();
+            alternativeAuthority = "localhost:" + server.port(ALTERNATIVE_SOCKET);
+            originUri = "https://" + originAuthority + PATH;
+            alternativeUri = "https://" + alternativeAuthority + PATH;
+            altSvcValue = "h2=\":%d\"; ma=3600".formatted(server.port(ALTERNATIVE_SOCKET));
+
+            var builder = WebClient.builder()
+                    .shareConnectionCache(false)
+                    .servicesDiscoverServices(false)
+                    .protocolPreference(List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID))
+                    .proxy(Proxy.noProxy())
+                    .dnsResolver((_, _) -> InetAddress.ofLiteral("127.0.0.1"))
+                    .tls(clientTls());
+            if (scenario.syntheticAlternative()) {
+                // Synthetic transport control, not an Alt-Svc implementation path: its setup defaults reproduce
+                // the logical origin authority and Alt-Used value while the URI connects directly to the H2 socket.
+                builder.addHeader(HeaderNames.HOST, originAuthority)
+                        .addHeader("Alt-Used", alternativeAuthority);
+            }
+            if (scenario.configuresAltSvc()) {
+                configureAltSvc(builder, altSvcConfigClass, scenario.altSvcEnabled());
+            }
+            webClient = builder.build();
+
+            switch (scenario) {
+                case TLS_H1, ENABLED_NO_ENTRY -> primeOrigin(false);
+                case TLS_H2 -> primeAlternative(false, false);
+                case DIRECT_H2_ALTERNATIVE -> primeAlternative(true, false);
+                case ACTIVE -> {
+                    primeOrigin(true);
+                    primeActiveAlternative(false);
+                }
+                case DIRECT_H2_ALTERNATIVE_REPEATED_AD -> primeAlternative(true, true);
+                case ACTIVE_REPEATED_AD -> {
+                    primeOrigin(true);
+                    primeActiveAlternative(true);
+                }
+                case DISABLED_CAPTURE -> {
+                    primeAlternative(false, true);
+                    primeAlternative(false, true);
+                }
+            }
+        }
+
+        @TearDown(Level.Trial)
+        public void tearDown() {
+            if (webClient != null) {
+                webClient.closeResource();
+            }
+            if (server != null) {
+                server.stop();
+            }
+        }
+
+        private static void configureAltSvc(Object webClientBuilder,
+                                            Class<?> altSvcConfigClass,
+                                            boolean enabled) {
+            if (altSvcConfigClass == null) {
+                return;
+            }
+            try {
+                Object altSvcBuilder = altSvcConfigClass.getMethod("builder").invoke(null);
+                altSvcBuilder.getClass().getMethod("enabled", boolean.class).invoke(altSvcBuilder, enabled);
+                altSvcBuilder.getClass()
+                        .getMethod("addProtocol", String.class)
+                        .invoke(altSvcBuilder, Http2Client.PROTOCOL_ID);
+                Object altSvcConfig = altSvcBuilder.getClass().getMethod("build").invoke(altSvcBuilder);
+                webClientBuilder.getClass()
+                        .getMethod("altSvc", altSvcConfigClass)
+                        .invoke(webClientBuilder, altSvcConfig);
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("Cannot configure the HEAD Alt-Svc API", e);
+            }
+        }
+
+        private Class<?> expectedAltSvcConfigClass() {
+            try {
+                Class<?> configClass = Class.forName(CLIENT_ALT_SVC_CONFIG);
+                if (expectedImplementation == ExpectedImplementation.BASE) {
+                    throw new IllegalStateException("BASE benchmark classpath contains " + CLIENT_ALT_SVC_CONFIG);
+                }
+                return configClass;
+            } catch (ClassNotFoundException e) {
+                if (expectedImplementation == ExpectedImplementation.HEAD) {
+                    throw new IllegalStateException("HEAD benchmark classpath does not contain "
+                                                            + CLIENT_ALT_SVC_CONFIG,
+                                                    e);
+                }
+                return null;
+            }
+        }
+
+        private void primeOrigin(boolean advertiseAltSvc) {
+            prime(originUri,
+                  new ExpectedRequest(SocketKind.ORIGIN, originAuthority, ""),
+                  Http1Client.PROTOCOL_ID,
+                  advertiseAltSvc);
+        }
+
+        private void primeAlternative(boolean synthetic, boolean advertiseAltSvc) {
+            String expectedAuthority = synthetic ? originAuthority : alternativeAuthority;
+            String expectedAltUsed = synthetic ? alternativeAuthority : "";
+            prime(alternativeUri,
+                  new ExpectedRequest(SocketKind.ALTERNATIVE, expectedAuthority, expectedAltUsed),
+                  Http2Client.PROTOCOL_ID,
+                  advertiseAltSvc);
+        }
+
+        private void primeActiveAlternative(boolean advertiseAltSvc) {
+            prime(originUri,
+                  new ExpectedRequest(SocketKind.ALTERNATIVE, originAuthority, alternativeAuthority),
+                  Http2Client.PROTOCOL_ID,
+                  advertiseAltSvc);
+        }
+
+        private void prime(String uri,
+                           ExpectedRequest requestExpectation,
+                           String protocol,
+                           boolean advertiseAltSvc) {
+            requestUri = uri;
+            expectedProtocol = protocol;
+            advertise = advertiseAltSvc;
+            expectedRequest = requestExpectation;
+            request();
+        }
+
+        private int request() {
+            var request = webClient.get(requestUri);
+            try (var response = request.request()) {
+                response.entity().consume();
+                int status = response.status().code();
+                if (status != Status.OK_200_CODE) {
+                    throw new IllegalStateException("Unexpected " + scenario + " status: " + response.status());
+                }
+                if (!expectedProtocol.equals(response.protocolId())) {
+                    throw new IllegalStateException("Unexpected " + scenario + " protocol: " + response.protocolId());
+                }
+                return status;
+            }
+        }
+
+        private void originResponse(ServerRequest request, ServerResponse response) {
+            respond(request, response, SocketKind.ORIGIN);
+        }
+
+        private void alternativeResponse(ServerRequest request, ServerResponse response) {
+            respond(request, response, SocketKind.ALTERNATIVE);
+        }
+
+        private void respond(ServerRequest request, ServerResponse response, SocketKind actualSocket) {
+            ExpectedRequest expectation = expectedRequest;
+            if (expectation == null || expectation.socket() != actualSocket) {
+                response.status(WRONG_SOCKET).send(BODY);
+                return;
+            }
+            if (!expectation.authority().equals(request.requestedUri().authority())) {
+                response.status(WRONG_AUTHORITY).send(BODY);
+                return;
+            }
+            if (!expectation.altUsed().equals(request.headers().first(ALT_USED).orElse(""))) {
+                response.status(WRONG_ALT_USED).send(BODY);
+                return;
+            }
+            if (advertise) {
+                // Repeated-ad rows emit this same value on every measured response.
+                response.header(HeaderNames.ALT_SVC, altSvcValue);
+            }
+            response.send(BODY);
         }
     }
 }

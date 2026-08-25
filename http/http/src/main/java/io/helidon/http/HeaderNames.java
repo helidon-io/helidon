@@ -439,6 +439,18 @@ public final class HeaderNames {
     public static final HeaderName ALT_SVC = HeaderNameEnum.ALT_SVC;
     /**
      * The {@value} header name.
+     * Identifies the alternative service used for a request.
+     */
+    public static final String ALT_USED_NAME = Strings.ALT_USED_NAME;
+    /**
+     * The {@value #ALT_USED_NAME} header name.
+     * Identifies the alternative service used for a request.
+     * <p>
+     * This infrequently used header is not part of the indexed known-header set.
+     */
+    public static final HeaderName ALT_USED = create(ALT_USED_NAME);
+    /**
+     * The {@value} header name.
      * Tells all caching mechanisms from server to client whether they may cache this object. It is measured in seconds.
      */
     public static final String CACHE_CONTROL_NAME = Strings.CACHE_CONTROL_NAME;

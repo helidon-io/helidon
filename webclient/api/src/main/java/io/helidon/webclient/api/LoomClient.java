@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -41,6 +42,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
  */
 @SuppressWarnings("rawtypes")
 class LoomClient implements WebClient {
+    private static final System.Logger LOGGER = System.getLogger(LoomClient.class.getName());
     static final LazyValue<ExecutorService> EXECUTOR =
             LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                                                                             .name("helidon-client-", 0)
@@ -163,6 +165,20 @@ class LoomClient implements WebClient {
             throw new IllegalStateException("TCP protocol IDs are not available during WebClient construction");
         }
         return protocolIds;
+    }
+
+    @Override
+    public void responseReceived(WebClientProtocolResponse response) {
+        WebClientProtocolResponse checkedResponse = Objects.requireNonNull(response, "response");
+        for (ProtocolSpi protocol : protocols) {
+            try {
+                protocol.spi().responseReceived(checkedResponse);
+            } catch (RuntimeException failure) {
+                LOGGER.log(System.Logger.Level.WARNING,
+                           "HTTP protocol response notification failed for " + protocol.id(),
+                           failure);
+            }
+        }
     }
 
     @Override

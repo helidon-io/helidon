@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.uri.UriFragment;
@@ -79,6 +80,18 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @Option.Configured
     Optional<SniConfig> sni();
+
+    /**
+     * Client policy for accepting and using HTTP {@code Alt-Svc} response advertisements.
+     * <p>
+     * Alternative service handling is disabled when this configuration is absent. Configure an empty
+     * {@link ClientAltSvcConfig} to opt in with its defaults.
+     *
+     * @return alternative service policy, or empty if alternative service handling is disabled
+     */
+    @Api.Preview
+    @Option.Configured
+    Optional<ClientAltSvcConfig> altSvc();
 
     /**
      * Base query used by the client in all requests.

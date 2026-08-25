@@ -168,6 +168,15 @@
     </dependencies>
 
     <build>
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}/../../../webclient/http2/src/test/resources</directory>
+                <includes>
+                    <include>client.p12</include>
+                    <include>server.p12</include>
+                </includes>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

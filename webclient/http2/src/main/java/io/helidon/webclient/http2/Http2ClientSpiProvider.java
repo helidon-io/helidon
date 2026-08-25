@@ -54,6 +54,7 @@ public class Http2ClientSpiProvider implements HttpClientSpiProvider<Http2Client
                                            .from(client.prototype())
                                            .protocolConfig(config)
                                            .servicesDiscoverServices(false)
-                                           .buildPrototype());
+                                           .buildPrototype(),
+                                   true);
     }
 }

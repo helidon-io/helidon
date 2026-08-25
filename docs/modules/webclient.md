@@ -69,6 +69,44 @@ WebClient client = WebClient.builder()
     .build();
 ```
 
+### Alt-Svc Discovery
+
+WebClient uses alternative services only when the optional common
+`ClientAltSvcConfig` (`alt-svc`) configuration is present. Within a present
+configuration, `enabled` defaults to `true`; setting it to `false` provides an
+explicit override without removing the configuration. An empty `protocols`
+list allows every available client protocol provider that supports Alt-Svc.
+Otherwise, the list is an exact, case-sensitive ALPN protocol filter. The
+HTTP/2 protocol ID is `h2`.
+
+Initial client support accepts advertisements only from `https` origins and
+only for alternatives on the same host; the alternative port may differ. Using
+an alternative changes the connection endpoint, not the request scheme or
+authority. WebClient does not support `h2c` alternatives. It also does not
+upgrade a plain `http` origin to TLS-based HTTP/2 because the RFC 8164
+`/.well-known/http-opportunistic` opt-in is not implemented.
+
+Alternative-service routing preserves the configured proxy policy and never
+bypasses a selected proxy. The current HTTP/2 provider uses alternatives only
+for a direct route that is not pinned to a resolved address; otherwise,
+WebClient continues with the selected route.
+
+WebClient honors the configured TLS policy as-is when connecting to an
+alternative. This includes custom TLS managers, custom SSL contexts, disabled
+endpoint identification, and `trust-all`. An unsafe or permissive TLS
+configuration therefore makes Alt-Svc steering equally unsafe or permissive.
+Configure TLS trust and endpoint identification according to the security
+requirements of the application.
+
+The HTTP/2 provider accounts for `Age` and apparent age derived from `Date`,
+honors `ma`, `clear`, and `persist`, and falls back to the origin if an
+advertised endpoint cannot be established. Advertisement freshness controls
+creation of new connections; an already-opening or reusable connection can
+continue after the advertisement expires. Discovery state belongs to the
+HTTP/2 connection cache. Shared connection caches share that state; disabling
+connection-cache sharing isolates it. `persist` does not make discovery state
+durable across a process or beyond that cache lifecycle.
+
 ### Creating the Request
 
 WebClient offers a set of request methods that are used to specify the type of
@@ -172,6 +210,13 @@ rules on which specific protocol will be used:
   configuration](#setting-protocol-configuration) on how to customize `HTTP/2`.
   In such a case, `prior-knowledge` will be used and fail if it is unable to
   switch to `HTTP/2`.
+- When the common `alt-svc` configuration is present, enabled, and allows the
+  exact `h2` protocol ID, an `https` origin can advertise a same-host TLS HTTP/2
+  alternative. A later generic WebClient request can use that alternative
+  while retaining the original request authority. WebClient adds `Alt-Used`
+  only to the request sent to the alternative. See [Alt-Svc
+  Discovery](#alt-svc-discovery) for current limitations and TLS, proxy, and
+  lifecycle behavior.
 
 ### Adding Media Support
 
@@ -320,17 +365,20 @@ client:
         name-format: "wc.counter.%1$s.error"
         description: "Counter of failed PUT, POST and DELETE requests"
     tracing:
-  protocol-configs: # <5>
+  alt-svc: # <5>
+    enabled: true
+    protocols: ["h2"]
+  protocol-configs: # <6>
     http_1_1:
       max-header-size: 20000
       validate-request-headers: true
     h2:
       prior-knowledge: true
-  proxy: # <6>
+  proxy: # <7>
     host: "hostName"
     port: 80
     no-proxy: ["localhost:8080", ".helidon.io", "192.168.1.1"]
-  tls: # <7>
+  tls: # <8>
     trust:
       keystore:
         passphrase: "password"
@@ -342,9 +390,10 @@ client:
 2. Cookie management
 3. Default client headers
 4. Client service configuration
-5. Protocol configuration
-6. Proxy configuration
-7. TLS configuration
+5. Opt-in alternative service configuration
+6. Protocol configuration
+7. Proxy configuration
+8. TLS configuration
 <!--@mdc :: -->
 
 ## Examples

@@ -17,6 +17,8 @@
 package io.helidon.webclient.http2;
 
 import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -45,6 +47,22 @@ final class Http1FallbackService implements WebClientService {
         Context context = Context.create(serviceRequest.context());
         context.register(CONTEXT_KEY, new FallbackContext(serviceRequest, fallbackHandler));
         return context;
+    }
+
+    static WebClientProtocolResponse response(WebClientProtocolResponse response) {
+        boolean explicitConnection = Contexts.context()
+                .flatMap(context -> context.get(CONTEXT_KEY, FallbackContext.class))
+                .map(fallback -> fallback.fallbackHandler().explicitConnection())
+                .orElse(response.explicitConnection());
+        if (explicitConnection == response.explicitConnection()) {
+            return response;
+        }
+        return WebClientProtocolResponse.create(response.target(),
+                                                explicitConnection,
+                                                response.protocolId(),
+                                                response.status(),
+                                                response.headers(),
+                                                response.receivedAt());
     }
 
     private record FallbackContext(WebClientServiceRequest serviceRequest,

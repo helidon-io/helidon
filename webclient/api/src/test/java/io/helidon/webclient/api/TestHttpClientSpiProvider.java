@@ -34,6 +34,14 @@ public class TestHttpClientSpiProvider implements HttpClientSpiProvider<Protocol
         }
 
         @Override
+        public void responseReceived(WebClientProtocolResponse response) {
+            protocolResponse = response;
+            if (failResponseNotification) {
+                throw new IllegalStateException("deliberate response notification failure");
+            }
+        }
+
+        @Override
         public boolean isTcp() {
             return false;
         }
@@ -44,6 +52,8 @@ public class TestHttpClientSpiProvider implements HttpClientSpiProvider<Protocol
     };
 
     private static volatile IllegalStateException constructionFailure;
+    private static volatile WebClientProtocolResponse protocolResponse;
+    private static volatile boolean failResponseNotification;
 
     @Override
     public String protocolId() {
@@ -82,9 +92,19 @@ public class TestHttpClientSpiProvider implements HttpClientSpiProvider<Protocol
 
     static void reset() {
         constructionFailure = null;
+        protocolResponse = null;
+        failResponseNotification = false;
     }
 
     static IllegalStateException constructionFailure() {
         return constructionFailure;
+    }
+
+    static WebClientProtocolResponse protocolResponse() {
+        return protocolResponse;
+    }
+
+    static void failResponseNotification() {
+        failResponseNotification = true;
     }
 }

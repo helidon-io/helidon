@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
@@ -116,6 +117,16 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
     @Api.Internal
     default List<String> tcpProtocolIds() {
         return List.of();
+    }
+
+    /**
+     * Notify active HTTP protocols about a response received by this client.
+     *
+     * @param response received protocol response
+     */
+    @Api.Internal
+    default void responseReceived(WebClientProtocolResponse response) {
+        Objects.requireNonNull(response, "response");
     }
 
     /**
