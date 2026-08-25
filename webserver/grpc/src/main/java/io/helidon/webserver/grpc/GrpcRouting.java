@@ -238,6 +238,16 @@ public class GrpcRouting implements Routing {
             return new GrpcRouting(routes, routingInterceptors, services, meterRegistry);
         }
 
+        Builder meterRegistry(Supplier<MeterRegistry> meterRegistry) {
+            this.meterRegistry = Objects.requireNonNull(meterRegistry);
+            return this;
+        }
+
+        Builder serviceRegistry(ServiceRegistry serviceRegistry) {
+            this.serviceRegistry = Optional.of(Objects.requireNonNull(serviceRegistry));
+            return this;
+        }
+
         private static ConfiguredGrpcServices configuredServices(Config config) {
             Set<String> configuredProviderTypes = new LinkedHashSet<>();
             Set<GrpcServerServiceIdentity> configuredServices = new LinkedHashSet<>();
@@ -388,16 +398,6 @@ public class GrpcRouting implements Routing {
          */
         public Builder config(Config config) {
             this.config = Objects.requireNonNull(config);
-            return this;
-        }
-
-        Builder meterRegistry(Supplier<MeterRegistry> meterRegistry) {
-            this.meterRegistry = Objects.requireNonNull(meterRegistry);
-            return this;
-        }
-
-        Builder serviceRegistry(ServiceRegistry serviceRegistry) {
-            this.serviceRegistry = Optional.of(Objects.requireNonNull(serviceRegistry));
             return this;
         }
 
