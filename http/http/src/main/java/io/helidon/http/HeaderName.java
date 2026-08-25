@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public sealed interface HeaderName permits HeaderNameImpl, HeaderNameEnum {
     String defaultCase();
 
     /**
-     * Index of this header (if one of the known indexed headers), or {@code -1} if this is a custom header name.
+     * Index of this header if it is optimized for indexed lookup, or {@code -1} otherwise.
      *
      * @return index of this header
      */

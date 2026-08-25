@@ -44,7 +44,8 @@ public final class HeaderNames {
      * This header is no longer sent by browsers, and it should be ignored by servers.
      * Character sets that are accepted.
      */
-    public static final HeaderName ACCEPT_CHARSET = HeaderNameEnum.ACCEPT_CHARSET;
+    // RFC 9110 deprecates this header, so it is intentionally not indexed.
+    public static final HeaderName ACCEPT_CHARSET = createNonIndexed(ACCEPT_CHARSET_NAME);
     /**
      * The {@value} header name.
      * List of acceptedTypes encodings.
@@ -607,7 +608,8 @@ public final class HeaderNames {
      * The {@value #PUBLIC_KEY_PINS_NAME} header name.
      * HTTP Public Key Pinning, announces hash of website's authentic TLS certificate.
      */
-    public static final HeaderName PUBLIC_KEY_PINS = HeaderNameEnum.PUBLIC_KEY_PINS;
+    // Browser support for RFC 7469 was removed because HPKP had low adoption and denial-of-service risks.
+    public static final HeaderName PUBLIC_KEY_PINS = createNonIndexed(PUBLIC_KEY_PINS_NAME);
     /**
      * The {@value} header name.
      * If an entity is temporarily unavailable, this instructs the client to try again later. Value could be a specified
@@ -649,7 +651,8 @@ public final class HeaderNames {
      * The {@value #SET_COOKIE2_NAME} header name.
      * An HTTP cookie set directive.
      */
-    public static final HeaderName SET_COOKIE2 = HeaderNameEnum.SET_COOKIE2;
+    // RFC 6265 obsoletes RFC 2965 and this header, so it is intentionally not indexed.
+    public static final HeaderName SET_COOKIE2 = createNonIndexed(SET_COOKIE2_NAME);
     /**
      * The {@value} header name.
      * A HSTS Policy informing The {@code HTTP client} how long to cache the HTTPS only policy and whether this applies to
@@ -695,7 +698,8 @@ public final class HeaderNames {
      * The {@value #TSV_NAME} header name.
      * Tracking Status Value, value suggested to be sent in response to a DNT(do-not-track).
      */
-    public static final HeaderName TSV = HeaderNameEnum.TSV;
+    // The retired W3C DNT specification defines TSV as a value of the Tk header, not as a header name.
+    public static final HeaderName TSV = createNonIndexed(TSV_NAME);
     /**
      * The {@value} header name.
      * Ask to upgrade to another protocol.
@@ -727,7 +731,8 @@ public final class HeaderNames {
      * The {@value #WARNING_NAME} header name.
      * A general warning about possible problems with the entity body.
      */
-    public static final HeaderName WARNING = HeaderNameEnum.WARNING;
+    // RFC 9111 obsoletes this header, so it is intentionally not indexed.
+    public static final HeaderName WARNING = createNonIndexed(WARNING_NAME);
     /**
      * The {@value} header name.
      * Indicates the authentication scheme that should be used to access the requested entity.
@@ -866,6 +871,10 @@ public final class HeaderNames {
         } else {
             return headerName;
         }
+    }
+
+    private static HeaderName createNonIndexed(String name) {
+        return new HeaderNameImpl(Ascii.toLowerCase(name), name);
     }
 
 }

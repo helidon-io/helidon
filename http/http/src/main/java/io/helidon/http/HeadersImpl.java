@@ -31,8 +31,6 @@ import java.util.function.Supplier;
 @SuppressWarnings("unchecked")
 class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     static final int KNOWN_HEADER_SIZE = HeaderNameEnum.values().length;
-    // must be one higher to avoid bit set expansion
-    private static final int NBITS = KNOWN_HEADER_SIZE + 1;
 
     /*
      Optimization for most commonly used header names
@@ -41,7 +39,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     // custom (unknown) headers are slower
     private Map<HeaderName, Header> customHeaders = null;
-    private final BitSet knownHeaderIndices = new BitSet(NBITS);
+    private final BitSet knownHeaderIndices = new BitSet(KNOWN_HEADER_SIZE);
 
     HeadersImpl() {
     }
@@ -186,7 +184,9 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     public T clear() {
         Arrays.fill(knownHeaders, null);
         knownHeaderIndices.clear();
-        customHeaders().clear();
+        if (customHeaders != null) {
+            customHeaders.clear();
+        }
         return (T) this;
     }
 
@@ -231,14 +231,14 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     }
 
     public Header doRemove(HeaderName name) {
-        if (name instanceof HeaderNameEnum) {
-            int index = ((HeaderNameEnum) name).ordinal();
+        int index = name.index();
+        if (index > -1) {
             Header value = knownHeaders[index];
             knownHeaders[index] = null;
             knownHeaderIndices.clear(index);
             return value;
         }
-        return customHeaders().remove(name);
+        return customHeaders == null ? null : customHeaders.remove(name);
     }
 
     private Header findOrNull(HeaderName name) {
@@ -248,7 +248,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
             return knownHeaders[index];
         }
 
-        return customHeaders().get(name);
+        return customHeaders == null ? null : customHeaders.get(name);
     }
 
     private Map<HeaderName, Header> customHeaders() {
