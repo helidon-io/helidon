@@ -1,0 +1,2 @@
+#HELIDON MANIFEST#
+META-INF/helidon/io.helidon.webserver.grpc/service.loader
