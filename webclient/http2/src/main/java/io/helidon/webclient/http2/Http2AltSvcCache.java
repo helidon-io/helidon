@@ -740,31 +740,49 @@ final class Http2AltSvcCache implements AutoCloseable {
         routes.put(routeKey, updated);
         insertionOrder.put(routeKey, updated);
         addIndexLocked(routeKey);
-        enforceCapacityLocked(invalidations);
+        enforceCapacityLocked(invalidations, false);
         Selection selection = updated.selection(target);
         if (selection != null && routes.get(routeKey) == updated) {
             publishSelectionMemoLocked(target, routeKey, updated, selection);
         }
     }
 
-    private void enforceCapacityLocked(List<Generation> invalidations) {
+    private void enforceCapacityLocked(List<Generation> invalidations, boolean evictRouteFirst) {
         while (insertionOrder.size() + tombstones.size() > MAX_ENTRIES) {
-            Map.Entry<OriginRouteKey, Instant> tombstone = tombstones.firstEntry();
-            if (tombstone != null) {
-                tombstones.remove(tombstone.getKey(), tombstone.getValue());
+            if (!evictRouteFirst && removeOldestTombstoneLocked()) {
                 continue;
             }
-            Map.Entry<OriginRouteKey, RouteState> removed = insertionOrder.firstEntry();
-            if (removed == null) {
-                throw new IllegalStateException("HTTP/2 Alt-Svc indexes are empty above capacity");
+            if (removeOldestRouteLocked(invalidations)) {
+                continue;
             }
-            invalidate(removed.getValue(), invalidations);
-            insertionOrder.remove(removed.getKey(), removed.getValue());
-            routes.remove(removed.getKey(), removed.getValue());
-            removeIndexLocked(removed.getKey());
-            removeAdvertisedHost(removed.getValue().advertisedHost);
-            clearSelectionMemosLocked(removed.getValue());
+            if (removeOldestTombstoneLocked()) {
+                continue;
+            }
+            throw new IllegalStateException("HTTP/2 Alt-Svc indexes are empty above capacity");
         }
+    }
+
+    private boolean removeOldestTombstoneLocked() {
+        Map.Entry<OriginRouteKey, Instant> tombstone = tombstones.firstEntry();
+        if (tombstone != null) {
+            tombstones.remove(tombstone.getKey(), tombstone.getValue());
+            return true;
+        }
+        return false;
+    }
+
+    private boolean removeOldestRouteLocked(List<Generation> invalidations) {
+        Map.Entry<OriginRouteKey, RouteState> removed = insertionOrder.firstEntry();
+        if (removed == null) {
+            return false;
+        }
+        invalidate(removed.getValue(), invalidations);
+        insertionOrder.remove(removed.getKey(), removed.getValue());
+        routes.remove(removed.getKey(), removed.getValue());
+        removeIndexLocked(removed.getKey());
+        removeAdvertisedHost(removed.getValue().advertisedHost);
+        clearSelectionMemosLocked(removed.getValue());
+        return true;
     }
 
     private void removeWithTombstone(OriginRouteKey routeKey,
@@ -799,7 +817,7 @@ final class Http2AltSvcCache implements AutoCloseable {
         }
         tombstones.remove(routeKey);
         tombstones.put(routeKey, observedAt);
-        enforceCapacityLocked(invalidations);
+        enforceCapacityLocked(invalidations, true);
     }
 
     private void invalidate(RouteState state, List<Generation> invalidations) {

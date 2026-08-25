@@ -1186,6 +1186,49 @@ class Http2AltSvcCacheTest {
     }
 
     @Test
+    void newWithdrawalEvictsOldestActiveRouteAtBound() {
+        MutableClock clock = new MutableClock(START);
+        List<Http2AltSvcCache.Generation> invalidations = new ArrayList<>();
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
+        Tls tls = Tls.builder().trustAll(true).build();
+        AltSvcHeader advertisement = header(START, "h2=\":8443\"; ma=3600");
+        ClientConnectionTarget first = null;
+        ClientConnectionTarget last = null;
+
+        for (int index = 0; index < 1_000; index++) {
+            ClientConnectionTarget target = target(tls, "active-" + index + ".example");
+            if (index == 0) {
+                first = target;
+            }
+            if (index == 999) {
+                last = target;
+            }
+            cache.record(target, advertisement, true, false, START.plusNanos(index + 1));
+        }
+
+        ClientConnectionTarget withdrawn = target(tls, "withdrawn.example");
+        Instant withdrawal = START.plusSeconds(10);
+        cache.record(withdrawn, header(withdrawal, "clear"), true, false, withdrawal);
+
+        assertThat(cache.select(first, false, _ -> false), nullValue());
+        assertThat(cache.select(last, false, _ -> false), notNullValue());
+        assertThat(invalidations, hasSize(1));
+
+        Instant delayed = withdrawal.minusSeconds(1);
+        cache.record(withdrawn, header(delayed, "h2=\":9443\"; ma=3600"), true, false, delayed);
+
+        assertThat(cache.select(withdrawn, false, _ -> false), nullValue());
+
+        Instant newer = withdrawal.plusSeconds(1);
+        cache.record(withdrawn, header(newer, "h2=\":10443\"; ma=3600"), true, false, newer);
+
+        assertThat(cache.select(withdrawn, false, _ -> false).port(), is(10443));
+        assertThat(invalidations, hasSize(1));
+
+        cache.close();
+    }
+
+    @Test
     void evictsOldestInsertedOriginAtBoundDespiteRead() {
         MutableClock clock = new MutableClock(START);
         List<Http2AltSvcCache.Generation> invalidations = new ArrayList<>();
