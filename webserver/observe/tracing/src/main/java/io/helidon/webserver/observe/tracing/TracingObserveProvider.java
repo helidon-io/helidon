@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.observe.tracing;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -69,6 +71,9 @@ public class TracingObserveProvider implements ObserveProvider {
 
     @Override
     public Observer create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
         Config tracingConfig = config.root().get("tracing");
         TracingObserverConfig observerConfig = TracingObserverConfig.builder()
                 .tracer(serviceRegistry.get(Tracer.class))

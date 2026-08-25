@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.observe.health;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
@@ -52,6 +54,9 @@ public class HealthObserveProvider implements ObserveProvider {
 
     @Override
     public Observer create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
         var observerConfig = HealthObserverConfig.builder()
                 .config(config)
                 .name(name)
