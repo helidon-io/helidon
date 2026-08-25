@@ -26,6 +26,22 @@ import io.helidon.webclient.spi.WebClientService;
 final class Http1FallbackService implements WebClientService {
     private static final Object CONTEXT_KEY = new Object();
 
+    static WebClientProtocolResponse response(WebClientProtocolResponse response) {
+        boolean explicitConnection = Contexts.context()
+                .flatMap(context -> context.get(CONTEXT_KEY, FallbackContext.class))
+                .map(fallback -> fallback.fallbackHandler().explicitConnection())
+                .orElse(response.explicitConnection());
+        if (explicitConnection == response.explicitConnection()) {
+            return response;
+        }
+        return WebClientProtocolResponse.create(response.target(),
+                                                explicitConnection,
+                                                response.protocolId(),
+                                                response.status(),
+                                                response.headers(),
+                                                response.receivedAt());
+    }
+
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest clientRequest) {
         clientRequest.context()
@@ -47,22 +63,6 @@ final class Http1FallbackService implements WebClientService {
         Context context = Context.create(serviceRequest.context());
         context.register(CONTEXT_KEY, new FallbackContext(serviceRequest, fallbackHandler));
         return context;
-    }
-
-    static WebClientProtocolResponse response(WebClientProtocolResponse response) {
-        boolean explicitConnection = Contexts.context()
-                .flatMap(context -> context.get(CONTEXT_KEY, FallbackContext.class))
-                .map(fallback -> fallback.fallbackHandler().explicitConnection())
-                .orElse(response.explicitConnection());
-        if (explicitConnection == response.explicitConnection()) {
-            return response;
-        }
-        return WebClientProtocolResponse.create(response.target(),
-                                                explicitConnection,
-                                                response.protocolId(),
-                                                response.status(),
-                                                response.headers(),
-                                                response.receivedAt());
     }
 
     private record FallbackContext(WebClientServiceRequest serviceRequest,

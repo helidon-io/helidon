@@ -72,6 +72,11 @@ final class Http1FallbackHandler {
         return upgradeFailureResponseAllowed;
     }
 
+    static void copyFinalHeaders(Http1ClientRequest request, WebClientServiceRequest serviceRequest) {
+        request.headers().clear();
+        request.headers(serviceRequest.headers());
+    }
+
     void explicitConnection(boolean explicitConnection) {
         this.explicitConnection = explicitConnection;
     }
@@ -82,10 +87,5 @@ final class Http1FallbackHandler {
 
     String actualProtocolId() {
         return actualProtocolId;
-    }
-
-    static void copyFinalHeaders(Http1ClientRequest request, WebClientServiceRequest serviceRequest) {
-        request.headers().clear();
-        request.headers(serviceRequest.headers());
     }
 }

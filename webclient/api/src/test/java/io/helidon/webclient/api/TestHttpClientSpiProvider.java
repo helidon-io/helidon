@@ -55,6 +55,14 @@ public class TestHttpClientSpiProvider implements HttpClientSpiProvider<Protocol
     private static volatile WebClientProtocolResponse protocolResponse;
     private static volatile boolean failResponseNotification;
 
+    static WebClientProtocolResponse protocolResponse() {
+        return protocolResponse;
+    }
+
+    static void failResponseNotification() {
+        failResponseNotification = true;
+    }
+
     @Override
     public String protocolId() {
         return PROTOCOL_ID;
@@ -98,13 +106,5 @@ public class TestHttpClientSpiProvider implements HttpClientSpiProvider<Protocol
 
     static IllegalStateException constructionFailure() {
         return constructionFailure;
-    }
-
-    static WebClientProtocolResponse protocolResponse() {
-        return protocolResponse;
-    }
-
-    static void failResponseNotification() {
-        failResponseNotification = true;
     }
 }

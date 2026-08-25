@@ -126,14 +126,6 @@ class TransportResponseDispatchTest {
                   Map.of());
         }
 
-        private WebClientServiceResponse invoke(WebClient client, WebClientService.TransportChain transport) {
-            return invokeServices(client,
-                                  transport,
-                                  new CompletableFuture<>(),
-                                  new CompletableFuture<>(),
-                                  resolvedUri());
-        }
-
         @Override
         protected HttpClientResponse doSubmit(Object entity) {
             throw new UnsupportedOperationException();
@@ -142,6 +134,14 @@ class TransportResponseDispatchTest {
         @Override
         protected HttpClientResponse doOutputStream(OutputStreamHandler outputStreamHandler) {
             throw new UnsupportedOperationException();
+        }
+
+        private WebClientServiceResponse invoke(WebClient client, WebClientService.TransportChain transport) {
+            return invokeServices(client,
+                                  transport,
+                                  new CompletableFuture<>(),
+                                  new CompletableFuture<>(),
+                                  resolvedUri());
         }
     }
 }

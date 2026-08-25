@@ -401,12 +401,6 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         }
     }
 
-    private WebClientProtocolResponse takeProtocolResponse() {
-        WebClientProtocolResponse response = pendingProtocolResponse;
-        pendingProtocolResponse = null;
-        return response;
-    }
-
     Http1ConnectionListener sendListener() {
         return sendListener;
     }
@@ -477,6 +471,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
     Http1ConnectionListener recvListener() {
         return recvListener;
+    }
+
+    private WebClientProtocolResponse takeProtocolResponse() {
+        WebClientProtocolResponse response = pendingProtocolResponse;
+        pendingProtocolResponse = null;
+        return response;
     }
 
     static boolean statusAllowsEntity(Status responseStatus) {

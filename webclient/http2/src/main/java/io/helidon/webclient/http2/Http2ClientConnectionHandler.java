@@ -103,6 +103,37 @@ class Http2ClientConnectionHandler {
         this.currentAlternative = Objects.requireNonNull(currentAlternative, "currentAlternative");
     }
 
+    static boolean ownsExplicitConnection(Http2ClientRequestImpl request) {
+        return request.ownsExplicitConnection();
+    }
+
+    static Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,
+                                              ClientConnectionTarget requestTarget,
+                                              Http2ClientRequestImpl request,
+                                              WebClientServiceRequest serviceRequest,
+                                              Http1FallbackHandler http1FallbackHandler,
+                                              Http2ClientConnectionHandler resultHandler) {
+        return http1(http2Client,
+                     requestTarget,
+                     request,
+                     serviceRequest,
+                     http1FallbackHandler,
+                     resultHandler,
+                     null);
+    }
+
+    static boolean http1FallbackAllowed(Http2ClientRequestImpl request) {
+        return request.tcpProtocolIds().contains(Http1Client.PROTOCOL_ID);
+    }
+
+    static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri,
+                                                             Http2ClientRequestImpl request,
+                                                             Http1FallbackHandler http1FallbackHandler) {
+        IllegalArgumentException failure = unsupportedHttp1Fallback(uri, request);
+        http1FallbackHandler.completeSentExceptionally(failure);
+        return failure;
+    }
+
     boolean acquire() {
         lifecycleLock.lock();
         try {
@@ -417,6 +448,107 @@ class Http2ClientConnectionHandler {
         }
     }
 
+    private static AlternativeConnectionException staleAlternative(Http2AltSvcCache.Selection selection,
+                                                                    String message) {
+        return new AlternativeConnectionException(selection,
+                                                  AlternativeConnectionException.Reason.STALE,
+                                                  new IllegalStateException(message));
+    }
+
+    private static Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,
+                                                       ClientConnectionTarget requestTarget,
+                                                       Http2ClientRequestImpl request,
+                                                       WebClientServiceRequest serviceRequest,
+                                                       Http1FallbackHandler http1FallbackHandler,
+                                                       Http2ClientConnectionHandler resultHandler,
+                                                       ResolvedClientTarget resolvedTarget) {
+        try {
+            Http1ClientRequest http1Request = http1Request(http2Client.http1FallbackClient(),
+                                                           requestTarget,
+                                                           request,
+                                                           serviceRequest.uri());
+            Http1ClientResponse fallbackResponse = http1FallbackHandler.apply(http1Request, serviceRequest);
+            return new Http2ConnectionAttemptResult(Result.HTTP_1,
+                                                    null,
+                                                    fallbackResponse,
+                                                    resultHandler,
+                                                    requestTarget,
+                                                    resolvedTarget,
+                                                    null);
+        } catch (RuntimeException | Error e) {
+            http1FallbackHandler.completeSentExceptionally(e);
+            throw e;
+        }
+    }
+
+    private static Http1ClientRequest http1Request(Http1Client http1Client,
+                                                  ClientConnectionTarget requestTarget,
+                                                  Http2ClientRequestImpl request,
+                                                  ClientUri initialUri) {
+        Http1ClientRequest http1Request = http1Client.method(request.method())
+                .uri(initialUri)
+                .keepAlive(request.keepAlive())
+                .headers(request.headers())
+                .skipUriEncoding(request.skipUriEncoding())
+                .tls(request.tls())
+                .readTimeout(request.readTimeout())
+                .readContinueTimeout(request.readContinueTimeout())
+                .proxy(request.proxy())
+                .maxRedirects(request.maxRedirects())
+                .followRedirects(request.followRedirects());
+        request.connection().ifPresent(http1Request::connection);
+        request.address().ifPresent(http1Request::address);
+        request.sni().ifPresent(http1Request::sni);
+        request.sendExpectContinue().ifPresent(http1Request::sendExpectContinue);
+        // This is a manual HTTP/2-to-HTTP/1 request copy used for h2c probing/fallback. Properties carry internal
+        // redirect state, including whether a previous redirect already crossed an origin boundary.
+        request.properties().forEach(http1Request::property);
+        if (requestTarget.transportAddress().isEmpty()
+                && http1Request instanceof FullClientRequest<?> fullClientRequest) {
+            fullClientRequest.selectedProxyRoute(requestTarget.proxyRoute());
+        }
+        return http1Request;
+    }
+
+    private static ResolvedClientTarget resolvedTarget(ClientConnection clientConnection) {
+        return clientConnection instanceof TcpClientConnection tcpConnection
+                ? tcpConnection.resolvedTarget().orElse(null)
+                : null;
+    }
+
+    private static void closeClientConnection(ClientConnection clientConnection) {
+        try {
+            clientConnection.closeResource();
+        } catch (RuntimeException e) {
+            LOGGER.log(DEBUG, "Failed to close internally created HTTP/2 probe connection", e);
+        }
+    }
+
+    private static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri, Http2ClientRequestImpl request) {
+        return new IllegalArgumentException("Cannot handle request to " + uri
+                                                   + ", negotiated HTTP/1.1 fallback is not enabled. HTTP versions supported: "
+                                                   + request.tcpProtocolIds());
+    }
+
+    private static IllegalStateException unsupportedUpgradeFallback(Http2ClientRequestImpl request,
+                                                                    HttpClientResponse response) {
+        return new IllegalStateException("Cannot use failed h2c upgrade response as HTTP/1.1 fallback for "
+                                                 + request.method()
+                                                 + " request with an entity. Status: "
+                                                 + response.status());
+    }
+
+    private static List<String> alpnProtocolIds(Http2ClientRequestImpl request) {
+        return request.priorKnowledge() ? List.of(Http2Client.PROTOCOL_ID) : request.tcpProtocolIds();
+    }
+
+    private static void requireHttp2(ClientConnection clientConnection) {
+        if (!clientConnection.helidonSocket().protocolNegotiated()
+                || !Http2Client.PROTOCOL_ID.equals(clientConnection.helidonSocket().protocol())) {
+            throw new IllegalStateException("HTTP/2 alternative did not negotiate h2");
+        }
+    }
+
     private Http2ConnectionAttemptResult alternativeHttp2(Http2ClientImpl http2Client,
                                                           Http2AltSvcCache.Selection selection,
                                                           Http2ClientRequestImpl request) {
@@ -526,13 +658,6 @@ class Http2ClientConnectionHandler {
         } finally {
             lifecycleLock.unlock();
         }
-    }
-
-    private static AlternativeConnectionException staleAlternative(Http2AltSvcCache.Selection selection,
-                                                                    String message) {
-        return new AlternativeConnectionException(selection,
-                                                  AlternativeConnectionException.Reason.STALE,
-                                                  new IllegalStateException(message));
     }
 
     private ExistingStream existingStream(Http2ClientImpl http2Client,
@@ -862,10 +987,6 @@ class Http2ClientConnectionHandler {
         }
     }
 
-    static boolean ownsExplicitConnection(Http2ClientRequestImpl request) {
-        return request.ownsExplicitConnection();
-    }
-
     private String settingsForUpgrade(Http2ClientProtocolConfig protocolConfig) {
         Http2Settings settings = Http2ClientConnection.settings(protocolConfig);
         BufferData settingsFrameData = settings.toFrameData(null, 0, Http2Flag.SettingsFlags.create(0))
@@ -873,76 +994,6 @@ class Http2ClientConnectionHandler {
         byte[] b = new byte[settingsFrameData.available()];
         settingsFrameData.read(b);
         return Base64.getUrlEncoder().encodeToString(b);
-    }
-
-    static Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,
-                                              ClientConnectionTarget requestTarget,
-                                              Http2ClientRequestImpl request,
-                                              WebClientServiceRequest serviceRequest,
-                                              Http1FallbackHandler http1FallbackHandler,
-                                              Http2ClientConnectionHandler resultHandler) {
-        return http1(http2Client,
-                     requestTarget,
-                     request,
-                     serviceRequest,
-                     http1FallbackHandler,
-                     resultHandler,
-                     null);
-    }
-
-    private static Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,
-                                                       ClientConnectionTarget requestTarget,
-                                                       Http2ClientRequestImpl request,
-                                                       WebClientServiceRequest serviceRequest,
-                                                       Http1FallbackHandler http1FallbackHandler,
-                                                       Http2ClientConnectionHandler resultHandler,
-                                                       ResolvedClientTarget resolvedTarget) {
-        try {
-            Http1ClientRequest http1Request = http1Request(http2Client.http1FallbackClient(),
-                                                           requestTarget,
-                                                           request,
-                                                           serviceRequest.uri());
-            Http1ClientResponse fallbackResponse = http1FallbackHandler.apply(http1Request, serviceRequest);
-            return new Http2ConnectionAttemptResult(Result.HTTP_1,
-                                                    null,
-                                                    fallbackResponse,
-                                                    resultHandler,
-                                                    requestTarget,
-                                                    resolvedTarget,
-                                                    null);
-        } catch (RuntimeException | Error e) {
-            http1FallbackHandler.completeSentExceptionally(e);
-            throw e;
-        }
-    }
-
-    private static Http1ClientRequest http1Request(Http1Client http1Client,
-                                                  ClientConnectionTarget requestTarget,
-                                                  Http2ClientRequestImpl request,
-                                                  ClientUri initialUri) {
-        Http1ClientRequest http1Request = http1Client.method(request.method())
-                .uri(initialUri)
-                .keepAlive(request.keepAlive())
-                .headers(request.headers())
-                .skipUriEncoding(request.skipUriEncoding())
-                .tls(request.tls())
-                .readTimeout(request.readTimeout())
-                .readContinueTimeout(request.readContinueTimeout())
-                .proxy(request.proxy())
-                .maxRedirects(request.maxRedirects())
-                .followRedirects(request.followRedirects());
-        request.connection().ifPresent(http1Request::connection);
-        request.address().ifPresent(http1Request::address);
-        request.sni().ifPresent(http1Request::sni);
-        request.sendExpectContinue().ifPresent(http1Request::sendExpectContinue);
-        // This is a manual HTTP/2-to-HTTP/1 request copy used for h2c probing/fallback. Properties carry internal
-        // redirect state, including whether a previous redirect already crossed an origin boundary.
-        request.properties().forEach(http1Request::property);
-        if (requestTarget.transportAddress().isEmpty()
-                && http1Request instanceof FullClientRequest<?> fullClientRequest) {
-            fullClientRequest.selectedProxyRoute(requestTarget.proxyRoute());
-        }
-        return http1Request;
     }
 
     private Http2ClientConnection createConnection(Http2ClientImpl http2Client,
@@ -1150,50 +1201,6 @@ class Http2ClientConnectionHandler {
         toRetire.forEach(Http2ClientConnection::retire);
     }
 
-    private static ResolvedClientTarget resolvedTarget(ClientConnection clientConnection) {
-        return clientConnection instanceof TcpClientConnection tcpConnection
-                ? tcpConnection.resolvedTarget().orElse(null)
-                : null;
-    }
-
-    private static void closeClientConnection(ClientConnection clientConnection) {
-        try {
-            clientConnection.closeResource();
-        } catch (RuntimeException e) {
-            LOGGER.log(DEBUG, "Failed to close internally created HTTP/2 probe connection", e);
-        }
-    }
-
-    static boolean http1FallbackAllowed(Http2ClientRequestImpl request) {
-        return request.tcpProtocolIds().contains(Http1Client.PROTOCOL_ID);
-    }
-
-    private static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri, Http2ClientRequestImpl request) {
-        return new IllegalArgumentException("Cannot handle request to " + uri
-                                                   + ", negotiated HTTP/1.1 fallback is not enabled. HTTP versions supported: "
-                                                   + request.tcpProtocolIds());
-    }
-
-    static IllegalArgumentException unsupportedHttp1Fallback(ClientUri uri,
-                                                             Http2ClientRequestImpl request,
-                                                             Http1FallbackHandler http1FallbackHandler) {
-        IllegalArgumentException failure = unsupportedHttp1Fallback(uri, request);
-        http1FallbackHandler.completeSentExceptionally(failure);
-        return failure;
-    }
-
-    private static IllegalStateException unsupportedUpgradeFallback(Http2ClientRequestImpl request,
-                                                                    HttpClientResponse response) {
-        return new IllegalStateException("Cannot use failed h2c upgrade response as HTTP/1.1 fallback for "
-                                                 + request.method()
-                                                 + " request with an entity. Status: "
-                                                 + response.status());
-    }
-
-    private static List<String> alpnProtocolIds(Http2ClientRequestImpl request) {
-        return request.priorKnowledge() ? List.of(Http2Client.PROTOCOL_ID) : request.tcpProtocolIds();
-    }
-
     private ClientConnection connectAlternative(WebClient webClient, ResolvedClientTarget resolvedTarget) {
         return TcpClientConnection.create(webClient,
                                           resolvedTarget,
@@ -1201,13 +1208,6 @@ class Http2ClientConnectionHandler {
                                           _ -> false,
                                           this::removeClientConnection)
                 .connect();
-    }
-
-    private static void requireHttp2(ClientConnection clientConnection) {
-        if (!clientConnection.helidonSocket().protocolNegotiated()
-                || !Http2Client.PROTOCOL_ID.equals(clientConnection.helidonSocket().protocol())) {
-            throw new IllegalStateException("HTTP/2 alternative did not negotiate h2");
-        }
     }
 
     private ClientConnection connectClient(WebClient webClient,
