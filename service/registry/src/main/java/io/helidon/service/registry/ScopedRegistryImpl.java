@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
@@ -39,11 +40,13 @@ class ScopedRegistryImpl implements ScopedRegistry {
     private static final System.Logger LOGGER = System.getLogger(ScopedRegistryImpl.class.getName());
 
     private final ReadWriteLock serviceProvidersLock = new ReentrantReadWriteLock();
+    private final Condition deactivationCompleted = serviceProvidersLock.writeLock().newCondition();
     private final Map<ServiceInfo, Activator<?>> activators = new IdentityHashMap<>();
 
     private final TypeName scope;
     private final String id;
     private boolean active = false;
+    private boolean deactivating;
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     ScopedRegistryImpl(CoreServiceRegistry registry,
@@ -77,18 +80,29 @@ class ScopedRegistryImpl implements ScopedRegistry {
 
     @Override
     public void deactivate() {
+        List<Activator<?>> toShutdown;
+        var writeLock = serviceProvidersLock.writeLock();
+        writeLock.lock();
         try {
-            serviceProvidersLock.writeLock().lock();
+            while (deactivating) {
+                deactivationCompleted.awaitUninterruptibly();
+            }
             if (!active) {
                 return;
             }
 
-            List<Activator<?>> toShutdown = activators.values()
+            active = false;
+            deactivating = true;
+            toShutdown = activators.values()
                     .stream()
                     .filter(it -> it.phase().eligibleForDeactivation())
                     .sorted(shutdownComparator())
                     .toList();
+        } finally {
+            writeLock.unlock();
+        }
 
+        try {
             List<Throwable> exceptions = new ArrayList<>();
 
             for (Activator<?> managedService : toShutdown) {
@@ -115,8 +129,6 @@ class ScopedRegistryImpl implements ScopedRegistry {
                 }
             }
 
-            active = false;
-
             if (exceptions.isEmpty()) {
                 return;
             }
@@ -124,7 +136,13 @@ class ScopedRegistryImpl implements ScopedRegistry {
             exceptions.forEach(failure::addSuppressed);
             throw failure;
         } finally {
-            serviceProvidersLock.writeLock().unlock();
+            writeLock.lock();
+            try {
+                deactivating = false;
+                deactivationCompleted.signalAll();
+            } finally {
+                writeLock.unlock();
+            }
         }
     }
 

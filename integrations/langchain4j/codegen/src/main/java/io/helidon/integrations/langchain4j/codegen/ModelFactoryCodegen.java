@@ -22,6 +22,10 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
@@ -29,6 +33,7 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.Field;
+import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Parameter;
 import io.helidon.codegen.classmodel.Returns;
@@ -58,12 +63,15 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_L
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_SERVICES_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PRE_DESTROY;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_RUN_LEVEL;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIED_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIER;
 
 class ModelFactoryCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(ModelConfigCodegen.class);
     private static final double DEFAULT_FACTORY_WEIGHT = Weighted.DEFAULT_WEIGHT - 2;
+    private static final double LIFECYCLE_COORDINATOR_RUN_LEVEL = Double.MIN_VALUE;
+    private static final double LIFECYCLE_COORDINATOR_WEIGHT = Double.MAX_VALUE;
 
     @Override
     public void process(RoundContext roundContext) {
@@ -91,7 +99,133 @@ class ModelFactoryCodegen implements CodegenExtension {
 
         var modelType = modelAnnotation.typeValue().orElseThrow();
 
-        var modelFactoryWeightAnnotation = modelAnnotation.doubleValue("weight")
+        var modelFactoryWeightAnnotation = modelFactoryWeightAnnotation(configType, modelAnnotation);
+
+        var modelClassNamePrefix = modelAnnotation.typeValue().map(TypeName::className)
+                .orElseThrow(() -> new CodegenException("Missing model class"));
+
+        var factoryTypeName = TypeName.builder()
+                .packageName(configType.typeName().packageName())
+                .className(modelClassNamePrefix + "Factory")
+                .build();
+        var lifecycleStateType = TypeName.create(factoryTypeName.fqName() + ".LifecycleState");
+        var lifecyclePhaseType = TypeName.create(factoryTypeName.fqName() + ".LifecyclePhase");
+        var lifecycleCoordinatorType = TypeName.create(factoryTypeName.fqName() + "Lifecycle");
+
+        var classModel = factoryClassModel(configType,
+                                           modelType,
+                                           modelClassNamePrefix,
+                                           factoryTypeName,
+                                           modelFactoryWeightAnnotation);
+
+        classModel.addField(Field.builder()
+                                    .name("config")
+                                    .accessModifier(AccessModifier.PRIVATE)
+                                    .isFinal(true)
+                                    .type(CONFIG)
+                                    .build());
+
+        classModel.addField(Field.builder()
+                                    .name("lifecycle")
+                                    .accessModifier(AccessModifier.PRIVATE)
+                                    .isFinal(true)
+                                    .type(lifecycleCoordinatorType)
+                                    .build());
+
+        classModel.addField(Field.builder()
+                                    .name("modelNames")
+                                    .accessModifier(AccessModifier.PRIVATE)
+                                    .isFinal(true)
+                                    .type(TypeName.builder(LIST)
+                                                  .addTypeArgument(STRING)
+                                                  .build())
+                                    .build());
+
+        classModel.addField(Field.builder()
+                                    .name("lifecycleLock")
+                                    .accessModifier(AccessModifier.PRIVATE)
+                                    .isFinal(true)
+                                    .type(ReentrantLock.class)
+                                    .addContent("new ")
+                                    .addContent(ReentrantLock.class)
+                                    .addContent("()")
+                                    .build());
+
+        classModel.addField(Field.builder()
+                                    .name("lifecycleChanged")
+                                    .accessModifier(AccessModifier.PRIVATE)
+                                    .isFinal(true)
+                                    .type(Condition.class)
+                                    .build());
+
+        classModel.addField(Field.builder()
+                                    .name("lifecycleState")
+                                    .accessModifier(AccessModifier.PRIVATE)
+                                    .type(lifecycleStateType)
+                                    .build());
+
+        classModel.addConstructor(Constructor.builder()
+                                          .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                                          .description("Creates a new " + modelClassNamePrefix + "Factory.")
+                                          .addContentLine("this.config = config;")
+                                          .addContentLine("this.lifecycle = lifecycle;")
+                                          .addContentLine("this.lifecycleChanged = lifecycleLock.newCondition();")
+                                          .addContent("this.modelNames = ")
+                                          .addContent(constantClassTypeName)
+                                          .addContent(".modelNames(config, ")
+                                          .addContent(modelType)
+                                          .addContent(".class, ")
+                                          .addContent(modelClassNamePrefix + "Config.PROVIDER_KEY);")
+                                          .addContentLine()
+                                          .addContent("this.lifecycleState = new ")
+                                          .addContent(lifecycleStateType)
+                                          .addContent("(")
+                                          .addContent(lifecyclePhaseType)
+                                          .addContent(".NEW, ")
+                                          .addContent(LIST)
+                                          .addContent(".of(), ")
+                                          .addContent(LIST)
+                                          .addContentLine(".of(), null, null);")
+                                          .addParameter(Parameter.builder()
+                                                                .description("Configuration for the new model.")
+                                                                .name("config")
+                                                                .type(CONFIG)
+                                                                .build())
+                                          .addParameter(Parameter.builder()
+                                                                .description("Lifecycle coordinator for the new model.")
+                                                                .name("lifecycle")
+                                                                .type(lifecycleCoordinatorType)
+                                                                .build()));
+
+        classModel.addMethod(servicesMethod(modelType, lifecycleStateType, lifecyclePhaseType));
+        classModel.addMethod(initializeServicesMethod(modelType, lifecycleStateType, lifecyclePhaseType));
+        classModel.addMethod(preDestroyMethod(lifecycleStateType, lifecyclePhaseType));
+        classModel.addMethod(closeModelsMethod());
+        classModel.addMethod(combineFailuresMethod());
+        classModel.addMethod(throwCloseFailureMethod());
+        classModel.addMethod(shouldCloseModelMethod());
+        classModel.addMethod(addOwnedModelMethod());
+
+        var modelNamePrefix = modelAnnotation.typeValue().map(TypeName::className)
+                .orElseThrow(() -> new CodegenException("Missing model class"));
+
+        var modelConfigTypeName = TypeName.builder()
+                .packageName(configType.typeName().packageName())
+                .className(modelNamePrefix + "Config")
+                .build();
+
+        classModel.addMethod(buildModelMethod(modelClassNamePrefix, modelType, constantClassTypeName));
+        classModel.addMethod(createMethod(modelType, modelConfigTypeName));
+        classModel.addInnerClass(lifecyclePhase());
+        classModel.addInnerClass(lifecycleState(modelType, lifecyclePhaseType));
+        roundContext.addGeneratedType(factoryTypeName, classModel, configType.typeName());
+        roundContext.addGeneratedType(lifecycleCoordinatorType,
+                                      lifecycleCoordinator(factoryTypeName, lifecycleCoordinatorType),
+                                      configType.typeName());
+    }
+
+    private static Annotation modelFactoryWeightAnnotation(TypeInfo configType, Annotation modelAnnotation) {
+        return modelAnnotation.doubleValue("weight")
                 .filter(w -> w != Weighted.DEFAULT_WEIGHT)
                 .map(w -> Annotation.builder()
                         .typeName(WEIGHT)
@@ -112,18 +246,14 @@ class ModelFactoryCodegen implements CodegenExtension {
                         .typeName(WEIGHT)
                         .addProperties(Map.of("value", AnnotationProperty.create(DEFAULT_FACTORY_WEIGHT)))
                         .build());
+    }
 
-        var modelClassNamePrefix = modelAnnotation.typeValue().map(TypeName::className)
-                .orElseThrow(() -> new CodegenException("Missing model class"));
-
-        var factoryTypeName = TypeName.builder()
-                .packageName(configType.typeName().packageName())
-                .className(modelClassNamePrefix + "Factory")
-                .build();
-
-        var superTypeName = TypeName.builder(SVC_SERVICES_FACTORY).addTypeArgument(modelType);
-
-        var classModel = ClassModel.builder()
+    private static ClassModel.Builder factoryClassModel(TypeInfo configType,
+                                                        TypeName modelType,
+                                                        String modelClassNamePrefix,
+                                                        TypeName factoryTypeName,
+                                                        Annotation modelFactoryWeightAnnotation) {
+        return ClassModel.builder()
                 .classType(ElementKind.CLASS)
                 .type(factoryTypeName)
                 .copyright(CodegenUtil.copyright(GENERATOR,
@@ -144,69 +274,7 @@ class ModelFactoryCodegen implements CodegenExtension {
                                                                                        "WILDCARD_NAME"))
                                        .build())
                 .addAnnotation(modelFactoryWeightAnnotation)
-                .addInterface(superTypeName.build());
-
-        classModel.addField(Field.builder()
-                                    .name("config")
-                                    .accessModifier(AccessModifier.PRIVATE)
-                                    .isFinal(true)
-                                    .type(CONFIG)
-                                    .build());
-
-        classModel.addField(Field.builder()
-                                    .name("modelNames")
-                                    .accessModifier(AccessModifier.PRIVATE)
-                                    .isFinal(true)
-                                    .type(TypeName.builder(LIST)
-                                                  .addTypeArgument(STRING)
-                                                  .build())
-                                    .build());
-
-        classModel.addField(Field.builder()
-                                    .name("services")
-                                    .accessModifier(AccessModifier.PRIVATE)
-                                    .type(servicesType(modelType))
-                                    .build());
-
-        classModel.addField(Field.builder()
-                                    .name("ownedModels")
-                                    .accessModifier(AccessModifier.PRIVATE)
-                                    .type(closeablesType())
-                                    .build());
-
-        classModel.addConstructor(Constructor.builder()
-                                          .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                                          .description("Creates a new " + modelClassNamePrefix + "Factory.")
-                                          .addContentLine("this.config = config;")
-                                          .addContent("this.modelNames = ")
-                                          .addContent(constantClassTypeName)
-                                          .addContent(".modelNames(config, ")
-                                          .addContent(modelType)
-                                          .addContent(".class, ")
-                                          .addContent(modelClassNamePrefix + "Config.PROVIDER_KEY);")
-                                          .addParameter(Parameter.builder()
-                                                                .description("Configuration for the new model.")
-                                                                .name("config")
-                                                                .type(CONFIG)
-                                                                .build()));
-
-        classModel.addMethod(servicesMethod(modelType));
-        classModel.addMethod(preDestroyMethod());
-        classModel.addMethod(closeModelsMethod());
-        classModel.addMethod(shouldCloseModelMethod());
-        classModel.addMethod(addOwnedModelMethod());
-
-        var modelNamePrefix = modelAnnotation.typeValue().map(TypeName::className)
-                .orElseThrow(() -> new CodegenException("Missing model class"));
-
-        var modelConfigTypeName = TypeName.builder()
-                .packageName(configType.typeName().packageName())
-                .className(modelNamePrefix + "Config")
-                .build();
-
-        classModel.addMethod(buildModelMethod(modelClassNamePrefix, modelType, constantClassTypeName));
-        classModel.addMethod(createMethod(modelType, modelConfigTypeName));
-        roundContext.addGeneratedType(factoryTypeName, classModel, configType.typeName());
+                .addInterface(TypeName.builder(SVC_SERVICES_FACTORY).addTypeArgument(modelType).build());
     }
 
     /*
@@ -221,16 +289,115 @@ class ModelFactoryCodegen implements CodegenExtension {
             Service.QualifiedInstance.create(theModel, OciGenAi.QUALIFIER));
     }
      */
-    private static Method servicesMethod(TypeName modelType) {
+    private static Method servicesMethod(TypeName modelType,
+                                         TypeName lifecycleStateType,
+                                         TypeName lifecyclePhaseType) {
         return Method.builder()
                 .addAnnotation(Annotations.OVERRIDE)
                 .accessModifier(PUBLIC)
                 .name("services")
                 .returnType(servicesType(modelType))
-                .addContentLine("synchronized (this) {")
+                .addContentLine("lifecycle.register(this);")
+                .addContentLine("while (true) {")
                 .increaseContentPadding()
-                .addContentLine("if (services == null) {")
+                .addContentLine("lifecycleLock.lock();")
+                .addContentLine("try {")
                 .increaseContentPadding()
+                .addContentLine("var state = lifecycleState;")
+                .addContent("if (state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".READY) {")
+                .increaseContentPadding()
+                .addContentLine("return state.services();")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("if (state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContent(".DESTROYING || state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".DESTROYED) {")
+                .increaseContentPadding()
+                .addContent("return ")
+                .addContent(LIST)
+                .addContentLine(".of();")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("if (state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".CLEANUP_FAILED) {")
+                .increaseContentPadding()
+                .addContent("throw new ")
+                .addContent(IllegalStateException.class)
+                .addContent("(")
+                .addContentLiteral("Cannot initialize LangChain4j models after cleanup failed.")
+                .addContentLine(", state.failure());")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("if (state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".INITIALIZING) {")
+                .increaseContentPadding()
+                .addContent("if (state.owner() == ")
+                .addContent(Thread.class)
+                .addContentLine(".currentThread()) {")
+                .increaseContentPadding()
+                .addContent("throw new ")
+                .addContent(IllegalStateException.class)
+                .addContent("(")
+                .addContentLiteral("Recursive LangChain4j model factory initialization.")
+                .addContentLine(");")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("try {")
+                .increaseContentPadding()
+                .addContentLine("lifecycleChanged.await();")
+                .decreaseContentPadding()
+                .addContent("} catch (")
+                .addContent(InterruptedException.class)
+                .addContentLine(" e) {")
+                .increaseContentPadding()
+                .addContent(Thread.class)
+                .addContentLine(".currentThread().interrupt();")
+                .addContent("throw new ")
+                .addContent(IllegalStateException.class)
+                .addContent("(")
+                .addContentLiteral("Interrupted while waiting for LangChain4j model factory initialization.")
+                .addContentLine(", e);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("continue;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".INITIALIZING, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(Thread.class)
+                .addContentLine(".currentThread(), null);")
+                .decreaseContentPadding()
+                .addContentLine("} finally {")
+                .increaseContentPadding()
+                .addContentLine("lifecycleLock.unlock();")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("return initializeServices();")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .build();
+    }
+
+    private static Method initializeServicesMethod(TypeName modelType,
+                                                   TypeName lifecycleStateType,
+                                                   TypeName lifecyclePhaseType) {
+        var builder = Method.builder()
+                .accessModifier(AccessModifier.PRIVATE)
+                .name("initializeServices")
+                .returnType(servicesType(modelType))
                 .addContent("var createdServices = new ")
                 .addContent(ArrayList.class)
                 .addContent("<")
@@ -243,6 +410,8 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .addContent("<")
                 .addContent(AutoCloseable.class)
                 .addContentLine(">();")
+                .addContent(lifecycleStateType)
+                .addContentLine(" completedState;")
                 .addContentLine("try {")
                 .increaseContentPadding()
                 .addContentLine("for (var name : modelNames) {")
@@ -260,14 +429,15 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .addContentLine(".ifPresent(createdServices::add);")
                 .decreaseContentPadding()
                 .addContentLine("}")
-                .addContent("var completedServices = ")
+                .addContent("completedState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".READY, ")
                 .addContent(LIST)
-                .addContentLine(".copyOf(createdServices);")
-                .addContent("var completedModels = ")
+                .addContent(".copyOf(createdServices), ")
                 .addContent(LIST)
-                .addContentLine(".copyOf(createdModels);")
-                .addContentLine("services = completedServices;")
-                .addContentLine("ownedModels = completedModels;")
+                .addContentLine(".copyOf(createdModels), null, null);")
                 .decreaseContentPadding()
                 .addContent("} catch (")
                 .addContent(RuntimeException.class)
@@ -275,59 +445,288 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .addContent(Error.class)
                 .addContentLine(" e) {")
                 .increaseContentPadding()
-                .addContentLine("closeModels(createdModels, e);")
+                .addContentLine("var cleanupFailure = closeModels(createdModels);")
+                .addContentLine("if (cleanupFailure != null && cleanupFailure != e) {")
+                .increaseContentPadding()
+                .addContentLine("e.addSuppressed(cleanupFailure);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("lifecycleLock.lock();")
+                .addContentLine("try {")
+                .increaseContentPadding()
+                .addContentLine("if (cleanupFailure == null) {")
+                .increaseContentPadding()
+                .addContent("var phase = lifecycleState.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContent(".INITIALIZING ? ")
+                .addContent(lifecyclePhaseType)
+                .addContent(".NEW : ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".DESTROYED;")
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(phase, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(LIST)
+                .addContentLine(".of(), null, null);")
+                .decreaseContentPadding()
+                .addContentLine("} else {")
+                .increaseContentPadding()
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".CLEANUP_FAILED, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(LIST)
+                .addContentLine(".of(), null, cleanupFailure);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("lifecycleChanged.signalAll();")
+                .decreaseContentPadding()
+                .addContentLine("} finally {")
+                .increaseContentPadding()
+                .addContentLine("lifecycleLock.unlock();")
+                .decreaseContentPadding()
+                .addContentLine("}")
                 .addContentLine("throw e;")
                 .decreaseContentPadding()
                 .addContentLine("}")
+                .addContentLine("lifecycleLock.lock();")
+                .addContentLine("try {")
+                .increaseContentPadding()
+                .addContent("if (lifecycleState.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".INITIALIZING) {")
+                .increaseContentPadding()
+                .addContentLine("lifecycleState = completedState;")
+                .addContentLine("lifecycleChanged.signalAll();")
+                .addContentLine("return completedState.services();")
                 .decreaseContentPadding()
                 .addContentLine("}")
-                .addContentLine("return services;")
                 .decreaseContentPadding()
-                .addContentLine("}")
-                .build();
+                .addContentLine("} finally {")
+                .increaseContentPadding()
+                .addContentLine("lifecycleLock.unlock();")
+                .decreaseContentPadding()
+                .addContentLine("}");
+        addInitializationShutdownCleanup(builder, lifecycleStateType, lifecyclePhaseType);
+        return builder.build();
     }
 
-    private static Method preDestroyMethod() {
-        return Method.builder()
-                .addAnnotation(Annotation.create(SERVICE_ANNOTATION_PRE_DESTROY))
+    private static void addInitializationShutdownCleanup(Method.Builder builder,
+                                                         TypeName lifecycleStateType,
+                                                         TypeName lifecyclePhaseType) {
+        builder
+                .addContentLine("var cleanupFailure = closeModels(completedState.ownedModels());")
+                .addContentLine("lifecycleLock.lock();")
+                .addContentLine("try {")
+                .increaseContentPadding()
+                .addContentLine("if (cleanupFailure == null) {")
+                .increaseContentPadding()
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".DESTROYED, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(LIST)
+                .addContentLine(".of(), null, null);")
+                .decreaseContentPadding()
+                .addContentLine("} else {")
+                .increaseContentPadding()
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".CLEANUP_FAILED, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(LIST)
+                .addContentLine(".of(), null, cleanupFailure);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("lifecycleChanged.signalAll();")
+                .decreaseContentPadding()
+                .addContentLine("} finally {")
+                .increaseContentPadding()
+                .addContentLine("lifecycleLock.unlock();")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("throwCloseFailure(cleanupFailure);")
+                .addContent("return ")
+                .addContent(LIST)
+                .addContentLine(".of();");
+    }
+
+    private static Method preDestroyMethod(TypeName lifecycleStateType, TypeName lifecyclePhaseType) {
+        var builder = Method.builder()
                 .accessModifier(PACKAGE_PRIVATE)
                 .name("preDestroy")
                 .addContent(closeablesType())
-                .addContentLine(" modelsToClose;")
-                .addContentLine("synchronized (this) {")
+                .addContentLine(" modelsToClose = null;")
+                .addContentLine("while (true) {")
                 .increaseContentPadding()
-                .addContentLine("modelsToClose = ownedModels;")
-                .addContent("services = ")
-                .addContent(LIST)
-                .addContentLine(".of();")
-                .addContent("ownedModels = ")
-                .addContent(LIST)
-                .addContentLine(".of();")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine("if (modelsToClose == null) {")
+                .addContentLine("lifecycleLock.lock();")
+                .addContentLine("try {")
+                .increaseContentPadding()
+                .addContentLine("var state = lifecycleState;")
+                .addContent("if (state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".DESTROYED) {")
                 .increaseContentPadding()
                 .addContentLine("return;")
                 .decreaseContentPadding()
                 .addContentLine("}")
-                .addContentLine("var failure = closeModels(modelsToClose, null);")
-                .addContentLine("if (failure != null) {")
+                .addContent("if (state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".NEW) {")
                 .increaseContentPadding()
-                .addContent("if (failure instanceof ")
-                .addContent(Error.class)
-                .addContentLine(" error) {")
-                .increaseContentPadding()
-                .addContentLine("throw error;")
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".DESTROYED, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(LIST)
+                .addContentLine(".of(), null, null);")
+                .addContentLine("lifecycleChanged.signalAll();")
+                .addContentLine("return;")
                 .decreaseContentPadding()
                 .addContentLine("}")
+                .addContent("if (state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".CLEANUP_FAILED) {")
+                .increaseContentPadding()
+                .addContentLine("throwCloseFailure(state.failure());")
+                .addContentLine("return;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("if (state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".READY) {")
+                .increaseContentPadding()
+                .addContentLine("modelsToClose = state.ownedModels();")
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".DESTROYING, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent("modelsToClose, ")
+                .addContent(Thread.class)
+                .addContentLine(".currentThread(), null);")
+                .addContentLine("break;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("if (state.phase() == ")
+                .addContent(lifecyclePhaseType)
+                .addContentLine(".INITIALIZING) {")
+                .increaseContentPadding()
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".DESTROYING, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(LIST)
+                .addContentLine(".of(), state.owner(), null);")
+                .addContentLine("lifecycleChanged.signalAll();")
+                .addContent("if (state.owner() == ")
+                .addContent(Thread.class)
+                .addContentLine(".currentThread()) {")
+                .increaseContentPadding()
+                .addContentLine("return;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .decreaseContentPadding()
+                .addContent("} else if (state.owner() == ")
+                .addContent(Thread.class)
+                .addContentLine(".currentThread()) {")
+                .increaseContentPadding()
+                .addContentLine("return;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("try {")
+                .increaseContentPadding()
+                .addContentLine("lifecycleChanged.await();")
+                .decreaseContentPadding()
+                .addContent("} catch (")
+                .addContent(InterruptedException.class)
+                .addContentLine(" e) {")
+                .increaseContentPadding()
+                .addContent(Thread.class)
+                .addContentLine(".currentThread().interrupt();")
                 .addContent("throw new ")
                 .addContent(IllegalStateException.class)
                 .addContent("(")
-                .addContentLiteral("Failed to close LangChain4j model instances.")
-                .addContentLine(", failure);")
+                .addContentLiteral("Interrupted while waiting for LangChain4j model factory shutdown.")
+                .addContentLine(", e);")
                 .decreaseContentPadding()
                 .addContentLine("}")
-                .build();
+                .decreaseContentPadding()
+                .addContentLine("} finally {")
+                .increaseContentPadding()
+                .addContentLine("lifecycleLock.unlock();")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .decreaseContentPadding()
+                .addContentLine("}");
+        addShutdownCleanup(builder, lifecycleStateType, lifecyclePhaseType);
+        return builder.build();
+    }
+
+    private static void addShutdownCleanup(Method.Builder builder,
+                                           TypeName lifecycleStateType,
+                                           TypeName lifecyclePhaseType) {
+        builder
+                .addContentLine("var cleanupFailure = closeModels(modelsToClose);")
+                .addContentLine("lifecycleLock.lock();")
+                .addContentLine("try {")
+                .increaseContentPadding()
+                .addContentLine("if (cleanupFailure == null) {")
+                .increaseContentPadding()
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".DESTROYED, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(LIST)
+                .addContentLine(".of(), null, null);")
+                .decreaseContentPadding()
+                .addContentLine("} else {")
+                .increaseContentPadding()
+                .addContent("lifecycleState = new ")
+                .addContent(lifecycleStateType)
+                .addContent("(")
+                .addContent(lifecyclePhaseType)
+                .addContent(".CLEANUP_FAILED, ")
+                .addContent(LIST)
+                .addContent(".of(), ")
+                .addContent(LIST)
+                .addContentLine(".of(), null, cleanupFailure);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("lifecycleChanged.signalAll();")
+                .decreaseContentPadding()
+                .addContentLine("} finally {")
+                .increaseContentPadding()
+                .addContentLine("lifecycleLock.unlock();")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (cleanupFailure != null) {")
+                .increaseContentPadding()
+                .addContentLine("throwCloseFailure(cleanupFailure);")
+                .decreaseContentPadding()
+                .addContentLine("}");
     }
 
     private static Method closeModelsMethod() {
@@ -340,10 +739,6 @@ class ModelFactoryCodegen implements CodegenExtension {
                                       .type(closeablesType())
                                       .name("models")
                                       .build())
-                .addParameter(Parameter.builder()
-                                      .type(Throwable.class)
-                                      .name("failure")
-                                      .build())
                 .addContent("var closed = ")
                 .addContent(Collections.class)
                 .addContent(".newSetFromMap(new ")
@@ -353,6 +748,7 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .addContent(", ")
                 .addContent(Boolean.class)
                 .addContentLine(">());")
+                .addContentLine("Throwable failure = null;")
                 .addContentLine("for (var model : models) {")
                 .increaseContentPadding()
                 .addContentLine("if (closed.add(model)) {")
@@ -365,15 +761,7 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .addContent(Throwable.class)
                 .addContentLine(" e) {")
                 .increaseContentPadding()
-                .addContentLine("if (failure == null) {")
-                .increaseContentPadding()
-                .addContentLine("failure = e;")
-                .decreaseContentPadding()
-                .addContentLine("} else if (failure != e) {")
-                .increaseContentPadding()
-                .addContentLine("failure.addSuppressed(e);")
-                .decreaseContentPadding()
-                .addContentLine("}")
+                .addContentLine("failure = combineFailures(failure, e);")
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .decreaseContentPadding()
@@ -381,6 +769,74 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .addContentLine("return failure;")
+                .build();
+    }
+
+    private static Method combineFailuresMethod() {
+        return Method.builder()
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .name("combineFailures")
+                .returnType(TypeName.create(Throwable.class))
+                .addParameter(Parameter.builder()
+                                      .type(Throwable.class)
+                                      .name("previousFailure")
+                                      .build())
+                .addParameter(Parameter.builder()
+                                      .type(Throwable.class)
+                                      .name("newFailure")
+                                      .build())
+                .addContentLine("if (previousFailure == null) {")
+                .increaseContentPadding()
+                .addContentLine("return newFailure;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (newFailure == null || previousFailure == newFailure) {")
+                .increaseContentPadding()
+                .addContentLine("return previousFailure;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("if (newFailure instanceof ")
+                .addContent(Error.class)
+                .addContent(" && !(previousFailure instanceof ")
+                .addContent(Error.class)
+                .addContentLine(")) {")
+                .increaseContentPadding()
+                .addContentLine("newFailure.addSuppressed(previousFailure);")
+                .addContentLine("return newFailure;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("previousFailure.addSuppressed(newFailure);")
+                .addContentLine("return previousFailure;")
+                .build();
+    }
+
+    private static Method throwCloseFailureMethod() {
+        return Method.builder()
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .name("throwCloseFailure")
+                .addParameter(Parameter.builder()
+                                      .type(Throwable.class)
+                                      .name("failure")
+                                      .build())
+                .addContentLine("if (failure == null) {")
+                .increaseContentPadding()
+                .addContentLine("return;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("if (failure instanceof ")
+                .addContent(Error.class)
+                .addContentLine(" error) {")
+                .increaseContentPadding()
+                .addContentLine("throw error;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContent("throw new ")
+                .addContent(IllegalStateException.class)
+                .addContent("(")
+                .addContentLiteral("Failed to close LangChain4j model instances.")
+                .addContentLine(", failure);")
                 .build();
     }
 
@@ -527,5 +983,126 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .addContentLine("}")
                 .addContentLine("return config.configuredBuilder().build();")
                 .build();
+    }
+
+    private static InnerClass lifecyclePhase() {
+        return InnerClass.builder()
+                .name("LifecyclePhase")
+                .accessModifier(AccessModifier.PRIVATE)
+                .classType(ElementKind.ENUM)
+                .addEnumConstant(it -> it.name("NEW"))
+                .addEnumConstant(it -> it.name("INITIALIZING"))
+                .addEnumConstant(it -> it.name("READY"))
+                .addEnumConstant(it -> it.name("CLEANUP_FAILED"))
+                .addEnumConstant(it -> it.name("DESTROYING"))
+                .addEnumConstant(it -> it.name("DESTROYED"))
+                .build();
+    }
+
+    private static InnerClass lifecycleState(TypeName modelType, TypeName lifecyclePhaseType) {
+        return InnerClass.builder()
+                .name("LifecycleState")
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .classType(ElementKind.RECORD)
+                .sortFields(false)
+                .addField(it -> it.name("phase")
+                        .type(lifecyclePhaseType))
+                .addField(it -> it.name("services")
+                        .type(servicesType(modelType)))
+                .addField(it -> it.name("ownedModels")
+                        .type(closeablesType()))
+                .addField(it -> it.name("owner")
+                        .type(Thread.class))
+                .addField(it -> it.name("failure")
+                        .type(Throwable.class))
+                .build();
+    }
+
+    private static ClassModel.Builder lifecycleCoordinator(TypeName factoryTypeName, TypeName lifecycleCoordinatorType) {
+        var factoryReferenceType = TypeName.builder(TypeName.create(AtomicReference.class))
+                .addTypeArgument(factoryTypeName)
+                .build();
+        return ClassModel.builder()
+                .classType(ElementKind.CLASS)
+                .type(lifecycleCoordinatorType)
+                .copyright(CodegenUtil.copyright(GENERATOR,
+                                                 factoryTypeName,
+                                                 lifecycleCoordinatorType))
+                .addDescriptionLine("Coordinates shutdown of the " + factoryTypeName.className() + ".")
+                .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
+                                                               factoryTypeName,
+                                                               lifecycleCoordinatorType,
+                                                               "1",
+                                                               ""))
+                .accessModifier(PACKAGE_PRIVATE)
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON))
+                .addAnnotation(Annotation.builder()
+                                       .typeName(SERVICE_ANNOTATION_RUN_LEVEL)
+                                       .putProperty("value",
+                                                    AnnotationProperty.create(LIFECYCLE_COORDINATOR_RUN_LEVEL,
+                                                                              TypeNames.BOXED_DOUBLE,
+                                                                              "MIN_VALUE"))
+                                       .build())
+                .addAnnotation(Annotation.builder()
+                                       .typeName(WEIGHT)
+                                       .putProperty("value",
+                                                    AnnotationProperty.create(LIFECYCLE_COORDINATOR_WEIGHT,
+                                                                              TypeNames.BOXED_DOUBLE,
+                                                                              "MAX_VALUE"))
+                                       .build())
+                .addField(Field.builder()
+                                  .name("factory")
+                                  .accessModifier(AccessModifier.PRIVATE)
+                                  .isFinal(true)
+                                  .type(factoryReferenceType)
+                                  .addContent("new ")
+                                  .addContent(AtomicReference.class)
+                                  .addContent("<>()")
+                                  .build())
+                .addField(Field.builder()
+                                  .name("destroyed")
+                                  .accessModifier(AccessModifier.PRIVATE)
+                                  .isFinal(true)
+                                  .type(AtomicBoolean.class)
+                                  .addContent("new ")
+                                  .addContent(AtomicBoolean.class)
+                                  .addContent("()")
+                                  .build())
+                .addMethod(Method.builder()
+                                   .accessModifier(PACKAGE_PRIVATE)
+                                   .name("register")
+                                   .addParameter(Parameter.builder()
+                                                         .name("factory")
+                                                         .type(factoryTypeName)
+                                                         .build())
+                                   .addContentLine("var existing = this.factory.compareAndExchange(null, factory);")
+                                   .addContentLine("if (existing != null && existing != factory) {")
+                                   .increaseContentPadding()
+                                   .addContent("throw new ")
+                                   .addContent(IllegalStateException.class)
+                                   .addContent("(")
+                                   .addContentLiteral("A different LangChain4j model factory is already registered.")
+                                   .addContentLine(");")
+                                   .decreaseContentPadding()
+                                   .addContentLine("}")
+                                   .addContentLine("if (destroyed.get()) {")
+                                   .increaseContentPadding()
+                                   .addContentLine("factory.preDestroy();")
+                                   .decreaseContentPadding()
+                                   .addContentLine("}")
+                                   .build())
+                .addMethod(Method.builder()
+                                   .addAnnotation(Annotation.create(SERVICE_ANNOTATION_PRE_DESTROY))
+                                   .accessModifier(PACKAGE_PRIVATE)
+                                   .name("preDestroy")
+                                   .addContentLine("destroyed.set(true);")
+                                   .addContentLine("var factory = this.factory.get();")
+                                   .addContentLine("if (factory != null) {")
+                                   .increaseContentPadding()
+                                   .addContentLine("factory.preDestroy();")
+                                   .decreaseContentPadding()
+                                   .addContentLine("}")
+                                   .build());
     }
 }
