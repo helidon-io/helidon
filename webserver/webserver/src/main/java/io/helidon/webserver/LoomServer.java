@@ -51,6 +51,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
@@ -79,20 +80,28 @@ class LoomServer implements WebServer, Resumable {
     private volatile boolean alreadyStarted = false;
 
     @Service.Inject
-    LoomServer(WebServerService service, Supplier<MetricsFactory> metricsFactory, ServiceRegistry serviceRegistry) {
+    LoomServer(WebServerService service,
+               Supplier<MetricsFactory> metricsFactory,
+               Supplier<MeterRegistry> meterRegistry,
+               ServiceRegistry serviceRegistry) {
         // only for service registry
         this(WebServerConfig.builder()
                      .serviceRegistry(serviceRegistry)
                      .update(service::updateServerBuilder)
                      .buildPrototype(),
-             metricsFactory);
+             metricsFactory,
+             meterRegistry);
     }
 
     LoomServer(WebServerConfig serverConfig) {
-        this(serverConfig, () -> Services.get(MetricsFactory.class));
+        this(serverConfig,
+             () -> Services.get(MetricsFactory.class),
+             () -> Services.get(MeterRegistry.class));
     }
 
-    private LoomServer(WebServerConfig serverConfig, Supplier<MetricsFactory> metricsFactory) {
+    private LoomServer(WebServerConfig serverConfig,
+                       Supplier<MetricsFactory> metricsFactory,
+                       Supplier<MeterRegistry> meterRegistry) {
         this.registerShutdownHook = serverConfig.shutdownHook();
         this.context = serverConfig.serverContext()
                 .orElseGet(() -> Context.builder()
@@ -128,6 +137,7 @@ class LoomServer implements WebServer, Resumable {
                                                serverConfig.contentEncoding().orElseGet(ContentEncodingContext::create),
                                                serverConfig.directHandlers().orElseGet(DirectHandlers::create),
                                                metricsFactory,
+                                               meterRegistry,
                                                this::fatalListenerFailure));
         });
 

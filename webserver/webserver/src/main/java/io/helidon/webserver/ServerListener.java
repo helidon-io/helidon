@@ -44,6 +44,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Services;
@@ -99,6 +100,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
              defaultContentEncodingContext,
              defaultDirectHandlers,
              () -> Services.get(MetricsFactory.class),
+             () -> Services.get(MeterRegistry.class),
              fatalListenerFailureHandler);
     }
 
@@ -111,6 +113,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                    ContentEncodingContext defaultContentEncodingContext,
                    DirectHandlers defaultDirectHandlers,
                    Supplier<MetricsFactory> metricsFactory,
+                   Supplier<MeterRegistry> meterRegistry,
                    FatalListenerFailureHandler fatalListenerFailureHandler) {
 
         List<ProtocolConfig> protocolConfigs = listenerConfig.protocols();
@@ -123,7 +126,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                     .build();
         }
 
-        InitializationContext limitContext = limitContext(socketName, metricsFactory);
+        InitializationContext limitContext = limitContext(socketName, metricsFactory, meterRegistry);
         if (listenerConfig.maxConnections() == -1 || listenerConfig.maxConnections() == 0) {
             this.connectionLimit = FixedLimit.create();
         } else {
@@ -369,12 +372,14 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         }
     }
 
-    private static InitializationContext limitContext(String socketName, Supplier<MetricsFactory> metricsFactory) {
+    private static InitializationContext limitContext(String socketName,
+                                                      Supplier<MetricsFactory> metricsFactory,
+                                                      Supplier<MeterRegistry> meterRegistry) {
         if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
-            return InitializationContext.create(socketName);
+            return InitializationContext.create(socketName, List.of(), meterRegistry);
         }
         Tag socketNameTag = metricsFactory.get().tagCreate("socketName", socketName);
-        return InitializationContext.create(socketName, List.of(socketNameTag));
+        return InitializationContext.create(socketName, List.of(socketNameTag), meterRegistry);
     }
 
     private List<TransportBinding> planTransportBindings(List<ProtocolConfig> protocolConfigs) {

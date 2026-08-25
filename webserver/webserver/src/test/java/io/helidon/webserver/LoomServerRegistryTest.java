@@ -18,19 +18,31 @@ package io.helidon.webserver;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.RETURNS_SELF;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class LoomServerRegistryTest {
     @Test
@@ -63,6 +75,32 @@ class LoomServerRegistryTest {
         }
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void managedLimitReceivesOwningMeterRegistry() {
+        Config config = Config.just(ConfigSources.create(Map.of("server.concurrency-limit.fixed.enable-metrics", "true")));
+        MeterRegistry meterRegistry = mock(MeterRegistry.class);
+        MetricsFactory metricsFactory = mock(MetricsFactory.class);
+        Gauge.Builder<Integer> gaugeBuilder = mock(Gauge.Builder.class, RETURNS_SELF);
+        Timer.Builder timerBuilder = mock(Timer.Builder.class, RETURNS_SELF);
+        when(meterRegistry.metricsFactory()).thenReturn(metricsFactory);
+        when(metricsFactory.gaugeBuilder(anyString(), ArgumentMatchers.<Supplier<Integer>>any()))
+                .thenReturn(gaugeBuilder);
+        when(metricsFactory.timerBuilder(anyString())).thenReturn(timerBuilder);
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Config.class, config)
+                                                                                .putContractInstance(MeterRegistry.class,
+                                                                                                     meterRegistry)
+                                                                                .build());
+        try {
+            manager.registry().get(WebServer.class);
+
+            verify(meterRegistry, atLeastOnce()).metricsFactory();
+        } finally {
+            manager.shutdown();
+        }
+    }
+
     private static final class TestFeature implements ServerFeature {
         private final AtomicBoolean setup = new AtomicBoolean();
 
@@ -85,4 +123,5 @@ class LoomServerRegistryTest {
             return setup.get();
         }
     }
+
 }
