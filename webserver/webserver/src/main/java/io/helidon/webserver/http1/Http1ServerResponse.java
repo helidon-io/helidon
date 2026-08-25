@@ -71,6 +71,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private final boolean keepAlive;
     private final boolean sendKeepAliveHeader;
 
+    private boolean keepConnectionOpen;
     private boolean streamingEntity;
     private boolean isSent;
     private ClosingBufferedOutputStream outputStream;
@@ -97,6 +98,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
         this.keepAlive = keepAlive;
+        this.keepConnectionOpen = keepAlive;
         this.sendKeepAliveHeader = sendKeepAliveHeader;
         this.validateHeaders = validateHeaders;
     }
@@ -326,6 +328,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             return false;
         }
         headers.clear();
+        keepConnectionOpen = keepAlive;
         streamingEntity = false;
         outputStream = null;
         return true;
@@ -455,6 +458,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         // give some space for code and headers + entity
         BufferData responseBuffer = BufferData.growing(256 + length);
 
+        keepConnectionOpen = resolveKeepConnectionOpen();
         nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, sendKeepAliveHeader, validateHeaders);
         if (forcedChunkedEncoding) {
             byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
@@ -510,11 +514,18 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             encodedOutputStream = contentEncode(outputStream);
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
-        return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
+        OutputStream result = outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
+        keepConnectionOpen = resolveKeepConnectionOpen();
+        return result;
     }
 
     boolean keepConnectionOpen() {
-        return keepAlive && !headers.containsToken(HeaderValues.CONNECTION_CLOSE);
+        return keepConnectionOpen;
+    }
+
+    private boolean resolveKeepConnectionOpen() {
+        return keepAlive
+                && (!headers.contains(HeaderNames.CONNECTION) || !headers.containsToken(HeaderValues.CONNECTION_CLOSE));
     }
 
     private static Status noEntityInternalError(Status status) {
