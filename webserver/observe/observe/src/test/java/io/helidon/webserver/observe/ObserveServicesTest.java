@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode;
@@ -30,6 +31,7 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +45,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.sameInstance;
 
 class ObserveServicesTest {
+    private static final TypeName OBSERVE_FEATURE_PROVIDER = TypeName.builder(TypeName.create(ServerFeatureProvider.class))
+            .typeArguments(List.of(TypeName.create(ObserveFeature.class)))
+            .build();
+
     @Test
     void factoriesExposeTheSameConfiguredGraph() {
         Config config = Config.just(ConfigSources.create(Map.of("server.features.observe.observers.test.value", "configured")));
@@ -50,7 +56,7 @@ class ObserveServicesTest {
         ServiceRegistryManager manager = registry(provider);
         try {
             ServiceRegistry serviceRegistry = manager.registry();
-            var services = new ObserveServices(() -> config, serviceRegistry);
+            var services = observeServices(config, serviceRegistry);
             var featureProducts = new ObserveFeatureServicesFactory(services).services();
             var observerProducts = new ObserverServicesFactory(services).services();
 
@@ -73,13 +79,13 @@ class ObserveServicesTest {
         try {
             ServiceRegistry serviceRegistry = manager.registry();
             Config noFeatureDiscovery = Config.just(ConfigSources.create(Map.of("server.features-discover-services", "false")));
-            var noFeatures = new ObserveServices(() -> noFeatureDiscovery, serviceRegistry);
+            var noFeatures = observeServices(noFeatureDiscovery, serviceRegistry);
             assertThat(new ObserveFeatureServicesFactory(noFeatures).services(), empty());
             assertThat(new ObserverServicesFactory(noFeatures).services(), empty());
 
             Config noObserverDiscovery = Config.just(
                     ConfigSources.create(Map.of("server.features.observe.observers-discover-services", "false")));
-            var noObservers = new ObserveServices(() -> noObserverDiscovery, serviceRegistry);
+            var noObservers = observeServices(noObserverDiscovery, serviceRegistry);
             assertThat(new ObserveFeatureServicesFactory(noObservers).services(), hasSize(1));
             assertThat(new ObserverServicesFactory(noObservers).services(), empty());
             assertThat(provider.createCount, is(0));
@@ -109,7 +115,7 @@ class ObserveServicesTest {
         var provider = new TestObserveProvider();
         ServiceRegistryManager manager = registry(provider);
         try {
-            var services = new ObserveServices(() -> config, manager.registry());
+            var services = observeServices(config, manager.registry());
             List<ObserveFeature> features = new ObserveFeatureServicesFactory(services)
                     .services()
                     .stream()
@@ -130,6 +136,38 @@ class ObserveServicesTest {
         } finally {
             manager.shutdown();
         }
+    }
+
+    @Test
+    void higherWeightRegistryFeatureProviderIsSelected() {
+        var observerProvider = new TestObserveProvider();
+        var featureProvider = new TestObserveFeatureProvider();
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Config.class,
+                                                                                                     Config.empty())
+                                                                                .putContractInstance(ObserveProvider.class,
+                                                                                                     observerProvider)
+                                                                                .putContractInstance(OBSERVE_FEATURE_PROVIDER,
+                                                                                                     featureProvider)
+                                                                                .build());
+        try {
+            ServiceRegistry serviceRegistry = manager.registry();
+            var services = serviceRegistry.get(ObserveServices.class);
+
+            List<ObserveFeature> features = services.features();
+
+            assertThat(features, hasSize(1));
+            assertThat(featureProvider.createCount, is(1));
+            assertThat(featureProvider.registry, sameInstance(serviceRegistry));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    private static ObserveServices observeServices(Config config, ServiceRegistry serviceRegistry) {
+        return new ObserveServices(() -> config,
+                                   () -> List.of(new ObserveFeatureProvider()),
+                                   serviceRegistry);
     }
 
     private static ServiceRegistryManager registry(ObserveProvider provider) {
@@ -159,6 +197,29 @@ class ObserveServicesTest {
             registry = serviceRegistry;
             createCount++;
             return new TestObserver(name);
+        }
+    }
+
+    private static final class TestObserveFeatureProvider implements ServerFeatureProvider<ObserveFeature> {
+        private final ObserveFeatureProvider delegate = new ObserveFeatureProvider();
+        private ServiceRegistry registry;
+        private int createCount;
+
+        @Override
+        public String configKey() {
+            return ObserveFeature.OBSERVE_ID;
+        }
+
+        @Override
+        public ObserveFeature create(Config config, String name) {
+            throw new AssertionError("Managed feature creation must use the owning registry");
+        }
+
+        @Override
+        public ObserveFeature create(Config config, String name, ServiceRegistry serviceRegistry) {
+            registry = serviceRegistry;
+            createCount++;
+            return delegate.create(config, name, serviceRegistry);
         }
     }
 

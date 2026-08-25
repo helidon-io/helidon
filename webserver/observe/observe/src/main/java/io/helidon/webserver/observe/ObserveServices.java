@@ -29,6 +29,7 @@ import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.observe.spi.Observer;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 @Service.Singleton
 class ObserveServices {
@@ -37,8 +38,10 @@ class ObserveServices {
     private final LazyValue<Graph> graph;
 
     @Service.Inject
-    ObserveServices(Supplier<Config> config, ServiceRegistry serviceRegistry) {
-        this.graph = LazyValue.create(() -> createGraph(config.get(), serviceRegistry));
+    ObserveServices(Supplier<Config> config,
+                    Supplier<List<ServerFeatureProvider<ObserveFeature>>> featureProviders,
+                    ServiceRegistry serviceRegistry) {
+        this.graph = LazyValue.create(() -> createGraph(config.get(), featureProviders, serviceRegistry));
     }
 
     List<ObserveFeature> features() {
@@ -49,7 +52,9 @@ class ObserveServices {
         return graph.get().observers();
     }
 
-    private static Graph createGraph(Config rootConfig, ServiceRegistry serviceRegistry) {
+    private static Graph createGraph(Config rootConfig,
+                                     Supplier<List<ServerFeatureProvider<ObserveFeature>>> featureProviders,
+                                     ServiceRegistry serviceRegistry) {
         Config serverConfig = rootConfig.get("server");
         Config featuresConfig = serverConfig.get("features");
         List<ConfiguredFeature> configuredFeatures = configuredFeatures(featuresConfig);
@@ -57,7 +62,12 @@ class ObserveServices {
                 .asBoolean()
                 .orElse(true);
 
-        var featureProvider = new ObserveFeatureProvider();
+        LazyValue<ServerFeatureProvider<ObserveFeature>> featureProvider = LazyValue.create(() -> featureProviders.get()
+                .stream()
+                .filter(provider -> OBSERVE.equals(provider.configKey()))
+                .findFirst()
+                .orElseThrow(() -> new ConfigException("No server feature provider is available for type \""
+                                                               + OBSERVE + "\"")));
         var features = new ArrayList<ObserveFeature>();
         boolean observeConfigured = false;
         Set<String> names = new HashSet<>();
@@ -73,14 +83,14 @@ class ObserveServices {
                                                   + "\", name \"" + configuredFeature.name() + "\"");
             }
             if (configuredFeature.enabled()) {
-                features.add(featureProvider.create(configuredFeature.config(),
-                                                    configuredFeature.name(),
-                                                    serviceRegistry));
+                features.add(featureProvider.get().create(configuredFeature.config(),
+                                                          configuredFeature.name(),
+                                                          serviceRegistry));
             }
         }
 
         if (discoverFeatures && !observeConfigured) {
-            features.add(featureProvider.create(featuresConfig.get(OBSERVE), OBSERVE, serviceRegistry));
+            features.add(featureProvider.get().create(featuresConfig.get(OBSERVE), OBSERVE, serviceRegistry));
         }
 
         var observers = new ArrayList<Service.QualifiedInstance<Observer>>();
