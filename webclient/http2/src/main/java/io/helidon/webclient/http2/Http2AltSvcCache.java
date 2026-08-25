@@ -324,7 +324,7 @@ final class Http2AltSvcCache implements AutoCloseable {
 
     void recordFailure(Selection selection) {
         Objects.requireNonNull(selection, "selection");
-        if (!current(selection) || !selection.establishAllowed()) {
+        if (!current(selection)) {
             return;
         }
 

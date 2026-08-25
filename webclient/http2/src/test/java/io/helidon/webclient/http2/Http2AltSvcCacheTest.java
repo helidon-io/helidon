@@ -558,14 +558,9 @@ class Http2AltSvcCacheTest {
         assertThat(reuse.sameRouteGeneration(fresh), is(true));
         assertThat(reuse.establishAllowed(), is(false));
         cache.recordFailure(reuse);
-        assertThat(cache.current(reuse), is(true));
-        assertThat(cache.select(target,
-                                false,
-                                candidate -> candidate.sameRouteGeneration(reuse)),
-                   sameInstance(reuse));
 
-        assertThat(cache.select(target, false, _ -> false), nullValue());
         assertThat(cache.current(reuse), is(false));
+        assertThat(cache.select(target, false, _ -> true), nullValue());
         assertThat(invalidations, hasSize(1));
         assertThat(reuse.sameGeneration(invalidations.getFirst()), is(true));
 
@@ -1047,6 +1042,31 @@ class Http2AltSvcCacheTest {
         assertThat(cache.select(target, false, _ -> false), nullValue());
 
         Instant newer = START.plusMillis(750);
+        cache.record(target, header(newer, "h2=\":10443\"; ma=3600"), true, false, newer);
+
+        assertThat(cache.select(target, false, _ -> false).port(), is(10443));
+
+        cache.close();
+    }
+
+    @Test
+    void connectionFailureAfterAdvertisementExpiryRejectsOlderObservation() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
+
+        cache.record(target, header(START, "h2=\":8443\"; ma=1"), true, false, START);
+        Http2AltSvcCache.Selection selection = cache.select(target, false, _ -> false);
+        Instant delayed = START.plusMillis(500);
+        AltSvcHeader delayedAdvertisement = header(delayed, "h2=\":9443\"; ma=3600");
+
+        clock.advance(Duration.ofSeconds(2));
+        cache.recordFailure(selection);
+        cache.record(target, delayedAdvertisement, true, false, delayed);
+
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+
+        Instant newer = clock.instant().plusSeconds(1);
         cache.record(target, header(newer, "h2=\":10443\"; ma=3600"), true, false, newer);
 
         assertThat(cache.select(target, false, _ -> false).port(), is(10443));
