@@ -34,7 +34,7 @@ module io.helidon.declarative.tests.graphql {
     requires io.helidon.service.registry;
     requires io.helidon.tracing;
     requires io.helidon.validation;
-    requires io.helidon.webclient.api;
+    requires io.helidon.webclient;
     requires io.helidon.webserver;
     requires io.helidon.webserver.concurrency.limits;
     requires io.helidon.webserver.context;

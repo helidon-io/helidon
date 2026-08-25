@@ -25,7 +25,7 @@ module io.helidon.declarative.tests.cors {
     // for generated code
     requires io.helidon.config.yaml;
     requires io.helidon.metrics.api;
-    requires io.helidon.webclient.api;
+    requires io.helidon.webclient;
     requires io.helidon.common;
 
     exports io.helidon.declarative.tests.cors;
