@@ -86,33 +86,31 @@
         -->
 
         <!-- maven plugin versions -->
-        <version.plugin.build-helper>3.4.0</version.plugin.build-helper>
+        <version.plugin.build-helper>3.6.1</version.plugin.build-helper>
         <version.plugin.checkstyle>3.6.0</version.plugin.checkstyle>
-        <version.plugin.compiler>3.11.0</version.plugin.compiler>
-        <version.plugin.dependency>3.10.0</version.plugin.dependency>
+        <version.plugin.compiler>3.15.0</version.plugin.compiler>
+        <version.plugin.dependency>3.11.0</version.plugin.dependency>
         <version.plugin.directory>1.0</version.plugin.directory>
-        <version.plugin.enforcer>3.3.0</version.plugin.enforcer>
-        <version.plugin.exec>3.1.0</version.plugin.exec>
-        <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
-        <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>4.0.26</version.plugin.helidon-build-tools>
-        <version.plugin.install>3.1.2</version.plugin.install>
-        <version.plugin.invoker>3.2.2</version.plugin.invoker>
-        <version.plugin.jar>3.3.0</version.plugin.jar>
-        <version.plugin.javadoc>3.6.2</version.plugin.javadoc>
-        <version.plugin.license>1.16</version.plugin.license>
-        <version.plugin.os>1.5.0.Final</version.plugin.os>
-        <version.plugin.plugin>3.15.1</version.plugin.plugin>
+        <version.plugin.enforcer>3.6.3</version.plugin.enforcer>
+        <version.plugin.exec>3.6.3</version.plugin.exec>
+        <version.plugin.failsafe>3.5.6</version.plugin.failsafe>
+        <version.plugin.helidon-build-tools>4.0.29</version.plugin.helidon-build-tools>
+        <version.plugin.install>3.1.4</version.plugin.install>
+        <version.plugin.invoker>3.10.1</version.plugin.invoker>
+        <version.plugin.jar>3.5.1</version.plugin.jar>
+        <version.plugin.javadoc>3.12.0</version.plugin.javadoc>
+        <version.plugin.license>2.7.1</version.plugin.license>
+        <version.plugin.os>1.7.1</version.plugin.os>
+        <version.plugin.plugin>3.15.2</version.plugin.plugin>
         <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
-        <version.plugin.resources>3.3.1</version.plugin.resources>
-        <version.plugin.shade>3.5.0</version.plugin.shade>
-        <version.plugin.source>3.0.1</version.plugin.source>
-        <version.plugin.spotbugs>4.9.8.2</version.plugin.spotbugs>
-        <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>12.2.2</version.plugin.dependency-check>
-        <version.plugin.surefire>3.1.0</version.plugin.surefire>
-        <version.plugin.toolchains>1.1</version.plugin.toolchains>
-        <version.plugin.buildnumber>3.1.0</version.plugin.buildnumber>
+        <version.plugin.resources>3.5.0</version.plugin.resources>
+        <version.plugin.source>3.4.0</version.plugin.source>
+        <version.plugin.spotbugs>4.10.4.0</version.plugin.spotbugs>
+        <version.plugin.findsecbugs>1.14.0</version.plugin.findsecbugs>
+        <version.plugin.dependency-check>13.0.0</version.plugin.dependency-check>
+        <version.plugin.surefire>3.5.6</version.plugin.surefire>
+        <version.plugin.toolchains>3.3.0</version.plugin.toolchains>
+        <version.plugin.buildnumber>3.3.0</version.plugin.buildnumber>
         <version.plugin.replacer>1.4.1</version.plugin.replacer>
 
 
@@ -432,23 +430,6 @@
                     <version>${version.plugin.install}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.glassfish.copyright</groupId>
-                    <artifactId>glassfish-copyright-maven-plugin</artifactId>
-                    <version>${version.plugin.glassfish-copyright}</version>
-                    <configuration>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <templateFile>${copyright.template}</templateFile>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <excludeFile>${copyright.exclude}</excludeFile>
-                        <scm>git</scm>
-                        <debug>false</debug>
-                        <scmOnly>true</scmOnly>
-                        <warn>true</warn>
-                        <ignoreYear>false</ignoreYear>
-                        <useDash>false</useDash>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${version.plugin.checkstyle}</version>
@@ -564,23 +545,6 @@
                     <configuration>
                         <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>${version.plugin.shade}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.ow2.asm</groupId>
-                            <artifactId>asm</artifactId>
-                            <version>${version.lib.asm}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.ow2.asm</groupId>
-                            <artifactId>asm-commons</artifactId>
-                            <version>${version.lib.asm}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
