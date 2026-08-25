@@ -21,7 +21,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
 
 /**
- * Common connector configuration for one channel direction.
+ * Effective connector configuration assembled for one channel direction.
  */
 @Api.Preview
 @Prototype.Blueprint
@@ -53,7 +53,7 @@ interface ConnectorConfigBlueprint {
     String CONNECTOR_PREFIX = "helidon.messaging.connector.";
 
     /**
-     * Channel direction.
+     * Runtime-supplied channel direction.
      *
      * @return direction
      */
@@ -61,7 +61,7 @@ interface ConnectorConfigBlueprint {
     ConnectorDirection direction();
 
     /**
-     * Channel name.
+     * Runtime-supplied logical channel name.
      *
      * @return channel name
      */
@@ -69,7 +69,7 @@ interface ConnectorConfigBlueprint {
     String channel();
 
     /**
-     * Connector name.
+     * Selected connector provider type.
      *
      * @return connector name
      */

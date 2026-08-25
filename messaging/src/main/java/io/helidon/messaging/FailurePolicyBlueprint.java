@@ -27,11 +27,11 @@ import io.helidon.common.Api;
  * Portable incoming delivery failure policy.
  */
 @Api.Preview
-@Prototype.Blueprint(decorator = FailurePolicyBlueprint.BuilderDecorator.class)
+@Prototype.Blueprint(decorator = FailurePolicyBuilderDecorator.class)
 @Prototype.Configured
 interface FailurePolicyBlueprint {
     /**
-     * Delay before retrying a failed delivery.
+     * Positive delay before retrying a failed delivery.
      *
      * @return retry delay
      */
@@ -40,8 +40,9 @@ interface FailurePolicyBlueprint {
     Duration retryDelay();
 
     /**
-     * Maximum total delivery attempts, including the initial attempt. Zero means unlimited and is only valid with
-     * {@link FailureDisposition#FAIL}; terminal drop and dead-letter dispositions require a positive limit. An
+     * Maximum total delivery attempts, including the initial attempt; the value must be zero or greater, zero means
+     * unlimited and is only valid with {@link FailureDisposition#FAIL}, and {@link FailureDisposition#DROP} and
+     * {@link FailureDisposition#DEAD_LETTER} require a positive limit. An
      * unlimited pre-dispatch mapping failure reported through
      * {@link ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)} is treated as exhausted after
      * its initial attempt because the runtime cannot repeat transport mapping.
@@ -53,7 +54,9 @@ interface FailurePolicyBlueprint {
     int maxAttempts();
 
     /**
-     * Terminal disposition after delivery attempts are exhausted.
+     * Terminal disposition after delivery attempts are exhausted; {@link FailureDisposition#DROP} and
+     * {@link FailureDisposition#DEAD_LETTER} require positive maximum attempts, and dead letter also requires a target
+     * channel.
      * <p>
      * {@link FailureDisposition#DROP} and {@link FailureDisposition#DEAD_LETTER} require a positive
      * {@link #maxAttempts()} so that exhaustion can be reached.
@@ -65,7 +68,8 @@ interface FailurePolicyBlueprint {
     FailureDisposition onExhausted();
 
     /**
-     * Logical channel used for dead-letter delivery.
+     * Logical channel used for dead-letter delivery; required for {@link FailureDisposition#DEAD_LETTER} and invalid
+     * for other dispositions.
      * <p>
      * Runtime validation covers the logical channel graph. It cannot detect when distinct connector bindings resolve
      * to the same transport destination, such as two Kafka channels configured with the same topic. A dead-letter
@@ -76,39 +80,4 @@ interface FailurePolicyBlueprint {
     @Option.Configured("dead-letter.channel")
     Optional<String> deadLetterChannel();
 
-    /**
-     * Validate the failure policy.
-     */
-    class BuilderDecorator implements Prototype.BuilderDecorator<FailurePolicy.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(FailurePolicy.BuilderBase<?, ?> target) {
-            Duration retryDelay = target.retryDelay();
-            if (retryDelay.isZero() || retryDelay.isNegative()) {
-                throw new IllegalArgumentException("failure.retry.delay must be greater than zero");
-            }
-            int maxAttempts = target.maxAttempts();
-            if (maxAttempts < 0) {
-                throw new IllegalArgumentException("failure.retry.max-attempts must be zero or greater");
-            }
-
-            Optional<String> deadLetterChannel = target.deadLetterChannel();
-            if (target.onExhausted() == FailureDisposition.DROP && maxAttempts == 0) {
-                throw new IllegalArgumentException(
-                        "failure.retry.max-attempts must be greater than zero for DROP");
-            }
-            if (target.onExhausted() == FailureDisposition.DEAD_LETTER) {
-                if (maxAttempts == 0) {
-                    throw new IllegalArgumentException(
-                            "failure.retry.max-attempts must be greater than zero for DEAD_LETTER");
-                }
-                if (deadLetterChannel.filter(channel -> !channel.isBlank()).isEmpty()) {
-                    throw new IllegalArgumentException(
-                            "failure.dead-letter.channel must be configured for DEAD_LETTER");
-                }
-            } else if (deadLetterChannel.isPresent()) {
-                throw new IllegalArgumentException(
-                        "failure.dead-letter.channel is only valid for DEAD_LETTER");
-            }
-        }
-    }
 }

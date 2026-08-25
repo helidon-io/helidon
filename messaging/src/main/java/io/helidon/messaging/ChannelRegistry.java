@@ -1146,7 +1146,7 @@ class ChannelRegistry implements MessagingRuntime {
 
     static MessagingExecutionConfig executionConfig(Config root, String channel) {
         Map<String, String> properties = new LinkedHashMap<>();
-        root.get("helidon.messaging.execution").detach().asMap().ifPresent(properties::putAll);
+        root.get(MessagingConfigKeys.EXECUTION).detach().asMap().ifPresent(properties::putAll);
         if (channel != null) {
             Map<String, String> channelProperties = new LinkedHashMap<>();
             root.get("helidon.messaging.channel." + Config.Key.escapeName(channel) + ".execution")
