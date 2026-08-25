@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
@@ -32,6 +33,7 @@ import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.tracing.HeaderConsumer;
@@ -55,6 +57,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
@@ -105,42 +108,43 @@ class WebClientTelemetryProviderTest {
     @Test
     void registryCreationUsesOwningRegistryTracer() {
         RecordingTracer tracer = new RecordingTracer();
-        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
-                                                                                .putContractInstance(Tracer.class, tracer)
-                                                                                .build());
-        try {
-            WebClientService service = new WebClientTelemetryProvider()
-                    .create(TRACING_CONFIG, "telemetry", manager.registry());
+        AtomicBoolean resolved = new AtomicBoolean();
+        ServiceRegistry serviceRegistry = mock(ServiceRegistry.class);
+        when(serviceRegistry.supply(Tracer.class)).thenReturn(() -> {
+            resolved.set(true);
+            return tracer;
+        });
+        WebClientService service = new WebClientTelemetryProvider()
+                .create(TRACING_CONFIG, "telemetry", serviceRegistry);
 
-            service.handle(WebClientTelemetryProviderTest::response, request("http://localhost/registry"));
+        assertThat(resolved.get(), is(false));
 
-            assertThat(tracer.spanNames(), contains("GET"));
-        } finally {
-            manager.shutdown();
-        }
+        service.handle(WebClientTelemetryProviderTest::response, request("http://localhost/registry"));
+
+        assertThat(resolved.get(), is(true));
+        assertThat(tracer.spanNames(), contains("GET"));
     }
 
     @Test
     void requestContextTracerTakesPrecedenceOverOwningRegistryTracer() {
         RecordingTracer registryTracer = new RecordingTracer();
         RecordingTracer contextTracer = new RecordingTracer();
-        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
-                                                                                .putContractInstance(Tracer.class,
-                                                                                                     registryTracer)
-                                                                                .build());
-        try {
-            WebClientService service = new WebClientTelemetryProvider()
-                    .create(TRACING_CONFIG, "telemetry", manager.registry());
-            WebClientServiceRequest request = request("http://localhost/context");
-            request.context().register(contextTracer);
+        AtomicBoolean resolved = new AtomicBoolean();
+        ServiceRegistry serviceRegistry = mock(ServiceRegistry.class);
+        when(serviceRegistry.supply(Tracer.class)).thenReturn(() -> {
+            resolved.set(true);
+            return registryTracer;
+        });
+        WebClientService service = new WebClientTelemetryProvider()
+                .create(TRACING_CONFIG, "telemetry", serviceRegistry);
+        WebClientServiceRequest request = request("http://localhost/context");
+        request.context().register(contextTracer);
 
-            service.handle(WebClientTelemetryProviderTest::response, request);
+        service.handle(WebClientTelemetryProviderTest::response, request);
 
-            assertThat(contextTracer.spanNames(), contains("GET"));
-            assertThat(registryTracer.spanNames(), empty());
-        } finally {
-            manager.shutdown();
-        }
+        assertThat(resolved.get(), is(false));
+        assertThat(contextTracer.spanNames(), contains("GET"));
+        assertThat(registryTracer.spanNames(), empty());
     }
 
     @Test

@@ -93,9 +93,21 @@ public class WebClientTelemetryTracing implements WebClientService {
      * @return new tracing semantic conventions implementation
      */
     public static WebClientTelemetryTracing create(Config config, Tracer tracer) {
-        Objects.requireNonNull(config);
         Tracer fallbackTracer = Objects.requireNonNull(tracer);
-        return new WebClientTelemetryTracing(() -> fallbackTracer);
+        return create(config, () -> fallbackTracer);
+    }
+
+    /**
+     * Creates a new service instance to emit tracing spans compliant with OpenTelemetry semantic conventions
+     * for clients using the provided configuration and tracer supplier.
+     *
+     * @param config telemetry tracing config
+     * @param tracer supplier of the fallback tracer when the request context does not contain one
+     * @return new tracing semantic conventions implementation
+     */
+    public static WebClientTelemetryTracing create(Config config, Supplier<Tracer> tracer) {
+        Objects.requireNonNull(config);
+        return new WebClientTelemetryTracing(Objects.requireNonNull(tracer));
     }
 
     @Override

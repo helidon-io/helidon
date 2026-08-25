@@ -61,7 +61,7 @@ public class WebClientTelemetryProvider implements WebClientServiceProvider {
         return create(config,
                       metricsConfig -> WebClientTelemetryMetrics.create(metricsConfig, serviceRegistry),
                       tracingConfig -> WebClientTelemetryTracing.create(tracingConfig,
-                                                                        serviceRegistry.get(Tracer.class)));
+                                                                        serviceRegistry.supply(Tracer.class)));
     }
 
     private WebClientService create(Config config,
