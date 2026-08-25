@@ -26,6 +26,7 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 
 import static io.helidon.faulttolerance.FaultTolerance.FT_METRICS_DEFAULT_ENABLED;
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
@@ -47,7 +48,11 @@ class MetricsUtils {
             return false;
         }
 
-        return GlobalServiceRegistry.registry()
+        return defaultEnabled(GlobalServiceRegistry.registry());
+    }
+
+    static boolean defaultEnabled(ServiceRegistry serviceRegistry) {
+        return serviceRegistry
                 .firstActive(Config.class)
                 .map(config -> config.get(FT_METRICS_DEFAULT_ENABLED)
                         .asBoolean()

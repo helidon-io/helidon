@@ -17,12 +17,16 @@
 package io.helidon.faulttolerance;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
@@ -61,5 +65,30 @@ class MetricsExplicitConfigTest {
                                                     Retry.FT_RETRY_CALLS_TOTAL,
                                                     MetricsUtils.tag(metricsFactory, "name", retry.name()));
         assertThat(callsCounter.count(), is(1L));
+    }
+
+    @Test
+    void managedImplementationsUseOwningConfig() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .discoverServices(false)
+                                                                                .putContractInstance(Config.class,
+                                                                                                     Config.empty())
+                                                                                .build());
+        try {
+            AtomicBoolean meterRegistryResolved = new AtomicBoolean();
+            Supplier<MeterRegistry> meterRegistrySupplier = () -> {
+                meterRegistryResolved.set(true);
+                return meterRegistry;
+            };
+
+            new BulkheadImpl(BulkheadConfig.builder().buildPrototype(), meterRegistrySupplier, manager.registry());
+            new CircuitBreakerImpl(CircuitBreakerConfig.builder().buildPrototype(), meterRegistrySupplier, manager.registry());
+            new RetryImpl(RetryConfig.builder().buildPrototype(), meterRegistrySupplier, manager.registry());
+            new TimeoutImpl(TimeoutConfig.builder().buildPrototype(), meterRegistrySupplier, manager.registry());
+
+            assertThat(meterRegistryResolved.get(), is(false));
+        } finally {
+            manager.shutdown();
+        }
     }
 }
