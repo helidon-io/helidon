@@ -136,7 +136,7 @@ class GrpcClientTracingInterceptorTest {
         public String parse(InputStream stream) {
             try {
                 return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-                } catch (IOException e) {
+            } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
         }
