@@ -90,7 +90,9 @@ Alternative-service routing never bypasses the configured proxy policy. The
 current HTTP/2 provider uses alternatives only when proxying is disabled. When
 any proxy policy is configured, including a `no-proxy` exception that selected
 a direct route for the origin, WebClient ignores the advertisement and
-continues with the selected route.
+continues with the selected route. WebClient uses the system proxy policy by
+default; configure `proxy.type` as `none`, or use `Proxy.noProxy()`
+programmatically, to use an advertised alternative.
 
 WebClient honors the configured TLS policy as-is when connecting to an
 alternative. This includes custom TLS managers, custom SSL contexts, disabled
@@ -393,7 +395,8 @@ client:
 4. Client service configuration
 5. Opt-in alternative service configuration
 6. Protocol configuration
-7. Proxy configuration
+7. Proxy configuration; any configured proxy policy disables current Alt-Svc
+   alternative use
 8. TLS configuration
 <!--@mdc :: -->
 

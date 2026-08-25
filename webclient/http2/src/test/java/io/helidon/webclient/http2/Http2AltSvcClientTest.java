@@ -167,6 +167,30 @@ class Http2AltSvcClientTest {
     }
 
     @Test
+    void responseObservationTimeOrdersDelayedCallbacks() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            Instant newer = Instant.now();
+            Instant older = newer.minusSeconds(1);
+
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID,
+                                                                    false,
+                                                                    Status.OK_200,
+                                                                    responseHeaders("h2=\":9443\"; ma=3600"),
+                                                                    newer));
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID,
+                                                                    false,
+                                                                    Status.OK_200,
+                                                                    responseHeaders("h2=\":8443\"; ma=3600"),
+                                                                    older));
+
+            Http2AltSvcCache.Selection selection = context.client.connectionCache()
+                    .currentAlternative(context.target, false);
+            assertThat(selection, notNullValue());
+            assertThat(selection.port(), is(9443));
+        }
+    }
+
+    @Test
     void ignoresAdvertisementFromExplicitConnection() {
         try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
             context.client.responseReceived(context.directResponse(Http2Client.PROTOCOL_ID, true, Status.OK_200));
@@ -249,8 +273,12 @@ class Http2AltSvcClientTest {
     }
 
     private static ClientResponseHeaders responseHeaders() {
+        return responseHeaders("h2=\":8443\"; ma=3600");
+    }
+
+    private static ClientResponseHeaders responseHeaders(String value) {
         WritableHeaders<?> headers = WritableHeaders.create();
-        headers.set(HeaderNames.ALT_SVC, "h2=\":8443\"; ma=3600");
+        headers.set(HeaderNames.ALT_SVC, value);
         return ClientResponseHeaders.create(headers);
     }
 
@@ -346,12 +374,24 @@ class Http2AltSvcClientTest {
         private WebClientProtocolResponse directResponse(String protocolId,
                                                          boolean explicitConnection,
                                                          Status status) {
+            return directResponse(protocolId,
+                                  explicitConnection,
+                                  status,
+                                  responseHeaders(),
+                                  Instant.now());
+        }
+
+        private WebClientProtocolResponse directResponse(String protocolId,
+                                                         boolean explicitConnection,
+                                                         Status status,
+                                                         ClientResponseHeaders headers,
+                                                         Instant receivedAt) {
             return WebClientProtocolResponse.create(resolvedTarget,
                                                     explicitConnection,
                                                     protocolId,
                                                     status,
-                                                    responseHeaders(),
-                                                    Instant.now());
+                                                    headers,
+                                                    receivedAt);
         }
 
         @Override

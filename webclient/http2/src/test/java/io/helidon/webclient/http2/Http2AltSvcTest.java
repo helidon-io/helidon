@@ -209,7 +209,7 @@ class Http2AltSvcTest {
     }
 
     @Test
-    void dnsFreeCandidateReconstructsTargetsWithAndWithoutAuthorityOverride() {
+    void configuredNoProxyPolicyDoesNotUseAlternativeWithAuthorityOverride() {
         Proxy proxy = Proxy.builder()
                 .host("unused-proxy.invalid")
                 .port(8181)
@@ -230,14 +230,14 @@ class Http2AltSvcTest {
 
         try {
             assertOrigin(request(client, "/learn"));
-            assertAlternative(request(client, "/reuse"));
+            assertOrigin(request(client, "/reuse"));
 
             String authority = "Alt-Origin.EXAMPLE:" + originPort;
             Observation learnedOverride = requestWithHost(client, "/learn", authority);
             Observation reusedOverride = requestWithHost(client, "/reuse", authority);
 
             assertThat(learnedOverride.responseProtocol(), is(Http1Client.PROTOCOL_ID));
-            assertThat(reusedOverride.responseProtocol(), is(Http2Client.PROTOCOL_ID));
+            assertThat(reusedOverride.responseProtocol(), is(Http1Client.PROTOCOL_ID));
         } finally {
             client.closeResource();
         }
@@ -250,6 +250,7 @@ class Http2AltSvcTest {
                 .shareConnectionCache(false)
                 .servicesDiscoverServices(false)
                 .altSvc(ClientAltSvcConfig.create())
+                .proxy(Proxy.noProxy())
                 .tls(clientTls()));
 
         try {
@@ -282,6 +283,7 @@ class Http2AltSvcTest {
                 .baseUri("https://localhost:" + originPort)
                 .shareConnectionCache(false)
                 .servicesDiscoverServices(false)
+                .proxy(Proxy.noProxy())
                 .tls(tls));
         Http2ClientImpl http2Client = (Http2ClientImpl) client;
         ClientConnectionTarget originTarget = ClientConnectionTarget.create(
@@ -297,10 +299,11 @@ class Http2AltSvcTest {
         responseHeaders.set(HeaderNames.ALT_SVC, advertisement(staleReusePort, 3600));
 
         try (Http2AltSvcCache alternatives = Http2AltSvcCache.create(_ -> { })) {
+            Instant observedAt = Instant.now();
             AltSvcHeader advertisement = AltSvcHeader.parse(ClientResponseHeaders.create(responseHeaders),
-                                                             Instant.now())
+                                                             observedAt)
                     .orElseThrow();
-            alternatives.record(originTarget, advertisement, true, false);
+            alternatives.record(originTarget, advertisement, true, false, observedAt);
             Http2AltSvcCache.Selection selection = alternatives.select(originTarget, false, _ -> false);
 
             AtomicInteger phase = new AtomicInteger();
@@ -369,6 +372,7 @@ class Http2AltSvcTest {
                 .addProtocolConfig(Http1ClientProtocolConfig.builder()
                                            .defaultKeepAlive(false)
                                            .build())
+                .proxy(Proxy.noProxy())
                 .tls(clientTls())
                 .build();
 
@@ -406,6 +410,7 @@ class Http2AltSvcTest {
                 .shareConnectionCache(false)
                 .servicesDiscoverServices(false)
                 .altSvc(ClientAltSvcConfig.create())
+                .proxy(Proxy.noProxy())
                 .tls(clientTls()));
 
         try {
@@ -423,6 +428,7 @@ class Http2AltSvcTest {
                 .shareConnectionCache(false)
                 .servicesDiscoverServices(false)
                 .altSvc(ClientAltSvcConfig.create())
+                .proxy(Proxy.noProxy())
                 .tls(clientTls()));
 
         try {
@@ -658,6 +664,7 @@ class Http2AltSvcTest {
                 .baseUri("https://localhost:" + alternativePort)
                 .shareConnectionCache(false)
                 .servicesDiscoverServices(false)
+                .proxy(Proxy.noProxy())
                 .tls(clientTls());
         altSvc.ifPresent(configBuilder::altSvc);
         Http2ClientConfig clientConfig = configBuilder.buildPrototype();
@@ -701,6 +708,7 @@ class Http2AltSvcTest {
                 .protocolPreference(List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID))
                 .altSvc(altSvc)
                 .addProtocolConfig(Http2ClientProtocolConfig.create())
+                .proxy(Proxy.noProxy())
                 .tls(tls)
                 .build();
     }
@@ -712,6 +720,7 @@ class Http2AltSvcTest {
                 .servicesDiscoverServices(false)
                 .protocolPreference(List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID))
                 .addProtocolConfig(Http2ClientProtocolConfig.create())
+                .proxy(Proxy.noProxy())
                 .tls(tls)
                 .build();
     }

@@ -46,9 +46,10 @@ supported. Plain HTTP origins cannot be upgraded to TLS-based HTTP/2 until the R
 
 Alt-Svc never bypasses the configured proxy policy. The current HTTP/2 provider uses alternatives only when proxying is
 disabled. When any proxy policy is configured, including a `no-proxy` exception that selected a direct origin route,
-WebClient ignores the advertisement. The configured TLS policy is honored as-is for the alternative, including an
-explicit `SSLContext`, a custom TLS manager, disabled endpoint identification, and `trust-all`. An unsafe or permissive
-TLS policy makes Alt-Svc steering equally unsafe or permissive.
+WebClient ignores the advertisement. WebClient uses the system proxy policy by default, so configure `proxy.type` as
+`none`, or use `Proxy.noProxy()` programmatically, to use an advertised alternative. The configured TLS policy is
+honored as-is for the alternative, including an explicit `SSLContext`, a custom TLS manager, disabled endpoint
+identification, and `trust-all`. An unsafe or permissive TLS policy makes Alt-Svc steering equally unsafe or permissive.
 
 The HTTP/2 provider applies `ma`, `Age`, `Date`, `clear`, and `persist` to its connection-cache discovery state. Shared
 connection caches share that state; disabling connection-cache sharing isolates it. `persist` does not make discovery

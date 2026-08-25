@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http2;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -155,8 +156,9 @@ public final class Http2ConnectionCache extends ClientConnectionCache {
     void recordAlternative(ClientConnectionTarget connectionTarget,
                            AltSvcHeader header,
                            boolean secureOrigin,
-                           boolean explicitConnection) {
-        altSvc.record(connectionTarget, header, secureOrigin, explicitConnection);
+                           boolean explicitConnection,
+                           Instant observedAt) {
+        altSvc.record(connectionTarget, header, secureOrigin, explicitConnection, observedAt);
     }
 
     void recordAlternativeFailure(Http2AltSvcCache.Selection selection) {

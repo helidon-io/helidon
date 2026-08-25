@@ -181,11 +181,13 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
             return;
         }
 
-        AltSvcHeader.parse(response.headers(), response.receivedAt())
+        var receivedAt = response.receivedAt();
+        AltSvcHeader.parse(response.headers(), receivedAt)
                 .ifPresent(header -> connectionCache.recordAlternative(response.target().logicalTarget(),
                                                                         header,
                                                                         response.secure(),
-                                                                        response.explicitConnection()));
+                                                                        response.explicitConnection(),
+                                                                        receivedAt));
     }
 
     @Override

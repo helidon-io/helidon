@@ -73,7 +73,7 @@ class Http2AltSvcCacheTest {
         cache.record(target,
                      header(clock, "h3=\":7443\", h2=\":8443\"; ma=60"),
                      true,
-                     false);
+                     false, clock.nextObservation());
 
         Http2AltSvcCache.Selection byTarget = cache.select(target, false, _ -> false);
         Http2AltSvcCache.Candidate byLookup = cache.selectRoute(target.lookupKey(), false, _ -> false);
@@ -102,7 +102,7 @@ class Http2AltSvcCacheTest {
 
         assertThat(upper, not(is(lower)));
 
-        cache.record(upper, header(clock, "h2=\":8443\"; ma=3600"), true, false);
+        cache.record(upper, header(clock, "h2=\":8443\"; ma=3600"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection upperSelection = cache.select(upper, false, _ -> false);
         Http2AltSvcCache.Selection lowerSelection = cache.select(lower, false, _ -> false);
 
@@ -114,13 +114,13 @@ class Http2AltSvcCacheTest {
         assertThat(cache.mayContain("EXAMPLE.COM"), is(true));
         assertThat(cache.selectRoute(lower.lookupKey(), false, _ -> false), notNullValue());
 
-        cache.record(lower, header(clock, "h2=\":8443\"; ma=7200"), true, false);
+        cache.record(lower, header(clock, "h2=\":8443\"; ma=7200"), true, false, clock.nextObservation());
 
         assertThat(cache.select(upper, false, _ -> false), sameInstance(upperSelection));
         assertThat(cache.select(lower, false, _ -> false), sameInstance(lowerSelection));
 
-        cache.record(upper, header(clock, "clear"), true, false);
-        cache.record(lower, header(clock, "h2=\":9443\"; ma=3600"), true, false);
+        cache.record(upper, header(clock, "clear"), true, false, clock.nextObservation());
+        cache.record(lower, header(clock, "h2=\":9443\"; ma=3600"), true, false, clock.nextObservation());
 
         Http2AltSvcCache.Selection reverse = cache.select(upper, false, _ -> false);
         assertThat(reverse.originTarget(), sameInstance(upper));
@@ -147,7 +147,7 @@ class Http2AltSvcCacheTest {
         ClientConnectionTarget upper = target(tls, "Example.COM");
         ClientConnectionTarget lower = target(tls, "example.com");
 
-        cache.record(upper, header(clock, "h2=\":8443\"; ma=3600; persist=1"), true, false);
+        cache.record(upper, header(clock, "h2=\":8443\"; ma=3600; persist=1"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection beforeNetworkChange = cache.select(lower, false, _ -> false);
 
         cache.networkChanged();
@@ -171,7 +171,7 @@ class Http2AltSvcCacheTest {
         ClientConnectionTarget upper = target(tls, "Example.COM");
         ClientConnectionTarget lower = target(tls, "example.com");
 
-        cache.record(upper, header(clock, "h2=\":8443\"; ma=1"), true, false);
+        cache.record(upper, header(clock, "h2=\":8443\"; ma=1"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection establishedUpper = cache.select(upper, false, _ -> false);
         clock.advance(Duration.ofSeconds(2));
 
@@ -196,7 +196,7 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "Origin.EXAMPLE");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=3600"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=3600"), true, false, clock.nextObservation());
         cache.recordFailure(cache.select(target, false, _ -> false));
 
         assertThat(cache.selectRoute(target.lookupKey(), false, _ -> true), nullValue());
@@ -219,29 +219,29 @@ class Http2AltSvcCacheTest {
         assertThat(cache.mayContain("origin.example"), is(false));
         assertThat(cache.mayContain("other.example"), is(false));
 
-        cache.record(first, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(first, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
 
         assertThat(cache.mayContain("origin.example"), is(true));
         assertThat(cache.mayContain("other.example"), is(false));
 
-        cache.record(first, header(clock, "h2=\":8443\"; ma=120"), true, false);
-        cache.record(first, header(clock, "h2=\":9443\"; ma=60"), true, false);
+        cache.record(first, header(clock, "h2=\":8443\"; ma=120"), true, false, clock.nextObservation());
+        cache.record(first, header(clock, "h2=\":9443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection replacement = cache.select(first, false, _ -> false);
         cache.recordFailure(replacement);
 
         assertThat(cache.mayContain("origin.example"), is(true));
 
-        cache.record(first, header(clock, "clear"), true, false);
+        cache.record(first, header(clock, "clear"), true, false, clock.nextObservation());
 
         assertThat(cache.mayContain("origin.example"), is(false));
 
-        cache.record(first, header(clock, "h2=\":8443\"; ma=60"), true, false);
-        cache.record(second, header(clock, "h2=\":8443\"; ma=60"), true, false);
-        cache.record(first, header(clock, "clear"), true, false);
+        cache.record(first, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
+        cache.record(second, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
+        cache.record(first, header(clock, "clear"), true, false, clock.nextObservation());
 
         assertThat(cache.mayContain("origin.example"), is(true));
 
-        cache.record(second, header(clock, "clear"), true, false);
+        cache.record(second, header(clock, "clear"), true, false, clock.nextObservation());
 
         assertThat(cache.mayContain("origin.example"), is(false));
 
@@ -255,11 +255,11 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection selection = cache.select(target, false, _ -> false);
 
         clock.advance(Duration.ofSeconds(30));
-        cache.record(target, header(clock, "h2=\":8443\"; ma=120; persist=1"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=120; persist=1"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), sameInstance(selection));
         assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
@@ -272,7 +272,7 @@ class Http2AltSvcCacheTest {
         clock.advance(Duration.ofSeconds(61));
         assertThat(cache.select(target, false, _ -> false), sameInstance(selection));
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=0"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=0"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target,
                                 false,
@@ -296,32 +296,34 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection transientSelection = cache.select(target, false, _ -> false);
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60; persist=1"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60; persist=1"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), sameInstance(transientSelection));
 
         cache.networkChanged();
+        clock.advance(Duration.ofNanos(1));
 
         Http2AltSvcCache.Selection persistentSelection = cache.select(target, false, _ -> false);
         assertThat(persistentSelection, not(sameInstance(transientSelection)));
         assertThat(invalidations, hasSize(1));
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), sameInstance(persistentSelection));
         assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
 
         cache.networkChanged();
+        clock.advance(Duration.ofNanos(1));
 
         assertThat(cache.select(target, false, _ -> true), nullValue());
         assertThat(cache.mayContain(target.connectionKey().host()), is(false));
         assertThat(invalidations, hasSize(2));
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection revived = cache.select(target, false, _ -> false);
-        cache.record(target, header(clock, "h2=\":8443\"; ma=120"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=120"), true, false, clock.nextObservation());
 
         assertThat(revived, not(sameInstance(persistentSelection)));
         assertThat(cache.select(target, false, _ -> false), sameInstance(revived));
@@ -337,14 +339,15 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection failed = cache.select(target, false, _ -> false);
         cache.recordFailure(failed);
 
         assertThat(cache.select(target, false, _ -> true), nullValue());
         assertThat(invalidations, hasSize(1));
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=120"), true, false);
+        clock.advance(Duration.ofNanos(1));
+        cache.record(target, header(clock, "h2=\":8443\"; ma=120"), true, false, clock.nextObservation());
 
         Http2AltSvcCache.Selection retry = cache.select(target, false, _ -> false);
         assertThat(retry, not(sameInstance(failed)));
@@ -352,7 +355,7 @@ class Http2AltSvcCacheTest {
         assertThat(cache.selectRoute(target.lookupKey(), false, _ -> false), notNullValue());
         assertThat(invalidations, hasSize(1));
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), sameInstance(retry));
         assertThat(invalidations, hasSize(1));
@@ -372,29 +375,29 @@ class Http2AltSvcCacheTest {
         assertThat(equalTarget, is(target));
         assertThat(equalTarget, not(sameInstance(target)));
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection first = cache.select(target, false, _ -> false);
-        cache.record(equalTarget, header(clock, "h2=\":8443\"; ma=120"), true, false);
+        cache.record(equalTarget, header(clock, "h2=\":8443\"; ma=120"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), sameInstance(first));
         assertThat(cache.selectRoute(equalTarget.lookupKey(), false, _ -> false), notNullValue());
 
-        cache.record(equalTarget, header(clock, "h2=\":9443\"; ma=60"), true, false);
+        cache.record(equalTarget, header(clock, "h2=\":9443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection replacement = cache.select(target, false, _ -> false);
-        cache.record(equalTarget, header(clock, "h2=\":9443\"; ma=120"), true, false);
+        cache.record(equalTarget, header(clock, "h2=\":9443\"; ma=120"), true, false, clock.nextObservation());
 
         assertThat(replacement, not(sameInstance(first)));
         assertThat(cache.select(equalTarget, false, _ -> false), sameInstance(replacement));
         assertThat(invalidations, hasSize(1));
 
-        cache.record(equalTarget, header(clock, "clear"), true, false);
+        cache.record(equalTarget, header(clock, "clear"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> true), nullValue());
         assertThat(invalidations, hasSize(2));
 
-        cache.record(target, header(clock, "h2=\":10443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":10443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection revived = cache.select(target, false, _ -> false);
-        cache.record(target, header(clock, "h2=\":10443\"; ma=120"), true, false);
+        cache.record(target, header(clock, "h2=\":10443\"; ma=120"), true, false, clock.nextObservation());
 
         assertThat(revived, not(sameInstance(replacement)));
         assertThat(cache.select(target, false, _ -> false), sameInstance(revived));
@@ -417,26 +420,26 @@ class Http2AltSvcCacheTest {
         ClientConnectionTarget persistent = target(tls, "persistent.example");
         ClientConnectionTarget transientTarget = target(tls, "transient.example");
 
-        cache.record(unsupported, header(clock, "h2=\":8443\"; ma=60"), true, false);
-        cache.record(unsupported, header(clock, "H2=\":8443\"; ma=60"), true, false);
+        cache.record(unsupported, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
+        cache.record(unsupported, header(clock, "H2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         assertThat(cache.mayContain("unsupported.example"), is(false));
 
-        cache.record(misdirected, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(misdirected, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         cache.recordMisdirected(cache.select(misdirected, false, _ -> false));
         assertThat(cache.mayContain("misdirected.example"), is(false));
 
-        cache.record(expired, header(clock, "h2=\":8443\"; ma=1"), true, false);
+        cache.record(expired, header(clock, "h2=\":8443\"; ma=1"), true, false, clock.nextObservation());
         clock.advance(Duration.ofSeconds(2));
         assertThat(cache.select(expired, false, _ -> false), nullValue());
         assertThat(cache.mayContain("expired.example"), is(false));
 
-        cache.record(staleTls, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(staleTls, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         reloadedTls.reload(TlsMaterial.builder().trustAll(true).build());
         assertThat(cache.select(staleTls, false, _ -> false), nullValue());
         assertThat(cache.mayContain("stale-tls.example"), is(false));
 
-        cache.record(persistent, header(clock, "h2=\":8443\"; ma=60; persist=1"), true, false);
-        cache.record(transientTarget, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(persistent, header(clock, "h2=\":8443\"; ma=60; persist=1"), true, false, clock.nextObservation());
+        cache.record(transientTarget, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         cache.networkChanged();
 
         assertThat(cache.mayContain("persistent.example"), is(true));
@@ -455,22 +458,22 @@ class Http2AltSvcCacheTest {
         AltSvcHeader advertisement = header(clock, "h2=\":8443\"; ma=60");
         ClientConnectionTarget target = target(tls, "origin.example");
 
-        cache.record(target, advertisement, false, false);
+        cache.record(target, advertisement, false, false, clock.nextObservation());
         assertThat(cache.select(target, false, _ -> false), nullValue());
 
-        cache.record(target, advertisement, true, true);
+        cache.record(target, advertisement, true, true, clock.nextObservation());
         assertThat(cache.select(target, false, _ -> false), nullValue());
 
-        cache.record(target, advertisement, true, false);
+        cache.record(target, advertisement, true, false, clock.nextObservation());
         assertThat(cache.select(target, true, _ -> true), nullValue());
 
         ClientConnectionTarget httpTarget = target(Tls.builder().enabled(false).build(), "http", "origin.example");
-        cache.record(httpTarget, advertisement, true, false);
+        cache.record(httpTarget, advertisement, true, false, clock.nextObservation());
         assertThat(cache.select(httpTarget, false, _ -> false), nullValue());
 
         Proxy proxy = Proxy.builder().host("proxy.example").port(8181).build();
         ClientConnectionTarget proxyTarget = target(tls, "https", "origin.example", proxy, DNS);
-        cache.record(proxyTarget, advertisement, true, false);
+        cache.record(proxyTarget, advertisement, true, false, clock.nextObservation());
         assertThat(cache.select(proxyTarget, false, _ -> false), nullValue());
 
         Proxy portScopedNoProxy = Proxy.builder()
@@ -485,7 +488,7 @@ class Http2AltSvcCacheTest {
                                                                  DNS);
         assertThat(portScopedNoProxyTarget.proxyRoute().direct(), is(true));
         assertThat(portScopedNoProxyTarget.proxyRoute().addressBound(), is(false));
-        cache.record(portScopedNoProxyTarget, advertisement, true, false);
+        cache.record(portScopedNoProxyTarget, advertisement, true, false, clock.nextObservation());
         assertThat(cache.select(portScopedNoProxyTarget, false, _ -> false), nullValue());
 
         Proxy noProxy = Proxy.builder()
@@ -498,12 +501,12 @@ class Http2AltSvcCacheTest {
                                                             "origin.example",
                                                             noProxy,
                                                             (_, _) -> InetAddress.ofLiteral("127.0.0.1"));
-        cache.record(addressBoundTarget, advertisement, true, false);
+        cache.record(addressBoundTarget, advertisement, true, false, clock.nextObservation());
         assertThat(addressBoundTarget.proxyRoute().addressBound(), is(true));
         assertThat(cache.select(addressBoundTarget, false, _ -> false), nullValue());
 
         ClientConnectionTarget udsTarget = udsTarget(tls, "origin.example");
-        cache.record(udsTarget, advertisement, true, false);
+        cache.record(udsTarget, advertisement, true, false, clock.nextObservation());
         assertThat(cache.select(udsTarget, false, _ -> false), nullValue());
 
         cache.close();
@@ -516,19 +519,19 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection first = cache.select(target, false, _ -> false);
 
-        cache.record(target, header(clock, "H2=\":9443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "H2=\":9443\"; ma=60"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), nullValue());
         assertThat(cache.current(first), is(false));
         assertThat(invalidations, hasSize(1));
         assertThat(first.sameGeneration(invalidations.getFirst()), is(true));
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection second = cache.select(target, false, _ -> false);
-        cache.record(target, header(clock, "h2=\"other.example:8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\"other.example:8443\"; ma=60"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), nullValue());
         assertThat(cache.current(second), is(false));
@@ -544,7 +547,7 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=1"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=1"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection fresh = cache.select(target, false, _ -> false);
         clock.advance(Duration.ofSeconds(2));
 
@@ -577,8 +580,8 @@ class Http2AltSvcCacheTest {
         ClientConnectionTarget expiredTarget = target(tls, "expired.example");
         ClientConnectionTarget freshTarget = target(tls, "fresh.example");
 
-        cache.record(expiredTarget, header(clock, "h2=\":8443\"; ma=1"), true, false);
-        cache.record(freshTarget, header(clock, "h2=\":9443\"; ma=60"), true, false);
+        cache.record(expiredTarget, header(clock, "h2=\":8443\"; ma=1"), true, false, clock.nextObservation());
+        cache.record(freshTarget, header(clock, "h2=\":9443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection expired = cache.select(expiredTarget, false, _ -> false);
         Http2AltSvcCache.Selection fresh = cache.select(freshTarget, false, _ -> false);
         clock.advance(Duration.ofSeconds(2));
@@ -621,7 +624,7 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=1"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=1"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection stale = cache.select(target, false, _ -> false);
         clock.advance(Duration.ofSeconds(2));
 
@@ -645,7 +648,11 @@ class Http2AltSvcCacheTest {
             try {
                 assertThat(enteredEstablishedProbe.await(5, TimeUnit.SECONDS), is(true));
                 Future<?> replacementWrite = executor.submit(
-                        () -> cache.record(target, header(clock, "h2=\":9443\"; ma=60"), true, false));
+                        () -> cache.record(target,
+                                           header(clock, "h2=\":9443\"; ma=60"),
+                                           true,
+                                           false,
+                                           clock.nextObservation()));
                 assertThat(replacementWrite.get(5, TimeUnit.SECONDS), nullValue());
             } finally {
                 releaseEstablishedProbe.countDown();
@@ -667,7 +674,7 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=1"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=1"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection expired = cache.select(target, false, _ -> false);
         clock.advance(Duration.ofSeconds(2));
 
@@ -691,7 +698,11 @@ class Http2AltSvcCacheTest {
             try {
                 assertThat(enteredEstablishedProbe.await(5, TimeUnit.SECONDS), is(true));
                 Future<?> refreshWrite = executor.submit(
-                        () -> cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false));
+                        () -> cache.record(target,
+                                           header(clock, "h2=\":8443\"; ma=60"),
+                                           true,
+                                           false,
+                                           clock.nextObservation()));
                 assertThat(refreshWrite.get(5, TimeUnit.SECONDS), nullValue());
             } finally {
                 releaseEstablishedProbe.countDown();
@@ -714,7 +725,7 @@ class Http2AltSvcCacheTest {
         Tls tls = Tls.builder().trustAll(true).build();
         ClientConnectionTarget target = target(tls, "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=1"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=1"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection stale = cache.select(target, false, _ -> false);
         clock.advance(Duration.ofSeconds(2));
 
@@ -757,15 +768,15 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection first = cache.select(target, false, _ -> false);
-        cache.record(target, header(clock, "h2=\":8443\"; ma=120; persist=1"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=120; persist=1"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection extended = cache.select(target, false, _ -> false);
 
         assertThat(extended, sameInstance(first));
         assertThat(invalidations, is(empty()));
 
-        cache.record(target, header(clock, "h2=\":9443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":9443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection replacement = cache.select(target, false, _ -> false);
 
         assertThat(replacement, not(sameInstance(first)));
@@ -773,7 +784,7 @@ class Http2AltSvcCacheTest {
         assertThat(cache.current(first), is(false));
         assertThat(invalidations, hasSize(1));
 
-        cache.record(target, header(clock, "h2=\":9443\"; ma=0"), true, false);
+        cache.record(target, header(clock, "h2=\":9443\"; ma=0"), true, false, clock.nextObservation());
 
         Http2AltSvcCache.Selection zeroAgeReuse = cache.select(
                 target,
@@ -785,9 +796,9 @@ class Http2AltSvcCacheTest {
         assertThat(cache.select(target, false, _ -> false), nullValue());
         assertThat(invalidations, hasSize(2));
 
-        cache.record(target, header(clock, "h2=\":10443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":10443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection beforeClear = cache.select(target, false, _ -> false);
-        cache.record(target, header(clock, "clear"), true, false);
+        cache.record(target, header(clock, "clear"), true, false, clock.nextObservation());
 
         assertThat(cache.select(target, false, _ -> false), nullValue());
         assertThat(cache.current(beforeClear), is(false));
@@ -803,7 +814,7 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=3600"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=3600"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection failed = cache.select(target, false, _ -> false);
         cache.recordFailure(failed);
 
@@ -829,9 +840,9 @@ class Http2AltSvcCacheTest {
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection stale = cache.select(target, false, _ -> false);
-        cache.record(target, header(clock, "h2=\":9443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":9443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection current = cache.select(target, false, _ -> false);
 
         cache.recordMisdirected(stale);
@@ -856,8 +867,12 @@ class Http2AltSvcCacheTest {
         ClientConnectionTarget persistentTarget = target(tls, "persistent.example");
         ClientConnectionTarget transientTarget = target(tls, "transient.example");
 
-        cache.record(persistentTarget, header(clock, "h2=\":8443\"; ma=60; persist=1"), true, false);
-        cache.record(transientTarget, header(clock, "h2=\":9443\"; ma=60"), true, false);
+        cache.record(persistentTarget,
+                     header(clock, "h2=\":8443\"; ma=60; persist=1"),
+                     true,
+                     false,
+                     clock.nextObservation());
+        cache.record(transientTarget, header(clock, "h2=\":9443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection persistent = cache.select(persistentTarget, false, _ -> false);
         Http2AltSvcCache.Selection transientSelection = cache.select(transientTarget, false, _ -> false);
 
@@ -884,7 +899,7 @@ class Http2AltSvcCacheTest {
         Tls tls = Tls.builder().trustAll(true).build();
         ClientConnectionTarget target = target(tls, "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false);
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection selection = cache.select(target, false, _ -> false);
         tls.reload(TlsMaterial.builder().trustAll(true).build());
 
@@ -896,6 +911,276 @@ class Http2AltSvcCacheTest {
         ClientConnectionTarget currentTarget = target(tls, "origin.example");
         assertThat(currentTarget, is(not(target)));
         assertThat(cache.select(currentTarget, false, _ -> true), nullValue());
+
+        cache.close();
+    }
+
+    @Test
+    void newerAdvertisementWinsOverDelayedReplacement() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
+        Instant older = START.plusSeconds(5);
+        Instant newer = START.plusSeconds(10);
+
+        cache.record(target, header(newer, "h2=\":9443\"; ma=60"), true, false, newer);
+        cache.record(target, header(older, "h2=\":8443\"; ma=60"), true, false, older);
+
+        assertThat(cache.select(target, false, _ -> false).port(), is(9443));
+
+        Instant latest = newer.plusSeconds(1);
+        cache.record(target, header(latest, "h2=\":10443\"; ma=60"), true, false, latest);
+
+        assertThat(cache.select(target, false, _ -> false).port(), is(10443));
+
+        cache.close();
+    }
+
+    @Test
+    void withdrawalWinsTiesAndRejectsDelayedAdvertisement() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
+        Instant first = START.plusSeconds(5);
+
+        cache.record(target, header(first, "h2=\":8443\"; ma=60"), true, false, first);
+        cache.record(target, header(first, "h2=\":9443\"; ma=60"), true, false, first);
+
+        assertThat(cache.select(target, false, _ -> false).port(), is(8443));
+
+        cache.record(target, header(first, "H2=\":9443\"; ma=60"), true, false, first);
+        cache.record(target, header(first, "h2=\":10443\"; ma=60"), true, false, first);
+
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+
+        Instant second = first.plusSeconds(1);
+        cache.record(target, header(second, "h2=\":10443\"; ma=60"), true, false, second);
+        cache.record(target, header(second, "clear"), true, false, second);
+        cache.record(target, header(first, "h2=\":11443\"; ma=60"), true, false, first);
+        cache.record(target, header(second, "h2=\":12443\"; ma=60"), true, false, second);
+
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+
+        Instant third = second.plusSeconds(1);
+        cache.record(target, header(third, "h2=\":13443\"; ma=60"), true, false, third);
+
+        assertThat(cache.select(target, false, _ -> false).port(), is(13443));
+
+        cache.close();
+    }
+
+    @Test
+    void failureAndMisdirectedResponseRejectDelayedAdvertisements() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        Tls tls = Tls.builder().trustAll(true).build();
+        ClientConnectionTarget failedTarget = target(tls, "failed.example");
+        ClientConnectionTarget misdirectedTarget = target(tls, "misdirected.example");
+
+        cache.record(failedTarget, header(START, "h2=\":8443\"; ma=3600"), true, false, START);
+        Http2AltSvcCache.Selection failed = cache.select(failedTarget, false, _ -> false);
+        clock.advance(Duration.ofSeconds(10));
+        cache.recordFailure(failed);
+
+        Instant delayedFailure = START.plusSeconds(5);
+        cache.record(failedTarget,
+                     header(delayedFailure, "h2=\":9443\"; ma=3600"),
+                     true,
+                     false,
+                     delayedFailure);
+        assertThat(cache.select(failedTarget, false, _ -> false), nullValue());
+
+        Instant afterFailure = clock.instant().plusSeconds(1);
+        cache.record(failedTarget,
+                     header(afterFailure, "h2=\":10443\"; ma=3600"),
+                     true,
+                     false,
+                     afterFailure);
+        assertThat(cache.select(failedTarget, false, _ -> false).port(), is(10443));
+
+        cache.record(misdirectedTarget,
+                     header(clock, "h2=\":8443\"; ma=3600"),
+                     true,
+                     false,
+                     clock.instant());
+        Http2AltSvcCache.Selection misdirected = cache.select(misdirectedTarget, false, _ -> false);
+        clock.advance(Duration.ofSeconds(10));
+        cache.recordMisdirected(misdirected);
+
+        Instant delayedMisdirected = clock.instant().minusSeconds(5);
+        cache.record(misdirectedTarget,
+                     header(delayedMisdirected, "h2=\":9443\"; ma=3600"),
+                     true,
+                     false,
+                     delayedMisdirected);
+        assertThat(cache.select(misdirectedTarget, false, _ -> false), nullValue());
+
+        Instant afterMisdirected = clock.instant().plusSeconds(1);
+        cache.record(misdirectedTarget,
+                     header(afterMisdirected, "h2=\":10443\"; ma=3600"),
+                     true,
+                     false,
+                     afterMisdirected);
+        assertThat(cache.select(misdirectedTarget, false, _ -> false).port(), is(10443));
+
+        cache.close();
+    }
+
+    @Test
+    void failureObservationSurvivesNaturalExpiry() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
+
+        cache.record(target, header(START, "h2=\":8443\"; ma=1"), true, false, START);
+        Http2AltSvcCache.Selection selection = cache.select(target, false, _ -> false);
+        assertThat(selection, notNullValue());
+        clock.advance(Duration.ofMillis(500));
+        cache.recordFailure(selection);
+        clock.advance(Duration.ofMinutes(5));
+
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+
+        Instant delayed = START.plusMillis(250);
+        cache.record(target, header(delayed, "h2=\":9443\"; ma=3600"), true, false, delayed);
+
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+
+        Instant newer = START.plusMillis(750);
+        cache.record(target, header(newer, "h2=\":10443\"; ma=3600"), true, false, newer);
+
+        assertThat(cache.select(target, false, _ -> false).port(), is(10443));
+
+        cache.close();
+    }
+
+    @Test
+    void networkChangeOrdersKnownPersistentAndPreviouslyUnseenRoutes() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        Tls tls = Tls.builder().trustAll(true).build();
+        ClientConnectionTarget transientTarget = target(tls, "transient.example");
+        ClientConnectionTarget persistentTarget = target(tls, "persistent.example");
+        ClientConnectionTarget unseenTarget = target(tls, "unseen.example");
+
+        cache.record(transientTarget, header(START, "h2=\":7443\"; ma=60"), true, false, START);
+        cache.record(persistentTarget,
+                     header(START, "h2=\":8443\"; ma=60; persist=1"),
+                     true,
+                     false,
+                     START);
+        clock.advance(Duration.ofSeconds(10));
+        cache.networkChanged();
+
+        Instant delayed = START.plusSeconds(5);
+        cache.record(transientTarget, header(delayed, "h2=\":9443\"; ma=60"), true, false, delayed);
+        cache.record(persistentTarget, header(delayed, "h2=\":9443\"; ma=60"), true, false, delayed);
+        cache.record(unseenTarget, header(delayed, "h2=\":9443\"; ma=60"), true, false, delayed);
+        Instant barrier = clock.instant();
+        cache.record(unseenTarget, header(barrier, "h2=\":10443\"; ma=60"), true, false, barrier);
+
+        assertThat(cache.select(transientTarget, false, _ -> false), nullValue());
+        assertThat(cache.select(persistentTarget, false, _ -> false).port(), is(8443));
+        assertThat(cache.select(unseenTarget, false, _ -> false), nullValue());
+
+        Instant newer = clock.instant().plusSeconds(1);
+        cache.record(transientTarget, header(newer, "h2=\":10443\"; ma=60"), true, false, newer);
+        cache.record(persistentTarget, header(newer, "h2=\":11443\"; ma=60"), true, false, newer);
+        cache.record(unseenTarget, header(newer, "h2=\":12443\"; ma=60"), true, false, newer);
+
+        assertThat(cache.select(transientTarget, false, _ -> false).port(), is(10443));
+        assertThat(cache.select(persistentTarget, false, _ -> false).port(), is(11443));
+        assertThat(cache.select(unseenTarget, false, _ -> false).port(), is(12443));
+
+        cache.close();
+    }
+
+    @Test
+    void caseVariantsShareObservationOrder() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        Tls tls = Tls.builder().trustAll(true).build();
+        ClientConnectionTarget upper = target(tls, "Example.COM");
+        ClientConnectionTarget lower = target(tls, "example.com");
+        Instant older = START.plusSeconds(5);
+        Instant newer = START.plusSeconds(10);
+
+        cache.record(upper, header(newer, "h2=\":8443\"; ma=60"), true, false, newer);
+        cache.record(lower, header(older, "h2=\":9443\"; ma=60"), true, false, older);
+
+        assertThat(cache.select(lower, false, _ -> false).port(), is(8443));
+
+        cache.record(lower, header(newer, "clear"), true, false, newer);
+        cache.record(upper, header(newer, "h2=\":10443\"; ma=60"), true, false, newer);
+
+        assertThat(cache.select(upper, false, _ -> false), nullValue());
+
+        Instant latest = newer.plusSeconds(1);
+        cache.record(lower, header(latest, "h2=\":11443\"; ma=60"), true, false, latest);
+
+        assertThat(cache.select(upper, false, _ -> false).port(), is(11443));
+
+        cache.close();
+    }
+
+    @Test
+    void naturalExpiryRetainsOnlyTheAdvertisementObservation() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
+
+        cache.record(target, header(START, "h2=\":8443\"; ma=1"), true, false, START);
+        clock.advance(Duration.ofSeconds(2));
+
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+
+        Instant delayedNewer = START.plusMillis(500);
+        cache.record(target,
+                     header(delayedNewer, "h2=\":9443\"; ma=60"),
+                     true,
+                     false,
+                     delayedNewer);
+        cache.record(target,
+                     header(START, "h2=\":10443\"; ma=60"),
+                     true,
+                     false,
+                     START);
+
+        assertThat(cache.select(target, false, _ -> false).port(), is(9443));
+
+        cache.close();
+    }
+
+    @Test
+    void evictsOldestTombstoneBeforeActiveRoutesAtBound() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        Tls tls = Tls.builder().trustAll(true).build();
+        AltSvcHeader clear = header(START, "clear");
+        ClientConnectionTarget first = null;
+        ClientConnectionTarget last = null;
+
+        for (int index = 0; index <= 1_000; index++) {
+            ClientConnectionTarget target = target(tls, "withdrawn-" + index + ".example");
+            if (index == 0) {
+                first = target;
+            }
+            if (index == 1_000) {
+                last = target;
+            }
+            cache.record(target, clear, true, false, START.plusSeconds(index));
+        }
+
+        cache.record(first, header(START, "h2=\":8443\"; ma=3600"), true, false, START);
+        Instant lastObservation = START.plusSeconds(1_000);
+        cache.record(last,
+                     header(lastObservation, "h2=\":9443\"; ma=3600"),
+                     true,
+                     false,
+                     lastObservation);
+
+        assertThat(cache.select(first, false, _ -> false), notNullValue());
+        assertThat(cache.select(last, false, _ -> false), nullValue());
 
         cache.close();
     }
@@ -914,14 +1199,14 @@ class Http2AltSvcCacheTest {
             if (index == 0) {
                 first = target;
             }
-            cache.record(target, advertisement, true, false);
+            cache.record(target, advertisement, true, false, clock.nextObservation());
         }
         Http2AltSvcCache.Selection firstSelection = cache.select(first, false, _ -> false);
         assertThat(firstSelection, notNullValue());
-        cache.record(first, advertisement, true, false);
+        cache.record(first, advertisement, true, false, clock.nextObservation());
 
         ClientConnectionTarget last = target(tls, "origin-1000.example");
-        cache.record(last, advertisement, true, false);
+        cache.record(last, advertisement, true, false, clock.nextObservation());
 
         assertThat(cache.select(first, false, _ -> false), nullValue());
         assertThat(cache.select(last, false, _ -> false), notNullValue());
@@ -930,9 +1215,9 @@ class Http2AltSvcCacheTest {
         assertThat(invalidations, hasSize(1));
         assertThat(firstSelection.sameGeneration(invalidations.getFirst()), is(true));
 
-        cache.record(first, advertisement, true, false);
+        cache.record(first, advertisement, true, false, clock.nextObservation());
         Http2AltSvcCache.Selection revived = cache.select(first, false, _ -> false);
-        cache.record(first, header(clock, "h2=\":8443\"; ma=120"), true, false);
+        cache.record(first, header(clock, "h2=\":8443\"; ma=120"), true, false, clock.nextObservation());
 
         assertThat(revived, not(sameInstance(firstSelection)));
         assertThat(cache.select(first, false, _ -> false), sameInstance(revived));
@@ -943,11 +1228,15 @@ class Http2AltSvcCacheTest {
     }
 
     private static AltSvcHeader header(Clock clock, String... values) {
+        return header(clock.instant(), values);
+    }
+
+    private static AltSvcHeader header(Instant observedAt, String... values) {
         WritableHeaders<?> headers = WritableHeaders.create();
         for (String value : values) {
             headers.add(HeaderValues.create(HeaderNames.ALT_SVC, value));
         }
-        return AltSvcHeader.parse(ClientResponseHeaders.create(headers), clock.instant()).orElseThrow();
+        return AltSvcHeader.parse(ClientResponseHeaders.create(headers), observedAt).orElseThrow();
     }
 
     private static ClientConnectionTarget target(Tls tls, String host) {
@@ -1027,6 +1316,12 @@ class Http2AltSvcCacheTest {
 
         private void advance(Duration duration) {
             instant = instant.plus(duration);
+        }
+
+        private Instant nextObservation() {
+            Instant observedAt = instant;
+            instant = instant.plusNanos(1);
+            return observedAt;
         }
     }
 }

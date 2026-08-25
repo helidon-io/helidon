@@ -55,6 +55,8 @@ final class Http2AltSvcCache implements AutoCloseable {
     private final ConcurrentMap<String, Integer> advertisedHostCounts = new ConcurrentHashMap<>();
     // Mutated only while holding lock.
     private final LinkedHashMap<OriginRouteKey, RouteState> insertionOrder = new LinkedHashMap<>();
+    // Mutated only while holding lock. Active routes and tombstones share MAX_ENTRIES.
+    private final LinkedHashMap<OriginRouteKey, Instant> tombstones = new LinkedHashMap<>();
     // Even values are stable; every locked mutation spans the adjacent odd value.
     private volatile long mutationVersion;
     // Mutated only while holding lock, then published through mutationVersion.
@@ -63,6 +65,7 @@ final class Http2AltSvcCache implements AutoCloseable {
     private volatile List<SelectionMemo> selectionMemos = List.of();
     private long nextGeneration;
     private long networkGeneration;
+    private Instant networkChangedAt = Instant.MIN;
     private volatile boolean closed;
 
     private Http2AltSvcCache(Clock clock, Consumer<Generation> invalidationListener) {
@@ -224,9 +227,11 @@ final class Http2AltSvcCache implements AutoCloseable {
     void record(ClientConnectionTarget target,
                 AltSvcHeader header,
                 boolean secureOrigin,
-                boolean explicitConnection) {
+                boolean explicitConnection,
+                Instant observedAt) {
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(header, "header");
+        Objects.requireNonNull(observedAt, "observedAt");
         if (!target.currentTlsGeneration()) {
             removeStale(target);
             return;
@@ -254,7 +259,14 @@ final class Http2AltSvcCache implements AutoCloseable {
                         : normalizeHost(target.originAuthority().host().value());
                 alternative = selectAlternative(originHost, header, now);
             }
-            if (alternative == null && previous == null) {
+            boolean withdrawal = alternative == null;
+            Instant latestObservation = previous == null ? tombstones.get(routeKey) : previous.observedAt;
+            // Equal-time withdrawals win; advertisements must be strictly newer than state and network barriers.
+            if (observedAt.isBefore(networkChangedAt)
+                    || (!withdrawal && observedAt.equals(networkChangedAt))
+                    || (latestObservation != null
+                            && (observedAt.isBefore(latestObservation)
+                                    || (!withdrawal && observedAt.equals(latestObservation))))) {
                 return;
             }
             if (alternative != null
@@ -262,7 +274,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                     && previous.alternative.sameAuthority(alternative)) {
                 beginMutation();
                 try {
-                    previous.refresh(alternative);
+                    previous.refresh(alternative, observedAt);
                     Selection selection = previous.selection(target);
                     if (selection == null) {
                         selection = previous.addSelection(clock,
@@ -281,7 +293,7 @@ final class Http2AltSvcCache implements AutoCloseable {
             beginMutation();
             try {
                 if (alternative == null) {
-                    remove(routeKey, previous, invalidations);
+                    removeWithTombstone(routeKey, previous, observedAt, invalidations);
                 } else {
                     Generation generation = nextGeneration(alternative.expirationTime);
                     RouteState updated = new RouteState(previous == null ? originHost : previous.originHost,
@@ -290,6 +302,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                                                                 : previous.advertisedHost,
                                                         routeKey,
                                                         alternative,
+                                                        observedAt,
                                                         generation,
                                                         selection(target, routeKey, alternative, generation),
                                                         null);
@@ -315,6 +328,7 @@ final class Http2AltSvcCache implements AutoCloseable {
             return;
         }
 
+        Instant observedAt = clock.instant();
         List<Generation> invalidations = new ArrayList<>();
         lock.lock();
         try {
@@ -324,14 +338,19 @@ final class Http2AltSvcCache implements AutoCloseable {
             }
             beginMutation();
             try {
+                Instant eventAt = latest(state.observedAt, observedAt);
                 Generation generation = nextGeneration(state.alternative.expirationTime);
-                RouteState updated = routeState(selection.routeKey,
-                                                selection.originTarget,
-                                                state.originHost,
-                                                state.advertisedHost,
-                                                state.alternative,
-                                                generation,
-                                                clock.instant().plus(NEGATIVE_CACHE_TTL));
+                RouteState updated = new RouteState(state.originHost,
+                                                    state.advertisedHost,
+                                                    selection.routeKey,
+                                                    state.alternative,
+                                                    eventAt,
+                                                    generation,
+                                                    selection(selection.originTarget,
+                                                              selection.routeKey,
+                                                              state.alternative,
+                                                              generation),
+                                                    eventAt.plus(NEGATIVE_CACHE_TTL));
                 put(selection.routeKey, selection.originTarget, state, updated, invalidations);
             } finally {
                 endMutation();
@@ -344,6 +363,7 @@ final class Http2AltSvcCache implements AutoCloseable {
 
     void recordMisdirected(Selection selection) {
         Objects.requireNonNull(selection, "selection");
+        Instant observedAt = clock.instant();
         List<Generation> invalidations = new ArrayList<>();
         lock.lock();
         try {
@@ -351,7 +371,10 @@ final class Http2AltSvcCache implements AutoCloseable {
             if (matches(selection, state)) {
                 beginMutation();
                 try {
-                    remove(selection.routeKey, state, invalidations);
+                    removeWithTombstone(selection.routeKey,
+                                        state,
+                                        latest(state.observedAt, observedAt),
+                                        invalidations);
                 } finally {
                     endMutation();
                 }
@@ -363,6 +386,7 @@ final class Http2AltSvcCache implements AutoCloseable {
     }
 
     void networkChanged() {
+        Instant observedAt = clock.instant();
         List<Generation> invalidations = new ArrayList<>();
         lock.lock();
         try {
@@ -371,6 +395,7 @@ final class Http2AltSvcCache implements AutoCloseable {
             }
             beginMutation();
             try {
+                networkChangedAt = latest(networkChangedAt, observedAt);
                 networkGeneration++;
                 var iterator = insertionOrder.entrySet().iterator();
                 while (iterator.hasNext()) {
@@ -383,6 +408,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                                                         state.originHost,
                                                         state.advertisedHost,
                                                         state.alternative,
+                                                        latest(state.observedAt, networkChangedAt),
                                                         nextGeneration(state.alternative.expirationTime),
                                                         null);
                         entry.setValue(updated);
@@ -394,6 +420,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                         removeIndexLocked(routeKey);
                         removeAdvertisedHost(state.advertisedHost);
                         clearSelectionMemosLocked(state);
+                        putTombstoneLocked(routeKey, networkChangedAt, invalidations);
                     }
                 }
             } finally {
@@ -420,6 +447,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                 routes.clear();
                 lookupIndex.clear();
                 insertionOrder.clear();
+                tombstones.clear();
                 advertisedHostCounts.clear();
                 selectionMemos = List.of();
             } finally {
@@ -441,6 +469,10 @@ final class Http2AltSvcCache implements AutoCloseable {
 
     private static boolean fresh(RouteState state, Instant now) {
         return state.alternative.expirationTime.isAfter(now);
+    }
+
+    private static Instant latest(Instant first, Instant second) {
+        return first.isAfter(second) ? first : second;
     }
 
     private static boolean eligible(ClientConnectionTarget target) {
@@ -552,7 +584,10 @@ final class Http2AltSvcCache implements AutoCloseable {
                             }
                             beginMutation();
                             try {
-                                remove(routeKey, state, invalidations);
+                                removeWithTombstone(routeKey,
+                                                    state,
+                                                    state.observedAt,
+                                                    invalidations);
                             } finally {
                                 endMutation();
                             }
@@ -651,7 +686,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                 }
                 beginMutation();
                 try {
-                    remove(routeKey, state, invalidations);
+                    removeWithTombstone(routeKey, state, state.observedAt, invalidations);
                 } finally {
                     endMutation();
                 }
@@ -701,13 +736,27 @@ final class Http2AltSvcCache implements AutoCloseable {
         if (previous == null) {
             addAdvertisedHost(updated.advertisedHost);
         }
+        tombstones.remove(routeKey);
         routes.put(routeKey, updated);
         insertionOrder.put(routeKey, updated);
         addIndexLocked(routeKey);
-        while (insertionOrder.size() > MAX_ENTRIES) {
+        enforceCapacityLocked(invalidations);
+        Selection selection = updated.selection(target);
+        if (selection != null && routes.get(routeKey) == updated) {
+            publishSelectionMemoLocked(target, routeKey, updated, selection);
+        }
+    }
+
+    private void enforceCapacityLocked(List<Generation> invalidations) {
+        while (insertionOrder.size() + tombstones.size() > MAX_ENTRIES) {
+            Map.Entry<OriginRouteKey, Instant> tombstone = tombstones.firstEntry();
+            if (tombstone != null) {
+                tombstones.remove(tombstone.getKey(), tombstone.getValue());
+                continue;
+            }
             Map.Entry<OriginRouteKey, RouteState> removed = insertionOrder.firstEntry();
             if (removed == null) {
-                throw new IllegalStateException("HTTP/2 Alt-Svc insertion index is empty above capacity");
+                throw new IllegalStateException("HTTP/2 Alt-Svc indexes are empty above capacity");
             }
             invalidate(removed.getValue(), invalidations);
             insertionOrder.remove(removed.getKey(), removed.getValue());
@@ -716,15 +765,21 @@ final class Http2AltSvcCache implements AutoCloseable {
             removeAdvertisedHost(removed.getValue().advertisedHost);
             clearSelectionMemosLocked(removed.getValue());
         }
-        Selection selection = updated.selection(target);
-        if (selection != null) {
-            publishSelectionMemoLocked(target, routeKey, updated, selection);
+    }
+
+    private void removeWithTombstone(OriginRouteKey routeKey,
+                                     RouteState expected,
+                                     Instant observedAt,
+                                     List<Generation> invalidations) {
+        removeDiscardingHistory(routeKey, expected, invalidations);
+        if (expected == null || routes.get(routeKey) == null) {
+            putTombstoneLocked(routeKey, observedAt, invalidations);
         }
     }
 
-    private void remove(OriginRouteKey routeKey,
-                        RouteState expected,
-                        List<Generation> invalidations) {
+    private void removeDiscardingHistory(OriginRouteKey routeKey,
+                                         RouteState expected,
+                                         List<Generation> invalidations) {
         if (expected != null && routes.get(routeKey) == expected) {
             invalidate(expected, invalidations);
             routes.remove(routeKey, expected);
@@ -735,37 +790,35 @@ final class Http2AltSvcCache implements AutoCloseable {
         }
     }
 
+    private void putTombstoneLocked(OriginRouteKey routeKey,
+                                    Instant observedAt,
+                                    List<Generation> invalidations) {
+        Instant previous = tombstones.get(routeKey);
+        if (previous != null && !observedAt.isAfter(previous)) {
+            return;
+        }
+        tombstones.remove(routeKey);
+        tombstones.put(routeKey, observedAt);
+        enforceCapacityLocked(invalidations);
+    }
+
     private void invalidate(RouteState state, List<Generation> invalidations) {
         state.generation.current = false;
         invalidations.add(state.generation);
     }
 
     private RouteState routeState(OriginRouteKey routeKey,
-                                  ClientConnectionTarget target,
                                   String originHost,
                                   String advertisedHost,
                                   Alternative alternative,
+                                  Instant observedAt,
                                   Generation generation,
                                   Instant negativeUntil) {
         return new RouteState(originHost,
                               advertisedHost,
                               routeKey,
                               alternative,
-                              generation,
-                              selection(target, routeKey, alternative, generation),
-                              negativeUntil);
-    }
-
-    private RouteState routeState(OriginRouteKey routeKey,
-                                  String originHost,
-                                  String advertisedHost,
-                                  Alternative alternative,
-                                  Generation generation,
-                                  Instant negativeUntil) {
-        return new RouteState(originHost,
-                              advertisedHost,
-                              routeKey,
-                              alternative,
+                              observedAt,
                               generation,
                               negativeUntil);
     }
@@ -902,7 +955,7 @@ final class Http2AltSvcCache implements AutoCloseable {
             if (state != null) {
                 beginMutation();
                 try {
-                    remove(routeKey, state, invalidations);
+                    removeDiscardingHistory(routeKey, state, invalidations);
                 } finally {
                     endMutation();
                 }
@@ -922,7 +975,10 @@ final class Http2AltSvcCache implements AutoCloseable {
                 beginMutation();
                 try {
                     for (OriginRouteKey routeKey : routeKeys) {
-                        remove(routeKey, routes.get(routeKey), invalidations);
+                        RouteState state = routes.get(routeKey);
+                        if (state != null) {
+                            removeDiscardingHistory(routeKey, state, invalidations);
+                        }
                     }
                 } finally {
                     endMutation();
@@ -1091,12 +1147,14 @@ final class Http2AltSvcCache implements AutoCloseable {
         private final Candidate candidate;
         private List<Selection> selections;
         private Alternative alternative;
+        private Instant observedAt;
         private Instant negativeUntil;
 
         private RouteState(String originHost,
                            String advertisedHost,
                            OriginRouteKey routeKey,
                            Alternative alternative,
+                           Instant observedAt,
                            Generation generation,
                            Selection selection,
                            Instant negativeUntil) {
@@ -1104,6 +1162,7 @@ final class Http2AltSvcCache implements AutoCloseable {
             this.advertisedHost = Objects.requireNonNull(advertisedHost, "advertisedHost");
             this.routeKey = Objects.requireNonNull(routeKey, "routeKey");
             this.alternative = Objects.requireNonNull(alternative, "alternative");
+            this.observedAt = Objects.requireNonNull(observedAt, "observedAt");
             this.generation = Objects.requireNonNull(generation, "generation");
             this.candidate = new Candidate(routeKey, generation);
             this.selections = List.of(Objects.requireNonNull(selection, "selection"));
@@ -1114,12 +1173,14 @@ final class Http2AltSvcCache implements AutoCloseable {
                            String advertisedHost,
                            OriginRouteKey routeKey,
                            Alternative alternative,
+                           Instant observedAt,
                            Generation generation,
                            Instant negativeUntil) {
             this.originHost = Objects.requireNonNull(originHost, "originHost");
             this.advertisedHost = Objects.requireNonNull(advertisedHost, "advertisedHost");
             this.routeKey = Objects.requireNonNull(routeKey, "routeKey");
             this.alternative = Objects.requireNonNull(alternative, "alternative");
+            this.observedAt = Objects.requireNonNull(observedAt, "observedAt");
             this.generation = Objects.requireNonNull(generation, "generation");
             this.candidate = new Candidate(routeKey, generation);
             this.selections = List.of();
@@ -1161,8 +1222,9 @@ final class Http2AltSvcCache implements AutoCloseable {
             return selection;
         }
 
-        private void refresh(Alternative alternative) {
+        private void refresh(Alternative alternative, Instant observedAt) {
             this.alternative = alternative;
+            this.observedAt = observedAt;
             generation.establishUntil = alternative.expirationTime;
             negativeUntil = null;
         }
