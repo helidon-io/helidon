@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,5 +136,17 @@ class BadPrologueTest {
         // end of message from double quote, index of bad char, and bad char
         assertThat(response, containsString(", index: 16, char: 0x3e"));
         assertThat(response, not(containsString(">")));
+    }
+
+    @Test
+    void testRelativeOriginForm() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "boards/",
+                                                      null,
+                                                      List.of());
+
+        assertThat(response, containsString("400 Bad Request"));
+        assertThat(response, not(containsString("500 Internal Server Error")));
+        assertThat(response, containsString("Bad request, see server log for more information"));
     }
 }

@@ -152,4 +152,81 @@ class HttpPrologueTest {
 
         assertThat(withoutDelimiter.equals(withDelimiter), is(false));
     }
+
+    @Test
+    void testRelativeOriginFormIsRejectedWhenValidated() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                                                   () -> HttpPrologue.create("HTTP/1.1",
+                                                                             "HTTP",
+                                                                             "1.1",
+                                                                             Method.GET,
+                                                                             "boards/",
+                                                                             true));
+        assertThat(ex.getMessage(), is("Relative path in HTTP request-target"));
+    }
+
+    @Test
+    void testRelativeOriginFormWithQueryIsRejectedWhenValidated() {
+        assertThrows(IllegalArgumentException.class, () -> HttpPrologue.create("HTTP/1.1",
+                                                                              "HTTP",
+                                                                              "1.1",
+                                                                              Method.GET,
+                                                                              "boards/?q=1",
+                                                                              true));
+    }
+
+    @Test
+    void testRelativeOriginFormIsAcceptedWhenValidationDisabled() {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
+                                                    "1.1",
+                                                    Method.GET,
+                                                    "boards/",
+                                                    false);
+        assertThat(prologue.uriPath().rawPath(), is("boards/"));
+    }
+
+    @Test
+    void testAbsolutePathRemainsValid() {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
+                                                    "1.1",
+                                                    Method.GET,
+                                                    "/boards/",
+                                                    true);
+        assertThat(prologue.uriPath().rawPath(), is("/boards/"));
+    }
+
+    @Test
+    void testAsteriskFormRemainsValid() {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
+                                                    "1.1",
+                                                    Method.OPTIONS,
+                                                    "*",
+                                                    true);
+        assertThat(prologue.uriPath().rawPath(), is("*"));
+    }
+
+    @Test
+    void testAbsoluteFormRemainsValid() {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
+                                                    "1.1",
+                                                    Method.GET,
+                                                    "http://example.com/boards/",
+                                                    true);
+        assertThat(prologue.uriPath().path(), is("/boards/"));
+    }
+
+    @Test
+    void testConnectAuthorityFormRemainsValid() {
+        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
+                                                    "HTTP",
+                                                    "1.1",
+                                                    Method.CONNECT,
+                                                    "example.com:443",
+                                                    true);
+        assertThat(prologue.method(), is(Method.CONNECT));
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,5 +71,26 @@ class Http1PrologueTest {
             assertThat(e.safeMessage(), is(true));
             assertThat(e.getMessage(), containsString("HTTP 1.0 is not supported"));
         }
+    }
+
+    @Test
+    void testRelativeOriginFormIsBadRequest() {
+        DataReader reader = DataReader.create(() -> "GET boards/ HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue p = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, p::readPrologue);
+
+        assertThat(e.status(), is(Status.BAD_REQUEST_400));
+        assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+        assertThat(e.getMessage(), containsString("Relative path in HTTP request-target"));
+    }
+
+    @Test
+    void testAsteriskFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "OPTIONS * HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method(), is(Method.OPTIONS));
+        assertThat(prologue.uriPath().rawPath(), is("*"));
     }
 }
