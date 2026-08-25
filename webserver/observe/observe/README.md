@@ -9,8 +9,12 @@ that may collide with the business code.
 
 # Discovery
 
-`ObserveProvider` instances are discovered using `ServiceLoader`. In case an explicit `Observer` is registered with the
-same `type` as a provider, the provider will not be used (so we do not duplicate services).
+When an application is bootstrapped using `ServiceRegistryManager`, `ObserveProvider` instances are discovered from the
+owning service registry. Existing providers loaded using `ServiceLoader` are bridged into the registry when service loader
+discovery is enabled.
+
+When an `ObserveFeature` is built directly, providers are discovered using `ServiceLoader`. An explicitly configured
+`Observer` with the same `type` takes precedence so the observer is not duplicated.
 
 # Endpoints
 

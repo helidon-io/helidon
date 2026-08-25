@@ -26,7 +26,8 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for config observe provider.
+ * Config observe provider implementation, discoverable through
+ * {@link io.helidon.service.registry.ServiceRegistry} and {@link java.util.ServiceLoader}.
  */
 @Service.Singleton
 public class ConfigObserveProvider implements ObserveProvider {

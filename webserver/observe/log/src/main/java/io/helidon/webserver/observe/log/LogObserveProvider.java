@@ -23,7 +23,8 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for logging observe provider.
+ * Logging observe provider implementation, discoverable through
+ * {@link io.helidon.service.registry.ServiceRegistry} and {@link java.util.ServiceLoader}.
  * <p>
  * Java Util Logging uses weak references to loggers (and does not support adding level configuration to LogManager at runtime),
  *  so changing a log level for a logger may be temporary (in case a garbage collector runs and the reference is not kept

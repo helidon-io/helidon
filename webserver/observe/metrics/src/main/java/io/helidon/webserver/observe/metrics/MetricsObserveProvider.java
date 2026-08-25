@@ -29,7 +29,8 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for metrics observe provider.
+ * Metrics observe provider implementation, discoverable through
+ * {@link io.helidon.service.registry.ServiceRegistry} and {@link java.util.ServiceLoader}.
  */
 @Service.Singleton
 public class MetricsObserveProvider implements ObserveProvider {

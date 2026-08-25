@@ -31,7 +31,8 @@ import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.observe.tracing.spi.TracingSemanticConventionsProvider;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation for tracing observe provider.
+ * Tracing observe provider implementation, discoverable through
+ * {@link io.helidon.service.registry.ServiceRegistry} and {@link java.util.ServiceLoader}.
  */
 @Service.Singleton
 public class TracingObserveProvider implements ObserveProvider {
