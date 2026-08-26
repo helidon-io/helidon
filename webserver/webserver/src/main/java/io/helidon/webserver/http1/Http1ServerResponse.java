@@ -193,6 +193,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         if (headRequest && length > 0) {
             throw new IllegalStateException("Cannot send response entity for a HEAD request");
         }
+        if (headRequest && hasStreamFilter()) {
+            prepareFilteredHeadResponse();
+        }
         // if no entity status, we cannot send bytes here
         if (isNoEntityStatus && length > 0) {
             status(noEntityInternalError(status()));
@@ -207,7 +210,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             normalizeNoEntityHeaders(headers, status());
         }
         if (noEntityResponse || !hasStreamFilter() && !headers.contains(HeaderNames.TRAILER)) {
-            byte[] entity = noEntityResponse ? BufferData.EMPTY_BYTES : entityBytes(bytes, position, length);
+            long configuredHeadLength = headRequest ? headers.contentLength().orElse(-1) : -1;
+            byte[] entity = noEntityResponse ? entityBytes(BufferData.EMPTY_BYTES) : entityBytes(bytes, position, length);
+            if (configuredHeadLength >= 0) {
+                headers.contentLength(configuredHeadLength);
+            }
             int entityPosition = bytes == entity ? position : 0;
             int entityLength = noEntityResponse ? 0 : bytes == entity ? length : entity.length;
             BufferData bufferData = responseBuffer(entity, entityPosition, entityLength, headRequest);
@@ -217,9 +224,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             writeResponse(dataWriter, bufferData, "Failed to write response");
             afterSend();
         } else {
-            // we should skip encoders if no data is written (e.g. for GZIP)
-            boolean skipEncoders = (length == 0);
-            try (OutputStream os = outputStream(skipEncoders)) {
+            // automatic encoders are skipped for an empty entity, but an explicit encoder still applies
+            boolean allowAutomaticEncoding = length > 0;
+            try (OutputStream os = outputStream(allowAutomaticEncoding)) {
                 os.write(bytes, position, length);
             } catch (IOException e) {
                 throw new ServerConnectionException("Failed to write response", e);
@@ -236,7 +243,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     @Override
     public OutputStream outputStream() {
         beforeSend();
-        return outputStream(false);
+        return outputStream(true);
     }
 
     @Override
@@ -327,6 +334,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         keepConnectionOpen = keepAlive;
         streamingEntity = false;
         outputStream = null;
+        resetContentEncoding();
         return true;
     }
 
@@ -337,6 +345,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
         streamingEntity = false;
         outputStream = null;
+        resetAutomaticContentEncoding();
         return true;
     }
 
@@ -460,7 +469,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;
         } else if (!headers.contains(HeaderNames.CONTENT_LENGTH)
-                && (!headRequest || !suppressImplicitContentLength())) {
+                && (!headRequest || !suppressImplicitContentLength(length))) {
             headers.contentLength(length);
         }
 
@@ -490,7 +499,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         return responseBuffer;
     }
 
-    private OutputStream outputStream(boolean skipEncoders) {
+    private OutputStream outputStream(boolean allowAutomaticEncoding) {
         if (isSent) {
             throw new IllegalStateException("Response already sent");
         }
@@ -520,11 +529,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
 
-        OutputStream encodedOutputStream = outputStream;
-        if (!skipEncoders && !isNoEntityStatus(status())) {
-            encodedOutputStream = contentEncode(outputStream);
-            bos.checkResponseHeaders();     // headers can be augmented by encoders
-        }
+        OutputStream encodedOutputStream = contentEncode(outputStream, allowAutomaticEncoding);
+        bos.checkResponseHeaders();     // headers can be augmented by encoders
         OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
         keepConnectionOpen = resolveKeepConnectionOpen();
         if (applicationOutputStream == outputStream) {

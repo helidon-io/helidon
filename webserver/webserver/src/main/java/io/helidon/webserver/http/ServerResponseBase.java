@@ -98,6 +98,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private boolean reroute;
     private UriQuery rerouteQuery;
     private String reroutePath;
+    private boolean automaticContentEncoding = true;
+    private ContentEncoder explicitContentEncoder;
+    private ContentEncoder selectedContentEncoder;
     private Consumer<ServerResponseTrailers> beforeTrailers;
     private Runnable responseBeforeSend;
     private UnaryOperator<OutputStream> responseStreamFilter;
@@ -170,6 +173,21 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     @Override
     public void entityBeforeSend(Runnable listener) {
         beforeSend.add(Objects.requireNonNull(listener));
+    }
+
+    @Override
+    public T automaticContentEncoding(boolean enabled) {
+        ensureContentEncodingConfigurable();
+        this.automaticContentEncoding = enabled;
+        return (T) this;
+    }
+
+    @Override
+    public T contentEncoder(ContentEncoder encoder) {
+        Objects.requireNonNull(encoder);
+        ensureContentEncodingConfigurable();
+        this.explicitContentEncoder = encoder;
+        return (T) this;
     }
 
     @Override
@@ -276,6 +294,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         beforeTrailers = null;
         streamFilter = responseStreamFilter;
         suppressImplicitContentLength = false;
+        automaticContentEncoding = true;
+        selectedContentEncoder = null;
         return true;
     }
 
@@ -386,7 +406,11 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         return streamFilter != null;
     }
 
-    final void prepareFilteredHeadResponse() {
+    /**
+     * Discard entity stream filters and suppress an implicit content length for a {@code HEAD} response.
+     */
+    @Api.Internal
+    protected final void prepareFilteredHeadResponse() {
         streamFilter = null;
         suppressImplicitContentLength = true;
     }
@@ -394,11 +418,13 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     /**
      * Whether the protocol implementation should suppress an implicit content length.
      *
+     * @param length response entity length
      * @return whether to suppress the implicit content length
      */
     @Api.Internal
-    protected final boolean suppressImplicitContentLength() {
-        return suppressImplicitContentLength;
+    protected final boolean suppressImplicitContentLength(int length) {
+        return suppressImplicitContentLength
+                || length == 0 && headers().contains(HeaderNames.CONTENT_ENCODING);
     }
 
     /**
@@ -423,8 +449,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     /**
-     * Entity bytes encoded using content encoding. Does not attempt encoding
-     * if entity is empty.
+     * Entity bytes encoded using content encoding. Automatic encoding is skipped for an empty entity. An explicitly
+     * configured encoder is applied unless the response status does not allow an entity.
      *
      * @param configuredEntity plain bytes
      * @return encoded bytes or same entity array if encoding is disabled
@@ -434,8 +460,8 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     /**
-     * Entity bytes encoded using content encoding. Does not attempt encoding
-     * if entity is empty.
+     * Entity bytes encoded using content encoding. Automatic encoding is skipped for an empty entity. An explicitly
+     * configured encoder is applied unless the response status does not allow an entity.
      *
      * @param configuredEntity plain bytes
      * @param position starting position
@@ -443,25 +469,30 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * @return encoded bytes or same entity array if encoding is disabled
      */
     protected byte[] entityBytes(byte[] configuredEntity, int position, int length) {
-        byte[] entity = configuredEntity;
-        if (contentEncodingContext.contentEncodingEnabled()
-                && length > 0
-                && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
-            ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
-            // we want to preserve optimization here, let's create a new byte array
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
-            OutputStream os = encoder.apply(baos);
-            try {
-                os.write(entity, position, length);
-                os.close();
-            } catch (IOException e) {
-                throw new ServerConnectionException("Failed to write response", e);
+        if (length == 0) {
+            if (explicitContentEncoder == null) {
+                return configuredEntity;
             }
-            entity = baos.toByteArray();
-            encoder.headers(headers());
-            headers().add(VARY_ACCEPT_ENCODING);
+            if (!statusAllowsEntity()) {
+                responseContentEncoder(true);
+                return configuredEntity;
+            }
         }
-        return entity;
+        ContentEncoder encoder = responseContentEncoder(true);
+        if (encoder == ContentEncoder.NO_OP) {
+            return configuredEntity;
+        }
+
+        // we want to preserve optimization here, let's create a new byte array
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
+        OutputStream os = encoder.apply(baos);
+        try {
+            os.write(configuredEntity, position, length);
+            os.close();
+        } catch (IOException e) {
+            throw new ServerConnectionException("Failed to write response", e);
+        }
+        return baos.toByteArray();
     }
 
     /**
@@ -471,14 +502,45 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * @return output stream to write plain data to
      */
     protected OutputStream contentEncode(OutputStream outputStream) {
-        if (contentEncodingContext.contentEncodingEnabled() && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
-            ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
-            encoder.headers(headers());
-            headers().add(VARY_ACCEPT_ENCODING);
+        return contentEncode(outputStream, true);
+    }
 
-            return encoder.apply(outputStream);
+    /**
+     * Encode content using an explicitly configured encoder, or an automatic encoder when allowed.
+     *
+     * @param outputStream output stream to write encoded data to
+     * @param allowAutomaticEncoding whether automatic encoding may be selected
+     * @return output stream to write plain data to
+     */
+    protected OutputStream contentEncode(OutputStream outputStream, boolean allowAutomaticEncoding) {
+        if (!statusAllowsEntity()) {
+            if (explicitContentEncoder != null) {
+                responseContentEncoder(false);
+            }
+            return outputStream;
         }
-        return outputStream;
+        return responseContentEncoder(allowAutomaticEncoding).apply(outputStream);
+    }
+
+    /**
+     * Reset response-layer automatic content encoding to its default behavior.
+     */
+    protected void resetAutomaticContentEncoding() {
+        this.automaticContentEncoding = true;
+        if (explicitContentEncoder == null
+                && selectedContentEncoder == ContentEncoder.NO_OP
+                && !headers().contains(HeaderNames.CONTENT_ENCODING)) {
+            selectedContentEncoder = null;
+        }
+    }
+
+    /**
+     * Reset all response-layer content encoding state to its defaults.
+     */
+    protected void resetContentEncoding() {
+        resetAutomaticContentEncoding();
+        explicitContentEncoder = null;
+        selectedContentEncoder = null;
     }
 
     /**
@@ -503,6 +565,67 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         }
     }
 
+    private static UnaryOperator<OutputStream> addStreamFilter(UnaryOperator<OutputStream> current,
+                                                               UnaryOperator<OutputStream> filterFunction) {
+        if (current == null) {
+            return filterFunction;
+        }
+        return it -> filterFunction.apply(current.apply(it));
+    }
+
+    private ContentEncoder responseContentEncoder(boolean allowAutomaticEncoding) {
+        if (selectedContentEncoder != null) {
+            return selectedContentEncoder;
+        }
+
+        ContentEncoder encoder;
+        boolean automaticallySelected = false;
+        if (explicitContentEncoder != null) {
+            encoder = explicitContentEncoder;
+        } else if (!allowAutomaticEncoding
+                || !automaticContentEncoding
+                || headers().contains(HeaderNames.CONTENT_ENCODING)) {
+            encoder = ContentEncoder.NO_OP;
+        } else {
+            encoder = contentEncodingContext.encoder(requestHeaders);
+            automaticallySelected = true;
+        }
+
+        encoder.headers(headers());
+        if (automaticallySelected) {
+            mergeVaryAcceptEncoding();
+        }
+        selectedContentEncoder = encoder;
+        return selectedContentEncoder;
+    }
+
+    private boolean statusAllowsEntity() {
+        int statusCode = status().code();
+        return statusCode != Status.NO_CONTENT_204.code()
+                && statusCode != Status.RESET_CONTENT_205.code()
+                && statusCode != Status.NOT_MODIFIED_304.code();
+    }
+
+    private void ensureContentEncodingConfigurable() {
+        if (isSent() || selectedContentEncoder != null) {
+            throw new IllegalStateException("Response content encoding already selected");
+        }
+    }
+
+    private void mergeVaryAcceptEncoding() {
+        if (headers().contains(HeaderNames.VARY)) {
+            for (String value : headers().get(HeaderNames.VARY).allValues()) {
+                String[] values = value.split(",");
+                for (String vary : values) {
+                    if (HeaderNames.ACCEPT_ENCODING_NAME.equalsIgnoreCase(vary.trim())) {
+                        return;
+                    }
+                }
+            }
+        }
+        headers().add(HeaderValues.create(HeaderNames.VARY, true, false, HeaderNames.ACCEPT_ENCODING_NAME));
+    }
+
     private void checkStreamFilter(UnaryOperator<OutputStream> filterFunction) {
         if (isSent()) {
             throw new IllegalStateException("Response already sent");
@@ -511,14 +634,6 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             throw new IllegalStateException("OutputStream already obtained");
         }
         Objects.requireNonNull(filterFunction);
-    }
-
-    private static UnaryOperator<OutputStream> addStreamFilter(UnaryOperator<OutputStream> current,
-                                                               UnaryOperator<OutputStream> filterFunction) {
-        if (current == null) {
-            return filterFunction;
-        }
-        return it -> filterFunction.apply(current.apply(it));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

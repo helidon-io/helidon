@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.tests;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import io.helidon.http.Headers;
@@ -91,6 +92,11 @@ abstract class ContentEncodingDisabledAbstract {
         }
 
         @Override
+        public List<String> contentEncodingIds() {
+            return List.of();
+        }
+
+        @Override
         public boolean contentDecodingSupported(String encodingId) {
             return false;
         }
@@ -107,7 +113,7 @@ abstract class ContentEncodingDisabledAbstract {
 
         @Override
         public ContentEncoder encoder(Headers headers) {
-            return null;
+            return ContentEncoder.NO_OP;
         }
 
     }

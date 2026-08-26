@@ -245,8 +245,7 @@ class Http2ServerResponseTest {
 
     @Test
     void directHandlerHeadPreservesContentLengthWithoutEntity() {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
         DirectHandler.TransportRequest request = mock(DirectHandler.TransportRequest.class);
@@ -318,8 +317,7 @@ class Http2ServerResponseTest {
     @Test
     void directHandlerFilteredHeadUsesOnlyConfiguredRepresentationLength() {
         for (long configuredLength : List.of(-1L, 10L)) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             Http2ServerStream stream = mock(Http2ServerStream.class);
             Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
             response.streamFilter(output -> new FilterOutputStream(output) {
@@ -402,8 +400,7 @@ class Http2ServerResponseTest {
 
     @Test
     void directHandlerNoContentRemovesContentLength() {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
         response.contentLength(17);
@@ -544,8 +541,7 @@ class Http2ServerResponseTest {
 
     @Test
     void presetInformationalStatusIsNotSentAsFinalResponse() {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
         response.status(Status.CONTINUE_100);
@@ -559,8 +555,7 @@ class Http2ServerResponseTest {
 
     @Test
     void filteredInformationalStatusIsNotSentAsFinalResponse() {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
         AtomicBoolean filterCalled = new AtomicBoolean();
@@ -583,8 +578,7 @@ class Http2ServerResponseTest {
 
     @Test
     void streamingInformationalStatusIsNotSentAsFinalResponse() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
         response.status(Status.CONTINUE_100);
@@ -648,8 +642,7 @@ class Http2ServerResponseTest {
 
     @Test
     void filteredSendHonorsBeforeSendNoContent() {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
         AtomicBoolean filterCalled = new AtomicBoolean();
@@ -682,8 +675,7 @@ class Http2ServerResponseTest {
     @Test
     void noEntityApplicationWritesRemainRejected() throws IOException {
         for (Status status : NO_ENTITY_STATUSES) {
-            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             Http2ServerStream stream = mock(Http2ServerStream.class);
             Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
             AtomicInteger whenSentCalls = new AtomicInteger();
@@ -741,8 +733,7 @@ class Http2ServerResponseTest {
 
     @Test
     void streamingHeadRejectsEntityBeforeWritingToFilter() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         AtomicBoolean filterWritten = new AtomicBoolean();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
@@ -797,8 +788,7 @@ class Http2ServerResponseTest {
     @Test
     void streamingHeadRejectsEntityBeforeSendingResponse() throws IOException {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
@@ -814,8 +804,7 @@ class Http2ServerResponseTest {
 
     @Test
     void flushedStreamingHeadRejectsEntityBeforeSendingResponse() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
 
@@ -834,8 +823,7 @@ class Http2ServerResponseTest {
 
     @Test
     void flushedStreamingHeadPreservesExplicitContentLength() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
         response.contentLength(42);
@@ -854,8 +842,7 @@ class Http2ServerResponseTest {
 
     @Test
     void emptyStreamingHeadSendsTrailersWithoutData() throws IOException {
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.HEAD, contentEncodingContext);
         AtomicBoolean beforeTrailersCalled = new AtomicBoolean();

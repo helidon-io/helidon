@@ -44,9 +44,6 @@ import io.helidon.webserver.http.spi.Sink;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
-    private static final Header VARY_ACCEPT_ENCODING =
-            HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
-
     private final ConnectionContext ctx;
     private final ServerResponseHeaders headers;
     private final ServerResponseTrailers trailers;
@@ -118,6 +115,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         if (headRequest && length > 0) {
             throw new IllegalStateException("Cannot send response entity for a HEAD request");
         }
+        if (headRequest && hasStreamFilter()) {
+            prepareFilteredHeadResponse();
+        }
         try {
             if (hasStreamFilter()) {
                 // in this case we must honor user's request to filter the stream
@@ -150,25 +150,31 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             byte[] actualBytes = entityBytes;
 
             Status responseStatus = status();
+            long configuredHeadLength;
             if (noEntityResponse) {
                 normalizeNoEntityHeaders(headers, responseStatus);
+                configuredHeadLength = headRequest ? headers.contentLength().orElse(-1) : -1;
+                entityBytes(BufferData.EMPTY_BYTES);
             } else {
+                configuredHeadLength = headRequest ? headers.contentLength().orElse(-1) : -1;
                 // handle content encoding
                 actualBytes = entityBytes(entityBytes, position, length);
-                boolean automaticContentEncoding = entityBytes != actualBytes;
-                if (automaticContentEncoding) {       // encoding happened, new byte array
+                if (entityBytes != actualBytes) {       // encoding happened, new byte array
                     actualPosition = 0;
                     actualLength = actualBytes.length;
-                    if (!headers.containsToken(VARY_ACCEPT_ENCODING)) {
-                        headers.add(VARY_ACCEPT_ENCODING);
-                    }
                 }
-                if (!headRequest || !suppressImplicitContentLength()) {
+                if (configuredHeadLength >= 0) {
+                    headers.contentLength(configuredHeadLength);
+                }
+                if (!headRequest || !suppressImplicitContentLength(actualLength)) {
                     headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
                                                             true,
                                                             false,
                                                             String.valueOf(actualLength)));
                 }
+            }
+            if (noEntityResponse && configuredHeadLength >= 0) {
+                headers.contentLength(configuredHeadLength);
             }
             isSent = true;
 
@@ -282,7 +288,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public long bytesWritten() {
-        return streamingEntity ? outputStream.bytesWritten : bytesWritten;
+        return streamingEntity && outputStream != null ? outputStream.bytesWritten : bytesWritten;
     }
 
     @Override
@@ -317,6 +323,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         headers.clear();
         streamingEntity = false;
         outputStream = null;
+        resetContentEncoding();
         return true;
     }
 
@@ -327,6 +334,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
         streamingEntity = false;
         outputStream = null;
+        resetAutomaticContentEncoding();
         return true;
     }
 
