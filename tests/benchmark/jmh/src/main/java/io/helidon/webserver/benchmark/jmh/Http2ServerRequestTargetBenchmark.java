@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http1.Http1Config;
@@ -38,6 +39,8 @@ import org.openjdk.jmh.annotations.TearDown;
 
 @State(Scope.Benchmark)
 public class Http2ServerRequestTargetBenchmark {
+    private static final Duration EXCHANGE_TIMEOUT = Duration.ofSeconds(10);
+
     @Param({"32", "4000"})
     private int targetLength;
 
@@ -67,15 +70,25 @@ public class Http2ServerRequestTargetBenchmark {
 
         client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(EXCHANGE_TIMEOUT)
                 .build();
         String path = "/" + "a".repeat(targetLength - 1);
         request = HttpRequest.newBuilder()
                 .uri(URI.create("http://127.0.0.1:" + server.port() + path))
+                .timeout(EXCHANGE_TIMEOUT)
                 .build();
 
-        HttpResponse<Void> response = exchange();
-        if (response.version() != HttpClient.Version.HTTP_2) {
-            throw new IllegalStateException("Benchmark connection did not negotiate HTTP/2");
+        boolean setupComplete = false;
+        try {
+            HttpResponse<Void> response = exchange();
+            if (response.version() != HttpClient.Version.HTTP_2) {
+                throw new IllegalStateException("Benchmark connection did not negotiate HTTP/2");
+            }
+            setupComplete = true;
+        } finally {
+            if (!setupComplete) {
+                server.stop();
+            }
         }
     }
 

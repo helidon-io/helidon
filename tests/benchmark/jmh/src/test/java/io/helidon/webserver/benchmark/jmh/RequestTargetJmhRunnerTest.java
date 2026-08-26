@@ -67,6 +67,7 @@ class RequestTargetJmhRunnerTest {
                 .warmupTime(TimeValue.seconds(1))
                 .measurementIterations(8)
                 .measurementTime(TimeValue.seconds(1))
+                .timeout(TimeValue.seconds(30))
                 .shouldFailOnError(true)
                 .resultFormat(ResultFormatType.JSON);
     }
