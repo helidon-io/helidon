@@ -672,10 +672,10 @@ final class ProvidedUtil {
         @Override
         public List<T> all() {
             Map<String, T> providers = new LinkedHashMap<>();
-            Services.all(providerType)
-                    .forEach(provider -> providers.putIfAbsent(provider.configKey(), provider));
             HelidonServiceLoader.create(providerType)
                     .forEach(provider -> providers.putIfAbsent(provider.configKey(), provider));
+            Services.all(providerType)
+                    .forEach(provider -> providers.put(provider.configKey(), provider));
             return List.copyOf(providers.values());
         }
 

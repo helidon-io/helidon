@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.test.testsubjects.DetachedChildProvider;
 import io.helidon.builder.test.testsubjects.DetachedRegistrySupportChild;
 import io.helidon.builder.test.testsubjects.InheritedChildProvider;
 import io.helidon.builder.test.testsubjects.RegistryServiceChild;
@@ -97,6 +98,16 @@ class ProviderRegistryTest {
             assertThat(value.getChildService().map(InheritedChildProvider.ChildService::prop), optionalValue(is("child")));
         } finally {
             manager.shutdown();
+        }
+    }
+
+    @Test
+    void testInheritedRegistrySupportFromDetachedPrototypeMetadata() throws IOException {
+        String resource = "/META-INF/helidon/service.loader";
+        try (var input = ProviderRegistryTest.class.getResourceAsStream(resource)) {
+            assertThat(input, notNullValue());
+            assertThat(new String(input.readAllBytes(), StandardCharsets.UTF_8),
+                       containsString(DetachedChildProvider.class.getName()));
         }
     }
 
@@ -573,9 +584,21 @@ class ProviderRegistryTest {
                 return new ChildServiceImpl(config.get("value").asString().orElse(name), name);
             }
         };
+        DetachedChildProvider detachedChildProvider = new DetachedChildProvider() {
+            @Override
+            public String configKey() {
+                return "registry-provider";
+            }
+
+            @Override
+            public InheritedChildProvider.ChildService create(Config config, String name) {
+                return new ChildServiceImpl(config.get("value").asString().orElse(name), name);
+            }
+        };
         return ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                      .putContractInstance(SomeProvider.class, parentProvider)
                                                      .putContractInstance(InheritedChildProvider.class, childProvider)
+                                                     .putContractInstance(DetachedChildProvider.class, detachedChildProvider)
                                                      .build());
     }
 

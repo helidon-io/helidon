@@ -721,13 +721,13 @@ class BuilderCodegen implements CodegenExtension {
                 .collect(Collectors.toUnmodifiableList());
 
         // abstract class BuilderBase...
-        new GenerateAbstractBuilder(ctx).generate(extensions,
-                                                  classModel,
-                                                  prototypeInfo,
-                                                  typeArguments,
-                                                  typeGenericArguments,
-                                                  options,
-                                                  newDefaults);
+        GenerateAbstractBuilder.generate(ctx,
+                                         extensions,
+                                         classModel,
+                                         prototypeInfo,
+                                         new GenerateAbstractBuilder.TypeArguments(typeArguments, typeGenericArguments),
+                                         options,
+                                         newDefaults);
 
         // class Builder extends BuilderBase ...
         GenerateBuilder.generate(extensions,

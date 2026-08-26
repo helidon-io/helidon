@@ -59,22 +59,20 @@ import static io.helidon.common.types.TypeNames.SET;
 final class GenerateAbstractBuilder {
 
     private static final String SERVICE_REGISTRY_CONFIG_KEY = "service-registry";
-
-    private final RoundContext ctx;
-
-    GenerateAbstractBuilder(RoundContext ctx) {
-        this.ctx = ctx;
+    private GenerateAbstractBuilder() {
     }
 
-    void generate(List<BuilderCodegenExtension> extensions,
-                  ClassModel.Builder classModel,
-                  PrototypeInfo prototypeInfo,
-                  List<TypeArgument> typeArguments,
-                  List<TypeName> typeArgumentNames,
-                  List<OptionHandler> options,
-                  List<BuilderCodegen.NewDefault> newDefaults) {
+    static void generate(RoundContext ctx,
+                         List<BuilderCodegenExtension> extensions,
+                         ClassModel.Builder classModel,
+                         PrototypeInfo prototypeInfo,
+                         TypeArguments genericArguments,
+                         List<OptionHandler> options,
+                         List<BuilderCodegen.NewDefault> newDefaults) {
         Optional<TypeName> superType = prototypeInfo.superPrototype();
         TypeName prototype = prototypeInfo.prototypeType();
+        List<TypeArgument> typeArguments = genericArguments.arguments();
+        List<TypeName> typeArgumentNames = genericArguments.names();
 
         classModel.addInnerClass(builder -> {
             typeArguments.forEach(builder::addGenericArgument);
@@ -122,7 +120,7 @@ final class GenerateAbstractBuilder {
             fromBuilderMethod(builder, prototypeInfo, options, typeArgumentNames);
 
             // method preBuildPrototype() - handles providers, decorator
-            preBuildPrototypeMethod(extensions, builder, prototypeInfo, options);
+            preBuildPrototypeMethod(ctx, extensions, builder, prototypeInfo, options);
             validatePrototypeMethod(extensions, builder, prototypeInfo, options);
 
             //custom method adding
@@ -468,10 +466,11 @@ final class GenerateAbstractBuilder {
         return type.equals(CONFIG);
     }
 
-    private void preBuildPrototypeMethod(List<BuilderCodegenExtension> extensions,
-                                         InnerClass.Builder classBuilder,
-                                         PrototypeInfo prototypeInfo,
-                                         List<OptionHandler> options) {
+    private static void preBuildPrototypeMethod(RoundContext ctx,
+                                                List<BuilderCodegenExtension> extensions,
+                                                InnerClass.Builder classBuilder,
+                                                PrototypeInfo prototypeInfo,
+                                                List<OptionHandler> options) {
         Method.Builder preBuildBuilder = Method.builder()
                 .name("preBuildPrototype")
                 .accessModifier(AccessModifier.PROTECTED)
@@ -1597,5 +1596,8 @@ final class GenerateAbstractBuilder {
         }
 
         return result.toString();
+    }
+
+    record TypeArguments(List<TypeArgument> arguments, List<TypeName> names) {
     }
 }

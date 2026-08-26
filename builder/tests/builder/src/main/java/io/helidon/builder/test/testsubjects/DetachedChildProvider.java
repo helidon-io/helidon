@@ -16,15 +16,8 @@
 
 package io.helidon.builder.test.testsubjects;
 
-import java.util.Optional;
-
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
-
-@Prototype.Blueprint(beanStyle = true)
-@Prototype.Configured
-interface DetachedRegistrySupportChildBlueprint extends DetachedRegistrySupportParent {
-    @Option.Configured
-    @Option.Provider(DetachedChildProvider.class)
-    Optional<InheritedChildProvider.ChildService> getChildService();
+/**
+ * Provider contract used to verify metadata generated from a detached parent prototype.
+ */
+public interface DetachedChildProvider extends InheritedChildProvider {
 }
