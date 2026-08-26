@@ -19,7 +19,10 @@ package io.helidon.http.media.json.smile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalLong;
 
@@ -27,22 +30,29 @@ import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.json.JsonDecodingException;
 import io.helidon.json.JsonGenerator;
+import io.helidon.json.JsonException;
 import io.helidon.json.binding.Json;
 import io.helidon.json.smile.SmileConfig;
 import io.helidon.json.smile.SmileGenerator;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
 When adding/updating tests in this class, consider if it should be done
@@ -50,7 +60,9 @@ When adding/updating tests in this class, consider if it should be done
  */
 class SmileMediaTest {
     private static final byte[] SMILE_HEADER_DEFAULT = new byte[] {0x3A, 0x29, 0x0A, 0x01};
+    private static final GenericType<BigInteger> BIG_INTEGER_TYPE = GenericType.create(BigInteger.class);
     private static final GenericType<Book> BOOK_TYPE = GenericType.create(Book.class);
+    private static final GenericType<Map<List<String>, String>> LIST_KEYED_MAP_TYPE = new GenericType<>() { };
     private static final GenericType<List<Book>> BOOK_LIST_TYPE = new GenericType<List<Book>>() { };
     private final MediaSupport support;
 
@@ -174,6 +186,62 @@ class SmileMediaTest {
                 .read(BOOK_TYPE, is, requestHeaders);
 
         assertThat(book.getTitle(), is("utf-8: řžýčň"));
+    }
+
+    @Test
+    void testReadServerExcessiveBigIntegerExpansionIsBadRequest() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_X_JACKSON_SMILE);
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try (JsonGenerator generator = SmileGenerator.create(os)) {
+            generator.write(new BigDecimal("1E+4097"));
+        }
+
+        MediaSupport.ReaderResponse<BigInteger> res = support.reader(BIG_INTEGER_TYPE, requestHeaders);
+        InputStream is = new ByteArrayInputStream(os.toByteArray());
+        HttpException exception = assertThrows(HttpException.class, () -> res.supplier().get()
+                .read(BIG_INTEGER_TYPE, is, requestHeaders));
+
+        assertThat(exception.status(), is(Status.BAD_REQUEST_400));
+        assertThat(exception.getCause(), instanceOf(JsonDecodingException.class));
+    }
+
+    @Test
+    void testReadServerIncompatibleShapeIsBadRequest() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_X_JACKSON_SMILE);
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try (JsonGenerator generator = SmileGenerator.create(os)) {
+            generator.write(1);
+        }
+
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders);
+        InputStream is = new ByteArrayInputStream(os.toByteArray());
+        HttpException exception = assertThrows(HttpException.class, () -> res.supplier().get()
+                .read(BOOK_TYPE, is, requestHeaders));
+
+        assertThat(exception.status(), is(Status.BAD_REQUEST_400));
+        assertThat(exception.getCause(), instanceOf(JsonDecodingException.class));
+    }
+
+    @Test
+    void testReadServerBindingConfigurationFailureIsNotBadRequest() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_X_JACKSON_SMILE);
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try (JsonGenerator generator = SmileGenerator.create(os)) {
+            generator.writeObjectStart().writeObjectEnd();
+        }
+
+        MediaSupport.ReaderResponse<Map<List<String>, String>> res = support.reader(LIST_KEYED_MAP_TYPE, requestHeaders);
+        InputStream is = new ByteArrayInputStream(os.toByteArray());
+        JsonException exception = assertThrows(JsonException.class, () -> res.supplier().get()
+                .read(LIST_KEYED_MAP_TYPE, is, requestHeaders));
+
+        assertThat(exception.getMessage(), containsString("Unsupported key serializer"));
     }
 
     @Test

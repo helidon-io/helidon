@@ -196,7 +196,7 @@ class SingleValueTest {
 
     @Test
     public void testRejectsEmptyByteArraySlice() {
-        assertThrows(JsonException.class, () -> JsonParser.create(new byte[] {1}, 1, 0));
+        assertThrows(JsonDecodingException.class, () -> JsonParser.create(new byte[] {1}, 1, 0));
     }
 
 }

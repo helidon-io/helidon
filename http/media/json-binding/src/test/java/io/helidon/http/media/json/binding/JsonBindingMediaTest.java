@@ -19,9 +19,11 @@ package io.helidon.http.media.json.binding;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalLong;
 
@@ -37,12 +39,15 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.json.JsonDecodingException;
+import io.helidon.json.JsonException;
 import io.helidon.json.binding.Json;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -57,7 +62,9 @@ When adding/updating tests in this class, consider if it should be done
  */
 class JsonBindingMediaTest {
     private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
+    private static final GenericType<BigInteger> BIG_INTEGER_TYPE = GenericType.create(BigInteger.class);
     private static final GenericType<Book> BOOK_TYPE = GenericType.create(Book.class);
+    private static final GenericType<Map<List<String>, String>> LIST_KEYED_MAP_TYPE = new GenericType<>() { };
     private static final GenericType<List<Book>> BOOK_LIST_TYPE = new GenericType<List<Book>>() { };
     private final MediaSupport support;
 
@@ -154,6 +161,50 @@ class JsonBindingMediaTest {
                 .read(BOOK_TYPE, is, requestHeaders);
 
         assertThat(book.getTitle(), is("utf-8: řžýčň"));
+    }
+
+    @Test
+    void testReadServerInvalidBigIntegerIsBadRequest() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
+
+        MediaSupport.ReaderResponse<BigInteger> res = support.reader(BIG_INTEGER_TYPE, requestHeaders);
+        InputStream is = new ByteArrayInputStream("1E+4097".getBytes(StandardCharsets.UTF_8));
+
+        HttpException exception = assertThrows(HttpException.class, () -> res.supplier().get()
+                .read(BIG_INTEGER_TYPE, is, requestHeaders));
+
+        assertThat(exception.status(), is(Status.BAD_REQUEST_400));
+        assertThat(exception.getCause(), instanceOf(JsonDecodingException.class));
+    }
+
+    @Test
+    void testReadServerMalformedJsonIsBadRequest() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
+
+        MediaSupport.ReaderResponse<Book> res = support.reader(BOOK_TYPE, requestHeaders);
+        InputStream is = new ByteArrayInputStream("{\"title\":".getBytes(StandardCharsets.UTF_8));
+
+        HttpException exception = assertThrows(HttpException.class, () -> res.supplier().get()
+                .read(BOOK_TYPE, is, requestHeaders));
+
+        assertThat(exception.status(), is(Status.BAD_REQUEST_400));
+        assertThat(exception.getCause(), instanceOf(JsonDecodingException.class));
+    }
+
+    @Test
+    void testReadServerBindingConfigurationFailureIsNotBadRequest() {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.contentType(MediaTypes.APPLICATION_JSON);
+
+        MediaSupport.ReaderResponse<Map<List<String>, String>> res = support.reader(LIST_KEYED_MAP_TYPE, requestHeaders);
+        InputStream is = new ByteArrayInputStream("{}".getBytes(StandardCharsets.UTF_8));
+
+        JsonException exception = assertThrows(JsonException.class, () -> res.supplier().get()
+                .read(LIST_KEYED_MAP_TYPE, is, requestHeaders));
+
+        assertThat(exception.getMessage(), containsString("Unsupported key serializer"));
     }
 
     @Test

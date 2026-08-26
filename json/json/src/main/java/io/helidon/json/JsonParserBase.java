@@ -29,6 +29,7 @@ import io.helidon.common.Api;
 public abstract class JsonParserBase implements JsonParser {
 
     private int nestingDepth;
+    private BigIntegerExpansionBudget bigIntegerExpansionBudget;
 
     /**
      * Protected default constructor for subclasses.
@@ -179,6 +180,15 @@ public abstract class JsonParserBase implements JsonParser {
      */
     final void exitStructure() {
         nestingDepth--;
+    }
+
+    final BigIntegerExpansionBudget bigIntegerExpansionBudget() {
+        BigIntegerExpansionBudget budget = bigIntegerExpansionBudget;
+        if (budget == null) {
+            budget = new BigIntegerExpansionBudget();
+            bigIntegerExpansionBudget = budget;
+        }
+        return budget;
     }
 
 }

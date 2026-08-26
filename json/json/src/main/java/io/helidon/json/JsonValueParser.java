@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-class JsonValueParser implements JsonParser {
+class JsonValueParser extends JsonParserBase {
 
     private static final int INITIAL_FRAME_CAPACITY = 4;
     private static final BigDecimal LONG_MIN_MINUS_ONE = new BigDecimal("-9223372036854775809");
@@ -202,7 +202,7 @@ class JsonValueParser implements JsonParser {
 
     @Override
     public BigInteger readBigInteger() {
-        return current.asNumber().bigDecimalValue().toBigInteger();
+        return current.asNumber().bigIntegerValue(this);
     }
 
     @Override
@@ -213,7 +213,11 @@ class JsonValueParser implements JsonParser {
     @Override
     public byte[] readBinary() {
         String value = current.asString().value();
-        return Base64.getDecoder().decode(value);
+        try {
+            return Base64.getDecoder().decode(value);
+        } catch (IllegalArgumentException e) {
+            throw createException("Invalid Base64 value", e);
+        }
     }
 
     @Override
@@ -237,12 +241,12 @@ class JsonValueParser implements JsonParser {
 
     @Override
     public JsonException createException(String message) {
-        return new JsonException(message);
+        return new JsonDecodingException(message);
     }
 
     @Override
     public JsonException createException(String message, Exception e) {
-        return new JsonException(message, e);
+        return new JsonDecodingException(message, e);
     }
 
     @Override

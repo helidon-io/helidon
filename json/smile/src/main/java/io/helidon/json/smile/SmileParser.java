@@ -30,6 +30,7 @@ import io.helidon.common.Api;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonDecodingException;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonNumber;
@@ -40,6 +41,8 @@ import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
 import io.helidon.json.Parsers;
 
+import static io.helidon.json.JsonParserSupport.createJsonNumber;
+import static io.helidon.json.JsonParserSupport.toBigInteger;
 import static io.helidon.json.Parsers.translateHex;
 
 /**
@@ -373,11 +376,11 @@ public final class SmileParser extends JsonParserBase {
         } else if (b == SmileConstants.TOKEN_BIG_INT) {
             number = JsonNumber.create(new BigDecimal(decodeBigInteger()));
         } else if (b == SmileConstants.TOKEN_BIG_DEC) {
-            number = JsonNumber.create(decodeBigDecimal());
+            number = createJsonNumber(this, decodeBigDecimal());
         } else if (b == SmileConstants.TOKEN_FLOAT32) {
-            number = JsonNumber.create(decodeFloat());
+            number = createJsonNumber(this, decodeFloat());
         } else if (b == SmileConstants.TOKEN_FLOAT64) {
-            number = JsonNumber.create(decodeDouble());
+            number = createJsonNumber(this, decodeDouble());
         } else {
             throw createException("Unsupported numeric value");
         }
@@ -802,7 +805,7 @@ public final class SmileParser extends JsonParserBase {
         } else if (b >= SmileConstants.VALUE_SMALL_INT_MIN && b <= SmileConstants.VALUE_SMALL_INT_MAX) {
             toReturn = BigInteger.valueOf(zigzagDecodeInt(b & 0x1F));
         } else if (b == SmileConstants.TOKEN_BIG_DEC) {
-            toReturn = decodeBigDecimal().toBigInteger();
+            toReturn = toBigInteger(this, decodeBigDecimal());
         } else if (b == SmileConstants.TOKEN_FLOAT64) {
             toReturn = BigInteger.valueOf((long) decodeDouble());
         } else if (b == SmileConstants.TOKEN_FLOAT32) {
@@ -905,12 +908,12 @@ public final class SmileParser extends JsonParserBase {
 
     @Override
     public JsonException createException(String message) {
-        return new JsonException(message);
+        return new JsonDecodingException(message);
     }
 
     @Override
     public JsonException createException(String message, Exception e) {
-        return new JsonException(message, e);
+        return new JsonDecodingException(message, e);
     }
 
     @Override

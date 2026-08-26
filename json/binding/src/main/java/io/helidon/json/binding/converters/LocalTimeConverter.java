@@ -17,6 +17,7 @@
 package io.helidon.json.binding.converters;
 
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
@@ -50,7 +51,12 @@ class LocalTimeConverter implements JsonConverter<LocalTime> {
     @Override
     public LocalTime deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
-            return LocalTime.parse(parser.readString());
+            String value = parser.readString();
+            try {
+                return LocalTime.parse(value);
+            } catch (DateTimeParseException e) {
+                throw parser.createException("Invalid LocalTime value", e);
+            }
         }
         throw parser.createException("Only the string format of the LocalTime is supported");
     }

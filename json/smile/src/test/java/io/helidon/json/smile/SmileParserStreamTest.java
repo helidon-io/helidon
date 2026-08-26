@@ -17,8 +17,16 @@
 package io.helidon.json.smile;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 
+import io.helidon.json.JsonException;
 import io.helidon.json.JsonParser;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Stream-backed execution of the spec-mapped parser cases documented in {@link SmileParserTestBase}.
@@ -27,6 +35,16 @@ class SmileParserStreamTest extends SmileParserTestBase {
     @Override
     JsonParser createParser(byte[] smileData) {
         return SmileParser.create(new OneByteAtATimeInputStream(smileData), 5);
+    }
+
+    @Test
+    void excessiveBigIntegerExpansionReportsStreamPosition() throws Exception {
+        byte[] smileData = generateSmileBytes(gen -> gen.write(new BigDecimal("1E+4097")));
+        JsonException exception = assertThrows(JsonException.class,
+                                               () -> createParser(smileData).readBigInteger());
+
+        assertThat(exception.getMessage(), containsString("4096"));
+        assertThat(exception.getMessage(), containsString("stream position ~"));
     }
 
     private static final class OneByteAtATimeInputStream extends InputStream {

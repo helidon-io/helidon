@@ -78,7 +78,7 @@ final class JsonParserStream extends JsonParserBase {
             throw new UncheckedIOException("Error occurred while reading JSON to the buffer", e);
         }
         if (bufferLength == 0) {
-            throw new JsonException("Empty JSON input provided");
+            throw new JsonDecodingException("Empty JSON input provided");
         }
     }
 
@@ -288,12 +288,12 @@ final class JsonParserStream extends JsonParserBase {
 
     @Override
     public JsonException createException(String message) {
-        return new JsonException(exceptionMessage(message));
+        return new JsonDecodingException(exceptionMessage(message));
     }
 
     @Override
     public JsonException createException(String message, Exception e) {
-        return new JsonException(exceptionMessage(message), e);
+        return new JsonDecodingException(exceptionMessage(message), e);
     }
 
     private String exceptionMessage(String message) {
@@ -835,7 +835,7 @@ final class JsonParserStream extends JsonParserBase {
     public JsonNumber readJsonNumber() {
         bufferingJsonValue = true;
         jsonValueStart = currentIndex;
-        skipNumber();
+        boolean hasExponent = skipJsonNumber();
         int length = currentIndex - jsonValueStart;
         if (currentIndex < bufferLength) {
             length++;
@@ -843,7 +843,7 @@ final class JsonParserStream extends JsonParserBase {
         byte[] numberBytes = new byte[length];
         System.arraycopy(buffer, jsonValueStart, numberBytes, 0, length);
         bufferingJsonValue = false;
-        return JsonNumber.create(numberBytes, 0, length);
+        return JsonNumber.create(numberBytes, 0, length, this, hasExponent);
     }
 
     void skipNumber() {
@@ -1252,7 +1252,11 @@ final class JsonParserStream extends JsonParserBase {
         int length = currentIndex - jsonValueStart;
         byte[] bytes = new byte[length];
         System.arraycopy(buffer, jsonValueStart, bytes, 0, length);
-        return Base64.getDecoder().decode(bytes);
+        try {
+            return Base64.getDecoder().decode(bytes);
+        } catch (IllegalArgumentException e) {
+            throw createException("Invalid Base64 value", e);
+        }
     }
 
     @Override
@@ -1353,6 +1357,31 @@ final class JsonParserStream extends JsonParserBase {
             currentIndex = bufferLength - 1;
             readMoreData();
             index = currentIndex + 1;
+        }
+    }
+
+    private boolean skipJsonNumber() {
+        boolean hasExponent = false;
+        int index;
+        while (true) {
+            for (index = currentIndex; index < bufferLength; index++) {
+                byte b = buffer[index];
+                if (!VALID_NUMBER_PARTS[b]) {
+                    currentIndex = index - 1;
+                    return hasExponent;
+                }
+                // Only exponent markers among valid number parts sort above '9'.
+                if (b > '9') {
+                    hasExponent = true;
+                }
+            }
+            if (!finished) {
+                currentIndex = index;
+                readMoreData();
+            } else {
+                currentIndex = index - 1;
+                return hasExponent;
+            }
         }
     }
 

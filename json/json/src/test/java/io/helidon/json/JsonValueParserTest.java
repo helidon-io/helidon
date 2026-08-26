@@ -27,7 +27,9 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -55,6 +57,100 @@ class JsonValueParserTest {
         assertThat(parser.readJsonValue(), is(original));
         assertThat(parser.readDouble(), is(123.45));
         assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testJsonValueParserReadsBigInteger() {
+        JsonParser parser = JsonParser.create(JsonNumber.create(new BigDecimal("1E+3")));
+
+        assertThat(parser.readBigInteger(), is(BigInteger.valueOf(1_000)));
+    }
+
+    @Test
+    public void testJsonValueParserRejectsExcessiveBigIntegerExpansion() {
+        JsonParser parser = JsonParser.create(JsonNumber.create(new BigDecimal("1E+4097")));
+
+        assertThrows(JsonException.class, parser::readBigInteger);
+    }
+
+    @Test
+    public void testJsonValueParserHasAggregateBigIntegerExpansionBudget() {
+        JsonNumber number = JsonNumber.create(new BigDecimal("1E+4096"));
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        JsonParser parser = JsonParser.create(number);
+
+        for (int i = 0; i < 16; i++) {
+            assertThat(parser.readBigInteger(), is(expected));
+        }
+        JsonException exception = assertThrows(JsonException.class, parser::readBigInteger);
+        assertThat(exception.getMessage(), containsString("65536"));
+
+        assertThat(JsonParser.create(number).readBigInteger(), is(expected));
+    }
+
+    @Test
+    public void testJsonValueParserRetainsSourceDocumentBigIntegerExpansionBudget() {
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        JsonNumber number = JsonParser.create("1e4096").readJsonNumber();
+
+        for (int i = 0; i < 8; i++) {
+            assertThat(number.bigIntegerValue(), is(expected));
+        }
+        JsonParser parser = JsonParser.create(number);
+        for (int i = 0; i < 8; i++) {
+            assertThat(parser.readBigInteger(), is(expected));
+        }
+        assertThrows(JsonException.class, parser::readBigInteger);
+        assertThrows(JsonException.class, () -> JsonParser.create(number).readBigInteger());
+
+        assertThat(JsonParser.create("1e4096").readJsonNumber().bigIntegerValue(), is(expected));
+    }
+
+    @Test
+    public void testJsonValueParserChargesMixedOriginNumbersToParserBudget() {
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        List<JsonNumber> values = new ArrayList<>();
+        for (int i = 0; i < 17; i++) {
+            values.add(JsonParser.create("1e4096").readJsonNumber());
+        }
+        JsonParser parser = JsonParser.create(JsonArray.create(values));
+
+        for (int i = 0; i < 16; i++) {
+            assertThat(parser.nextToken(), is((byte) '1'));
+            assertThat(parser.readBigInteger(), is(expected));
+            assertThat(parser.nextToken(), is((byte) ','));
+        }
+        assertThat(parser.nextToken(), is((byte) '1'));
+        JsonException exception = assertThrows(JsonException.class, parser::readBigInteger);
+        assertThat(exception.getMessage(), containsString("65536"));
+    }
+
+    @Test
+    public void testJsonValueParserReturnedNumberRetainsSourceDocumentBudget() {
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        JsonNumber number = JsonParser.create("1e4096").readJsonNumber();
+        JsonParser parser = JsonParser.create(number);
+        JsonNumber returnedNumber = parser.readJsonNumber();
+
+        assertThat(returnedNumber, sameInstance(number));
+
+        for (int i = 0; i < 8; i++) {
+            assertThat(number.bigIntegerValue(), is(expected));
+            assertThat(returnedNumber.bigIntegerValue(), is(expected));
+        }
+        assertThrows(JsonException.class, number::bigIntegerValue);
+        assertThrows(JsonException.class, returnedNumber::bigIntegerValue);
+    }
+
+    @Test
+    public void testJsonValueParserRetainsExpandingValueIdentity() {
+        JsonNumber number = JsonParser.create("1e4096").readJsonNumber();
+        JsonArray array = JsonArray.create(List.of(number));
+        JsonObject object = JsonObject.create(Map.of("number", number));
+
+        assertThat(JsonParser.create(number).readJsonValue(), sameInstance(number));
+        assertThat(JsonParser.create(array).readJsonArray(), sameInstance(array));
+        assertThat(JsonParser.create(object).readJsonObject(), sameInstance(object));
     }
 
     @Test
@@ -146,6 +242,13 @@ class JsonValueParserTest {
     }
 
     @Test
+    public void testJsonValueParserRejectsInvalidBase64() {
+        JsonParser parser = JsonParser.create(JsonString.create("not-base64***"));
+
+        assertThrows(JsonDecodingException.class, parser::readBinary);
+    }
+
+    @Test
     public void testJsonValueParserWithBoolean() {
         JsonValue original = JsonBoolean.TRUE;
         JsonParser parser = JsonParser.create(original);
@@ -174,6 +277,7 @@ class JsonValueParserTest {
         JsonParser parser = JsonParser.create(original);
 
         JsonObject result = parser.readJsonObject();
+        assertThat(result, sameInstance(original));
         assertThat(result.stringValue("key1").orElseThrow(), is("value1"));
         assertThat(result.intValue("key2").orElseThrow(), is(42));
     }
@@ -188,6 +292,7 @@ class JsonValueParserTest {
         JsonParser parser = JsonParser.create(original);
 
         JsonArray result = parser.readJsonArray();
+        assertThat(result, sameInstance(original));
         assertThat(result.size(), is(3));
         assertThat(result.get(0, JsonNull.instance()).asString().value(), is("item1"));
         assertThat(result.get(1, JsonNull.instance()).asNumber().intValue(), is(123));

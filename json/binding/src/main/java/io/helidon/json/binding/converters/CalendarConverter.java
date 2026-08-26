@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -60,14 +61,18 @@ class CalendarConverter implements JsonConverter<Calendar> {
     public Calendar deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
             String value = parser.readString();
-            ZonedDateTime zonedDateTime;
-            if (value.contains("T")) {
-                zonedDateTime = ZonedDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME);
-            } else {
-                zonedDateTime = LocalDate.parse(value, DateTimeFormatter.ISO_DATE)
-                        .atStartOfDay(UTC);
+            try {
+                ZonedDateTime zonedDateTime;
+                if (value.contains("T")) {
+                    zonedDateTime = ZonedDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME);
+                } else {
+                    zonedDateTime = LocalDate.parse(value, DateTimeFormatter.ISO_DATE)
+                            .atStartOfDay(UTC);
+                }
+                return GregorianCalendar.from(zonedDateTime);
+            } catch (DateTimeParseException | IllegalArgumentException e) {
+                throw parser.createException("Invalid Calendar value", e);
             }
-            return GregorianCalendar.from(zonedDateTime);
         }
         throw parser.createException("Only the string format of the Calendar is supported");
     }

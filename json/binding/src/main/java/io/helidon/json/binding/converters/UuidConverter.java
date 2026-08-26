@@ -54,7 +54,12 @@ class UuidConverter implements JsonConverter<UUID> {
 
     @Override
     public UUID deserialize(JsonParser parser) {
-        return UUID.fromString(parser.readString());
+        String value = parser.readString();
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            throw parser.createException("Invalid UUID value", e);
+        }
     }
 
 }

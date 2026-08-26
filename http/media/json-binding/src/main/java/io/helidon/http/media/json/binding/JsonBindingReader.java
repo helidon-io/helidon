@@ -26,7 +26,10 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.http.media.EntityReaderBase;
+import io.helidon.json.JsonDecodingException;
 import io.helidon.json.binding.JsonBinding;
 
 import static java.util.function.Predicate.not;
@@ -40,13 +43,17 @@ class JsonBindingReader<T> extends EntityReaderBase<T> {
 
     @Override
     public T read(GenericType<T> type, InputStream stream, Headers headers) {
-        Optional<InputStreamReader> reader = findContentTypeCharset(headers)
-                .filter(not(StandardCharsets.UTF_8::equals)) //We don't need reader to be applied for UTF-8
-                .map(charset -> new InputStreamReader(stream, charset));
-        if (reader.isPresent()) {
-            return read(type, reader.get());
+        try {
+            Optional<InputStreamReader> reader = findContentTypeCharset(headers)
+                    .filter(not(StandardCharsets.UTF_8::equals)) //We don't need reader to be applied for UTF-8
+                    .map(charset -> new InputStreamReader(stream, charset));
+            if (reader.isPresent()) {
+                return read(type, reader.get());
+            }
+            return read(type, stream);
+        } catch (JsonDecodingException e) {
+            throw new HttpException("Failed to deserialize JSON request entity", Status.BAD_REQUEST_400, e);
         }
-        return read(type, stream);
     }
 
     @Override

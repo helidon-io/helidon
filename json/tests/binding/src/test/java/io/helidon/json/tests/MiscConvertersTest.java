@@ -18,17 +18,29 @@ package io.helidon.json.tests;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
+import io.helidon.common.GenericType;
+import io.helidon.json.JsonDecodingException;
+import io.helidon.json.JsonException;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonValue;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
 public class MiscConvertersTest {
@@ -51,12 +63,55 @@ public class MiscConvertersTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    public void testMalformedUuidParameterized(BindingMethod bindingMethod) {
+        JsonDecodingException exception = assertThrows(JsonDecodingException.class,
+                                                        () -> bindingMethod.deserialize(jsonBinding,
+                                                                                        "\"invalid\"",
+                                                                                        UUID.class));
+        assertMalformedUuidException(exception);
+    }
+
+    @Test
+    public void testMalformedUuidSmile() {
+        byte[] invalid = SmileBindingSupport.serializeSmile(jsonBinding, "invalid");
+        JsonDecodingException exception = assertThrows(JsonDecodingException.class,
+                                                        () -> SmileBindingSupport.deserializeSmile(jsonBinding,
+                                                                                                     invalid,
+                                                                                                     UUID.class));
+        assertMalformedUuidException(exception);
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     public void testBigIntegerConverterParameterized(BindingMethod bindingMethod) {
         BigInteger original = new BigInteger("123456789012345678901234567890");
         String json = bindingMethod.serialize(jsonBinding, original);
         assertThat(json, is("123456789012345678901234567890"));
         BigInteger deserialized = bindingMethod.deserialize(jsonBinding, json, BigInteger.class);
         assertThat(deserialized, is(original));
+    }
+
+    @Test
+    public void testBigIntegerConverterRejectsExcessiveExpansionFromJsonValue() {
+        BigDecimal decimal = new BigDecimal("1E+4097");
+        JsonValue value = JsonNumber.create(decimal);
+
+        assertThat(jsonBinding.deserialize(value, BigDecimal.class), is(decimal));
+        assertThrows(JsonException.class, () -> jsonBinding.deserialize(value, BigInteger.class));
+    }
+
+    @Test
+    public void testBigIntegerCollectionHasAggregateExpansionBudget() {
+        BigDecimal number = new BigDecimal("1E+4096");
+        GenericType<List<BigInteger>> type = new GenericType<>() { };
+        byte[] atLimit = SmileBindingSupport.serializeSmile(jsonBinding, Collections.nCopies(16, number));
+
+        assertThat(SmileBindingSupport.deserializeSmile(jsonBinding, atLimit, type), hasSize(16));
+
+        byte[] overLimit = SmileBindingSupport.serializeSmile(jsonBinding, Collections.nCopies(17, number));
+        assertThrows(JsonException.class, () -> SmileBindingSupport.deserializeSmile(jsonBinding, overLimit, type));
+
+        assertThat(SmileBindingSupport.deserializeSmile(jsonBinding, atLimit, type), hasSize(16));
     }
 
     @ParameterizedTest
@@ -88,6 +143,11 @@ public class MiscConvertersTest {
         UuidBean deserialized = bindingMethod.deserialize(jsonBinding, json, UuidBean.class);
         assertThat(deserialized.getId(), is(bean.getId()));
         assertThat(deserialized.getName(), is(bean.getName()));
+    }
+
+    private static void assertMalformedUuidException(JsonDecodingException exception) {
+        assertThat(exception.getMessage(), startsWith("Invalid UUID value"));
+        assertThat(exception.getCause(), instanceOf(IllegalArgumentException.class));
     }
 
     @ParameterizedTest

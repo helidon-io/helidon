@@ -33,7 +33,7 @@ public final class JsonNumber extends JsonValue {
     private final int start;
     private final int length;
     private byte jsonStartChar;
-    private BigDecimal bigDecimalValue;
+    private Object value;
 
     private JsonNumber(byte[] buffer, int start, int length) {
         this.buffer = buffer;
@@ -42,15 +42,38 @@ public final class JsonNumber extends JsonValue {
         this.jsonStartChar = buffer[start];
     }
 
+    private JsonNumber(byte[] buffer,
+                       int start,
+                       int length,
+                       BigIntegerExpansionBudget bigIntegerExpansionBudget) {
+        this(buffer, start, length);
+        this.value = bigIntegerExpansionBudget;
+    }
+
     private JsonNumber(BigDecimal bigDecimalValue) {
         this.buffer = EMPTY_BYTES;
         this.start = -1;
         this.length = -1;
-        this.bigDecimalValue = Objects.requireNonNull(bigDecimalValue);
+        this.value = Objects.requireNonNull(bigDecimalValue);
+    }
+
+    private JsonNumber(BigDecimal bigDecimalValue, BigIntegerExpansionBudget bigIntegerExpansionBudget) {
+        this(bigDecimalValue);
+        if (BigIntegerExpansionBudget.requiresExpansion(bigDecimalValue)
+                && bigIntegerExpansionBudget.aggregateLimited()) {
+            this.value = new BudgetedValue(bigIntegerExpansionBudget, bigDecimalValue);
+        }
     }
 
     private JsonNumber(BigDecimal bigDecimalValue, byte jsonStartChar) {
         this(bigDecimalValue);
+        this.jsonStartChar = jsonStartChar;
+    }
+
+    private JsonNumber(BigDecimal bigDecimalValue,
+                       byte jsonStartChar,
+                       BigIntegerExpansionBudget bigIntegerExpansionBudget) {
+        this(bigDecimalValue, bigIntegerExpansionBudget);
         this.jsonStartChar = jsonStartChar;
     }
 
@@ -89,10 +112,43 @@ public final class JsonNumber extends JsonValue {
         return new JsonNumber(buffer, start, length);
     }
 
+    static JsonNumber create(byte[] buffer,
+                             int start,
+                             int length,
+                             BigIntegerExpansionBudget bigIntegerExpansionBudget) {
+        return new JsonNumber(buffer, start, length, bigIntegerExpansionBudget);
+    }
+
+    static JsonNumber create(BigDecimal value, JsonParserBase parser) {
+        if (BigIntegerExpansionBudget.requiresExpansion(value)) {
+            return new JsonNumber(value, parser.bigIntegerExpansionBudget());
+        }
+        return new JsonNumber(value);
+    }
+
+    static JsonNumber create(double value, JsonParserBase parser) {
+        BigDecimal decimalValue = BigDecimal.valueOf(value);
+        if (BigIntegerExpansionBudget.requiresExpansion(decimalValue)) {
+            return new JsonNumber(decimalValue, jsonStartChar(decimalValue), parser.bigIntegerExpansionBudget());
+        }
+        return new JsonNumber(decimalValue, jsonStartChar(decimalValue));
+    }
+
+    static JsonNumber create(byte[] buffer,
+                             int start,
+                             int length,
+                             JsonParserBase parser,
+                             boolean hasExponent) {
+        if (hasExponent && requiresExpansion(buffer, start, length)) {
+            return new JsonNumber(buffer, start, length, parser.bigIntegerExpansionBudget());
+        }
+        return new JsonNumber(buffer, start, length);
+    }
+
     @Override
     byte jsonStartChar() {
         if (jsonStartChar == 0) {
-            jsonStartChar = jsonStartChar(bigDecimalValue);
+            jsonStartChar = jsonStartChar(bigDecimalValue());
         }
         return jsonStartChar;
     }
@@ -200,12 +256,28 @@ public final class JsonNumber extends JsonValue {
 
     /**
      * Return the BigInteger value of this JsonNumber. Any fractional part is discarded.
+     * <p>
+     * For a nonzero value with a negative scale, a conversion may introduce at most 4,096 trailing decimal digits.
+     * Numbers originating from the same parsed JSON document also share a cumulative budget of 65,536 such digits;
+     * every invocation consumes that document budget. Programmatically created numbers have only the per-conversion
+     * limit.
+     * </p>
      *
      * @return the BigInteger value
+     * @throws JsonException if the conversion exceeds the per-value or parsed-document expansion budget
      * @see BigDecimal#toBigInteger()
      */
     public BigInteger bigIntegerValue() {
-        return bigDecimalValue().toBigInteger();
+        return bigIntegerExpansionBudget().toBigInteger(bigDecimalValue());
+    }
+
+    BigInteger bigIntegerValue(JsonParserBase parser) {
+        BigDecimal decimalValue = bigDecimalValue();
+        BigIntegerExpansionBudget expansionBudget = bigIntegerExpansionBudget();
+        if (BigIntegerExpansionBudget.requiresExpansion(decimalValue)) {
+            return expansionBudget.toBigInteger(decimalValue, parser, parser.bigIntegerExpansionBudget());
+        }
+        return expansionBudget.toBigInteger(decimalValue, parser);
     }
 
     /**
@@ -214,11 +286,20 @@ public final class JsonNumber extends JsonValue {
      * @return the BigDecimal value
      */
     public BigDecimal bigDecimalValue() {
-        if (bigDecimalValue == null) {
-            JsonParser parser = new JsonParserArray(buffer, start, length);
-            bigDecimalValue = parser.readBigDecimal();
+        Object currentValue = value;
+        if (currentValue instanceof BigDecimal decimalValue) {
+            return decimalValue;
+        } else if (currentValue instanceof BudgetedValue budgetedValue) {
+            return budgetedValue.value();
         }
-        return bigDecimalValue;
+
+        JsonParser parser = new JsonParserArray(buffer, start, length);
+        BigDecimal decimalValue = parser.readBigDecimal();
+        value = currentValue instanceof BigIntegerExpansionBudget budget
+                && BigIntegerExpansionBudget.requiresExpansion(decimalValue)
+                ? new BudgetedValue(budget, decimalValue)
+                : decimalValue;
+        return decimalValue;
     }
 
     @Override
@@ -244,11 +325,73 @@ public final class JsonNumber extends JsonValue {
 
     @Override
     public void toJson(JsonGenerator generator) {
-        BigDecimal bigDecimal = bigDecimalValue();
-        if (bigDecimal.scale() <= 0) {
-            generator.write(bigDecimal.toBigInteger());
+        BigDecimal decimalValue = bigDecimalValue();
+        int scale = decimalValue.scale();
+        // Preserve legacy integer output for bounded trailing-zero expansion.
+        if (scale == 0 || (scale < 0 && decimalValue.signum() == 0)) {
+            generator.write(decimalValue.unscaledValue());
+        } else if (scale >= -3 && scale < 0) {
+            generator.write(decimalValue.toBigInteger());
         } else {
-            generator.write(bigDecimal);
+            generator.write(decimalValue);
         }
+    }
+
+    private static boolean requiresExpansion(byte[] buffer, int start, int length) {
+        int end = start + length;
+        int fractionDigits = 0;
+        int exponentIndex = -1;
+        boolean fraction = false;
+        boolean nonZero = false;
+        for (int i = start; i < end; i++) {
+            byte current = buffer[i];
+            if (current == '.') {
+                fraction = true;
+            } else if (current == 'e' || current == 'E') {
+                exponentIndex = i + 1;
+                break;
+            } else if (current >= '0' && current <= '9') {
+                nonZero |= current != '0';
+                if (fraction) {
+                    fractionDigits++;
+                }
+            }
+        }
+        if (!nonZero || exponentIndex == -1 || exponentIndex == end) {
+            return false;
+        }
+
+        byte sign = buffer[exponentIndex];
+        if (sign == '-') {
+            return false;
+        } else if (sign == '+') {
+            exponentIndex++;
+        }
+        int exponent = 0;
+        for (int i = exponentIndex; i < end; i++) {
+            int digit = buffer[i] - '0';
+            if (digit < 0 || digit > 9) {
+                return true;
+            }
+            if (exponent > fractionDigits / 10
+                    || (exponent == fractionDigits / 10 && digit > fractionDigits % 10)) {
+                return true;
+            }
+            exponent = exponent * 10 + digit;
+        }
+        return false;
+    }
+
+    private BigIntegerExpansionBudget bigIntegerExpansionBudget() {
+        Object currentValue = value;
+        if (currentValue instanceof BigIntegerExpansionBudget budget) {
+            return budget;
+        } else if (currentValue instanceof BudgetedValue budgetedValue) {
+            return budgetedValue.budget();
+        }
+        return BigIntegerExpansionBudget.noAggregate();
+    }
+
+    private record BudgetedValue(BigIntegerExpansionBudget budget, BigDecimal value) {
     }
 }

@@ -17,6 +17,7 @@
 package io.helidon.json.binding.converters;
 
 import java.time.Period;
+import java.time.format.DateTimeParseException;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
@@ -50,7 +51,12 @@ class PeriodConverter implements JsonConverter<Period> {
     @Override
     public Period deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
-            return Period.parse(parser.readString());
+            String value = parser.readString();
+            try {
+                return Period.parse(value);
+            } catch (DateTimeParseException e) {
+                throw parser.createException("Invalid Period value", e);
+            }
         }
         throw parser.createException("Only the string format of the Period is supported");
     }

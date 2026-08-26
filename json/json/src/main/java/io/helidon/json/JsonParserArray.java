@@ -160,7 +160,7 @@ class JsonParserArray extends JsonParserBase {
     public JsonNumber readJsonNumber() {
         int start = currentIndex;
         skipNumber();
-        return JsonNumber.create(buffer, start, currentIndex - start + 1);
+        return JsonNumber.create(buffer, start, currentIndex - start + 1, bigIntegerExpansionBudget());
     }
 
     @Override
@@ -624,7 +624,11 @@ class JsonParserArray extends JsonParserBase {
         int length = currentIndex - start;
         byte[] bytes = new byte[length];
         System.arraycopy(buffer, start, bytes, 0, length);
-        return Base64.getDecoder().decode(bytes);
+        try {
+            return Base64.getDecoder().decode(bytes);
+        } catch (IllegalArgumentException e) {
+            throw createException("Invalid Base64 value", e);
+        }
     }
 
     void ensure(int amount) {
@@ -973,13 +977,13 @@ class JsonParserArray extends JsonParserBase {
     @Override
     public JsonException createException(String message) {
         clearMark();
-        return new JsonException(exceptionMessage(message));
+        return new JsonDecodingException(exceptionMessage(message));
     }
 
     @Override
     public JsonException createException(String message, Exception e) {
         clearMark();
-        return new JsonException(exceptionMessage(message), e);
+        return new JsonDecodingException(exceptionMessage(message), e);
     }
 
     private String exceptionMessage(String message) {
