@@ -126,16 +126,25 @@ class BadPrologueTest {
     @Test
     void testBadFragment() {
         String response = socketClient.sendAndReceive(Method.GET,
-                                                      "/?a=b#invalid-fragment>",
+                                                      "/#fragment",
                                                       null,
                                                       List.of());
 
         assertThat(response, containsString("400 Bad Request"));
-        // beginning of message to the first double quote
-        assertThat(response, containsString("Fragment contains invalid char: "));
-        // end of message from double quote, index of bad char, and bad char
-        assertThat(response, containsString(", index: 16, char: 0x3e"));
-        assertThat(response, not(containsString(">")));
+        assertThat(response, not(containsString("500 Internal Server Error")));
+        assertThat(response, containsString("Bad request, see server log for more information"));
+    }
+
+    @Test
+    void testBadAbsoluteFormFragment() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "http://example.com/#fragment",
+                                                      null,
+                                                      List.of());
+
+        assertThat(response, containsString("400 Bad Request"));
+        assertThat(response, not(containsString("500 Internal Server Error")));
+        assertThat(response, containsString("Bad request, see server log for more information"));
     }
 
     @Test

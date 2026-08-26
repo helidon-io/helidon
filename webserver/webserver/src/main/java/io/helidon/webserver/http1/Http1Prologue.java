@@ -169,6 +169,9 @@ public final class Http1Prologue {
                 return;
             }
         } else {
+            if (requestTarget.indexOf('#') >= 0) {
+                throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
+            }
             if (requestTarget.charAt(0) == '/' || isAbsoluteForm(requestTarget)) {
                 return;
             }
