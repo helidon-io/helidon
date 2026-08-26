@@ -22,6 +22,7 @@ import java.net.ProxySelector;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -42,7 +43,9 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 
 @Testing.Test
 class ScoringModelConfigTest {
@@ -165,6 +168,108 @@ class ScoringModelConfigTest {
             assertThat(captured.httpRequest(), containsString("legacy query"));
             assertThat(captured.httpRequest(), containsString("legacy document"));
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testConfiguredSocksProxyTakesPrecedenceOverDiscoveredHttpClientBuilder(ServiceRegistry registry) throws Exception {
+        try (var socks = new MockSocksProxy()) {
+            var configSource = Config.builder()
+                    .sources(ConfigSources.create(Map.of("api-key", "api-key",
+                                                        "base-url", "http://cohere.invalid/",
+                                                        "model-name", "rerank-model",
+                                                        "max-retries", "0",
+                                                        "proxy", "configured")))
+                    .addMapper(Proxy.class, ignored -> socks.proxy())
+                    .build();
+            var config = CohereScoringModelConfig.builder()
+                    .serviceRegistry(registry)
+                    .config(configSource)
+                    .build();
+
+            assertThat(config.httpClientBuilder().orElseThrow(),
+                       not(instanceOf(MockHttpClientFactory.TrackingHttpClientBuilder.class)));
+
+            var response = config.configuredBuilder()
+                    .build()
+                    .scoreAll(List.of(TextSegment.from("legacy document")), "legacy query");
+            var captured = socks.capturedRequest();
+
+            assertThat(response.content(), contains(0.875));
+            assertThat(captured.targetHost(), is("cohere.invalid"));
+            assertThat(captured.httpRequest(), containsString("POST /rerank HTTP/1.1"));
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testNamedProxyTakesPrecedenceOverDiscoveredHttpClientBuilder(ServiceRegistry registry) {
+        // language=YAML
+        var yaml = """
+                api-key: api-key
+                proxy.service-registry.named: socksProxy
+                """;
+
+        var config = CohereScoringModelConfig.builder()
+                .serviceRegistry(registry)
+                .config(Config.just(ConfigSources.create(yaml, APPLICATION_X_YAML)))
+                .build();
+
+        assertThat(config.proxy().map(Proxy::toString), optionalValue(equalTo("socksProxy")));
+        assertThat(config.httpClientBuilder().orElseThrow(),
+                   not(instanceOf(MockHttpClientFactory.TrackingHttpClientBuilder.class)));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testNamedHttpClientBuilderConfiguredAfterProxyTakesPrecedence(ServiceRegistry registry) {
+        // language=YAML
+        var yaml = """
+                api-key: api-key
+                http-client-builder.service-registry.named: customHttpClient
+                """;
+        var proxy = new Proxy(Proxy.Type.SOCKS, InetSocketAddress.createUnresolved("proxy.example", 1080));
+
+        var config = CohereScoringModelConfig.builder()
+                .serviceRegistry(registry)
+                .proxy(proxy)
+                .config(Config.just(ConfigSources.create(yaml, APPLICATION_X_YAML)))
+                .build();
+
+        assertThat(config.httpClientBuilder().orElseThrow(),
+                   instanceOf(MockHttpClientFactory.TrackingHttpClientBuilder.class));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testProgrammaticHttpClientConfiguredBeforeDirectProxyTakesPrecedence() {
+        var httpClientBuilder = new MockHttpClientFactory.TrackingHttpClientBuilder();
+        var proxy = new Proxy(Proxy.Type.SOCKS, InetSocketAddress.createUnresolved("proxy.example", 1080));
+        var configSource = Config.builder()
+                .sources(ConfigSources.create(Map.of("api-key", "api-key",
+                                                    "proxy", "configured")))
+                .addMapper(Proxy.class, ignored -> proxy)
+                .build();
+
+        var config = CohereScoringModelConfig.builder()
+                .httpClientBuilder(httpClientBuilder)
+                .config(configSource)
+                .build();
+
+        assertThat(config.httpClientBuilder().orElseThrow(), sameInstance(httpClientBuilder));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testDefaultDiscoveredHttpClientBuilderTakesPrecedenceOverDefaultDiscoveredProxy(ServiceRegistry registry) {
+        var config = CohereScoringModelConfig.builder()
+                .serviceRegistry(registry)
+                .apiKey("api-key")
+                .build();
+
+        assertThat(config.proxy().map(Proxy::toString), optionalValue(equalTo("defaultProxy")));
+        assertThat(config.httpClientBuilder().orElseThrow(),
+                   instanceOf(MockHttpClientFactory.TrackingHttpClientBuilder.class));
     }
 
     @Test

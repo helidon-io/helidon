@@ -131,6 +131,18 @@ Configuration for LangChain4j model CohereEmbeddingModel
 </tr>
 <tr>
 <td>
+<code>listeners-<wbr>discover-<wbr>services</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>listeners</code></td>
+</tr>
+<tr>
+<td>
 <code>v2-<wbr>base-<wbr>url</code>
 </td>
 <td>

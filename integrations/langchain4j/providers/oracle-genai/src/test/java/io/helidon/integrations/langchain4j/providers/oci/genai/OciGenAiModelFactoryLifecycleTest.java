@@ -36,7 +36,6 @@ import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.generativeaiinference.GenerativeAiInferenceAsyncClient;
 import com.oracle.bmc.generativeaiinference.GenerativeAiInferenceClient;
-import dev.langchain4j.community.model.oracle.oci.genai.OciGenAiChatModel;
 import dev.langchain4j.community.model.oracle.oci.genai.OciGenAiStreamingChatModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,19 +85,6 @@ class OciGenAiModelFactoryLifecycleTest {
     }
 
     @Test
-    void closesInternallyOwnedModelOnShutdown() {
-        var factory = chatFactory(ownedModelConfig());
-        var model = factory.services().getFirst().get();
-
-        factory.preDestroy();
-
-        assertThat(factory.services(), is(empty()));
-        assertClosed(model);
-        factory.preDestroy();
-        assertClosed(model);
-    }
-
-    @Test
     void preservesOwnershipForMixedAuthenticationAndClientConfigurations() {
         var authProvider = Mockito.mock(BasicAuthenticationDetailsProvider.class);
         var syncClient = Mockito.mock(GenerativeAiInferenceClient.class);
@@ -139,7 +125,7 @@ class OciGenAiModelFactoryLifecycleTest {
                 .genAiAsyncClient(asyncClient)
                 .build();
 
-        assertThat(ownedSyncConfig.closeModelOnShutdown(), is(true));
+        assertThat(ownedSyncConfig.closeModelOnShutdown(), is(false));
         assertThat(borrowedSyncConfig.closeModelOnShutdown(), is(false));
         assertThat(ownedStreamingConfig.closeModelOnShutdown(), is(true));
         assertThat(borrowedStreamingSyncConfig.closeModelOnShutdown(), is(false));
@@ -157,7 +143,7 @@ class OciGenAiModelFactoryLifecycleTest {
     }
 
     @Test
-    void closesSyncModelButKeepsRegistryAsyncClientOpenForMixedProviderConfig(ServiceRegistry registry) {
+    void leavesSyncModelAndRegistryAsyncClientOpenForMixedProviderConfig(ServiceRegistry registry) {
         var asyncClient = registry.get(GenerativeAiInferenceAsyncClient.class);
         var config = mixedAuthAndAsyncClientConfig();
         var streamingConfig = OciGenAiStreamingChatModelConfig.builder()
@@ -166,7 +152,7 @@ class OciGenAiModelFactoryLifecycleTest {
                 .build();
         var syncFactory = chatFactory(config);
         var streamingFactory = streamingFactory(config);
-        var syncModel = syncFactory.services().getFirst().get();
+        assertThat(syncFactory.services(), hasSize(1));
         long closesBeforeShutdown = closeInvocationCount(asyncClient);
 
         assertThat(streamingConfig.genAiAsyncClient().orElseThrow(), sameInstance(asyncClient));
@@ -174,7 +160,6 @@ class OciGenAiModelFactoryLifecycleTest {
         assertThat(streamingFactory.services(), hasSize(1));
 
         syncFactory.preDestroy();
-        assertClosed(syncModel);
         assertThat(closeInvocationCount(asyncClient), is(closesBeforeShutdown));
 
         streamingFactory.preDestroy();
@@ -499,28 +484,6 @@ class OciGenAiModelFactoryLifecycleTest {
             Thread.onSpinWait();
         }
         return false;
-    }
-
-    private static void assertClosed(OciGenAiChatModel model) {
-        var failure = assertThrows(IllegalStateException.class, () -> model.chat("ignored"));
-        assertThat(failure.getMessage(), is("OCI GenAI model is closed."));
-    }
-
-    private static Config ownedModelConfig() {
-        // language=YAML
-        var yaml = """
-                langchain4j:
-                  models:
-                    owned:
-                      provider: oci-gen-ai
-                  providers:
-                    oci-gen-ai:
-                      model-name: model-name
-                      compartment-id: compartment-id
-                      region: us-ashburn-1
-                      gen-ai-client-discover-services: false
-                """;
-        return Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_X_YAML));
     }
 
     private static Config twoModelConfig() {

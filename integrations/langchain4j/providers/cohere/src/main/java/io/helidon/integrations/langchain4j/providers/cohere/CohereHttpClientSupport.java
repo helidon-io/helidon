@@ -33,7 +33,7 @@ import dev.langchain4j.http.client.HttpClient;
 import dev.langchain4j.http.client.HttpClientBuilder;
 import dev.langchain4j.http.client.HttpRequest;
 import dev.langchain4j.http.client.SuccessfulHttpResponse;
-import dev.langchain4j.http.client.jdk.JdkHttpClient;
+import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.http.client.sse.ServerSentEventListener;
 import dev.langchain4j.http.client.sse.ServerSentEventParser;
 import okhttp3.MediaType;
@@ -57,10 +57,11 @@ final class CohereHttpClientSupport {
             case SOCKS -> throw new IllegalStateException("SOCKS proxy was not handled");
         };
 
-        var clientBuilder = java.net.http.HttpClient.newBuilder()
-                .proxy(proxySelector);
-        return JdkHttpClient.builder()
-                .httpClientBuilder(clientBuilder);
+        return new ProxyJdkHttpClientBuilder(proxySelector);
+    }
+
+    static boolean isProxyAdapter(HttpClientBuilder httpClientBuilder) {
+        return httpClientBuilder instanceof ProxyAdapter;
     }
 
     private static ProxySelector httpProxySelector(Proxy proxy) {
@@ -70,7 +71,16 @@ final class CohereHttpClientSupport {
         throw new IllegalArgumentException("HTTP proxy address must be an InetSocketAddress");
     }
 
-    private static final class SocksHttpClientBuilder implements HttpClientBuilder {
+    private interface ProxyAdapter {
+    }
+
+    private static final class ProxyJdkHttpClientBuilder extends JdkHttpClientBuilder implements ProxyAdapter {
+        private ProxyJdkHttpClientBuilder(ProxySelector proxySelector) {
+            httpClientBuilder(java.net.http.HttpClient.newBuilder().proxy(proxySelector));
+        }
+    }
+
+    private static final class SocksHttpClientBuilder implements HttpClientBuilder, ProxyAdapter {
         private final Proxy proxy;
         private Duration connectTimeout;
         private Duration readTimeout;

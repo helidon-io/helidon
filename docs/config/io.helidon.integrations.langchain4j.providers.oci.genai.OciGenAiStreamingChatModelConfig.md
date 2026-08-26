@@ -76,6 +76,18 @@ Configuration for LangChain4j model OciGenAiStreamingChatModel
 </tr>
 <tr>
 <td>
+<code>executor-<wbr>service-<wbr>discover-<wbr>services</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>executor-<wbr>service</code></td>
+</tr>
+<tr>
+<td>
 <code>num-<wbr>generations</code>
 </td>
 <td>

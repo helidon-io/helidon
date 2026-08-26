@@ -78,6 +78,7 @@ interface OciGenAiCohereLc4jProvider extends AiProvider.ModelLifecycle {
 
     @Override
     default boolean closeModelOnShutdown() {
-        return genAiClient().isEmpty();
+        // LangChain4j does not account for synchronous calls in its model lifecycle yet.
+        return false;
     }
 }

@@ -40,6 +40,7 @@ interface CohereScoringLc4jProvider {
      */
     @Option.Configured
     @Option.RegistryService
+    @Option.Decorator(CohereScoringConfigSupport.HttpClientBuilderDecorator.class)
     @AiProvider.CustomBuilderMapping
     Optional<HttpClientBuilder> httpClientBuilder();
 
@@ -51,6 +52,7 @@ interface CohereScoringLc4jProvider {
     @Option.Configured
     @Option.RegistryService
     @Option.Deprecated("httpClientBuilder")
+    @Option.Decorator(CohereScoringConfigSupport.ProxyDecorator.class)
     @AiProvider.CustomBuilderMapping
     Optional<Proxy> proxy();
 

@@ -98,6 +98,18 @@ Merged configuration for langchain4j.providers.cohere
 </tr>
 <tr>
 <td>
+<code>listeners-<wbr>discover-<wbr>services</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>listeners</code></td>
+</tr>
+<tr>
+<td>
 <code>log-<wbr>requests</code>
 </td>
 <td>
