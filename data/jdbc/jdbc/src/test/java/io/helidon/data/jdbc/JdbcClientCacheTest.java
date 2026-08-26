@@ -98,7 +98,7 @@ class JdbcClientCacheTest {
         DataSource dataSource = mock(DataSource.class);
         JdbcClientImpl client = client(dataSource);
 
-        JdbcClient.Statement statement = client.create("select ?, '?' where ? = 1", 2);
+        JdbcClient.Statement statement = JdbcClient.createGenerated(client, "select ?, '?' where ? = 1", 2);
         statement.bind(1, 1).bind(2, 2);
 
         assertThrows(IllegalArgumentException.class, () -> statement.bind(3, 3));
@@ -111,9 +111,9 @@ class JdbcClientCacheTest {
         DataSource dataSource = mock(DataSource.class);
         JdbcClientImpl client = client(dataSource);
 
-        assertThrows(NullPointerException.class, () -> client.create(null, 0));
-        assertThrows(IllegalArgumentException.class, () -> client.create("select 1", -1));
-        assertThrows(IllegalArgumentException.class, () -> client.create("?", 2));
+        assertThrows(NullPointerException.class, () -> JdbcClient.createGenerated(client, null, 0));
+        assertThrows(IllegalArgumentException.class, () -> JdbcClient.createGenerated(client, "select 1", -1));
+        assertThrows(IllegalArgumentException.class, () -> JdbcClient.createGenerated(client, "?", 2));
 
         verifyNoMoreInteractions(dataSource);
     }

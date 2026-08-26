@@ -236,6 +236,27 @@ class JdbcRunnerTest {
     }
 
     /**
+     * Proves an explicit optional-valued mapper preserves row presence
+     * separately from SQL nullability for imperative applications.
+     */
+    @Test
+    void distinguishesNoRowSqlNullAndNonNullWithAnExplicitMapper() {
+        Optional<Optional<String>> noRow = client.create("SELECT NAME FROM POKEMON WHERE 1 = 0")
+                .map(row -> row.optional(1, String.class))
+                .optional();
+        Optional<Optional<String>> sqlNull = client.create("SELECT CAST(NULL AS VARCHAR)")
+                .map(row -> row.optional(1, String.class))
+                .optional();
+        Optional<Optional<String>> value = client.create("SELECT 'Pikachu'")
+                .map(row -> row.optional(1, String.class))
+                .optional();
+
+        assertThat(noRow, is(Optional.empty()));
+        assertThat(sqlNull, is(Optional.of(Optional.empty())));
+        assertThat(value, is(Optional.of(Optional.of("Pikachu"))));
+    }
+
+    /**
      * Proves row access is callback-scoped and a mapper returning null is
      * rejected without leaking its result set.
      */

@@ -66,7 +66,7 @@ public interface ContactOperations {
      * Returns a nullable email as an optional scalar.
      *
      * @param id contact identifier
-     * @return email, or empty for SQL {@code NULL}
+     * @return email, or empty for no row or SQL {@code NULL}
      */
     Optional<String> optionalEmail(long id);
 

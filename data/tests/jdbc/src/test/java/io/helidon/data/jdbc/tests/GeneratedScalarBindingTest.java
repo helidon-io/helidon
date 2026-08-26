@@ -38,13 +38,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("helidon:api:internal")
 class GeneratedScalarBindingTest {
 
     /**
@@ -60,9 +57,57 @@ class GeneratedScalarBindingTest {
         assertThat(source.split("bindParameter\\(jdbcStatement,", -1).length - 1, is(18));
         assertThat(source, containsString("void bindParameter("));
         assertThat(source, containsString("if (value == null) {"));
-        assertThat(source, containsString("statement.bindNull(index, nullType);"));
+        assertThat(source, containsString("JdbcClient.bindNull(statement, index, nullType);"));
         assertThat(source, containsString("statement.bind(index, value);"));
+        assertThat(source, containsString("JdbcClient.createGenerated(jdbcClient, SQL_BIND_ALL, 18);"));
         assertThat(source, not(containsString("if (booleanValue == null) {")));
+
+        String[] parameterNames = {
+                "booleanValue",
+                "byteValue",
+                "shortValue",
+                "integerValue",
+                "longValue",
+                "floatValue",
+                "doubleValue",
+                "decimalValue",
+                "stringValue",
+                "bytesValue",
+                "localDateValue",
+                "localTimeValue",
+                "localDateTimeValue",
+                "offsetTimeValue",
+                "offsetDateTimeValue",
+                "dateValue",
+                "timeValue",
+                "timestampValue"
+        };
+        JDBCType[] nullTypes = {
+                JDBCType.BOOLEAN,
+                JDBCType.TINYINT,
+                JDBCType.SMALLINT,
+                JDBCType.INTEGER,
+                JDBCType.BIGINT,
+                JDBCType.REAL,
+                JDBCType.DOUBLE,
+                JDBCType.DECIMAL,
+                JDBCType.VARCHAR,
+                JDBCType.VARBINARY,
+                JDBCType.DATE,
+                JDBCType.TIME,
+                JDBCType.TIMESTAMP,
+                JDBCType.TIME_WITH_TIMEZONE,
+                JDBCType.TIMESTAMP_WITH_TIMEZONE,
+                JDBCType.DATE,
+                JDBCType.TIME,
+                JDBCType.TIMESTAMP
+        };
+        for (int index = 0; index < parameterNames.length; index++) {
+            assertThat(source,
+                       containsString("bindParameter(jdbcStatement, " + (index + 1) + ", "
+                                              + parameterNames[index] + ", JDBCType."
+                                              + nullTypes[index] + ");"));
+        }
     }
 
     /**
@@ -76,6 +121,7 @@ class GeneratedScalarBindingTest {
         String source = generatedSource(OverflowRepository.class);
 
         assertThat(source, containsString("if (name == null) {"));
+        assertThat(source, containsString("JdbcClient.bindNull(jdbcStatement, 1, JDBCType.VARCHAR);"));
         assertThat(source, not(containsString("void bindParameter(")));
     }
 
@@ -98,16 +144,15 @@ class GeneratedScalarBindingTest {
     }
 
     /**
-     * Proves generated call shape uses ordinary binds for values and canonical
-     * typed-null binds for every supported reference scalar family.
+     * Proves generated non-null calls use the supported statement contract
+     * when an alternate client receives the generated repository.
      */
     @Test
-    void generatedRepositoryBindsEveryReferenceScalarAndCanonicalTypedNull() {
+    void generatedRepositoryBindsEveryReferenceScalarThroughTheSupportedContract() {
         JdbcClient client = mock(JdbcClient.class);
         JdbcClient.Statement statement = mock(JdbcClient.Statement.class);
-        when(client.create(anyString(), anyInt())).thenReturn(statement);
+        when(client.create(anyString())).thenReturn(statement);
         when(statement.bind(anyInt(), any())).thenReturn(statement);
-        when(statement.bindNull(anyInt(), any())).thenReturn(statement);
         ScalarBindingRepository repository = new ScalarBindingRepository__Jdbc(client);
 
         Object[] values = {
@@ -132,38 +177,9 @@ class GeneratedScalarBindingTest {
         };
         invoke(repository, values);
 
-        verify(client).create(anyString(), eq(values.length));
+        verify(client).create(anyString());
         for (int index = 0; index < values.length; index++) {
             verify(statement).bind(index + 1, values[index]);
-        }
-        verify(statement).execute();
-
-        clearInvocations(client, statement);
-        invoke(repository, new Object[values.length]);
-
-        JDBCType[] nullTypes = {
-                JDBCType.BOOLEAN,
-                JDBCType.TINYINT,
-                JDBCType.SMALLINT,
-                JDBCType.INTEGER,
-                JDBCType.BIGINT,
-                JDBCType.REAL,
-                JDBCType.DOUBLE,
-                JDBCType.DECIMAL,
-                JDBCType.VARCHAR,
-                JDBCType.VARBINARY,
-                JDBCType.DATE,
-                JDBCType.TIME,
-                JDBCType.TIMESTAMP,
-                JDBCType.TIME_WITH_TIMEZONE,
-                JDBCType.TIMESTAMP_WITH_TIMEZONE,
-                JDBCType.DATE,
-                JDBCType.TIME,
-                JDBCType.TIMESTAMP
-        };
-        verify(client).create(anyString(), eq(nullTypes.length));
-        for (int index = 0; index < nullTypes.length; index++) {
-            verify(statement).bindNull(index + 1, nullTypes[index]);
         }
         verify(statement).execute();
     }

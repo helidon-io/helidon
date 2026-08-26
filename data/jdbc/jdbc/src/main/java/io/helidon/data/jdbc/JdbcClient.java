@@ -17,6 +17,7 @@ package io.helidon.data.jdbc;
 
 import java.sql.JDBCType;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
@@ -43,7 +44,73 @@ import io.helidon.service.registry.Service;
 public interface JdbcClient {
 
     /**
-     * Creates a single-use statement description from positional JDBC SQL.
+     * Creates a statement description for generated repository
+     * code that has already validated the positional JDBC SQL.
+     * <p>
+     * This internal code-generation bridge carries the physical marker count
+     * computed by the annotation processor. A statement from Helidon's JDBC
+     * provider avoids rescanning static SQL and accessing the runtime
+     * marker-count cache. An alternate provider falls back to its supported
+     * {@link #create(String)} operation and therefore has no generated-only
+     * method to implement.
+     *
+     * @param client JDBC client
+     * @param sql validated SQL containing positional JDBC markers
+     * @param parameterCount exact number of physical JDBC markers
+     * @return statement description
+     * @throws NullPointerException if the client or SQL is {@code null}
+     * @throws IllegalArgumentException if the parameter count is negative or
+     *                                  greater than the SQL text length
+     */
+    @Api.Internal
+    static Statement createGenerated(JdbcClient client, String sql, int parameterCount) {
+        Objects.requireNonNull(client, "The JDBC client must not be null.");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        // A physical marker occupies at least one code unit. This constant-time
+        // guard prevents an invalid internal caller from requesting an
+        // unrelated or unbounded bind array without rescanning generated SQL.
+        if (parameterCount < 0 || parameterCount > sql.length()) {
+            throw new IllegalArgumentException(
+                    "The JDBC parameter count must be between zero and the SQL statement length.");
+        }
+        if (client instanceof JdbcClientImpl clientImpl) {
+            return clientImpl.createGenerated(sql, parameterCount);
+        }
+        return client.create(sql);
+    }
+
+    /**
+     * Binds SQL {@code NULL} for a generated declarative repository.
+     * <p>
+     * This internal code-generation bridge is not part of the statement
+     * implementor contract. It accepts only a statement created by Helidon's
+     * JDBC provider. Types that require a database type name are not
+     * supported.
+     *
+     * @param statement statement created by Helidon's JDBC provider
+     * @param index one-based JDBC position
+     * @param type SQL type of the null value
+     * @return the statement
+     * @throws NullPointerException if the statement or type is {@code null}
+     * @throws IllegalArgumentException if the position or type is invalid,
+     *                                  or the type requires a database type name
+     * @throws IllegalStateException if a terminal operation has started
+     * @throws UnsupportedOperationException if the statement was not created
+     *                                       by Helidon's JDBC provider
+     */
+    @Api.Internal
+    static Statement bindNull(Statement statement, int index, JDBCType type) {
+        Objects.requireNonNull(statement, "The JDBC statement must not be null.");
+        Objects.requireNonNull(type, "The JDBC null type must not be null.");
+        if (statement instanceof JdbcStatement jdbcStatement) {
+            return jdbcStatement.bindNull(index, type);
+        }
+        throw new UnsupportedOperationException(
+                "Typed SQL null binding requires a statement created by Helidon's JDBC provider.");
+    }
+
+    /**
+     * Creates a statement description from positional JDBC SQL.
      * <p>
      * The SQL is trusted executable application input. This method does not
      * sanitize data concatenated into the SQL text. Represent untrusted values
@@ -70,25 +137,6 @@ public interface JdbcClient {
     Statement create(String sql);
 
     /**
-     * Creates a single-use statement description for generated repository
-     * code that has already validated the positional JDBC SQL.
-     * <p>
-     * This internal code-generation bridge carries the physical marker count
-     * computed by the annotation processor. It avoids rescanning static SQL or
-     * mutating the runtime marker-count cache on every repository invocation.
-     * Imperative applications must use {@link #create(String)}.
-     *
-     * @param sql validated SQL containing positional JDBC markers
-     * @param parameterCount exact number of physical JDBC markers
-     * @return statement description
-     * @throws NullPointerException if the SQL is {@code null}
-     * @throws IllegalArgumentException if the parameter count is negative or
-     *                                  greater than the SQL text length
-     */
-    @Api.Internal
-    Statement create(String sql, int parameterCount);
-
-    /**
      * Describes one prepared JDBC operation.
      * <p>
      * Bind positions are one-based. The stage accepts exactly one terminal
@@ -108,25 +156,6 @@ public interface JdbcClient {
          * @throws IllegalStateException if a terminal operation has started
          */
         Statement bind(int index, Object value);
-
-        /**
-         * Binds SQL {@code NULL} for a generated declarative repository.
-         *
-         * <p>
-         * This is an internal code-generation bridge, not a supported
-         * imperative application API. Types that require a database type name
-         * are not supported.
-         *
-         * @param index one-based JDBC position
-         * @param type SQL type of the null value
-         * @return this statement
-         * @throws NullPointerException if the type is {@code null}
-         * @throws IllegalArgumentException if the position or type is invalid,
-         *                                  or the type requires a database type name
-         * @throws IllegalStateException if a terminal operation has started
-         */
-        @Api.Internal
-        Statement bindNull(int index, JDBCType type);
 
         /**
          * Executes an update and returns its large update count.
@@ -150,6 +179,14 @@ public interface JdbcClient {
 
         /**
          * Selects column-one mapping for a supported scalar type.
+         * <p>
+         * {@link Rows#one()} and {@link Rows#list()} require a non-null column
+         * value. {@link Rows#optional()} returns {@link Optional#empty()} both
+         * when no row is returned and when exactly one row contains SQL
+         * {@code NULL} in column one. Applications that need to distinguish
+         * those states can use {@link #map(RowMapper)} with a mapper that
+         * returns an {@link Optional}; the outer optional returned by
+         * {@link Rows#optional()} then represents row presence.
          *
          * @param scalarType scalar type
          * @param <T> mapped scalar type
@@ -229,8 +266,17 @@ public interface JdbcClient {
 
         /**
          * Returns zero or one row.
+         * <p>
+         * For a scalar stage created by {@link Statement#map(Class)}, an empty
+         * result represents either no row or exactly one row whose first
+         * column is SQL {@code NULL}. For a stage created by
+         * {@link Statement#map(RowMapper)}, an empty result represents no row;
+         * the mapper may return an {@link Optional} value to represent column
+         * nullability separately.
          *
-         * @return optional mapped row
+         * @return empty if no row is returned or, for scalar mapping selected
+         *         by {@link Statement#map(Class)}, if one row contains SQL
+         *         {@code NULL} in column one; otherwise the mapped row
          * @throws io.helidon.data.NonUniqueResultException if more than one row is returned
          * @throws DataException if JDBC execution or provider mapping fails
          * @throws IllegalStateException if a terminal operation has started

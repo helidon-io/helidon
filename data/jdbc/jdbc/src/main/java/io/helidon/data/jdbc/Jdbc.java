@@ -118,9 +118,10 @@ public final class Jdbc {
      * Selects an application row mapper for query or generated key rows.
      * <p>
      * With a mapper class, generated code injects that exact service type.
-     * Without a class, generated code requires a row mapper service whose
-     * generic result type exactly matches the repository result type. When this
-     * annotation is absent, supported records use generated mapping.
+     * Without an explicit mapper class, generated code requires a row mapper
+     * service whose generic result type exactly matches the repository result
+     * type. When this annotation is absent, supported records use generated
+     * mapping.
      * <p>
      * A mapper used by a singleton repository must be stateless or safe for
      * concurrent use. The mapper receives a scoped {@link JdbcClient.Row} and
@@ -133,8 +134,10 @@ public final class Jdbc {
         /**
          * Returns the mapper service type.
          *
-         * @return service type, or {@link Void} to select by generic result type
+         * @return service type, or the raw {@link JdbcClient.RowMapper} contract
+         *         to select by generic result type
          */
-        Class<?> value() default Void.class;
+        Class<? extends JdbcClient.RowMapper> value()
+                default JdbcClient.RowMapper.class;
     }
 }

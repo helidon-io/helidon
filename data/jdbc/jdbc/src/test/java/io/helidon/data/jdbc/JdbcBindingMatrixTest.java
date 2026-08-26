@@ -121,7 +121,7 @@ class JdbcBindingMatrixTest {
                                      JDBCType.REF,
                                      JDBCType.STRUCT)) {
             IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-                                                            () -> client.create(SQL).bindNull(1, type));
+                                                            () -> JdbcClient.bindNull(client.create(SQL), 1, type));
             assertThat(failure.getMessage(),
                        is("The JDBC client cannot bind a null value of type '" + type
                                   + "' without a database type name."));
@@ -144,9 +144,9 @@ class JdbcBindingMatrixTest {
         verify(statement, never()).setNull(1, nullType.getVendorTypeNumber());
 
         prepareOperation();
-        new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
-                .create(SQL)
-                .bindNull(1, nullType)
+        JdbcClient.bindNull(new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider()).create(SQL),
+                            1,
+                            nullType)
                 .execute();
         verify(statement).setNull(1, nullType.getVendorTypeNumber());
         verify(statement, never()).setObject(1, null);

@@ -159,8 +159,9 @@ class JdbcBindSnapshotTest {
     }
 
     @Test
+    @SuppressWarnings("helidon:api:internal")
     void typedNullUsesOnlyTheDeclaredJdbcType() throws Exception {
-        client.create(UPDATE_SQL).bindNull(1, JDBCType.TIMESTAMP).execute();
+        JdbcClient.bindNull(client.create(UPDATE_SQL), 1, JDBCType.TIMESTAMP).execute();
 
         verify(preparedStatement).setNull(1, JDBCType.TIMESTAMP.getVendorTypeNumber());
         verify(preparedStatement, never()).setObject(anyInt(), any());

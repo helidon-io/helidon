@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -107,6 +108,24 @@ class JdbcGeneratedKeyScalarMatrixTest {
         assertThat(generatedLongKeys().optional().isEmpty(), is(true));
     }
 
+    /**
+     * Proves the generated optional-scalar shape collapses an absent key row
+     * and a SQL-null key while retaining a non-null generated key.
+     */
+    @Test
+    void collapsesNoRowAndSqlNullForOptionalGeneratedScalarKeys() throws Exception {
+        prepareOperation();
+        when(resultSet.next()).thenReturn(false);
+        assertThat(optionalGeneratedLongKey(), is(Optional.empty()));
+
+        prepareOperation();
+        assertThat(optionalGeneratedLongKey(), is(Optional.empty()));
+
+        prepareOperation();
+        when(resultSet.getObject(1, Long.class)).thenReturn(10L);
+        assertThat(optionalGeneratedLongKey(), is(Optional.of(10L)));
+    }
+
     @Test
     void usesTheExactJdbcPreparationOverloadForDefaultAndNamedKeys() throws Exception {
         prepareOperation();
@@ -162,6 +181,15 @@ class JdbcGeneratedKeyScalarMatrixTest {
             assertThat(actual, is(expected));
             verify(resultSet).getObject(1, type);
         }
+    }
+
+    private Optional<Long> optionalGeneratedLongKey() {
+        return new JdbcClientImpl(dataSource, JdbcConnectionLease.ownedProvider())
+                .create(SQL)
+                .generatedKeys()
+                .map(row -> row.optional(1, Long.class))
+                .optional()
+                .flatMap(value -> value);
     }
 
     private void prepareOperation() throws Exception {
