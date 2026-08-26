@@ -2335,7 +2335,11 @@ class StaticContentHandlerTest {
     }
 
     private CachedHandlerPath pathHandler(Path path) throws IOException {
-        return CachedHandlerPath.create(path, path, MediaTypes.TEXT_PLAIN, false, tempDir);
+        return CachedHandlerPath.create(path,
+                                        path.toRealPath(),
+                                        MediaTypes.TEXT_PLAIN,
+                                        false,
+                                        tempDir.toRealPath());
     }
 
     private ServerRequest mockRequestWithHeaders(String acceptEncoding,

@@ -94,11 +94,13 @@ public class StaticContentPreCompressedJmhTest {
 
     @Setup
     public void setup() throws IOException, URISyntaxException {
-        benchmarkDirectory = Files.createTempDirectory("static-content-pre-compressed-jmh-");
-        identityPath = benchmarkDirectory.resolve(RESOURCE);
-        sidecarPath = benchmarkDirectory.resolve(RESOURCE + ".br");
-        Files.writeString(identityPath, "Content", StandardCharsets.UTF_8);
-        Files.writeString(sidecarPath, "Brotli content", StandardCharsets.UTF_8);
+        benchmarkDirectory = Files.createTempDirectory("static-content-pre-compressed-jmh-").toRealPath();
+        identityPath = Files.writeString(benchmarkDirectory.resolve(RESOURCE),
+                                         "Content",
+                                         StandardCharsets.UTF_8).toRealPath();
+        sidecarPath = Files.writeString(benchmarkDirectory.resolve(RESOURCE + ".br"),
+                                        "Brotli content",
+                                        StandardCharsets.UTF_8).toRealPath();
 
         handler = new BenchmarkStaticContentHandler(FileSystemHandlerConfig.builder()
                                                            .location(benchmarkDirectory)
