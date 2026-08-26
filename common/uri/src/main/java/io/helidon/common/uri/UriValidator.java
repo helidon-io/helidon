@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -233,7 +233,7 @@ public final class UriValidator {
 
         String host = ipLiteral.substring(1, ipLiteral.length() - 1);
         checkNotBlank(Segment.HOST, "Host", ipLiteral, host);
-        if (host.charAt(0) == 'v') {
+        if (host.charAt(0) == 'v' || host.charAt(0) == 'V') {
             // IP future - starts with version `v1` etc.
             validateIpFuture(ipLiteral, host);
             return;
@@ -265,6 +265,11 @@ public final class UriValidator {
         int segments = 0; // max segments is 8 (full IPv6 address)
         String inProgress = host;
         while (!inProgress.isEmpty()) {
+            if (segments >= 8) {
+                throw new UriValidationException(Segment.HOST,
+                                                 ipLiteral.toCharArray(),
+                                                 "Host IPv6 address contains too many segments");
+            }
             if (inProgress.length() == 1) {
                 segments++;
                 validateH16(ipLiteral, inProgress);
@@ -302,6 +307,12 @@ public final class UriValidator {
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(2));
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(3));
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(4));
+                        segments += 2;
+                        if (segments > 8) {
+                            throw new UriValidationException(Segment.HOST,
+                                                             ipLiteral.toCharArray(),
+                                                             "Host IPv6 address contains too many segments");
+                        }
                     } else {
                         throw new UriValidationException(Segment.HOST,
                                                          ipLiteral.toCharArray(),
@@ -330,6 +341,11 @@ public final class UriValidator {
             throw new UriValidationException(Segment.HOST,
                                              ipLiteral.toCharArray(),
                                              "Host IPv6 address contains too many segments");
+        }
+        if (!skipped && segments < 8) {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             "Host IPv6 address contains too few segments");
         }
     }
 

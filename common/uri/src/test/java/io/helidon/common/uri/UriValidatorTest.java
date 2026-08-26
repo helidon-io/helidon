@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,6 +159,7 @@ class UriValidatorTest {
         validateHost("[::1234:5678:1]");
         validateHost("[2001:db8::1234:5678]");
         validateHost("[2001:db8:1::ab9:C0A8:102]");
+        validateHost("[1:2:3:4:5:6:7::]");
     }
 
     @Test
@@ -170,6 +171,7 @@ class UriValidatorTest {
         validateHost("[::1234:5678:91.123.4.56]");
         validateHost("[::1234:5678:1.2.3.4]");
         validateHost("[2001:db8::1234:5678:5.6.7.8]");
+        validateHost("[1:2:3:4:5::192.0.2.1]");
     }
 
     @Test
@@ -177,6 +179,7 @@ class UriValidatorTest {
         // IPvFuture
         validateHost("[v9.abc:def]");
         validateHost("[v9.abc:def*]");
+        validateHost("[Vf.foo-bar]");
     }
 
     @Test
@@ -232,6 +235,21 @@ class UriValidatorTest {
         invokeExpectFailure("Host IPv6 address contains too many segments: "
                                     + "[0000:0000:0000:0000:0000:0000:0000:0000:0000:0000]",
                             "[0000:0000:0000:0000:0000:0000:0000:0000:0000:0000]");
+        String overlongLiteral = "[" + "1:".repeat(500) + "1]";
+        invokeExpectFailure("Host IPv6 address contains too many segments: " + overlongLiteral,
+                            overlongLiteral);
+        invokeExpectFailure("Host IPv6 address contains too few segments: [1:2:3]",
+                            "[1:2:3]");
+        invokeExpectFailure("Host IPv6 address contains too few segments: [1.2.3.4]",
+                            "[1.2.3.4]");
+        invokeExpectFailure("Host IPv6 address contains too few segments: [1:2:3:4:5:6:7]",
+                            "[1:2:3:4:5:6:7]");
+        invokeExpectFailure("Host IPv6 address contains too few segments: [1:2:3:4:5:192.0.2.1]",
+                            "[1:2:3:4:5:192.0.2.1]");
+        invokeExpectFailure("Host IPv6 address contains too many segments: [1:2:3:4:5:6:7:8::]",
+                            "[1:2:3:4:5:6:7:8::]");
+        invokeExpectFailure("Host IPv6 address contains too many segments: [1:2:3:4:5:6::192.0.2.1]",
+                            "[1:2:3:4:5:6::192.0.2.1]");
         // missing everything
         invokeExpectFailure("Host cannot be blank. Value: []",
                             "[]");

@@ -150,6 +150,21 @@ class Http1PrologueTest {
     }
 
     @Test
+    void testConnectIpFutureAuthorityFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "CONNECT [Vf.foo-bar]:443 HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.uriPath().rawPath(), is("[Vf.foo-bar]:443"));
+    }
+
+    @Test
+    void testConnectRejectsInvalidIpLiteralAuthorityForm() {
+        assertInvalidRequestTarget("CONNECT [1:2:3]:443 HTTP/1.1\r\n");
+        assertInvalidRequestTarget("CONNECT [1.2.3.4]:443 HTTP/1.1\r\n");
+    }
+
+    @Test
     void testAbsoluteFormRemainsValid() {
         DataReader reader = DataReader.create(() -> "GET http://example.com/boards/ HTTP/1.1\r\n"
                 .getBytes(StandardCharsets.US_ASCII));
