@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -127,6 +128,7 @@ interface BaseHandlerConfigBlueprint {
 
     /**
      * Configures the capacity of the cache used for resource metadata.
+     * Pre-compressed sidecar lookup state is attached to the corresponding normal resource record.
      * <p>
      * To cache content (bytes) in memory, use {@link io.helidon.webserver.staticcontent.BaseHandlerConfig#memoryCache()}
      *
@@ -134,4 +136,24 @@ interface BaseHandlerConfigBlueprint {
      */
     @Option.Configured
     Optional<Integer> recordCacheCapacity();
+
+    /**
+     * Whether pre-compressed sidecar resources should be selected for this handler; feature-registered handlers inherit
+     * the feature value when absent, and direct service creation defaults to enabled.
+     *
+     * @return whether pre-compressed sidecar resources should be used
+     */
+    @Option.Configured
+    Optional<Boolean> preCompressedEnabled();
+
+    /**
+     * Ordered pre-compressed content coding and file suffix entries; handler entries replace inherited feature-level
+     * entries rather than merging with them, an explicit empty list disables sidecar lookups for this handler, codings
+     * must be unique concrete valid HTTP tokens other than {@code identity} and {@code *}, and suffixes have leading
+     * dots ignored and must not contain path separators.
+     *
+     * @return ordered content coding and file suffix entries
+     */
+    @Option.Configured
+    Optional<List<PreCompressedEncodingConfig>> preCompressedEncodings();
 }

@@ -17,26 +17,23 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.ForbiddenException;
-import io.helidon.http.Method;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
-
-import static io.helidon.webserver.staticcontent.StaticContentHandler.processPreconditions;
 
 record CachedHandlerPath(Path sourcePath,
                          Path path,
                          StaticContentMetadata metadata,
                          boolean followLinks,
-                         Path secureRoot) implements CachedHandler {
+                         Path secureRoot,
+                         SidecarCache sidecarCache) implements CachedHandler {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerPath.class.getName());
 
     static CachedHandlerPath create(Path path,
@@ -62,19 +59,53 @@ record CachedHandlerPath(Path sourcePath,
                                      resolvedPath,
                                      StaticContentMetadata.create(mediaType, modified, attributes.size()),
                                      followLinks,
-                                     secureRoot);
+                                     secureRoot,
+                                     SidecarCache.create());
     }
 
     @Override
-    public boolean handle(LruCache<String, CachedHandler> cache,
-                          Method method,
-                          ServerRequest request,
-                          ServerResponse response,
-                          String requestedResource) throws IOException {
+    public Optional<PreparedContent> prepare(LruCache<String, CachedHandler> cache,
+                                             String requestedResource) throws IOException {
+        return prepare(cache::remove, requestedResource);
+    }
 
+    @Override
+    public Optional<PreparedContent> prepareSidecar(SidecarCache sidecarCache,
+                                                    String coding,
+                                                    LruCache<String, CachedHandler> cache,
+                                                    String requestedResource) throws IOException {
+        return prepare(_ -> sidecarCache.remove(coding), requestedResource);
+    }
+
+    @Override
+    public boolean available() {
         if (!Files.exists(sourcePath)) {
-            cache.remove(requestedResource);
             return false;
+        }
+        try {
+            BasicFileAttributes attributes = FileBasedContentHandler.attributes(path, followLinks, secureRoot);
+            if (!attributes.isRegularFile()
+                    || !Files.isReadable(path)
+                    || Files.isHidden(sourcePath)
+                    || Files.isHidden(path)) {
+                throw new ForbiddenException("File is not accessible");
+            }
+            return true;
+        } catch (IOException e) {
+            throw new ForbiddenException("File is not accessible", e);
+        }
+    }
+
+    @Override
+    public SidecarCache sidecarCache() {
+        return sidecarCache;
+    }
+
+    private Optional<PreparedContent> prepare(Consumer<String> invalidate,
+                                              String requestedResource) throws IOException {
+        if (!Files.exists(sourcePath)) {
+            invalidate.accept(requestedResource);
+            return Optional.empty();
         }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
@@ -87,36 +118,25 @@ record CachedHandlerPath(Path sourcePath,
                     || !Files.isReadable(path)
                     || Files.isHidden(sourcePath)
                     || Files.isHidden(path)) {
-                cache.remove(requestedResource);
+                invalidate.accept(requestedResource);
                 throw new ForbiddenException("File is not accessible");
             }
         } catch (IOException e) {
-            cache.remove(requestedResource);
+            invalidate.accept(requestedResource);
             throw new ForbiddenException("File is not accessible", e);
         }
 
-        SeekableByteChannel channel;
-        try {
-            channel = FileBasedContentHandler.newByteChannel(path, followLinks, secureRoot);
-        } catch (IOException e) {
-            cache.remove(requestedResource);
-            throw new ForbiddenException("File is not accessible", e);
-        }
-
-        // etag etc.
-        try (SeekableByteChannel openChannel = channel) {
-            processPreconditions(metadata, request.headers(), response.headers());
-
-            metadata.setContentType(response.headers());
-
-            if (method == Method.GET) {
-                FileBasedContentHandler.send(request, response, openChannel, metadata);
-            } else {
-                metadata.setContentLength(response.headers());
-                response.send();
+        IoSupplier<PreparedContent.Body> bodySource = () -> {
+            try {
+                return PreparedContent.channel(FileBasedContentHandler.newByteChannel(path, followLinks, secureRoot));
+            } catch (IOException e) {
+                invalidate.accept(requestedResource);
+                throw new ForbiddenException("File is not accessible", e);
             }
-        }
+        };
 
-        return true;
+        return Optional.of(new PreparedContent(metadata,
+                                               null,
+                                               bodySource));
     }
 }

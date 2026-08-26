@@ -18,11 +18,8 @@ package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -43,10 +40,6 @@ import java.util.Set;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.HeaderNames;
-import io.helidon.http.ServerRequestHeaders;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
 
 abstract class FileBasedContentHandler extends StaticContentHandler {
     private static final OpenOption[] READ_OPTIONS = {StandardOpenOption.READ};
@@ -58,6 +51,12 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
 
     FileBasedContentHandler(BaseHandlerConfig config) {
         super(config);
+
+        this.customMediaTypes = config.contentTypes();
+    }
+
+    FileBasedContentHandler(BaseHandlerConfig config, boolean preCompressedCrossOriginSourcingEnabled) {
+        super(config, preCompressedCrossOriginSourcingEnabled);
 
         this.customMediaTypes = config.contentTypes();
     }
@@ -76,57 +75,6 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
         try (SeekableByteChannel channel = newByteChannel(path, followLinks, secureRoot);
                 InputStream in = Channels.newInputStream(channel)) {
             return in.readAllBytes();
-        }
-    }
-
-    static void send(ServerRequest request,
-                     ServerResponse response,
-                     SeekableByteChannel channel,
-                     StaticContentMetadata metadata) throws IOException {
-        ServerRequestHeaders headers = request.headers();
-        long contentLength = metadata.contentLength();
-        if (headers.contains(HeaderNames.RANGE)) {
-            List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
-                                                                   response,
-                                                                   headers.get(HeaderNames.RANGE).values(),
-                                                                   contentLength);
-            if (ranges.size() == 1) {
-                // single response
-                ByteRangeRequest range = ranges.getFirst();
-                range.setContentRange(response);
-
-                // only send a part of the file
-                try (OutputStream out = response.outputStream()) {
-                    WritableByteChannel outChannel = Channels.newChannel(out);
-                    channel.position(range.offset());
-                    long toRead = range.length();
-                    ByteBuffer buffer = ByteBuffer.allocate((int) Math.min(toRead, 1000));
-                    while (toRead != 0) {
-                        int read = channel.read(buffer);
-                        int toWrite = (int) Math.min(toRead, read);
-                        buffer.flip();
-                        buffer.limit(toWrite);
-                        outChannel.write(buffer);
-                        buffer.flip();
-                        toRead -= toWrite;
-                    }
-                }
-            } else {
-                // multipart response not yet supported, send all
-                metadata.setContentLength(response.headers());
-                // send the full file
-                channel.position(0);
-                try (InputStream in = Channels.newInputStream(channel); OutputStream out = response.outputStream()) {
-                    in.transferTo(out);
-                }
-            }
-        } else {
-            metadata.setContentLength(response.headers());
-            // send the full file
-            channel.position(0);
-            try (InputStream in = Channels.newInputStream(channel); OutputStream out = response.outputStream()) {
-                in.transferTo(out);
-            }
         }
     }
 
@@ -251,10 +199,15 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     }
 
     Optional<CachedHandler> fileHandler(Path path) throws IOException {
+        return fileHandler(path, fileName(path));
+    }
+
+    Optional<CachedHandler> fileHandler(Path path,
+                                        String logicalFileName) throws IOException {
         // we know the file exists and is a file
         return Optional.of(CachedHandlerPath.create(path,
                                                     path,
-                                                    detectType(fileName(path)),
+                                                    detectType(logicalFileName),
                                                     true,
                                                     null));
     }

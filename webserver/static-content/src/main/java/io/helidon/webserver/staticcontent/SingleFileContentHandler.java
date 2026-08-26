@@ -17,6 +17,8 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -95,10 +97,15 @@ class SingleFileContentHandler extends FileBasedContentHandler {
             String resource = ".";
             Optional<CachedHandler> cachedHandler = cacheHandler(resource);
             if (cachedHandler.isPresent()) {
-                return cachedHandler.get().handle(handlerCache(), method, req, res, resource);
+                CachedHandler handler = selectSingleFileHandler(cachedHandler.get(), req);
+                return handler.handle(handlerCache(), method, req, res, resource);
             }
             Optional<CachedHandlerPath> handler = cacheFileHandler();
-            return handler.isPresent() && handler.get().handle(handlerCache(), method, req, res, resource);
+            if (handler.isEmpty()) {
+                return false;
+            }
+            CachedHandler selected = selectSingleFileHandler(handler.get(), req);
+            return selected.handle(handlerCache(), method, req, res, resource);
         }
 
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -127,6 +134,35 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         }
     }
 
+    private CachedHandler selectSingleFileHandler(CachedHandler identityHandler, ServerRequest request)
+            throws IOException {
+        String logicalFileName = fileName(path);
+        try {
+            return selectHandler(identityHandler, request, (coding, suffix) -> {
+                Path pinnedPath = realPath.get();
+                if (pinnedPath == null) {
+                    Optional<Path> maybePinnedPath = contentPath(path);
+                    if (maybePinnedPath.isEmpty()) {
+                        return Optional.empty();
+                    }
+                    pinnedPath = maybePinnedPath.get();
+                }
+                Path sidecar = pinnedPath.resolveSibling(fileName(pinnedPath) + "." + suffix);
+                Optional<Path> resolvedSidecar = sidecarPath(sidecar);
+                if (resolvedSidecar.isEmpty()) {
+                    return Optional.empty();
+                }
+                return Optional.of(CachedHandlerPath.create(sidecar,
+                                                            resolvedSidecar.get(),
+                                                            detectType(logicalFileName),
+                                                            false,
+                                                            pinnedPath.getParent()));
+            });
+        } catch (URISyntaxException e) {
+            throw new IOException(e);
+        }
+    }
+
     private Optional<Path> contentPath(Path path) {
         try {
             Path currentRealPath = path.toRealPath();
@@ -143,6 +179,23 @@ class SingleFileContentHandler extends FileBasedContentHandler {
             }
             if (currentRealPath.equals(pinnedRealPath)) {
                 return Optional.of(currentRealPath);
+            }
+            return Optional.empty();
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Path> sidecarPath(Path sidecar) {
+        Path pinnedPath = realPath.get();
+        if (pinnedPath == null || !Files.exists(sidecar)) {
+            return Optional.empty();
+        }
+
+        try {
+            Path resolvedSidecar = sidecar.toRealPath();
+            if (resolvedSidecar.equals(sidecar.toAbsolutePath().normalize())) {
+                return Optional.of(resolvedSidecar);
             }
             return Optional.empty();
         } catch (IOException | SecurityException e) {
