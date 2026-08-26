@@ -312,6 +312,52 @@ WebClient provides three DNS resolver implementations out of the box:
 See [Configuration options][io-helidon-webcl].
 <!--/include-->
 
+### Registry-managed WebClients
+
+The service registry provides a default `WebClient` even when no clients are
+configured. The unqualified `WebClient` service and the client named `@default`
+refer to the same instance.
+
+Configure the default client and additional named clients under the `clients`
+root:
+
+```yaml [application.yaml]
+clients:
+  "@default":
+    base-uri: "https://default.example"
+  inventory:
+    base-uri: "https://inventory.example"
+```
+
+Inject the default client without a qualifier and named clients using
+`@Service.Named`:
+
+```java
+@Service.Singleton
+class ClientConsumer {
+    private final WebClient defaultClient;
+    private final WebClient inventoryClient;
+
+    @Service.Inject
+    ClientConsumer(WebClient defaultClient,
+                   @Service.Named("inventory") WebClient inventoryClient) {
+        this.defaultClient = defaultClient;
+        this.inventoryClient = inventoryClient;
+    }
+}
+```
+
+The same clients can be obtained programmatically:
+
+```java
+WebClient defaultClient = serviceRegistry.get(WebClient.class);
+WebClient inventoryClient = serviceRegistry.getNamed(WebClient.class, "inventory");
+```
+
+The `clients` root defines registry-managed WebClient instances. The singular
+`client` root used in the examples below is passed explicitly to a WebClient
+builder and does not define registry services.
+
 ## Protocol Configuration
 
 Protocol specific configuration can be set using the `protocol-configs`
