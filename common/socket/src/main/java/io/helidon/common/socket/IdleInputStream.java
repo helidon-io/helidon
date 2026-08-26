@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.common.socket;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -165,15 +166,34 @@ class IdleInputStream extends InputStream {
         }
     }
 
-    private void endIdle() {
+    private void endIdle() throws IOException {
         try {
             cancelled = true;
             idlingThread.get();
             idlingThread = null;
             cancelled = false;
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
             closed = true;
-            throw new RuntimeException("Exception in socket monitor thread.", e);
+            Thread.currentThread().interrupt();
+            var interrupted = new InterruptedIOException("Interrupted while waiting for socket monitor thread.");
+            interrupted.initCause(e);
+            throw interrupted;
+        } catch (ExecutionException e) {
+            closed = true;
+            Throwable cause = e.getCause();
+            if (cause instanceof UncheckedIOException unchecked) {
+                throw unchecked.getCause();
+            }
+            if (cause instanceof IOException ioException) {
+                throw ioException;
+            }
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            throw new IOException("Exception in socket monitor thread.", cause);
         }
     }
 }
