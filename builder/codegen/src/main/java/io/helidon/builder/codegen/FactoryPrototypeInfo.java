@@ -86,7 +86,7 @@ final class FactoryPrototypeInfo {
                 .builderAccessModifier(builderAccessModifier(blueprintAnnotation))
                 .createEmptyCreate(createEmptyPublic(blueprintAnnotation))
                 .recordStyle(recordStyleAccessors(blueprintAnnotation))
-                .registrySupport(registrySupport(blueprint))
+                .registrySupport(registrySupport(ctx, blueprint))
                 .superPrototype(superPrototype)
                 .providerProvides(providerProvides(blueprint))
                 .javadoc(prototypeJavadoc(blueprint))
@@ -174,15 +174,15 @@ final class FactoryPrototypeInfo {
                 && Api.class.getPackageName().equals(annotationType.packageName());
     }
 
-    static Optional<String> inheritedServiceRegistryAccessor(TypeInfo blueprint) {
-        return superBlueprintDefinition(blueprint)
-                .flatMap(FactoryPrototypeInfo::serviceRegistryOwner)
+    static Optional<String> inheritedServiceRegistryAccessor(RoundContext ctx, TypeInfo blueprint) {
+        return superBlueprintDefinition(ctx, blueprint)
+                .flatMap(it -> serviceRegistryOwner(ctx, it))
                 .map(FactoryPrototypeInfo::serviceRegistryAccessor);
     }
 
-    static Optional<String> inheritedConfigAccessor(TypeInfo blueprint) {
-        return superBlueprintDefinition(blueprint)
-                .flatMap(FactoryPrototypeInfo::configOwner)
+    static Optional<String> inheritedConfigAccessor(RoundContext ctx, TypeInfo blueprint) {
+        return superBlueprintDefinition(ctx, blueprint)
+                .flatMap(it -> configOwner(ctx, it))
                 .map(FactoryPrototypeInfo::configAccessor);
     }
 
@@ -589,28 +589,28 @@ final class FactoryPrototypeInfo {
                 .orElseGet(Set::of);
     }
 
-    private static boolean registrySupport(TypeInfo blueprint) {
+    private static boolean registrySupport(RoundContext ctx, TypeInfo blueprint) {
         Optional<Annotation> annotation = blueprint.findAnnotation(Types.PROTOTYPE_SERVICE_REGISTRY);
         if (annotation.isPresent()) {
             return annotation.get().booleanValue().orElse(true);
         }
-        return superBlueprintDefinition(blueprint)
-                .map(FactoryPrototypeInfo::registrySupport)
+        return superBlueprintDefinition(ctx, blueprint)
+                .map(it -> registrySupport(ctx, it))
                 .orElse(false);
     }
 
-    private static Optional<TypeInfo> serviceRegistryOwner(TypeInfo blueprint) {
-        Optional<TypeInfo> inheritedOwner = superBlueprintDefinition(blueprint)
-                .flatMap(FactoryPrototypeInfo::serviceRegistryOwner);
+    private static Optional<TypeInfo> serviceRegistryOwner(RoundContext ctx, TypeInfo blueprint) {
+        Optional<TypeInfo> inheritedOwner = superBlueprintDefinition(ctx, blueprint)
+                .flatMap(it -> serviceRegistryOwner(ctx, it));
         if (inheritedOwner.isPresent()) {
             return inheritedOwner;
         }
         return declaresServiceRegistry(blueprint) ? Optional.of(blueprint) : Optional.empty();
     }
 
-    private static Optional<TypeInfo> configOwner(TypeInfo blueprint) {
-        Optional<TypeInfo> inheritedOwner = superBlueprintDefinition(blueprint)
-                .flatMap(FactoryPrototypeInfo::configOwner);
+    private static Optional<TypeInfo> configOwner(RoundContext ctx, TypeInfo blueprint) {
+        Optional<TypeInfo> inheritedOwner = superBlueprintDefinition(ctx, blueprint)
+                .flatMap(it -> configOwner(ctx, it));
         if (inheritedOwner.isPresent()) {
             return inheritedOwner;
         }
@@ -625,11 +625,13 @@ final class FactoryPrototypeInfo {
         return recordStyleAccessors(blueprintAnnotation(owner)) ? "config" : "getConfig";
     }
 
-    private static Optional<TypeInfo> superBlueprintDefinition(TypeInfo blueprint) {
-        return superBlueprintDefinition(blueprint, new HashSet<>());
+    private static Optional<TypeInfo> superBlueprintDefinition(RoundContext ctx, TypeInfo blueprint) {
+        return superBlueprintDefinition(ctx, blueprint, new HashSet<>());
     }
 
-    private static Optional<TypeInfo> superBlueprintDefinition(TypeInfo inProgress, Set<TypeName> processed) {
+    private static Optional<TypeInfo> superBlueprintDefinition(RoundContext ctx,
+                                                               TypeInfo inProgress,
+                                                               Set<TypeName> processed) {
         for (TypeInfo superInterface : inProgress.interfaceTypeInfo()) {
             if (!processed.add(superInterface.typeName())) {
                 continue;
@@ -641,15 +643,29 @@ final class FactoryPrototypeInfo {
                     .stream()
                     .filter(it -> it.hasAnnotation(PROTOTYPE_BLUEPRINT))
                     .findFirst();
+            if (prototypeBlueprint.isEmpty()) {
+                prototypeBlueprint = generatedPrototypeBlueprint(ctx, superInterface);
+            }
             if (prototypeBlueprint.isPresent()) {
                 return prototypeBlueprint;
             }
-            Optional<TypeInfo> inheritedBlueprint = superBlueprintDefinition(superInterface, processed);
+            Optional<TypeInfo> inheritedBlueprint = superBlueprintDefinition(ctx, superInterface, processed);
             if (inheritedBlueprint.isPresent()) {
                 return inheritedBlueprint;
             }
         }
         return Optional.empty();
+    }
+
+    private static Optional<TypeInfo> generatedPrototypeBlueprint(RoundContext ctx, TypeInfo prototype) {
+        return prototype.findAnnotation(Types.GENERATED)
+                .filter(it -> it.stringValue()
+                        .filter(BuilderCodegen.class.getName()::equals)
+                        .isPresent())
+                .flatMap(it -> it.stringValue("trigger"))
+                .map(TypeName::create)
+                .flatMap(ctx::typeInfo)
+                .filter(it -> it.hasAnnotation(PROTOTYPE_BLUEPRINT));
     }
 
     private static boolean declaresServiceRegistry(TypeInfo blueprint) {

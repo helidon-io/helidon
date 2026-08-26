@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.codegen.spi.BuilderCodegenExtension;
+import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.ContentBuilder;
@@ -58,16 +59,20 @@ import static io.helidon.common.types.TypeNames.SET;
 final class GenerateAbstractBuilder {
 
     private static final String SERVICE_REGISTRY_CONFIG_KEY = "service-registry";
-    private GenerateAbstractBuilder() {
+
+    private final RoundContext ctx;
+
+    GenerateAbstractBuilder(RoundContext ctx) {
+        this.ctx = ctx;
     }
 
-    static void generate(List<BuilderCodegenExtension> extensions,
-                         ClassModel.Builder classModel,
-                         PrototypeInfo prototypeInfo,
-                         List<TypeArgument> typeArguments,
-                         List<TypeName> typeArgumentNames,
-                         List<OptionHandler> options,
-                         List<BuilderCodegen.NewDefault> newDefaults) {
+    void generate(List<BuilderCodegenExtension> extensions,
+                  ClassModel.Builder classModel,
+                  PrototypeInfo prototypeInfo,
+                  List<TypeArgument> typeArguments,
+                  List<TypeName> typeArgumentNames,
+                  List<OptionHandler> options,
+                  List<BuilderCodegen.NewDefault> newDefaults) {
         Optional<TypeName> superType = prototypeInfo.superPrototype();
         TypeName prototype = prototypeInfo.prototypeType();
 
@@ -463,10 +468,10 @@ final class GenerateAbstractBuilder {
         return type.equals(CONFIG);
     }
 
-    private static void preBuildPrototypeMethod(List<BuilderCodegenExtension> extensions,
-                                                InnerClass.Builder classBuilder,
-                                                PrototypeInfo prototypeInfo,
-                                                List<OptionHandler> options) {
+    private void preBuildPrototypeMethod(List<BuilderCodegenExtension> extensions,
+                                         InnerClass.Builder classBuilder,
+                                         PrototypeInfo prototypeInfo,
+                                         List<OptionHandler> options) {
         Method.Builder preBuildBuilder = Method.builder()
                 .name("preBuildPrototype")
                 .accessModifier(AccessModifier.PROTECTED)
@@ -487,7 +492,7 @@ final class GenerateAbstractBuilder {
 
             if (configured && hasConfiguredRegistryServiceOrProvider(options)) {
                 // need to have a non-null config instance
-                String configAccessor = FactoryPrototypeInfo.inheritedConfigAccessor(prototypeInfo.blueprint())
+                String configAccessor = FactoryPrototypeInfo.inheritedConfigAccessor(ctx, prototypeInfo.blueprint())
                         .orElseGet(() -> prototypeInfo.recordStyle() ? "config" : "getConfig");
                 preBuildBuilder.addContent("var config = ")
                         .addContent(configAccessor)
@@ -497,7 +502,7 @@ final class GenerateAbstractBuilder {
             }
 
             if (prototypeInfo.registrySupport() || hasRegistryService) {
-                String registryAccessor = FactoryPrototypeInfo.inheritedServiceRegistryAccessor(prototypeInfo.blueprint())
+                String registryAccessor = FactoryPrototypeInfo.inheritedServiceRegistryAccessor(ctx, prototypeInfo.blueprint())
                         .orElseGet(() -> prototypeInfo.recordStyle() ? "serviceRegistry" : "getServiceRegistry");
                 preBuildBuilder.addContent("var registry = ")
                         .addContent(registryAccessor)

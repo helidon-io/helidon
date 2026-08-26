@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.test.testsubjects.DetachedRegistrySupportChild;
 import io.helidon.builder.test.testsubjects.InheritedChildProvider;
 import io.helidon.builder.test.testsubjects.RegistryServiceChild;
 import io.helidon.builder.test.testsubjects.RegistrySupportChild;
@@ -77,6 +78,23 @@ class ProviderRegistryTest {
 
             assertThat(value.getParentService().map(SomeProvider.SomeService::prop), optionalValue(is("parent")));
             assertThat(value.childService().map(InheritedChildProvider.ChildService::prop), optionalValue(is("child")));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void testInheritedRegistrySupportFromDetachedPrototype() {
+        Config inheritedConfig = Config.just(ConfigSources.create(Map.of(
+                "child-service.registry-provider.value", "child")));
+        ServiceRegistryManager manager = registryManager();
+        try {
+            DetachedRegistrySupportChild value = DetachedRegistrySupportChild.builder()
+                    .config(inheritedConfig)
+                    .setServiceRegistry(manager.registry())
+                    .build();
+
+            assertThat(value.getChildService().map(InheritedChildProvider.ChildService::prop), optionalValue(is("child")));
         } finally {
             manager.shutdown();
         }
