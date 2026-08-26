@@ -229,6 +229,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <!-- Verify that public configuration types are readable from a downstream named module. -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-invoker-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>install</goal>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

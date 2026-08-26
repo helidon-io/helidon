@@ -33,7 +33,7 @@ module io.helidon.integrations.langchain4j.providers.cohere {
 
     requires langchain4j.cohere;
     requires langchain4j.core;
-    requires langchain4j.http.client;
+    requires transitive langchain4j.http.client;
     requires langchain4j.http.client.jdk;
     requires okhttp3;
     requires okio;
