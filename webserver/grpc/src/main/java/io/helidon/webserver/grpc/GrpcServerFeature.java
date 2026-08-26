@@ -81,10 +81,10 @@ class GrpcServerFeature implements ServerFeature {
             RoutingBuilders routingBuilders = socketBuilders.routingBuilders();
             GrpcRouting.Builder builder = routingBuilders.routingBuilder(GrpcRouting.Builder.class,
                                                                          () -> GrpcRouting.builder()
-                                                                                 .config(config)
-                                                                                 .meterRegistry(meterRegistry)
-                                                                                 .serviceRegistry(serviceRegistry));
-            builder.service(route.descriptor());
+                                                                                 .config(config));
+            builder.meterRegistry(meterRegistry)
+                    .serviceRegistry(serviceRegistry)
+                    .service(route.descriptor());
         }
     }
 }
