@@ -54,6 +54,11 @@ public class ProvidedUtilStaticProviderSourceTest {
                                                                                         100))
                                                                                 .addServiceDescriptor(descriptor(
                                                                                         new RegistryProvider(
+                                                                                                "replaceable",
+                                                                                                "registry-lower-priority"),
+                                                                                        25))
+                                                                                .addServiceDescriptor(descriptor(
+                                                                                        new RegistryProvider(
                                                                                                 "registry-low",
                                                                                                 "registry-low"),
                                                                                         50))

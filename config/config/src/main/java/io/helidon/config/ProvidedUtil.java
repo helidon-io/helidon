@@ -683,13 +683,16 @@ final class ProvidedUtil {
                     .forEach(provider -> {
                         double weight = Weights.find(provider, Weighted.DEFAULT_WEIGHT);
                         providers.putIfAbsent(provider.configKey(), new WeightedProvider<>(provider, weight));
-                    });
-            List<ServiceInstance<T>> registryProviders = GlobalServiceRegistry.registry()
+            });
+            Map<String, WeightedProvider<T>> registryProviders = new LinkedHashMap<>();
+            List<ServiceInstance<T>> registryProviderInstances = GlobalServiceRegistry.registry()
                     .lookupInstances(Lookup.create(providerType));
-            for (ServiceInstance<T> providerInstance : registryProviders) {
+            for (ServiceInstance<T> providerInstance : registryProviderInstances) {
                 T provider = providerInstance.get();
-                providers.put(provider.configKey(), new WeightedProvider<>(provider, providerInstance.weight()));
+                registryProviders.putIfAbsent(provider.configKey(),
+                                              new WeightedProvider<>(provider, providerInstance.weight()));
             }
+            providers.putAll(registryProviders);
 
             List<WeightedProvider<T>> sortedProviders = new ArrayList<>(providers.values());
             Weights.sort(sortedProviders);
