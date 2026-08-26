@@ -34,7 +34,7 @@ public class ConnectionFlowControl {
     private final BiConsumer<Integer, Http2WindowUpdate> windowUpdateWriter;
     private final Duration timeout;
     private final WindowSize.Inbound inboundConnectionWindowSize;
-    private final WindowSize.Outbound outboundConnectionWindowSize;
+    private final WindowSizeImpl.Outbound outboundConnectionWindowSize;
 
     private volatile int maxFrameSize = WindowSize.DEFAULT_MAX_FRAME_SIZE;
     private volatile int initialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
@@ -53,8 +53,7 @@ public class ConnectionFlowControl {
                                          initialWindowSize,
                                          maxFrameSize,
                                          windowUpdateWriter);
-        outboundConnectionWindowSize =
-                WindowSize.createOutbound(type, 0, this);
+        outboundConnectionWindowSize = new WindowSizeImpl.Outbound(type, 0, this);
     }
 
     /**
@@ -161,6 +160,10 @@ public class ConnectionFlowControl {
      */
     public WindowSize.Outbound outbound() {
         return outboundConnectionWindowSize;
+    }
+
+    void connectionClosed() {
+        outboundConnectionWindowSize.connectionClosed();
     }
 
     /**
