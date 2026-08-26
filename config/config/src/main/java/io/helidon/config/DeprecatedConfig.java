@@ -31,6 +31,22 @@ public final class DeprecatedConfig {
     }
 
     /**
+     * Get a deprecated value from config, logging a warning if it is present.
+     *
+     * @param config configuration instance
+     * @param deprecatedKey key that should not be used
+     * @return config node of the deprecated key
+     */
+    public static Config get(Config config, String deprecatedKey) {
+        Config deprecatedConfig = config.get(deprecatedKey);
+        if (deprecatedConfig.exists()) {
+            LOGGER.log(Level.WARNING, "You are using a deprecated configuration key. "
+                    + "Deprecated key: \"" + deprecatedConfig.key() + "\".");
+        }
+        return deprecatedConfig;
+    }
+
+    /**
      * Get a value from config, attempting to read both the keys.
      * Warning is logged if either the current key is not defined, or both the keys are defined.
      *
