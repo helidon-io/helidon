@@ -100,9 +100,10 @@ Config sources listed in meta-configuration or a config profile are resolved
 from the selected service registry. A registry-managed `Config` uses its owning
 registry, and an imperative builder can select a registry using
 `Config.Builder.serviceRegistry`. The registry can provide a
-`ConfigSourceProvider` or a named `ConfigSource`. Existing Java service loader
-providers remain compatible when service loader discovery is enabled for the
-registry.
+`ConfigSourceProvider` or, for a single-source entry, a named `ConfigSource`. An
+entry configured with `multi-source: true` requires a `ConfigSourceProvider`.
+Existing Java service loader providers remain compatible when service loader
+discovery is enabled for the registry.
 
 For example for config sources, the interface defines the following methods
 (only subset shown):
