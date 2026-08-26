@@ -154,45 +154,13 @@ class HttpPrologueTest {
     }
 
     @Test
-    void testRelativeOriginFormIsRejectedWhenValidated() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                                                   () -> HttpPrologue.create("HTTP/1.1",
-                                                                             "HTTP",
-                                                                             "1.1",
-                                                                             Method.GET,
-                                                                             "boards/",
-                                                                             true));
-        assertThat(ex.getMessage(), is("Relative path in HTTP request-target"));
-    }
-
-    @Test
-    void testRelativeOriginFormWithQueryIsRejectedWhenValidated() {
-        assertThrows(IllegalArgumentException.class, () -> HttpPrologue.create("HTTP/1.1",
-                                                                              "HTTP",
-                                                                              "1.1",
-                                                                              Method.GET,
-                                                                              "boards/?q=1",
-                                                                              true));
-    }
-
-    @Test
-    void testQueryOnlyOriginFormIsRejectedWhenValidated() {
-        assertThrows(IllegalArgumentException.class, () -> HttpPrologue.create("HTTP/1.1",
-                                                                              "HTTP",
-                                                                              "1.1",
-                                                                              Method.GET,
-                                                                              "?q=1",
-                                                                              true));
-    }
-
-    @Test
-    void testRelativeOriginFormIsAcceptedWhenValidationDisabled() {
+    void testRelativePathCanBeCreatedWhenValidated() {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
                                                     Method.GET,
                                                     "boards/",
-                                                    false);
+                                                    true);
         assertThat(prologue.uriPath().rawPath(), is("boards/"));
     }
 
@@ -208,17 +176,6 @@ class HttpPrologueTest {
     }
 
     @Test
-    void testAsteriskFormRemainsValid() {
-        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
-                                                    "HTTP",
-                                                    "1.1",
-                                                    Method.OPTIONS,
-                                                    "*",
-                                                    true);
-        assertThat(prologue.uriPath().rawPath(), is("*"));
-    }
-
-    @Test
     void testAbsoluteFormRemainsValid() {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
@@ -229,14 +186,4 @@ class HttpPrologueTest {
         assertThat(prologue.uriPath().path(), is("/boards/"));
     }
 
-    @Test
-    void testConnectAuthorityFormRemainsValid() {
-        HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
-                                                    "HTTP",
-                                                    "1.1",
-                                                    Method.CONNECT,
-                                                    "example.com:443",
-                                                    true);
-        assertThat(prologue.method(), is(Method.CONNECT));
-    }
 }

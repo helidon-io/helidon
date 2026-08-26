@@ -105,4 +105,67 @@ class Http1PrologueTest {
         assertThat(prologue.method(), is(Method.OPTIONS));
         assertThat(prologue.uriPath().rawPath(), is("*"));
     }
+
+    @Test
+    void testAsteriskFormRequiresOptions() {
+        assertInvalidRequestTarget("GET * HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testAsteriskFormDoesNotAllowQuery() {
+        assertInvalidRequestTarget("OPTIONS *?q=1 HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testConnectRequiresAuthorityForm() {
+        assertInvalidRequestTarget("CONNECT boards/ HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testConnectAuthorityFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "CONNECT example.com:443 HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method(), is(Method.CONNECT));
+        assertThat(prologue.uriPath().rawPath(), is("example.com:443"));
+    }
+
+    @Test
+    void testConnectRegNameAuthorityFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "CONNECT example_host:443 HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.uriPath().rawPath(), is("example_host:443"));
+    }
+
+    @Test
+    void testConnectIpLiteralAuthorityFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "CONNECT [2001:db8::1]:443 HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.uriPath().rawPath(), is("[2001:db8::1]:443"));
+    }
+
+    @Test
+    void testAbsoluteFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "GET http://example.com/boards/ HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method(), is(Method.GET));
+        assertThat(prologue.uriPath().path(), is("/boards/"));
+    }
+
+    private static void assertInvalidRequestTarget(String requestLine) {
+        DataReader reader = DataReader.create(() -> requestLine.getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue prologue = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, prologue::readPrologue);
+
+        assertThat(e.status(), is(Status.BAD_REQUEST_400));
+        assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+    }
 }

@@ -92,7 +92,6 @@ public class HttpPrologue {
      * @param httpMethod      HTTP Method
      * @param unresolvedPath  unresolved path
      * @param validatePath    whether to validate path (that it contains only allowed characters)
-     *                        and that origin-form request-targets are absolute
      * @return a new prologue
      */
     public static HttpPrologue create(String rawProtocol,
@@ -119,10 +118,6 @@ public class HttpPrologue {
             rawPath = rawPath.substring(0, query);
         } else {
             rawQuery = null;
-        }
-
-        if (validatePath) {
-            validateRequestTarget(httpMethod, rawPath);
         }
 
         UriPath uriPath = UriPath.create(rawPath);
@@ -300,41 +295,6 @@ public class HttpPrologue {
                 + "uriPath=" + uriPath + ", "
                 + "query=" + query() + ", "
                 + "fragment=" + fragment() + ']';
-    }
-
-    private static void validateRequestTarget(Method method, String rawPath) {
-        if (rawPath.isEmpty()) {
-            throw new IllegalArgumentException("Relative path in HTTP request-target");
-        }
-        if (rawPath.charAt(0) == '/') {
-            return;
-        }
-        if ("*".equals(rawPath) || Method.CONNECT.equals(method) || isAbsoluteForm(rawPath)) {
-            return;
-        }
-        throw new IllegalArgumentException("Relative path in HTTP request-target");
-    }
-
-    private static boolean isAbsoluteForm(String path) {
-        int colon = path.indexOf(':');
-        if (colon <= 0) {
-            return false;
-        }
-        char first = path.charAt(0);
-        if ((first < 'a' || first > 'z') && (first < 'A' || first > 'Z')) {
-            return false;
-        }
-        for (int i = 1; i < colon; i++) {
-            char c = path.charAt(i);
-            if ((c >= 'a' && c <= 'z')
-                    || (c >= 'A' && c <= 'Z')
-                    || (c >= '0' && c <= '9')
-                    || c == '+' || c == '-' || c == '.') {
-                continue;
-            }
-            return false;
-        }
-        return true;
     }
 
     private HttpPrologue copy(String rawProtocol,

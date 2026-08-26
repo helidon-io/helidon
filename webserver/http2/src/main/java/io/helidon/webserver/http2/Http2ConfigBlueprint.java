@@ -146,7 +146,7 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
     int maxEmptyFrames();
 
     /**
-     * Whether to validate path characters and reject relative request targets.
+     * Whether to validate path characters and the HTTP/2 {@code :path} pseudo-header.
      *
      * @return whether to validate path
      */

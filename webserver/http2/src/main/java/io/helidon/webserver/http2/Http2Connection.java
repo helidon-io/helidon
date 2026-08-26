@@ -874,6 +874,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
         HttpPrologue httpPrologue;
         try {
+            validateRequestTarget(method, path);
             httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
                                                PROTOCOL,
                                                PROTOCOL_VERSION,
@@ -898,6 +899,21 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // we now have all information needed to execute
         ctx.executor()
                 .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
+    }
+
+    private void validateRequestTarget(Method method, String requestTarget) {
+        if (!http2Config.validatePath()) {
+            return;
+        }
+        if (Method.OPTIONS.equals(method) && "*".equals(requestTarget)) {
+            return;
+        }
+        if (!requestTarget.isEmpty()
+                && requestTarget.charAt(0) == '/'
+                && requestTarget.indexOf('#') == -1) {
+            return;
+        }
+        throw new IllegalArgumentException("Invalid HTTP/2 request-target form");
     }
 
     private void activateStream(int streamId) {

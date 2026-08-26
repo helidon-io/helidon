@@ -101,7 +101,7 @@ HTTP/2 server configuration
 <td>
 <code>true</code>
 </td>
-<td>Whether to validate path characters and reject relative request targets</td>
+<td>Whether to validate path characters and the HTTP/2 <code>:path</code> pseudo-header</td>
 </tr>
 <tr>
 <td>

@@ -77,7 +77,7 @@ HTTP/1.1 server configuration
 <td>
 <code>true</code>
 </td>
-<td>Whether to validate path characters and reject relative request targets</td>
+<td>Whether to validate path characters and HTTP/1.1 request-target forms</td>
 </tr>
 <tr>
 <td>

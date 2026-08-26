@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -158,6 +159,85 @@ public final class Http1Prologue {
         return maybePost == POST_INT;
     }
 
+    private static void validateRequestTarget(Method method, String requestTarget) {
+        if (Method.CONNECT.equals(method)) {
+            if (isAuthorityForm(requestTarget)) {
+                return;
+            }
+        } else if ("*".equals(requestTarget)) {
+            if (Method.OPTIONS.equals(method)) {
+                return;
+            }
+        } else {
+            if (requestTarget.charAt(0) == '/' || isAbsoluteForm(requestTarget)) {
+                return;
+            }
+            throw new IllegalArgumentException("Relative path in HTTP request-target");
+        }
+        throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
+    }
+
+    private static boolean isAuthorityForm(String requestTarget) {
+        int portDelimiter;
+        String host;
+        if (requestTarget.startsWith("[")) {
+            int closingBracket = requestTarget.indexOf(']');
+            if (closingBracket < 0
+                    || closingBracket + 1 >= requestTarget.length()
+                    || requestTarget.charAt(closingBracket + 1) != ':') {
+                return false;
+            }
+            host = requestTarget.substring(0, closingBracket + 1);
+            portDelimiter = closingBracket + 1;
+        } else {
+            portDelimiter = requestTarget.lastIndexOf(':');
+            if (portDelimiter <= 0 || requestTarget.indexOf(':') != portDelimiter) {
+                return false;
+            }
+            host = requestTarget.substring(0, portDelimiter);
+        }
+
+        String port = requestTarget.substring(portDelimiter + 1);
+        if (port.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < port.length(); i++) {
+            char c = port.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+
+        try {
+            UriValidator.validateHost(host);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private static boolean isAbsoluteForm(String requestTarget) {
+        int colon = requestTarget.indexOf(':');
+        if (colon <= 0) {
+            return false;
+        }
+        char first = requestTarget.charAt(0);
+        if ((first < 'a' || first > 'z') && (first < 'A' || first > 'Z')) {
+            return false;
+        }
+        for (int i = 1; i < colon; i++) {
+            char c = requestTarget.charAt(i);
+            if ((c >= 'a' && c <= 'z')
+                    || (c >= 'A' && c <= 'Z')
+                    || (c >= '0' && c <= '9')
+                    || c == '+' || c == '-' || c == '.') {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
     private HttpPrologue doRead() {
         int eol;
 
@@ -231,12 +311,15 @@ public final class Http1Prologue {
         }
 
         try {
+            if (validatePath) {
+                validateRequestTarget(method, path);
+            }
             return HttpPrologue.create(protocol,
                                        "HTTP",
                                        "1.1",
                                        method,
                                        path,
-                                       validatePath);
+                                       validatePath && !Method.CONNECT.equals(method));
         } catch (IllegalArgumentException e) {
             throw badRequest("Invalid path: " + e.getMessage(), method.text(), path, "HTTP", "1.1");
         }
