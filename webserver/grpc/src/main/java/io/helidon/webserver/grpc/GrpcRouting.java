@@ -176,7 +176,12 @@ public class GrpcRouting implements Routing {
 
         @Override
         public GrpcRouting build() {
-            Config routingConfig = config == null ? Services.get(Config.class) : config;
+            Config routingConfig = config;
+            if (routingConfig == null) {
+                routingConfig = serviceRegistry
+                        .map(registry -> registry.get(Config.class))
+                        .orElseGet(() -> Services.get(Config.class));
+            }
             WeightedBag<ServerInterceptor> configuredInterceptors = WeightedBag.create(InterceptorWeights.USER);
             List<GrpcRoute> routes = new LinkedList<>();
 

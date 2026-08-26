@@ -29,6 +29,8 @@ import io.helidon.grpc.core.WeightedBag;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
@@ -45,15 +47,16 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Testing.Test(perMethod = true)
 class GrpcRoutingRegistryTest {
     @Test
     void configuredServiceUsesOwningRegistryProvider() {
         TestProvider provider = new TestProvider();
-        ServiceRegistryManager manager = registry(provider);
+        Config config = routingConfig(Map.of("grpc.grpc-services.owner.enabled", "true",
+                                             "grpc.grpc-services-discover-services", "false"));
+        ServiceRegistryManager manager = registry(provider, config);
         try {
             ServiceRegistry serviceRegistry = manager.registry();
-            Config config = routingConfig(Map.of("grpc.grpc-services.owner.enabled", "true",
-                                                 "grpc.grpc-services-discover-services", "false"));
 
             GrpcRouting.builder()
                     .config(config)
@@ -71,10 +74,10 @@ class GrpcRoutingRegistryTest {
     @Test
     void discoveredServiceUsesOwningRegistryProvider() {
         TestProvider provider = new TestProvider();
-        ServiceRegistryManager manager = registry(provider);
+        Config config = routingConfig(Map.of("grpc.marker", "present"));
+        ServiceRegistryManager manager = registry(provider, config);
         try {
             ServiceRegistry serviceRegistry = manager.registry();
-            Config config = routingConfig(Map.of("grpc.marker", "present"));
 
             GrpcRouting.builder()
                     .config(config)
@@ -92,16 +95,18 @@ class GrpcRoutingRegistryTest {
     @Test
     void serverFeatureConfiguresExistingRoutingBuilder() throws Descriptors.DescriptorValidationException {
         TestProvider provider = new TestProvider();
-        ServiceRegistryManager manager = registry(provider);
+        Config owningConfig = Config.just(ConfigSources.create(Map.of("grpc.grpc-services.owner.marker", "owning",
+                                                                      "grpc.grpc-services-discover-services", "false")));
+        Config explicitConfig = Config.just(ConfigSources.create(Map.of("grpc.grpc-services.owner.marker", "explicit",
+                                                                        "grpc.grpc-services-discover-services", "false")));
+        ServiceRegistryManager manager = registry(provider, owningConfig);
         try {
             ServiceRegistry serviceRegistry = manager.registry();
-            Config rootConfig = Config.just(ConfigSources.create(Map.of("grpc.grpc-services.owner.enabled", "true",
-                                                                        "grpc.grpc-services-discover-services", "false")));
             GrpcRouting.Builder routingBuilder = GrpcRouting.builder()
-                    .config(rootConfig.get("grpc"));
+                    .config(explicitConfig.get("grpc"));
             AtomicBoolean meterRegistryRequested = new AtomicBoolean();
             GrpcServiceDescriptor descriptor = descriptor("feature");
-            GrpcServerFeature feature = new GrpcServerFeature(rootConfig,
+            GrpcServerFeature feature = new GrpcServerFeature(owningConfig,
                                                               serviceRegistry,
                                                               () -> {
                                                                   meterRegistryRequested.set(true);
@@ -114,8 +119,39 @@ class GrpcRoutingRegistryTest {
             routing.meterRegistry();
 
             assertThat(provider.createCount, is(1));
+            assertThat(provider.config.get("marker").asString().orElseThrow(), is("explicit"));
             assertThat(provider.serviceRegistry, sameInstance(serviceRegistry));
             assertThat(meterRegistryRequested.get(), is(true));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void serverFeatureUsesOwningConfigForExistingUnconfiguredRoutingBuilder()
+            throws Descriptors.DescriptorValidationException {
+        TestProvider provider = new TestProvider();
+        Config owningConfig = Config.just(ConfigSources.create(Map.of("grpc.grpc-services.owner.marker", "owning",
+                                                                      "grpc.grpc-services-discover-services", "false")));
+        Config globalConfig = Config.just(ConfigSources.create(Map.of("grpc.grpc-services.owner.marker", "global",
+                                                                      "grpc.grpc-services-discover-services", "false")));
+        Services.set(Config.class, globalConfig);
+        ServiceRegistryManager manager = registry(provider, owningConfig);
+        try {
+            ServiceRegistry serviceRegistry = manager.registry();
+            GrpcRouting.Builder routingBuilder = GrpcRouting.builder();
+            GrpcServiceDescriptor descriptor = descriptor("feature");
+            GrpcServerFeature feature = new GrpcServerFeature(owningConfig,
+                                                              serviceRegistry,
+                                                              () -> null,
+                                                              () -> List.of(() -> descriptor));
+
+            feature.setup(new TestFeatureContext(routingBuilder));
+            routingBuilder.build();
+
+            assertThat(provider.createCount, is(1));
+            assertThat(provider.config.get("marker").asString().orElseThrow(), is("owning"));
+            assertThat(provider.serviceRegistry, sameInstance(serviceRegistry));
         } finally {
             manager.shutdown();
         }
@@ -125,10 +161,11 @@ class GrpcRoutingRegistryTest {
         return Config.just(ConfigSources.create(values)).get("grpc");
     }
 
-    private static ServiceRegistryManager registry(GrpcServerServiceProvider provider) {
+    private static ServiceRegistryManager registry(GrpcServerServiceProvider provider, Config config) {
         return ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                      .discoverServices(false)
                                                      .discoverServicesFromServiceLoader(false)
+                                                     .putContractInstance(Config.class, config)
                                                      .putContractInstance(GrpcServerServiceProvider.class, provider)
                                                      .build());
     }
@@ -232,6 +269,7 @@ class GrpcRoutingRegistryTest {
     }
 
     private static final class TestProvider implements GrpcServerServiceProvider {
+        private Config config;
         private ServiceRegistry serviceRegistry;
         private String name;
         private int createCount;
@@ -248,6 +286,7 @@ class GrpcRoutingRegistryTest {
 
         @Override
         public GrpcServerService create(Config config, String name, ServiceRegistry serviceRegistry) {
+            this.config = config;
             this.serviceRegistry = serviceRegistry;
             this.name = name;
             createCount++;
