@@ -103,7 +103,7 @@ interface Http1ConfigBlueprint extends HttpConfig, ProtocolConfig {
 
 
     /**
-     * If set to false, any path is accepted (even containing illegal characters).
+     * Whether to validate path characters and reject relative request targets.
      *
      * @return whether to validate path
      */

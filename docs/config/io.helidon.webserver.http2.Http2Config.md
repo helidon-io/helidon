@@ -101,7 +101,7 @@ HTTP/2 server configuration
 <td>
 <code>true</code>
 </td>
-<td>If set to false, any path is accepted (even containing illegal characters)</td>
+<td>Whether to validate path characters and reject relative request targets</td>
 </tr>
 <tr>
 <td>
