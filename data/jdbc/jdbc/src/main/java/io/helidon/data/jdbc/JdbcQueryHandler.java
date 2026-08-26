@@ -37,6 +37,9 @@ import io.helidon.data.NonUniqueResultException;
  */
 final class JdbcQueryHandler {
 
+    // Bound warning traversal while the result set and its owning resources remain open.
+    private static final int MAX_RESULT_WARNINGS = 64;
+
     /**
      * Executes a query and returns exactly one mapped value.
      *
@@ -320,7 +323,7 @@ final class JdbcQueryHandler {
                     if (visited.containsKey(warning)) {
                         break;
                     }
-                    if (visited.size() == JdbcExceptionTranslator.MAX_WARNINGS_PER_OWNER) {
+                    if (visited.size() == MAX_RESULT_WARNINGS) {
                         // An unvisited warning may report truncation, so fail rather than return the mapped value.
                         // The fixed limit also bounds work while the JDBC resources remain owned.
                         throw new DataException(

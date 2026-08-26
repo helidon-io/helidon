@@ -579,11 +579,11 @@ class JdbcRunnerFailureTest {
     }
 
     /**
-     * Verifies that disabled warning capture does not inspect or attach
-     * warnings when an application mapper fails.
+     * Verifies that the focused result warning inspection does not replace or
+     * decorate an application mapper failure.
      */
     @Test
-    void doesNotCaptureWarningsForMapperFailures() throws Exception {
+    void doesNotInspectWarningsWhenMapperFails() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
         ResultSetMetaData metadata = mock(ResultSetMetaData.class);
         when(connection.prepareStatement("SELECT VALUE FROM TEST_VALUE")).thenReturn(statement);
@@ -614,7 +614,7 @@ class JdbcRunnerFailureTest {
 
     /**
      * Verifies that row-level truncation inspection precedes result
-     * advancement while general warning capture remains disabled.
+     * advancement without accessing general warning channels.
      */
     @Test
     void inspectsRowWarningsBeforeResultSetAdvancement() throws Exception {
@@ -866,43 +866,11 @@ class JdbcRunnerFailureTest {
     }
 
     /**
-     * Verifies that disabled warning capture cannot turn broken warning
-     * accessors into application-visible diagnostics.
+     * Verifies that a successful non-row operation does not access connection
+     * or statement warnings.
      */
     @Test
-    void doesNotInvokeBrokenWarningAccessors() throws Exception {
-        ResultSet resultSet = mock(ResultSet.class);
-        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
-        when(connection.prepareStatement("SELECT VALUE FROM TEST_VALUE")).thenReturn(statement);
-        when(statement.execute()).thenReturn(true);
-        when(statement.getResultSet()).thenReturn(resultSet);
-        when(resultSet.getMetaData()).thenReturn(metadata);
-        when(metadata.getColumnCount()).thenReturn(1);
-        when(metadata.getColumnLabel(1)).thenReturn("VALUE");
-        when(resultSet.next()).thenReturn(true);
-        when(resultSet.getWarnings()).thenThrow(new IllegalStateException("secret warning access"));
-        doThrow(new UnsupportedOperationException("secret warning clear")).when(resultSet).clearWarnings();
-        IllegalArgumentException mapperFailure = new IllegalArgumentException("mapper failed");
-
-        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-                                                        () -> client.create("SELECT VALUE FROM TEST_VALUE")
-                                                                .map(row -> {
-                                                                    throw mapperFailure;
-                                                                })
-                                                                .one());
-
-        assertThat(failure, sameInstance(mapperFailure));
-        assertThat(failure.getSuppressed().length, is(0));
-        verify(resultSet, never()).getWarnings();
-        verify(resultSet, never()).clearWarnings();
-    }
-
-    /**
-     * Verifies that a successful operation does not access warnings while
-     * capture is disabled.
-     */
-    @Test
-    void doesNotCaptureWarningsAfterSuccessfulWork() throws Exception {
+    void doesNotAccessGeneralWarningsAfterSuccessfulUpdate() throws Exception {
         prepareSuccessfulUpdate();
 
         long count = client.create("UPDATE TEST_VALUE SET VALUE = 1").execute();
@@ -912,32 +880,6 @@ class JdbcRunnerFailureTest {
         verify(statement, never()).clearWarnings();
         verify(connection, never()).getWarnings();
         verify(connection, never()).clearWarnings();
-        verify(statement).close();
-        verify(connection).close();
-    }
-
-    /**
-     * Verifies that dormant warning-processing failures cannot affect a
-     * successful operation while capture is disabled.
-     */
-    @Test
-    void doesNotInvokeWarningProcessingAfterSuccessfulWork() throws Exception {
-        prepareSuccessfulUpdate();
-        doThrow(new SQLException("secret connection warning failure", "01007", 17))
-                .when(connection)
-                .clearWarnings();
-        doThrow(new UnsupportedOperationException("secret statement warning failure"))
-                .when(statement)
-                .clearWarnings();
-
-        long count = client.create("UPDATE TEST_VALUE SET VALUE = 1").execute();
-
-        assertThat(count, is(1L));
-        verify(statement, never()).getWarnings();
-        verify(statement, never()).clearWarnings();
-        verify(connection, never()).getWarnings();
-        verify(connection, never()).clearWarnings();
-        verify(statement).execute();
         verify(statement).close();
         verify(connection).close();
     }
@@ -1068,25 +1010,6 @@ class JdbcRunnerFailureTest {
         assertSanitizedRuntimeFailure(this::generatedKey,
                                       keysFailure,
                                       "reading JDBC generated keys");
-    }
-
-    /**
-     * Verifies that even an {@link Error} configured on warning access remains
-     * dormant while capture is disabled.
-     */
-    @Test
-    void doesNotInvokeFatalWarningProcessingErrors() throws Exception {
-        prepareSuccessfulUpdate();
-        AssertionError warningError = new AssertionError("fatal warning failure");
-        doThrow(warningError).when(statement).clearWarnings();
-
-        long count = client.create("UPDATE TEST_VALUE SET VALUE = 1").execute();
-
-        assertThat(count, is(1L));
-        verify(statement, never()).clearWarnings();
-        verify(statement).execute();
-        verify(statement).close();
-        verify(connection).close();
     }
 
     @Test
