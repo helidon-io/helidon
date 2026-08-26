@@ -16,10 +16,13 @@
 
 package io.helidon.http.encoding;
 
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.http.Headers;
 
@@ -100,6 +103,30 @@ public interface ContentEncodingContext extends RuntimeType.Api<ContentEncodingC
     boolean contentEncodingSupported(String encodingId);
 
     /**
+     * Content encoding ids accepted by configured providers and applicable to response bodies, in server preference order.
+     * The implicit {@code identity} content coding is not included.
+     *
+     * @return available response content encoding provider ids
+     */
+    @Api.Incubating
+    default List<String> contentEncodingIds() {
+        return ContentEncodingSupportImpl.contentEncodingIds(prototype().contentEncodings());
+    }
+
+    /**
+     * Resolve a content encoding id to the canonical id of its configured provider.
+     * Encoding ids handled by the same provider return the same canonical id. The result is intended for comparing
+     * encoding ids, not for selecting the value of a {@code Content-Encoding} response header.
+     *
+     * @param encodingId encoding id
+     * @return canonical encoding id, or empty if there is no encoder for the id
+     */
+    @Api.Incubating
+    default Optional<String> canonicalEncodingId(String encodingId) {
+        return ContentEncodingSupportImpl.canonicalEncodingId(prototype().contentEncodings(), encodingId);
+    }
+
+    /**
      * Whether there is a content decoder for the provided id.
      *
      * @param encodingId encoding id
@@ -130,6 +157,8 @@ public interface ContentEncodingContext extends RuntimeType.Api<ContentEncodingC
      *
      * @param headers headers to analyze
      * @return content encoder to use
+     * @throws io.helidon.http.HttpException with status 400 if {@code Accept-Encoding} is malformed, or status 406 if no
+     *                                        response content encoding is acceptable
      */
     ContentEncoder encoder(Headers headers);
 }
