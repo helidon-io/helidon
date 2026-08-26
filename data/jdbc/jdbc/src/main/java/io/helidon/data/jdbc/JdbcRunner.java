@@ -38,10 +38,8 @@ import io.helidon.data.DataException;
  * connection, but result sets and statements always close before the terminal
  * returns.
  * <p>
- * Result-set warnings are inspected only to prevent read-side
- * {@link java.sql.DataTruncation} from reaching the application as successful
- * data. JDBC cleanup failures remain sanitized before attachment to the
- * application-visible failure tree.
+ * JDBC warnings are not inspected. JDBC cleanup failures remain sanitized
+ * before attachment to the application-visible failure tree.
  */
 final class JdbcRunner {
 

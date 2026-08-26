@@ -16,14 +16,12 @@
 package io.helidon.data.jdbc;
 
 import java.sql.Connection;
-import java.sql.DataTruncation;
 import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
@@ -579,8 +577,8 @@ class JdbcRunnerFailureTest {
     }
 
     /**
-     * Verifies that the focused result warning inspection does not replace or
-     * decorate an application mapper failure.
+     * Verifies that an application mapper failure remains unchanged without
+     * accessing any JDBC warning channel.
      */
     @Test
     void doesNotInspectWarningsWhenMapperFails() throws Exception {
@@ -613,209 +611,47 @@ class JdbcRunnerFailureTest {
     }
 
     /**
-     * Verifies that row-level truncation inspection precedes result
-     * advancement without accessing general warning channels.
+     * Verifies successful query mapping advances rows in order without
+     * accessing any JDBC warning channel.
      */
     @Test
-    void inspectsRowWarningsBeforeResultSetAdvancement() throws Exception {
-        ResultSet resultSet = mock(ResultSet.class);
-        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
-        when(connection.prepareStatement("SELECT VALUE FROM TEST_VALUE")).thenReturn(statement);
-        when(statement.execute()).thenReturn(true);
-        when(statement.getResultSet()).thenReturn(resultSet);
-        when(resultSet.getMetaData()).thenReturn(metadata);
-        when(metadata.getColumnCount()).thenReturn(1);
-        when(resultSet.next()).thenReturn(true, false);
-        when(resultSet.getObject(1, String.class)).thenReturn("value");
-        when(statement.getLargeUpdateCount()).thenReturn(1L, -1L);
-        when(statement.getMoreResults()).thenReturn(false);
+    void doesNotAccessWarningsWhileMappingQueryRows() throws Exception {
+        ResultSet resultSet = prepareSuccessfulQuery();
 
-        DataException failure = assertThrows(DataException.class,
-                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
-                                                     .map(String.class)
-                                                     .list());
+        String value = client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).one();
 
-        assertThat(failure.getMessage(), containsString("unexpected additional results"));
-        assertThat(failure.getSuppressed().length, is(0));
+        assertThat(value, is("value"));
         InOrder order = inOrder(resultSet);
         order.verify(resultSet).next();
         order.verify(resultSet).getObject(1, String.class);
-        order.verify(resultSet).getWarnings();
         order.verify(resultSet).next();
+        verify(resultSet, never()).getWarnings();
         verify(resultSet, never()).clearWarnings();
         verify(statement, never()).getWarnings();
         verify(statement, never()).clearWarnings();
         verify(connection, never()).getWarnings();
         verify(connection, never()).clearWarnings();
+        verify(statement).close();
+        verify(connection).close();
     }
 
+    /**
+     * Verifies successful generated-key mapping completes without accessing
+     * any JDBC warning channel.
+     */
     @Test
-    void rejectsDataTruncationBeforeReturningMappedQueryRow() throws Exception {
-        ResultSet resultSet = prepareSuccessfulQuery();
-        SQLWarning ordinary = new SQLWarning("private ordinary warning", "01000", 18);
-        DataTruncation truncation = new DataTruncation(1,
-                                                       false,
-                                                       true,
-                                                       12,
-                                                       4,
-                                                       new IllegalStateException("private truncation cause"));
-        ordinary.setNextWarning(truncation);
-        when(resultSet.getWarnings()).thenReturn(ordinary);
-
-        DataException failure = assertThrows(DataException.class,
-                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
-                                                     .map(String.class)
-                                                     .one());
-
-        assertSafeDataTruncation(failure, truncation);
-        verify(resultSet, times(1)).next();
-        verify(resultSet, never()).clearWarnings();
-        InOrder order = inOrder(resultSet, statement, connection);
-        order.verify(resultSet).getObject(1, String.class);
-        order.verify(resultSet).getWarnings();
-        order.verify(resultSet).close();
-        order.verify(statement).close();
-        order.verify(connection).close();
-    }
-
-    @Test
-    void rejectsDataTruncationWhileMappingGeneratedKeys() throws Exception {
+    void doesNotAccessWarningsWhileMappingGeneratedKeys() throws Exception {
         ResultSet resultSet = prepareSuccessfulGeneratedKeys();
-        DataTruncation truncation = new DataTruncation(1,
-                                                       false,
-                                                       true,
-                                                       24,
-                                                       8,
-                                                       new IllegalArgumentException("private generated-key cause"));
-        when(resultSet.getWarnings()).thenReturn(truncation);
 
-        DataException failure = assertThrows(DataException.class, this::generatedKey);
+        long key = generatedKey();
 
-        assertSafeDataTruncation(failure, truncation);
-        assertThat(failure.getMessage(), containsString("generated keys operation failed"));
+        assertThat(key, is(1L));
+        verify(resultSet, never()).getWarnings();
         verify(resultSet, never()).clearWarnings();
-        verify(resultSet).close();
-        verify(statement).close();
-        verify(connection).close();
-    }
-
-    /**
-     * Verifies that a cycle which closes after 64 distinct ordinary warnings
-     * terminates normally instead of being mistaken for a chain beyond the
-     * inspection limit.
-     */
-    @Test
-    void ignoresCyclicOrdinaryResultWarnings() throws Exception {
-        ResultSet resultSet = prepareSuccessfulQuery();
-        SQLWarning first = ordinaryWarningChain(63);
-        SQLWarning last = new SQLWarning("private cyclic warning", "01000", 64) {
-            @Override
-            public SQLWarning getNextWarning() {
-                return first;
-            }
-        };
-        lastWarning(first, 63).setNextWarning(last);
-        when(resultSet.getWarnings()).thenReturn(first);
-
-        String value = client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).one();
-
-        assertThat(value, is("value"));
-        verify(resultSet).getWarnings();
-        verify(resultSet, never()).clearWarnings();
-        verify(statement).close();
-        verify(connection).close();
-    }
-
-    /**
-     * Verifies that a mapped value is returned when the driver provides
-     * exactly 64 distinct ordinary warnings for the current row.
-     */
-    @Test
-    void acceptsMaximumOrdinaryResultWarnings() throws Exception {
-        ResultSet resultSet = prepareSuccessfulQuery();
-        when(resultSet.getWarnings()).thenReturn(ordinaryWarningChain(64));
-
-        String value = client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).one();
-
-        assertThat(value, is("value"));
-        verify(resultSet).getWarnings();
-        verify(resultSet, never()).clearWarnings();
-        verify(statement).close();
-        verify(connection).close();
-    }
-
-    /**
-     * Verifies that a truncation reported by warning number 64 is translated
-     * before the mapped value can reach the application.
-     */
-    @Test
-    void rejectsDataTruncationAtWarningInspectionLimit() throws Exception {
-        ResultSet resultSet = prepareSuccessfulQuery();
-        SQLWarning first = ordinaryWarningChain(63);
-        DataTruncation truncation = new DataTruncation(1,
-                                                       false,
-                                                       true,
-                                                       48,
-                                                       16,
-                                                       new IllegalStateException("private boundary cause"));
-        lastWarning(first, 63).setNextWarning(truncation);
-        when(resultSet.getWarnings()).thenReturn(first);
-
-        DataException failure = assertThrows(DataException.class,
-                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
-                                                     .map(String.class)
-                                                     .one());
-
-        assertSafeDataTruncation(failure, truncation);
-        verify(resultSet, times(1)).next();
-        verify(resultSet, never()).clearWarnings();
-        InOrder order = inOrder(resultSet, statement, connection);
-        order.verify(resultSet).getWarnings();
-        order.verify(resultSet).close();
-        order.verify(statement).close();
-        order.verify(connection).close();
-    }
-
-    /**
-     * Verifies that warning number 65 fails safely before the mapped value is
-     * returned and that every owned JDBC resource is released in order.
-     */
-    @Test
-    void rejectsTooManyResultWarningsAndClosesResources() throws Exception {
-        ResultSet resultSet = prepareSuccessfulQuery();
-        when(resultSet.getWarnings()).thenReturn(ordinaryWarningChain(65));
-
-        DataException failure = assertThrows(DataException.class,
-                                             () -> client.create("SELECT VALUE FROM TEST_VALUE")
-                                                     .map(String.class)
-                                                     .one());
-
-        assertThat(failure.getMessage(),
-                   is("The JDBC provider returned more result set warnings than can be inspected safely."));
-        assertThat(failure.getCause(), nullValue());
-        assertThat(failure.getSuppressed().length, is(0));
-        verify(resultSet, times(1)).next();
-        verify(resultSet, never()).clearWarnings();
-        InOrder order = inOrder(resultSet, statement, connection);
-        order.verify(resultSet).getWarnings();
-        order.verify(resultSet).close();
-        order.verify(statement).close();
-        order.verify(connection).close();
-    }
-
-    @Test
-    void sanitizesRuntimeFailureWhileReadingResultWarnings() throws Exception {
-        ResultSet resultSet = prepareSuccessfulQuery();
-        IllegalStateException warningFailure = driverRuntimeFailure("private result warning detail");
-        when(resultSet.getWarnings()).thenThrow(warningFailure);
-
-        assertSanitizedRuntimeFailure(() -> client.create("SELECT VALUE FROM TEST_VALUE")
-                                              .map(String.class)
-                                              .one(),
-                                      warningFailure,
-                                      "reading JDBC result warnings");
-
-        verify(resultSet).close();
+        verify(statement, never()).getWarnings();
+        verify(statement, never()).clearWarnings();
+        verify(connection, never()).getWarnings();
+        verify(connection, never()).clearWarnings();
         verify(statement).close();
         verify(connection).close();
     }
@@ -1162,25 +998,6 @@ class JdbcRunnerFailureTest {
                 .one();
     }
 
-    private static SQLWarning ordinaryWarningChain(int warningCount) {
-        SQLWarning first = new SQLWarning("private ordinary warning 1", "01000", 1);
-        SQLWarning current = first;
-        for (int index = 2; index <= warningCount; index++) {
-            SQLWarning next = new SQLWarning("private ordinary warning " + index, "01000", index);
-            current.setNextWarning(next);
-            current = next;
-        }
-        return first;
-    }
-
-    private static SQLWarning lastWarning(SQLWarning first, int warningCount) {
-        SQLWarning current = first;
-        for (int index = 2; index <= warningCount; index++) {
-            current = current.getNextWarning();
-        }
-        return current;
-    }
-
     private static void assertCleanupFailure(ThrowingInvocation invocation, SQLException expected) {
         DataException failure = assertThrows(DataException.class, invocation::run);
 
@@ -1227,22 +1044,6 @@ class JdbcRunnerFailureTest {
         assertThat(safe.getMessage(), is("The JDBC driver reported a failure."));
         assertThat(safe.getSQLState(), is(expected.getSQLState()));
         assertThat(safe.getErrorCode(), is(expected.getErrorCode()));
-    }
-
-    private static void assertSafeDataTruncation(DataException failure, DataTruncation original) {
-        assertThat(failure.getMessage(), containsString("String data, right truncation"));
-        assertThat(failure.getMessage(), not(containsString("private")));
-        assertThat(failure.getCause(), instanceOf(SQLException.class));
-        SQLException safe = (SQLException) failure.getCause();
-        assertThat(safe, not(sameInstance(original)));
-        assertThat(safe.getMessage(), is("The JDBC driver reported a failure."));
-        assertThat(safe.getSQLState(), is("01004"));
-        assertThat(safe.getErrorCode(), is(0));
-        assertThat(safe.getCause().getMessage(), containsString("while processing a related JDBC failure"));
-        assertThat(safe.getCause().getMessage(), not(containsString("private")));
-        assertThat(safe.getCause().getCause(), nullValue());
-        assertThat(safe.getSuppressed().length, is(0));
-        assertThat(safe.getNextException(), nullValue());
     }
 
     private static void assertSanitizedResultValueFailure(DataException failure) {
