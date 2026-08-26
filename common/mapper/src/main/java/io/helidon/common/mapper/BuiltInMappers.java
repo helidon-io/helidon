@@ -76,7 +76,6 @@ class BuiltInMappers implements MapperProvider {
         addStringMapper(mappers, Character.class, BuiltInMappers::asChar);
         addStringMapper(mappers, char.class, BuiltInMappers::asChar);
         addStringMapper(mappers, char[].class, String::toCharArray);
-        addStringMapper(mappers, Class.class, BuiltInMappers::asClass);
         //javax.math
         addStringMapper(mappers, BigDecimal.class, BigDecimal::new);
         addStringMapper(mappers, BigInteger.class, BigInteger::new);
@@ -204,20 +203,6 @@ class BuiltInMappers implements MapperProvider {
                                                        + "but was '" + stringValue + "'.");
         }
         return stringValue.charAt(0);
-    }
-
-    /**
-     * Maps {@code stringValue} to {@code Class<?>}.
-     *
-     * @param stringValue source value as a {@code String}
-     * @return mapped {@code stringValue} to {@code Class<?>}
-     */
-    private static Class<?> asClass(String stringValue) {
-        try {
-            return Class.forName(stringValue);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
-        }
     }
 
     /**
