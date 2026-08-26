@@ -18,7 +18,6 @@ package io.helidon.webserver;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import io.helidon.common.Builder;
 import io.helidon.config.Config;
@@ -81,11 +80,6 @@ class WebServerService {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     void updateServerBuilder(WebServerConfig.BuilderBase<?, ?> builder) {
-        updateServerBuilder(builder, Set.of());
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    void updateServerBuilder(WebServerConfig.BuilderBase<?, ?> builder, Set<String> excludedServerFeatureTypes) {
         if (builder.config().isEmpty()) {
             config.map(it -> it.get("server")).ifPresent(builder::config);
         }
@@ -113,9 +107,7 @@ class WebServerService {
         if (builder.requestedUriDiscoveryContext().isEmpty()) {
             requestedUriDiscoveryContext.ifPresent(builder::requestedUriDiscoveryContext);
         }
-        serverFeatures.stream()
-                .filter(feature -> !excludedServerFeatureTypes.contains(feature.type()))
-                .forEach(builder::addFeature);
+        serverFeatures.forEach(builder::addFeature);
         HttpRouting.Builder defaultRoutingBuilder = builder.routing()
                 .orElseGet(HttpRouting::builder);
         builder.routing(defaultRoutingBuilder);
