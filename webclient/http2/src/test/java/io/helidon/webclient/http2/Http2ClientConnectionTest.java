@@ -61,6 +61,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -371,6 +372,120 @@ class Http2ClientConnectionTest {
 
             assertThrows(IllegalStateException.class, () -> test.createConnection(false));
             test.assertConnectionClosed();
+        }
+    }
+
+    @Test
+    void connectionLossFailsStreamWaitingForResponseHeaders() throws InterruptedException {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream firstStream = connection.createStream(STREAM_CONFIG);
+            firstStream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(firstStream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman,
+                                                 true));
+            assertThat(firstStream.readHeaders().status(), is(Status.OK_200));
+            firstStream.close();
+
+            Http2ClientStream redirectedStream = connection.createStream(STREAM_CONFIG);
+            redirectedStream.writeHeaders(requestHeaders(), true);
+            CountDownLatch responseReadStarted = new CountDownLatch(1);
+            CompletableFuture<Http2Headers> response = CompletableFuture.supplyAsync(() -> {
+                responseReadStarted.countDown();
+                return redirectedStream.readHeaders();
+            });
+
+            try {
+                assertTrue(responseReadStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+                test.closeInbound();
+                test.assertConnectionClosed();
+                ExecutionException exception = assertThrows(ExecutionException.class,
+                                                              () -> response.get(TEST_WAIT_TIMEOUT.toMillis(),
+                                                                                 TimeUnit.MILLISECONDS));
+                assertThat(exception.getCause(), instanceOf(DataReader.InsufficientDataAvailableException.class));
+            } finally {
+                redirectedStream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
+    void connectionLossPreservesCompletedResponse() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman,
+                                                 true));
+            test.closeInbound();
+            test.assertConnectionClosed();
+
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void connectionLossPreservesQueuedResponseEntity() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            byte[] expectedEntity = "done".getBytes(StandardCharsets.UTF_8);
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman),
+                              dataFrame(stream.streamId(), expectedEntity, true));
+            test.closeInbound();
+            test.assertConnectionClosed();
+
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+            BufferData entity = stream.read();
+            byte[] actualEntity = new byte[entity.available()];
+            entity.read(actualEntity);
+            assertThat(actualEntity, is(expectedEntity));
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void connectionLossFailsStreamRegisteredAfterClosure() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            test.closeInbound();
+            test.assertConnectionClosed();
+
+            assertThrows(DataReader.InsufficientDataAvailableException.class,
+                         () -> stream.writeHeaders(requestHeaders(), true));
+            stream.close();
+            connection.close();
         }
     }
 
@@ -932,6 +1047,31 @@ class Http2ClientConnectionTest {
             assertNotNull(recoveredStream);
             recoveredStream.close();
             connection.close();
+        }
+    }
+
+    @Test
+    void retiredConnectionAllowsReservedStreamToComplete() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream reservedStream = connection.createStream(STREAM_CONFIG);
+
+            connection.retire();
+            reservedStream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(reservedStream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman,
+                                                 true));
+            assertThat(reservedStream.readHeaders().status(), is(Status.OK_200));
+            reservedStream.close();
+
+            test.assertConnectionClosed();
         }
     }
 

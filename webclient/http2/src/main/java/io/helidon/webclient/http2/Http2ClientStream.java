@@ -242,6 +242,29 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         close();
     }
 
+    void connectionClosed(RuntimeException failure) {
+        RuntimeException actualFailure;
+        StreamBuffer streamBuffer;
+        inboundStateLock.lock();
+        try {
+            if (readState == ReadState.END || inboundEndQueued) {
+                return;
+            }
+            if (inboundFailure == null) {
+                inboundFailure = failure;
+            }
+            actualFailure = inboundFailure;
+            streamBuffer = buffer;
+            inboundStateChanged.signalAll();
+        } finally {
+            inboundStateLock.unlock();
+        }
+        if (streamBuffer != null) {
+            streamBuffer.fail(actualFailure);
+        }
+        close();
+    }
+
     void trailers(Http2Headers headers, boolean endOfStream) {
         inboundStateLock.lock();
         try {
