@@ -15,12 +15,9 @@
  */
 package io.helidon.data.jdbc;
 
-import java.sql.DataTruncation;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -36,9 +33,6 @@ import io.helidon.data.NonUniqueResultException;
  * applies row mapping, and checks cardinality.
  */
 final class JdbcQueryHandler {
-
-    // Bound warning traversal while the result set and its owning resources remain open.
-    private static final int MAX_RESULT_WARNINGS = 64;
 
     /**
      * Executes a query and returns exactly one mapped value.
@@ -313,32 +307,7 @@ final class JdbcQueryHandler {
                 row.expire();
             }
 
-            // A new row clears ResultSet warnings, so reject truncated data before this value can reach the caller.
-            SQLWarning warning = JdbcExceptionTranslator.invoke("reading JDBC result warnings",
-                                                                resultSet::getWarnings);
-            if (warning != null) {
-                // Warning links can cycle, so inspect each warning instance once.
-                IdentityHashMap<SQLWarning, Boolean> visited = new IdentityHashMap<>();
-                while (warning != null) {
-                    if (visited.containsKey(warning)) {
-                        break;
-                    }
-                    if (visited.size() == MAX_RESULT_WARNINGS) {
-                        // An unvisited warning may report truncation, so fail rather than return the mapped value.
-                        // The fixed limit also bounds work while the JDBC resources remain owned.
-                        throw new DataException(
-                                "The JDBC provider returned more result set warnings than can be inspected safely.");
-                    }
-                    visited.put(warning, Boolean.TRUE);
-                    if (warning instanceof DataTruncation truncation) {
-                        // Sanitize the warning provided by the driver before normal resource cleanup begins.
-                        throw JdbcExceptionTranslator.translate(scope.operation(), truncation);
-                    }
-                    SQLWarning current = warning;
-                    warning = JdbcExceptionTranslator.invoke("advancing the JDBC result warning chain",
-                                                             current::getNextWarning);
-                }
-            }
+            // DataTruncation on read is reported as a JDBC warning, these warnings are not inspected in the current release.
             return value;
         }
     }
