@@ -20,13 +20,21 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.ServiceInfo;
+import io.helidon.service.registry.ServiceInstance;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.testing.junit5.TestJunitExtension;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.WebServerService__ServiceDescriptor;
 import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.spi.ServerFeatureProvider;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -126,15 +134,40 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
         // the service is package local
         Class<?> clazz = o.getClass();
         try {
-            Method method = clazz.getDeclaredMethod("updateServerBuilder", WebServerConfig.BuilderBase.class);
+            Method method = clazz.getDeclaredMethod("updateServerBuilder",
+                                                    WebServerConfig.BuilderBase.class,
+                                                    List.class);
             method.setAccessible(true);
-            method.invoke(o, serverBuilder);
+            method.invoke(o, serverBuilder, registryServerFeatures(serviceRegistry));
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Failed to get service registry specific method on WebServerService", e);
         }
     }
 
+    private static List<ServerFeature> registryServerFeatures(ServiceRegistry serviceRegistry) {
+        Set<String> providerTypes = new HashSet<>();
+        serviceRegistry.all(ServerFeatureProvider.class)
+                .forEach(provider -> providerTypes.add(provider.configKey()));
 
+        Lookup featureLookup = Lookup.create(ServerFeature.class);
+        Set<TypeName> factoryServiceTypes = new HashSet<>();
+        for (ServiceInfo serviceInfo : serviceRegistry.lookupServices(featureLookup)) {
+            // Config-backed factory products must be recreated from the final test server configuration.
+            if (!serviceInfo.serviceType().equals(serviceInfo.providedType())) {
+                factoryServiceTypes.add(serviceInfo.serviceType());
+            }
+        }
+
+        List<ServerFeature> result = new ArrayList<>();
+        List<ServiceInstance<ServerFeature>> featureInstances = serviceRegistry.lookupInstances(featureLookup);
+        for (ServiceInstance<ServerFeature> featureInstance : featureInstances) {
+            ServerFeature feature = featureInstance.get();
+            if (!factoryServiceTypes.contains(featureInstance.serviceType()) || !providerTypes.contains(feature.type())) {
+                result.add(feature);
+            }
+        }
+        return result;
+    }
 
     void testClass(Class<?> testClass) {
         this.testClass = testClass;

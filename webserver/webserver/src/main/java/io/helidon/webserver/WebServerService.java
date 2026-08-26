@@ -80,6 +80,11 @@ class WebServerService {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     void updateServerBuilder(WebServerConfig.BuilderBase<?, ?> builder) {
+        updateServerBuilder(builder, serverFeatures);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void updateServerBuilder(WebServerConfig.BuilderBase<?, ?> builder, List<ServerFeature> selectedServerFeatures) {
         if (builder.config().isEmpty()) {
             config.map(it -> it.get("server")).ifPresent(builder::config);
         }
@@ -107,7 +112,7 @@ class WebServerService {
         if (builder.requestedUriDiscoveryContext().isEmpty()) {
             requestedUriDiscoveryContext.ifPresent(builder::requestedUriDiscoveryContext);
         }
-        serverFeatures.forEach(builder::addFeature);
+        selectedServerFeatures.forEach(builder::addFeature);
         HttpRouting.Builder defaultRoutingBuilder = builder.routing()
                 .orElseGet(HttpRouting::builder);
         builder.routing(defaultRoutingBuilder);
