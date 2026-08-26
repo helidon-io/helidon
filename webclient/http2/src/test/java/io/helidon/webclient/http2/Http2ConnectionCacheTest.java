@@ -149,7 +149,7 @@ class Http2ConnectionCacheTest {
                 "https");
         WritableHeaders<?> responseHeaders = WritableHeaders.create();
         responseHeaders.add(HeaderValues.create(HeaderNames.ALT_SVC, "h2=\":8443\"; ma=0"));
-        AltSvcHeader advertisement = AltSvcHeader.parse(ClientResponseHeaders.create(responseHeaders), clock.instant())
+        AltSvcHeader advertisement = AltSvcHeader.create(ClientResponseHeaders.create(responseHeaders), clock.instant())
                 .orElseThrow();
         alternatives.record(originTarget, advertisement, true, false, clock.instant());
         Http2AltSvcCache.Selection selection = alternatives.select(originTarget, false, _ -> true);

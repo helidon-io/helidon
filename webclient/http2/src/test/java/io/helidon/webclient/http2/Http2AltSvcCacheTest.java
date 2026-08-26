@@ -1370,7 +1370,7 @@ class Http2AltSvcCacheTest {
         for (String value : values) {
             headers.add(HeaderValues.create(HeaderNames.ALT_SVC, value));
         }
-        return AltSvcHeader.parse(ClientResponseHeaders.create(headers), observedAt).orElseThrow();
+        return AltSvcHeader.create(ClientResponseHeaders.create(headers), observedAt).orElseThrow();
     }
 
     private static ClientConnectionTarget target(Tls tls, String host) {

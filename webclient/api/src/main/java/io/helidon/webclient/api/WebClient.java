@@ -120,7 +120,11 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
     }
 
     /**
-     * Notify active HTTP protocols about a response received by this client.
+     * Notify active HTTP protocol implementations about a transport response received by this client.
+     * <p>
+     * This notification lets one protocol observe response metadata produced by another protocol without creating
+     * dependencies between protocol modules. For example, a protocol may use an {@code Alt-Svc} response header to
+     * discover an alternative service.
      *
      * @param response received protocol response
      */

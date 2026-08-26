@@ -75,7 +75,11 @@ public interface HttpClientSpi extends ReleasableResource {
                                    ClientUri clientUri);
 
     /**
-     * Notification invoked after the WebClient receives a protocol response.
+     * Notification invoked after the WebClient receives a transport response, regardless of the protocol that produced
+     * it.
+     * <p>
+     * An implementation may inspect response metadata relevant to its protocol. For example, it may learn about an
+     * alternative service from an {@code Alt-Svc} response header received over another protocol.
      *
      * @param response received protocol response
      */

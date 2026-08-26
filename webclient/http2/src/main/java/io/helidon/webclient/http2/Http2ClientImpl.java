@@ -189,7 +189,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
         }
 
         var receivedAt = response.receivedAt();
-        AltSvcHeader.parse(response.headers(), receivedAt)
+        AltSvcHeader.create(response.headers(), receivedAt)
                 .ifPresent(header -> connectionCache.recordAlternative(response.target().logicalTarget(),
                                                                         header,
                                                                         response.secure(),

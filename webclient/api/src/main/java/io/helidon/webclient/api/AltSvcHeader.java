@@ -59,7 +59,7 @@ public final class AltSvcHeader {
     }
 
     /**
-     * Parse all {@code Alt-Svc} field lines as one atomic update.
+     * Create an {@code Alt-Svc} update by parsing all field lines atomically.
      * Up to {@value #MAX_EMPTY_LIST_ELEMENTS} empty comma-list elements are ignored across all field lines, as required
      * by RFC 9110's list-extension rules. Additional empty elements make the update malformed.
      *
@@ -67,7 +67,7 @@ public final class AltSvcHeader {
      * @param receivedAt time the response headers were received
      * @return parsed update, or empty when the field is absent or malformed
      */
-    public static Optional<AltSvcHeader> parse(ClientResponseHeaders headers, Instant receivedAt) {
+    public static Optional<AltSvcHeader> create(ClientResponseHeaders headers, Instant receivedAt) {
         ClientResponseHeaders checkedHeaders = Objects.requireNonNull(headers, "headers");
         Instant responseTime = Objects.requireNonNull(receivedAt, "receivedAt");
         if (!checkedHeaders.contains(HeaderNames.ALT_SVC)) {

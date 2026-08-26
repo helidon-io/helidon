@@ -300,7 +300,7 @@ class Http2AltSvcTest {
 
         try (Http2AltSvcCache alternatives = Http2AltSvcCache.create(_ -> { })) {
             Instant observedAt = Instant.now();
-            AltSvcHeader advertisement = AltSvcHeader.parse(ClientResponseHeaders.create(responseHeaders),
+            AltSvcHeader advertisement = AltSvcHeader.create(ClientResponseHeaders.create(responseHeaders),
                                                              observedAt)
                     .orElseThrow();
             alternatives.record(originTarget, advertisement, true, false, observedAt);

@@ -38,19 +38,19 @@ class AltSvcHeaderTest {
 
     @Test
     void distinguishesAbsentMalformedAndClearUpdates() {
-        assertThat(AltSvcHeader.parse(responseHeaders(), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("CLEAR"), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=:443"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders(), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("CLEAR"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=:443"), RECEIVED_AT).isEmpty(), is(true));
 
-        AltSvcHeader clear = AltSvcHeader.parse(responseHeaders(" \tclear\t "), RECEIVED_AT).orElseThrow();
+        AltSvcHeader clear = AltSvcHeader.create(responseHeaders(" \tclear\t "), RECEIVED_AT).orElseThrow();
         assertThat(clear.clear(), is(true));
         assertThat(clear.alternatives(), is(empty()));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\"unterminated", "clear"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\"unterminated", "clear"), RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
     void parsesEveryFieldLineAndQuotedCommaAtomically() {
-        AltSvcHeader parsed = AltSvcHeader.parse(
+        AltSvcHeader parsed = AltSvcHeader.create(
                 responseHeaders("h3=\":443\"; ma=60; persist=1",
                                 "w%3Dx%3Ay#z=\"other.example:8443\"; note=\"a,b\""),
                 RECEIVED_AT).orElseThrow();
@@ -73,7 +73,7 @@ class AltSvcHeaderTest {
 
     @Test
     void ignoresBoundedEmptyCommaListElements() {
-        AltSvcHeader parsed = AltSvcHeader.parse(
+        AltSvcHeader parsed = AltSvcHeader.create(
                 responseHeaders(", , h3=\":443\",,\t,", ", h2=\":8443\", ,"),
                 RECEIVED_AT).orElseThrow();
 
@@ -84,18 +84,18 @@ class AltSvcHeaderTest {
 
     @Test
     void requiresClearAsCompleteFieldValue() {
-        AltSvcHeader clear = AltSvcHeader.parse(responseHeaders(" \tclear\t "), RECEIVED_AT).orElseThrow();
+        AltSvcHeader clear = AltSvcHeader.create(responseHeaders(" \tclear\t "), RECEIVED_AT).orElseThrow();
 
         assertThat(clear.clear(), is(true));
         assertThat(clear.alternatives(), is(empty()));
-        assertThat(AltSvcHeader.parse(responseHeaders(",, \tclear\t, ,"), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h2=\":8443\", clear"), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("clear", "h2=\":8443\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders(",, \tclear\t, ,"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h2=\":8443\", clear"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("clear", "h2=\":8443\""), RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
     void preservesUnsupportedAlternativesAndDoesNotDecodeAuthority() {
-        AltSvcHeader.Alternative alternative = AltSvcHeader.parse(
+        AltSvcHeader.Alternative alternative = AltSvcHeader.create(
                         responseHeaders("unrelated=\"%68ost.example:9443\""),
                         RECEIVED_AT)
                 .orElseThrow()
@@ -109,7 +109,7 @@ class AltSvcHeaderTest {
 
     @Test
     void mapsDecodedProtocolOctetsWithoutTextTranscoding() {
-        AltSvcHeader.Alternative alternative = AltSvcHeader.parse(responseHeaders("%00%FF=\":443\""), RECEIVED_AT)
+        AltSvcHeader.Alternative alternative = AltSvcHeader.create(responseHeaders("%00%FF=\":443\""), RECEIVED_AT)
                 .orElseThrow()
                 .alternatives()
                 .getFirst();
@@ -118,31 +118,31 @@ class AltSvcHeaderTest {
         assertThat((int) alternative.protocolId().charAt(0), is(0));
         assertThat((int) alternative.protocolId().charAt(1), is(255));
 
-        AltSvcHeader.Alternative percent = AltSvcHeader.parse(responseHeaders("x%25y=\":443\""), RECEIVED_AT)
+        AltSvcHeader.Alternative percent = AltSvcHeader.create(responseHeaders("x%25y=\":443\""), RECEIVED_AT)
                 .orElseThrow()
                 .alternatives()
                 .getFirst();
         assertThat(percent.protocolId(), is("x%y"));
 
-        assertThat(AltSvcHeader.parse(responseHeaders("h%=\":443\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h%3=\":443\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h%GG=\":443\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h%32=\":443\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h%3a=\":443\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("%ff=\":443\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h%=\":443\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h%3=\":443\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h%GG=\":443\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h%32=\":443\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h%3a=\":443\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("%ff=\":443\""), RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
     void enforcesDecodedProtocolLength() {
-        assertThat(AltSvcHeader.parse(responseHeaders("a".repeat(255) + "=\":443\""), RECEIVED_AT).isPresent(),
+        assertThat(AltSvcHeader.create(responseHeaders("a".repeat(255) + "=\":443\""), RECEIVED_AT).isPresent(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("a".repeat(256) + "=\":443\""), RECEIVED_AT).isEmpty(),
+        assertThat(AltSvcHeader.create(responseHeaders("a".repeat(256) + "=\":443\""), RECEIVED_AT).isEmpty(),
                    is(true));
     }
 
     @Test
     void validatesPortOnlyDnsAndIpv6Authorities() {
-        AltSvcHeader parsed = AltSvcHeader.parse(
+        AltSvcHeader parsed = AltSvcHeader.create(
                 responseHeaders("h3=\":443\", h2=\"other.example:8443\", h3-29=\"[2001:db8::1]:9443\","
                                         + " h3-v1=\"[v1.fe80]:10443\""),
                 RECEIVED_AT).orElseThrow();
@@ -152,15 +152,15 @@ class AltSvcHeaderTest {
         assertThat(parsed.alternatives().get(2).host().orElseThrow(), is("2001:db8::1"));
         assertThat(parsed.alternatives().get(3).host().orElseThrow(), is("v1.fe80"));
         assertThat(parsed.alternatives().get(3).port(), is(10443));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\"2001:db8::1:443\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\"[2001:db8::1]443\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":0\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":65536\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\"2001:db8::1:443\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\"[2001:db8::1]443\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":0\""), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":65536\""), RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
     void appliesDefaultMaxAgeAndSaturatedAge() {
-        AltSvcHeader.Alternative defaultAge = AltSvcHeader.parse(responseHeaders("h3=\":443\""), RECEIVED_AT)
+        AltSvcHeader.Alternative defaultAge = AltSvcHeader.create(responseHeaders("h3=\":443\""), RECEIVED_AT)
                 .orElseThrow()
                 .alternatives()
                 .getFirst();
@@ -168,13 +168,13 @@ class AltSvcHeaderTest {
 
         WritableHeaders<?> agedHeaders = altSvcHeaders("h3=\":443\"; ma=60");
         agedHeaders.add(HeaderValues.create(HeaderNames.AGE, "999999999999999999999999999999"));
-        AltSvcHeader.Alternative expired = AltSvcHeader.parse(ClientResponseHeaders.create(agedHeaders), RECEIVED_AT)
+        AltSvcHeader.Alternative expired = AltSvcHeader.create(ClientResponseHeaders.create(agedHeaders), RECEIVED_AT)
                 .orElseThrow()
                 .alternatives()
                 .getFirst();
         assertThat(expired.expirationTime(), is(RECEIVED_AT));
 
-        AltSvcHeader.Alternative saturated = AltSvcHeader.parse(
+        AltSvcHeader.Alternative saturated = AltSvcHeader.create(
                         responseHeaders("h3=\":443\"; ma=999999999999999999999999999999"),
                         RECEIVED_AT)
                 .orElseThrow()
@@ -190,7 +190,7 @@ class AltSvcHeaderTest {
         headers.add(HeaderValues.create(HeaderNames.AGE, "30"));
         headers.add(HeaderValues.create(HeaderNames.DATE, "Sun, 23 Aug 2026 00:00:00 GMT"));
 
-        AltSvcHeader.Alternative alternative = AltSvcHeader.parse(ClientResponseHeaders.create(headers), RECEIVED_AT)
+        AltSvcHeader.Alternative alternative = AltSvcHeader.create(ClientResponseHeaders.create(headers), RECEIVED_AT)
                 .orElseThrow()
                 .alternatives()
                 .getFirst();
@@ -203,13 +203,13 @@ class AltSvcHeaderTest {
         String value = "h3=\":443\"; ma=120; persist=1";
         Instant laterReceivedAt = RECEIVED_AT.plusSeconds(150);
 
-        AltSvcHeader.Alternative first = AltSvcHeader.parse(
+        AltSvcHeader.Alternative first = AltSvcHeader.create(
                         timedResponseHeaders(value, "45", "Sun, 23 Aug 2026 00:01:00 GMT"),
                         RECEIVED_AT)
                 .orElseThrow()
                 .alternatives()
                 .getFirst();
-        AltSvcHeader.Alternative second = AltSvcHeader.parse(
+        AltSvcHeader.Alternative second = AltSvcHeader.create(
                         timedResponseHeaders(value, "20", "Sun, 23 Aug 2026 00:03:30 GMT"),
                         laterReceivedAt)
                 .orElseThrow()
@@ -229,11 +229,11 @@ class AltSvcHeaderTest {
         Instant laterReceivedAt = RECEIVED_AT.plusSeconds(90);
         Instant expectedExpiration = Instant.parse("2026-08-23T00:05:00Z");
 
-        AltSvcHeader.Alternative first = AltSvcHeader.parse(timedResponseHeaders(value, "0", date), RECEIVED_AT)
+        AltSvcHeader.Alternative first = AltSvcHeader.create(timedResponseHeaders(value, "0", date), RECEIVED_AT)
                 .orElseThrow()
                 .alternatives()
                 .getFirst();
-        AltSvcHeader.Alternative second = AltSvcHeader.parse(timedResponseHeaders(value, "0", date), laterReceivedAt)
+        AltSvcHeader.Alternative second = AltSvcHeader.create(timedResponseHeaders(value, "0", date), laterReceivedAt)
                 .orElseThrow()
                 .alternatives()
                 .getFirst();
@@ -246,12 +246,12 @@ class AltSvcHeaderTest {
     void memoizedInvalidDateStillHonorsAge() {
         String value = "h3=\":443\"; ma=120";
 
-        AltSvcHeader.Alternative first = AltSvcHeader.parse(
+        AltSvcHeader.Alternative first = AltSvcHeader.create(
                         timedResponseHeaders(value, "10", "not a date"), RECEIVED_AT)
                 .orElseThrow()
                 .alternatives()
                 .getFirst();
-        AltSvcHeader.Alternative second = AltSvcHeader.parse(
+        AltSvcHeader.Alternative second = AltSvcHeader.create(
                         timedResponseHeaders(value, "85", "not a date"), RECEIVED_AT)
                 .orElseThrow()
                 .alternatives()
@@ -264,25 +264,25 @@ class AltSvcHeaderTest {
     @Test
     void memoizesExactMalformedAndClearGrammar() {
         ClientResponseHeaders malformed = responseHeaders("h3=:443");
-        assertThat(AltSvcHeader.parse(malformed, RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(malformed, RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(malformed, RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(malformed, RECEIVED_AT).isEmpty(), is(true));
 
         ClientResponseHeaders clearHeaders = responseHeaders(" \tclear\t ");
-        AltSvcHeader firstClear = AltSvcHeader.parse(clearHeaders, RECEIVED_AT).orElseThrow();
-        AltSvcHeader secondClear = AltSvcHeader.parse(clearHeaders, RECEIVED_AT).orElseThrow();
+        AltSvcHeader firstClear = AltSvcHeader.create(clearHeaders, RECEIVED_AT).orElseThrow();
+        AltSvcHeader secondClear = AltSvcHeader.create(clearHeaders, RECEIVED_AT).orElseThrow();
         assertThat(firstClear.clear(), is(true));
         assertThat(secondClear.clear(), is(true));
     }
 
     @Test
     void changingOneFieldLineReplacesTheGrammarMemo() {
-        AltSvcHeader initial = AltSvcHeader.parse(
+        AltSvcHeader initial = AltSvcHeader.create(
                 responseHeaders("h3=\":443\"", "h2=\":8443\""),
                 RECEIVED_AT).orElseThrow();
-        AltSvcHeader changed = AltSvcHeader.parse(
+        AltSvcHeader changed = AltSvcHeader.create(
                 responseHeaders("h3=\":443\"", "h2=\"other.example:9443\""),
                 RECEIVED_AT).orElseThrow();
-        AltSvcHeader restored = AltSvcHeader.parse(
+        AltSvcHeader restored = AltSvcHeader.create(
                 responseHeaders("h3=\":443\"", "h2=\":8443\""),
                 RECEIVED_AT).orElseThrow();
 
@@ -295,17 +295,17 @@ class AltSvcHeaderTest {
     @Test
     void preservesFieldLineBoundariesAcrossMemoReplacement() {
         ClientResponseHeaders malformed = responseHeaders("h3=\"unterminated", "clear");
-        assertThat(AltSvcHeader.parse(malformed, RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(malformed, RECEIVED_AT).isEmpty(), is(true));
 
-        AltSvcHeader clear = AltSvcHeader.parse(responseHeaders("clear"), RECEIVED_AT).orElseThrow();
+        AltSvcHeader clear = AltSvcHeader.create(responseHeaders("clear"), RECEIVED_AT).orElseThrow();
         assertThat(clear.clear(), is(true));
 
-        assertThat(AltSvcHeader.parse(malformed, RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(malformed, RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
     void decodesAndValidatesQuotedParameterValues() {
-        AltSvcHeader.Alternative alternative = AltSvcHeader.parse(
+        AltSvcHeader.Alternative alternative = AltSvcHeader.create(
                         responseHeaders("h3=\":443\"; ma=\"6\\0\"; persist=\"1\"; note=\"a\\\"b\""),
                         RECEIVED_AT)
                 .orElseThrow()
@@ -316,17 +316,17 @@ class AltSvcHeaderTest {
         assertThat(alternative.persist(), is(true));
 
         String rawNull = "h3=\":443\"; note=\"a" + '\0' + "b\"";
-        assertThat(AltSvcHeader.parse(responseHeaders(rawNull), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\"; note=\"a\rb\""), RECEIVED_AT)
+        assertThat(AltSvcHeader.create(responseHeaders(rawNull), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\"; note=\"a\rb\""), RECEIVED_AT)
                            .isEmpty(),
                    is(true));
         String escapedNull = "h3=\":443\"; note=\"a\\" + '\0' + "b\"";
-        assertThat(AltSvcHeader.parse(responseHeaders(escapedNull), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders(escapedNull), RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
     void rejectsMalformedMembersAndDuplicateMaxAgeAsOneUpdate() {
-        AltSvcHeader.Alternative withOws = AltSvcHeader.parse(
+        AltSvcHeader.Alternative withOws = AltSvcHeader.create(
                         responseHeaders(" \th3=\":443\" \t;\t ma=60\t "),
                         RECEIVED_AT)
                 .orElseThrow()
@@ -335,50 +335,50 @@ class AltSvcHeaderTest {
         assertThat(withOws.protocolId(), is("h3"));
         assertThat(withOws.expirationTime(), is(RECEIVED_AT.plusSeconds(60)));
 
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\", h2=:8443"), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\", h2 =\":8443\""), RECEIVED_AT).isEmpty(),
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\", h2=:8443"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\", h2 =\":8443\""), RECEIVED_AT).isEmpty(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\", h2= \"other.example:8443\""), RECEIVED_AT)
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\", h2= \"other.example:8443\""), RECEIVED_AT)
                            .isEmpty(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\", h2=\":8443\"; ma =60"), RECEIVED_AT)
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\", h2=\":8443\"; ma =60"), RECEIVED_AT)
                            .isEmpty(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\"\u000B, h2=\":8443\""), RECEIVED_AT)
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\"\u000B, h2=\":8443\""), RECEIVED_AT)
                            .isEmpty(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\", h2=\"bad/path:8443\""), RECEIVED_AT)
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\", h2=\"bad/path:8443\""), RECEIVED_AT)
                            .isEmpty(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\", h2=\"[not-an-ip]:8443\""), RECEIVED_AT)
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\", h2=\"[not-an-ip]:8443\""), RECEIVED_AT)
                            .isEmpty(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\", h2=\"bücher.example:8443\""), RECEIVED_AT)
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\", h2=\"bücher.example:8443\""), RECEIVED_AT)
                            .isEmpty(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\"; ma=60; MA=30"), RECEIVED_AT).isEmpty(),
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\"; ma=60; MA=30"), RECEIVED_AT).isEmpty(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\"; broken"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\"; broken"), RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
     void keepsEmptyParameterElementsMalformed() {
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\";; ma=60"), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\"; ma=60;; persist=1"), RECEIVED_AT)
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\";; ma=60"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\"; ma=60;; persist=1"), RECEIVED_AT)
                            .isEmpty(),
                    is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders("h3=\":443\"; ma=60;"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders("h3=\":443\"; ma=60;"), RECEIVED_AT).isEmpty(), is(true));
     }
 
     @Test
     void boundsIgnoredEmptyElements() {
         String accepted = ",".repeat(32) + "h3=\":443\"";
-        assertThat(AltSvcHeader.parse(responseHeaders(accepted), RECEIVED_AT).isPresent(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders(accepted), RECEIVED_AT).isPresent(), is(true));
 
         String flood = ",".repeat(33) + "h3=\":443\"";
-        assertThat(AltSvcHeader.parse(responseHeaders(flood), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders(flood + ",clear"), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.parse(responseHeaders(",".repeat(16) + "h3=\":443\"",
+        assertThat(AltSvcHeader.create(responseHeaders(flood), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders(flood + ",clear"), RECEIVED_AT).isEmpty(), is(true));
+        assertThat(AltSvcHeader.create(responseHeaders(",".repeat(16) + "h3=\":443\"",
                                                      ",".repeat(17) + "h2=\":8443\""),
                                       RECEIVED_AT).isEmpty(),
                    is(true));
@@ -390,16 +390,16 @@ class AltSvcHeaderTest {
         for (int index = 0; index < 32; index++) {
             alternatives.add("h" + index + "=\":" + (8000 + index) + "\"");
         }
-        assertThat(AltSvcHeader.parse(responseHeaders(String.join(",", alternatives)), RECEIVED_AT)
+        assertThat(AltSvcHeader.create(responseHeaders(String.join(",", alternatives)), RECEIVED_AT)
                            .orElseThrow()
                            .alternatives(),
                    hasSize(32));
 
         alternatives.add("h32=\":8032\"");
-        assertThat(AltSvcHeader.parse(responseHeaders(String.join(",", alternatives)), RECEIVED_AT).isEmpty(),
+        assertThat(AltSvcHeader.create(responseHeaders(String.join(",", alternatives)), RECEIVED_AT).isEmpty(),
                    is(true));
         alternatives.add("clear");
-        assertThat(AltSvcHeader.parse(responseHeaders(String.join(",", alternatives)), RECEIVED_AT).isEmpty(),
+        assertThat(AltSvcHeader.create(responseHeaders(String.join(",", alternatives)), RECEIVED_AT).isEmpty(),
                    is(true));
     }
 
