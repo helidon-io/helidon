@@ -35,7 +35,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -155,11 +157,15 @@ public class HttpAuthProviderBuilderTest {
     }
 
     @Test
-    public void sendInvalidTypeTest() {
-        setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, "bearer token=\"adfasfaf\"");
+    public void sendBearerNotBasicTest() {
+        String credentials = "SECRET-TOKEN-XYZ";
+        setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, "Bearer " + credentials);
 
-        AuthenticationResponse response = context.authenticate();
+        AuthenticationResponse response = context.atnClientBuilder()
+                .explicitProvider("basic")
+                .buildAndGet();
 
+        assertThat(response.description().orElse(""), not(containsString(credentials)));
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
         assertThat(response.statusCode().orElse(200), is(401));
     }
