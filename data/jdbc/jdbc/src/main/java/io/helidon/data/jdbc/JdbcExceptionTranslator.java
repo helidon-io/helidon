@@ -16,7 +16,6 @@
 package io.helidon.data.jdbc;
 
 import java.sql.SQLException;
-import java.sql.SQLWarning;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -32,9 +31,9 @@ import io.helidon.data.DataException;
  * Driver-owned {@link SQLException} and {@link RuntimeException} instances
  * never cross this boundary by reference. SQL exceptions are rebuilt from SQL
  * state and vendor code, non-SQL failures are represented by a stable provider
- * operation and throwable class, and warning chains and exception graphs are
- * copied with explicit cycle and size limits. Provider-owned safe diagnostic
- * types make repeated sanitization idempotent.
+ * operation and throwable class, and exception graphs are copied with explicit
+ * cycle and size limits. Provider-owned safe diagnostic types make repeated
+ * sanitization idempotent.
  * <p>
  * Fatal {@link Error} instances deliberately remain outside this diagnostic
  * boundary and propagate unchanged. Rebuilding an error could hide a JVM
@@ -45,14 +44,10 @@ import io.helidon.data.DataException;
  */
 final class JdbcExceptionTranslator {
 
-    // Maximum number of warnings inspected or retained for one JDBC resource.
-    static final int MAX_WARNINGS_PER_OWNER = 64;
-
     // Retain at most 16 nodes in a sanitized graph, including its root.
     private static final int MAX_EXCEPTION_GRAPH_NODES = 16;
 
     private static final String DRIVER_FAILURE = "The JDBC driver reported a failure.";
-    private static final String DRIVER_WARNING = "The JDBC driver reported a warning.";
     private static final String RESULT_VALUE_FAILURE = "The JDBC provider could not read a result value.";
 
     private JdbcExceptionTranslator() {
@@ -142,9 +137,7 @@ final class JdbcExceptionTranslator {
      * @return provider-owned primary failure
      */
     static Throwable prepare(String operation, Throwable failure) {
-        if (failure instanceof SafeSQLException
-                || failure instanceof SafeSQLWarning
-                || failure instanceof SafeDiagnosticException) {
+        if (failure instanceof SafeSQLException || failure instanceof SafeDiagnosticException) {
             return failure;
         }
         if (failure instanceof SQLException sqlException) {
@@ -220,63 +213,6 @@ final class JdbcExceptionTranslator {
     }
 
     /**
-     * Rebuilds a warning-processing failure using stable provider text.
-     * Driver messages, causes, and suppressed failures are not retained.
-     *
-     * @param owner stable warning owner
-     * @param failure warning-processing failure
-     * @return sanitized provider-owned diagnostic
-     */
-    static Throwable warningFailure(String owner, Throwable failure) {
-        String message = warningFailureMessage(owner);
-        if (failure instanceof SQLException sqlException) {
-            SqlMetadata metadata = sqlMetadata(sqlException);
-            return new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode());
-        }
-        return new SafeDiagnosticException(message);
-    }
-
-    /**
-     * Copies one JDBC warning chain in encounter order. The returned failures
-     * have no driver-owned causes, suppressed failures, next-exception links,
-     * or messages. Broken and cyclic chains terminate with one provider-owned
-     * diagnostic rather than growing an application-visible failure tree. At
-     * most {@value #MAX_WARNINGS_PER_OWNER} warnings are copied for one JDBC
-     * owner.
-     *
-     * @param operation stable warning-owner label
-     * @param first first warning, or {@code null}
-     * @return sanitized warnings in encounter order
-     */
-    static List<Throwable> sanitizeWarnings(String operation, SQLWarning first) {
-        if (first == null) {
-            return List.of();
-        }
-        List<Throwable> sanitized = new ArrayList<>();
-        Map<SQLWarning, Boolean> visited = new IdentityHashMap<>();
-        SQLWarning current = first;
-        while (current != null) {
-            // A driver can return an overlong or cyclic warning chain.
-            if (sanitized.size() == MAX_WARNINGS_PER_OWNER || visited.put(current, Boolean.TRUE) != null) {
-                sanitized.add(new SafeDiagnosticException(warningFailureMessage(operation)));
-                break;
-            }
-            try {
-                // The returned list preserves order without retaining a driver-owned next link.
-                SqlMetadata metadata = sqlMetadata(current);
-                sanitized.add(new SafeSQLWarning(DRIVER_WARNING,
-                                                 metadata.sqlState(),
-                                                 metadata.vendorCode()));
-                current = current.getNextWarning();
-            } catch (RuntimeException traversalFailure) {
-                sanitized.add(warningFailure(operation, traversalFailure));
-                break;
-            }
-        }
-        return List.copyOf(sanitized);
-    }
-
-    /**
      * Creates a provider-owned SQLException whose message contains no SQL or
      * connection configuration and may therefore remain visible.
      *
@@ -330,29 +266,14 @@ final class JdbcExceptionTranslator {
      */
     private static Throwable relatedDiagnostic(String operation, Throwable failure) {
         if (failure instanceof SQLException sqlException) {
-            boolean safeWarning = failure instanceof SafeSQLWarning;
-            String message = failure instanceof SafeSQLException || safeWarning
-                    ? failure.getMessage()
-                    : DRIVER_FAILURE;
+            String message = failure instanceof SafeSQLException ? failure.getMessage() : DRIVER_FAILURE;
             SqlMetadata metadata = sqlMetadata(sqlException);
-            return safeWarning
-                    ? new SafeSQLWarning(message, metadata.sqlState(), metadata.vendorCode())
-                    : new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode());
+            return new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode());
         }
         if (failure instanceof SafeDiagnosticException safe) {
             return new SafeDiagnosticException(safe.getMessage());
         }
         return diagnostic(operation, failure);
-    }
-
-    /**
-     * Returns the stable message for a warning owner.
-     *
-     * @param owner stable warning owner
-     * @return safe warning-processing message
-     */
-    private static String warningFailureMessage(String owner) {
-        return "The JDBC provider could not process " + owner + "s.";
     }
 
     /**
@@ -781,11 +702,8 @@ final class JdbcExceptionTranslator {
         private static SQLException copySqlException(SQLException source,
                                                      DiagnosticBudget diagnosticBudget,
                                                      SqlMetadata metadata) {
-            boolean safeWarning = source instanceof SafeSQLWarning;
-            String message = source instanceof SafeSQLException || safeWarning ? source.getMessage() : DRIVER_FAILURE;
-            return safeWarning
-                    ? new SafeSQLWarning(message, metadata.sqlState(), metadata.vendorCode(), diagnosticBudget)
-                    : new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode(), diagnosticBudget);
+            String message = source instanceof SafeSQLException ? source.getMessage() : DRIVER_FAILURE;
+            return new SafeSQLException(message, metadata.sqlState(), metadata.vendorCode(), diagnosticBudget);
         }
 
         /**
@@ -859,34 +777,6 @@ final class JdbcExceptionTranslator {
                                  String sqlState,
                                  int vendorCode,
                                  DiagnosticBudget diagnosticBudget) {
-            super(message, sqlState, vendorCode);
-            this.diagnosticBudget = diagnosticBudget;
-        }
-
-        @Override
-        public DiagnosticBudget diagnosticBudget() {
-            return diagnosticBudget;
-        }
-    }
-
-    /**
-     * Sanitized warning with no driver-owned cause, suppressed tree, or next
-     * warning link.
-     */
-    private static final class SafeSQLWarning extends SQLWarning implements SafeSqlDiagnostic {
-        private static final long serialVersionUID = 1L;
-        private final DiagnosticBudget diagnosticBudget;
-
-        private SafeSQLWarning(String message, String sqlState, int vendorCode) {
-            super(message, sqlState, vendorCode);
-            diagnosticBudget = new DiagnosticBudget();
-            diagnosticBudget.initialize();
-        }
-
-        private SafeSQLWarning(String message,
-                               String sqlState,
-                               int vendorCode,
-                               DiagnosticBudget diagnosticBudget) {
             super(message, sqlState, vendorCode);
             this.diagnosticBudget = diagnosticBudget;
         }

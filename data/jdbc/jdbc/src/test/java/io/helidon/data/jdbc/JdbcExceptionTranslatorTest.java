@@ -16,7 +16,6 @@
 package io.helidon.data.jdbc;
 
 import java.sql.SQLException;
-import java.sql.SQLWarning;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -243,73 +242,12 @@ class JdbcExceptionTranslatorTest {
         }
     }
 
+    /**
+     * Verifies that a non-SQL driver failure is rebuilt without retaining its
+     * message, cause, or suppressed diagnostics.
+     */
     @Test
-    void copiesWarningMetadataWithoutRetainingDriverOwnedContent() {
-        SQLWarning first = new SQLWarning("secret server and SQL detail", "01001", 11);
-        SQLWarning second = new SQLWarning("secret database name", "01002", 12);
-        first.addSuppressed(new IllegalStateException("secret suppressed detail"));
-        second.initCause(new IllegalArgumentException("secret nested detail"));
-        first.setNextWarning(second);
-
-        List<Throwable> warnings = JdbcExceptionTranslator.sanitizeWarnings("statement warning", first);
-
-        assertThat(warnings.size(), is(2));
-        assertSafeWarning(warnings.get(0), "01001", 11);
-        assertSafeWarning(warnings.get(1), "01002", 12);
-        assertThat(((SQLException) warnings.get(0)).getNextException(), nullValue());
-        assertThat(messages(warnings.get(0)), not(containsString("secret")));
-        assertThat(messages(warnings.get(1)), not(containsString("secret")));
-    }
-
-    @Test
-    void boundsAndCycleProtectsWarningChains() {
-        SQLWarning cyclic = new SQLWarning("secret cycle", "01000", 1) {
-            @Override
-            public SQLWarning getNextWarning() {
-                return this;
-            }
-        };
-
-        List<Throwable> cycle = JdbcExceptionTranslator.sanitizeWarnings("result set warning", cyclic);
-
-        assertThat(cycle.size(), is(2));
-        assertSafeWarning(cycle.get(0), "01000", 1);
-        assertThat(cycle.get(1).getMessage(),
-                   is("The JDBC provider could not process result set warnings."));
-
-        SQLWarning first = new SQLWarning("secret warning 0", "01000", 0);
-        SQLWarning current = first;
-        for (int index = 1; index <= 64; index++) {
-            SQLWarning next = new SQLWarning("secret warning " + index, "01000", index);
-            current.setNextWarning(next);
-            current = next;
-        }
-
-        List<Throwable> bounded = JdbcExceptionTranslator.sanitizeWarnings("connection warning", first);
-
-        assertThat(bounded.size(), is(65));
-        assertThat(bounded.get(64).getMessage(),
-                   is("The JDBC provider could not process connection warnings."));
-    }
-
-    @Test
-    void replacesHostileWarningTraversalAndNonSqlFailures() {
-        SQLWarning broken = new SQLWarning("secret warning", "01003", 13) {
-            @Override
-            public SQLWarning getNextWarning() {
-                throw new IllegalArgumentException("secret traversal detail");
-            }
-        };
-
-        List<Throwable> warnings = JdbcExceptionTranslator.sanitizeWarnings("statement warning", broken);
-        Throwable traversal = warnings.get(1);
-
-        assertThat(warnings.size(), is(2));
-        assertThat(traversal.getMessage(),
-                   is("The JDBC provider could not process statement warnings."));
-        assertThat(traversal.getCause(), nullValue());
-        assertThat(traversal.getSuppressed().length, is(0));
-
+    void sanitizesNonSqlFailureWithoutRetainingDriverContent() {
         IllegalStateException driverFailure = new IllegalStateException("secret driver detail",
                                                                          new IllegalArgumentException("secret cause"));
         driverFailure.addSuppressed(new IllegalArgumentException("secret suppressed"));
@@ -461,16 +399,6 @@ class JdbcExceptionTranslatorTest {
         assertThat(sanitized.getErrorCode(), is(0));
         assertThat(truncationMarkers(graph), is(0L));
         assertThat(graphMessages(graph), not(containsString("private")));
-    }
-
-    private static void assertSafeWarning(Throwable actual, String sqlState, int vendorCode) {
-        assertThat(actual, instanceOf(SQLWarning.class));
-        SQLWarning warning = (SQLWarning) actual;
-        assertThat(warning.getMessage(), is("The JDBC driver reported a warning."));
-        assertThat(warning.getSQLState(), is(sqlState));
-        assertThat(warning.getErrorCode(), is(vendorCode));
-        assertThat(warning.getCause(), nullValue());
-        assertThat(warning.getSuppressed().length, is(0));
     }
 
     private static String messages(Throwable failure) {
