@@ -227,6 +227,11 @@ Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to
 <6> Support for metrics.
 <7> Support for Helidon JSON mapping.
 
+NOTE: In Helidon 27, the JPMS module name of `helidon-dbclient-metrics-hikari` is
+`io.helidon.dbclient.metrics.hikari`. Applications upgrading from Helidon 4 that declare
+`requires helidon.dbclient.metrics.hikari;` must change the declaration to
+`requires io.helidon.dbclient.metrics.hikari;`. Maven coordinates and Java packages are unchanged.
+
 === Configure the DB Client
 
 To configure the application, Helidon uses the `application.yaml`. The DB Client configuration can be joined in the same
