@@ -1585,6 +1585,10 @@ class ChannelRegistry implements MessagingRuntime {
         }
 
         private void markSettled(MessageBatch<?> root, boolean[] settled, MessageBatch<?> batch) {
+            if (root.sameDelivery(batch)) {
+                Arrays.fill(settled, true);
+                return;
+            }
             for (int i = 0; i < batch.size(); i++) {
                 markSettled(root, settled, batch, i);
             }

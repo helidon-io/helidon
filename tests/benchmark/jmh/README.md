@@ -34,6 +34,54 @@ the repository root:
 mvn -ntp clean install -DskipTests
 ```
 
+## Messaging runtime
+
+The messaging benchmarks separate payload and batch construction, runtime dispatch, singleton-versus-batch
+amortization, retained incoming-connector settlement, and saturated admission latency. Runtime results include the JMH
+GC profiler. Saturation results compare a single-capacity messaging channel with a fair-lock same-work control at 1, 8,
+and 32 callers. The sampled `messagingEmit` method returns only after a successful delivery, so transient `SATURATED`
+retries are included in its caller-observed latency. An in-fork profiler reports aggregate `deliveries` and
+`saturatedRetries` events from the exact same iterations for both sampled latency and throughput. Use
+`emitPrebuiltMessagesIndividually` versus `emitPrebuiltBatch` for the equal-input batching comparison; `emitSingletons`
+additionally measures the payload convenience path's per-message envelope construction.
+
+Run a short executable smoke test with:
+
+```shell
+mvn -ntp test -Ptests,jmh \
+    -pl :helidon-messaging,:helidon-tests-benchmark-jmh -am \
+    -Dtest=MessagingJmhRunnerTest -Dsurefire.failIfNoSpecifiedTests=false \
+    -Dmessaging.jmh.smoke=true
+```
+
+Run the evidence profile with three forks, five one-second warmups, eight one-second measurements, a fixed 1 GiB heap,
+and separate saturation results for each caller count with:
+
+```shell
+mvn -ntp test -Ptests,jmh \
+    -pl :helidon-messaging,:helidon-tests-benchmark-jmh -am \
+    -Dtest=MessagingJmhRunnerTest -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+The runner writes `target/messaging-runtime-jmh-result.json` and
+`target/messaging-saturation-jmh-result-t{1,8,32}.json`. Runtime operations parameterized by `batchSize` process that
+many messages per invocation; multiply operations per second by `batchSize` for messages per second and divide
+`gc.alloc.rate.norm` by `batchSize` for bytes per message. Saturation JSON contains sampled p50, p90, p99, and p99.9
+latency plus delivery and retry totals collected from each result's own trial. The event totals are summed across
+measurement iterations and forks; divide `saturatedRetries` by `deliveries` to obtain the retry ratio for that benchmark
+result. Override defaults with `messaging.jmh.forks`,
+`messaging.jmh.warmupIterations`, `messaging.jmh.warmupMillis`, `messaging.jmh.measurementIterations`,
+`messaging.jmh.measurementMillis`, `messaging.jmh.heap`, `messaging.jmh.runtimeInclude`,
+`messaging.jmh.saturationInclude`, `messaging.jmh.runtimeResult`, `messaging.jmh.saturationResultPrefix`, and
+comma-separated `messaging.jmh.saturationThreads`. The two include properties are Java regular expressions matched
+against fully qualified benchmark method names. For example, this selects one runtime and one saturation method while
+still allowing both runner methods to complete:
+
+```shell
+'-Dmessaging.jmh.runtimeInclude=.*MessagingRuntimeJmhBenchmark\.emitPayload' \
+    '-Dmessaging.jmh.saturationInclude=.*MessagingSaturationJmhBenchmark\.messagingEmit'
+```
+
 The gRPC streaming benchmark covers the resource-owning server-streaming, client-streaming, and bidirectional APIs,
 same-run legacy iterator baselines, mixed new-client/legacy-server and legacy-client/new-server pairs, and a deliberately
 CPU-bound slow-consumer bidirectional path. Payloads exercise both sides of the client's readiness threshold. The JSON
