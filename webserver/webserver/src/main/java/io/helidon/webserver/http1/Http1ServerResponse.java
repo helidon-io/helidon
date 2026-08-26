@@ -81,14 +81,15 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private final ServerResponseHeaders headers;
     private final ServerResponseTrailers trailers;
     private final boolean keepAlive;
+    private final boolean validateHeaders;
 
+    private boolean keepConnectionOpen;
     private boolean streamingEntity;
     private boolean isSent;
     private ClosingBufferedOutputStream outputStream;
     private long bytesWritten;
     private String streamResult = "";
     private boolean isNoEntityStatus;
-    private final boolean validateHeaders;
 
     Http1ServerResponse(ConnectionContext ctx,
                         Http1ConnectionListener sendListener,
@@ -105,6 +106,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         this.headers = ServerResponseHeaders.create();
         this.trailers = ServerResponseTrailers.create();
         this.keepAlive = keepAlive;
+        this.keepConnectionOpen = keepAlive;
         this.validateHeaders = validateHeaders;
     }
 
@@ -332,6 +334,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             return false;
         }
         headers.clear();
+        keepConnectionOpen = keepAlive;
         streamingEntity = false;
         outputStream = null;
         return true;
@@ -493,6 +496,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         // give some space for code and headers + entity
         BufferData responseBuffer = BufferData.growing(256 + (headRequest || noEntityResponse ? 0 : length));
 
+        keepConnectionOpen = resolveKeepConnectionOpen();
         nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, validateHeaders);
         if (!headRequest && !noEntityResponse && forcedChunkedEncoding) {
             byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
@@ -548,6 +552,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             bos.checkResponseHeaders();     // headers can be augmented by encoders
         }
         OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
+        keepConnectionOpen = resolveKeepConnectionOpen();
         if (applicationOutputStream == outputStream) {
             outputStream.applicationFacing();
             return outputStream;
@@ -556,7 +561,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     }
 
     boolean keepConnectionOpen() {
-        return keepAlive && !headers.containsToken(HeaderValues.CONNECTION_CLOSE);
+        return keepConnectionOpen;
     }
 
     private static Status noEntityInternalError(Status status) {
@@ -584,6 +589,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             headers.remove(HeaderNames.TRANSFER_ENCODING);
             headers.remove(HeaderNames.TRAILER);
         }
+    }
+
+    private boolean resolveKeepConnectionOpen() {
+        return keepAlive && !headers.containsToken(HeaderValues.CONNECTION_CLOSE);
     }
 
     static class BlockingOutputStream extends OutputStream {
