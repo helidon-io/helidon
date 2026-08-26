@@ -32,6 +32,7 @@ import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.Subject;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
+import io.helidon.security.spi.AuditProvider;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.webclient.api.WebClient;
@@ -81,8 +82,13 @@ class WebClientSecurityTest {
     void registryWebClientPreservesAuthenticatedSubjects() {
         Subject user = Subject.create(Principal.create("test-user"));
         Subject service = Subject.create(Principal.create("test-service"));
+        AtomicInteger requestAudits = new AtomicInteger();
+        AtomicInteger clientAudits = new AtomicInteger();
+        AtomicReference<String> clientAuditTracingId = new AtomicReference<>();
         Security requestSecurity = Security.builder()
                 .authenticationProvider(request -> AuthenticationResponse.success(user, service))
+                .addAuditProvider(outboundAuditor(requestAudits, new AtomicReference<>()))
+                .disableTracing()
                 .build();
         SecurityContext securityContext = requestSecurity.createContext("test-request");
         securityContext.authenticate();
@@ -97,6 +103,8 @@ class WebClientSecurityTest {
                     outboundService.set(request.service());
                     return OutboundSecurityResponse.abstain();
                 })
+                .addAuditProvider(outboundAuditor(clientAudits, clientAuditTracingId))
+                .disableTracing()
                 .build();
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                                                 .putContractInstance(Security.class,
@@ -118,6 +126,9 @@ class WebClientSecurityTest {
 
             assertThat("Outbound user subject", outboundUser.get(), is(Optional.of(user)));
             assertThat("Outbound service subject", outboundService.get(), is(Optional.of(service)));
+            assertThat("Request security outbound audits", requestAudits.get(), is(0));
+            assertThat("Client security outbound audits", clientAudits.get(), is(1));
+            assertThat("Client audit tracing ID", clientAuditTracingId.get(), is(securityContext.id()));
         } finally {
             manager.shutdown();
         }
@@ -241,6 +252,15 @@ class WebClientSecurityTest {
                 .filter(service -> service.type().equals("security"))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    private static AuditProvider outboundAuditor(AtomicInteger count, AtomicReference<String> tracingId) {
+        return () -> event -> {
+            if ("outbound.outbound".equals(event.eventType())) {
+                count.incrementAndGet();
+                tracingId.set(event.tracingId());
+            }
+        };
     }
 
     private static final class TestException extends RuntimeException {

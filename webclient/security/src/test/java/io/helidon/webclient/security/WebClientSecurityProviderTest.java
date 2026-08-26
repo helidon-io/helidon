@@ -61,4 +61,34 @@ class WebClientSecurityProviderTest {
             client.closeResource();
         }
     }
+
+    @Test
+    void firstExplicitProviderWithSameKeyWins() {
+        WebClientService higherPriorityService = (chain, request) -> chain.proceed(request);
+        WebClientService lowerPriorityService = (chain, request) -> chain.proceed(request);
+        Services.set(WebClientServiceProvider.class,
+                     provider(higherPriorityService),
+                     provider(lowerPriorityService));
+
+        Http1Client client = Http1Client.builder().build();
+        try {
+            assertThat(client.prototype().services(), hasItem(sameInstance(higherPriorityService)));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    private static WebClientServiceProvider provider(WebClientService service) {
+        return new WebClientServiceProvider() {
+            @Override
+            public String configKey() {
+                return "security";
+            }
+
+            @Override
+            public WebClientService create(Config config, String name) {
+                return service;
+            }
+        };
+    }
 }

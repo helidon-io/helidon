@@ -674,8 +674,10 @@ final class ProvidedUtil {
             Map<String, T> providers = new LinkedHashMap<>();
             HelidonServiceLoader.create(providerType)
                     .forEach(provider -> providers.putIfAbsent(provider.configKey(), provider));
+            Map<String, T> registryProviders = new LinkedHashMap<>();
             Services.all(providerType)
-                    .forEach(provider -> providers.put(provider.configKey(), provider));
+                    .forEach(provider -> registryProviders.putIfAbsent(provider.configKey(), provider));
+            providers.putAll(registryProviders);
             return List.copyOf(providers.values());
         }
 
