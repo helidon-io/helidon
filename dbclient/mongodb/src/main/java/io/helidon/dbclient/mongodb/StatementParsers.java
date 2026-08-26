@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,9 @@ final class StatementParsers {
     /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(StatementParsers.class.getName());
 
+    private StatementParsers() {
+    }
+
     static String toJson(Object value) {
         if ((value instanceof Integer)  || (value instanceof Short)  || (value instanceof Byte)){
             return Json.createValue(((Number) value).intValue()).toString();
@@ -46,21 +49,23 @@ final class StatementParsers {
         if (value instanceof BigInteger) {
             return Json.createValue((BigInteger) value).toString();
         }
-        if (value instanceof BigDecimal) {
+        // BigDecimal subclasses may override toString(), so validate them through the generic Number path below.
+        if (value instanceof BigDecimal && value.getClass() == BigDecimal.class) {
             return Json.createValue((BigDecimal) value).toString();
         }
         if (value instanceof Boolean) {
             return value.toString();
         }
-        // Check instanceof Number is more expensive than final types, it shall be at the end
+        // Number implementations may return non-numeric text, so validate the representation before writing it as JSON.
         if (value instanceof Number) {
-            return value.toString();
+            String numberValue = value.toString();
+            if (isJsonNumber(numberValue)) {
+                return numberValue;
+            }
+            return Json.createValue(numberValue).toString();
         }
         // String.valueOf handles null value
         return Json.createValue(String.valueOf(value)).toString();
-    }
-
-    private StatementParsers() {
     }
 
     static StatementParser indexedParser(String statement, List<Object> indexedParams) {
@@ -69,6 +74,66 @@ final class StatementParsers {
 
     static StatementParser namedParser(String statement, Map<String, Object> indexedParams) {
         return new NamedParser(statement, indexedParams);
+    }
+
+    private static boolean isJsonNumber(String numberValue) {
+        int length = numberValue.length();
+        if (length == 0) {
+            return false;
+        }
+
+        int index = 0;
+        if (numberValue.charAt(index) == '-') {
+            index++;
+            if (index == length) {
+                return false;
+            }
+        }
+
+        char firstDigit = numberValue.charAt(index);
+        if (firstDigit == '0') {
+            index++;
+        } else if (firstDigit >= '1' && firstDigit <= '9') {
+            index++;
+            while (index < length
+                    && numberValue.charAt(index) >= '0'
+                    && numberValue.charAt(index) <= '9') {
+                index++;
+            }
+        } else {
+            return false;
+        }
+
+        if (index < length && numberValue.charAt(index) == '.') {
+            index++;
+            int fractionStart = index;
+            while (index < length
+                    && numberValue.charAt(index) >= '0'
+                    && numberValue.charAt(index) <= '9') {
+                index++;
+            }
+            if (index == fractionStart) {
+                return false;
+            }
+        }
+
+        if (index < length && (numberValue.charAt(index) == 'e' || numberValue.charAt(index) == 'E')) {
+            index++;
+            if (index < length && (numberValue.charAt(index) == '+' || numberValue.charAt(index) == '-')) {
+                index++;
+            }
+            int exponentStart = index;
+            while (index < length
+                    && numberValue.charAt(index) >= '0'
+                    && numberValue.charAt(index) <= '9') {
+                index++;
+            }
+            if (index == exponentStart) {
+                return false;
+            }
+        }
+
+        return index == length;
     }
 
     @FunctionalInterface
