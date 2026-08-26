@@ -1223,6 +1223,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         try {
             connectionWriter.updateHeaderTableSize(value);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CloseConnectionException("Failed to update header table size, interrupted", e);
         }
     }
