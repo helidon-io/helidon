@@ -237,6 +237,67 @@ class ObserveRegistryBootstrapTest {
         }
     }
 
+    @Test
+    void matchingManualFeatureSuppressesAutomaticGraphWhenNotFirst() {
+        ServiceRegistry previousGlobal = GlobalServiceRegistry.registry();
+        var provider = new CountingObserveProvider();
+        InfoObserver observer = InfoObserver.builder()
+                .name("manual")
+                .endpoint("manual")
+                .putValue("source", "manual")
+                .build();
+        ObserveFeature customFeature = ObserveFeature.builder()
+                .name("custom")
+                .endpoint("/custom-observe")
+                .observersDiscoverServices(false)
+                .build();
+        ObserveFeature defaultFeature = ObserveFeature.builder()
+                .name("observe")
+                .endpoint("/manual-default-observe")
+                .observersDiscoverServices(false)
+                .addObserver(observer)
+                .build();
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "declarative.ignore-incubating", "true",
+                "server.port", "0")));
+        ServiceRegistryConfig registryConfig = ServiceRegistryConfig.builder()
+                .putContractInstance(Config.class, config)
+                .putContractInstance(ObserveProvider.class, provider)
+                .putContractInstance(Observer.class, observer)
+                .discoverServicesFromServiceLoader(false)
+                .build();
+        ServiceRegistryManager manager = null;
+        WebServer server = null;
+
+        try {
+            manager = ServiceRegistryManager.create(registryConfig);
+            ServiceRegistry registry = manager.registry();
+            GlobalServiceRegistry.registry(registry);
+            Services.set(ObserveFeature.class, customFeature, defaultFeature);
+            Services.set(ServerFeature.class, customFeature, defaultFeature);
+            server = registry.get(WebServer.class).start();
+
+            assertThat(provider.createCount, is(0));
+            List<ObserveFeature> features = registry.all(ObserveFeature.class);
+            assertThat(features, hasSize(2));
+            assertThat(features.get(0), sameInstance(customFeature));
+            assertThat(features.get(1), sameInstance(defaultFeature));
+
+            ClientResponseTyped<JsonObject> response = client(server).get("/manual-default-observe/manual/source")
+                    .request(JsonObject.class);
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().stringValue("value").orElseThrow(), is("manual"));
+        } finally {
+            if (server != null) {
+                server.stop();
+            }
+            if (manager != null) {
+                manager.shutdown();
+            }
+            GlobalServiceRegistry.registry(previousGlobal);
+        }
+    }
+
     private static ServiceRegistryConfig registryConfig(Config config) {
         return ServiceRegistryConfig.builder()
                 .putContractInstance(Config.class, config)

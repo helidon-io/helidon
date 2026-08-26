@@ -262,6 +262,78 @@ public interface ServiceRegistry {
     }
 
     /**
+     * Get all active service instances matching the contract.
+     * <p>
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new products for {@link Service.PerLookup} services. Explicitly registered fixed provider or service
+     * instances may be returned when the lookup requests those provider or service instances. The default implementation
+     * delegates to {@link #allActive(TypeName)}.
+     *
+     * @param contract contract to find
+     * @param <T>      type of the contract
+     * @return active service instances, or an empty list
+     */
+    default <T> List<T> allActive(Class<T> contract) {
+        return allActive(TypeName.create(contract));
+    }
+
+    /**
+     * Get all active service instances matching the contract and qualifiers.
+     * <p>
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new products for {@link Service.PerLookup} services. Explicitly registered fixed provider or service
+     * instances may be returned when the lookup requests those provider or service instances. The default implementation
+     * delegates to {@link #allActive(Lookup)}.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract
+     * @return active service instances, or an empty list
+     */
+    default <T> List<T> allActive(Class<T> contract, Qualifier... qualifiers) {
+        return allActive(Lookup.builder()
+                                 .addContract(contract)
+                                 .qualifiers(Set.of(qualifiers))
+                                 .build());
+    }
+
+    /**
+     * Get all active service instances matching the contract.
+     * <p>
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new products for {@link Service.PerLookup} services. Explicitly registered fixed provider or service
+     * instances may be returned when the lookup requests those provider or service instances. The default implementation
+     * delegates to {@link #allActive(Lookup)}.
+     *
+     * @param contract contract to find
+     * @param <T>      type of the contract
+     * @return active service instances, or an empty list
+     */
+    default <T> List<T> allActive(TypeName contract) {
+        return allActive(Lookup.create(contract));
+    }
+
+    /**
+     * Get all active service instances matching the contract and qualifiers.
+     * <p>
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new products for {@link Service.PerLookup} services. Explicitly registered fixed provider or service
+     * instances may be returned when the lookup requests those provider or service instances. The default implementation
+     * delegates to {@link #allActive(Lookup)}.
+     *
+     * @param contract   contract to look-up
+     * @param qualifiers qualifiers to find
+     * @param <T>        type of the contract
+     * @return active service instances, or an empty list
+     */
+    default <T> List<T> allActive(TypeName contract, Qualifier... qualifiers) {
+        return allActive(Lookup.builder()
+                                 .addContract(contract)
+                                 .qualifiers(Set.of(qualifiers))
+                                 .build());
+    }
+
+    /**
      * Get the first named service instance matching the contract with the expectation that there may not be a match available.
      *
      * @param contract contract to look-up
@@ -587,6 +659,24 @@ public interface ServiceRegistry {
     default <T> Optional<T> firstActive(Lookup lookup) {
         Objects.requireNonNull(lookup);
         return Optional.empty();
+    }
+
+    /**
+     * Get all active service instances matching the lookup.
+     * <p>
+     * Implementations that support active lookup should return only instances that are already active and should not
+     * create new products for {@link Service.PerLookup} services. Explicitly registered fixed provider or service
+     * instances may be returned when the lookup requests those provider or service instances. The default implementation
+     * returns an empty list.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return active service instances, or an empty list
+     */
+    default <T> List<T> allActive(Lookup lookup) {
+        Objects.requireNonNull(lookup);
+        return List.of();
     }
 
     /**

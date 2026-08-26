@@ -19,7 +19,6 @@ package io.helidon.webserver.observe;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -62,7 +61,7 @@ class ObserveServices {
         boolean discoverFeatures = serverConfig.get("features-discover-services")
                 .asBoolean()
                 .orElse(true);
-        Optional<ObserveFeature> activeFeature = serviceRegistry.firstActive(ObserveFeature.class);
+        List<ObserveFeature> activeFeatures = serviceRegistry.allActive(ObserveFeature.class);
 
         LazyValue<ServerFeatureProvider<ObserveFeature>> featureProvider = LazyValue.create(() -> featureProviders.get()
                 .stream()
@@ -84,7 +83,7 @@ class ObserveServices {
                                                   + ": type \"" + OBSERVE
                                                   + "\", name \"" + configuredFeature.name() + "\"");
             }
-            if (activeFeature.filter(feature -> sameIdentity(feature, configuredFeature.name())).isPresent()) {
+            if (activeFeatures.stream().anyMatch(feature -> sameIdentity(feature, configuredFeature.name()))) {
                 continue;
             }
             if (configuredFeature.enabled()) {
@@ -96,7 +95,7 @@ class ObserveServices {
 
         if (discoverFeatures
                 && !observeConfigured
-                && activeFeature.filter(feature -> sameIdentity(feature, OBSERVE)).isEmpty()) {
+                && activeFeatures.stream().noneMatch(feature -> sameIdentity(feature, OBSERVE))) {
             features.add(featureProvider.get().create(featuresConfig.get(OBSERVE), OBSERVE, serviceRegistry));
         }
 

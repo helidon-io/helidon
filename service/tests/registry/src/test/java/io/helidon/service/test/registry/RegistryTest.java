@@ -99,6 +99,33 @@ public class RegistryTest {
     }
 
     @Test
+    public void testRegistryAllActive() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        ServiceRegistry serviceRegistry = manager.registry();
+        FirstActiveService.instances = 0;
+        FirstActiveContract first = new FirstActiveContract() {
+        };
+        FirstActiveContract second = new FirstActiveContract() {
+        };
+
+        Services.registry(serviceRegistry);
+        try {
+            assertThat(serviceRegistry.allActive(FirstActiveContract.class), hasSize(0));
+            assertThat(FirstActiveService.instances, is(0));
+
+            Services.set(FirstActiveContract.class, first, second);
+
+            List<FirstActiveContract> active = serviceRegistry.allActive(FirstActiveContract.class);
+            assertThat(active, hasSize(2));
+            assertThat(active.get(0), sameInstance(first));
+            assertThat(active.get(1), sameInstance(second));
+            assertThat(FirstActiveService.instances, is(0));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
     public void testRegistryFirstActiveDoesNotBlockSet() {
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         ServiceRegistry serviceRegistry = manager.registry();
