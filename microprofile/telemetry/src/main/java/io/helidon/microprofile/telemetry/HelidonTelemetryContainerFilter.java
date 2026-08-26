@@ -28,6 +28,7 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
+import io.helidon.webserver.http.ServerResponse;
 
 import io.opentelemetry.semconv.ServerAttributes;
 import jakarta.enterprise.inject.Instance;
@@ -69,11 +70,15 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     @Deprecated(forRemoval = true, since = "4.1")
     static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
 
+    @Deprecated(forRemoval = true, since = "4.5.4")
+    static final String AUTO_SPAN_INCLUDES_RESPONSE_WRITE = "telemetry.span.includes-response-write";
+
     private static boolean spanNameFullUrl = false;
     private static AtomicBoolean spanNameWarningLogged = new AtomicBoolean();
 
     private final io.helidon.tracing.Tracer helidonTracer;
     private final boolean isAgentPresent;
+    private final boolean autoSpanIncludesResponseWrite;
 
     /*
      MP Telemetry 1.1 adopts OpenTelemetry 1.29 semantic conventions which require the route to be in the REST span name.
@@ -89,12 +94,17 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     @jakarta.ws.rs.core.Context
     private ResourceInfo resourceInfo;
 
+    @jakarta.ws.rs.core.Context
+    private ServerResponse serverResponse;
+
     @Inject
     HelidonTelemetryContainerFilter(io.helidon.tracing.Tracer helidonTracer,
                                     org.eclipse.microprofile.config.Config mpConfig,
                                     Instance<HelidonTelemetryContainerFilterHelper> helpersInstance) {
         this.helidonTracer = helidonTracer;
         isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
+        autoSpanIncludesResponseWrite = mpConfig.getOptionalValue(AUTO_SPAN_INCLUDES_RESPONSE_WRITE, Boolean.class)
+                .orElse(false);
 
         // @Deprecated(forRemoval = true) In 5.x remove the following.
         mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
@@ -192,7 +202,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SERVER_ERROR) == 0) {
                 span.status(Span.Status.ERROR);
             }
-            span.end();
+            if (autoSpanIncludesResponseWrite) {
+                serverResponse.whenSent(span::end);
+            } else {
+                span.end();
+            }
 
 
         } finally {

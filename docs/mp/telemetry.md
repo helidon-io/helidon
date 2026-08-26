@@ -54,7 +54,9 @@ telemetry.span.name-includes-method = true
 
 The ability to use the older format is deprecated, and you should plan for its
 removal in a future major release of Helidon. For that reason Helidon logs a
-warning message if you use the older REST span naming convention.
+warning message if you use the older REST span naming convention. See
+[Helidon automatic span compatibility](#helidon-automatic-span-compatibility)
+for details about this setting and the response-writing compatibility setting.
 
 ## Usage
 
@@ -442,6 +444,35 @@ use a different exporter set `otel.traces.exporter` in your configuration to the
 appropriate value. The `zipkin` value is deprecated because OpenTelemetry
 stopped publishing its Zipkin exporter in 1.65.0; use `otlp` for traces. See
 the [examples](#examples) section below.
+
+### Helidon Automatic Span Compatibility
+
+Helidon supports the following deprecated vendor-specific compatibility
+settings for automatic incoming REST request spans:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `telemetry.span.name-includes-method` | `Boolean` | `false` | **Deprecated.** Whether the span name includes the HTTP request method. |
+| `telemetry.span.includes-response-write` | `Boolean` | `false` | **Deprecated.** Whether the span includes preparing and writing the response entity. |
+
+Earlier Helidon 4 releases used OpenTelemetry semantic conventions which did
+not include the HTTP method in automatic incoming REST span names. Setting
+`telemetry.span.name-includes-method` to `true` selects the current convention,
+which includes the method. Leaving it unset or setting it to `false` preserves
+the older span names for compatibility and causes Helidon to log a warning. The
+setting is deprecated because a future major release will use the current span
+naming convention unconditionally.
+
+When `telemetry.span.includes-response-write` is `false`, Helidon ends the
+span before serializing the response entity, preserving the behavior of earlier
+Helidon 4 releases. When it is `true`, Helidon ends the span after response
+serialization and encoding, when the last byte has been buffered for writing to
+the socket. This setting is also deprecated for removal in a future major
+release.
+
+For `telemetry.span.includes-response-write`, `true` measures the
+server-side work of preparing the response. It does not measure network delivery
+or wait for the client to receive or acknowledge the response.
 
 ### OpenTelemetry Java Agent
 
