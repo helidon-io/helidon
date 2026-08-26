@@ -162,6 +162,7 @@ class Http1PrologueTest {
     void testConnectRejectsInvalidIpLiteralAuthorityForm() {
         assertInvalidRequestTarget("CONNECT [1:2:3]:443 HTTP/1.1\r\n");
         assertInvalidRequestTarget("CONNECT [1.2.3.4]:443 HTTP/1.1\r\n");
+        assertInvalidRequestTarget("CONNECT [1:2:3:4:5:6:010.000.000.001]:443 HTTP/1.1\r\n");
     }
 
     @Test

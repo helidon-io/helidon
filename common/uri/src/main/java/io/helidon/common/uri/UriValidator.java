@@ -593,6 +593,9 @@ public final class UriValidator {
     }
 
     private static void validateIpOctet(String message, String host, String octet) {
+        if (octet.length() > 1 && octet.charAt(0) == '0') {
+            throw new UriValidationException(Segment.HOST, host.toCharArray(), message);
+        }
         int octetInt = Integer.parseInt(octet);
         // cannot be negative, as the regexp will not match
         if (octetInt > 255) {

@@ -274,6 +274,9 @@ class UriValidatorTest {
                                    "[::14.266.44]");
         invokeLiteralExpectFailure("Host IPv6 dual address contains invalid IPv4 address: [::14.123.-44.147]",
                                    "[::14.123.-44.147]");
+        invokeLiteralExpectFailure("Host IPv6 dual address contains invalid IPv4 address: "
+                                           + "[1:2:3:4:5:6:010.000.000.001]",
+                                   "[1:2:3:4:5:6:010.000.000.001]");
     }
 
     @Test
