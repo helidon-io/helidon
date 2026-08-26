@@ -546,6 +546,19 @@ class Http2AltSvcTest {
     }
 
     @Test
+    void mixedClearRetiresAlternative() {
+        WebClient client = client(clientTls(), true, false);
+
+        try {
+            assertOrigin(request(client, "/learn-clear"));
+            assertAlternative(request(client, "/mixed-clear"));
+            assertOrigin(request(client, "/after-mixed-clear"));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @Test
     void misdirectedResponseInvalidatesWithoutRelearning() {
         WebClient client = client(clientTls(), true, false);
 
@@ -778,6 +791,8 @@ class Http2AltSvcTest {
                                                    "h2=\":%1$d\"; ma=3600, h3=\":%1$d\"; ma=3600"
                                                            .formatted(redirectTargetPort));
         case "clear" -> response.header(HeaderNames.ALT_SVC, "clear");
+        case "mixed-clear" -> response.header(HeaderNames.ALT_SVC,
+                                                advertisement(alternativePort, 3600) + ", clear");
         case "zero-age" -> response.header(HeaderNames.ALT_SVC, advertisement(alternativePort, 0));
         case "misdirected" -> response
                 .status(Status.MISDIRECTED_REQUEST_421)
