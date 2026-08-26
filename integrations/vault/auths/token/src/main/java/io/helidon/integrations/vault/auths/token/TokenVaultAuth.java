@@ -100,6 +100,8 @@ public class TokenVaultAuth implements VaultAuth {
                                        .or(vaultBuilder::baseNamespace)
                                        .ifPresent(ns -> builder.addHeader(VAULT_NAMESPACE_HEADER_NAME, ns));
                                vaultBuilder.webClientUpdater().accept(builder);
+                               builder.addRedirectSensitiveHeader(VAULT_TOKEN_HEADER_NAME)
+                                      .addRedirectSensitiveHeader(VAULT_NAMESPACE_HEADER_NAME);
                            })
                            .faultTolerance(vaultBuilder.ftHandler())
                            .build();
