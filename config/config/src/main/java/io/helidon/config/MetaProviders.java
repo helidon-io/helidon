@@ -312,8 +312,6 @@ final class MetaProviders {
 
         private static final Map<String, Function<Config, ConfigSource>> BUILT_INS = new HashMap<>();
 
-        private final Optional<ServiceRegistry> serviceRegistry;
-
         static {
             BUILT_INS.put(SYSTEM_PROPERTIES_TYPE, config -> ConfigSources.systemProperties().config(config).build());
             BUILT_INS.put(ENVIRONMENT_VARIABLES_TYPE, config -> ConfigSources.environmentVariables());
@@ -325,6 +323,8 @@ final class MetaProviders {
             BUILT_INS.put(PREFIXED_TYPE, PrefixedConfigSource::create);
             BUILT_INS.put(INLINED_TYPE, InlinedConfigSource::create);
         }
+
+        private final Optional<ServiceRegistry> serviceRegistry;
 
         private BuiltInConfigSourcesProvider(Optional<ServiceRegistry> serviceRegistry) {
             this.serviceRegistry = serviceRegistry;
