@@ -16,7 +16,9 @@
 
 package io.helidon.webclient.security;
 
+import java.lang.reflect.Proxy;
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,6 +48,46 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WebClientSecurityTest {
+
+    @Test
+    void registryWebClientWithoutOutboundProvidersSkipsSecurityContextCreation() {
+        AtomicInteger providerLookups = new AtomicInteger();
+        Security security = (Security) Proxy.newProxyInstance(Security.class.getClassLoader(),
+                                                              new Class<?>[] {Security.class},
+                                                              (proxy, method, args) -> {
+                                                                  if (method.getName().equals("resolveOutboundProvider")) {
+                                                                      providerLookups.incrementAndGet();
+                                                                      return List.of();
+                                                                  }
+                                                                  return switch (method.getName()) {
+                                                                      case "equals" -> proxy == args[0];
+                                                                      case "hashCode" -> System.identityHashCode(proxy);
+                                                                      case "toString" -> "Security without outbound providers";
+                                                                      default -> throw new AssertionError(
+                                                                              "Unexpected security call: " + method);
+                                                                  };
+                                                              });
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Security.class, security)
+                                                                                .build());
+        try {
+            WebClientService stopBeforeNetwork = (chain, request) -> {
+                throw new TestException();
+            };
+            Http1Client client = Http1Client.builder()
+                    .baseUri("https://example.test")
+                    .servicesDiscoverServices(false)
+                    .addService(managedSecurityService(manager))
+                    .addService(stopBeforeNetwork)
+                    .build();
+
+            assertThrows(TestException.class, () -> client.get().request());
+
+            assertThat("Outbound provider lookups", providerLookups.get(), is(1));
+        } finally {
+            manager.shutdown();
+        }
+    }
 
     @Test
     void registryWebClientUsesOwningRegistrySecurity() {
