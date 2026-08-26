@@ -161,7 +161,7 @@ public abstract class AbstractJdbcChaosSmokeContract {
     @Test
     protected final void malformedSqlFailureReturnsOneConnectionPoolLease() throws Exception {
         shutDownApplication();
-        try (AutoCloseable ignored = beforeStartPooledApplication()) {
+        try (AutoCloseable _ = beforeStartPooledApplication()) {
             startApplication(false);
 
             RuntimeException failure = assertThrows(RuntimeException.class, operations::executeMalformedSql);

@@ -398,7 +398,7 @@ final class JdbcExceptionTranslator {
             if (validSqlState(candidate)) {
                 sqlState = candidate;
             }
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException _) {
             // Broken driver accessors are treated as unavailable metadata.
         }
 
@@ -407,7 +407,7 @@ final class JdbcExceptionTranslator {
         try {
             vendorCode = source.getErrorCode();
             vendorCodeAvailable = true;
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException _) {
             // Broken driver accessors are treated as unavailable metadata.
         }
         return new SqlMetadata(sqlState, vendorCode, vendorCodeAvailable);
@@ -768,7 +768,7 @@ final class JdbcExceptionTranslator {
          * @param child related diagnostic
          */
         private void recordEdge(Throwable parent, Throwable child) {
-            acceptedEdges.computeIfAbsent(parent, ignored -> new ArrayList<>(2)).add(child);
+            acceptedEdges.computeIfAbsent(parent, _ -> new ArrayList<>(2)).add(child);
         }
 
         /**

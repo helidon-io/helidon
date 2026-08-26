@@ -19,8 +19,9 @@ import java.sql.JDBCType;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("helidon:api:internal")
@@ -32,8 +33,8 @@ class JdbcClientGeneratedBridgeTest {
 
         JdbcClient.Statement result = JdbcClient.createGenerated(client, "select ?", 1);
 
-        assertSame(client.statement, result);
-        assertEquals("select ?", client.sql);
+        assertThat(result, sameInstance(client.statement));
+        assertThat(client.sql, is("select ?"));
     }
 
     @Test
@@ -45,8 +46,8 @@ class JdbcClientGeneratedBridgeTest {
                                                                                         1,
                                                                                         JDBCType.VARCHAR));
 
-        assertEquals("Typed SQL null binding requires a statement created by Helidon's JDBC provider.",
-                     failure.getMessage());
+        assertThat(failure.getMessage(),
+                   is("Typed SQL null binding requires a statement created by Helidon's JDBC provider."));
     }
 
     private static final class AlternateClient implements JdbcClient {

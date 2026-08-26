@@ -37,7 +37,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Regression coverage for the bounded provider-owned exception graph produced
@@ -252,8 +251,8 @@ class JdbcExceptionTranslatorGraphTest {
         boolean completed = process.waitFor(Duration.ofSeconds(30).toMillis(), TimeUnit.MILLISECONDS);
         if (!completed) {
             process.destroyForcibly();
-            fail("Timed out waiting for the wide suppressed graph fork.");
         }
+        assertThat(completed, is(true));
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         return new ProcessResult(process.exitValue(), output);
     }

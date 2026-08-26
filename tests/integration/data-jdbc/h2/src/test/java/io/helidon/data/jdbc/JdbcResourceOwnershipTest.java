@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.Mockito.doAnswer;
@@ -295,9 +294,9 @@ class JdbcResourceOwnershipTest {
                     .one();
 
             assertThat(dataSource.getHikariPoolMXBean().getActiveConnections(), is(0));
-            assertArrayEquals(expected, result);
+            assertThat(result, is(expected));
             assertThat(client.create("SELECT COUNT(*) FROM BINARY_VALUE").map(Long.class).one(), is(1L));
-            assertArrayEquals(expected, result);
+            assertThat(result, is(expected));
             assertThat(dataSource.getHikariPoolMXBean().getActiveConnections(), is(0));
         }
     }

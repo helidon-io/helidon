@@ -39,7 +39,6 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 class DeclarativeScalarBindingH2Test {
     private ServiceRegistryManager manager;
@@ -108,7 +107,7 @@ class DeclarativeScalarBindingH2Test {
             assertThat(result.getObject("DOUBLE_VALUE", Double.class), is(doubleValue));
             assertThat(result.getObject("DECIMAL_VALUE", BigDecimal.class), is(decimalValue));
             assertThat(result.getObject("STRING_VALUE", String.class), is(stringValue));
-            assertArrayEquals(bytesValue, result.getBytes("BYTES_VALUE"));
+            assertThat(result.getBytes("BYTES_VALUE"), is(bytesValue));
             assertThat(result.getObject("LOCAL_DATE_VALUE", LocalDate.class), is(localDateValue));
             assertThat(result.getObject("LOCAL_TIME_VALUE", LocalTime.class), is(localTimeValue));
             assertThat(result.getObject("LOCAL_DATE_TIME_VALUE", LocalDateTime.class), is(localDateTimeValue));

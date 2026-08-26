@@ -241,7 +241,7 @@ public class TypeHierarchyResolver {
                 // Default methods participate because they can satisfy or override an abstract declaration.
                 TypedElementInfo method = resolveEnvironmentMember(rootInterface, element)
                         .orElseGet(() -> resolveMethod(element, substitutions, repositoryType));
-                methods.computeIfAbsent(TypeHierarchy.methodSignature(method), ignored -> new ArrayList<>())
+                methods.computeIfAbsent(TypeHierarchy.methodSignature(method), _ -> new ArrayList<>())
                         .add(new MethodCandidate(method, typeInfo));
             }
         }
@@ -732,7 +732,7 @@ public class TypeHierarchyResolver {
             String definition = declaration.substring(annotationStart, annotationEnd).trim();
             try {
                 annotations.add(io.helidon.codegen.classmodel.Annotation.parse(definition).toTypesAnnotation());
-            } catch (IllegalArgumentException ignored) {
+            } catch (IllegalArgumentException _) {
                 // The source remains valid even if the class model parser cannot represent the annotation value.
             }
             index = skipWhitespace(declaration, annotationEnd);
@@ -828,21 +828,33 @@ public class TypeHierarchyResolver {
 
     /**
      * One effective method and the maximally specific declarations that define it.
-     *
-     * @param method resolved method selected for generation
-     * @param declarations resolved source declarations that contribute to the method
      */
-    public record ResolvedMethod(TypedElementInfo method, List<TypedElementInfo> declarations) {
+    public static final class ResolvedMethod {
+        private final TypedElementInfo method;
+        private final List<TypedElementInfo> declarations;
+
+        private ResolvedMethod(TypedElementInfo method, List<TypedElementInfo> declarations) {
+            this.method = Objects.requireNonNull(method, "The resolved method must not be null.");
+            this.declarations = List.copyOf(Objects.requireNonNull(declarations,
+                                                                   "The source declarations must not be null."));
+        }
+
         /**
-         * Creates a resolved method.
+         * Returns the method selected for generation.
          *
-         * @param method resolved method selected for generation
-         * @param declarations resolved source declarations that contribute to the method
+         * @return resolved method
          */
-        public ResolvedMethod {
-            Objects.requireNonNull(method, "The resolved method must not be null.");
-            declarations = List.copyOf(Objects.requireNonNull(declarations,
-                                                              "The source declarations must not be null."));
+        public TypedElementInfo method() {
+            return method;
+        }
+
+        /**
+         * Returns the source declarations that contribute to the method.
+         *
+         * @return contributing declarations
+         */
+        public List<TypedElementInfo> declarations() {
+            return declarations;
         }
     }
 

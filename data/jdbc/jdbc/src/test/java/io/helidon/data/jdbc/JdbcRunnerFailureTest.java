@@ -1160,8 +1160,8 @@ class JdbcRunnerFailureTest {
     void sanitizesRuntimeFailureWhileReadingAnObjectResultValue() throws Exception {
         ResultSet resultSet = prepareSuccessfulQuery();
         IllegalStateException driverFailure = new IllegalStateException("secret result value",
-                                                                         new RuntimeException("secret cause"));
-        driverFailure.addSuppressed(new RuntimeException("secret suppressed"));
+                                                                         new IllegalArgumentException("secret cause"));
+        driverFailure.addSuppressed(new IllegalArgumentException("secret suppressed"));
         when(resultSet.getObject(1, String.class)).thenThrow(driverFailure);
 
         DataException failure = assertThrows(DataException.class,
@@ -1329,8 +1329,8 @@ class JdbcRunnerFailureTest {
     }
 
     private static IllegalStateException driverRuntimeFailure(String secret) {
-        IllegalStateException failure = new IllegalStateException(secret, new RuntimeException("private cause"));
-        failure.addSuppressed(new RuntimeException("private suppressed"));
+        IllegalStateException failure = new IllegalStateException(secret, new IllegalArgumentException("private cause"));
+        failure.addSuppressed(new IllegalArgumentException("private suppressed"));
         return failure;
     }
 

@@ -95,8 +95,8 @@ class JdbcLargeUpdateFallbackTest {
     @Test
     void sanitizesAnArbitraryRuntimeFailureWithoutTreatingItAsAnUnsupportedCapability() throws Exception {
         IllegalStateException driverFailure = new IllegalStateException("private driver failure",
-                                                                         new RuntimeException("private cause"));
-        driverFailure.addSuppressed(new RuntimeException("private suppressed detail"));
+                                                                         new IllegalArgumentException("private cause"));
+        driverFailure.addSuppressed(new IllegalArgumentException("private suppressed detail"));
         when(connection.prepareStatement(SQL)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenThrow(driverFailure);
