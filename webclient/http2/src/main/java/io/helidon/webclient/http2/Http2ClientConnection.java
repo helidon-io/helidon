@@ -386,10 +386,10 @@ public class Http2ClientConnection {
             lock.unlock();
         }
         if (failure != null) {
-            if (awaitGoAway) {
-                awaitGoAwayWrite(failure);
+            if (awaitGoAway && !awaitGoAwayWrite(failure, stream.readTimeout())) {
+                closeNow();
             }
-            stream.connectionClosed(failure);
+            stream.connectionClosedBeforeRegistration(failure);
             throw failure;
         }
     }
@@ -535,12 +535,21 @@ public class Http2ClientConnection {
         }
     }
 
-    private void awaitGoAwayWrite(RuntimeException failure) {
+    private boolean awaitGoAwayWrite(RuntimeException failure, Duration timeout) {
         CountDownLatch writeComplete = failure instanceof Http2Exception http2Exception
                 && http2Exception.code() != Http2ErrorCode.NO_ERROR
                 ? errorGoAwayWriteComplete
                 : goAwayWriteComplete;
-        await(writeComplete);
+        try {
+            if (timeout.isZero() || timeout.isNegative()) {
+                writeComplete.await();
+                return true;
+            }
+            return writeComplete.await(timeout.toNanos(), TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     private void await(CountDownLatch latch) {
@@ -1129,7 +1138,6 @@ public class Http2ClientConnection {
         try {
             headerStream.inboundHeaders(headers, endOfStream);
         } catch (Http2Exception e) {
-            headerStream.close();
             headerStream.reset(e.code());
             throw e;
         }

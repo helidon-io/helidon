@@ -244,37 +244,11 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     void connectionClosed(RuntimeException failure) {
-        recordConnectionFailure(failure);
-        RuntimeException actualFailure;
-        StreamBuffer streamBuffer;
-        boolean inboundComplete;
-        inboundStateLock.lock();
-        try {
-            actualFailure = connectionFailure;
-            inboundComplete = readState == ReadState.END || inboundEndQueued;
-            if (inboundComplete) {
-                streamBuffer = null;
-            } else {
-                if (inboundFailure == null) {
-                    inboundFailure = actualFailure;
-                }
-                streamBuffer = buffer;
-                inboundStateChanged.signalAll();
-            }
-        } finally {
-            inboundStateLock.unlock();
-        }
-        StreamFlowControl streamFlowControl = flowControl;
-        if (streamFlowControl != null) {
-            streamFlowControl.outbound().connectionClosed();
-        }
-        if (inboundComplete) {
-            return;
-        }
-        if (streamBuffer != null) {
-            streamBuffer.fail(actualFailure);
-        }
-        close();
+        connectionClosed(failure, true);
+    }
+
+    void connectionClosedBeforeRegistration(RuntimeException failure) {
+        connectionClosed(failure, false);
     }
 
     void completeTrailersFailure(RuntimeException failure) {
@@ -683,6 +657,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return http2ClientConfig.protocolConfig();
     }
 
+    Duration readTimeout() {
+        return timeout;
+    }
+
     /**
      * Reads an HTTP2 frame from the stream.
      *
@@ -784,6 +762,40 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         } finally {
             inboundStateLock.unlock();
         }
+    }
+
+    private void connectionClosed(RuntimeException failure, boolean notifyConnectionFlowControl) {
+        recordConnectionFailure(failure);
+        RuntimeException actualFailure;
+        StreamBuffer streamBuffer;
+        boolean inboundComplete;
+        inboundStateLock.lock();
+        try {
+            actualFailure = connectionFailure;
+            inboundComplete = readState == ReadState.END || inboundEndQueued;
+            if (inboundComplete) {
+                streamBuffer = null;
+            } else {
+                if (inboundFailure == null) {
+                    inboundFailure = actualFailure;
+                }
+                streamBuffer = buffer;
+                inboundStateChanged.signalAll();
+            }
+        } finally {
+            inboundStateLock.unlock();
+        }
+        StreamFlowControl streamFlowControl = flowControl;
+        if (notifyConnectionFlowControl && streamFlowControl != null) {
+            streamFlowControl.outbound().connectionClosed();
+        }
+        if (inboundComplete) {
+            return;
+        }
+        if (streamBuffer != null) {
+            streamBuffer.fail(actualFailure);
+        }
+        close();
     }
 
     /**

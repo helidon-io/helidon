@@ -585,6 +585,48 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void unregisteredStreamFailureDoesNotWakeConnectionWindowWaiter() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream firstStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream waitingStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream unregisteredStream = connection.createStream(STREAM_CONFIG);
+            firstStream.writeHeaders(requestHeaders(), false);
+            waitingStream.writeHeaders(requestHeaders(), false);
+            unregisteredStream.writeHeaders(requestHeaders(), false);
+            connection.removeStream(unregisteredStream.streamId());
+            firstStream.writeData(BufferData.create(new byte[WindowSize.DEFAULT_WIN_SIZE]), false);
+
+            CountDownLatch writerStarted = new CountDownLatch(1);
+            CompletableFuture<Void> waitingWrite = CompletableFuture.runAsync(() -> {
+                writerStarted.countDown();
+                waitingStream.writeData(BufferData.create(new byte[] {1}), true);
+            });
+
+            try {
+                assertThat(writerStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+                assertThrows(TimeoutException.class, () -> waitingWrite.get(200, TimeUnit.MILLISECONDS));
+                unregisteredStream.connectionClosedBeforeRegistration(
+                        new Http2Exception(Http2ErrorCode.PROTOCOL, "expected test connection failure"));
+                assertThrows(TimeoutException.class, () -> waitingWrite.get(200, TimeUnit.MILLISECONDS));
+
+                test.closeInbound();
+                test.assertConnectionClosed();
+                ExecutionException failure = assertThrows(ExecutionException.class,
+                                                            () -> waitingWrite.get(TEST_WAIT_TIMEOUT.toMillis(),
+                                                                                   TimeUnit.MILLISECONDS));
+                assertThat(failure.getCause(), instanceOf(DataReader.InsufficientDataAvailableException.class));
+            } finally {
+                firstStream.close();
+                waitingStream.close();
+                unregisteredStream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
     void connectionLossFailsPendingTrailers() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));
@@ -723,6 +765,56 @@ class Http2ClientConnectionTest {
             assertThat(exception.getCause(), instanceOf(Http2Exception.class));
             assertThat(((Http2Exception) exception.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
             test.assertConnectionClosed();
+            activeStream.close();
+            lateStream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void interruptedLateStreamDoesNotWaitForBlockedGoAwayWrite() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream activeStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream lateStream = connection.createStream(STREAM_CONFIG);
+            activeStream.writeHeaders(requestHeaders(), false);
+
+            MockedConnectionTestContext.BlockedWrite blockedGoAway = test.blockNextWriteNow();
+            test.offerInbound(dataFrame(activeStream.streamId(), "invalid".getBytes(StandardCharsets.UTF_8), false));
+            assertThat(blockedGoAway.awaitEntered(), is(true));
+
+            CountDownLatch lateWriteStarted = new CountDownLatch(1);
+            AtomicBoolean interruptPreserved = new AtomicBoolean();
+            CompletableFuture<Throwable> lateWriteResult = new CompletableFuture<>();
+            Thread lateWriteThread = Thread.ofPlatform().start(() -> {
+                Throwable result;
+                try {
+                    lateWriteStarted.countDown();
+                    lateStream.writeHeaders(requestHeaders(), true);
+                    result = new AssertionError("Late stream write unexpectedly completed");
+                } catch (Throwable t) {
+                    result = t;
+                }
+                interruptPreserved.set(Thread.currentThread().isInterrupted());
+                lateWriteResult.complete(result);
+            });
+
+            try {
+                assertThat(lateWriteStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+                assertThrows(TimeoutException.class, () -> lateWriteResult.get(200, TimeUnit.MILLISECONDS));
+                lateWriteThread.interrupt();
+                Throwable failure = lateWriteResult.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                assertThat(failure, instanceOf(Http2Exception.class));
+                assertThat(((Http2Exception) failure).code(), is(Http2ErrorCode.PROTOCOL));
+                assertThat(interruptPreserved.get(), is(true));
+                test.assertConnectionClosed();
+            } finally {
+                lateWriteThread.interrupt();
+                blockedGoAway.release();
+            }
+            lateWriteThread.join(TEST_WAIT_TIMEOUT.toMillis());
+            assertThat(lateWriteThread.isAlive(), is(false));
             activeStream.close();
             lateStream.close();
             connection.close();
@@ -1418,6 +1510,56 @@ class Http2ClientConnectionTest {
 
             stream.close();
             connection.close();
+        }
+    }
+
+    @Test
+    void invalidTrailersFailEntityAndTrailersWaiters() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+
+            CountDownLatch entityReadStarted = new CountDownLatch(1);
+            CompletableFuture<BufferData> entity = CompletableFuture.supplyAsync(() -> {
+                entityReadStarted.countDown();
+                return stream.read();
+            });
+            try {
+                assertThat(entityReadStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+                assertThrows(TimeoutException.class, () -> entity.get(200, TimeUnit.MILLISECONDS));
+                test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                     encodedTrailers(),
+                                                     inboundTable,
+                                                     huffman,
+                                                     false));
+                test.assertConnectionClosed();
+
+                ExecutionException entityFailure = assertThrows(
+                        ExecutionException.class,
+                        () -> entity.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+                assertThat(entityFailure.getCause(), instanceOf(Http2Exception.class));
+                assertThat(((Http2Exception) entityFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+
+                ExecutionException trailersFailure = assertThrows(
+                        ExecutionException.class,
+                        () -> stream.trailers().get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+                assertThat(trailersFailure.getCause(), instanceOf(Http2Exception.class));
+                assertThat(((Http2Exception) trailersFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+            } finally {
+                stream.close();
+                connection.close();
+            }
         }
     }
 
