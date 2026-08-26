@@ -369,10 +369,31 @@ public class HeadersServerTest {
 
     @Test
     void relativeRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
+        assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, "boards/");
+    }
+
+    @Test
+    void queryOnlyRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
+        assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, "?q=1");
+    }
+
+    @Test
+    void invalidResponseHeaderCanBeWrittenWhenValidationIsDisabled() {
+        ClientResponseTyped<String> res = responseValidationDisabledClient
+                .get("/invalid-response-header")
+                .request(String.class);
+
+        assertThat(res.status(), is(Status.OK_200));
+        assertThat(res.headers().get(INVALID_RESPONSE_HEADER.headerName()).get(),
+                   is(INVALID_RESPONSE_HEADER.get()));
+    }
+
+    private static void assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient,
+                                                                                      String requestTarget) {
         try (Http2TestConnection connection = testClient.createConnection()) {
             Http2Headers invalidHeaders = Http2Headers.create(WritableHeaders.create());
             invalidHeaders.method(GET);
-            invalidHeaders.path("boards/");
+            invalidHeaders.path(requestTarget);
             invalidHeaders.scheme(connection.clientUri().scheme());
             invalidHeaders.authority(connection.clientUri().authority());
             connection.writer()
@@ -401,17 +422,6 @@ public class HeadersServerTest {
 
             assertThat(connection.assertHeaders(3, TIMEOUT).status(), is(Status.OK_200));
         }
-    }
-
-    @Test
-    void invalidResponseHeaderCanBeWrittenWhenValidationIsDisabled() {
-        ClientResponseTyped<String> res = responseValidationDisabledClient
-                .get("/invalid-response-header")
-                .request(String.class);
-
-        assertThat(res.status(), is(Status.OK_200));
-        assertThat(res.headers().get(INVALID_RESPONSE_HEADER.headerName()).get(),
-                   is(INVALID_RESPONSE_HEADER.get()));
     }
 
     private HttpClient http2Client(URI base) throws IOException, InterruptedException {

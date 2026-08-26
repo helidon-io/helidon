@@ -303,7 +303,10 @@ public class HttpPrologue {
     }
 
     private static void validateRequestTarget(Method method, String rawPath) {
-        if (rawPath.isEmpty() || rawPath.charAt(0) == '/') {
+        if (rawPath.isEmpty()) {
+            throw new IllegalArgumentException("Relative path in HTTP request-target");
+        }
+        if (rawPath.charAt(0) == '/') {
             return;
         }
         if ("*".equals(rawPath) || Method.CONNECT.equals(method) || isAbsoluteForm(rawPath)) {

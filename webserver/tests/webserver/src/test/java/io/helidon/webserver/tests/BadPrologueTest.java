@@ -149,4 +149,16 @@ class BadPrologueTest {
         assertThat(response, not(containsString("500 Internal Server Error")));
         assertThat(response, containsString("Bad request, see server log for more information"));
     }
+
+    @Test
+    void testQueryOnlyOriginForm() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "?q=1",
+                                                      null,
+                                                      List.of());
+
+        assertThat(response, containsString("400 Bad Request"));
+        assertThat(response, not(containsString("500 Internal Server Error")));
+        assertThat(response, containsString("Bad request, see server log for more information"));
+    }
 }

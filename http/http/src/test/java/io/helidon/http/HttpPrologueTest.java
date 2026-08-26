@@ -176,6 +176,16 @@ class HttpPrologueTest {
     }
 
     @Test
+    void testQueryOnlyOriginFormIsRejectedWhenValidated() {
+        assertThrows(IllegalArgumentException.class, () -> HttpPrologue.create("HTTP/1.1",
+                                                                              "HTTP",
+                                                                              "1.1",
+                                                                              Method.GET,
+                                                                              "?q=1",
+                                                                              true));
+    }
+
+    @Test
     void testRelativeOriginFormIsAcceptedWhenValidationDisabled() {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",

@@ -86,6 +86,18 @@ class Http1PrologueTest {
     }
 
     @Test
+    void testQueryOnlyOriginFormIsBadRequest() {
+        DataReader reader = DataReader.create(() -> "GET ?q=1 HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue p = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, p::readPrologue);
+
+        assertThat(e.status(), is(Status.BAD_REQUEST_400));
+        assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+        assertThat(e.getMessage(), containsString("Relative path in HTTP request-target"));
+    }
+
+    @Test
     void testAsteriskFormRemainsValid() {
         DataReader reader = DataReader.create(() -> "OPTIONS * HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
         HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
