@@ -1442,6 +1442,22 @@ public class Http2Headers {
             return currentTableSize;
         }
 
+        DynamicTable copy() {
+            DynamicTable copy = new DynamicTable(protocolMaxTableSize);
+            copy.headers.addAll(headers);
+            copy.maxTableSize = maxTableSize;
+            copy.currentTableSize = currentTableSize;
+            return copy;
+        }
+
+        void restore(DynamicTable snapshot) {
+            headers.clear();
+            headers.addAll(snapshot.headers);
+            protocolMaxTableSize = snapshot.protocolMaxTableSize;
+            maxTableSize = snapshot.maxTableSize;
+            currentTableSize = snapshot.currentTableSize;
+        }
+
         private int findIndex(HeaderName headerName, String headerValue) {
             StaticHeader staticHeader = StaticHeader.find(headerName, headerValue);
             int candidate = 0;
