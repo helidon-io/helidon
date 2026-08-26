@@ -18,7 +18,6 @@ package io.helidon.messaging;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -765,8 +764,8 @@ class DeclarativeRegistrationTest {
 
     private record TestArrayMessage<T>(T[][] entity) implements ArrayMessage<T> {
         @Override
-        public Map<String, String> headers() {
-            return Map.of();
+        public MessageHeaders headers() {
+            return MessageHeaders.empty();
         }
     }
 }

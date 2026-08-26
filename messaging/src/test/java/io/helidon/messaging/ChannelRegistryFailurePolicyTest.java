@@ -1784,8 +1784,8 @@ class ChannelRegistryFailurePolicyTest {
             }
 
             @Override
-            public Map<String, String> headers() {
-                return Map.of();
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
             }
         };
     }

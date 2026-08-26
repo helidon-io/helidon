@@ -16,7 +16,6 @@
 
 package io.helidon.messaging;
 
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -26,11 +25,11 @@ import java.util.Objects;
  */
 final class DefaultMessage<T> implements Message<T> {
     private final T entity;
-    private final Map<String, String> headers;
+    private final MessageHeaders headers;
 
-    DefaultMessage(T entity, Map<String, String> headers) {
+    DefaultMessage(T entity, MessageHeaders headers) {
         this.entity = Objects.requireNonNull(entity, "entity");
-        this.headers = Map.copyOf(headers);
+        this.headers = Objects.requireNonNull(headers);
     }
 
     @Override
@@ -39,7 +38,7 @@ final class DefaultMessage<T> implements Message<T> {
     }
 
     @Override
-    public Map<String, String> headers() {
+    public MessageHeaders headers() {
         return headers;
     }
 }

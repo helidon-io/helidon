@@ -608,17 +608,19 @@ class MessagingExtension implements RegistryCodegenExtension {
             String headerName = annotationName(argument,
                                                MessagingTypes.HEADER_PARAM,
                                                "@Messaging.HeaderParam name");
-            dispatch.addContent("typedMessage.header(")
-                    .addContentLiteral(headerName);
-            if (argument.typeName().equals(optionalStringType())) {
-                dispatch.addContent(")");
-            } else {
-                dispatch.addContent(").orElseThrow(() -> new ")
-                        .addContent(MessagingTypes.MESSAGING_EXCEPTION)
-                        .addContent("(")
-                        .addContentLiteral("Missing required messaging header " + headerName
-                                                   + " for handler " + handlerId)
-                        .addContent("))");
+            HeaderParameterKind parameterKind = headerParameterKind(argument.typeName());
+            if (parameterKind == null) {
+                throw new IllegalStateException("Unsupported messaging header parameter type " + argument.typeName());
+            }
+            switch (parameterKind) {
+            case REQUIRED_TEXT -> addSingleHeaderParameterDispatch(dispatch, headerName, handlerId, true, true);
+            case OPTIONAL_TEXT -> addSingleHeaderParameterDispatch(dispatch, headerName, handlerId, true, false);
+            case REQUIRED_VALUE -> addSingleHeaderParameterDispatch(dispatch, headerName, handlerId, false, true);
+            case OPTIONAL_VALUE -> addSingleHeaderParameterDispatch(dispatch, headerName, handlerId, false, false);
+            case ALL_VALUES -> dispatch.addContent("typedMessage.headers().all(")
+                    .addContentLiteral(headerName)
+                    .addContent(")");
+            default -> throw new IllegalStateException("Unsupported messaging header parameter kind " + parameterKind);
             }
             return;
         }
@@ -645,6 +647,25 @@ class MessagingExtension implements RegistryCodegenExtension {
         throw new CodegenException("Unsupported @Messaging.ReceiveFrom parameter " + argument.toDeclaration()
                                            + ". Use @Messaging.Entity, @Messaging.HeaderParam, or Message<T>.",
                                    argument.originatingElementValue());
+    }
+
+    private void addSingleHeaderParameterDispatch(Method.Builder dispatch,
+                                                  String headerName,
+                                                  String handlerId,
+                                                  boolean textValue,
+                                                  boolean required) {
+        dispatch.addContent(textValue ? "typedMessage.header(" : "typedMessage.headerValue(")
+                .addContentLiteral(headerName);
+        if (!required) {
+            dispatch.addContent(")");
+            return;
+        }
+        dispatch.addContent(").orElseThrow(() -> new ")
+                .addContent(MessagingTypes.MESSAGING_EXCEPTION)
+                .addContent("(")
+                .addContentLiteral("Missing required messaging header " + headerName
+                                           + " for handler " + handlerId)
+                .addContent("))");
     }
 
     private ConsumerMethod consumerMethod(RegistryRoundContext roundContext, TypedElementInfo element) {
@@ -815,9 +836,9 @@ class MessagingExtension implements RegistryCodegenExtension {
             throw new CodegenException("Duplicate @Messaging.HeaderParam name " + headerName,
                                        argument.originatingElementValue());
         }
-        if (!argument.typeName().equals(TypeNames.STRING)
-                && !argument.typeName().equals(optionalStringType())) {
-            throw new CodegenException("@Messaging.HeaderParam parameters must be String or Optional<String>; "
+        if (headerParameterKind(argument.typeName()) == null) {
+            throw new CodegenException("@Messaging.HeaderParam parameters must be String, Optional<String>, "
+                                               + "HeaderValue, Optional<HeaderValue>, or List<HeaderValue>; "
                                                + "automatic header conversion is not supported",
                                        argument.originatingElementValue());
         }
@@ -1174,10 +1195,39 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .build();
     }
 
-    private TypeName optionalStringType() {
-        return TypeName.builder(MessagingTypes.OPTIONAL)
-                .addTypeArgument(TypeNames.STRING)
-                .build();
+    private HeaderParameterKind headerParameterKind(TypeName typeName) {
+        if (typeName.array() || typeName.vararg()) {
+            return null;
+        }
+        if (typeName.equals(TypeNames.STRING)) {
+            return HeaderParameterKind.REQUIRED_TEXT;
+        }
+        if (hasSingleTypeArgument(typeName, MessagingTypes.OPTIONAL, TypeNames.STRING)) {
+            return HeaderParameterKind.OPTIONAL_TEXT;
+        }
+        if (typeName.equals(MessagingTypes.HEADER_VALUE)) {
+            return HeaderParameterKind.REQUIRED_VALUE;
+        }
+        if (hasSingleTypeArgument(typeName, MessagingTypes.OPTIONAL, MessagingTypes.HEADER_VALUE)) {
+            return HeaderParameterKind.OPTIONAL_VALUE;
+        }
+        if (hasSingleTypeArgument(typeName, MessagingTypes.LIST, MessagingTypes.HEADER_VALUE)) {
+            return HeaderParameterKind.ALL_VALUES;
+        }
+        return null;
+    }
+
+    private boolean hasSingleTypeArgument(TypeName typeName, TypeName genericType, TypeName typeArgument) {
+        if (!typeName.genericTypeName().equals(genericType) || typeName.typeArguments().size() != 1) {
+            return false;
+        }
+        TypeName actualTypeArgument = typeName.typeArguments().getFirst();
+        return !actualTypeArgument.array()
+                && !actualTypeArgument.vararg()
+                && !actualTypeArgument.wildcard()
+                && actualTypeArgument.lowerBounds().isEmpty()
+                && actualTypeArgument.upperBounds().isEmpty()
+                && actualTypeArgument.equals(typeArgument);
     }
 
     private TypeName supplierType(TypeName suppliedType) {
@@ -1466,6 +1516,14 @@ class MessagingExtension implements RegistryCodegenExtension {
                                          int maxAttempts,
                                          String onExhausted,
                                          Optional<String> deadLetterChannel) {
+    }
+
+    private enum HeaderParameterKind {
+        REQUIRED_TEXT,
+        OPTIONAL_TEXT,
+        REQUIRED_VALUE,
+        OPTIONAL_VALUE,
+        ALL_VALUES
     }
 
     private record ConsumerMethod(TypeName payloadType,

@@ -45,6 +45,7 @@ final class MessagingTypes {
     static final TypeName GENERIC_TYPE = TypeName.create("io.helidon.common.GenericType");
     static final TypeName HEADER_PARAM =
             TypeName.create("io.helidon.messaging.Messaging.HeaderParam");
+    static final TypeName HEADER_VALUE = TypeName.create("io.helidon.messaging.HeaderValue");
     static final TypeName LIST = TypeNames.LIST;
     static final TypeName MESSAGE = TypeName.create("io.helidon.messaging.Message");
     static final TypeName MESSAGE_BATCH = TypeName.create("io.helidon.messaging.MessageBatch");

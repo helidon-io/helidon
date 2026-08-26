@@ -20,7 +20,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -805,8 +804,8 @@ class MessagingGraphBuilderTest {
 
     private record MessagePayload(String entity) implements Message<String> {
         @Override
-        public Map<String, String> headers() {
-            return Map.of();
+        public MessageHeaders headers() {
+            return MessageHeaders.empty();
         }
     }
 

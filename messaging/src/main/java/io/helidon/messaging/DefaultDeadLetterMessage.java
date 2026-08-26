@@ -16,8 +16,6 @@
 
 package io.helidon.messaging;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -31,7 +29,7 @@ final class DefaultDeadLetterMessage<T> implements DeadLetterMessage<T> {
     private final int attempts;
     private final String failureType;
     private final String failureMessage;
-    private final Map<String, String> headers;
+    private final MessageHeaders headers;
 
     DefaultDeadLetterMessage(Message<T> originalMessage,
                              String sourceChannel,
@@ -50,12 +48,13 @@ final class DefaultDeadLetterMessage<T> implements DeadLetterMessage<T> {
         this.failureType = actualFailure.getClass().getName();
         this.failureMessage = Objects.toString(actualFailure.getMessage(), "");
 
-        Map<String, String> headers = new LinkedHashMap<>(originalMessage.headers());
-        headers.put(SOURCE_CHANNEL_HEADER, sourceChannel);
-        headers.put(ATTEMPTS_HEADER, Integer.toString(attempts));
-        headers.put(FAILURE_TYPE_HEADER, failureType);
-        headers.put(FAILURE_MESSAGE_HEADER, failureMessage);
-        this.headers = Map.copyOf(headers);
+        this.headers = MessageHeaders.builder()
+                .addAll(originalMessage.headers())
+                .set(SOURCE_CHANNEL_HEADER, sourceChannel)
+                .set(ATTEMPTS_HEADER, Integer.toString(attempts))
+                .set(FAILURE_TYPE_HEADER, failureType)
+                .set(FAILURE_MESSAGE_HEADER, failureMessage)
+                .build();
     }
 
     @Override
@@ -89,7 +88,7 @@ final class DefaultDeadLetterMessage<T> implements DeadLetterMessage<T> {
     }
 
     @Override
-    public Map<String, String> headers() {
+    public MessageHeaders headers() {
         return headers;
     }
 }

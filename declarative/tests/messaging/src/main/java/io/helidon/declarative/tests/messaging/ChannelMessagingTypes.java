@@ -18,7 +18,6 @@ package io.helidon.declarative.tests.messaging;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -34,11 +33,13 @@ import io.helidon.config.Config;
 import io.helidon.messaging.DeadLetterMessage;
 import io.helidon.messaging.Emitter;
 import io.helidon.messaging.FailureDisposition;
+import io.helidon.messaging.HeaderValue;
 import io.helidon.messaging.IncomingConnector;
 import io.helidon.messaging.IncomingConnectorContext;
 import io.helidon.messaging.IncomingConnectorProvider;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessageHeaders;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.MessagingException;
 import io.helidon.service.registry.Interception;
@@ -58,6 +59,7 @@ class ChannelMessagingTypes {
     static final String ARRAY_PROCESSOR_OUTPUT_CHANNEL = "array-processor-output-channel";
     static final String REQUIRED_HEADER_CHANNEL = "required-header-channel";
     static final String OPTIONAL_HEADER_CHANNEL = "optional-header-channel";
+    static final String TYPED_HEADER_CHANNEL = "typed-header-channel";
     static final String PER_LOOKUP_INTERCEPTED_CHANNEL = "per-lookup-intercepted-channel";
     static final String FAILING_CHANNEL = "failing-channel";
     static final String ANNOTATED_FAILURE_CHANNEL = "annotated-failure-channel";
@@ -244,7 +246,7 @@ class ChannelMessagingTypes {
         @Messaging.SendTo(ARRAY_PROCESSOR_OUTPUT_CHANNEL)
         ArrayMessage<String> process(String payload) {
             String processed = "processed: " + payload;
-            return new ImmutableArrayMessage<>(new String[][] {{payload}, {processed}}, Map.of());
+            return new ImmutableArrayMessage<>(new String[][] {{payload}, {processed}}, MessageHeaders.empty());
         }
     }
 
@@ -288,6 +290,23 @@ class ChannelMessagingTypes {
         }
 
         List<OptionalHeaderDelivery> deliveries() {
+            return deliveries;
+        }
+    }
+
+    @Service.Singleton
+    static class TypedHeaderConsumer {
+        private final List<TypedHeaderDelivery> deliveries = new CopyOnWriteArrayList<>();
+
+        @Messaging.ReceiveFrom(TYPED_HEADER_CHANNEL)
+        void consume(@Messaging.Entity String payload,
+                     @Messaging.HeaderParam("required") HeaderValue required,
+                     @Messaging.HeaderParam("optional") Optional<HeaderValue> optional,
+                     @Messaging.HeaderParam("repeated") List<HeaderValue> repeated) {
+            deliveries.add(new TypedHeaderDelivery(payload, required, optional, repeated));
+        }
+
+        List<TypedHeaderDelivery> deliveries() {
             return deliveries;
         }
     }
@@ -667,6 +686,12 @@ class ChannelMessagingTypes {
     record OptionalHeaderDelivery(String payload, Optional<String> header) {
     }
 
+    record TypedHeaderDelivery(String payload,
+                               HeaderValue required,
+                               Optional<HeaderValue> optional,
+                               List<HeaderValue> repeated) {
+    }
+
     interface CustomMessage<K, V> extends Message<V> {
         K key();
     }
@@ -676,11 +701,11 @@ class ChannelMessagingTypes {
 
     static final class ImmutableArrayMessage<T> implements ArrayMessage<T> {
         private final T[][] entity;
-        private final Map<String, String> headers;
+        private final MessageHeaders headers;
 
-        ImmutableArrayMessage(T[][] entity, Map<String, String> headers) {
+        ImmutableArrayMessage(T[][] entity, MessageHeaders headers) {
             this.entity = entity;
-            this.headers = Map.copyOf(headers);
+            this.headers = headers;
         }
 
         @Override
@@ -689,7 +714,7 @@ class ChannelMessagingTypes {
         }
 
         @Override
-        public Map<String, String> headers() {
+        public MessageHeaders headers() {
             return headers;
         }
     }
@@ -697,12 +722,12 @@ class ChannelMessagingTypes {
     static final class ImmutableCustomMessage<K, V> implements CustomMessage<K, V> {
         private final K key;
         private final V entity;
-        private final Map<String, String> headers;
+        private final MessageHeaders headers;
 
-        ImmutableCustomMessage(K key, V entity, Map<String, String> headers) {
+        ImmutableCustomMessage(K key, V entity, MessageHeaders headers) {
             this.key = key;
             this.entity = entity;
-            this.headers = Map.copyOf(headers);
+            this.headers = headers;
         }
 
         @Override
@@ -716,7 +741,7 @@ class ChannelMessagingTypes {
         }
 
         @Override
-        public Map<String, String> headers() {
+        public MessageHeaders headers() {
             return headers;
         }
     }
@@ -731,12 +756,12 @@ class ChannelMessagingTypes {
     static final class ImmutableMultiHopMessage<K, V> implements MultiHopMessage<K, V> {
         private final K key;
         private final V entity;
-        private final Map<String, String> headers;
+        private final MessageHeaders headers;
 
-        ImmutableMultiHopMessage(K key, V entity, Map<String, String> headers) {
+        ImmutableMultiHopMessage(K key, V entity, MessageHeaders headers) {
             this.key = key;
             this.entity = entity;
-            this.headers = Map.copyOf(headers);
+            this.headers = headers;
         }
 
         @Override
@@ -750,7 +775,7 @@ class ChannelMessagingTypes {
         }
 
         @Override
-        public Map<String, String> headers() {
+        public MessageHeaders headers() {
             return headers;
         }
     }

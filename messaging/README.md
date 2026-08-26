@@ -132,13 +132,27 @@ messages originating from that connector. A default message emitted locally does
 one of those subtypes. In a multi-parameter method, a payload is identified with `@Messaging.Entity`. This explicit
 marker selects the payload view even when the parameter type implements `Message`; only an unannotated `Message<T>` or
 connector-specific subtype selects the envelope view. Other parameters use `@Messaging.HeaderParam`. Header names are
-exact and case-sensitive; `String` declares a required header and `Optional<String>` declares an optional one:
+exact and case-sensitive:
+
+| Parameter type | Selected value | When absent |
+| --- | --- | --- |
+| `String` | Last value, which must be `HeaderValue.TextValue` | Delivery fails |
+| `Optional<String>` | Last value, which must be text when present | `Optional.empty()` |
+| `HeaderValue` | Last value of any kind | Delivery fails |
+| `Optional<HeaderValue>` | Last value of any kind | `Optional.empty()` |
+| `List<HeaderValue>` | Immutable list of all matching values in message-entry order | Empty list |
+
+An explicit `HeaderValue.NullValue` is present data, including as `Optional.of(HeaderValue.nullValue())`. Header values
+are never converted automatically. A handler can declare at most one header parameter for each exact name:
 
 ```java
 @Messaging.ReceiveFrom("orders")
 void receive(@Messaging.Entity Order order,
              @Messaging.HeaderParam("tenant") String tenant,
-             @Messaging.HeaderParam("trace-id") Optional<String> traceId) {
+             @Messaging.HeaderParam("trace-id") Optional<String> traceId,
+             @Messaging.HeaderParam("attempt") HeaderValue attempt,
+             @Messaging.HeaderParam("routing") Optional<HeaderValue> routing,
+             @Messaging.HeaderParam("tag") List<HeaderValue> tags) {
     // Process one order and its selected headers.
 }
 ```
@@ -166,17 +180,25 @@ after all of them succeed. One service cannot declare two receivers for the same
 
 ### Create messages and batches
 
-`Message<T>` contains a required, non-null payload and immutable, single-valued portable headers:
+`Message<T>` contains a required, non-null payload and immutable, ordered portable headers:
 
 ```java
 Message<Order> message = Message.builder(order)
         .header("trace-id", traceId)
         .header("tenant", tenant)
+        .addHeader("tag", "first")
+        .addHeader("tag", "second")
+        .header("attempt", HeaderValue.integer(3))
         .build();
 ```
 
-Use `Message.create(order)` when no headers are needed. Setting the same header name again replaces its previous
-value.
+Use `Message.create(order)` when no headers are needed. `header` replaces all values with the same exact,
+case-sensitive name, while `addHeader` appends a duplicate-preserving entry. `MessageHeaders.entries()` is the
+authoritative globally ordered representation. Explicit `first`, `last`, and `all` lookups avoid imposing one
+transport's duplicate semantics on another; `valuesByName()` is only a derived grouped view and loses cross-name
+ordering. The closed `HeaderValue` model supports null, text, immutable binary, boolean, integer, decimal,
+32/64-bit floating point, timestamp, UUID, and opaque connector-encoded values. `Message.header(name)` remains a
+last-valued text convenience and never stringifies a typed value.
 
 Every delivery is a non-empty, ordered `MessageBatch<T>`. Payload and message receivers are called once per item,
 while a batch receiver is called once for the whole delivery:
@@ -938,12 +960,15 @@ concurrently with an active send.
 
 ### 7. Map transport messages and enforce limits
 
-- Convert each incoming transport record to an immutable `Message<T>` and copy portable headers into the
-  single-valued `Map<String, String>` contract.
+- Convert each incoming transport record to an immutable `Message<T>` and copy portable headers into globally ordered
+  `MessageHeader` entries. Preserve duplicate names, exact spelling, typed values, and immutable binary snapshots when
+  the transport exposes them.
 - Reject or translate a null transport payload before creating its message envelope; the core `Message` contract does
   not permit null payloads.
 - Use a connector-specific immutable `Message<T>` subtype when applications need native keys, offsets, destinations,
-  or other metadata. Document which locally emitted messages are accepted by handlers requiring that subtype.
+  protocol-defined properties, or other metadata. `HeaderValue.NativeValue` is an opaque encoded escape hatch for a
+  non-portable application header, not a replacement for connector metadata. Document which locally emitted messages
+  are accepted by handlers requiring the subtype.
 - Outgoing mapping must accept ordinary core `Message` instances; treat a connector-specific subtype as an optional
   richer view rather than a required input.
 - Bound every incoming batch by `context.maxDeliveryMessages()` before acquisition. This stable limit includes the
@@ -952,7 +977,9 @@ concurrently with an active send.
   performs message-count admission only.
 - Preserve message order and the exact `MessageBatch` identity through settlement. Use retained subsets rather than
   rebuilding batches during partial failure handling.
-- Document null, duplicate, encoding, native-header, and payload-type conversion rules.
+- Document null, duplicate, ordering, encoding, native-header, unsupported-value, and payload-type conversion rules.
+  Reject an unsupported outbound header unless the connector defines an explicit translation; never silently
+  stringify, reorder, or drop it.
 
 The runtime owns portable delivery retry, `DROP`, and dead-letter routing. The connector still owns transport
 reconnection, polling, acknowledgements, commits, negative acknowledgements, and checkpoints.
@@ -993,8 +1020,8 @@ At minimum, cover:
   that the provider is not a lifecycle resource, provider-registry shutdown does not close an unattached factory-created
   connector, and an attached connector is closed by its owning graph;
 - incoming readiness, reserve-before-acquire ordering, message-count bounds, empty polls, ordering, immutable message
-  snapshots, unmodifiable exact case-sensitive headers, oversize post-acquisition rejection, and release of every
-  unused reservation exactly once;
+  snapshots, globally ordered duplicate and typed headers, immutable binary snapshots, exact case-sensitive names,
+  oversize post-acquisition rejection, and release of every unused reservation exactly once;
 - successful processing followed by transport commit, failed processing without commit, redelivery, drop, dead-letter
   completion, commit or checkpoint failure, and retention of admission through commit, nack, or abandonment;
 - `tryReserveDelivery()` saturation and shared repeated-attempt timeout exhaustion, repeated-`tryStart()` budgets,

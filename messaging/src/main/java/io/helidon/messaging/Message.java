@@ -16,8 +16,6 @@
 
 package io.helidon.messaging;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -26,9 +24,9 @@ import io.helidon.common.Api;
 /**
  * Message envelope with a non-null payload and portable headers.
  * <p>
- * Portable headers are single-valued and keyed by exact, case-sensitive names. Implementations must be immutable
- * snapshots and must return an immutable map from {@link #headers()}. Connector-specific message subtypes may expose
- * richer native header representations separately.
+ * Portable headers retain global order, duplicate exact case-sensitive names, and immutable typed values.
+ * Implementations must be immutable snapshots. Connector-specific message subtypes may expose richer native metadata
+ * separately.
  *
  * @param <T> payload type
  */
@@ -66,22 +64,45 @@ public interface Message<T> {
     T entity();
 
     /**
-     * Single-valued portable headers.
+     * Ordered portable headers.
      * <p>
-     * The returned map uses exact, case-sensitive names and does not define an iteration order.
+     * Connectors preserve exact names, global order, duplicates, and value kinds when supported by their transport.
+     * An unsupported outbound value must be explicitly translated or rejected, never silently stringified, reordered,
+     * or dropped.
      *
      * @return immutable headers
      */
-    Map<String, String> headers();
+    MessageHeaders headers();
 
     /**
-     * Portable header value.
+     * Last portable header value with an exact name.
      *
      * @param name header name
-     * @return header value
+     * @return header value, or empty when the exact name is absent
+     */
+    default Optional<HeaderValue> headerValue(String name) {
+        return headers().last(name);
+    }
+
+    /**
+     * Last portable text header value with an exact name.
+     * <p>
+     * This convenience method preserves the original text-header API. It throws when the last value exists but is not
+     * a {@link HeaderValue.TextValue}; it never stringifies typed values or skips past a later non-text value.
+     *
+     * @param name header name
+     * @return header value, or empty only when the exact name is absent
+     * @throws IllegalStateException if the last value is present but is not text
      */
     default Optional<String> header(String name) {
-        return Optional.ofNullable(headers().get(name));
+        Optional<HeaderValue> value = headerValue(name);
+        if (value.isEmpty()) {
+            return Optional.empty();
+        }
+        if (value.get() instanceof HeaderValue.TextValue textValue) {
+            return Optional.of(textValue.value());
+        }
+        throw new IllegalStateException("Messaging header '" + name + "' is not a text value");
     }
 
     /**
@@ -91,23 +112,80 @@ public interface Message<T> {
      */
     final class Builder<T> {
         private final T entity;
-        private final Map<String, String> headers = new LinkedHashMap<>();
+        private final MessageHeaders.Builder headers = MessageHeaders.builder();
 
         private Builder(T entity) {
             this.entity = Objects.requireNonNull(entity, "entity");
         }
 
         /**
-         * Set a portable header.
-         * <p>
-         * Setting the same exact name again replaces its previous value, so the last value set for that name wins.
+         * Set a portable text header, replacing all values with the same exact name.
          *
          * @param name header name
          * @param value header value
          * @return updated builder
          */
         public Builder<T> header(String name, String value) {
-            headers.put(name, value);
+            headers.set(name, value);
+            return this;
+        }
+
+        /**
+         * Set a portable typed header, replacing all values with the same exact name.
+         *
+         * @param name header name
+         * @param value header value
+         * @return updated builder
+         */
+        public Builder<T> header(String name, HeaderValue value) {
+            headers.set(name, value);
+            return this;
+        }
+
+        /**
+         * Append a portable text header, retaining values with the same exact name.
+         *
+         * @param name header name
+         * @param value header value
+         * @return updated builder
+         */
+        public Builder<T> addHeader(String name, String value) {
+            headers.add(name, value);
+            return this;
+        }
+
+        /**
+         * Append a portable typed header, retaining values with the same exact name.
+         *
+         * @param name header name
+         * @param value header value
+         * @return updated builder
+         */
+        public Builder<T> addHeader(String name, HeaderValue value) {
+            headers.add(name, value);
+            return this;
+        }
+
+        /**
+         * Append a portable header entry.
+         *
+         * @param header header entry
+         * @return updated builder
+         */
+        public Builder<T> addHeader(MessageHeader header) {
+            headers.add(header);
+            return this;
+        }
+
+        /**
+         * Replace all current headers with an ordered snapshot.
+         *
+         * @param headers headers
+         * @return updated builder
+         */
+        public Builder<T> headers(MessageHeaders headers) {
+            MessageHeaders actualHeaders = Objects.requireNonNull(headers);
+            this.headers.clear().addAll(actualHeaders);
             return this;
         }
 
@@ -117,7 +195,7 @@ public interface Message<T> {
          * @return immutable message
          */
         public Message<T> build() {
-            return new DefaultMessage<>(entity, headers);
+            return new DefaultMessage<>(entity, headers.build());
         }
     }
 }

@@ -17,10 +17,13 @@
 package io.helidon.declarative.tests.messaging;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -36,8 +39,11 @@ import io.helidon.messaging.BatchDeliveryException;
 import io.helidon.messaging.BatchItemStatus;
 import io.helidon.messaging.DeadLetterMessage;
 import io.helidon.messaging.EmitterRegistration;
+import io.helidon.messaging.HeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessageHeader;
+import io.helidon.messaging.MessageHeaders;
 import io.helidon.messaging.MessagingChannel;
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.MessagingGraph;
@@ -73,6 +79,8 @@ import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownSing
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ShutdownSingletonProbe;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.TestConnectorObserver;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.TestEntryPointInterceptor;
+import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.TypedHeaderConsumer;
+import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.TypedHeaderDelivery;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -413,7 +421,9 @@ class DeclarativeMessagingTest {
     void testCustomMessageSubtypeDispatch() {
         MessagingRuntime runtime = registry.get(MessagingRuntime.class);
         CustomMessage<String, Integer> message =
-                new ImmutableCustomMessage<>("custom-key", 42, Map.of("source", "custom"));
+                new ImmutableCustomMessage<>("custom-key",
+                                             42,
+                                             MessageHeaders.create(MessageHeader.create("source", "custom")));
 
         runtime.emit(ChannelMessagingTypes.CUSTOM_MESSAGE_CHANNEL, message);
 
@@ -444,7 +454,9 @@ class DeclarativeMessagingTest {
     void testMultiHopMessageSubtypeResolvesParameterizedPayload() {
         MessagingRuntime runtime = registry.get(MessagingRuntime.class);
         MultiHopMessage<String, List<Integer>> message =
-                new ImmutableMultiHopMessage<>("multi-hop-key", List.of(1, 2, 3), Map.of("source", "multi-hop"));
+                new ImmutableMultiHopMessage<>("multi-hop-key",
+                                               List.of(1, 2, 3),
+                                               MessageHeaders.create(MessageHeader.create("source", "multi-hop")));
 
         runtime.emit(ChannelMessagingTypes.MULTI_HOP_MESSAGE_CHANNEL, message);
 
@@ -604,7 +616,7 @@ class DeclarativeMessagingTest {
         var consumer = registry.get(PayloadProcessorConsumer.class);
         assertThat(consumer.messages(), hasSize(1));
         assertThat(consumer.messages().getFirst().entity(), is("processed: test message"));
-        assertThat(consumer.messages().getFirst().headers(), is(Map.of()));
+        assertThat(consumer.messages().getFirst().headers(), is(MessageHeaders.empty()));
     }
 
     @Test
@@ -661,7 +673,25 @@ class DeclarativeMessagingTest {
                              .header("required", "header value")
                              .build());
 
-        assertThat(consumer.deliveries(), is(List.of(new HeaderDelivery("present header", "header value"))));
+        runtime.emit(ChannelMessagingTypes.REQUIRED_HEADER_CHANNEL,
+                     Message.builder("duplicate header")
+                             .addHeader("required", "first")
+                             .addHeader("required", "last")
+                             .build());
+
+        BatchDeliveryException wrongType =
+                assertThrows(BatchDeliveryException.class,
+                             () -> runtime.emit(ChannelMessagingTypes.REQUIRED_HEADER_CHANNEL,
+                                                Message.builder("typed header")
+                                                        .addHeader("required", "text")
+                                                        .addHeader("required", HeaderValue.integer(42))
+                                                        .build()));
+
+        assertSingleIndeterminateOutcome(wrongType);
+        assertThat(rootCause(wrongType).getMessage(), containsString("not a text value"));
+        assertThat(consumer.deliveries(),
+                   is(List.of(new HeaderDelivery("present header", "header value"),
+                              new HeaderDelivery("duplicate header", "last"))));
     }
 
     @Test
@@ -678,6 +708,68 @@ class DeclarativeMessagingTest {
         assertThat(consumer.deliveries(),
                    is(List.of(new OptionalHeaderDelivery("missing header", Optional.empty()),
                               new OptionalHeaderDelivery("present header", Optional.of("trace-123")))));
+    }
+
+    @Test
+    void testTypedHeaderValuesAreInjectedWithoutConversion() {
+        MessagingRuntime runtime = registry.get(MessagingRuntime.class);
+        var consumer = registry.get(TypedHeaderConsumer.class);
+
+        BatchDeliveryException missingRequired =
+                assertThrows(BatchDeliveryException.class,
+                             () -> runtime.emit(ChannelMessagingTypes.TYPED_HEADER_CHANNEL,
+                                                Message.builder("missing required")
+                                                        .header("optional", HeaderValue.text("present"))
+                                                        .addHeader("repeated", HeaderValue.integer(1))
+                                                        .build()));
+
+        assertSingleIndeterminateOutcome(missingRequired);
+        assertThat(rootCause(missingRequired).getMessage(),
+                   containsString("Missing required messaging header required"));
+        assertThat(consumer.deliveries(), empty());
+
+        List<HeaderValue> repeated = List.of(
+                HeaderValue.nullValue(),
+                HeaderValue.text("text"),
+                HeaderValue.binary(new byte[] {1, 2}),
+                HeaderValue.booleanValue(true),
+                HeaderValue.integer(42),
+                HeaderValue.decimal(new BigDecimal("12.30")),
+                HeaderValue.floatingPoint(1.5F),
+                HeaderValue.floatingPoint(2.5D),
+                HeaderValue.timestamp(Instant.parse("2026-08-26T10:15:30Z")),
+                HeaderValue.uuid(UUID.fromString("01234567-89ab-cdef-0123-456789abcdef")),
+                HeaderValue.nativeValue("test:encoded", new byte[] {3, 4}));
+
+        Message.Builder<String> message = Message.builder("typed values")
+                .addHeader("required", HeaderValue.text("shadowed"))
+                .addHeader("optional", HeaderValue.booleanValue(false))
+                .addHeader("required", HeaderValue.integer(99))
+                .addHeader("optional", HeaderValue.nullValue());
+        for (int i = 0; i < repeated.size(); i++) {
+            message.addHeader("repeated", repeated.get(i));
+            if (i == 4) {
+                message.addHeader("interleaved", HeaderValue.text("ignored"));
+            }
+        }
+        runtime.emit(ChannelMessagingTypes.TYPED_HEADER_CHANNEL, message.build());
+
+        runtime.emit(ChannelMessagingTypes.TYPED_HEADER_CHANNEL,
+                     Message.builder("explicit null")
+                             .header("required", HeaderValue.nullValue())
+                             .build());
+
+        assertThat(consumer.deliveries(),
+                   is(List.of(new TypedHeaderDelivery("typed values",
+                                                      HeaderValue.integer(99),
+                                                      Optional.of(HeaderValue.nullValue()),
+                                                      repeated),
+                              new TypedHeaderDelivery("explicit null",
+                                                      HeaderValue.nullValue(),
+                                                      Optional.empty(),
+                                                      List.of()))));
+        assertThrows(UnsupportedOperationException.class,
+                     () -> consumer.deliveries().getFirst().repeated().add(HeaderValue.text("mutable")));
     }
 
     @Test

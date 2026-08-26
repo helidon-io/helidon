@@ -16,8 +16,6 @@
 
 package io.helidon.messaging;
 
-import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -34,7 +32,8 @@ class MessageNullPayloadTest {
 
     @Test
     void defaultMessageRejectsNullPayload() {
-        assertThrows(NullPointerException.class, () -> new DefaultMessage<>(null, Map.of()));
+        assertThrows(NullPointerException.class, () -> new DefaultMessage<>(null, MessageHeaders.empty()));
+        assertThrows(NullPointerException.class, () -> new DefaultMessage<>("payload", null));
     }
 
     @Test
@@ -46,8 +45,8 @@ class MessageNullPayloadTest {
             }
 
             @Override
-            public Map<String, String> headers() {
-                return Map.of();
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
             }
         };
         MessagingGraph.Builder builder = MessagingGraph.builder();

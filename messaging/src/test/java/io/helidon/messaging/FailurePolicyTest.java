@@ -17,6 +17,7 @@
 package io.helidon.messaging;
 
 import java.time.Duration;
+import java.util.List;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
@@ -99,8 +100,14 @@ class FailurePolicyTest {
     @Test
     void testDeadLetterMessageRetainsOriginalAndOverridesReservedHeaders() {
         Message<String> original = Message.builder("orders")
-                .header("trace-id", "trace-1")
-                .header(DeadLetterMessage.SOURCE_CHANNEL_HEADER, "spoofed")
+                .addHeader("trace-id", "trace-1")
+                .addHeader(DeadLetterMessage.SOURCE_CHANNEL_HEADER, "spoofed-first")
+                .addHeader("binary", HeaderValue.binary(new byte[] {1, 2}))
+                .addHeader("trace-id", "trace-2")
+                .addHeader(DeadLetterMessage.SOURCE_CHANNEL_HEADER, "spoofed-last")
+                .addHeader(DeadLetterMessage.ATTEMPTS_HEADER, "99")
+                .addHeader(DeadLetterMessage.FAILURE_TYPE_HEADER, "spoofed-type")
+                .addHeader(DeadLetterMessage.FAILURE_MESSAGE_HEADER, "spoofed-message")
                 .build();
         IllegalStateException failure = new IllegalStateException();
 
@@ -112,14 +119,26 @@ class FailurePolicyTest {
         assertThat(deadLetter.attempts(), is(3));
         assertThat(deadLetter.failureType(), is(IllegalStateException.class.getName()));
         assertThat(deadLetter.failureMessage(), is(""));
-        assertThat(deadLetter.header("trace-id").orElseThrow(), is("trace-1"));
+        assertThat(deadLetter.headers().entries(),
+                   is(List.of(MessageHeader.create("trace-id", "trace-1"),
+                              MessageHeader.create("binary", HeaderValue.binary(new byte[] {1, 2})),
+                              MessageHeader.create("trace-id", "trace-2"),
+                              MessageHeader.create(DeadLetterMessage.SOURCE_CHANNEL_HEADER, "orders-in"),
+                              MessageHeader.create(DeadLetterMessage.ATTEMPTS_HEADER, "3"),
+                              MessageHeader.create(DeadLetterMessage.FAILURE_TYPE_HEADER,
+                                                   IllegalStateException.class.getName()),
+                              MessageHeader.create(DeadLetterMessage.FAILURE_MESSAGE_HEADER, ""))));
+        assertThat(deadLetter.header("trace-id").orElseThrow(), is("trace-2"));
         assertThat(deadLetter.header(DeadLetterMessage.SOURCE_CHANNEL_HEADER).orElseThrow(), is("orders-in"));
         assertThat(deadLetter.header(DeadLetterMessage.ATTEMPTS_HEADER).orElseThrow(), is("3"));
         assertThat(deadLetter.header(DeadLetterMessage.FAILURE_TYPE_HEADER).orElseThrow(),
                    is(IllegalStateException.class.getName()));
         assertThat(deadLetter.header(DeadLetterMessage.FAILURE_MESSAGE_HEADER).orElseThrow(), is(""));
+        assertThat(deadLetter.headers().all(DeadLetterMessage.SOURCE_CHANNEL_HEADER).size(), is(1));
+        assertThat(deadLetter.headers().all(DeadLetterMessage.ATTEMPTS_HEADER).size(), is(1));
+        assertThat(original.headers().all(DeadLetterMessage.SOURCE_CHANNEL_HEADER).size(), is(2));
         assertThrows(UnsupportedOperationException.class,
-                     () -> deadLetter.headers().put("mutable", "false"));
+                     () -> deadLetter.headers().entries().add(MessageHeader.create("mutable", "false")));
     }
 
     @Test

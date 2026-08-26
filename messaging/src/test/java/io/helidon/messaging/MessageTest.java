@@ -16,7 +16,7 @@
 
 package io.helidon.messaging;
 
-import java.util.Map;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessageTest {
     @Test
-    void exposesImmutableSingleValuedPortableHeaders() {
+    void replacesTextHeadersAndSnapshotsBuilderState() {
         Message.Builder<String> builder = Message.builder("payload")
                 .header("trace", "first")
                 .header("Trace", "case-sensitive")
@@ -35,9 +35,52 @@ class MessageTest {
         Message<String> message = builder.build();
         builder.header("trace", "after-build");
 
-        assertThat(message.headers(), is(Map.of("trace", "last", "Trace", "case-sensitive")));
+        assertThat(message.headers().entries(),
+                   is(List.of(MessageHeader.create("Trace", "case-sensitive"),
+                              MessageHeader.create("trace", "last"))));
         assertThat(message.header("trace").orElseThrow(), is("last"));
         assertThat(message.header("Trace").orElseThrow(), is("case-sensitive"));
-        assertThrows(UnsupportedOperationException.class, () -> message.headers().put("new", "value"));
+        assertThat(message.headerValue("trace").orElseThrow(), is(HeaderValue.text("last")));
+    }
+
+    @Test
+    void appendsOrderedDuplicateTypedHeaders() {
+        Message<String> message = Message.builder("payload")
+                .addHeader("a", "first")
+                .addHeader("b", HeaderValue.booleanValue(true))
+                .addHeader(MessageHeader.create("a", HeaderValue.binary(new byte[] {1, 2})))
+                .build();
+
+        assertThat(message.headers().entries(),
+                   is(List.of(MessageHeader.create("a", "first"),
+                              MessageHeader.create("b", HeaderValue.booleanValue(true)),
+                              MessageHeader.create("a", HeaderValue.binary(new byte[] {1, 2})))));
+        assertThat(message.headerValue("a").orElseThrow(), is(HeaderValue.binary(new byte[] {1, 2})));
+        assertThrows(IllegalStateException.class, () -> message.header("a"));
+    }
+
+    @Test
+    void replacesCompleteHeaderCollection() {
+        MessageHeaders headers = MessageHeaders.builder()
+                .add("a", "first")
+                .add("a", "last")
+                .build();
+
+        Message<String> message = Message.builder("payload")
+                .header("discarded", "value")
+                .headers(headers)
+                .build();
+
+        assertThat(message.headers(), is(headers));
+        assertThat(message.header("a").orElseThrow(), is("last"));
+    }
+
+    @Test
+    void failedHeaderCollectionReplacementDoesNotChangeBuilder() {
+        Message.Builder<String> builder = Message.builder("payload").header("a", "original");
+
+        assertThrows(NullPointerException.class, () -> builder.headers(null));
+
+        assertThat(builder.build().headers().entries(), is(List.of(MessageHeader.create("a", "original"))));
     }
 }

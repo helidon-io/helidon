@@ -288,9 +288,9 @@ class MessagingExtensionTest {
         TestCompiler.Result result = compile("""
                 package com.example;
 
-                import java.util.Map;
-
                 import io.helidon.messaging.Message;
+                import io.helidon.messaging.MessageHeader;
+                import io.helidon.messaging.MessageHeaders;
                 import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
 
@@ -307,8 +307,8 @@ class MessagingExtensionTest {
                     }
 
                     @Override
-                    public Map<String, String> headers() {
-                        return Map.of("tenant", "inner");
+                    public MessageHeaders headers() {
+                        return MessageHeaders.create(MessageHeader.create("tenant", "inner"));
                     }
                 }
 
@@ -508,8 +508,10 @@ class MessagingExtensionTest {
                 package com.example;
 
                 import java.io.IOException;
+                import java.util.List;
                 import java.util.Optional;
 
+                import io.helidon.messaging.HeaderValue;
                 import io.helidon.messaging.Message;
                 import io.helidon.messaging.Messaging;
                 import io.helidon.service.registry.Service;
@@ -519,7 +521,10 @@ class MessagingExtensionTest {
                     @Messaging.ReceiveFrom("orders")
                     void consume(Message<String> message,
                                  @Messaging.HeaderParam("required") String required,
-                                 @Messaging.HeaderParam("optional") Optional<String> optional) throws IOException {
+                                 @Messaging.HeaderParam("optional") Optional<String> optional,
+                                 @Messaging.HeaderParam("typed-required") HeaderValue typedRequired,
+                                 @Messaging.HeaderParam("typed-optional") Optional<HeaderValue> typedOptional,
+                                 @Messaging.HeaderParam("all") List<HeaderValue> all) throws IOException {
                     }
                 }
                 """);
@@ -545,6 +550,9 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("consumer.get()"), is(false));
         assertThat(source, source.contains("typedMessage.header(\"required\").orElseThrow"), is(true));
         assertThat(source, source.contains("typedMessage.header(\"optional\")"), is(true));
+        assertThat(source, source.contains("typedMessage.headerValue(\"typed-required\").orElseThrow"), is(true));
+        assertThat(source, source.contains("typedMessage.headerValue(\"typed-optional\")"), is(true));
+        assertThat(source, source.contains("typedMessage.headers().all(\"all\")"), is(true));
         assertThat(source, source.contains("catch (RuntimeException | Error e)"), is(true));
         assertThat(source, source.contains("catch (Exception e)"), is(true));
     }
@@ -1328,7 +1336,118 @@ class MessagingExtensionTest {
                     }
                 }
                 """),
-                         "must be String or Optional<String>");
+                         "must be String, Optional<String>, HeaderValue, Optional<HeaderValue>, or List<HeaderValue>");
+
+        assertDiagnostic(compile("""
+                package com.example;
+
+                import java.util.Optional;
+
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class InvalidOptionalHeaderConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(@Messaging.Entity String entity,
+                                 @Messaging.HeaderParam("attempt") Optional<Integer> attempt) {
+                    }
+                }
+                """),
+                         "must be String, Optional<String>, HeaderValue, Optional<HeaderValue>, or List<HeaderValue>");
+
+        assertDiagnostic(compile("""
+                package com.example;
+
+                import java.util.List;
+
+                import io.helidon.messaging.HeaderValue;
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class InvalidArrayHeaderConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(@Messaging.Entity String entity,
+                                 @Messaging.HeaderParam("attempt") List<HeaderValue>[] attempt) {
+                    }
+                }
+                """),
+                         "must be String, Optional<String>, HeaderValue, Optional<HeaderValue>, or List<HeaderValue>");
+
+        assertDiagnostic(compile("""
+                package com.example;
+
+                import java.util.List;
+
+                import io.helidon.messaging.HeaderValue;
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class InvalidArrayValueHeaderConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(@Messaging.Entity String entity,
+                                 @Messaging.HeaderParam("attempt") List<HeaderValue[]> attempt) {
+                    }
+                }
+                """),
+                         "must be String, Optional<String>, HeaderValue, Optional<HeaderValue>, or List<HeaderValue>");
+
+        assertDiagnostic(compile("""
+                package com.example;
+
+                import java.util.List;
+
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class InvalidListHeaderConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(@Messaging.Entity String entity,
+                                 @Messaging.HeaderParam("attempt") List<String> attempt) {
+                    }
+                }
+                """),
+                         "must be String, Optional<String>, HeaderValue, Optional<HeaderValue>, or List<HeaderValue>");
+
+        assertDiagnostic(compile("""
+                package com.example;
+
+                import java.util.List;
+
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class InvalidRawListHeaderConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(@Messaging.Entity String entity,
+                                 @Messaging.HeaderParam("attempt") List attempt) {
+                    }
+                }
+                """),
+                         "must be String, Optional<String>, HeaderValue, Optional<HeaderValue>, or List<HeaderValue>");
+
+        assertDiagnostic(compile("""
+                package com.example;
+
+                import java.util.Optional;
+
+                import io.helidon.messaging.HeaderValue;
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class InvalidWildcardHeaderConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(@Messaging.Entity String entity,
+                                 @Messaging.HeaderParam("attempt") Optional<? extends HeaderValue> attempt) {
+                    }
+                }
+                """),
+                         "must be String, Optional<String>, HeaderValue, Optional<HeaderValue>, or List<HeaderValue>");
 
         assertDiagnostic(compile("""
                 package com.example;
