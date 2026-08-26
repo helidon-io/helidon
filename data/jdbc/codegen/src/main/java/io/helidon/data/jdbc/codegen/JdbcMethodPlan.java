@@ -114,7 +114,7 @@ final class JdbcMethodPlan {
         TypeName explicitMapper = rowMapperAnnotation == null
                 ? null
                 : rowMapperAnnotation.typeValue()
-                        .filter(type -> !TypeNames.BOXED_VOID.equals(type))
+                        .filter(type -> !JdbcPersistenceTypes.ROW_MAPPER.equals(type))
                         .orElse(null);
         Operation operation = operation(method, result, generatedKeys, rowMapperRequested);
         if (generatedKeys) {

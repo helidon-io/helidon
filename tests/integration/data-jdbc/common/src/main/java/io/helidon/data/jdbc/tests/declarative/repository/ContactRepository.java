@@ -93,7 +93,7 @@ public interface ContactRepository {
      * Returns a nullable scalar.
      *
      * @param id contact identifier
-     * @return email or empty for SQL NULL
+     * @return email, or empty for no row or SQL NULL
      */
     @Jdbc.Statement(TestSql.FIND_EMAIL_BY_ID)
     Optional<String> email(long id);

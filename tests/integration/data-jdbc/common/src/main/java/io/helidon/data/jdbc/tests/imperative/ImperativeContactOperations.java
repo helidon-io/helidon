@@ -127,14 +127,14 @@ public final class ImperativeContactOperations implements ContactOperations {
      * Returns a nullable email as an optional scalar.
      *
      * @param id contact identifier
-     * @return email, or empty for SQL {@code NULL}
+     * @return email, or empty for no row or SQL {@code NULL}
      */
     @Override
     public Optional<String> optionalEmail(long id) {
         return client.create(TestSql.FIND_EMAIL_BY_ID)
                 .bind(1, id)
-                .map(row -> row.optional(1, String.class))
-                .one();
+                .map(String.class)
+                .optional();
     }
 
     /**

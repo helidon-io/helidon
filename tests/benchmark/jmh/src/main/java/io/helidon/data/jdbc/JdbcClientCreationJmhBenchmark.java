@@ -68,7 +68,7 @@ public class JdbcClientCreationJmhBenchmark {
      */
     @Benchmark
     public void generatedRepeatedSql(SharedState state, Blackhole blackhole) {
-        blackhole.consume(state.client.create(SQL[0], PARAMETER_COUNT));
+        blackhole.consume(JdbcClient.createGenerated(state.client, SQL[0], PARAMETER_COUNT));
     }
 
     /**
@@ -80,7 +80,7 @@ public class JdbcClientCreationJmhBenchmark {
      */
     @Benchmark
     public void generatedMultipleSql(SharedState state, Cursor cursor, Blackhole blackhole) {
-        blackhole.consume(state.client.create(SQL[cursor.next()], PARAMETER_COUNT));
+        blackhole.consume(JdbcClient.createGenerated(state.client, SQL[cursor.next()], PARAMETER_COUNT));
     }
 
     /**

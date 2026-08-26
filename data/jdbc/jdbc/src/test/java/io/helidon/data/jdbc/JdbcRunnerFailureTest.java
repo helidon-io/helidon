@@ -270,14 +270,17 @@ class JdbcRunnerFailureTest {
     }
 
     @Test
+    @SuppressWarnings("helidon:api:internal")
     void closesStatementAndConnectionWhenTypedNullBindingFails() throws Exception {
         SQLException bindFailure = new SQLException("null bind failed", "22000", 93);
         when(connection.prepareStatement("UPDATE TEST_VALUE SET VALUE = ?")).thenReturn(statement);
         doThrow(bindFailure).when(statement).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
 
         DataException failure = assertThrows(DataException.class,
-                                             () -> client.create("UPDATE TEST_VALUE SET VALUE = ?")
-                                                     .bindNull(1, JDBCType.VARCHAR)
+                                             () -> JdbcClient.bindNull(
+                                                             client.create("UPDATE TEST_VALUE SET VALUE = ?"),
+                                                             1,
+                                                             JDBCType.VARCHAR)
                                                      .execute());
 
         assertSafeSqlCause(failure.getCause(), bindFailure);

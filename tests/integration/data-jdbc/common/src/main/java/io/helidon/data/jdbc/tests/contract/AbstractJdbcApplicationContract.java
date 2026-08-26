@@ -106,8 +106,8 @@ public abstract class AbstractJdbcApplicationContract {
     }
 
     /**
-     * Proves empty, singular, and non-unique cardinalities plus required and
-     * optional SQL null mapping behave identically.
+     * Proves both application styles apply the same cardinality rules and
+     * collapse no-row and SQL-null optional scalar results identically.
      */
     @Test
     protected final void enforcesSharedCardinalityAndSqlNullBehavior() {
@@ -123,6 +123,7 @@ public abstract class AbstractJdbcApplicationContract {
         assertThat(contacts.requiredEmail(1), is("alpha@example.test"));
         assertThat(contacts.optionalEmail(1), is(Optional.of("alpha@example.test")));
         assertThat(contacts.optionalEmail(2), is(Optional.empty()));
+        assertThat(contacts.optionalEmail(Long.MAX_VALUE), is(Optional.empty()));
         assertThrows(DataException.class, () -> contacts.requiredEmail(2));
     }
 

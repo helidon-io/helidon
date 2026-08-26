@@ -226,11 +226,23 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
                                                    policy.cache()));
         }
 
-        // The final phase resolves connection sources, runs bootstrap scripts, and publishes fully initialized clients.
-        List<Service.QualifiedInstance<JdbcClient>> result = new ArrayList<>(configuredUnits.size());
+        // The third phase resolves every connection source before provider bootstrap can modify any persistence unit.
+        List<ResolvedUnit> resolvedUnits = new ArrayList<>(configuredUnits.size());
         for (ConfiguredUnit configuredUnit : configuredUnits) {
             JdbcPersistenceUnitConfig unit = configuredUnit.config();
-            JdbcClient client = createClient(configuredUnit);
+            resolvedUnits.add(new ResolvedUnit(unit,
+                                               configuredUnit.scripts(),
+                                               configuredUnit.cachePolicy(),
+                                               connectionSource(unit)));
+        }
+
+        // The final phase runs bootstrap scripts and publishes fully initialized clients in configuration order.
+        List<Service.QualifiedInstance<JdbcClient>> result = new ArrayList<>(resolvedUnits.size());
+        for (ResolvedUnit resolvedUnit : resolvedUnits) {
+            JdbcPersistenceUnitConfig unit = resolvedUnit.config();
+            DataSource dataSource = resolvedUnit.dataSource();
+            JdbcScriptRunner.execute(unit.name(), dataSource, resolvedUnit.scripts());
+            JdbcClient client = new JdbcClientImpl(dataSource, connectionManager, resolvedUnit.cachePolicy());
             Qualifier named = Qualifier.createNamed(unit.name());
             // A single view with both qualifiers avoids duplicate candidates for named lookups.
             result.add(Service.QualifiedInstance.create(client, named, PROVIDER_QUALIFIER));
@@ -568,19 +580,6 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     }
 
     /**
-     * Resolves one unit's datasource and creates its client.
-     *
-     * @param configuredUnit persistence-unit configuration and detached scripts
-     * @return configured client
-     */
-    private JdbcClient createClient(ConfiguredUnit configuredUnit) {
-        JdbcPersistenceUnitConfig unit = configuredUnit.config();
-        DataSource dataSource = connectionSource(unit);
-        JdbcScriptRunner.execute(unit.name(), dataSource, configuredUnit.scripts());
-        return new JdbcClientImpl(dataSource, connectionManager, configuredUnit.cachePolicy());
-    }
-
-    /**
      * Validates and resolves exactly one connection source.
      * <p>
      * Cardinality is validated before resolving either source so invalid
@@ -693,6 +692,20 @@ final class JdbcPersistenceUnitFactory implements Service.ServicesFactory<JdbcCl
     private record ConfiguredUnit(JdbcPersistenceUnitConfig config,
                                   JdbcScriptRunner.PreparedScripts scripts,
                                   JdbcClientImpl.CachePolicy cachePolicy) {
+    }
+
+    /**
+     * Persistence unit configuration paired with detached scripts, cache policy, and resolved datasource.
+     *
+     * @param config persistence unit configuration
+     * @param scripts preloaded scripts
+     * @param cachePolicy parameter count cache policy
+     * @param dataSource resolved datasource
+     */
+    private record ResolvedUnit(JdbcPersistenceUnitConfig config,
+                                JdbcScriptRunner.PreparedScripts scripts,
+                                JdbcClientImpl.CachePolicy cachePolicy,
+                                DataSource dataSource) {
     }
 
     /**

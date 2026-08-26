@@ -232,8 +232,10 @@ final class JdbcMethodGenerator {
                 .addContent(" ")
                 .addContent(statementName)
                 .addContent(" = ")
+                .addContent(JdbcPersistenceTypes.JDBC_CLIENT)
+                .addContent(".createGenerated(")
                 .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                .addContent(".create(")
+                .addContent(", ")
                 .addContent(plan.sqlFieldName())
                 .addContent(", ")
                 .addContent(String.valueOf(plan.parameterPlan().parameterCount()))
@@ -286,8 +288,10 @@ final class JdbcMethodGenerator {
         method.addContent("if (")
                 .addContent(parameterName)
                 .addContentLine(" == null) {")
-                .addContent(statementName)
+                .addContent(JdbcPersistenceTypes.JDBC_CLIENT)
                 .addContent(".bindNull(")
+                .addContent(statementName)
+                .addContent(", ")
                 .addContent(String.valueOf(bind.position()))
                 .addContent(", ")
                 .addContent(JdbcPersistenceTypes.JDBC_TYPE)
@@ -324,7 +328,8 @@ final class JdbcMethodGenerator {
                 .addParameter(parameter -> parameter.name("nullType")
                         .type(JdbcPersistenceTypes.JDBC_TYPE))
                 .addContentLine("if (value == null) {")
-                .addContentLine("statement.bindNull(index, nullType);")
+                .addContent(JdbcPersistenceTypes.JDBC_CLIENT)
+                .addContentLine(".bindNull(statement, index, nullType);")
                 .decreaseContentPadding()
                 .addContentLine("} else {")
                 .addContentLine("statement.bind(index, value);")
@@ -333,6 +338,12 @@ final class JdbcMethodGenerator {
 
     /**
      * Emits the update or mapped result terminal.
+     * <p>
+     * An optional scalar query delegates the documented no-row and SQL NULL
+     * collapse to the client's scalar rows stage. An optional scalar
+     * generated-key mapper produces an inner optional for SQL nullability, so
+     * the emitted terminal flattens it with the outer row-presence optional to
+     * preserve the same declarative result contract.
      *
      * @param plan method plan
      * @param method generated method

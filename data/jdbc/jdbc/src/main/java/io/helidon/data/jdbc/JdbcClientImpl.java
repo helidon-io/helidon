@@ -95,16 +95,7 @@ final class JdbcClientImpl implements JdbcClient {
      * @param parameterCount exact physical marker count
      * @return a new single-use statement stage
      */
-    @Override
-    public Statement create(String sql, int parameterCount) {
-        Objects.requireNonNull(sql, "The SQL statement must not be null.");
-        // A physical marker occupies at least one code unit. This constant-time
-        // guard prevents an invalid internal caller from requesting an
-        // unrelated or unbounded bind array without rescanning generated SQL.
-        if (parameterCount < 0 || parameterCount > sql.length()) {
-            throw new IllegalArgumentException(
-                    "The JDBC parameter count must be between zero and the SQL statement length.");
-        }
+    Statement createGenerated(String sql, int parameterCount) {
         return new JdbcStatement(runner, sql, parameterCount);
     }
 

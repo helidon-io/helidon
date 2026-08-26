@@ -52,7 +52,8 @@ import static org.mockito.Mockito.when;
 class JdbcPersistenceUnitFactoryTest {
 
     /**
-     * Proves named datasource lookup creates distinct clients carrying both name and JDBC-provider qualifiers.
+     * Proves multiple resolved datasources bootstrap and publish distinct clients
+     * carrying both name and JDBC-provider qualifiers.
      */
     @Test
     void createsDistinctNamedAndProviderQualifiedClients() throws Exception {
@@ -61,8 +62,12 @@ class JdbcPersistenceUnitFactoryTest {
         Config config = Config.just(ConfigSources.create(Map.of(
                 "data.persistence-units.jdbc.0.name", "contacts",
                 "data.persistence-units.jdbc.0.data-source", "contacts-source",
+                "data.persistence-units.jdbc.0.init-script.content-plain",
+                "UPDATE UNIT_NAME SET NAME = 'READY_CONTACTS';",
                 "data.persistence-units.jdbc.1.name", "audit",
-                "data.persistence-units.jdbc.1.data-source", "audit-source")));
+                "data.persistence-units.jdbc.1.data-source", "audit-source",
+                "data.persistence-units.jdbc.1.init-script.content-plain",
+                "UPDATE UNIT_NAME SET NAME = 'READY_AUDIT';")));
         List<ServiceInstance<DataSource>> sources = List.of(instance("contacts-source", contacts),
                                                             instance("audit-source", audit));
         JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(() -> sources,
@@ -74,8 +79,61 @@ class JdbcPersistenceUnitFactoryTest {
         assertThat(clients.size(), is(2));
         JdbcClient contactsClient = namedProviderClient(clients, "contacts");
         JdbcClient auditClient = namedProviderClient(clients, "audit");
-        assertThat(contactsClient.create("SELECT NAME FROM UNIT_NAME").map(String.class).one(), is("CONTACTS"));
-        assertThat(auditClient.create("SELECT NAME FROM UNIT_NAME").map(String.class).one(), is("AUDIT"));
+        assertThat(contactsClient.create("SELECT NAME FROM UNIT_NAME").map(String.class).one(), is("READY_CONTACTS"));
+        assertThat(auditClient.create("SELECT NAME FROM UNIT_NAME").map(String.class).one(), is("READY_AUDIT"));
+    }
+
+    /**
+     * Proves a missing later named datasource prevents an earlier unit's
+     * initialization script from changing durable database state.
+     */
+    @Test
+    void resolvesEveryNamedDataSourceBeforeExecutingEarlierBootstrap() throws Exception {
+        JdbcDataSource first = dataSource("missing_later_datasource", "UNCHANGED");
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "first",
+                "data.persistence-units.jdbc.0.data-source", "first-source",
+                "data.persistence-units.jdbc.0.init-script.content-plain",
+                "UPDATE UNIT_NAME SET NAME = 'CHANGED';",
+                "data.persistence-units.jdbc.1.name", "missing",
+                "data.persistence-units.jdbc.1.data-source", "missing-source")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> List.of(instance("first-source", first)),
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(), is("No SQL datasource service is named 'missing-source'."));
+        assertThat(singleUnitName(first), is("UNCHANGED"));
+    }
+
+    /**
+     * Proves a later direct-driver resolution failure prevents an earlier
+     * unit's drop script from changing durable database state.
+     */
+    @Test
+    void resolvesEveryDirectDriverBeforeExecutingEarlierBootstrap() throws Exception {
+        JdbcDataSource first = dataSource("missing_later_driver", "UNCHANGED");
+        String unavailableUrl = "jdbc:missing:bootstrap-resolution";
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "first",
+                "data.persistence-units.jdbc.0.data-source", "first-source",
+                "data.persistence-units.jdbc.0.drop-script.content-plain", "DELETE FROM UNIT_NAME;",
+                "data.persistence-units.jdbc.1.name", "missing-driver",
+                "data.persistence-units.jdbc.1.connection.url", unavailableUrl)));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> List.of(instance("first-source", first)),
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(),
+                   is("JDBC persistence unit 'missing-driver' could not resolve a JDBC driver for its direct "
+                              + "connection."));
+        SensitiveFailureAssertions.assertNoSecrets(failure, unavailableUrl);
+        assertThat(singleUnitName(first), is("UNCHANGED"));
     }
 
     /**
@@ -470,6 +528,25 @@ class JdbcPersistenceUnitFactoryTest {
 
         assertThrows(DataException.class,
                      () -> client.create("SELECT COUNT(*) FROM DROP_ONLY_RESOURCE").map(Long.class).one());
+    }
+
+    /**
+     * Reads the sole identifying value from a factory-test datasource without
+     * relying on a client which failed factory publication.
+     *
+     * @param dataSource initialized datasource
+     * @return sole identifying value
+     * @throws Exception when the database cannot be inspected
+     */
+    private static String singleUnitName(JdbcDataSource dataSource) throws Exception {
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement();
+             var resultSet = statement.executeQuery("SELECT NAME FROM UNIT_NAME")) {
+            assertThat(resultSet.next(), is(true));
+            String name = resultSet.getString(1);
+            assertThat(resultSet.next(), is(false));
+            return name;
+        }
     }
 
     /**

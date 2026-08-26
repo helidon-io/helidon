@@ -42,6 +42,44 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class JdbcMapperAccessibilityGenerationTest {
 
     @Test
+    void rejectsMapperOutsideThePublicAnnotationBoundDuringJavaCompilation() {
+        TestCompiler.Result result = TestCompiler.builder()
+                .currentRelease()
+                .printDiagnostics(false)
+                .addProcessor(AptProcessor::new)
+                .addClasspath(List.of(Data.class,
+                                      JdbcClient.class,
+                                      Service.class,
+                                      Tx.class,
+                                      Generated.class,
+                                      TypeName.class,
+                                      DataGeneratorProvider.class,
+                                      RepositoryCodegenProvider.class,
+                                      JdbcPersistenceGeneratorProvider.class))
+                .addSource("InvalidMapperRepository.java", """
+                        package example;
+
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+
+                        @Data.Repository
+                        @Data.Provider("jdbc")
+                        interface InvalidMapperRepository {
+                            @Jdbc.Statement("select VALUE from TEST_VALUE")
+                            @Jdbc.RowMapper(String.class)
+                            String find();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("incompatible types"));
+        assertThat(diagnostics, containsString("java.lang.String"));
+    }
+
+    @Test
     void leavesInaccessibleMapperDiagnosticsToJavaCompilation() throws IOException {
         TestCompiler.Result result = TestCompiler.builder()
                 .currentRelease()

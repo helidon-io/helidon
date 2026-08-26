@@ -47,6 +47,8 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JdbcPersistenceUnitConfigTest {
@@ -480,6 +482,39 @@ class JdbcPersistenceUnitConfigTest {
                    is("The JDBC provider encountered an exception of type 'java.lang.IllegalStateException' "
                               + "while resolving a SQL datasource service."));
         assertNoSecret(failure, "private-password", "private-token");
+    }
+
+    /**
+     * Verifies a later datasource activation failure occurs before an earlier
+     * unit can acquire its bootstrap connection.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void resolvesEveryDatasourceServiceBeforeExecutingEarlierBootstrap() throws Exception {
+        DataSource firstDataSource = mock(DataSource.class);
+        ServiceInstance<DataSource> firstService = mock(ServiceInstance.class);
+        when(firstService.qualifiers()).thenReturn(Set.of(Qualifier.createNamed("first-source")));
+        when(firstService.get()).thenReturn(firstDataSource);
+        ServiceInstance<DataSource> failingService = mock(ServiceInstance.class);
+        when(failingService.qualifiers()).thenReturn(Set.of(Qualifier.createNamed("failing-source")));
+        when(failingService.get()).thenThrow(new IllegalStateException("private datasource activation failure"));
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "data.persistence-units.jdbc.0.name", "first",
+                "data.persistence-units.jdbc.0.data-source", "first-source",
+                "data.persistence-units.jdbc.0.init-script.content-plain", "SELECT 1;",
+                "data.persistence-units.jdbc.1.name", "failing",
+                "data.persistence-units.jdbc.1.data-source", "failing-source")));
+        JdbcPersistenceUnitFactory factory = new JdbcPersistenceUnitFactory(
+                () -> List.of(firstService, failingService),
+                () -> config,
+                new JdbcTransactionConnectionManager());
+
+        DataException failure = assertThrows(DataException.class, factory::services);
+
+        assertThat(failure.getMessage(),
+                   is("JDBC persistence unit 'failing' could not resolve SQL datasource service 'failing-source'."));
+        assertNoSecret(failure, "private datasource activation failure");
+        verify(firstDataSource, never()).getConnection();
     }
 
     @Test

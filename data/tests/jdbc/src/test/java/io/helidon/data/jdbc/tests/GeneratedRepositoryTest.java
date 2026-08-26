@@ -40,11 +40,10 @@ class GeneratedRepositoryTest {
      * silently narrowing the JDBC long update count.
      */
     @Test
-    @SuppressWarnings("helidon:api:internal")
     void rejectsAnUpdateCountOutsideThePrimitiveIntRange() {
         JdbcClient client = mock(JdbcClient.class);
         JdbcClient.Statement statement = mock(JdbcClient.Statement.class);
-        when(client.create(anyString(), anyInt())).thenReturn(statement);
+        when(client.create(anyString())).thenReturn(statement);
         when(statement.bind(anyInt(), any())).thenReturn(statement);
         when(statement.execute()).thenReturn(Long.MAX_VALUE);
         OverflowRepository repository = new OverflowRepository__Jdbc(client);

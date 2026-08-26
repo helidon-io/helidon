@@ -34,6 +34,7 @@ import io.helidon.common.types.TypedElementInfo;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -77,6 +78,16 @@ class JdbcMethodPlanRoundContextTest {
 
         assertThat(plan.mappingKind(), is(JdbcMethodPlan.MappingKind.EXPLICIT));
         assertThat(plan.explicitMapper(), is(mapperType));
+    }
+
+    @Test
+    void treatsTheRawMapperContractAsMarkerSelection() {
+        JdbcMethodPlan plan = JdbcMethodPlan.create(
+                repositoryMethod("mappedValue", TypeNames.STRING, JdbcPersistenceTypes.ROW_MAPPER),
+                new TypesRoundContext(Map.of()));
+
+        assertThat(plan.mappingKind(), is(JdbcMethodPlan.MappingKind.SERVICE));
+        assertThat(plan.explicitMapper(), nullValue());
     }
 
     /**

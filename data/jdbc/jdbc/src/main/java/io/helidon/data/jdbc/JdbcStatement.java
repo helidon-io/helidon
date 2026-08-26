@@ -67,28 +67,6 @@ final class JdbcStatement implements JdbcClient.Statement {
     }
 
     /**
-     * Stores an explicitly typed SQL null for generated repository code.
-     *
-     * @param index one-based JDBC position
-     * @param type standard JDBC type
-     * @return this statement
-     */
-    @Override
-    public JdbcClient.Statement bindNull(int index, JDBCType type) {
-        Objects.requireNonNull(type, "The JDBC null type must not be null.");
-        switch (type) {
-        case NULL, REF_CURSOR -> throw new IllegalArgumentException(
-                "The JDBC client does not support null values of type '" + type + "'.");
-        case ARRAY, DISTINCT, JAVA_OBJECT, REF, STRUCT -> throw new IllegalArgumentException(
-                "The JDBC client cannot bind a null value of type '" + type
-                        + "' without a database type name.");
-        default -> {
-        }
-        }
-        return bind(index, new JdbcOperation.Bind(null, type));
-    }
-
-    /**
      * Executes the statement as an update.
      *
      * @return large update count
@@ -143,6 +121,27 @@ final class JdbcStatement implements JdbcClient.Statement {
     public JdbcClient.GeneratedKeys generatedKeys() {
         ensureMutable();
         return new JdbcGeneratedKeys(this);
+    }
+
+    /**
+     * Stores an explicitly typed SQL null for generated repository code.
+     *
+     * @param index one-based JDBC position
+     * @param type standard JDBC type
+     * @return this statement
+     */
+    JdbcClient.Statement bindNull(int index, JDBCType type) {
+        Objects.requireNonNull(type, "The JDBC null type must not be null.");
+        switch (type) {
+        case NULL, REF_CURSOR -> throw new IllegalArgumentException(
+                "The JDBC client does not support null values of type '" + type + "'.");
+        case ARRAY, DISTINCT, JAVA_OBJECT, REF, STRUCT -> throw new IllegalArgumentException(
+                "The JDBC client cannot bind a null value of type '" + type
+                        + "' without a database type name.");
+        default -> {
+        }
+        }
+        return bind(index, new JdbcOperation.Bind(null, type));
     }
 
     /**
