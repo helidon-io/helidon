@@ -171,7 +171,7 @@ class JdbcPersistenceUnitFactoryTest {
         owner.setURL(url);
         owner.setUser("owner");
         owner.setPassword("correct-password");
-        try (var ignored = owner.getConnection()) {
+        try (var _ = owner.getConnection()) {
             // Establish the authenticated in-memory database before attempting invalid credentials.
         }
         Config config = Config.just(ConfigSources.create(Map.of(

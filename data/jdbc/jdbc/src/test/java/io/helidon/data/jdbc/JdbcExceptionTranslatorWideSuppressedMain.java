@@ -74,7 +74,7 @@ public final class JdbcExceptionTranslatorWideSuppressedMain {
         }
 
         @Override
-        public synchronized Throwable fillInStackTrace() {
+        public Throwable fillInStackTrace() {
             return this;
         }
     }

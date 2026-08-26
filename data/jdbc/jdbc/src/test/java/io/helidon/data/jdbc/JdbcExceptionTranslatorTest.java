@@ -311,8 +311,8 @@ class JdbcExceptionTranslatorTest {
         assertThat(traversal.getSuppressed().length, is(0));
 
         IllegalStateException driverFailure = new IllegalStateException("secret driver detail",
-                                                                         new RuntimeException("secret cause"));
-        driverFailure.addSuppressed(new RuntimeException("secret suppressed"));
+                                                                         new IllegalArgumentException("secret cause"));
+        driverFailure.addSuppressed(new IllegalArgumentException("secret suppressed"));
         Throwable sanitized = JdbcExceptionTranslator.sanitize("closing a connection", driverFailure);
 
         assertThat(sanitized.getMessage(),
@@ -441,7 +441,7 @@ class JdbcExceptionTranslatorTest {
             }
 
             @Override
-            public synchronized Throwable getCause() {
+            public Throwable getCause() {
                 throw new IllegalStateException("private cause accessor");
             }
 

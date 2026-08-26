@@ -149,11 +149,11 @@ final class JdbcMethodGenerator {
                 MapperDependencyKey key = new MapperDependencyKey(ResolvedType.create(plan.explicitMapper()),
                                                                   ResolvedType.create(plan.mappedType()),
                                                                   true);
-                groupedPlans.computeIfAbsent(key, ignored -> new ArrayList<>()).add(plan);
+                groupedPlans.computeIfAbsent(key, _ -> new ArrayList<>()).add(plan);
             } else if (plan.mappingKind() == JdbcMethodPlan.MappingKind.SERVICE) {
                 ResolvedType mappedType = ResolvedType.create(plan.mappedType());
                 MapperDependencyKey key = new MapperDependencyKey(mappedType, mappedType, false);
-                groupedPlans.computeIfAbsent(key, ignored -> new ArrayList<>()).add(plan);
+                groupedPlans.computeIfAbsent(key, _ -> new ArrayList<>()).add(plan);
             }
         }
 

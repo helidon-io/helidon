@@ -762,8 +762,8 @@ class JdbcScriptRunnerFailureTest {
     }
 
     private static IllegalStateException driverRuntimeFailure(String secret) {
-        IllegalStateException failure = new IllegalStateException(secret, new RuntimeException("private cause"));
-        failure.addSuppressed(new RuntimeException("private suppressed"));
+        IllegalStateException failure = new IllegalStateException(secret, new IllegalArgumentException("private cause"));
+        failure.addSuppressed(new IllegalArgumentException("private suppressed"));
         return failure;
     }
 

@@ -69,7 +69,7 @@ class SensitiveFailureAssertionsTest {
         }
 
         @Override
-        public synchronized Throwable getCause() {
+        public Throwable getCause() {
             causeReads++;
             if (causeReads > 1) {
                 throw new AssertionError("Failure node was traversed more than once.");

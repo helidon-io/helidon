@@ -20,8 +20,8 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class MixedProviderCodegenTest {
 
@@ -30,8 +30,8 @@ class MixedProviderCodegenTest {
      */
     @Test
     void generatesUnqualifiedRepositoryWithEveryProvider() throws Exception {
-        assertTrue(Files.isRegularFile(generatedSource(UnqualifiedRepository.class, "__Jdbc")));
-        assertTrue(Files.isRegularFile(generatedSource(UnqualifiedRepository.class, "__Jpa")));
+        assertThat(Files.isRegularFile(generatedSource(UnqualifiedRepository.class, "__Jdbc")), is(true));
+        assertThat(Files.isRegularFile(generatedSource(UnqualifiedRepository.class, "__Jpa")), is(true));
     }
 
     /**
@@ -39,8 +39,8 @@ class MixedProviderCodegenTest {
      */
     @Test
     void generatesQualifiedJdbcRepositoryOnlyWithJdbc() throws Exception {
-        assertTrue(Files.isRegularFile(generatedSource(JdbcRepository.class, "__Jdbc")));
-        assertFalse(Files.exists(generatedSource(JdbcRepository.class, "__Jpa")));
+        assertThat(Files.isRegularFile(generatedSource(JdbcRepository.class, "__Jdbc")), is(true));
+        assertThat(Files.exists(generatedSource(JdbcRepository.class, "__Jpa")), is(false));
     }
 
     /**
@@ -48,8 +48,8 @@ class MixedProviderCodegenTest {
      */
     @Test
     void generatesQualifiedJakartaRepositoryOnlyWithJakartaPersistence() throws Exception {
-        assertTrue(Files.isRegularFile(generatedSource(JakartaRepository.class, "__Jpa")));
-        assertFalse(Files.exists(generatedSource(JakartaRepository.class, "__Jdbc")));
+        assertThat(Files.isRegularFile(generatedSource(JakartaRepository.class, "__Jpa")), is(true));
+        assertThat(Files.exists(generatedSource(JakartaRepository.class, "__Jdbc")), is(false));
     }
 
     private static Path generatedSource(Class<?> repositoryType, String suffix) throws Exception {
