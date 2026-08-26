@@ -24,7 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Hikari connection pool metrics support")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"DbClient", "Metrics-Hikari"})
-module helidon.dbclient.metrics.hikari {
+module io.helidon.dbclient.metrics.hikari {
 
     requires transitive io.helidon.common.features.api;
 
