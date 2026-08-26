@@ -52,7 +52,13 @@ public class Http1ClientRequestTargetBenchmark {
 
     @Setup
     public void setup() {
-        Http1ClientImpl client = (Http1ClientImpl) Http1Client.create();
+        Http1ClientImpl client = (Http1ClientImpl) Http1Client.create(builder -> builder
+                .protocolConfig(protocol -> protocol.log(log -> log
+                        .sendLog(false)
+                        .receiveLog(false))));
+        if (client.sendListener().enabled()) {
+            throw new IllegalStateException("Benchmark requires HTTP/1 send logging to be disabled");
+        }
         Http1ClientRequestImpl originalRequest = (Http1ClientRequestImpl) client.get("http://localhost/test");
         chain = new BenchmarkChain(client, originalRequest);
 
