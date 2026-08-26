@@ -1809,6 +1809,8 @@ public interface Config {
          *        optional: true
          *        resource: "application.yaml"
          * </pre>
+         * To resolve declared sources through an explicit service registry, invoke
+         * {@link #serviceRegistry(ServiceRegistry)} before this method.
          *
          * @param metaConfig meta configuration to set this builder up
          * @return updated builder from meta configuration
@@ -1818,6 +1820,8 @@ public interface Config {
         /**
          * Configure an explicit service registry to use when resolving config sources declared by the
          * {@linkplain #config(Config) meta-configuration}. Other builder service discovery is not affected.
+         * This method must be invoked before {@link #config(Config)}, because that method resolves the declared
+         * config sources when it is invoked.
          *
          * @param serviceRegistry registry to use
          * @return updated builder instance

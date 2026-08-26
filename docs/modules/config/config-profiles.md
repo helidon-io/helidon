@@ -388,7 +388,9 @@ using the owning service registry. The requested type can be provided by a
 built-in source types remain available. An entry configured with
 `multi-source: true` requires a `ConfigSourceProvider`. The same resolution
 applies when an explicit registry is configured using
-`Config.Builder.serviceRegistry` in the Helidon imperative model.
+`Config.Builder.serviceRegistry` in the Helidon imperative model. Invoke
+`serviceRegistry(registry)` before `config(metaConfig)`, because applying the
+meta-configuration resolves its declared sources.
 
 ### Designing a config source that integrates with profiles and default config
 
