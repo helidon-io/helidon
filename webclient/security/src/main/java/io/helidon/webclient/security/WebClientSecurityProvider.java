@@ -15,8 +15,12 @@
  */
 package io.helidon.webclient.security;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.security.Security;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
@@ -40,5 +44,13 @@ public class WebClientSecurityProvider implements WebClientServiceProvider {
     @Override
     public WebClientService create(Config config, String name) {
         return WebClientSecurity.create();
+    }
+
+    @Override
+    public WebClientService create(Config config, String name, ServiceRegistry serviceRegistry) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(serviceRegistry);
+        return WebClientSecurity.create(serviceRegistry.get(Security.class));
     }
 }

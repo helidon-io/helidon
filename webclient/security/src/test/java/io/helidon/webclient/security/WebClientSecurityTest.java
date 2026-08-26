@@ -17,6 +17,7 @@
 package io.helidon.webclient.security;
 
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.security.OutboundSecurityResponse;
@@ -24,6 +25,9 @@ import io.helidon.security.Security;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.spi.WebClientService;
 
@@ -34,6 +38,44 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WebClientSecurityTest {
+
+    @Test
+    void registryWebClientUsesOwningRegistrySecurity() {
+        AtomicInteger outboundCalls = new AtomicInteger();
+        Security security = Security.builder()
+                .addOutboundSecurityProvider((request, environment, config) -> {
+                    outboundCalls.incrementAndGet();
+                    return OutboundSecurityResponse.abstain();
+                })
+                .build();
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Security.class, security)
+                                                                                .build());
+        try {
+            WebClient managedClient = manager.registry().get(WebClient.class);
+            WebClientService securityService = managedClient.prototype()
+                    .services()
+                    .stream()
+                    .filter(service -> service.type().equals("security"))
+                    .findFirst()
+                    .orElseThrow();
+            WebClientService stopBeforeNetwork = (chain, request) -> {
+                throw new TestException();
+            };
+            Http1Client client = Http1Client.builder()
+                    .baseUri("https://example.test")
+                    .servicesDiscoverServices(false)
+                    .addService(securityService)
+                    .addService(stopBeforeNetwork)
+                    .build();
+
+            assertThrows(TestException.class, () -> client.get().request());
+
+            assertThat("Owning registry outbound provider calls", outboundCalls.get(), is(1));
+        } finally {
+            manager.shutdown();
+        }
+    }
 
     @Test
     void matchesHttpsOutboundTargetUsingRequestScheme() {
