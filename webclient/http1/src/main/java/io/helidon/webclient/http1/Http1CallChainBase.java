@@ -33,6 +33,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.tls.Tls;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
@@ -208,7 +209,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                                                            request.method(),
                                                                                            uri.path(),
                                                                                            uri.query(),
-                                                                                           uri.fragment()));
+                                                                                           UriFragment.empty()));
         }
     }
 
