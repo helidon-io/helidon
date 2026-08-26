@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Lookup;
@@ -42,6 +43,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import static io.helidon.webserver.testing.junit5.Junit5Util.withStaticMethods;
 
 abstract class JunitExtensionBase extends TestJunitExtension implements AfterAllCallback {
+    private static final TypeName SERVER_FEATURE_PROVIDER = TypeName.create(ServerFeatureProvider.class);
+
     private Class<?> testClass;
 
     JunitExtensionBase() {
@@ -144,37 +147,48 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
         }
     }
 
-    private static List<ServerFeature> registryServerFeatures(ServiceRegistry serviceRegistry) {
-        Set<String> providerTypes = new HashSet<>();
-        serviceRegistry.all(ServerFeatureProvider.class)
-                .forEach(provider -> providerTypes.add(provider.configKey()));
-
-        Lookup featureLookup = Lookup.create(ServerFeature.class);
-        Set<TypeName> factoryServiceTypes = new HashSet<>();
-        for (ServiceInfo serviceInfo : serviceRegistry.lookupServices(featureLookup)) {
-            // Config-backed factory products must be recreated from the final test server configuration.
-            if (!serviceInfo.serviceType().equals(serviceInfo.providedType())) {
-                factoryServiceTypes.add(serviceInfo.serviceType());
-            }
-        }
-
-        List<ServerFeature> result = new ArrayList<>();
-        List<ServiceInstance<ServerFeature>> featureInstances = serviceRegistry.lookupInstances(featureLookup);
-        for (ServiceInstance<ServerFeature> featureInstance : featureInstances) {
-            ServerFeature feature = featureInstance.get();
-            if (!factoryServiceTypes.contains(featureInstance.serviceType()) || !providerTypes.contains(feature.type())) {
-                result.add(feature);
-            }
-        }
-        return result;
-    }
-
     void testClass(Class<?> testClass) {
         this.testClass = testClass;
     }
 
     Class<?> testClass() {
         return testClass;
+    }
+
+    private static List<ServerFeature> registryServerFeatures(ServiceRegistry serviceRegistry) {
+        List<ServiceInfo> providerServices = serviceRegistry.lookupServices(Lookup.create(ServerFeatureProvider.class));
+        Lookup featureLookup = Lookup.create(ServerFeature.class);
+        List<ServiceInfo> featureServices = serviceRegistry.lookupServices(featureLookup);
+        Set<TypeName> providerBackedFactoryTypes = new HashSet<>();
+        for (ServiceInfo serviceInfo : featureServices) {
+            // Config-backed factory products must be recreated from the final test server configuration.
+            if (!serviceInfo.serviceType().equals(serviceInfo.providedType())
+                    && hasProviderFor(serviceInfo, providerServices)) {
+                providerBackedFactoryTypes.add(serviceInfo.serviceType());
+            }
+        }
+
+        List<ServerFeature> result = new ArrayList<>();
+        for (ServiceInfo featureService : featureServices) {
+            if (!providerBackedFactoryTypes.contains(featureService.serviceType())) {
+                Lookup serviceLookup = Lookup.builder(featureLookup)
+                        .serviceType(featureService.serviceType())
+                        .build();
+                List<ServiceInstance<ServerFeature>> featureInstances = serviceRegistry.lookupInstances(serviceLookup);
+                for (ServiceInstance<ServerFeature> featureInstance : featureInstances) {
+                    result.add(featureInstance.get());
+                }
+            }
+        }
+        return result;
+    }
+
+    private static boolean hasProviderFor(ServiceInfo factoryService, List<ServiceInfo> providerServices) {
+        ResolvedType providerContract = ResolvedType.create(TypeName.builder(SERVER_FEATURE_PROVIDER)
+                                                                    .addTypeArgument(factoryService.providedType())
+                                                                    .build());
+        return providerServices.stream()
+                .anyMatch(serviceInfo -> serviceInfo.contracts().contains(providerContract));
     }
 
     private void callAfterStop() {
