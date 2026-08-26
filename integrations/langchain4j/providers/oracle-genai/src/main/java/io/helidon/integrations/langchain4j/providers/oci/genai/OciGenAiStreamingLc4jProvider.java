@@ -43,6 +43,7 @@ interface OciGenAiStreamingLc4jProvider extends OciGenAiLc4jProvider {
 
     @Override
     default boolean closeModelOnShutdown() {
-        return genAiClient().isEmpty() && genAiAsyncClient().isEmpty();
+        // A streaming callback may use the registry, so registry shutdown cannot safely wait for model close.
+        return false;
     }
 }

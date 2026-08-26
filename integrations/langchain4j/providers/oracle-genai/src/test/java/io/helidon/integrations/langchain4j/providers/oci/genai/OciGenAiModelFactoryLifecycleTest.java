@@ -85,7 +85,7 @@ class OciGenAiModelFactoryLifecycleTest {
     }
 
     @Test
-    void preservesOwnershipForMixedAuthenticationAndClientConfigurations() {
+    void allOciConfigsOptOutOfGeneratedModelShutdown() {
         var authProvider = Mockito.mock(BasicAuthenticationDetailsProvider.class);
         var syncClient = Mockito.mock(GenerativeAiInferenceClient.class);
         var asyncClient = Mockito.mock(GenerativeAiInferenceAsyncClient.class);
@@ -127,10 +127,10 @@ class OciGenAiModelFactoryLifecycleTest {
 
         assertThat(ownedSyncConfig.closeModelOnShutdown(), is(false));
         assertThat(borrowedSyncConfig.closeModelOnShutdown(), is(false));
-        assertThat(ownedStreamingConfig.closeModelOnShutdown(), is(true));
+        assertThat(ownedStreamingConfig.closeModelOnShutdown(), is(false));
         assertThat(borrowedStreamingSyncConfig.closeModelOnShutdown(), is(false));
         assertThat(borrowedStreamingAsyncConfig.closeModelOnShutdown(), is(false));
-        assertThat(ownedCohereStreamingConfig.closeModelOnShutdown(), is(true));
+        assertThat(ownedCohereStreamingConfig.closeModelOnShutdown(), is(false));
         assertThat(borrowedCohereStreamingConfig.closeModelOnShutdown(), is(false));
     }
 
