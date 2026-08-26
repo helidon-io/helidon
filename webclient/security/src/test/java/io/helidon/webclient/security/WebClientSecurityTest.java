@@ -17,12 +17,19 @@
 package io.helidon.webclient.security;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.OutboundSecurityResponse;
+import io.helidon.security.Principal;
 import io.helidon.security.Security;
+import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.Subject;
 import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.service.registry.ServiceRegistryConfig;
@@ -52,26 +59,65 @@ class WebClientSecurityTest {
                                                                                 .putContractInstance(Security.class, security)
                                                                                 .build());
         try {
-            WebClient managedClient = manager.registry().get(WebClient.class);
-            WebClientService securityService = managedClient.prototype()
-                    .services()
-                    .stream()
-                    .filter(service -> service.type().equals("security"))
-                    .findFirst()
-                    .orElseThrow();
             WebClientService stopBeforeNetwork = (chain, request) -> {
                 throw new TestException();
             };
             Http1Client client = Http1Client.builder()
                     .baseUri("https://example.test")
                     .servicesDiscoverServices(false)
-                    .addService(securityService)
+                    .addService(managedSecurityService(manager))
                     .addService(stopBeforeNetwork)
                     .build();
 
             assertThrows(TestException.class, () -> client.get().request());
 
             assertThat("Owning registry outbound provider calls", outboundCalls.get(), is(1));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void registryWebClientPreservesAuthenticatedSubjects() {
+        Subject user = Subject.create(Principal.create("test-user"));
+        Subject service = Subject.create(Principal.create("test-service"));
+        Security requestSecurity = Security.builder()
+                .authenticationProvider(request -> AuthenticationResponse.success(user, service))
+                .build();
+        SecurityContext securityContext = requestSecurity.createContext("test-request");
+        securityContext.authenticate();
+        Context context = Context.create();
+        context.register(securityContext);
+
+        AtomicReference<Optional<Subject>> outboundUser = new AtomicReference<>();
+        AtomicReference<Optional<Subject>> outboundService = new AtomicReference<>();
+        Security clientSecurity = Security.builder()
+                .addOutboundSecurityProvider((request, environment, config) -> {
+                    outboundUser.set(request.subject());
+                    outboundService.set(request.service());
+                    return OutboundSecurityResponse.abstain();
+                })
+                .build();
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Security.class,
+                                                                                                     clientSecurity)
+                                                                                .build());
+        try {
+            WebClientService stopBeforeNetwork = (chain, request) -> {
+                throw new TestException();
+            };
+            Http1Client client = Http1Client.builder()
+                    .baseUri("https://example.test")
+                    .servicesDiscoverServices(false)
+                    .addService(managedSecurityService(manager))
+                    .addService(stopBeforeNetwork)
+                    .build();
+
+            Contexts.runInContext(context,
+                                  () -> assertThrows(TestException.class, () -> client.get().request()));
+
+            assertThat("Outbound user subject", outboundUser.get(), is(Optional.of(user)));
+            assertThat("Outbound service subject", outboundService.get(), is(Optional.of(service)));
         } finally {
             manager.shutdown();
         }
@@ -185,6 +231,16 @@ class WebClientSecurityTest {
         assertThat(outboundTarget.get(), is("/p?"));
         assertThat(environment.targetUri().getRawQuery(), is(""));
         assertThat(environment.requestedQuery().orElseThrow().rawValue(), is(""));
+    }
+
+    private static WebClientService managedSecurityService(ServiceRegistryManager manager) {
+        WebClient managedClient = manager.registry().get(WebClient.class);
+        return managedClient.prototype()
+                .services()
+                .stream()
+                .filter(service -> service.type().equals("security"))
+                .findFirst()
+                .orElseThrow();
     }
 
     private static final class TestException extends RuntimeException {

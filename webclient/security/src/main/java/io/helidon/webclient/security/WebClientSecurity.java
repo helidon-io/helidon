@@ -166,6 +166,7 @@ public class WebClientSecurity implements WebClientService {
             }
 
             clientBuilder = context.outboundClientBuilder()
+                    .securityContext(maybeContext.orElse(context))
                     .outboundEnvironment(outboundEnv)
                     .outboundEndpointConfig(outboundEp)
                     .explicitProvider(explicitProvider);

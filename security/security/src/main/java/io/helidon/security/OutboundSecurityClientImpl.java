@@ -26,14 +26,14 @@ import io.helidon.security.spi.OutboundSecurityProvider;
  */
 final class OutboundSecurityClientImpl implements SecurityClient<OutboundSecurityResponse> {
     private final Security security;
-    private final SecurityContextImpl context;
+    private final SecurityContext context;
     private final String providerName;
     private final ProviderRequest providerRequest;
     private final SecurityEnvironment outboundEnv;
     private final EndpointConfig outboundEpConfig;
 
     OutboundSecurityClientImpl(Security security,
-                               SecurityContextImpl context,
+                               SecurityContext context,
                                SecurityRequest request,
                                String providerName,
                                SecurityEnvironment outboundEnvironment,

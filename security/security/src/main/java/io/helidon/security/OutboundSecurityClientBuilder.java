@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
@@ -26,9 +27,9 @@ import io.helidon.common.Builder;
 public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<OutboundSecurityClientBuilder>
         implements Builder<OutboundSecurityClientBuilder, SecurityClient<OutboundSecurityResponse>> {
 
-    private final SecurityContextImpl context;
     private final Security security;
 
+    private SecurityContext context;
     private SecurityEnvironment outboundEnvironment;
     private EndpointConfig outboundEndpointConfig;
 
@@ -94,6 +95,19 @@ public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<Outbou
      */
     public OutboundSecurityClientBuilder outboundEndpointConfig(Supplier<EndpointConfig> outboundEndpointConfig) {
         return outboundEndpointConfig(outboundEndpointConfig.get());
+    }
+
+    /**
+     * Configure the security context representing the request for which outbound security is invoked.
+     * The context provides the current user and service subjects to outbound security providers.
+     * Provider selection is still controlled by the {@link Security} instance that created this builder.
+     *
+     * @param context security context of the current request
+     * @return updated builder instance
+     */
+    public OutboundSecurityClientBuilder securityContext(SecurityContext context) {
+        this.context = Objects.requireNonNull(context);
+        return this;
     }
 
     /**
