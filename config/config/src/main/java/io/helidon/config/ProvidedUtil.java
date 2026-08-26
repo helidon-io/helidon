@@ -29,9 +29,13 @@ import io.helidon.builder.api.Option.Provider.ConfigForm;
 import io.helidon.builder.api.Option.Provider.Identity;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Weighted;
+import io.helidon.common.Weights;
 import io.helidon.config.ConfigBuilderSupport.ProviderSettings;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.ServiceInstance;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.Services;
 
 @SuppressWarnings("ALL")
 final class ProvidedUtil {
@@ -642,6 +646,9 @@ final class ProvidedUtil {
     private record ConfiguredService(TypeAndName typeAndName, Config serviceConfig, boolean enabled) {
     }
 
+    private record WeightedProvider<T>(T provider, double weight) implements Weighted {
+    }
+
     private static final class ServiceLoaderProviderSource<S extends NamedService, T extends ConfiguredProvider<S>>
             implements ProviderSource<S, T> {
         private final HelidonServiceLoader<T> serviceLoader;
@@ -671,14 +678,24 @@ final class ProvidedUtil {
 
         @Override
         public List<T> all() {
-            Map<String, T> providers = new LinkedHashMap<>();
+            Map<String, WeightedProvider<T>> providers = new LinkedHashMap<>();
             HelidonServiceLoader.create(providerType)
-                    .forEach(provider -> providers.putIfAbsent(provider.configKey(), provider));
-            Map<String, T> registryProviders = new LinkedHashMap<>();
-            Services.all(providerType)
-                    .forEach(provider -> registryProviders.putIfAbsent(provider.configKey(), provider));
-            providers.putAll(registryProviders);
-            return List.copyOf(providers.values());
+                    .forEach(provider -> {
+                        double weight = Weights.find(provider, Weighted.DEFAULT_WEIGHT);
+                        providers.putIfAbsent(provider.configKey(), new WeightedProvider<>(provider, weight));
+                    });
+            List<ServiceInstance<T>> registryProviders = GlobalServiceRegistry.registry()
+                    .lookupInstances(Lookup.create(providerType));
+            for (ServiceInstance<T> providerInstance : registryProviders) {
+                T provider = providerInstance.get();
+                providers.put(provider.configKey(), new WeightedProvider<>(provider, providerInstance.weight()));
+            }
+
+            List<WeightedProvider<T>> sortedProviders = new ArrayList<>(providers.values());
+            Weights.sort(sortedProviders);
+            return sortedProviders.stream()
+                    .map(WeightedProvider::provider)
+                    .toList();
         }
 
         @Override

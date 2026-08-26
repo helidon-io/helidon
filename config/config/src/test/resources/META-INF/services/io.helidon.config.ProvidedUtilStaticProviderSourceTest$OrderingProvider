@@ -1,0 +1,2 @@
+io.helidon.config.ProvidedUtilStaticProviderSourceTest$LoaderHighProvider
+io.helidon.config.ProvidedUtilStaticProviderSourceTest$LoaderReplaceableProvider
