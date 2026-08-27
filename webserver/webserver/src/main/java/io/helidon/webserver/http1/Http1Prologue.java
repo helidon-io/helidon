@@ -337,6 +337,7 @@ public final class Http1Prologue {
             }
             if (specialRequestTarget) {
                 if (Method.CONNECT.equals(method)
+                        && !prologue.fragment().hasValue()
                         && (requestTarget.startsWith("[v") || requestTarget.startsWith("[V"))) {
                     throw RequestException.builder()
                             .type(DirectHandler.EventType.OTHER)

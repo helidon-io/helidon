@@ -107,6 +107,14 @@ class SpecialRequestTargetTest {
         assertThat(response, not(containsString("[Vf.foo-bar]:443|")));
     }
 
+    @Test
+    void connectIpFutureWithFragmentIsBadRequest() {
+        String response = client.sendAndReceive(Method.CONNECT, "[Vf.foo-bar]:443#fragment", null, List.of());
+
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Status.BAD_REQUEST_400));
+        assertThat(response, not(containsString("[Vf.foo-bar]:443|")));
+    }
+
     private void assertConnectTarget(String requestTarget, String expectedUri, String expectedAuthority, int expectedPort) {
         String response = client.sendAndReceive(Method.CONNECT, requestTarget, null, List.of());
 
