@@ -47,6 +47,15 @@ public interface MapperNameCollisionRepository {
     String namedClientMapper();
 
     /**
+     * Uses an explicit mapper whose simple name already describes its role.
+     *
+     * @return mapped value
+     */
+    @Jdbc.Statement("SELECT VALUE FROM TEST_VALUE")
+    @Jdbc.RowMapper(ExplicitRowMapper.class)
+    String explicitlyNamedMapper();
+
+    /**
      * Uses the marker mapper contract for one parameterization of a nested generic type.
      *
      * @return mapped box
@@ -80,6 +89,17 @@ public interface MapperNameCollisionRepository {
      */
     @Service.Singleton
     final class NamedJdbcClient implements JdbcClient.RowMapper<String> {
+        @Override
+        public String map(JdbcClient.Row row) {
+            return row.required(1, String.class);
+        }
+    }
+
+    /**
+     * Explicit mapper used to verify that an existing mapper suffix is not repeated.
+     */
+    @Service.Singleton
+    final class ExplicitRowMapper implements JdbcClient.RowMapper<String> {
         @Override
         public String map(JdbcClient.Row row) {
             return row.required(1, String.class);

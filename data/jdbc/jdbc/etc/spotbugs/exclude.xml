@@ -30,13 +30,4 @@
         <Method name="~lambda\$prepare\$[0-9]+"/>
         <Bug pattern="SQL_INJECTION_JDBC"/>
     </Match>
-
-    <Match>
-        <!--
-        JdbcScriptRunner executes trusted, application-owned classpath bootstrap scripts. Script text is never
-        assembled from request data or parameter values.
-        -->
-        <Class name="io.helidon.data.jdbc.JdbcScriptRunner"/>
-        <Bug pattern="SQL_INJECTION_JDBC"/>
-    </Match>
 </FindBugsFilter>

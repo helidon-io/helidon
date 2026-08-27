@@ -9,8 +9,7 @@ databases and through both supported application styles:
 
 The tests are intentionally integration-level. They validate provider behavior
 against real JDBC drivers, database dialect differences, transaction behavior,
-generated keys, bootstrap diagnostics, resource ownership, and SQL/bind
-handling.
+generated keys, resource ownership, and SQL and bind handling.
 
 ## Supported databases and JDBC drivers
 
@@ -60,16 +59,6 @@ the password rules of the selected database image. Do not replace these test
 values with production credentials, and do not commit private credentials to
 the repository.
 
-The H2 test
-`h2/src/test/java/io/helidon/data/jdbc/JdbcPersistenceUnitFactoryTest.java`
-contains the fixed username `owner` and the fixed password `correct-password`.
-It uses them only to create an authenticated database in memory. The same test
-uses `private-username-canary` and `private-password-canary` as deliberately
-invalid credentials and verifies that errors do not reveal them. These values
-do not provide access to an external database. If local policy requires a
-stronger H2 test password, update the value passed to `owner.setPassword` in
-that test. Keep the canary values distinct from the valid H2 credentials.
-
 ## Directory layout
 
 The main reactor is `tests/integration/data-jdbc/pom.xml`.
@@ -79,7 +68,7 @@ tests/integration/data-jdbc/
   common/
     src/main/java/        Shared contracts, application adapters, repositories, and support code.
     src/<db>/java/        Database-specific fixtures and configuration helpers.
-    src/<db>/resources/   Database-specific schema/init scripts.
+    src/<db>/resources/   Database-specific Testcontainers initialization resources.
   h2/                     Provider-level H2 integration tests.
   imperative/
     h2/

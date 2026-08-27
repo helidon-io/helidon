@@ -61,6 +61,21 @@
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-class-model</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen-apt</artifactId>
             <version>${project.version}</version>

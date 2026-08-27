@@ -36,12 +36,4 @@ interface JdbcProviderPropertiesConfigBlueprint {
     @Option.DefaultMethod("create")
     JdbcParameterCountCacheConfig parameterCountCache();
 
-    /**
-     * Bootstrap script configuration.
-     *
-     * @return bootstrap script configuration
-     */
-    @Option.Configured
-    @Option.DefaultMethod("create")
-    JdbcScriptConfig scripts();
 }

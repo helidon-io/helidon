@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc.tests.declarative.h2;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -71,7 +72,7 @@ class DeclarativeScalarBindingH2Test {
         LocalDateTime localDateTimeValue = LocalDateTime.of(2026, 7, 27, 10, 11, 12);
         OffsetTime offsetTimeValue = OffsetTime.parse("10:11:12+05:30");
         OffsetDateTime offsetDateTimeValue = OffsetDateTime.parse("2026-07-27T10:11:12+05:30");
-        java.sql.Date dateValue = java.sql.Date.valueOf("2026-07-27");
+        Date dateValue = Date.valueOf("2026-07-27");
         Time timeValue = Time.valueOf("10:11:12");
         Timestamp timestampValue = Timestamp.valueOf("2026-07-27 10:11:12");
 
@@ -113,7 +114,7 @@ class DeclarativeScalarBindingH2Test {
             assertThat(result.getObject("LOCAL_DATE_TIME_VALUE", LocalDateTime.class), is(localDateTimeValue));
             assertThat(result.getObject("OFFSET_TIME_VALUE", OffsetTime.class), is(offsetTimeValue));
             assertThat(result.getObject("OFFSET_DATE_TIME_VALUE", OffsetDateTime.class), is(offsetDateTimeValue));
-            assertThat(result.getObject("DATE_VALUE", java.sql.Date.class), is(dateValue));
+            assertThat(result.getObject("DATE_VALUE", Date.class), is(dateValue));
             assertThat(result.getObject("TIME_VALUE", Time.class), is(timeValue));
             assertThat(result.getObject("TIMESTAMP_VALUE", Timestamp.class), is(timestampValue));
             assertThat(result.next(), is(false));

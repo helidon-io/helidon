@@ -35,7 +35,7 @@ public final class ChaosMySqlDatabase {
     public static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.chaos.generated-key-column";
 
     /**
-     * Named datasource used by MySQL one-connection recovery tests.
+     * Named data source used by MySQL one connection recovery tests.
      */
     public static final String HIKARI_SOURCE_NAME = "chaos-mysql-hikari-source";
 
@@ -55,7 +55,8 @@ public final class ChaosMySqlDatabase {
         return new MySQLContainer<>(IMAGE)
                 .withUsername("test")
                 .withPassword("mysql123")
-                .withDatabaseName("test");
+                .withDatabaseName("test")
+                .withInitScript("db/chaos/mysql/schema-init.sql");
     }
 
     /**
@@ -67,30 +68,30 @@ public final class ChaosMySqlDatabase {
     public static Config config(MySQLContainer<?> container) {
         System.clearProperty(GENERATED_KEY_COLUMN_PROPERTY);
         return Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.connection.url", container.getJdbcUrl(),
-                "data.persistence-units.jdbc.0.connection.username", container.getUsername(),
-                "data.persistence-units.jdbc.0.connection.password", container.getPassword(),
-                "data.persistence-units.jdbc.0.connection.jdbc-driver-class-name", "com.mysql.cj.jdbc.Driver",
-                "data.persistence-units.jdbc.0.init-script.resource-path", "db/chaos/mysql/schema-init.sql")));
+                "data.clients.jdbc.0.name", "@default",
+                "data.clients.jdbc.0.connection.url", container.getJdbcUrl(),
+                "data.clients.jdbc.0.connection.username", container.getUsername(),
+                "data.clients.jdbc.0.connection.password", container.getPassword(),
+                "data.clients.jdbc.0.connection.jdbc-driver-class-name", "com.mysql.cj.jdbc.Driver")));
     }
 
     /**
-     * Creates Helidon configuration for a named MySQL Hikari datasource.
+     * Creates Helidon configuration for a named MySQL Hikari data source.
      *
-     * @return datasource-backed configuration
+     * @return data source backed configuration
      */
     public static Config hikariConfig() {
         System.clearProperty(GENERATED_KEY_COLUMN_PROPERTY);
         return Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.data-source", HIKARI_SOURCE_NAME,
-                "data.persistence-units.jdbc.0.init-script.resource-path", "db/chaos/mysql/schema-init.sql")));
+                "data.clients.jdbc.0.name", "@default",
+                "data.clients.jdbc.0.data-source", HIKARI_SOURCE_NAME)));
     }
 
     /**
-     * Creates a bounded Hikari datasource from a started MySQL container.
+     * Creates a bounded Hikari data source from a started MySQL container.
      *
      * @param container started container
-     * @return Hikari datasource
+     * @return Hikari data source
      */
     public static HikariDataSource dataSource(MySQLContainer<?> container) {
         HikariConfig config = new HikariConfig();

@@ -38,7 +38,7 @@ public final class PostgreSqlDatabase {
     }
 
     /**
-     * Creates a PostgreSQL container from the local integration-test image.
+     * Creates a PostgreSQL container from the local integration test image.
      *
      * @return container
      */
@@ -46,7 +46,8 @@ public final class PostgreSqlDatabase {
         ImageFromDockerfile image = new ImageFromDockerfile("data-jdbc-pgsql", false)
                 .withFileFromPath(".", Path.of("../../common/src/pgsql/docker"));
         return new PostgreSQLContainer(image)
-                .withPassword("pgsql123");
+                .withPassword("pgsql123")
+                .withInitScript("db/pgsql/schema-init.sql");
     }
 
     /**
@@ -58,11 +59,11 @@ public final class PostgreSqlDatabase {
     public static Config config(JdbcDatabaseContainer<?> container) {
         System.clearProperty(GENERATED_KEY_COLUMN_PROPERTY);
         return Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.connection.url", container.getJdbcUrl(),
-                "data.persistence-units.jdbc.0.connection.username", container.getUsername(),
-                "data.persistence-units.jdbc.0.connection.password", container.getPassword(),
-                "data.persistence-units.jdbc.0.connection.jdbc-driver-class-name", container.getDriverClassName(),
-                "data.persistence-units.jdbc.0.init-script.resource-path", "db/pgsql/schema-init.sql")));
+                "data.clients.jdbc.0.name", "@default",
+                "data.clients.jdbc.0.connection.url", container.getJdbcUrl(),
+                "data.clients.jdbc.0.connection.username", container.getUsername(),
+                "data.clients.jdbc.0.connection.password", container.getPassword(),
+                "data.clients.jdbc.0.connection.jdbc-driver-class-name", container.getDriverClassName())));
     }
 
     private static final class PostgreSQLContainer extends JdbcDatabaseContainer<PostgreSQLContainer> {

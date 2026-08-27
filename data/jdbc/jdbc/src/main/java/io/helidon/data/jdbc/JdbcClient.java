@@ -19,7 +19,9 @@ import java.sql.JDBCType;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
 import io.helidon.data.Data;
 import io.helidon.data.DataException;
@@ -34,14 +36,54 @@ import io.helidon.service.registry.Service;
  * Statement and result stages are single use and are not safe for concurrent
  * use.
  * <p>
- * A configured persistence unit publishes a client through the Service
- * Registry. Applications select it with the {@code jdbc}
- * {@link Data.ProviderType} and a {@link Service.Named} qualifier using the
- * persistence unit name.
+ * A client built through {@link #builder()} or {@link #create(JdbcClientConfig)}
+ * owns a connection for each terminal operation. It does not participate in
+ * a transaction established by a transaction annotation on its caller.
+ * <p>
+ * Annotation based applications inject a registry managed client with the
+ * {@code jdbc} {@link Data.ProviderType} and a {@link Service.Named}
+ * qualifier. A registry managed client uses Helidon's local transaction
+ * support and participates in the transaction surrounding the intercepted
+ * service invocation.
  */
 @Api.Preview
 @Service.Contract
-public interface JdbcClient {
+public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
+
+    /**
+     * Creates a builder for a JDBC client.
+     *
+     * @return new JDBC client builder
+     */
+    static JdbcClientConfig.Builder builder() {
+        return JdbcClientConfig.builder();
+    }
+
+    /**
+     * Creates a JDBC client from an immutable configuration.
+     *
+     * @param config JDBC client configuration
+     * @return configured JDBC client
+     * @throws NullPointerException if the configuration is {@code null}
+     * @throws DataException if the configuration cannot create a direct client
+     */
+    static JdbcClient create(JdbcClientConfig config) {
+        Objects.requireNonNull(config, "The JDBC client configuration must not be null.");
+        return JdbcClientImpl.create(config);
+    }
+
+    /**
+     * Creates a JDBC client after updating a new builder.
+     *
+     * @param consumer builder updates
+     * @return configured JDBC client
+     * @throws NullPointerException if the consumer is {@code null}
+     * @throws DataException if the configuration cannot create a direct client
+     */
+    static JdbcClient create(Consumer<JdbcClientConfig.Builder> consumer) {
+        Objects.requireNonNull(consumer, "The JDBC client builder consumer must not be null.");
+        return builder().update(consumer).build();
+    }
 
     /**
      * Creates a statement description for generated repository

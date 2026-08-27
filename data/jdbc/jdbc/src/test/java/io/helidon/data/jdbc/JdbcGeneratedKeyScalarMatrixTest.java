@@ -17,6 +17,7 @@ package io.helidon.data.jdbc;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -84,7 +85,7 @@ class JdbcGeneratedKeyScalarMatrixTest {
         assertGeneratedKey(LocalDateTime.of(2026, 7, 27, 10, 11, 12), LocalDateTime.class);
         assertGeneratedKey(OffsetTime.parse("10:11:12+05:30"), OffsetTime.class);
         assertGeneratedKey(OffsetDateTime.parse("2026-07-27T10:11:12+05:30"), OffsetDateTime.class);
-        assertGeneratedKey(java.sql.Date.valueOf("2026-07-27"), java.sql.Date.class);
+        assertGeneratedKey(Date.valueOf("2026-07-27"), Date.class);
         assertGeneratedKey(Time.valueOf("10:11:12"), Time.class);
         assertGeneratedKey(Timestamp.valueOf("2026-07-27 10:11:12"), Timestamp.class);
     }

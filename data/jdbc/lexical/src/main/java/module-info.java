@@ -15,7 +15,14 @@
  */
 
 /**
- * Shared lexical support for JDBC SQL.
+ * Shared lexical support for JDBC SQL marker processing.
+ *
+ * <p>JDBC code generation uses this module to recognize named and positional
+ * markers while producing validated positional SQL. The JDBC runtime uses it
+ * to validate imperative SQL and count positional markers before creating a
+ * statement. The module recognizes lexical regions and reports marker events,
+ * while each consumer remains responsible for rewriting or counting the
+ * reported markers.</p>
  */
 module io.helidon.data.jdbc.lexical {
 

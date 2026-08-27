@@ -45,7 +45,8 @@ public final class MySqlDatabase {
         return new MySQLContainer<>(IMAGE)
                 .withUsername("test")
                 .withPassword("mysql123")
-                .withDatabaseName("test");
+                .withDatabaseName("test")
+                .withInitScript("db/mysql/schema-init.sql");
     }
 
     /**
@@ -57,10 +58,10 @@ public final class MySqlDatabase {
     public static Config config(MySQLContainer<?> container) {
         System.clearProperty(GENERATED_KEY_COLUMN_PROPERTY);
         return Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.connection.url", container.getJdbcUrl(),
-                "data.persistence-units.jdbc.0.connection.username", container.getUsername(),
-                "data.persistence-units.jdbc.0.connection.password", container.getPassword(),
-                "data.persistence-units.jdbc.0.connection.jdbc-driver-class-name", "com.mysql.cj.jdbc.Driver",
-                "data.persistence-units.jdbc.0.init-script.resource-path", "db/mysql/schema-init.sql")));
+                "data.clients.jdbc.0.name", "@default",
+                "data.clients.jdbc.0.connection.url", container.getJdbcUrl(),
+                "data.clients.jdbc.0.connection.username", container.getUsername(),
+                "data.clients.jdbc.0.connection.password", container.getPassword(),
+                "data.clients.jdbc.0.connection.jdbc-driver-class-name", "com.mysql.cj.jdbc.Driver")));
     }
 }

@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc.tests.imperative;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import io.helidon.data.Data;
@@ -110,7 +111,7 @@ public final class ImperativeGeneratedKeyOperations implements GeneratedKeyOpera
         }
         String[] result = new String[defaultColumns.length];
         for (int index = 0; index < defaultColumns.length; index++) {
-            result[index] = defaultColumns[index].toUpperCase(java.util.Locale.ROOT);
+            result[index] = defaultColumns[index].toUpperCase(Locale.ROOT);
         }
         return result;
     }

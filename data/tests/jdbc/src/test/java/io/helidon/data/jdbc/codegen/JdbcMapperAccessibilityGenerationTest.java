@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
@@ -47,7 +48,8 @@ class JdbcMapperAccessibilityGenerationTest {
                 .currentRelease()
                 .printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(Data.class,
+                .addClasspath(List.of(RuntimeType.class,
+                                      Data.class,
                                       JdbcClient.class,
                                       Service.class,
                                       Tx.class,
@@ -85,7 +87,8 @@ class JdbcMapperAccessibilityGenerationTest {
                 .currentRelease()
                 .printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(Data.class,
+                .addClasspath(List.of(RuntimeType.class,
+                                      Data.class,
                                       JdbcClient.class,
                                       Service.class,
                                       Tx.class,
