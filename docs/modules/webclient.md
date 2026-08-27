@@ -94,6 +94,10 @@ continues with the selected route. WebClient uses the system proxy policy by
 default; configure `proxy.type` as `none`, or use `Proxy.noProxy()`
 programmatically, to use an advertised alternative.
 
+Requests with caller-supplied connections or explicit transport addresses,
+including client `base-address` and Unix domain socket transports, do not learn
+or use alternative services.
+
 WebClient honors the configured TLS policy as-is when connecting to an
 alternative. This includes custom TLS managers, custom SSL contexts, disabled
 endpoint identification, and `trust-all`. An unsafe or permissive TLS
