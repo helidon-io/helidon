@@ -82,6 +82,8 @@ public class StaticContentPreCompressedJmhTest {
 
     private StaticContentHandler handler;
     private StaticContentHandler disabledHandler;
+    private FileSystemContentHandler fileSystemMissingSidecarHandler;
+    private FileSystemContentHandler disabledFileSystemMissingSidecarHandler;
     private ClassPathContentHandler classpathHandler;
     private ClassPathContentHandler disabledClasspathHandler;
     private SidecarCache.Resolver sidecarResolver;
@@ -132,6 +134,13 @@ public class StaticContentPreCompressedJmhTest {
                                                                    .location(benchmarkDirectory)
                                                                    .preCompressedEnabled(false)
                                                                    .build());
+        fileSystemMissingSidecarHandler = new FileSystemContentHandler(FileSystemHandlerConfig.builder()
+                                                                               .location(benchmarkDirectory)
+                                                                               .build());
+        disabledFileSystemMissingSidecarHandler = new FileSystemContentHandler(FileSystemHandlerConfig.builder()
+                                                                                       .location(benchmarkDirectory)
+                                                                                       .preCompressedEnabled(false)
+                                                                                       .build());
         classpathHandler = new ClassPathContentHandler(ClasspathHandlerConfig.builder()
                                                                .location("benchmark")
                                                                .classLoader(classpathClassLoader)
@@ -176,6 +185,11 @@ public class StaticContentPreCompressedJmhTest {
         gzipRequest = request("gzip", ContentEncodingContext.create());
         runtimeGzipRequest = request("gzip, identity;q=0", runtimeContentEncodingContext());
 
+        fileSystemMissingSidecarHandler.beforeStart();
+        disabledFileSystemMissingSidecarHandler.beforeStart();
+        warmFileSystemHandler(fileSystemMissingSidecarHandler);
+        warmFileSystemHandler(disabledFileSystemMissingSidecarHandler);
+
         handler.selectHandler(identityHandler, brRequest, sidecarResolver);
         handler.selectHandler(identityHandler, gzipRequest, sidecarResolver);
         handler.selectHandler(fileIdentityHandler, brRequest, fileSidecarResolver);
@@ -186,6 +200,8 @@ public class StaticContentPreCompressedJmhTest {
 
     @TearDown
     public void tearDown() throws IOException {
+        fileSystemMissingSidecarHandler.afterStop();
+        disabledFileSystemMissingSidecarHandler.afterStop();
         classpathClassLoader.close();
         Files.deleteIfExists(sidecarPath);
         Files.deleteIfExists(identityPath);
@@ -225,7 +241,27 @@ public class StaticContentPreCompressedJmhTest {
 
     @Benchmark
     @Threads(4)
-    public CachedHandler classpathJarMissingSidecarEnabled(JarMissingSidecarRequestState state)
+    public boolean fileSystemMissingSidecarEnabled(MissingSidecarRequestState state) throws IOException {
+        return fileSystemMissingSidecarHandler.doHandle(Method.GET,
+                                                        RESOURCE,
+                                                        state.request,
+                                                        new ResponseStub(),
+                                                        true);
+    }
+
+    @Benchmark
+    @Threads(4)
+    public boolean fileSystemMissingSidecarDisabled(MissingSidecarRequestState state) throws IOException {
+        return disabledFileSystemMissingSidecarHandler.doHandle(Method.GET,
+                                                                RESOURCE,
+                                                                state.request,
+                                                                new ResponseStub(),
+                                                                true);
+    }
+
+    @Benchmark
+    @Threads(4)
+    public CachedHandler classpathJarMissingSidecarEnabled(MissingSidecarRequestState state)
             throws IOException, URISyntaxException {
         return classpathHandler.selectCachedClassPathHandler(CLASSPATH_RESOURCE,
                                                              classpathIdentityHandler,
@@ -234,7 +270,7 @@ public class StaticContentPreCompressedJmhTest {
 
     @Benchmark
     @Threads(4)
-    public CachedHandler classpathJarMissingSidecarDisabled(JarMissingSidecarRequestState state)
+    public CachedHandler classpathJarMissingSidecarDisabled(MissingSidecarRequestState state)
             throws IOException, URISyntaxException {
         return disabledClasspathHandler.selectCachedClassPathHandler(CLASSPATH_RESOURCE,
                                                                      disabledClasspathIdentityHandler,
@@ -271,6 +307,17 @@ public class StaticContentPreCompressedJmhTest {
         return response;
     }
 
+    private void warmFileSystemHandler(FileSystemContentHandler fileSystemContentHandler) throws IOException {
+        boolean handled = fileSystemContentHandler.doHandle(Method.GET,
+                                                            RESOURCE,
+                                                            noAcceptEncodingRequest,
+                                                            new ResponseStub(),
+                                                            true);
+        if (!handled) {
+            throw new IllegalStateException("Filesystem benchmark handler did not handle the resource");
+        }
+    }
+
     private static CachedHandlerInMemory inMemoryHandler(String value) {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         return new CachedHandlerInMemory(StaticContentMetadata.create(MediaTypes.TEXT_PLAIN, bytes.length), bytes);
@@ -291,7 +338,7 @@ public class StaticContentPreCompressedJmhTest {
     }
 
     @State(Scope.Thread)
-    public static class JarMissingSidecarRequestState {
+    public static class MissingSidecarRequestState {
         private ServerRequest request;
 
         @Setup
