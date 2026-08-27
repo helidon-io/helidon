@@ -54,7 +54,7 @@ final class ClasspathSourceHelper {
     }
 
     static Path resourcePath(String resourceName) throws URISyntaxException {
-        URL resourceUrl = Thread.currentThread().getContextClassLoader().getResource(resourceName);
+        URL resourceUrl = contextClassLoader().getResource(resourceName);
         if (resourceUrl != null) {
             // this can only work if we are using a file based classloader (which may not be always the case)
             // we may load classes from http, or from specific loaders, such as in Graal native image
@@ -67,6 +67,11 @@ final class ClasspathSourceHelper {
         } else {
             return null;
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? ClasspathSourceHelper.class.getClassLoader() : classLoader;
     }
 
 }

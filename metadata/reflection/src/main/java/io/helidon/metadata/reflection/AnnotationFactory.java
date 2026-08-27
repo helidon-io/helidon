@@ -103,14 +103,6 @@ public final class AnnotationFactory {
                                                       new AnnotationInvocationHandler(annotationType, annotation)));
     }
 
-    private static ClassLoader classLoader() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (loader == null) {
-            return loader;
-        }
-        return AnnotationFactory.class.getClassLoader();
-    }
-
     // basically the same semantics as in `AptAnnotationFactory` (and scan based annotation factory)
     private static Optional<Annotation> createAnnotation(java.lang.annotation.Annotation annotation,
                                                          Set<TypeName> processedTypes) {
@@ -227,6 +219,14 @@ public final class AnnotationFactory {
             return result;
         }
         throw new IllegalArgumentException("Unknown primitive type: " + componentType.getName());
+    }
+
+    private static ClassLoader classLoader() {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader == null) {
+            return AnnotationFactory.class.getClassLoader();
+        }
+        return loader;
     }
 
     private static class AnnotationInvocationHandler implements InvocationHandler {

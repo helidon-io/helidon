@@ -182,7 +182,7 @@ public final class HelidonFeatures {
             return;
         }
 
-        scan(Thread.currentThread().getContextClassLoader());
+        scan(contextClassLoader());
 
         Set<FeatureMetadata> features = FEATURES.get(currentFlavor);
         if (null == features) {
@@ -402,6 +402,11 @@ public final class HelidonFeatures {
             }
             printDetails(actualName, childNode, level + 1);
         });
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? HelidonFeatures.class.getClassLoader() : classLoader;
     }
 
     static final class Node {

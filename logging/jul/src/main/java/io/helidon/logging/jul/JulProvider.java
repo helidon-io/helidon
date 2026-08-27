@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ public class JulProvider implements LoggingProvider {
             logConfigStream = new BufferedInputStream(Files.newInputStream(path));
             source = "file: " + path.toAbsolutePath();
         } else {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            ClassLoader cl = contextClassLoader();
 
             // check if there is a logging-test.properties first (we are running within a unit test)
             InputStream resourceStream = classPath(TEST_LOGGING_FILE);
@@ -165,5 +165,10 @@ public class JulProvider implements LoggingProvider {
 
     private static InputStream classPath(String loggingFile) {
         return JulProvider.class.getResourceAsStream("/" + loggingFile);
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        return cl == null ? JulProvider.class.getClassLoader() : cl;
     }
 }
