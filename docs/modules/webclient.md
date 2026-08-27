@@ -94,9 +94,10 @@ continues with the selected route. WebClient uses the system proxy policy by
 default; configure `proxy.type` as `none`, or use `Proxy.noProxy()`
 programmatically, to use an advertised alternative.
 
-Requests with caller-supplied connections or explicit transport addresses,
-including client `base-address` and Unix domain socket transports, do not learn
-or use alternative services.
+Requests with caller-supplied connections or Unix domain socket transport
+addresses do not learn or use alternative services. An `InetSocketAddress`
+supplied through client `base-address` or request `address` updates the request
+URI host and port, so Alt-Svc applies to that resulting origin.
 
 WebClient honors the configured TLS policy as-is when connecting to an
 alternative. This includes custom TLS managers, custom SSL contexts, disabled
