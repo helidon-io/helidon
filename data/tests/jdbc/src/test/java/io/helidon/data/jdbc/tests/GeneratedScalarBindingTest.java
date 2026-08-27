@@ -18,6 +18,7 @@ package io.helidon.data.jdbc.tests;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Date;
 import java.sql.JDBCType;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -171,7 +172,7 @@ class GeneratedScalarBindingTest {
                 LocalDateTime.of(2026, 7, 27, 10, 11, 12),
                 OffsetTime.parse("10:11:12+05:30"),
                 OffsetDateTime.parse("2026-07-27T10:11:12+05:30"),
-                java.sql.Date.valueOf("2026-07-27"),
+                Date.valueOf("2026-07-27"),
                 Time.valueOf("10:11:12"),
                 Timestamp.valueOf("2026-07-27 10:11:12")
         };
@@ -200,7 +201,7 @@ class GeneratedScalarBindingTest {
                            (LocalDateTime) values[12],
                            (OffsetTime) values[13],
                            (OffsetDateTime) values[14],
-                           (java.sql.Date) values[15],
+                           (Date) values[15],
                            (Time) values[16],
                            (Timestamp) values[17]);
     }

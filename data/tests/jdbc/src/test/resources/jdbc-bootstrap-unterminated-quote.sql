@@ -1,1 +1,0 @@
-INSERT INTO TEST_VALUE VALUES ('unterminated);

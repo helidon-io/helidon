@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -210,7 +211,7 @@ class JdbcRunnerTest {
         assertScalar(LocalDateTime.of(2026, 7, 25, 10, 11, 12), LocalDateTime.class);
         assertScalar(OffsetTime.parse("10:11:12+05:30"), OffsetTime.class);
         assertScalar(OffsetDateTime.parse("2026-07-25T10:11:12+05:30"), OffsetDateTime.class);
-        assertScalar(java.sql.Date.valueOf("2026-07-25"), java.sql.Date.class);
+        assertScalar(Date.valueOf("2026-07-25"), Date.class);
         assertScalar(Time.valueOf("10:11:12"), Time.class);
         assertScalar(Timestamp.valueOf("2026-07-25 10:11:12"), Timestamp.class);
 

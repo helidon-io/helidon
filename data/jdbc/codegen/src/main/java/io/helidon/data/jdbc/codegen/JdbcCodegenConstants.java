@@ -21,7 +21,7 @@ package io.helidon.data.jdbc.codegen;
 final class JdbcCodegenConstants {
 
     static final String PROVIDER = "jdbc";
-    static final String DEFAULT_PERSISTENCE_UNIT = "@default";
+    static final String DEFAULT_CLIENT_NAME = "@default";
     static final String REPOSITORY_SUFFIX = "__Jdbc";
     static final String GENERATED_VERSION = "1";
     static final String ANNOTATION_VALUE_PROPERTY = "value";

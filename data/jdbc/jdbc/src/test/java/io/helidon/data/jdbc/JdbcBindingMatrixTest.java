@@ -17,6 +17,7 @@ package io.helidon.data.jdbc;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.Time;
@@ -74,7 +75,7 @@ class JdbcBindingMatrixTest {
         assertBinding(LocalDateTime.of(2026, 7, 27, 10, 11, 12), JDBCType.TIMESTAMP);
         assertBinding(OffsetTime.parse("10:11:12+05:30"), JDBCType.TIME_WITH_TIMEZONE);
         assertBinding(OffsetDateTime.parse("2026-07-27T10:11:12+05:30"), JDBCType.TIMESTAMP_WITH_TIMEZONE);
-        assertBinding(java.sql.Date.valueOf("2026-07-27"), JDBCType.DATE);
+        assertBinding(Date.valueOf("2026-07-27"), JDBCType.DATE);
         assertBinding(Time.valueOf("10:11:12"), JDBCType.TIME);
         assertBinding(Timestamp.valueOf("2026-07-27 10:11:12"), JDBCType.TIMESTAMP);
     }

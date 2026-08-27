@@ -20,8 +20,8 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
 
 /**
- * Configuration blueprint for persistence unit properties owned by the JDBC
- * provider. These values are not forwarded to a datasource, JDBC driver,
+ * Configuration blueprint for client properties owned by the JDBC provider.
+ * These values are not forwarded to a data source, JDBC driver,
  * connection, statement, or result set.
  */
 @Api.Preview

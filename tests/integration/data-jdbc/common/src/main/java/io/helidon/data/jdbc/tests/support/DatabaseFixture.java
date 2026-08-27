@@ -34,7 +34,7 @@ public final class DatabaseFixture {
     private final JdbcClient client;
 
     /**
-     * Creates database support for the default persistence unit.
+     * Creates database support for the Default JDBC Client.
      *
      * @param client qualified JDBC client
      */

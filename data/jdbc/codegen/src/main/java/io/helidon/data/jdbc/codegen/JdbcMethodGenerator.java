@@ -159,7 +159,7 @@ final class JdbcMethodGenerator {
 
         Set<String> dependencyNames = new HashSet<>();
         // Mapper fields and their constructor parameters intentionally share one name. Reserve every client
-        // parameter name so a mapper can never replace infrastructure in any persistence-unit mode.
+        // parameter name so a mapper can never replace client selection infrastructure.
         dependencyNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
         dependencyNames.add(JdbcCodegenConstants.NAMED_JDBC_CLIENT_NAME);
         List<MapperDependency> dependencies = new ArrayList<>(groupedPlans.size());
@@ -169,14 +169,18 @@ final class JdbcMethodGenerator {
             TypeName mapperContract = TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
                     .addTypeArgument(key.mappedType().type())
                     .build();
-            // A fixed suffix keeps the application-derived name descriptive and turns a lower-cased Java keyword,
-            // such as Class, into the valid identifier classRowMapper.
+            // An explicit mapper type already describes its role when its simple name ends in Mapper. For service
+            // selection, the name is derived from the mapped result type, so append RowMapper to distinguish the
+            // dependency from a mapped value. The suffix also prevents a type such as Class from producing a Java
+            // keyword after its first character is converted to lowercase.
             String className = key.explicit()
                     ? key.serviceType().type().className()
                     : key.mappedType().type().className();
-            String baseName = Character.toLowerCase(className.charAt(0))
-                    + className.substring(1)
-                    + JdbcCodegenConstants.ROW_MAPPER_SUFFIX;
+            String variableName = Character.toLowerCase(className.charAt(0)) + className.substring(1);
+            String baseName = key.explicit() && className.endsWith("Mapper")
+                    ? variableName
+                    : variableName + JdbcCodegenConstants.ROW_MAPPER_SUFFIX;
+            // Keep the natural name for the first dependency and add a number only when that name is already used.
             String candidate = baseName;
             for (int index = 2; !dependencyNames.add(candidate); index++) {
                 candidate = baseName + index;

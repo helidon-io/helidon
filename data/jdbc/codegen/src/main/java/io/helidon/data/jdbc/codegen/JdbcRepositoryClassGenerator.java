@@ -81,7 +81,8 @@ final class JdbcRepositoryClassGenerator {
     }
 
     /**
-     * Generates the repository constructor with the selected JDBC persistence unit and row-mapper services.
+     * Generates the repository constructor with the selected JDBC client and
+     * row mapper services.
      *
      * @param classModel generated repository class
      * @param repositoryInfo repository metadata
@@ -99,19 +100,19 @@ final class JdbcRepositoryClassGenerator {
         Annotation defaultNamed = Annotation.builder()
                 .typeName(JdbcPersistenceTypes.SERVICE_NAMED)
                 .property(JdbcCodegenConstants.ANNOTATION_VALUE_PROPERTY,
-                          JdbcCodegenConstants.DEFAULT_PERSISTENCE_UNIT)
+                          JdbcCodegenConstants.DEFAULT_CLIENT_NAME)
                 .build();
 
         Annotation persistenceUnit = repositoryInfo.interfaceInfo()
                 .findAnnotation(JdbcPersistenceTypes.DATA_PERSISTENCE_UNIT)
                 .orElse(null);
         String name = persistenceUnit == null
-                ? JdbcCodegenConstants.DEFAULT_PERSISTENCE_UNIT
-                : persistenceUnit.stringValue().orElse(JdbcCodegenConstants.DEFAULT_PERSISTENCE_UNIT);
+                ? JdbcCodegenConstants.DEFAULT_CLIENT_NAME
+                : persistenceUnit.stringValue().orElse(JdbcCodegenConstants.DEFAULT_CLIENT_NAME);
         boolean required = persistenceUnit == null
                 || persistenceUnit.booleanValue(JdbcCodegenConstants.PERSISTENCE_UNIT_REQUIRED_PROPERTY).orElse(true);
 
-        if (!JdbcCodegenConstants.DEFAULT_PERSISTENCE_UNIT.equals(name)) {
+        if (!JdbcCodegenConstants.DEFAULT_CLIENT_NAME.equals(name)) {
             Annotation named = Annotation.builder()
                     .typeName(JdbcPersistenceTypes.SERVICE_NAMED)
                     .property(JdbcCodegenConstants.ANNOTATION_VALUE_PROPERTY, name)

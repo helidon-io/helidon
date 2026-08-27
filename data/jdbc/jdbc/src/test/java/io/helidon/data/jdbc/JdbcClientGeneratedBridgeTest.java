@@ -17,12 +17,15 @@ package io.helidon.data.jdbc;
 
 import java.sql.JDBCType;
 
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 @SuppressWarnings("helidon:api:internal")
 class JdbcClientGeneratedBridgeTest {
@@ -51,9 +54,18 @@ class JdbcClientGeneratedBridgeTest {
     }
 
     private static final class AlternateClient implements JdbcClient {
+        private static final JdbcClientConfig CONFIG = JdbcClientConfig.builder()
+                .dataSource(mock(DataSource.class))
+                .buildPrototype();
+
         private final AlternateStatement statement = new AlternateStatement();
 
         private String sql;
+
+        @Override
+        public JdbcClientConfig prototype() {
+            return CONFIG;
+        }
 
         @Override
         public Statement create(String sql) {

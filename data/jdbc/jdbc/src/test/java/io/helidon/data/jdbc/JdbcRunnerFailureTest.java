@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.sql.DataSource;
 
 import io.helidon.data.DataException;
+import io.helidon.data.NonUniqueResultException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -565,8 +566,8 @@ class JdbcRunnerFailureTest {
         doThrow(statementClose).when(statement).close();
         doThrow(connectionClose).doNothing().when(connection).close();
 
-        io.helidon.data.NonUniqueResultException failure =
-                assertThrows(io.helidon.data.NonUniqueResultException.class,
+        NonUniqueResultException failure =
+                assertThrows(NonUniqueResultException.class,
                              () -> client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).one());
 
         assertThat(failure.getSuppressed().length, is(1));

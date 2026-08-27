@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
 
 import io.helidon.data.DataException;
+import io.helidon.data.NonUniqueResultException;
 import io.helidon.data.jdbc.tests.support.SensitiveFailureAssertions;
 
 import com.zaxxer.hikari.HikariConfig;
@@ -162,7 +163,7 @@ class JdbcResourceOwnershipTest {
                                  .one());
             assertPoolReusable(dataSource, client, 2L);
 
-            assertThrows(io.helidon.data.NonUniqueResultException.class,
+            assertThrows(NonUniqueResultException.class,
                          () -> client.create("SELECT DATA_VALUE FROM TEST_VALUE")
                                  .map(String.class)
                                  .one());

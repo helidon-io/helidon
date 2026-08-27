@@ -63,6 +63,9 @@ class GeneratedRepositoryTest {
 
         assertThat(source, containsString("private final JdbcClient.RowMapper<String> classRowMapper;"));
         assertThat(source, containsString("private final JdbcClient.RowMapper<String> namedJdbcClientRowMapper;"));
+        assertThat(source, containsString("private final JdbcClient.RowMapper<String> explicitRowMapper;"));
+        assertThat(source, containsString("MapperNameCollisionRepository.ExplicitRowMapper explicitRowMapper"));
+        assertThat(source, not(containsString("explicitRowMapperRowMapper")));
         assertThat(source, containsString("JdbcClient.RowMapper<MapperNameCollisionRepository.Box<String>> "
                                                   + "boxRowMapper;"));
         assertThat(source, containsString("JdbcClient.RowMapper<MapperNameCollisionRepository.Box<Integer>> "

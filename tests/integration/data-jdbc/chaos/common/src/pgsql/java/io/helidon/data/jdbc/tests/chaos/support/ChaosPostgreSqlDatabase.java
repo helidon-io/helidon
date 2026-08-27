@@ -40,7 +40,7 @@ public final class ChaosPostgreSqlDatabase {
     public static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.chaos.generated-key-column";
 
     /**
-     * Named datasource used by PostgreSQL one-connection recovery tests.
+     * Named data source used by PostgreSQL one connection recovery tests.
      */
     public static final String HIKARI_SOURCE_NAME = "chaos-pgsql-hikari-source";
 
@@ -48,7 +48,7 @@ public final class ChaosPostgreSqlDatabase {
     }
 
     /**
-     * Creates a PostgreSQL container from the local chaos integration-test image.
+     * Creates a PostgreSQL container from the local chaos integration test image.
      *
      * @return PostgreSQL container
      */
@@ -56,7 +56,8 @@ public final class ChaosPostgreSqlDatabase {
         ImageFromDockerfile image = new ImageFromDockerfile("data-jdbc-chaos-pgsql", false)
                 .withFileFromPath(".", Path.of("../../common/src/pgsql/docker"));
         return new PostgreSQLContainer(image)
-                .withPassword("pgsql123");
+                .withPassword("pgsql123")
+                .withInitScript("db/chaos/pgsql/schema-init.sql");
     }
 
     /**
@@ -68,30 +69,30 @@ public final class ChaosPostgreSqlDatabase {
     public static Config config(JdbcDatabaseContainer<?> container) {
         System.clearProperty(GENERATED_KEY_COLUMN_PROPERTY);
         return Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.connection.url", container.getJdbcUrl(),
-                "data.persistence-units.jdbc.0.connection.username", container.getUsername(),
-                "data.persistence-units.jdbc.0.connection.password", container.getPassword(),
-                "data.persistence-units.jdbc.0.connection.jdbc-driver-class-name", container.getDriverClassName(),
-                "data.persistence-units.jdbc.0.init-script.resource-path", "db/chaos/pgsql/schema-init.sql")));
+                "data.clients.jdbc.0.name", "@default",
+                "data.clients.jdbc.0.connection.url", container.getJdbcUrl(),
+                "data.clients.jdbc.0.connection.username", container.getUsername(),
+                "data.clients.jdbc.0.connection.password", container.getPassword(),
+                "data.clients.jdbc.0.connection.jdbc-driver-class-name", container.getDriverClassName())));
     }
 
     /**
-     * Creates Helidon configuration for a named PostgreSQL Hikari datasource.
+     * Creates Helidon configuration for a named PostgreSQL Hikari data source.
      *
-     * @return datasource-backed configuration
+     * @return data source backed configuration
      */
     public static Config hikariConfig() {
         System.clearProperty(GENERATED_KEY_COLUMN_PROPERTY);
         return Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.data-source", HIKARI_SOURCE_NAME,
-                "data.persistence-units.jdbc.0.init-script.resource-path", "db/chaos/pgsql/schema-init.sql")));
+                "data.clients.jdbc.0.name", "@default",
+                "data.clients.jdbc.0.data-source", HIKARI_SOURCE_NAME)));
     }
 
     /**
-     * Creates a bounded Hikari datasource from a started PostgreSQL container.
+     * Creates a bounded Hikari data source from a started PostgreSQL container.
      *
      * @param container started container
-     * @return Hikari datasource
+     * @return Hikari data source
      */
     public static HikariDataSource dataSource(JdbcDatabaseContainer<?> container) {
         HikariConfig config = new HikariConfig();

@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc.tests.contract;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -31,6 +32,7 @@ import io.helidon.data.jdbc.tests.declarative.repository.EqualWeightMapperReposi
 import io.helidon.data.jdbc.tests.declarative.repository.FailingMapperRepository;
 import io.helidon.data.jdbc.tests.declarative.repository.MissingMapperRepository;
 import io.helidon.data.jdbc.tests.declarative.repository.UnregisteredMapperRepository;
+import io.helidon.data.jdbc.tests.support.DatabaseFixture;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.transaction.Tx;
@@ -53,8 +55,7 @@ public abstract class AbstractGeneratedRepositoryContract {
      */
     @Test
     protected void executesGeneratedRepositoryThroughServiceRegistryAndLocalTransactions() {
-        beforeStartApplication();
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        ServiceRegistryManager manager = startApplication();
         try {
             ContactRepository repository = manager.registry().get(ContactRepository.class);
 
@@ -135,8 +136,7 @@ public abstract class AbstractGeneratedRepositoryContract {
      */
     @Test
     protected void selectsEqualWeightMarkerMapperDeterministically() {
-        beforeStartApplication();
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        ServiceRegistryManager manager = startApplication();
         try {
             EqualWeightMapperRepository repository = manager.registry().get(EqualWeightMapperRepository.class);
 
@@ -152,8 +152,7 @@ public abstract class AbstractGeneratedRepositoryContract {
      */
     @Test
     protected void rejectsMissingMarkerAndExplicitMapperServicesDuringRepositoryActivation() {
-        beforeStartApplication();
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        ServiceRegistryManager manager = startApplication();
         try {
             assertThrows(ServiceRegistryException.class,
                          () -> manager.registry().get(MissingMapperRepository.class));
@@ -170,8 +169,7 @@ public abstract class AbstractGeneratedRepositoryContract {
      */
     @Test
     protected void doesNotFallBackWhenPreferredMapperActivationFails() {
-        beforeStartApplication();
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        ServiceRegistryManager manager = startApplication();
         try {
             assertThrows(ServiceRegistryException.class,
                          () -> manager.registry().get(FailingMapperRepository.class));
@@ -186,15 +184,14 @@ public abstract class AbstractGeneratedRepositoryContract {
      */
     @Test
     protected void invokesSharedSingletonMapperConcurrently() throws Exception {
-        beforeStartApplication();
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        ServiceRegistryManager manager = startApplication();
         try {
             ContactRepository repository = manager.registry().get(ContactRepository.class);
             Callable<ContactLabel> invocation = () -> repository.mapped(1);
             // This checks singleton mapper reuse across concurrent virtual-thread calls without turning the
             // repository test into an Oracle listener capacity test.
             List<Callable<ContactLabel>> invocations =
-                    java.util.Collections.nCopies(CONCURRENT_MAPPER_INVOCATIONS, invocation);
+                    Collections.nCopies(CONCURRENT_MAPPER_INVOCATIONS, invocation);
 
             try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 List<Future<ContactLabel>> results = executor.invokeAll(invocations);
@@ -213,8 +210,7 @@ public abstract class AbstractGeneratedRepositoryContract {
      */
     @Test
     protected void executesGeneratedOperationKindsAcrossEveryPropagationType() {
-        beforeStartApplication();
-        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        ServiceRegistryManager manager = startApplication();
         try {
             ContactRepository repository = manager.registry().get(ContactRepository.class);
 
@@ -293,6 +289,13 @@ public abstract class AbstractGeneratedRepositoryContract {
         assertThat(explicitListKeys, is(List.of(new ContactLabel(explicitListKeys.getFirst().id(),
                                                                  "explicit:explicit-list-key"))));
         return scalarKey;
+    }
+
+    private ServiceRegistryManager startApplication() {
+        beforeStartApplication();
+        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        manager.registry().get(DatabaseFixture.class).reset();
+        return manager;
     }
 
     private static void exerciseGeneratedOperations(ContactRepository repository, Tx.Type type) {

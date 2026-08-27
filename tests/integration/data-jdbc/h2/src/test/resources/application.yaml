@@ -15,11 +15,13 @@
 #
 
 data:
-  persistence-units:
+  clients:
     jdbc:
       - name: "@default"
         connection:
-          url: "jdbc:h2:mem:jdbc_generated_repository;DB_CLOSE_DELAY=-1"
+          url: "jdbc:h2:mem:jdbc_generated_repository_default;DB_CLOSE_DELAY=-1"
           jdbc-driver-class-name: "org.h2.Driver"
-        init-script:
-          resource-path: "db/h2/schema-init.sql"
+      - name: "inventory"
+        connection:
+          url: "jdbc:h2:mem:jdbc_generated_repository_inventory;DB_CLOSE_DELAY=-1"
+          jdbc-driver-class-name: "org.h2.Driver"
