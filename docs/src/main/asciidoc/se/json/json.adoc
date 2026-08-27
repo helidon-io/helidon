@@ -518,6 +518,10 @@ The JSON module (`helidon-json`) provides fundamental JSON parsing and generatio
 
 link:{json-base-url}/io/helidon/json/JsonParser.html[`JsonParser`] is a streaming JSON parser that provides efficient, low-level access to JSON data without loading the entire document into memory. It's designed for processing large JSON documents or streaming data sources.
 
+When decoding JSON or Smile input, materializing or skipping nested objects and arrays beyond
+`JsonParser.MAX_NESTING_DEPTH` (1,000) throws a `JsonException`. The root object or array counts as one structure.
+Direct Smile token iteration enforces the same limit.
+
 ==== What it's used for
 
 * Parsing large JSON documents efficiently
