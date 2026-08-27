@@ -989,7 +989,7 @@ class Http2ClientConnectionTest {
                                         "invalid".getBytes(StandardCharsets.UTF_8),
                                         false));
 
-            test.assertConnectionClosed();
+            verify(test.clientConnection, timeout(1_000)).closeResource();
             drained.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         }
     }
