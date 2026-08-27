@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ContentEncodingSupportTest {
@@ -361,7 +360,7 @@ class ContentEncodingSupportTest {
 
         HttpException actual = assertThrows(HttpException.class, () -> context.encoder(headers("gzip;q=NaN")));
 
-        assertSame(HttpException.class, actual.getClass());
+        assertThat(actual.getClass().getName(), is(HttpException.class.getName()));
         assertThat(actual.status(), is(Status.BAD_REQUEST_400));
     }
 
@@ -485,6 +484,16 @@ class ContentEncodingSupportTest {
                 .build();
 
         assertContentEncoding(context.encoder("x-gzip"), "x-gzip");
+    }
+
+    @Test
+    void testAliasEncoderPreservesExistingContentEncodings() {
+        ContentEncodingContext context = ContentEncodingContext.builder()
+                .addContentEncoding(new TestEncoding(gzipHeaderEncoder(), Set.of("gzip", "x-gzip"), true, false, "gzip"))
+                .build();
+
+        assertContentEncodings(context.encoder("x-gzip"), "br", "gzip", "x-gzip");
+        assertContentEncodings(context.encoder(headers("x-gzip, identity;q=0")), "br", "gzip", "x-gzip");
     }
 
     @Test
@@ -621,6 +630,16 @@ class ContentEncodingSupportTest {
         encoder.headers(headers);
 
         assertThat(headers.get(HeaderNames.CONTENT_ENCODING).get(), is(contentEncoding));
+    }
+
+    private static void assertContentEncodings(ContentEncoder encoder, String... expected) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.CONTENT_ENCODING, "br");
+        headers.add(HeaderNames.CONTENT_ENCODING, "gzip");
+
+        encoder.headers(headers);
+
+        assertThat(headers.get(HeaderNames.CONTENT_ENCODING).allValues(), is(List.of(expected)));
     }
 
     private static void assertSingleIdEquivalent(String providerCoding, String acceptedCoding) {

@@ -17,6 +17,7 @@
 package io.helidon.http.encoding;
 
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -94,8 +95,11 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
                     @Override
                     public void headers(WritableHeaders<?> headers) {
+                        List<String> contentEncodings =
+                                new ArrayList<>(headers.all(HeaderNames.CONTENT_ENCODING, List::of));
                         delegate.headers(headers);
-                        headers.set(HeaderNames.CONTENT_ENCODING, responseCoding);
+                        contentEncodings.add(responseCoding);
+                        headers.set(HeaderNames.CONTENT_ENCODING, contentEncodings.toArray(String[]::new));
                     }
                 });
             }

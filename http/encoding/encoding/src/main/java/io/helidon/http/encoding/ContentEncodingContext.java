@@ -115,11 +115,12 @@ public interface ContentEncodingContext extends RuntimeType.Api<ContentEncodingC
 
     /**
      * Resolve a content encoding id to the canonical id of its configured provider.
-     * Encoding ids handled by the same provider return the same canonical id. The result is intended for comparing
+     * Encoding ids handled by the same provider return the same canonical id. The implicit {@code identity} content
+     * coding resolves to {@code identity} even though it has no configured provider. The result is intended for comparing
      * encoding ids, not for selecting the value of a {@code Content-Encoding} response header.
      *
      * @param encodingId encoding id
-     * @return canonical encoding id, or empty if there is no encoder for the id
+     * @return canonical encoding id, or empty if there is no encoder for the id and the id is not {@code identity}
      */
     @Api.Incubating
     default Optional<String> canonicalEncodingId(String encodingId) {
