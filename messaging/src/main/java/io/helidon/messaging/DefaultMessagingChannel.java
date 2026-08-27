@@ -130,7 +130,15 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Message<T> toMessage(Object value) {
         Message<?> message = (Message<?>) value;
-        Object entity = Objects.requireNonNull(message.entity(), "Message entity");
+        Object entity;
+        try {
+            entity = Objects.requireNonNull(message.entity(), "Message entity");
+        } catch (MessagingException failure) {
+            if (message instanceof DeadLetterMessage<?>) {
+                return (Message<T>) message;
+            }
+            throw failure;
+        }
         if (payloadType.rawType().isInstance(entity)) {
             return (Message<T>) message;
         }

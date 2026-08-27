@@ -863,7 +863,16 @@ class ChannelRegistry implements MessagingRuntime {
                                                        + consumer.envelopeType().getName()
                                                        + " but received " + message.getClass().getName());
         }
-        Object entity = message.entity();
+        Object entity;
+        try {
+            entity = message.entity();
+        } catch (MessagingException failure) {
+            if (message instanceof DeadLetterMessage<?>
+                    && consumer.envelopeType().isAssignableFrom(DeadLetterMessage.class)) {
+                return;
+            }
+            throw failure;
+        }
         if (entity == null) {
             throw new IllegalArgumentException("Channel " + consumer.channel() + " received a null payload");
         }

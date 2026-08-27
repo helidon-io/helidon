@@ -422,6 +422,23 @@ class TypeNameTest {
     }
 
     @Test
+    void wildcardArrayBoundsRetainDimensions() {
+        TypeName typeName = TypeName.create("? extends java.lang.String[]");
+
+        assertThat(typeName.resolvedName(), is("? extends java.lang.String[]"));
+        assertThat(typeName.upperBounds().getFirst().resolvedName(), is("java.lang.String[]"));
+
+        typeName = TypeName.create("? extends java.lang.String[][]");
+
+        assertThat(typeName.resolvedName(), is("? extends java.lang.String[][]"));
+        assertThat(typeName.upperBounds().getFirst().resolvedName(), is("java.lang.String[][]"));
+
+        typeName = TypeName.create("pkg.Box<? extends java.lang.String[]>");
+
+        assertThat(typeName.resolvedName(), is("pkg.Box<? extends java.lang.String[]>"));
+    }
+
+    @Test
     void reflectedGenericArraysRetainTheSameRecursiveStructure() throws NoSuchFieldException {
         TypeName parsedOne = TypeName.create("pkg.Emitter<T[]>").typeArguments().getFirst();
         TypeName reflectedOne = TypeName.create(GenericArrays.class.getDeclaredField("one").getGenericType());

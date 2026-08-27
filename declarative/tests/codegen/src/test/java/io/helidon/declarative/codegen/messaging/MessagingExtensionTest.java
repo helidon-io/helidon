@@ -962,6 +962,214 @@ class MessagingExtensionTest {
     }
 
     @Test
+    void preservesArraysOfAsyncTypesAsSynchronousPayloads() throws IOException {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import java.util.concurrent.CompletableFuture;
+                import java.util.concurrent.Flow;
+                import java.util.concurrent.Future;
+                import java.util.stream.Stream;
+
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class CompletableFutureArrayProcessor {
+                    @Messaging.ReceiveFrom("completable-future-in")
+                    @Messaging.SendTo("completable-future-out")
+                    CompletableFuture<String>[] process(String value) {
+                        return null;
+                    }
+                }
+
+                @Service.Singleton
+                class FutureArrayProcessor {
+                    @Messaging.ReceiveFrom("future-in")
+                    @Messaging.SendTo("future-out")
+                    Future<String>[] process(String value) {
+                        return null;
+                    }
+                }
+
+                @Service.Singleton
+                class StreamArrayProcessor {
+                    @Messaging.ReceiveFrom("stream-in")
+                    @Messaging.SendTo("stream-out")
+                    Stream<String>[] process(String value) {
+                        return null;
+                    }
+                }
+
+                @Service.Singleton
+                class PublisherArrayProcessor {
+                    @Messaging.ReceiveFrom("publisher-in")
+                    @Messaging.SendTo("publisher-out")
+                    Flow.Publisher<String>[] process(String value) {
+                        return null;
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        assertThat(generatedSource(result, "CompletableFutureArrayProcessor__MessagingConsumer_")
+                           .contains("new GenericType<CompletableFuture<String>[]>()"), is(true));
+        assertThat(generatedSource(result, "FutureArrayProcessor__MessagingConsumer_")
+                           .contains("new GenericType<Future<String>[]>()"), is(true));
+        assertThat(generatedSource(result, "StreamArrayProcessor__MessagingConsumer_")
+                           .contains("new GenericType<Stream<String>[]>()"), is(true));
+        assertThat(generatedSource(result, "PublisherArrayProcessor__MessagingConsumer_")
+                           .contains("new GenericType<Flow.Publisher<String>[]>()"), is(true));
+    }
+
+    @Test
+    void treatsMessageArrayParameterAsPayload() throws IOException {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import io.helidon.messaging.Message;
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                interface CustomMessage<T> extends Message<T> {
+                }
+
+                @Service.Singleton
+                class MessageArrayConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(Message<String>[] messages) {
+                    }
+                }
+
+                @Service.Singleton
+                class CustomMessageArrayConsumer {
+                    @Messaging.ReceiveFrom("custom-orders")
+                    void consume(CustomMessage<String>[] messages) {
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        String source = generatedSource(result, "MessageArrayConsumer__MessagingConsumer_");
+        assertThat(source, source.contains("new GenericType<Message<String>[]>()"), is(true));
+        assertThat(source, source.contains("new GenericType<Message<Message<String>[]>>()"), is(true));
+        assertThat(source, source.contains("var typedMessage = (Message<Message<String>[]>) message;"), is(true));
+        assertThat(source, source.contains("consumerInstance.consume(typedMessage.entity());"), is(true));
+
+        String customSource = generatedSource(result, "CustomMessageArrayConsumer__MessagingConsumer_");
+        assertThat(customSource, customSource.contains("new GenericType<CustomMessage<String>[]>()"), is(true));
+        assertThat(customSource, customSource.contains("new GenericType<Message<CustomMessage<String>[]>>()"), is(true));
+        assertThat(customSource, customSource.contains("consumerInstance.consume(typedMessage.entity());"), is(true));
+    }
+
+    @Test
+    void treatsArraysOfBatchLikeTypesAsPayloads() throws IOException {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import java.util.List;
+
+                import io.helidon.messaging.Message;
+                import io.helidon.messaging.MessageBatch;
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class MessageBatchArrayConsumer {
+                    @Messaging.ReceiveFrom("batches")
+                    void consume(MessageBatch<String>[] batches) {
+                    }
+                }
+
+                @Service.Singleton
+                class MessageListArrayConsumer {
+                    @Messaging.ReceiveFrom("lists")
+                    void consume(List<Message<String>>[] messages) {
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        String batchSource = generatedSource(result, "MessageBatchArrayConsumer__MessagingConsumer_");
+        assertThat(batchSource, batchSource.contains("new GenericType<MessageBatch<String>[]>()"), is(true));
+        assertThat(batchSource, batchSource.contains("new GenericType<Message<MessageBatch<String>[]>>()"), is(true));
+
+        String listSource = generatedSource(result, "MessageListArrayConsumer__MessagingConsumer_");
+        assertThat(listSource, listSource.contains("new GenericType<List<Message<String>>[]>()"), is(true));
+        assertThat(listSource, listSource.contains("new GenericType<Message<List<Message<String>>[]>>()"), is(true));
+    }
+
+    @Test
+    void normalizesVarargConsumerToArrayPayload() throws IOException {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import java.util.List;
+
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class VarargConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(String... values) {
+                    }
+                }
+
+                @Service.Singleton
+                class PrimitiveVarargConsumer {
+                    @Messaging.ReceiveFrom("numbers")
+                    void consume(int... values) {
+                    }
+                }
+
+                @Service.Singleton
+                class ParameterizedVarargConsumer {
+                    @Messaging.ReceiveFrom("lists")
+                    void consume(List<String>... values) {
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        String source = generatedSource(result, "VarargConsumer__MessagingConsumer_");
+        assertThat(source, source.contains("new GenericType<String[]>()"), is(true));
+        assertThat(source, source.contains("new GenericType<Message<String[]>>()"), is(true));
+        assertThat(source, source.contains("var typedMessage = (Message<String[]>) message;"), is(true));
+        assertThat(source, source.contains("consumerInstance.consume(typedMessage.entity());"), is(true));
+
+        String primitiveSource = generatedSource(result, "PrimitiveVarargConsumer__MessagingConsumer_");
+        assertThat(primitiveSource, primitiveSource.contains("new GenericType<int[]>()"), is(true));
+        assertThat(primitiveSource, primitiveSource.contains("new GenericType<Message<int[]>>()"), is(true));
+        assertThat(primitiveSource, primitiveSource.contains("consumerInstance.consume(typedMessage.entity());"), is(true));
+
+        String parameterizedSource = generatedSource(result, "ParameterizedVarargConsumer__MessagingConsumer_");
+        assertThat(parameterizedSource, parameterizedSource.contains("new GenericType<List<String>[]>()"), is(true));
+        assertThat(parameterizedSource, parameterizedSource.contains("new GenericType<Message<List<String>[]>>()"), is(true));
+        assertThat(parameterizedSource, parameterizedSource.contains("consumerInstance.consume(typedMessage.entity());"),
+                   is(true));
+    }
+
+    @Test
+    void rejectsUnresolvedGenericVarargPayload() {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class GenericVarargConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    <T> void consume(T... values) {
+                    }
+                }
+                """);
+
+        assertDiagnostic(result, "must not use wildcards or unresolved type variables");
+    }
+
+    @Test
     void generatesArrayEmitterMetadata() throws IOException {
         TestCompiler.Result result = compile("""
                 package com.example;

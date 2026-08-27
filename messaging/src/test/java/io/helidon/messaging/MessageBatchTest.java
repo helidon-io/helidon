@@ -18,6 +18,7 @@ package io.helidon.messaging;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
@@ -47,6 +48,77 @@ class MessageBatchTest {
         assertThat(toList(batch), is(batch.messages()));
         assertThrows(UnsupportedOperationException.class, () -> batch.messages().clear());
         assertThrows(UnsupportedOperationException.class, () -> batch.payloads().clear());
+    }
+
+    @Test
+    void materializesPayloadsOnlyOnDemand() {
+        AtomicInteger entityCalls = new AtomicInteger();
+        MessagingException unavailable = new MessagingException("entity unavailable");
+        Message<String> message = new Message<>() {
+            @Override
+            public String entity() {
+                entityCalls.incrementAndGet();
+                throw unavailable;
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+
+        MessageBatch<String> batch = MessageBatch.create(message);
+
+        assertThat(batch.get(0), sameInstance(message));
+        assertThat(entityCalls.get(), is(0));
+        assertThat(assertThrows(MessagingException.class, batch::payloads), sameInstance(unavailable));
+        assertThat(entityCalls.get(), is(1));
+    }
+
+    @Test
+    void cachesMaterializedPayloadSnapshot() {
+        AtomicInteger entityCalls = new AtomicInteger();
+        Message<String> message = new Message<>() {
+            @Override
+            public String entity() {
+                entityCalls.incrementAndGet();
+                return "value";
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+        MessageBatch<String> batch = MessageBatch.create(message);
+
+        List<String> first = batch.payloads();
+        List<String> second = batch.payloads();
+
+        assertThat(first, is(List.of("value")));
+        assertThat(second, sameInstance(first));
+        assertThat(entityCalls.get(), is(1));
+        assertThrows(UnsupportedOperationException.class, () -> first.add("other"));
+    }
+
+    @Test
+    void rejectsNullDuringPayloadMaterialization() {
+        Message<String> message = new Message<>() {
+            @Override
+            public String entity() {
+                return null;
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
+        MessageBatch<String> batch = MessageBatch.create(message);
+
+        NullPointerException failure = assertThrows(NullPointerException.class, batch::payloads);
+
+        assertThat(failure.getMessage(), is("Message entity"));
     }
 
     @Test

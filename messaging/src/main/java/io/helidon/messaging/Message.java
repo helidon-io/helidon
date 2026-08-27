@@ -22,11 +22,13 @@ import java.util.Optional;
 import io.helidon.common.Api;
 
 /**
- * Message envelope with a non-null payload and portable headers.
+ * Message envelope with a payload and portable headers.
  * <p>
- * Portable headers retain global order, duplicate exact case-sensitive names, and immutable typed values.
- * Implementations must be immutable snapshots. Connector-specific message subtypes may expose richer native metadata
- * separately.
+ * Ordinary messages expose a non-null payload. A connector-specific immutable metadata envelope created after transport
+ * mapping fails may instead throw {@link MessagingException} from {@link #entity()}; such an envelope is only valid in
+ * the batch passed to {@link ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)}. Portable headers
+ * retain global order, duplicate exact case-sensitive names, and immutable typed values. Implementations must be
+ * immutable snapshots. Connector-specific message subtypes may expose richer native metadata separately.
  *
  * @param <T> payload type
  */
@@ -60,6 +62,7 @@ public interface Message<T> {
      * Payload.
      *
      * @return non-null payload
+     * @throws MessagingException if this is a connector metadata envelope whose transport payload could not be mapped
      */
     T entity();
 

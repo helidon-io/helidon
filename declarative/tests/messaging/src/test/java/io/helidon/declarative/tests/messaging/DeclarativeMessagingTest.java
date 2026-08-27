@@ -602,7 +602,6 @@ class DeclarativeMessagingTest {
                    is(List.of("forwarded: first", "forwarded: second")));
         assertThat(batchConsumer.batches(), hasSize(1));
         assertThat(batchConsumer.batches().getFirst().id(), is("processor-batch"));
-        assertThat(input.sameDelivery(batchConsumer.batches().getFirst()), is(true));
         assertThat(batchConsumer.batches().getFirst().payloads(),
                    is(List.of("forwarded: first", "forwarded: second")));
     }

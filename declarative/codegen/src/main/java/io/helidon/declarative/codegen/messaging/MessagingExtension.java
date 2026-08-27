@@ -717,14 +717,15 @@ class MessagingExtension implements RegistryCodegenExtension {
                 continue;
             }
 
+            TypeName parameterType = normalizeVararg(argument.typeName());
             MessageType declaredMessage = entity
                     ? null
                     : messageType(roundContext,
-                                  argument.typeName(),
+                                  parameterType,
                                   argument.originatingElementValue());
             if (entity) {
                 TypeName payloadType = concreteType(roundContext,
-                                                    argument.typeName().boxed(),
+                                                    parameterType.boxed(),
                                                     argument.originatingElementValue(),
                                                     "Messaging payload parameter");
                 primaryViews.add(new MessageType(messageType(payloadType), payloadType));
@@ -732,7 +733,7 @@ class MessagingExtension implements RegistryCodegenExtension {
                 primaryViews.add(declaredMessage);
             } else if (element.parameterArguments().size() == 1) {
                 TypeName payloadType = concreteType(roundContext,
-                                                    argument.typeName().boxed(),
+                                                    parameterType.boxed(),
                                                     argument.originatingElementValue(),
                                                     "Messaging payload parameter");
                 primaryViews.add(new MessageType(messageType(payloadType), payloadType));
@@ -807,6 +808,9 @@ class MessagingExtension implements RegistryCodegenExtension {
     private boolean isAsyncReturnType(RegistryRoundContext roundContext,
                                       TypeName typeName,
                                       Set<String> visited) {
+        if (typeName.array() || typeName.vararg()) {
+            return false;
+        }
         TypeName rawType = typeName.genericTypeName();
         if (!visited.add(rawType.fqName())) {
             return false;
@@ -846,7 +850,9 @@ class MessagingExtension implements RegistryCodegenExtension {
 
     private void rejectLegacyListBatch(RegistryRoundContext roundContext, TypedElementInfo argument) {
         TypeName typeName = argument.typeName();
-        if (!typeName.genericTypeName().equals(MessagingTypes.LIST)) {
+        if (typeName.array()
+                || typeName.vararg()
+                || !typeName.genericTypeName().equals(MessagingTypes.LIST)) {
             return;
         }
         if (typeName.typeArguments().isEmpty()) {
@@ -863,7 +869,9 @@ class MessagingExtension implements RegistryCodegenExtension {
 
     private BatchType batchType(RegistryRoundContext roundContext, TypedElementInfo argument) {
         TypeName envelopeType = argument.typeName();
-        if (!envelopeType.genericTypeName().equals(MessagingTypes.MESSAGE_BATCH)) {
+        if (envelopeType.array()
+                || envelopeType.vararg()
+                || !envelopeType.genericTypeName().equals(MessagingTypes.MESSAGE_BATCH)) {
             return null;
         }
         if (envelopeType.typeArguments().isEmpty()) {
@@ -883,6 +891,9 @@ class MessagingExtension implements RegistryCodegenExtension {
     }
 
     private MessageType messageType(RegistryRoundContext roundContext, TypeName envelopeType, Object origin) {
+        if (envelopeType.array() || envelopeType.vararg()) {
+            return null;
+        }
         TypeInfo typeInfo = roundContext.typeInfo(envelopeType.genericTypeName()).orElse(null);
         if (typeInfo == null) {
             return null;
@@ -913,6 +924,15 @@ class MessagingExtension implements RegistryCodegenExtension {
         concreteType(roundContext, envelopeType, origin, "Message envelope type");
         return new MessageType(envelopeType,
                                concreteType(roundContext, payloadType, origin, "Message payload type"));
+    }
+
+    private TypeName normalizeVararg(TypeName typeName) {
+        if (!typeName.vararg()) {
+            return typeName;
+        }
+        return TypeName.builder(typeName)
+                .vararg(false)
+                .build();
     }
 
     private TypeName resolveSuperType(TypeInfo typeInfo,

@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.common.GenericType;
@@ -441,6 +442,7 @@ class ChannelRegistryFailurePolicyTest {
     void testUnlimitedPreDispatchFailureTerminatesAndRetainsCapacityUntilClose() throws InterruptedException {
         TestIncomingConnector incoming = new TestIncomingConnector();
         List<String> handled = new CopyOnWriteArrayList<>();
+        AtomicInteger entityCalls = new AtomicInteger();
         ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", message -> {
                                 handled.add((String) message.entity());
                             })),
@@ -463,8 +465,18 @@ class ChannelRegistryFailurePolicyTest {
                             List.of(incoming));
         start(registry);
         IncomingConnectorContext context = incoming.context("orders");
-        MessageBatch<String> failedBatch = MessageBatch.create(
-                Message.builder("unmapped").header("message-id", "poison-1").build());
+        MessageBatch<String> failedBatch = MessageBatch.create(new Message<>() {
+            @Override
+            public String entity() {
+                entityCalls.incrementAndGet();
+                throw new MessagingException("entity unavailable");
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.builder().add("message-id", "poison-1").build();
+            }
+        });
         MessageBatch<String> goodBatch = MessageBatch.create(Message.create("good"));
         IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
 
@@ -477,6 +489,7 @@ class ChannelRegistryFailurePolicyTest {
             assertThat(terminalFailure.batch(), sameInstance(failedBatch));
             assertThat(terminalFailure.getCause(), sameInstance(mappingFailure));
             assertThat(handled, is(List.of()));
+            assertThat(entityCalls.get(), is(0));
 
             try (ConnectorDeliveryReservation blocked = context.reserveDelivery()) {
                 assertThat(blocked.tryStart(goodBatch).isEmpty(), is(true));
@@ -488,6 +501,81 @@ class ChannelRegistryFailurePolicyTest {
         }
 
         assertThat(handled, is(List.of("good")));
+    }
+
+    @Test
+    void testPreDispatchEntityFailureReachesLocalDeadLetterEnvelopeConsumer() throws InterruptedException {
+        assertPreDispatchEntityFailureReachesLocalConsumer(
+                DeadLetterMessage.class,
+                new GenericType<DeadLetterMessage<String>>() { });
+    }
+
+    @Test
+    void testPreDispatchEntityFailureReachesLocalMessageEnvelopeConsumer() throws InterruptedException {
+        assertPreDispatchEntityFailureReachesLocalConsumer(
+                Message.class,
+                new GenericType<Message<String>>() { });
+    }
+
+    private void assertPreDispatchEntityFailureReachesLocalConsumer(Class<?> envelopeType,
+                                                                    GenericType<?> envelopeGenericType)
+            throws InterruptedException {
+        TestIncomingConnector incoming = new TestIncomingConnector();
+        AtomicInteger entityCalls = new AtomicInteger();
+        Message<String> unavailable = new Message<>() {
+            @Override
+            public String entity() {
+                entityCalls.incrementAndGet();
+                throw new MessagingException("entity unavailable");
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.builder().add("message-id", "poison-1").build();
+            }
+        };
+        AtomicReference<Message<?>> routed = new AtomicReference<>();
+        ConsumerRegistration deadLetterConsumer = registration(
+                "orders-dlq",
+                String.class,
+                new GenericType<String>() { },
+                envelopeType,
+                envelopeGenericType,
+                routed::set);
+        ChannelRegistry registry = new ChannelRegistry(
+                List.of(registration("orders", ignored -> {
+                            throw new AssertionError("Unavailable payload must not reach handlers");
+                        }),
+                        deadLetterConsumer),
+                yaml("""
+                        helidon:
+                          messaging:
+                            incoming:
+                              orders:
+                                connector: test-in
+                                failure:
+                                  retry:
+                                    max-attempts: 1
+                                  on-exhausted: DEAD_LETTER
+                                  dead-letter:
+                                    channel: orders-dlq
+                        """),
+                List.of(incoming));
+        start(registry);
+        try {
+            IllegalStateException mappingFailure = new IllegalStateException("message mapping failed");
+            MessageBatch<String> failedBatch = MessageBatch.create(unavailable);
+            assertThat(entityCalls.get(), is(0));
+
+            deliverFailed(incoming.context("orders"), failedBatch, mappingFailure);
+
+            DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) routed.get();
+            assertThat(deadLetter.originalMessage(), sameInstance(unavailable));
+            assertThat(deadLetter.failureMessage(), is(mappingFailure.getMessage()));
+            assertThat(entityCalls.get(), is(2));
+        } finally {
+            registry.close();
+        }
     }
 
     @Test

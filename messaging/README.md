@@ -865,6 +865,12 @@ repeat mapping. Bounded policies retain their configured failure-attempt account
 mapping failure as exhausted after its initial attempt so `await()` always terminates; with `FAIL`, leave the transport
 delivery available for redelivery so the connector can map it again.
 
+When mapping fails before a safe payload can be retained, pass a connector-specific immutable metadata envelope only to
+`startFailed`; its `entity()` may throw `MessagingException`. `MessageBatch` retains the envelope and delivery lineage
+without reading the entity, while `payloads()` propagates the mapping failure if called. The runtime can wrap the envelope
+in a `DeadLetterMessage` and route it to a local dead-letter envelope consumer; ordinary channel emission still rejects
+it. An outgoing connector must either support this failed-mapping form or reject it before its transport success point.
+
 For a partially mapped native batch, pass a root-aligned `BatchDeliveryException`: use `FAILED` or `INDETERMINATE` for
 unmappable items and `NOT_ATTEMPTED` for mapped siblings that have not reached application handlers. Never mark an
 undispatched item `SUCCEEDED`. The runtime settles the failed subset first. Successful `DROP` or dead-letter settlement
@@ -972,8 +978,9 @@ concurrently with an active send.
 - Convert each incoming transport record to an immutable `Message<T>` and copy portable headers into globally ordered
   `MessageHeader` entries. Preserve duplicate names, exact spelling, typed values, and immutable binary snapshots when
   the transport exposes them.
-- Reject or translate a null transport payload before creating its message envelope; the core `Message` contract does
-  not permit null payloads.
+- Reject or translate a null transport payload before creating its ordinary message envelope. If no safe payload can be
+  retained after mapping fails, preserve native metadata in an immutable connector-specific envelope whose `entity()`
+  throws `MessagingException`, and pass it only to `startFailed`.
 - Use a connector-specific immutable `Message<T>` subtype when applications need native keys, offsets, destinations,
   protocol-defined properties, or other metadata. `HeaderValue.NativeValue` is an opaque encoded escape hatch for a
   non-portable application header, not a replacement for connector metadata. Document which locally emitted messages

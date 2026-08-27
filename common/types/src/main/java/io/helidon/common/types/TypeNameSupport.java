@@ -470,7 +470,7 @@ final class TypeNameSupport {
         }
 
         StringBuilder result = new StringBuilder(resolvedName);
-        if (instance.array()) {
+        if (instance.array() && !instance.wildcard()) {
             addArrayBrackets(instance, result, true);
         }
         return result.toString();

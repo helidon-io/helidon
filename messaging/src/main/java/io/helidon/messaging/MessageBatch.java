@@ -47,8 +47,8 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
     private final Object deliveryToken;
     private final String id;
     private final List<Message<T>> messages;
-    private final List<T> payloads;
     private final List<Integer> lineage;
+    private volatile List<T> payloads;
 
     private MessageBatch(Object deliveryToken,
                          String id,
@@ -64,7 +64,6 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
         }
 
         ArrayList<Message<T>> messageSnapshot = new ArrayList<>(messages.size());
-        ArrayList<T> payloadSnapshot = new ArrayList<>(messages.size());
         ArrayList<Integer> lineageSnapshot = new ArrayList<>(lineage.size());
         int previous = -1;
         for (int i = 0; i < messages.size(); i++) {
@@ -74,12 +73,10 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
                 throw new IllegalArgumentException("Message batch lineage must be non-negative and strictly increasing");
             }
             messageSnapshot.add(message);
-            payloadSnapshot.add(message.entity());
             lineageSnapshot.add(item);
             previous = item;
         }
         this.messages = List.copyOf(messageSnapshot);
-        this.payloads = Collections.unmodifiableList(payloadSnapshot);
         this.lineage = List.copyOf(lineageSnapshot);
     }
 
@@ -118,8 +115,7 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
     /**
      * Opaque delivery correlation ID shared by framework-derived batches.
      * <p>
-     * ID equality alone does not establish common delivery lineage; use {@link #sameDelivery(MessageBatch)} when
-     * translating indexed outcomes.
+     * ID equality alone does not establish common delivery lineage.
      *
      * @return stable, non-blank identity no longer than {@link #MAX_ID_LENGTH}
      */
@@ -137,12 +133,28 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
     }
 
     /**
-     * Ordered immutable payload snapshot.
+     * Ordered immutable payload snapshot, materialized on first access.
      *
      * @return payloads
+     * @throws MessagingException if any message cannot expose its payload
+     * @throws NullPointerException if any message returns a null payload
      */
     public List<T> payloads() {
-        return payloads;
+        List<T> result = payloads;
+        if (result == null) {
+            synchronized (this) {
+                result = payloads;
+                if (result == null) {
+                    ArrayList<T> snapshot = new ArrayList<>(messages.size());
+                    for (Message<T> message : messages) {
+                        snapshot.add(Objects.requireNonNull(message.entity(), "Message entity"));
+                    }
+                    result = List.copyOf(snapshot);
+                    payloads = result;
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -173,7 +185,7 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
      * @param other other batch
      * @return whether delivery identity and ordered item lineage are equal
      */
-    public boolean sameDelivery(MessageBatch<?> other) {
+    boolean sameDelivery(MessageBatch<?> other) {
         return other != null && deliveryToken == other.deliveryToken && lineage.equals(other.lineage);
     }
 
@@ -241,6 +253,7 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
      * @return derived batch
      */
     @SuppressWarnings("unchecked")
+    @Api.Internal
     public <R> MessageBatch<R> derive(List<? extends Message<? extends R>> derivedMessages) {
         List<? extends Message<? extends R>> actualMessages = List.copyOf(Objects.requireNonNull(derivedMessages));
         if (actualMessages.size() != size()) {

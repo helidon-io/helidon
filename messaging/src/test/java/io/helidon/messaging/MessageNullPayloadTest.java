@@ -16,10 +16,14 @@
 
 package io.helidon.messaging;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -64,6 +68,75 @@ class MessageNullPayloadTest {
     }
 
     @Test
+    void channelRejectsOrdinaryMessageWhoseEntityFails() {
+        AtomicInteger entityCalls = new AtomicInteger();
+        MessagingException entityFailure = new MessagingException("entity unavailable");
+        Message<String> unavailable = unavailableMessage(entityCalls, entityFailure);
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("unavailable", String.class);
+        builder.messageSink(channel, ignored -> { });
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+
+            MessagingException failure = assertThrows(MessagingException.class,
+                                                       () -> graph.emitter(channel).emit(unavailable));
+
+            assertThat(failure, sameInstance(entityFailure));
+            assertThat(entityCalls.get(), is(1));
+        }
+    }
+
+    @Test
+    void channelRoutesDeadLetterWhoseEntityFails() {
+        AtomicInteger entityCalls = new AtomicInteger();
+        Message<String> unavailable = unavailableMessage(
+                entityCalls,
+                new MessagingException("entity unavailable"));
+        DeadLetterMessage<String> deadLetter = DeadLetterMessage.create(
+                unavailable,
+                "source",
+                1,
+                new MessagingException("mapping failed"));
+        AtomicReference<Message<String>> delivered = new AtomicReference<>();
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("dead-letter", String.class);
+        builder.messageSink(channel, delivered::set);
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+            graph.emitter(channel).emit(deadLetter);
+        }
+
+        assertThat(delivered.get(), is(deadLetter));
+        assertThat(entityCalls.get(), is(1));
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void channelStillValidatesAccessibleDeadLetterPayloadType() {
+        DeadLetterMessage<Integer> deadLetter = DeadLetterMessage.create(
+                Message.create(42),
+                "source",
+                1,
+                new MessagingException("handler failed"));
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("dead-letter", String.class);
+        builder.messageSink(channel, ignored -> { });
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+
+            IllegalArgumentException failure = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> graph.emitter(channel).emit((Message) deadLetter));
+
+            assertThat(failure.getMessage(), is("Channel expected payload type class java.lang.String"
+                                                        + " but received java.lang.Integer"));
+        }
+    }
+
+    @Test
     void imperativePayloadProcessorRejectsNullResult() {
         MessagingGraph.Builder builder = MessagingGraph.builder();
         MessagingChannel<String> source = builder.channel("source", String.class);
@@ -79,5 +152,21 @@ class MessageNullPayloadTest {
             assertThat(failure.getCause(), instanceOf(NullPointerException.class));
             assertThat(failure.outcome(0).status(), is(BatchItemStatus.INDETERMINATE));
         }
+    }
+
+    private static Message<String> unavailableMessage(AtomicInteger entityCalls,
+                                                       MessagingException entityFailure) {
+        return new Message<>() {
+            @Override
+            public String entity() {
+                entityCalls.incrementAndGet();
+                throw entityFailure;
+            }
+
+            @Override
+            public MessageHeaders headers() {
+                return MessageHeaders.empty();
+            }
+        };
     }
 }
