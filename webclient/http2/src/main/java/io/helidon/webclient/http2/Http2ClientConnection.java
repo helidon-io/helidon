@@ -373,8 +373,8 @@ public class Http2ClientConnection {
         lock.lock();
         try {
             State currentState = state.get();
-            if (currentState == State.CLOSED || currentState == State.GO_AWAY) {
-                awaitGoAway = currentState == State.GO_AWAY;
+            if (currentState == State.CLOSED || currentState.goAway()) {
+                awaitGoAway = currentState.goAway();
                 failure = closeFailure.get();
                 if (failure == null) {
                     failure = new IllegalStateException("HTTP/2 connection is closed");
@@ -527,8 +527,7 @@ public class Http2ClientConnection {
                     : Http2ErrorCode.NO_ERROR;
             // A normal close must reach the transport to break an in-flight retirement GOAWAY write.
             if (errorCode == Http2ErrorCode.NO_ERROR
-                    && state.get() == State.GO_AWAY
-                    && goAwayErrorCode.get() == Http2ErrorCode.NO_ERROR
+                    && state.get() == State.RETIREMENT_GO_AWAY
                     && goAwayWriteComplete.getCount() != 0) {
                 return;
             }
@@ -627,7 +626,7 @@ public class Http2ClientConnection {
     }
 
     private void finishRetirement() {
-        if (!state.compareAndSet(State.RETIRING, State.GO_AWAY)) {
+        if (!state.compareAndSet(State.RETIRING, State.RETIREMENT_GO_AWAY)) {
             return;
         }
         goAwayErrorCode.compareAndSet(null, Http2ErrorCode.NO_ERROR);
@@ -1201,7 +1200,7 @@ public class Http2ClientConnection {
                     errorGoAwayWriteComplete.countDown();
                 }
             }
-        } else if (state.get() == State.GO_AWAY) {
+        } else if (state.get().goAway()) {
             await(goAwayWriteComplete);
             if (errorCode != Http2ErrorCode.NO_ERROR) {
                 if (goAwayErrorCode.compareAndSet(Http2ErrorCode.NO_ERROR, errorCode)) {
@@ -1226,6 +1225,7 @@ public class Http2ClientConnection {
     private enum State {
         CLOSED(true),
         GO_AWAY(true),
+        RETIREMENT_GO_AWAY(true),
         RETIRING(true),
         OPEN(false);
 
@@ -1237,6 +1237,10 @@ public class Http2ClientConnection {
 
         boolean closed() {
             return closed;
+        }
+
+        boolean goAway() {
+            return this == GO_AWAY || this == RETIREMENT_GO_AWAY;
         }
     }
 
