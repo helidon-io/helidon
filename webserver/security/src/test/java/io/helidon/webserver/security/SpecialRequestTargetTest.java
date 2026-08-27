@@ -77,7 +77,17 @@ class SpecialRequestTargetTest {
 
     @Test
     void encodedConnectAuthorityMatchesSecurityTarget() {
-        assertConnectTarget("example%2Ecom:443", "http://example.com:443");
+        assertConnectTarget("example%2Ecom:443", "http://example%2Ecom:443");
+    }
+
+    @Test
+    void connectAuthorityPreservesPlus() {
+        assertConnectTarget("example+service:443", "http://example+service:443");
+    }
+
+    @Test
+    void connectAuthorityPreservesEncodedDelimiter() {
+        assertConnectTarget("example%40service:443", "http://example%40service:443");
     }
 
     private void assertConnectTarget(String requestTarget, String expectedUri) {
