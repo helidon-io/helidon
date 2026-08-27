@@ -63,7 +63,7 @@ interface FailurePolicyBlueprint {
      *
      * @return terminal disposition
      */
-    @Option.Configured("on-exhausted")
+    @Option.Configured
     @Option.Default("FAIL")
     FailureDisposition onExhausted();
 

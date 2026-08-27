@@ -38,7 +38,7 @@ interface MessagingExecutionConfigBlueprint {
      *
      * @return queue capacity
      */
-    @Option.Configured("queue-capacity")
+    @Option.Configured
     @Option.Default("0")
     int queueCapacity();
 
@@ -51,7 +51,7 @@ interface MessagingExecutionConfigBlueprint {
      *
      * @return maximum pending admissions
      */
-    @Option.Configured("max-pending-admissions")
+    @Option.Configured
     @Option.Default("64")
     int maxPendingAdmissions();
 
@@ -64,7 +64,7 @@ interface MessagingExecutionConfigBlueprint {
      *
      * @return maximum pending messages
      */
-    @Option.Configured("max-pending-messages")
+    @Option.Configured
     @Option.Default("1024")
     int maxPendingMessages();
 
@@ -76,7 +76,7 @@ interface MessagingExecutionConfigBlueprint {
      *
      * @return maximum in-flight message count
      */
-    @Option.Configured("max-in-flight-messages")
+    @Option.Configured
     @Option.Default("1024")
     int maxInFlightMessages();
 
@@ -88,7 +88,7 @@ interface MessagingExecutionConfigBlueprint {
      *
      * @return admission timeout
      */
-    @Option.Configured("admission-timeout")
+    @Option.Configured
     Optional<Duration> admissionTimeout();
 
     /**
@@ -100,7 +100,7 @@ interface MessagingExecutionConfigBlueprint {
      *
      * @return shutdown timeout
      */
-    @Option.Configured("shutdown-timeout")
+    @Option.Configured
     @Option.Default("PT10S")
     Duration shutdownTimeout();
 

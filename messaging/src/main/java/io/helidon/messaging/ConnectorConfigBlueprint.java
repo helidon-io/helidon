@@ -57,7 +57,7 @@ interface ConnectorConfigBlueprint {
      *
      * @return direction
      */
-    @Option.Configured("direction")
+    @Option.Configured
     ConnectorDirection direction();
 
     /**
@@ -73,7 +73,7 @@ interface ConnectorConfigBlueprint {
      *
      * @return connector name
      */
-    @Option.Configured(CONNECTOR_ATTRIBUTE)
+    @Option.Configured
     String connector();
 
 }
