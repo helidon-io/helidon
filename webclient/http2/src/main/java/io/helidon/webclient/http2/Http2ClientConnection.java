@@ -106,8 +106,13 @@ public class Http2ClientConnection {
     private final Http2ClientConfig clientConfig;
     private final boolean clearReadTimeoutAfterInitialSettings;
     private final ReentrantLock reservedStreamsLock = new ReentrantLock();
+    private final ReentrantLock closeOrderingLock = new ReentrantLock();
     private final CountDownLatch initialSettingsLatch = new CountDownLatch(1);
+    private final CountDownLatch goAwayWriteComplete = new CountDownLatch(1);
+    private final CountDownLatch errorGoAwayWriteComplete = new CountDownLatch(1);
     private final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
+    private final AtomicReference<RuntimeException> closeFailure = new AtomicReference<>();
+    private final AtomicReference<Http2ErrorCode> goAwayErrorCode = new AtomicReference<>();
     private volatile int lastStreamId;
     private volatile long expectedPingAck = NO_PING_ACK;
     private volatile long peerMaxConcurrentStreams = Http2Setting.MAX_CONCURRENT_STREAMS.defaultValue();
@@ -362,12 +367,30 @@ public class Http2ClientConnection {
      * @param stream the stream
      */
     public void addStream(int streamId, Http2ClientStream stream) {
+        RuntimeException failure = null;
+        boolean awaitGoAway = false;
         Lock lock = streamsLock.writeLock();
         lock.lock();
         try {
-            this.streams.put(streamId, stream);
+            State currentState = state.get();
+            if (currentState == State.CLOSED || currentState.goAway()) {
+                awaitGoAway = currentState.goAway();
+                failure = closeFailure.get();
+                if (failure == null) {
+                    failure = new IllegalStateException("HTTP/2 connection is closed");
+                }
+            } else {
+                this.streams.put(streamId, stream);
+            }
         } finally {
             lock.unlock();
+        }
+        if (failure != null) {
+            if (awaitGoAway && !awaitGoAwayWrite(failure, stream.readTimeout())) {
+                closeNow();
+            }
+            stream.connectionClosedBeforeRegistration(failure);
+            throw failure;
         }
     }
 
@@ -459,23 +482,13 @@ public class Http2ClientConnection {
      * Closes this connection.
      */
     public void close() {
-        initialSettingsLatch.countDown();
-        if (!clientPrefaceSent) {
-            closeConnection();
-            return;
-        }
-        try {
-            this.goAway(0, Http2ErrorCode.NO_ERROR, "Closing connection");
-        } catch (Throwable e) {
-            ctx.log(LOGGER, TRACE, "Failed to send HTTP/2 GOAWAY before closing connection.", e);
-        }
-        closeConnection();
+        close(new IllegalStateException("HTTP/2 connection is closed"));
     }
 
     void retire() {
         initialSettingsLatch.countDown();
         if (!clientPrefaceSent) {
-            closeConnection();
+            closeConnection(new IllegalStateException("HTTP/2 connection is closed"));
             return;
         }
         reservedStreamsLock.lock();
@@ -494,40 +507,140 @@ public class Http2ClientConnection {
      */
     @Api.Internal
     public void closeNow() {
-        initialSettingsLatch.countDown();
-        closeConnection();
+        closeConnection(new IllegalStateException("HTTP/2 connection is closed"));
     }
 
-    private void closeConnection() {
-        if (state.getAndSet(State.CLOSED) != State.CLOSED) {
+    private void close(RuntimeException failure) {
+        initialSettingsLatch.countDown();
+        if (!clientPrefaceSent) {
+            closeConnection(failure);
+            return;
+        }
+        if (!closeOrderingLock.tryLock()) {
+            closeConnection(failure);
+            return;
+        }
+        try {
+            closeFailure.compareAndSet(null, failure);
+            Http2ErrorCode errorCode = failure instanceof Http2Exception http2Exception
+                    ? http2Exception.code()
+                    : Http2ErrorCode.NO_ERROR;
+            // Closing must reach the transport to break an in-flight retirement GOAWAY write.
+            if (state.get() == State.RETIREMENT_GO_AWAY
+                    && goAwayWriteComplete.getCount() != 0) {
+                return;
+            }
+            // A protocol error must put GOAWAY on the wire before a failed request can make its caller exit.
+            this.goAway(0, errorCode, failure.getMessage());
+        } catch (Throwable e) {
+            ctx.log(LOGGER, TRACE, "Failed to send HTTP/2 GOAWAY before closing connection.", e);
+        } finally {
             try {
-                if (handleTask != null) {
-                    handleTask.cancel(true);
-                }
-                ctx.log(LOGGER, TRACE, "Closing connection");
-                connection.closeResource();
-            } catch (Throwable e) {
-                ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
+                closeConnection(failure);
             } finally {
-                closeListener.accept(this);
+                closeOrderingLock.unlock();
             }
         }
     }
 
+    private boolean awaitGoAwayWrite(RuntimeException failure, Duration timeout) {
+        CountDownLatch writeComplete = failure instanceof Http2Exception http2Exception
+                && http2Exception.code() != Http2ErrorCode.NO_ERROR
+                ? errorGoAwayWriteComplete
+                : goAwayWriteComplete;
+        try {
+            if (timeout.isZero() || timeout.isNegative()) {
+                writeComplete.await();
+                return true;
+            }
+            return writeComplete.await(timeout.toNanos(), TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    private void await(CountDownLatch latch) {
+        boolean interrupted = false;
+        while (latch.getCount() != 0) {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void closeConnection(RuntimeException failure) {
+        List<Http2ClientStream> failedStreams = beginClose(failure);
+        if (failedStreams != null) {
+            RuntimeException actualFailure = closeFailure.get();
+            try {
+                closeTransport();
+            } finally {
+                failedStreams.forEach(stream ->
+                        Thread.startVirtualThread(() -> stream.completeTrailersFailure(actualFailure)));
+            }
+        }
+    }
+
+    private List<Http2ClientStream> beginClose(RuntimeException failure) {
+        initialSettingsLatch.countDown();
+        closeFailure.compareAndSet(null, failure);
+        if (state.getAndSet(State.CLOSED) == State.CLOSED) {
+            return null;
+        }
+        return failActiveStreams(closeFailure.get());
+    }
+
+    private void closeTransport() {
+        try {
+            if (handleTask != null) {
+                handleTask.cancel(true);
+            }
+            ctx.log(LOGGER, TRACE, "Closing connection");
+            connection.closeResource();
+        } catch (Throwable e) {
+            ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
+        } finally {
+            closeListener.accept(this);
+        }
+    }
+
+    private List<Http2ClientStream> failActiveStreams(RuntimeException failure) {
+        List<Http2ClientStream> activeStreams;
+        Lock lock = streamsLock.readLock();
+        lock.lock();
+        try {
+            activeStreams = List.copyOf(streams.values());
+        } finally {
+            lock.unlock();
+        }
+        activeStreams.forEach(stream -> stream.recordConnectionFailure(failure));
+        activeStreams.forEach(stream -> stream.connectionClosed(failure));
+        return activeStreams;
+    }
+
     private void finishRetirement() {
-        if (!state.compareAndSet(State.RETIRING, State.GO_AWAY)) {
+        if (!state.compareAndSet(State.RETIRING, State.RETIREMENT_GO_AWAY)) {
             return;
         }
+        goAwayErrorCode.compareAndSet(null, Http2ErrorCode.NO_ERROR);
         try {
-            Http2Settings http2Settings = Http2Settings.create();
-            Http2GoAway frame = new Http2GoAway(0,
-                                                Http2ErrorCode.NO_ERROR,
-                                                "Connection target retired");
-            writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
+            writeGoAway(0, Http2ErrorCode.NO_ERROR, "Connection target retired");
         } catch (Throwable e) {
             ctx.log(LOGGER, TRACE, "Failed to send HTTP/2 GOAWAY while retiring connection.", e);
         } finally {
-            closeConnection();
+            goAwayWriteComplete.countDown();
+            closeOrderingLock.lock();
+            try {
+                closeConnection(new IllegalStateException("HTTP/2 connection is closed"));
+            } finally {
+                closeOrderingLock.unlock();
+            }
         }
     }
 
@@ -602,14 +715,26 @@ public class Http2ClientConnection {
             try {
                 while (!Thread.interrupted()) {
                     if (!handle()) {
-                        this.close();
+                        closeConnection(new IllegalStateException("HTTP/2 connection closed while reading a response"));
                         ctx.log(LOGGER, TRACE, "Connection closed");
                         return;
                     }
                 }
                 ctx.log(LOGGER, TRACE, "Client listener interrupted");
             } catch (Throwable t) {
-                this.close();
+                RuntimeException failure = t instanceof RuntimeException runtimeException
+                        ? runtimeException
+                        : new IllegalStateException("HTTP/2 connection failed", t);
+                if (failure instanceof DataReader.InsufficientDataAvailableException
+                        || failure instanceof UncheckedIOException) {
+                    closeConnection(failure);
+                } else {
+                    close(failure instanceof Http2Exception
+                                  ? failure
+                                  : new Http2Exception(Http2ErrorCode.INTERNAL,
+                                                       "HTTP/2 connection failed while processing a peer frame",
+                                                       failure));
+                }
                 ctx.log(LOGGER, DEBUG, "Failed to handle HTTP/2 client connection", t);
             }
         });
@@ -666,6 +791,9 @@ public class Http2ClientConnection {
     }
 
     private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
+        if (state.get() == State.CLOSED) {
+            return;
+        }
         if (streamId == 0) {
             writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             return;
@@ -825,7 +953,8 @@ public class Http2ClientConnection {
         Http2GoAway http2GoAway = Http2GoAway.create(data);
         recvListener.frameHeader(ctx, streamId, frameHeader);
         recvListener.frame(ctx, streamId, http2GoAway);
-        this.close();
+        close(new Http2Exception(http2GoAway.errorCode(),
+                                 "Connection closed by remote peer, last stream: " + http2GoAway.lastStreamId()));
         ctx.log(LOGGER, TRACE, "Connection closed by remote peer, error code: %s, last stream: %d",
                 http2GoAway.errorCode(),
                 http2GoAway.lastStreamId());
@@ -1021,7 +1150,6 @@ public class Http2ClientConnection {
         try {
             headerStream.inboundHeaders(headers, endOfStream);
         } catch (Http2Exception e) {
-            headerStream.close();
             headerStream.reset(e.code());
             throw e;
         }
@@ -1060,16 +1188,43 @@ public class Http2ClientConnection {
     }
 
     private void goAway(int streamId, Http2ErrorCode errorCode, String msg) {
-        if (state.compareAndSet(State.OPEN, State.GO_AWAY)) {
-            Http2Settings http2Settings = Http2Settings.create();
-            Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
-            writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
+        if (state.compareAndSet(State.OPEN, State.GO_AWAY)
+                || state.compareAndSet(State.RETIRING, State.GO_AWAY)) {
+            goAwayErrorCode.compareAndSet(null, errorCode);
+            try {
+                writeGoAway(streamId, errorCode, msg);
+            } finally {
+                goAwayWriteComplete.countDown();
+                if (errorCode != Http2ErrorCode.NO_ERROR) {
+                    errorGoAwayWriteComplete.countDown();
+                }
+            }
+        } else if (state.get().goAway()) {
+            await(goAwayWriteComplete);
+            if (errorCode != Http2ErrorCode.NO_ERROR) {
+                if (goAwayErrorCode.compareAndSet(Http2ErrorCode.NO_ERROR, errorCode)) {
+                    try {
+                        writeGoAway(streamId, errorCode, msg);
+                    } finally {
+                        errorGoAwayWriteComplete.countDown();
+                    }
+                } else {
+                    await(errorGoAwayWriteComplete);
+                }
+            }
         }
+    }
+
+    private void writeGoAway(int streamId, Http2ErrorCode errorCode, String msg) {
+        Http2Settings http2Settings = Http2Settings.create();
+        Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
+        writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
     }
 
     private enum State {
         CLOSED(true),
         GO_AWAY(true),
+        RETIREMENT_GO_AWAY(true),
         RETIRING(true),
         OPEN(false);
 
@@ -1081,6 +1236,10 @@ public class Http2ClientConnection {
 
         boolean closed() {
             return closed;
+        }
+
+        boolean goAway() {
+            return this == GO_AWAY || this == RETIREMENT_GO_AWAY;
         }
     }
 

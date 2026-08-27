@@ -100,6 +100,14 @@ public interface FlowControl {
         void blockTillUpdate();
 
         /**
+         * Notify flow control that the connection has closed.
+         * <p>
+         * Releases threads blocked waiting for a window update.
+         */
+        default void connectionClosed() {
+        }
+
+        /**
          * MAX_FRAME_SIZE setting last received from the other side or default.
          * @return MAX_FRAME_SIZE
          */

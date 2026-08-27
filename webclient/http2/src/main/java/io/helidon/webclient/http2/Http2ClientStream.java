@@ -81,6 +81,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private volatile ReadState readState = ReadState.INIT;
     private Http2Headers currentHeaders;
     private RuntimeException inboundFailure;
+    private volatile RuntimeException connectionFailure;
     // accessed from stream thread an connection thread
     private volatile StreamFlowControl flowControl;
     private boolean hasEntity;
@@ -240,6 +241,37 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     @Override
     public void closeResource() {
         close();
+    }
+
+    void connectionClosed(RuntimeException failure) {
+        connectionClosed(failure, true);
+    }
+
+    void connectionClosedBeforeRegistration(RuntimeException failure) {
+        connectionClosed(failure, false);
+    }
+
+    void completeTrailersFailure(RuntimeException failure) {
+        inboundStateLock.lock();
+        try {
+            if (inboundFailure == null) {
+                return;
+            }
+        } finally {
+            inboundStateLock.unlock();
+        }
+        trailers.completeExceptionally(failure);
+    }
+
+    void recordConnectionFailure(RuntimeException failure) {
+        inboundStateLock.lock();
+        try {
+            if (connectionFailure == null) {
+                connectionFailure = failure;
+            }
+        } finally {
+            inboundStateLock.unlock();
+        }
     }
 
     void trailers(Http2Headers headers, boolean endOfStream) {
@@ -625,6 +657,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return http2ClientConfig.protocolConfig();
     }
 
+    Duration readTimeout() {
+        return timeout;
+    }
+
     /**
      * Reads an HTTP2 frame from the stream.
      *
@@ -719,12 +755,47 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 }
             }
             case DATA, TRAILERS -> pushTrailers(headers, endOfStream);
-            default -> throw new IllegalStateException("Client is in wrong read state " + readState.name());
+            default -> throw new Http2Exception(Http2ErrorCode.STREAM_CLOSED,
+                                                "Received HEADERS in invalid response read state " + readState);
             }
             inboundStateChanged.signalAll();
         } finally {
             inboundStateLock.unlock();
         }
+    }
+
+    private void connectionClosed(RuntimeException failure, boolean notifyConnectionFlowControl) {
+        recordConnectionFailure(failure);
+        RuntimeException actualFailure;
+        StreamBuffer streamBuffer;
+        boolean inboundComplete;
+        inboundStateLock.lock();
+        try {
+            actualFailure = connectionFailure;
+            inboundComplete = readState == ReadState.END || inboundEndQueued;
+            if (inboundComplete) {
+                streamBuffer = null;
+            } else {
+                if (inboundFailure == null) {
+                    inboundFailure = actualFailure;
+                }
+                streamBuffer = buffer;
+                inboundStateChanged.signalAll();
+            }
+        } finally {
+            inboundStateLock.unlock();
+        }
+        StreamFlowControl streamFlowControl = flowControl;
+        if (notifyConnectionFlowControl && streamFlowControl != null) {
+            streamFlowControl.outbound().connectionClosed();
+        }
+        if (inboundComplete) {
+            return;
+        }
+        if (streamBuffer != null) {
+            streamBuffer.fail(actualFailure);
+        }
+        close();
     }
 
     /**
@@ -851,8 +922,18 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                       true,
                                                       endOfStream,
                                                       false));
-        connection.writer().writeData(frameData,
-                                      flowControl().outbound());
+        try {
+            connection.writer().writeData(frameData,
+                                          flowControl().outbound());
+        } catch (Http2Exception e) {
+            if (e.code() == Http2ErrorCode.CANCEL) {
+                RuntimeException failure = connectionFailure;
+                if (failure != null) {
+                    throw failure;
+                }
+            }
+            throw e;
+        }
     }
 
     private void updateState(Http2StreamState newState) {

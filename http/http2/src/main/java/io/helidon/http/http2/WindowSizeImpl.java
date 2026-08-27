@@ -134,6 +134,7 @@ abstract class WindowSizeImpl implements WindowSize {
         private final ConnectionFlowControl.Type type;
         private final int streamId;
         private final long timeoutMillis;
+        private boolean connectionClosed;
 
         Outbound(ConnectionFlowControl.Type type, int streamId, ConnectionFlowControl connectionFlowControl) {
             super(type, streamId, connectionFlowControl.initialWindowSize());
@@ -185,6 +186,16 @@ abstract class WindowSizeImpl implements WindowSize {
             }
         }
 
+        void connectionClosed() {
+            updateLock.lock();
+            try {
+                connectionClosed = true;
+                updated.signalAll();
+            } finally {
+                updateLock.unlock();
+            }
+        }
+
         @Override
         public void blockTillUpdate() {
             var startTime = System.nanoTime();
@@ -195,6 +206,10 @@ abstract class WindowSizeImpl implements WindowSize {
                     boolean waiting;
                     updateLock.lock();
                     try {
+                        if (connectionClosed) {
+                            throw new Http2Exception(Http2ErrorCode.CANCEL,
+                                                     "Connection closed while waiting for a flow control update.");
+                        }
                         // Updates acquire this lock, so the predicate check and await enrollment are atomic.
                         int remainingWindowSize = getRemainingWindowSize();
                         long elapsedNanos = System.nanoTime() - startTime;

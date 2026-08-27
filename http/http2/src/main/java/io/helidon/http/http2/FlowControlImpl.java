@@ -135,7 +135,7 @@ abstract class FlowControlImpl implements FlowControl {
 
         private final ConnectionFlowControl.Type type;
         private final ConnectionFlowControl connectionFlowControl;
-        private final WindowSize.Outbound streamWindowSize;
+        private final WindowSizeImpl.Outbound streamWindowSize;
 
         Outbound(ConnectionFlowControl.Type type,
                  int streamId,
@@ -143,7 +143,7 @@ abstract class FlowControlImpl implements FlowControl {
             super(streamId);
             this.type = type;
             this.connectionFlowControl = connectionFlowControl;
-            this.streamWindowSize = WindowSize.createOutbound(type, streamId, connectionFlowControl);
+            this.streamWindowSize = new WindowSizeImpl.Outbound(type, streamId, connectionFlowControl);
         }
 
         @Override
@@ -188,6 +188,12 @@ abstract class FlowControlImpl implements FlowControl {
         public void blockTillUpdate() {
             connectionFlowControl.outbound().blockTillUpdate();
             streamWindowSize.blockTillUpdate();
+        }
+
+        @Override
+        public void connectionClosed() {
+            connectionFlowControl.connectionClosed();
+            streamWindowSize.connectionClosed();
         }
 
         @Override
