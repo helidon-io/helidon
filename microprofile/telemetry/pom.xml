@@ -198,7 +198,22 @@
                                 <exclude>**/TestSpanListenersWithInjection.java</exclude>
                                 <exclude>**/TestFilterSpanNesting.java</exclude>
                                 <exclude>**/PlainJerseyClientTest.java</exclude>
+                                <exclude>**/AutoSpanIncludesWriteAsyncTest.java</exclude>
                             </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>auto-span-async-context-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <io.opentelemetry.context.enableStrictContext>true</io.opentelemetry.context.enableStrictContext>
+                            </systemPropertyVariables>
+                            <includes>
+                                <include>**/AutoSpanIncludesWriteAsyncTest.java</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>

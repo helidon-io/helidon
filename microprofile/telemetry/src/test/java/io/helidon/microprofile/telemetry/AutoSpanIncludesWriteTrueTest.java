@@ -22,11 +22,13 @@ import org.junit.jupiter.api.Test;
 
 @AddConfig(key = HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE, value = "true")
 @AddBean(AutoSpanIncludesWriteTestBase.FailingWriterInterceptor.class)
+@AddBean(AutoSpanIncludesWriteTestBase.FailingResponseFilter.class)
+@AddBean(AutoSpanIncludesWriteTestBase.MappedNotFoundExceptionMapper.class)
 class AutoSpanIncludesWriteTrueTest extends AutoSpanIncludesWriteTestBase {
 
     @Test
     void testTrueEndsSpanAfterWrite() {
-        checkSpanAtWrite(false, false, true);
+        checkSpanAtWrite(false, true);
     }
 
     @Test
@@ -40,7 +42,17 @@ class AutoSpanIncludesWriteTrueTest extends AutoSpanIncludesWriteTestBase {
     }
 
     @Test
+    void testTrueEndsSpanAfterResponseFilterFailure() {
+        checkFailedResponseFilterEndsSpan();
+    }
+
+    @Test
     void testTrueEndsSpanForEntitylessResponse() {
         checkNoEntitySpanEnds();
+    }
+
+    @Test
+    void testMappedApplicationExceptionIsNotAWriteFailure() {
+        checkMappedApplicationException();
     }
 }

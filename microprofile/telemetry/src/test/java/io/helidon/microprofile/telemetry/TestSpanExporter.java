@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.testing.junit5.MatcherWithRetry;
+import io.helidon.tracing.Span;
 
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
@@ -84,6 +85,18 @@ public class TestSpanExporter implements SpanExporter {
                     + " ms for expected spans to arrive.");
         }
         return result;
+    }
+
+    SpanData spanData(Span span) {
+        String spanId = span.context().spanId();
+        return MatcherWithRetry.assertThatWithRetry("Expected exported span",
+                                                    () -> spanData.stream()
+                                                            .filter(item -> item.getSpanContext().getSpanId().equals(spanId))
+                                                            .findFirst()
+                                                            .orElse(null),
+                                                    org.hamcrest.Matchers.notNullValue(),
+                                                    RETRY_COUNT,
+                                                    RETRY_DELAY_MS);
     }
 
     void clear() {

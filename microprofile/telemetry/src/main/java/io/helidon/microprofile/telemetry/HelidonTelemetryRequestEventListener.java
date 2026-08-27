@@ -18,13 +18,14 @@ package io.helidon.microprofile.telemetry;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 
+import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
 
 /**
- * Completes response-write-inclusive server spans after Jersey finishes processing a request.
+ * Maintains response-write-inclusive server spans across Jersey request-processing phases.
  */
 final class HelidonTelemetryRequestEventListener implements ApplicationEventListener {
 
@@ -38,21 +39,34 @@ final class HelidonTelemetryRequestEventListener implements ApplicationEventList
     }
 
     private static void onRequestEvent(RequestEvent event) {
-        ServerSpanLifecycle lifecycle = (ServerSpanLifecycle) event.getContainerRequest()
-                .getProperty(ServerSpanLifecycle.PROPERTY);
+        ContainerRequest request = event.getContainerRequest();
+        ServerSpanLifecycle lifecycle = (ServerSpanLifecycle) request.getProperty(ServerSpanLifecycle.PROPERTY);
         if (lifecycle == null) {
             return;
         }
 
+        Span span = (Span) request.getProperty(HelidonTelemetryContainerFilter.SPAN);
+        Scope scope = (Scope) request.getProperty(HelidonTelemetryContainerFilter.SPAN_SCOPE);
         switch (event.getType()) {
+        case RESOURCE_METHOD_START:
+            lifecycle.resourceMethodStarted();
+            break;
+        case RESOURCE_METHOD_FINISHED:
+            if (span != null && scope != null) {
+                lifecycle.resourceMethodFinished(span, scope);
+            }
+            break;
+        case RESP_FILTERS_START:
+            if (span != null) {
+                lifecycle.responseProcessingStarted(span);
+            }
+            break;
         case ON_EXCEPTION:
-            lifecycle.failure(event.getException());
+            lifecycle.responseFailure(event.getException());
             break;
         case FINISHED:
-            Span span = (Span) event.getContainerRequest().getProperty(HelidonTelemetryContainerFilter.SPAN);
-            Scope scope = (Scope) event.getContainerRequest().getProperty(HelidonTelemetryContainerFilter.SPAN_SCOPE);
             if (span != null && scope != null) {
-                lifecycle.complete(span, scope, event.isResponseWritten());
+                lifecycle.requestFinished(span, scope, event.isResponseWritten());
             }
             break;
         default:

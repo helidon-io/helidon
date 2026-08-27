@@ -24,6 +24,6 @@ class AutoSpanIncludesWriteFalseTest extends AutoSpanIncludesWriteTestBase {
 
     @Test
     void testFalseEndsSpanBeforeWrite() {
-        checkSpanAtWrite(true, true, false);
+        checkSpanAtWrite(true, false);
     }
 }

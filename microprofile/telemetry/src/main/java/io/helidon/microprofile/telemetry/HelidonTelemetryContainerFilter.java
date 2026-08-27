@@ -214,7 +214,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                     request.setProperty(ServerSpanLifecycle.PROPERTY, lifecycle);
                 }
                 ServerSpanLifecycle finalLifecycle = lifecycle;
-                serverResponse.whenSent(() -> finalLifecycle.complete(span, scope, true));
+                serverResponse.whenSent(() -> finalLifecycle.responseSent(span, scope));
             } else {
                 span.end();
             }

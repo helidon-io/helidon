@@ -15,12 +15,15 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import io.helidon.microprofile.testing.junit5.AddConfig;
+
 import org.junit.jupiter.api.Test;
 
-class AutoSpanIncludesWriteDefaultTest extends AutoSpanIncludesWriteTestBase {
+@AddConfig(key = HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE, value = "true")
+class AutoSpanIncludesWriteAsyncTest extends AutoSpanIncludesWriteTestBase {
 
     @Test
-    void testDefaultEndsSpanBeforeWrite() {
-        checkSpanAtWrite(true, false);
+    void testAsyncStreamingOutputSpanIsChildOfAutomaticServerSpan() {
+        checkAsyncResponseWriteSpanParent();
     }
 }
