@@ -210,6 +210,33 @@ class SseHttp2Test {
     }
 
     @Test
+    void tlsSseRemovesContentLengthFromBeforeSendFilter() throws IOException, InterruptedException {
+        URI uri = URI.create("https://localhost:" + tlsPort);
+        try (HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(TIMEOUT)
+                .sslContext(clientTls.sslContext())
+                .build()) {
+            HttpResponse<String> sse = client.send(request(uri.resolve("/filtered")),
+                                                   HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> ping = client.send(request(uri.resolve("/ping")),
+                                                    HttpResponse.BodyHandlers.ofString());
+
+            assertThat("SSE response must use HTTP/2", sse.version(), is(HttpClient.Version.HTTP_2));
+            assertThat("SSE response status", sse.statusCode(), is(Status.OK_200.code()));
+            assertThat("SSE response must not retain filter-supplied Content-Length",
+                       sse.headers().firstValue(HeaderNames.CONTENT_LENGTH.lowerCase()).isEmpty(),
+                       is(true));
+            assertThat("SSE response must preserve exact event framing", sse.body(), is("data:x\n\n"));
+            assertThat("Ping response must use HTTP/2", ping.version(), is(HttpClient.Version.HTTP_2));
+            assertThat("Ping response status", ping.statusCode(), is(Status.OK_200.code()));
+            assertThat("SSE and ping must use the same physical server socket",
+                       ping.headers().firstValue(SOCKET_ID.lowerCase()).orElseThrow(),
+                       is(sse.headers().firstValue(SOCKET_ID.lowerCase()).orElseThrow()));
+        }
+    }
+
+    @Test
     void concurrentSseStreamsCompleteIndependentlyOnOneConnection(Http2TestClient client) throws InterruptedException {
         StreamControl first = new StreamControl("open-one", "close-one", false);
         StreamControl second = new StreamControl("open-two", "close-two", false);
@@ -420,6 +447,13 @@ class SseHttp2Test {
                 .route(Http2Route.route(Method.HEAD, "/sse-head", (_, res) -> {
                     try (SseSink _ = res.sink(SseSink.TYPE)) {
                         // A HEAD response completes without an SSE entity.
+                    }
+                }))
+                .route(Http2Route.route(Method.GET, "/filtered", (req, res) -> {
+                    res.header(SOCKET_ID, req.socketId());
+                    res.beforeSend(() -> res.header(HeaderNames.CONTENT_LENGTH, "13"));
+                    try (SseSink sink = res.sink(SseSink.TYPE)) {
+                        sink.emit(SseEvent.create("x"));
                     }
                 }))
                 .route(Http2Route.route(Method.GET, "/controlled", (req, res) -> controlled(req.query().get("id"), res)))

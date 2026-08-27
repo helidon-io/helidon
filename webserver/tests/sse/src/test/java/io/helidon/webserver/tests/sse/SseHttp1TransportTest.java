@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -79,6 +80,13 @@ class SseHttp1TransportTest {
             try (SseSink sink = res.sink(SseSink.TYPE)) {
                 sink.emit(SseEvent.create("hello"));
                 sink.emit(SseEvent.create("world"));
+            }
+        });
+        rules.get("/content-length-sse", (req, res) -> {
+            res.header(SOCKET_ID, req.socketId());
+            res.beforeSend(() -> res.header(HeaderNames.CONTENT_LENGTH, "13"));
+            try (SseSink sink = res.sink(SseSink.TYPE)) {
+                sink.emit(SseEvent.create("x"));
             }
         });
         rules.any("/sse-head", (req, res) -> {
@@ -141,6 +149,36 @@ class SseHttp1TransportTest {
                        is("data:\n\n"));
 
             assertConnectionReuse(client, input, response.header(SOCKET_ID.defaultCase()));
+        }
+    }
+
+    @Test
+    void sseRemovesContentLengthBeforeReusingConnection() throws Exception {
+        try (SocketHttpClient client = socketClient()) {
+            client.request(Method.GET,
+                           "/content-length-sse",
+                           null,
+                           List.of("Accept: text/event-stream"));
+            client.request(Method.GET, "/connection", null, List.of("Accept: text/plain"));
+            InputStream input = client.socketInputStream();
+
+            RawResponse sse = readResponse(input);
+            assertThat("SSE response must not retain filter-supplied Content-Length",
+                       sse.header("content-length"), nullValue());
+            assertThat("SSE response must use streaming HTTP/1 framing",
+                       sse.header("transfer-encoding").toLowerCase(Locale.ROOT),
+                       containsString("chunked"));
+            assertThat("SSE response must preserve exact event framing",
+                       new String(sse.entity(), StandardCharsets.UTF_8),
+                       is("data:x\n\n"));
+
+            String socketId = sse.header(SOCKET_ID.defaultCase());
+            assertThat("SSE response must expose its physical socket id", socketId, notNullValue());
+            RawResponse probe = readResponse(input);
+            assertThat("Connection probe status", probe.statusCode(), is(200));
+            assertThat("Probe must use the same physical server socket after SSE completion",
+                       new String(probe.entity(), StandardCharsets.UTF_8),
+                       is(socketId));
         }
     }
 
