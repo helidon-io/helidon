@@ -16,6 +16,7 @@
 
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.service.registry.Service;
 
 /**
  * Micrometer adapter for Helidon metrics API.
@@ -24,6 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Micrometer provider for metrics")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"Metrics", "Micrometer"})
+@Service.DiscoverFromServiceLoader
 module io.helidon.metrics.providers.micrometer {
 
     requires static io.helidon.common.features.api;

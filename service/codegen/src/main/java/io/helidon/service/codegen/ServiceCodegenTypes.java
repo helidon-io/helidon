@@ -42,6 +42,12 @@ public final class ServiceCodegenTypes {
     public static final TypeName SERVICE_ANNOTATION_RUN_LEVEL =
             TypeName.create("io.helidon.service.registry.Service.RunLevel");
     /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.registry.Service.DiscoverFromServiceLoader}.
+     */
+    public static final TypeName SERVICE_ANNOTATION_DISCOVER_FROM_SERVICE_LOADER =
+            TypeName.create("io.helidon.service.registry.Service.DiscoverFromServiceLoader");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.EntryPoint}.
      */
     public static final TypeName SERVICE_ANNOTATION_ENTRY_POINT =

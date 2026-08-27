@@ -290,6 +290,19 @@ public final class Service {
     }
 
     /**
+     * Discover Java {@link java.util.ServiceLoader} providers through the service registry.
+     * <p>
+     * When a module is annotated with this annotation, Helidon service code generation contributes every service contract
+     * declared by a {@code uses} directive in that module to the module's {@code service.loader} metadata. Other code
+     * generators may contribute additional contracts to the same metadata.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.MODULE)
+    public @interface DiscoverFromServiceLoader {
+    }
+
+    /**
      * A service that has instances created for each named instance of the service it is driven by.
      * The instance created will have the same {@link Named} qualifier as the
      * driving instance (in addition to all qualifiers defined on this service).

@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+import io.helidon.service.registry.Service;
+
 /**
  * Helidon metrics API.
  */
+@Service.DiscoverFromServiceLoader
 module io.helidon.metrics.api {
 
     requires io.helidon.http;

@@ -314,21 +314,24 @@ class BuilderCodegen implements CodegenExtension {
         String resourceLocation = MetadataConstants.LOCATION
                 + (moduleName == null ? "" : "/" + moduleName)
                 + "/" + MetadataConstants.SERVICE_LOADER_FILE;
-        FilerTextResource serviceLoaderResource = filer.textResource(resourceLocation);
+        FilerTextResource serviceLoaderResource = filer.manifest().deferredTextResource(resourceLocation);
         List<String> lines = new ArrayList<>(serviceLoaderResource.lines());
         if (lines.isEmpty()) {
             lines.add("# List of service contracts we want to support either from service registry, or from service loader");
         }
-        boolean modified = false;
-        for (String serviceLoaderContract : this.serviceLoaderContracts) {
-            if (!lines.contains(serviceLoaderContract)) {
-                modified = true;
-                lines.add(serviceLoaderContract);
-            }
-        }
+        Set<String> contracts = lines.stream()
+                .map(String::trim)
+                .filter(it -> !it.isEmpty())
+                .filter(it -> !it.startsWith("#"))
+                .collect(Collectors.toCollection(() -> new TreeSet<>(String.CASE_INSENSITIVE_ORDER)));
+        boolean modified = contracts.addAll(serviceLoaderContracts);
 
         if (modified) {
-            serviceLoaderResource.lines(lines);
+            List<String> newLines = lines.stream()
+                    .filter(it -> it.trim().isEmpty() || it.trim().startsWith("#"))
+                    .collect(Collectors.toCollection(ArrayList::new));
+            newLines.addAll(contracts);
+            serviceLoaderResource.lines(newLines);
             serviceLoaderResource.write();
             filer.manifest()
                     .add(resourceLocation);

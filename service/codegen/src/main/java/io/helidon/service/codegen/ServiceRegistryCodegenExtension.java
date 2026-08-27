@@ -82,6 +82,9 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
 
     @Override
     public void process(io.helidon.codegen.RoundContext roundContext) {
+        roundContext.modules()
+                .forEach(module -> ServiceLoaderMetadata.write(ctx.filer(), module));
+
         List<DescriptorClassCode> descriptors = new ArrayList<>();
         Collection<TypeInfo> allTypes = roundContext.types();
         if (allTypes.isEmpty()) {

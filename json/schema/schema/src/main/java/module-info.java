@@ -15,6 +15,7 @@
  */
 
 import io.helidon.common.features.api.Features;
+import io.helidon.service.registry.Service;
 
 /**
  * JSON Schema annotations and lookup.
@@ -27,6 +28,7 @@ import io.helidon.common.features.api.Features;
 @Features.Path({"JSON", "Schema"})
 @Features.Description("JSON - Schema")
 @Features.Incubating
+@Service.DiscoverFromServiceLoader
 module io.helidon.json.schema {
     requires static io.helidon.common.features.api;
     requires transitive io.helidon.json;
@@ -36,4 +38,6 @@ module io.helidon.json.schema {
 
     exports io.helidon.json.schema;
     exports io.helidon.json.schema.spi;
+
+    uses io.helidon.json.schema.spi.JsonSchemaProvider;
 }

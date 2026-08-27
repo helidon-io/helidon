@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+import io.helidon.service.registry.Service;
+
 /**
  * Helidon Common Mapper.
  */
+@Service.DiscoverFromServiceLoader
 module io.helidon.common.mapper {
     requires transitive io.helidon.common;
     requires transitive io.helidon.builder.api;

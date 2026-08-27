@@ -57,6 +57,7 @@ public class ServiceRegistryCodegenProvider implements CodegenExtensionProvider 
                                   .map(RegistryCodegenExtensionProvider::supportedAnnotations)
                                   .flatMap(Set::stream),
                           Stream.of(TypeNames.GENERATED,
+                                    ServiceCodegenTypes.SERVICE_ANNOTATION_DISCOVER_FROM_SERVICE_LOADER,
                                     ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR))
                     .collect(Collectors.toUnmodifiableSet());
 
