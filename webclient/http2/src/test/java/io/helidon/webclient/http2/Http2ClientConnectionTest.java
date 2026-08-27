@@ -67,7 +67,6 @@ import org.mockito.InOrder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1168,13 +1167,9 @@ class Http2ClientConnectionTest {
             CompletableFuture<Void> cancel = CompletableFuture.runAsync(stream::cancel);
 
             assertTrue(blockedWrite.awaitEntered());
-            try {
-                connection.closeNow();
-                test.assertConnectionClosed();
-                assertFalse(cancel.isDone());
-            } finally {
-                blockedWrite.release();
-            }
+            CompletableFuture<Void> closed = CompletableFuture.runAsync(connection::closeNow);
+            closed.get(1, TimeUnit.SECONDS);
+            test.assertConnectionClosed();
             cancel.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             stream.close();
         }
