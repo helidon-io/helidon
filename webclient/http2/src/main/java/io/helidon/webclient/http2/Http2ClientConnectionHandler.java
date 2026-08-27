@@ -69,11 +69,12 @@ class Http2ClientConnectionHandler {
     private static final HeaderName HTTP2_SETTINGS_HEADER = HeaderNames.create("HTTP2-Settings");
 
     // todo requires handling of timeouts and removal from this queue
-    private final Map<ClientConnection, Http2ClientConnection> h2ConnByConn =
-            Collections.synchronizedMap(new IdentityHashMap<>());
+    // Accessed only while holding lifecycleLock.
+    private final Map<ClientConnection, Http2ClientConnection> h2ConnByConn = new IdentityHashMap<>();
 
-    private final Map<Http2ClientConnection, ConnectionRoute> allConnections =
-            Collections.synchronizedMap(new IdentityHashMap<>());
+    // Accessed only while holding lifecycleLock.
+    private final Map<Http2ClientConnection, ConnectionRoute> allConnections = new IdentityHashMap<>();
+    // Accessed only while holding lifecycleLock.
     private final Set<Http2ClientConnection> pendingUpgradedConnections =
             Collections.newSetFromMap(new IdentityHashMap<>());
     // Creation ordered and compared by identity. Mutated only while holding lifecycleLock.
@@ -249,6 +250,9 @@ class Http2ClientConnectionHandler {
     }
 
     void retire(Http2AltSvcCache.Generation generation) {
+        if (!containsGeneration(generation)) {
+            return;
+        }
         Set<Http2ClientConnection> toRetire = new HashSet<>();
         lock.lock();
         try {
@@ -269,6 +273,20 @@ class Http2ClientConnectionHandler {
             lock.unlock();
         }
         toRetire.forEach(Http2ClientConnection::retire);
+    }
+
+    private boolean containsGeneration(Http2AltSvcCache.Generation generation) {
+        lifecycleLock.lock();
+        try {
+            for (ConnectionRoute route : allConnections.values()) {
+                if (route.matches(generation)) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     void close() {
@@ -666,7 +684,7 @@ class Http2ClientConnectionHandler {
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
         Http2ClientConnection connection = activeConnection.get();
         if (connection != null) {
-            ConnectionRoute route = allConnections.get(connection);
+            ConnectionRoute route = connectionRoute(connection);
             if (route != null
                     && route.matches(selectedAlternative)
                     && (request.priorKnowledge() || !route.logicalTarget().proxyRoute().forwardProxy())) {
@@ -695,7 +713,7 @@ class Http2ClientConnectionHandler {
             if (candidate == connection) {
                 continue;
             }
-            ConnectionRoute route = allConnections.get(candidate);
+            ConnectionRoute route = connectionRoute(candidate);
             if (route == null || !route.matches(selectedAlternative)) {
                 continue;
             }
@@ -951,7 +969,7 @@ class Http2ClientConnectionHandler {
         }
         try {
             boolean ownsExplicitConnection = ownsExplicitConnection(request);
-            Http2ClientConnection connection = ownsExplicitConnection ? h2ConnByConn.get(clientConnection) : null;
+            Http2ClientConnection connection = ownsExplicitConnection ? http2Connection(clientConnection) : null;
             if (connection != null && connection.closed(http2Client.protocolConfig())) {
                 removeConnection(connection);
                 connection = null;
@@ -1117,10 +1135,28 @@ class Http2ClientConnectionHandler {
 
     private ConnectionRoute connectionRoute(Http2ClientConnection connection,
                                             ClientConnectionTarget fallbackTarget) {
-        ConnectionRoute route = allConnections.get(connection);
+        ConnectionRoute route = connectionRoute(connection);
         return route == null
                 ? new ConnectionRoute(fallbackTarget, connection.resolvedTarget().orElse(null), null)
                 : route;
+    }
+
+    private ConnectionRoute connectionRoute(Http2ClientConnection connection) {
+        lifecycleLock.lock();
+        try {
+            return allConnections.get(connection);
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    private Http2ClientConnection http2Connection(ClientConnection connection) {
+        lifecycleLock.lock();
+        try {
+            return h2ConnByConn.get(connection);
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     private void activateConnection(ClientConnectionTarget connectionTarget,
