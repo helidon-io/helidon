@@ -18,6 +18,7 @@ package io.helidon.http.http2;
 
 import java.time.Duration;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 
 import io.helidon.common.Builder;
 
@@ -164,6 +165,14 @@ public class ConnectionFlowControl {
 
     void connectionClosed() {
         outboundConnectionWindowSize.connectionClosed();
+    }
+
+    void streamClosed() {
+        outboundConnectionWindowSize.triggerUpdate();
+    }
+
+    void blockTillUpdate(BooleanSupplier streamClosed) {
+        outboundConnectionWindowSize.blockTillUpdate(streamClosed);
     }
 
     /**

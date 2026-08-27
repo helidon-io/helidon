@@ -282,6 +282,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
         } finally {
             resetCompletionLock.unlock();
         }
+        flowControl.outbound().streamClosed();
         if (ignoreInboundDataAfterReset) {
             remoteCompleteAfterReset();
         }

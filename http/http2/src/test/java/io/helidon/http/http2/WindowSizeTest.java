@@ -33,6 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WindowSizeTest {
 
@@ -101,6 +102,87 @@ class WindowSizeTest {
 
         assertThat("both flow-control waiters must resume", returnedNormally.get(), is(2));
         assertThat(failure.get(), is(nullValue()));
+    }
+
+    @Test
+    void rejectsStreamClosedBeforeBlockingWaitStarts() {
+        ConnectionFlowControl connection = ConnectionFlowControl.clientBuilder((_, _) -> { })
+                .blockTimeout(Duration.ofSeconds(1))
+                .build();
+        FlowControl.Outbound outbound = connection.createStreamFlowControl(1,
+                                                                            WindowSize.DEFAULT_WIN_SIZE,
+                                                                            WindowSize.DEFAULT_MAX_FRAME_SIZE)
+                .outbound();
+        outbound.resetStreamWindowSize(0);
+
+        outbound.streamClosed();
+        Http2Exception exception = assertThrows(Http2Exception.class, outbound::blockTillUpdate);
+
+        assertThat(exception.code(), is(Http2ErrorCode.CANCEL));
+    }
+
+    @Test
+    void streamCloseReleasesConnectionWindowWaitWithoutClosingSibling() throws InterruptedException {
+        ConnectionFlowControl connection = ConnectionFlowControl.clientBuilder((_, _) -> { })
+                .blockTimeout(Duration.ofSeconds(10))
+                .build();
+        WindowSize.Outbound connectionWindow = connection.outbound();
+        connectionWindow.decrementWindowSize(connectionWindow.getRemainingWindowSize());
+        FlowControl.Outbound first = connection.createStreamFlowControl(1,
+                                                                         WindowSize.DEFAULT_WIN_SIZE,
+                                                                         WindowSize.DEFAULT_MAX_FRAME_SIZE)
+                .outbound();
+        FlowControl.Outbound sibling = connection.createStreamFlowControl(3,
+                                                                           WindowSize.DEFAULT_WIN_SIZE,
+                                                                           WindowSize.DEFAULT_MAX_FRAME_SIZE)
+                .outbound();
+        AtomicReference<Throwable> firstFailure = new AtomicReference<>();
+        AtomicReference<Throwable> siblingFailure = new AtomicReference<>();
+        AtomicBoolean siblingReturned = new AtomicBoolean();
+        Thread firstBlocker = Thread.ofVirtual().start(() -> {
+            try {
+                first.blockTillUpdate();
+            } catch (Throwable t) {
+                firstFailure.set(t);
+            }
+        });
+        Thread siblingBlocker = Thread.ofVirtual().start(() -> {
+            try {
+                sibling.blockTillUpdate();
+                siblingReturned.set(true);
+            } catch (Throwable t) {
+                siblingFailure.set(t);
+            }
+        });
+        try {
+            long waitDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+            while ((firstBlocker.getState() != Thread.State.TIMED_WAITING
+                    || siblingBlocker.getState() != Thread.State.TIMED_WAITING)
+                    && System.nanoTime() < waitDeadline) {
+                Thread.onSpinWait();
+            }
+            assertThat("first flow-control wait must start", firstBlocker.getState(), is(Thread.State.TIMED_WAITING));
+            assertThat("sibling flow-control wait must start", siblingBlocker.getState(), is(Thread.State.TIMED_WAITING));
+
+            first.streamClosed();
+            firstBlocker.join(1000);
+            assertThat("closed stream flow-control wait must finish", firstBlocker.isAlive(), is(false));
+            assertThat(firstFailure.get(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) firstFailure.get()).code(), is(Http2ErrorCode.CANCEL));
+            assertThat("sibling flow-control wait must remain blocked", siblingBlocker.isAlive(), is(true));
+
+            connectionWindow.incrementWindowSize(1);
+            siblingBlocker.join(1000);
+        } finally {
+            first.streamClosed();
+            sibling.streamClosed();
+            connectionWindow.incrementWindowSize(1);
+            firstBlocker.join();
+            siblingBlocker.join();
+        }
+
+        assertThat("sibling flow-control wait must resume normally", siblingReturned.get(), is(true));
+        assertThat(siblingFailure.get(), is(nullValue()));
     }
 
     @Test

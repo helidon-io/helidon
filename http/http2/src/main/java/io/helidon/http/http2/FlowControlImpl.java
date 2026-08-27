@@ -186,7 +186,7 @@ abstract class FlowControlImpl implements FlowControl {
 
         @Override
         public void blockTillUpdate() {
-            connectionFlowControl.outbound().blockTillUpdate();
+            connectionFlowControl.blockTillUpdate(streamWindowSize::isStreamClosed);
             streamWindowSize.blockTillUpdate();
         }
 
@@ -194,6 +194,12 @@ abstract class FlowControlImpl implements FlowControl {
         public void connectionClosed() {
             connectionFlowControl.connectionClosed();
             streamWindowSize.connectionClosed();
+        }
+
+        @Override
+        public void streamClosed() {
+            streamWindowSize.streamClosed();
+            connectionFlowControl.streamClosed();
         }
 
         @Override

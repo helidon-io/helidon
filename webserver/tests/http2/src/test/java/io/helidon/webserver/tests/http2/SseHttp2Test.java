@@ -50,6 +50,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameType;
@@ -77,6 +78,7 @@ import io.helidon.webserver.testing.junit5.http2.Http2TestConnection;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -313,13 +315,14 @@ class SseHttp2Test {
     }
 
     @Test
-    void clientCancelReleasesZeroWindowSseHandler(Http2TestClient client) throws InterruptedException {
-        StreamControl canceled = new StreamControl(null, "late-cancel", false);
+    void clientCancelReleasesBlockedZeroWindowSseHandler(Http2TestClient client) throws InterruptedException {
+        String payload = "x".repeat(FLOW_WINDOW);
+        StreamControl canceled = new StreamControl(payload, null, false);
         STREAM_CONTROLS.put("zero-window-cancel", canceled);
         try (Http2TestConnection connection = client.createConnection()) {
             connection.completeHandshake(TIMEOUT);
             connection.sendSettings(Http2Settings.builder()
-                                            .add(Http2Setting.INITIAL_WINDOW_SIZE, 0L)
+                                            .add(Http2Setting.INITIAL_WINDOW_SIZE, (long) FLOW_WINDOW)
                                             .build());
             FrameDemultiplexer frames = new FrameDemultiplexer(connection);
             request(connection, 1, "/controlled?id=zero-window-cancel", sseHeaders());
@@ -330,29 +333,18 @@ class SseHttp2Test {
                        settingsAck.header().flags(Http2FrameTypes.SETTINGS).ack(), is(true));
 
             StreamCapture canceledCapture = new StreamCapture();
-            canceledCapture.accept(frames.next(1, "zero-window SSE response headers"));
-            assertThat("Zero-window SSE response must start with HEADERS",
-                       canceledCapture.responseHeaders, notNullValue());
-            assertThat("Zero-window SSE response must remain open after HEADERS", canceledCapture.ended, is(false));
+            canceledCapture.readUntilBytes(frames, 1, FLOW_WINDOW);
+            assertThat("SSE handler must consume all advertised stream credit before reset",
+                       canceledCapture.data.size(), is(FLOW_WINDOW));
+            assertThat("SSE handler must remain blocked before reset", canceled.completed.getCount(), is(1L));
 
             connection.writer().write(new Http2RstStream(Http2ErrorCode.CANCEL)
                                               .toFrameData(null, 1, Http2Flag.NoFlags.create()));
             request(connection, 3, "/ping", WritableHeaders.create());
-
-            StreamCapture ping = new StreamCapture();
-            ping.accept(frames.next(3, "sibling ping response headers after client reset"));
-            assertThat("Sibling ping response status", ping.responseHeaders.status(), is(Status.OK_200));
-            assertThat("Sibling ping must remain flow-control blocked before WINDOW_UPDATE", ping.ended, is(false));
-
-            canceled.release.countDown();
+            assertPing(frames, 3);
             await("Canceled zero-window SSE handler completion", canceled.completed);
-            assertThat("Canceled zero-window SSE handler must observe stream cancellation",
-                       canceled.failure.get(), notNullValue());
-
-            connection.writer().write(new Http2WindowUpdate(2)
-                                              .toFrameData(null, 3, Http2Flag.NoFlags.create()));
-            ping.readUntilEnd(frames, 3);
-            assertThat("Sibling ping survives zero-window SSE cancellation", ping.body(), is("ok"));
+            assertThat(canceled.failure.get(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) canceled.failure.get()).code(), is(Http2ErrorCode.CANCEL));
         } finally {
             canceled.release.countDown();
             STREAM_CONTROLS.remove("zero-window-cancel");

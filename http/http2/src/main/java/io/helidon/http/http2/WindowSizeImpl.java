@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -135,6 +136,7 @@ abstract class WindowSizeImpl implements WindowSize {
         private final int streamId;
         private final long timeoutMillis;
         private boolean connectionClosed;
+        private volatile boolean streamClosed;
 
         Outbound(ConnectionFlowControl.Type type, int streamId, ConnectionFlowControl connectionFlowControl) {
             super(type, streamId, connectionFlowControl.initialWindowSize());
@@ -196,8 +198,26 @@ abstract class WindowSizeImpl implements WindowSize {
             }
         }
 
+        void streamClosed() {
+            updateLock.lock();
+            try {
+                streamClosed = true;
+                updated.signalAll();
+            } finally {
+                updateLock.unlock();
+            }
+        }
+
+        boolean isStreamClosed() {
+            return streamClosed;
+        }
+
         @Override
         public void blockTillUpdate() {
+            blockTillUpdate(() -> false);
+        }
+
+        void blockTillUpdate(BooleanSupplier otherStreamClosed) {
             var startTime = System.nanoTime();
             long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
             try {
@@ -209,6 +229,10 @@ abstract class WindowSizeImpl implements WindowSize {
                         if (connectionClosed) {
                             throw new Http2Exception(Http2ErrorCode.CANCEL,
                                                      "Connection closed while waiting for a flow control update.");
+                        }
+                        if (streamClosed || otherStreamClosed.getAsBoolean()) {
+                            throw new Http2Exception(Http2ErrorCode.CANCEL,
+                                                     "Stream closed while waiting for a flow control update.");
                         }
                         // Updates acquire this lock, so the predicate check and await enrollment are atomic.
                         int remainingWindowSize = getRemainingWindowSize();
