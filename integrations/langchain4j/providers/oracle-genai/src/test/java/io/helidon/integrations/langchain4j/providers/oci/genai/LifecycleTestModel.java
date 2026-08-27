@@ -17,7 +17,9 @@
 package io.helidon.integrations.langchain4j.providers.oci.genai;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -33,6 +35,7 @@ final class LifecycleTestModel implements ChatModel, AutoCloseable {
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicInteger closeCount = new AtomicInteger();
     private final AutoCloseable closeAction;
+    private ExecutorService executorService;
 
     private LifecycleTestModel(AutoCloseable closeAction) {
         this.closeAction = closeAction;
@@ -71,6 +74,10 @@ final class LifecycleTestModel implements ChatModel, AutoCloseable {
         return closed.get();
     }
 
+    ExecutorService executorService() {
+        return executorService;
+    }
+
     void assertOpen() {
         if (closed()) {
             throw new IllegalStateException("Lifecycle test model is closed.");
@@ -94,6 +101,7 @@ final class LifecycleTestModel implements ChatModel, AutoCloseable {
     }
 
     static final class Builder {
+        private ExecutorService executorService;
         private String plan;
 
         private Builder() {
@@ -104,13 +112,20 @@ final class LifecycleTestModel implements ChatModel, AutoCloseable {
             return this;
         }
 
+        public Builder executorService(ExecutorService executorService) {
+            this.executorService = Objects.requireNonNull(executorService);
+            return this;
+        }
+
         public LifecycleTestModel build() {
             BUILD_COUNT.incrementAndGet();
             var supplier = PLANS.get(plan);
             if (supplier == null) {
                 throw new IllegalStateException("No lifecycle test model plan named '" + plan + "'.");
             }
-            return supplier.get();
+            var model = supplier.get();
+            model.executorService = executorService;
+            return model;
         }
     }
 }

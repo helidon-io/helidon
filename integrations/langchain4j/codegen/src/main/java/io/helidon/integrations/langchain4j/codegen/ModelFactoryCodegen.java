@@ -63,11 +63,13 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_C
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_CONFIG_TYPE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.MODEL_LIFECYCLE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.SVC_SERVICES_FACTORY;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PRE_DESTROY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_RUN_LEVEL;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIED_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_REGISTRY;
 
 class ModelFactoryCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(ModelConfigCodegen.class);
@@ -124,8 +126,10 @@ class ModelFactoryCodegen implements CodegenExtension {
 
         classModel.addConstructor(Constructor.builder()
                                           .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                                          .addAnnotation(Annotation.create(SERVICE_ANNOTATION_INJECT))
                                           .description("Creates a new " + modelClassNamePrefix + "Factory.")
                                           .addContentLine("this.config = config;")
+                                          .addContentLine("this.registry = registry;")
                                           .addContentLine("this.lifecycle = lifecycle;")
                                           .addContentLine("this.lifecycleChanged = lifecycleLock.newCondition();")
                                           .addContent("var modelNames = ")
@@ -162,6 +166,11 @@ class ModelFactoryCodegen implements CodegenExtension {
                                                                 .description("Configuration for the new model.")
                                                                 .name("config")
                                                                 .type(CONFIG)
+                                                                .build())
+                                          .addParameter(Parameter.builder()
+                                                                .description("Service registry for the new model.")
+                                                                .name("registry")
+                                                                .type(SERVICE_REGISTRY)
                                                                 .build())
                                           .addParameter(Parameter.builder()
                                                                 .description("Lifecycle coordinator for the new model.")
@@ -209,6 +218,12 @@ class ModelFactoryCodegen implements CodegenExtension {
                                     .accessModifier(AccessModifier.PRIVATE)
                                     .isFinal(true)
                                     .type(CONFIG)
+                                    .build());
+        classModel.addField(Field.builder()
+                                    .name("registry")
+                                    .accessModifier(AccessModifier.PRIVATE)
+                                    .isFinal(true)
+                                    .type(SERVICE_REGISTRY)
                                     .build());
         classModel.addField(Field.builder()
                                     .name("lifecycle")
@@ -1079,7 +1094,8 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .addContentLine(".class, modelName);")
                 .addContent("var configBuilder = ")
                 .addContentLine(modelClassNamePrefix + "Config.builder()")
-                .addContentLine(".config(mergedConfig);")
+                .addContentLine(".config(mergedConfig)")
+                .addContentLine(".serviceRegistry(registry);")
                 .addContentLine()
                 .addContentLine("if (!configBuilder.enabled()) {")
                 .increaseContentPadding()
