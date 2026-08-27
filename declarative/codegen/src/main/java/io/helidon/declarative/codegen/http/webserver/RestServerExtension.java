@@ -65,6 +65,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.BAD_REQUEST_EXCEPTION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_CONSUMES_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_FORM_PARAM_ANNOTATION;
@@ -496,8 +497,22 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                     RestMethod restMethod,
                                     Map<String, String> headerProducers,
                                     int methodIndex) {
-        validateBodyParameters(restMethod);
-        if (methodUsesFormParams(restMethod)) {
+        BodyParameters bodyParameters = bodyParameters(restMethod);
+        validateBodyParameters(restMethod, bodyParameters);
+        bodyParameters.entityName()
+                .ifPresent(entity -> method.addContent("if (!")
+                        .addContent(REQUEST_PARAM_NAME)
+                        .addContentLine(".content().hasEntity()) {")
+                        .increaseContentPadding()
+                        .addContent("throw new ")
+                        .addContent(BAD_REQUEST_EXCEPTION)
+                        .addContent("(\"Entity ")
+                        .addContent(entity)
+                        .addContentLine(" is not present in the request.\");")
+                        .decreaseContentPadding()
+                        .addContentLine("}"));
+
+        if (bodyParameters.formCount() > 0) {
             method.addContent("var ")
                     .addContent(ParamProviderHttpForm.FORM_PARAMS)
                     .addContent(" = ")
@@ -708,8 +723,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         }
     }
 
-    private void validateBodyParameters(RestMethod restMethod) {
-        BodyParameters bodyParameters = bodyParameters(restMethod);
+    private void validateBodyParameters(RestMethod restMethod, BodyParameters bodyParameters) {
         if (bodyParameters.entityCount() > 1) {
             throw new CodegenException("Only one @Http.Entity parameter is supported on declarative server method "
                                                + restMethod.type().typeName().fqName() + "." + restMethod.name() + "().",
@@ -722,18 +736,16 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         }
     }
 
-    private boolean methodUsesFormParams(RestMethod restMethod) {
-        return bodyParameters(restMethod).formCount() > 0;
-    }
-
     private BodyParameters bodyParameters(RestMethod restMethod) {
         int entityCount = 0;
         int formCount = 0;
+        Optional<String> entityName = Optional.empty();
         Object firstOriginatingElement = restMethod.method().originatingElementValue();
 
         for (RestMethodParameter parameter : restMethod.parameters()) {
             if (HttpCodegenValidation.hasAnnotation(parameter.annotations(), HTTP_ENTITY_ANNOTATION)) {
                 entityCount++;
+                entityName = Optional.of(parameter.name());
                 firstOriginatingElement = parameter.parameter().originatingElementValue();
             }
             if (HttpCodegenValidation.hasAnnotation(parameter.annotations(), HTTP_FORM_PARAM_ANNOTATION)) {
@@ -749,6 +761,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                 for (TypedElementInfo component : HttpCodegenValidation.requestParamsComponents(requestParamsType)) {
                     if (HttpCodegenValidation.hasAnnotation(component.annotations(), HTTP_ENTITY_ANNOTATION)) {
                         entityCount++;
+                        entityName = Optional.of(component.elementName());
                         firstOriginatingElement = component.originatingElementValue();
                     }
                     if (HttpCodegenValidation.hasAnnotation(component.annotations(), HTTP_FORM_PARAM_ANNOTATION)) {
@@ -759,7 +772,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
             }
         }
 
-        return new BodyParameters(entityCount, formCount, firstOriginatingElement);
+        return new BodyParameters(entityCount, formCount, entityName, firstOriginatingElement);
     }
 
     private void addSimpleRoute(FieldHandler fieldHandler, Method.Builder routing, RestMethod restMethod) {
@@ -847,6 +860,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
 
     private record BodyParameters(int entityCount,
                                   int formCount,
+                                  Optional<String> entityName,
                                   Object firstOriginatingElement) {
     }
 }

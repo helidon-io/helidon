@@ -135,6 +135,9 @@ class EntityGenericTypeCodegenTest {
         }
 
         String generated = generatedContent.toString();
+        assertThat(generated, containsString("if (!req.content().hasEntity())"));
+        assertThat(generated,
+                   containsString("throw new BadRequestException(\"Entity entity is not present in the request.\");"));
         assertThat(generated, containsString(".content().as(GTYPE"));
         assertThat(generated, not(containsString("List<String>.class")));
     }
