@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.codegen;
+package io.helidon.service.tests.codegen;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,7 +24,6 @@ import java.util.List;
 
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
-import io.helidon.metadata.MetadataConstants;
 
 import org.junit.jupiter.api.Test;
 
@@ -103,9 +102,10 @@ class ServiceLoaderMetadataTest {
     }
 
     private static void assertServiceLoader(Path classOutput, String... contracts) throws IOException {
-        Path serviceLoader = classOutput.resolve(MetadataConstants.LOCATION)
+        Path serviceLoader = classOutput.resolve("META-INF")
+                .resolve("helidon")
                 .resolve("test.module")
-                .resolve(MetadataConstants.SERVICE_LOADER_FILE);
+                .resolve("service.loader");
         List<String> expected = new ArrayList<>();
         expected.add(HEADER);
         expected.addAll(List.of(contracts));

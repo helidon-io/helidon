@@ -33,11 +33,6 @@
         Code generation implementation for Helidon Service, to be used from annotation processing and from maven plugin
     </description>
 
-    <properties>
-        <!-- TestCompiler module-path setup is incorrectly reported as compile-scope test-only dependencies. -->
-        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -67,49 +62,5 @@
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-metadata</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-apt</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-testing</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-testCompile</id>
-                        <configuration>
-                            <proc>none</proc>
-                            <compilerArgs combine.children="append">
-                                <compilerArg>--add-modules</compilerArg>
-                                <compilerArg>java.compiler</compilerArg>
-                                <compilerArg>--add-reads</compilerArg>
-                                <compilerArg>io.helidon.service.codegen=java.compiler</compilerArg>
-                            </compilerArgs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>
