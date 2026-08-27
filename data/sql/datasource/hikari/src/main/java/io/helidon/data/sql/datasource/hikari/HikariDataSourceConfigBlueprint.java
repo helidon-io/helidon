@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -263,18 +263,24 @@ interface HikariDataSourceConfigBlueprint extends ConnectionConfig, ProviderConf
 
 /*
     Following HikariConfig methods were not added to the config.
-     - DataSource: Nested datasource may require additional support to be implemented
-     - Object instances can't be simply put into the config which is being read by Service.ServicesFactory
+     - DataSource: Nested datasource may require additional support to be implemented.
+     - Object instances can't be simply put into the config which is being read by Service.ServicesFactory.
+     - The configuration surface is intentionally limited to common pool and JDBC options.
 
+    void setCredentials(com.zaxxer.hikari.util.Credentials credentials)
+    void setCredentialsProvider(com.zaxxer.hikari.HikariCredentialsProvider credentialsProvider)
+    void setCredentialsProviderClassName(java.lang.String credentialsProviderClassName)
     void setDataSource(javax.sql.DataSource dataSource)
     void setDataSourceClassName(java.lang.String className)
     void setDataSourceJNDI(java.lang.String jndiDataSource)
     void setDataSourceProperties(java.util.Properties dsProperties)
+    void setExceptionOverride(com.zaxxer.hikari.SQLExceptionOverride exceptionOverride)
+    void setExceptionOverrideClassName(java.lang.String exceptionOverrideClassName)
+    void setHealthCheckProperties(java.util.Properties healthCheckProperties)
     void setHealthCheckRegistry(java.lang.Object healthCheckRegistry)
     void setMetricRegistry(java.lang.Object metricRegistry)
     void setMetricsTrackerFactory(MetricsTrackerFactory metricsTrackerFactory)
     void setScheduledExecutor(java.util.concurrent.ScheduledExecutorService executor)
-    void setScheduledExecutorService(java.util.concurrent.ScheduledThreadPoolExecutor executor)
     void setThreadFactory(java.util.concurrent.ThreadFactory threadFactory)
 */
 

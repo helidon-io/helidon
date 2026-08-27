@@ -54,7 +54,7 @@ endif::[]
 
 // 3rd party
 :version-lib-jaeger: 1.22
-:version-lib-hikaricp: 5.0.1
+:version-lib-hikaricp: 7.1.0
 :version-lib-eclipselink: 4.0.2
 :version-lib-hibernate: 6.1
 :version-lib-oracle-jdbc: 21
