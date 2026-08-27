@@ -15,20 +15,32 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 
 import org.junit.jupiter.api.Test;
 
 @AddConfig(key = HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE, value = "true")
+@AddBean(AutoSpanIncludesWriteTestBase.FailingWriterInterceptor.class)
 class AutoSpanIncludesWriteTrueTest extends AutoSpanIncludesWriteTestBase {
 
     @Test
     void testTrueEndsSpanAfterWrite() {
-        checkSpanAtWrite(false);
+        checkSpanAtWrite(false, false, true);
     }
 
     @Test
     void testTruePreservesErrorStatus() {
         checkErrorStatus();
+    }
+
+    @Test
+    void testTrueEndsSpanAfterWriteFailure() {
+        checkFailedWriteEndsSpan();
+    }
+
+    @Test
+    void testTrueEndsSpanForEntitylessResponse() {
+        checkNoEntitySpanEnds();
     }
 }

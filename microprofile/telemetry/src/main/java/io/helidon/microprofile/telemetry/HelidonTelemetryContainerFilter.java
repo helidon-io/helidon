@@ -58,8 +58,8 @@ import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_HO
 @Provider
 class HelidonTelemetryContainerFilter implements ContainerRequestFilter, ContainerResponseFilter {
     private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
-    private static final String SPAN = Span.class.getName();
-    private static final String SPAN_SCOPE = Scope.class.getName();
+    static final String SPAN = Span.class.getName();
+    static final String SPAN_SCOPE = Scope.class.getName();
     private static final String HTTP_TARGET = "http.target";
     private static final String HTTP_ROUTE = "http.route";
 
@@ -168,6 +168,9 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
         requestContext.setProperty(SPAN, helidonSpan);
         requestContext.setProperty(SPAN_SCOPE, helidonScope);
+        if (autoSpanIncludesResponseWrite) {
+            requestContext.setProperty(ServerSpanLifecycle.PROPERTY, new ServerSpanLifecycle());
+        }
 
     }
 
@@ -193,7 +196,9 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                 return;
             }
             Scope scope = (Scope) request.getProperty(SPAN_SCOPE);
-            scope.close();
+            if (!autoSpanIncludesResponseWrite) {
+                scope.close();
+            }
 
             span.tag(HTTP_STATUS_CODE, response.getStatus());
 
@@ -203,15 +208,23 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                 span.status(Span.Status.ERROR);
             }
             if (autoSpanIncludesResponseWrite) {
-                serverResponse.whenSent(span::end);
+                ServerSpanLifecycle lifecycle = (ServerSpanLifecycle) request.getProperty(ServerSpanLifecycle.PROPERTY);
+                if (lifecycle == null) {
+                    lifecycle = new ServerSpanLifecycle();
+                    request.setProperty(ServerSpanLifecycle.PROPERTY, lifecycle);
+                }
+                ServerSpanLifecycle finalLifecycle = lifecycle;
+                serverResponse.whenSent(() -> finalLifecycle.complete(span, scope, true));
             } else {
                 span.end();
             }
 
 
         } finally {
-            request.removeProperty(SPAN);
-            request.removeProperty(SPAN_SCOPE);
+            if (!autoSpanIncludesResponseWrite) {
+                request.removeProperty(SPAN);
+                request.removeProperty(SPAN_SCOPE);
+            }
         }
     }
 

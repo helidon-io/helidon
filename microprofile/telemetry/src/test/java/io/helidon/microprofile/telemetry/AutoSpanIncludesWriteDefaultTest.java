@@ -21,6 +21,6 @@ class AutoSpanIncludesWriteDefaultTest extends AutoSpanIncludesWriteTestBase {
 
     @Test
     void testDefaultEndsSpanBeforeWrite() {
-        checkSpanAtWrite(true);
+        checkSpanAtWrite(true, true, false);
     }
 }

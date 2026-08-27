@@ -45,6 +45,7 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
     @Override
     public void configure(FeatureContext ctx) {
         ctx.register(HelidonTelemetryContainerFilter.class);
+        ctx.register(new HelidonTelemetryRequestEventListener());
 
         try {
             Instance<Tracer> tracers = CDI.current().select(Tracer.class);

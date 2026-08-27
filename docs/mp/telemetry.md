@@ -467,8 +467,12 @@ When `telemetry.span.includes-response-write` is `false`, Helidon ends the
 span before serializing the response entity, preserving the behavior of earlier
 Helidon 4 releases. When it is `true`, Helidon ends the span after response
 serialization and encoding, when the last byte has been buffered for writing to
-the socket. This setting is also deprecated for removal in a future major
-release.
+the socket. The automatic span remains current while the response entity is
+written, so spans started by writer interceptors, message-body writers, or
+streaming output are children of the automatic span. If response writing fails,
+Helidon records the failure and ends the automatic span when Jersey finishes
+processing the failed request. This setting is deprecated for removal in a
+future major release.
 
 For `telemetry.span.includes-response-write`, `true` measures the
 server-side work of preparing the response. It does not measure network delivery

@@ -20,12 +20,13 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
@@ -33,10 +34,8 @@ import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
-import io.helidon.webserver.http.ServerResponse;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.SpanKind;
@@ -49,14 +48,12 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NameBinding;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.container.ContainerResponseContext;
-import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.ext.Provider;
 import jakarta.ws.rs.ext.WriterInterceptor;
 import jakarta.ws.rs.ext.WriterInterceptorContext;
@@ -78,7 +75,8 @@ import static org.hamcrest.Matchers.notNullValue;
 class AutoSpanIncludesWriteTestBase {
 
     private static final String BASE_PATH = "/auto-span-includes-write";
-    static final String ENTIRE_REQUEST_SPAN_NAME = "entireRequest";
+    static final String WRITER_CHILD_SPAN_NAME = "writerChild";
+    static final String STREAMING_CHILD_SPAN_NAME = "streamingChild";
 
     @Inject
     private WebTarget webTarget;
@@ -108,7 +106,9 @@ class AutoSpanIncludesWriteTestBase {
         spanExporter.clear();
     }
 
-    void checkSpanAtWrite(boolean expectedEndedAtWrite) {
+    void checkSpanAtWrite(boolean expectedClosedAtWrite,
+                          boolean expectedEndedAtWrite,
+                          boolean expectedCurrentAtWrite) {
         try (Response response = webTarget.path(BASE_PATH + "/ok")
                 .request(MediaType.TEXT_PLAIN)
                 .get()) {
@@ -118,8 +118,10 @@ class AutoSpanIncludesWriteTestBase {
 
         Span observedSpan = writeProbe.observedSpan();
         assertThat("Writer observed a span", observedSpan, notNullValue());
-        assertThat("Span scope was closed before entity serialization", writeProbe.spanClosed(), is(true));
+        assertThat("Span scope state at entity serialization", writeProbe.spanClosed(), is(expectedClosedAtWrite));
         assertThat("Span end state at entity serialization", writeProbe.spanEnded(), is(expectedEndedAtWrite));
+        assertThat("Automatic span current state at entity serialization",
+                   writeProbe.spanWasCurrent(), is(expectedCurrentAtWrite));
         assertThat("Span eventually ended", spanListener.awaitEnded(observedSpan), is(true));
         spanExporter.spanData(2);
     }
@@ -147,35 +149,74 @@ class AutoSpanIncludesWriteTestBase {
                    is(500L));
     }
 
-    void checkResponseWriteSpanParent() {
-        try (Response response = webTarget.path(BASE_PATH + "/ok")
+    void checkResponseWriteSpanParent(String path, String childSpanName, String expectedEntity) {
+        try (Response response = webTarget.path(BASE_PATH + path)
                 .request(MediaType.TEXT_PLAIN)
                 .get()) {
             assertThat("Response status", response.getStatus(), is(200));
-            assertThat("Response entity", response.readEntity(String.class), is("ok"));
+            assertThat("Response entity", response.readEntity(String.class), is(expectedEntity));
         }
 
-        Span responseWriteSpan = writeProbe.observedSpan();
-        assertThat("Writer observed a span", responseWriteSpan, notNullValue());
-        assertThat("Response write span scope was closed before entity serialization",
-                   writeProbe.spanClosed(), is(true));
-        assertThat("Response write span remained open during entity serialization",
+        Span serverSpanAtWrite = writeProbe.observedSpan();
+        assertThat("Writer observed the automatic span", serverSpanAtWrite, notNullValue());
+        assertThat("Automatic span scope remained open during entity serialization",
+                   writeProbe.spanClosed(), is(false));
+        assertThat("Automatic span remained open during entity serialization",
                    writeProbe.spanEnded(), is(false));
-        assertThat("Response write span eventually ended", spanListener.awaitEnded(responseWriteSpan), is(true));
+        assertThat("Automatic span was current during entity serialization",
+                   writeProbe.spanWasCurrent(), is(true));
+        assertThat("Automatic span eventually ended", spanListener.awaitEnded(serverSpanAtWrite), is(true));
 
         List<SpanData> spans = spanExporter.spanData(3);
-        SpanData entireRequestSpan = spans.stream()
-                .filter(span -> span.getName().equals(ENTIRE_REQUEST_SPAN_NAME))
+        SpanData serverSpan = spans.stream()
+                .filter(span -> span.getKind() == SpanKind.SERVER)
                 .findFirst()
                 .orElseThrow();
-        SpanData exportedResponseWriteSpan = spans.stream()
-                .filter(span -> span.getSpanContext().getSpanId().equals(responseWriteSpan.context().spanId()))
+        SpanData childSpan = spans.stream()
+                .filter(span -> span.getName().equals(childSpanName))
                 .findFirst()
                 .orElseThrow();
 
-        assertThat("Response write span parent",
-                   exportedResponseWriteSpan.getParentSpanContext().getSpanId(),
-                   equalTo(entireRequestSpan.getSpanContext().getSpanId()));
+        assertThat("Response-write child span parent",
+                   childSpan.getParentSpanContext().getSpanId(),
+                   equalTo(serverSpan.getSpanContext().getSpanId()));
+    }
+
+    void checkFailedWriteEndsSpan() {
+        try (Response ignored = webTarget.path(BASE_PATH + "/write-error")
+                .request(MediaType.TEXT_PLAIN)
+                .get()) {
+            // Depending on how far response writing progressed, the client can receive an error response or an exception.
+        } catch (ProcessingException ignored) {
+            // The server-side lifecycle assertions below are authoritative for this test.
+        }
+
+        Span observedSpan = writeProbe.observedSpan();
+        assertThat("Failing writer observed the automatic span", observedSpan, notNullValue());
+        assertThat("Automatic span was current in the failing writer", writeProbe.spanWasCurrent(), is(true));
+        assertThat("Failed response span eventually ended", spanListener.awaitEnded(observedSpan), is(true));
+        assertThat("Failed response span ended once", spanListener.endCount(observedSpan), is(1));
+        assertThat("Failed response span recorded the write failure",
+                   spanListener.failure(observedSpan), notNullValue());
+
+        List<SpanData> spans = spanExporter.spanData(2);
+        SpanData serverSpan = spans.stream()
+                .filter(span -> span.getKind() == SpanKind.SERVER)
+                .findFirst()
+                .orElseThrow();
+        assertThat("Failed response span status", serverSpan.getStatus().getStatusCode(), is(StatusCode.ERROR));
+    }
+
+    void checkNoEntitySpanEnds() {
+        try (Response response = webTarget.path(BASE_PATH + "/no-content")
+                .request()
+                .get()) {
+            assertThat("Response status", response.getStatus(), is(204));
+        }
+
+        List<SpanData> spans = spanExporter.spanData(2);
+        assertThat("Entity-less response exported its server span",
+                   spans.stream().anyMatch(span -> span.getKind() == SpanKind.SERVER), is(true));
     }
 
     @NameBinding
@@ -190,6 +231,8 @@ class AutoSpanIncludesWriteTestBase {
         private final AtomicReference<Span> latestStarted = new AtomicReference<>();
         private final Set<Span> closed = ConcurrentHashMap.newKeySet();
         private final ConcurrentHashMap<Span, CompletableFuture<Void>> ended = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<Span, AtomicInteger> endCounts = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<Span, Throwable> failures = new ConcurrentHashMap<>();
 
         @Override
         public void started(Span span) {
@@ -204,11 +247,13 @@ class AutoSpanIncludesWriteTestBase {
 
         @Override
         public void ended(Span span) {
+            endCounts.computeIfAbsent(span, ignored -> new AtomicInteger()).incrementAndGet();
             ended.computeIfAbsent(span, ignored -> new CompletableFuture<>()).complete(null);
         }
 
         @Override
         public void ended(Span span, Throwable t) {
+            failures.put(span, t);
             ended(span);
         }
 
@@ -234,15 +279,27 @@ class AutoSpanIncludesWriteTestBase {
             }
         }
 
+        int endCount(Span span) {
+            AtomicInteger count = endCounts.get(span);
+            return count == null ? 0 : count.get();
+        }
+
+        Throwable failure(Span span) {
+            return failures.get(span);
+        }
+
         void reset() {
             latestStarted.set(null);
             closed.clear();
             ended.clear();
+            endCounts.clear();
+            failures.clear();
         }
     }
 
     @Provider
     @ObserveWrite
+    @Priority(Priorities.USER)
     @ApplicationScoped
     public static class WriteProbe implements WriterInterceptor {
 
@@ -250,6 +307,7 @@ class AutoSpanIncludesWriteTestBase {
         private final AtomicReference<Span> observedSpan = new AtomicReference<>();
         private volatile boolean spanClosed;
         private volatile boolean spanEnded;
+        private volatile boolean spanWasCurrent;
 
         @Inject
         WriteProbe(TestSpanListener spanListener) {
@@ -262,6 +320,9 @@ class AutoSpanIncludesWriteTestBase {
             observedSpan.set(span);
             spanClosed = spanListener.isClosed(span);
             spanEnded = spanListener.isEnded(span);
+            spanWasCurrent = Span.current()
+                    .map(current -> current.context().spanId().equals(span.context().spanId()))
+                    .orElse(false);
             context.proceed();
         }
 
@@ -277,52 +338,76 @@ class AutoSpanIncludesWriteTestBase {
             return spanEnded;
         }
 
+        boolean spanWasCurrent() {
+            return spanWasCurrent;
+        }
+
         void reset() {
             observedSpan.set(null);
             spanClosed = false;
             spanEnded = false;
+            spanWasCurrent = false;
         }
     }
 
     @Provider
-    @Priority(Priorities.HEADER_DECORATOR)
+    @WriterChild
+    @Priority(Priorities.USER + 100)
     @ApplicationScoped
-    public static class EntireRequestSpanFilter implements ContainerRequestFilter, ContainerResponseFilter {
+    public static class ChildSpanWriterInterceptor implements WriterInterceptor {
 
         private final Tracer tracer;
 
-        @jakarta.ws.rs.core.Context
-        private ServerResponse serverResponse;
-
-        private Span entireRequestSpan;
-        private Scope entireRequestScope;
-
         @Inject
-        EntireRequestSpanFilter(Tracer tracer) {
+        ChildSpanWriterInterceptor(Tracer tracer) {
             this.tracer = tracer;
         }
 
         @Override
-        public void filter(ContainerRequestContext requestContext) {
-            Optional<SpanContext> propagatedSpanContext =
-                    tracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()));
-            entireRequestSpan = tracer.spanBuilder(ENTIRE_REQUEST_SPAN_NAME)
-                    .update(builder -> propagatedSpanContext.ifPresent(builder::parent))
-                    .build();
-            entireRequestScope = entireRequestSpan.activate();
+        public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
+            Span childSpan = tracer.spanBuilder(WRITER_CHILD_SPAN_NAME).build();
+            try (Scope ignored = childSpan.activate()) {
+                context.proceed();
+            } finally {
+                childSpan.end();
+            }
         }
+    }
 
+    @Provider
+    @FailWrite
+    @Priority(Priorities.USER + 100)
+    @ApplicationScoped
+    public static class FailingWriterInterceptor implements WriterInterceptor {
         @Override
-        public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-            entireRequestScope.close();
-            serverResponse.whenSent(entireRequestSpan::end);
+        public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
+            throw new IOException("Deliberate response write failure");
         }
+    }
+
+    @NameBinding
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    public @interface WriterChild {
+    }
+
+    @NameBinding
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    public @interface FailWrite {
     }
 
     @Path(BASE_PATH)
     @ObserveWrite
     @ApplicationScoped
     public static class TestResource {
+
+        private final Tracer tracer;
+
+        @Inject
+        TestResource(Tracer tracer) {
+            this.tracer = tracer;
+        }
 
         @GET
         @Path("/ok")
@@ -336,6 +421,42 @@ class AutoSpanIncludesWriteTestBase {
         @Produces(MediaType.TEXT_PLAIN)
         public Response error() {
             return Response.serverError().entity("error").build();
+        }
+
+        @GET
+        @Path("/writer-child")
+        @Produces(MediaType.TEXT_PLAIN)
+        @WriterChild
+        public String writerChild() {
+            return "writer-child";
+        }
+
+        @GET
+        @Path("/streaming-child")
+        @Produces(MediaType.TEXT_PLAIN)
+        public StreamingOutput streamingChild() {
+            return output -> {
+                Span childSpan = tracer.spanBuilder(STREAMING_CHILD_SPAN_NAME).build();
+                try (Scope ignored = childSpan.activate()) {
+                    output.write("streaming-child".getBytes(StandardCharsets.UTF_8));
+                } finally {
+                    childSpan.end();
+                }
+            };
+        }
+
+        @GET
+        @Path("/write-error")
+        @Produces(MediaType.TEXT_PLAIN)
+        @FailWrite
+        public String writeError() {
+            return "never-written";
+        }
+
+        @GET
+        @Path("/no-content")
+        public Response noContent() {
+            return Response.noContent().build();
         }
     }
 }

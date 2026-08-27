@@ -20,12 +20,17 @@ import io.helidon.microprofile.testing.junit5.AddConfig;
 
 import org.junit.jupiter.api.Test;
 
-@AddBean(AutoSpanIncludesWriteTestBase.EntireRequestSpanFilter.class)
+@AddBean(AutoSpanIncludesWriteTestBase.ChildSpanWriterInterceptor.class)
 @AddConfig(key = HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE, value = "true")
 class AutoSpanIncludesWriteNestingTest extends AutoSpanIncludesWriteTestBase {
 
     @Test
-    void testResponseWriteSpanIsChildOfEntireRequestSpan() {
-        checkResponseWriteSpanParent();
+    void testWriterInterceptorSpanIsChildOfAutomaticServerSpan() {
+        checkResponseWriteSpanParent("/writer-child", WRITER_CHILD_SPAN_NAME, "writer-child");
+    }
+
+    @Test
+    void testStreamingOutputSpanIsChildOfAutomaticServerSpan() {
+        checkResponseWriteSpanParent("/streaming-child", STREAMING_CHILD_SPAN_NAME, "streaming-child");
     }
 }
