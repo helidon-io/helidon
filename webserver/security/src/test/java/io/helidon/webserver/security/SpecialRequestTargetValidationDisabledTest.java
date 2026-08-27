@@ -22,7 +22,9 @@ import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.security.Security;
+import io.helidon.security.SecurityContext;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -52,11 +54,18 @@ class SpecialRequestTargetValidationDisabledTest {
         server.protocolsDiscoverServices(false)
                 .addConnectionSelector(http1)
                 .featuresDiscoverServices(false)
+                .addFeature(ContextFeature.create())
                 .addFeature(SecurityFeature.builder()
                                     .security(Security.builder().build())
                                     .build())
-                .routing(routing -> routing.any((req, res) -> res.status(Status.NOT_IMPLEMENTED_501)
-                        .send(req.requestedUri().toUri().toString())));
+                .routing(routing -> routing.any((req, res) -> {
+                    var securityContext = req.context().get(SecurityContext.class).orElseThrow();
+                    res.status(Status.NOT_IMPLEMENTED_501)
+                            .send(req.query().rawValue()
+                                          + '|' + req.requestedUri().query().rawValue()
+                                          + '|' + req.requestedUri().toUri()
+                                          + '|' + securityContext.env().targetUri());
+                }));
     }
 
     @Test
@@ -64,5 +73,14 @@ class SpecialRequestTargetValidationDisabledTest {
         String response = client.sendAndReceive(Method.CONNECT, "example.com:2147483648", null, List.of());
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Status.NOT_IMPLEMENTED_501));
+    }
+
+    @Test
+    void connectTargetUriIgnoresQuery() {
+        String response = client.sendAndReceive(Method.CONNECT, "example.com:443?q=1", null, List.of());
+
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Status.NOT_IMPLEMENTED_501));
+        assertThat(SocketHttpClient.entityFromResponse(response, true),
+                   is("q=1||http://example.com:443|http://example.com:443"));
     }
 }

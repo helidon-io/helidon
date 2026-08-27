@@ -284,6 +284,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                 .from(requestedUri)
                 .authority(authority)
                 .path("")
+                .query(UriQuery.empty())
                 .build();
         return new ConnectUriInfo(connectUri, authority);
     }
