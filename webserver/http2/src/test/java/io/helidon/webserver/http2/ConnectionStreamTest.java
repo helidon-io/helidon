@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.http2;
 
+import java.io.UncheckedIOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -24,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
@@ -43,6 +47,7 @@ import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
@@ -54,6 +59,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -197,6 +203,26 @@ class ConnectionStreamTest {
     }
 
     @Test
+    void invalidContentLengthResetWritePreservesSocketWriterException() {
+        assertInvalidContentLengthResetWriteFailure(new SocketWriterException());
+    }
+
+    @Test
+    void invalidContentLengthResetWritePreservesUncheckedIOException() {
+        assertInvalidContentLengthResetWriteFailure(new UncheckedIOException(new SocketException("Broken pipe")));
+    }
+
+    @Test
+    void invalidWindowUpdateResetWritePreservesSocketWriterException() {
+        assertInvalidWindowUpdateResetWriteFailure(new SocketWriterException());
+    }
+
+    @Test
+    void invalidWindowUpdateResetWritePreservesUncheckedIOException() {
+        assertInvalidWindowUpdateResetWriteFailure(new UncheckedIOException(new SocketException("Broken pipe")));
+    }
+
+    @Test
     void resetRestoresOnlyConnectionCreditForQueuedData() {
         List<WindowUpdate> windowUpdates = new ArrayList<>();
         ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder(
@@ -269,6 +295,33 @@ class ConnectionStreamTest {
         Http2ServerStream s = mock(Http2ServerStream.class);
         when(s.streamId()).thenReturn(streamId);
         return s;
+    }
+
+    private static void assertInvalidContentLengthResetWriteFailure(RuntimeException writeFailure) {
+        Http2ServerStream stream = stream(new Http2ConnectionStreams(), new RecordingConnectionWriter(writeFailure));
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.CONTENT_LENGTH, 2);
+        stream.headers(Http2Headers.create(headers), false);
+        BufferData payload = BufferData.create("frank");
+        Http2FrameHeader header = Http2FrameHeader.create(payload.available(),
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                          STREAM_ID);
+
+        ServerConnectionException exception = assertThrows(ServerConnectionException.class,
+                                                           () -> stream.data(header, payload, true));
+
+        assertThat(exception.getCause(), sameInstance(writeFailure));
+    }
+
+    private static void assertInvalidWindowUpdateResetWriteFailure(RuntimeException writeFailure) {
+        Http2ServerStream stream = stream(new Http2ConnectionStreams(), new RecordingConnectionWriter(writeFailure));
+        stream.headers(Http2Headers.create(WritableHeaders.create()), false);
+
+        ServerConnectionException exception = assertThrows(ServerConnectionException.class,
+                                                           () -> stream.windowUpdate(new Http2WindowUpdate(0)));
+
+        assertThat(exception.getCause(), sameInstance(writeFailure));
     }
 
     private static Http2ServerStream stream(Http2ConnectionStreams streams, Http2ConnectionWriter writer) {
@@ -397,10 +450,16 @@ class ConnectionStreamTest {
     }
 
     private static final class RecordingConnectionWriter extends Http2ConnectionWriter {
+        private final RuntimeException writeFailure;
         private Runnable terminalCallback;
 
         private RecordingConnectionWriter() {
+            this(null);
+        }
+
+        private RecordingConnectionWriter(RuntimeException writeFailure) {
             super(mock(SocketContext.class), mock(DataWriter.class), List.of());
+            this.writeFailure = writeFailure;
         }
 
         @Override
@@ -457,6 +516,9 @@ class ConnectionStreamTest {
 
         @Override
         public void write(Http2FrameData frame) {
+            if (writeFailure != null) {
+                throw writeFailure;
+            }
         }
 
         private void completeTerminalWrite() {

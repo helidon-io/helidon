@@ -382,7 +382,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 writeResetStream(frame, clientSettings);
                 connectionAttackVectorMetrics.madeYouResetCheck();
             }
-        } catch (UncheckedIOException e) {
+        } catch (SocketWriterException | UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write window update", e);
         }
     }
@@ -976,7 +976,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 discardDataAfterReset(currentFrameLength);
             }
             if (sendReset) {
-                writeResetStream(rst, clientSettings);
+                try {
+                    writeResetStream(rst, clientSettings);
+                } catch (SocketWriterException | UncheckedIOException e) {
+                    throw new ServerConnectionException("Failed to write reset stream", e);
+                }
                 connectionAttackVectorMetrics.madeYouResetCheck();
             }
         } finally {
