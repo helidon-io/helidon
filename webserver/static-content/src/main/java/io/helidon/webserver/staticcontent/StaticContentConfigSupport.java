@@ -103,11 +103,6 @@ final class StaticContentConfigSupport {
         static MediaType createContentTypes(Config config) {
             return StaticContentConfigSupport.createContentTypes(config);
         }
-
-        @Prototype.ConfigFactoryMethod("preCompressedEncodings")
-        static List<PreCompressedEncodingConfig> createPreCompressedEncodings(Config config) {
-            return config.asList(PreCompressedEncodingConfig::create).get();
-        }
     }
 
     static class PreCompressedEncodingMethods {

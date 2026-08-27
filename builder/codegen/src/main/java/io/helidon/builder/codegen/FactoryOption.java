@@ -706,7 +706,12 @@ final class FactoryOption {
                                             String optionName,
                                             OptionConfigured.Builder configured) {
 
-        TypeName actualType = Utils.realType(optionType);
+        TypeName containerType = Utils.realType(optionType);
+        boolean optionalContainer = optionType.isOptional()
+                && (containerType.isList() || containerType.isSet() || containerType.isMap());
+        TypeName actualType = optionalContainer
+                ? Utils.realType(containerType)
+                : containerType;
         // first check config factories
         for (FactoryMethod configFactory : prototypeInfo.configFactories()) {
             if (typesEqual(configFactory.returnType(), actualType)) {
