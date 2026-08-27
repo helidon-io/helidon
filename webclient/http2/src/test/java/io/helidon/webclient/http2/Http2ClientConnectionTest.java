@@ -662,6 +662,63 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void connectionLossFailsSiblingTrailersDespiteBlockingCallback() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream firstStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream secondStream = connection.createStream(STREAM_CONFIG);
+            firstStream.writeHeaders(requestHeaders(), true);
+            secondStream.writeHeaders(requestHeaders(), true);
+
+            WritableHeaders<?> responseHeaders = WritableHeaders.create();
+            responseHeaders.set(HeaderNames.TRAILER, "grpc-status");
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            Http2Headers response = Http2Headers.create(responseHeaders).status(Status.OK_200);
+            test.offerInbound(encodedHeaderFrame(firstStream.streamId(), response, inboundTable, huffman),
+                              encodedHeaderFrame(secondStream.streamId(), response, inboundTable, huffman));
+            assertThat(firstStream.readHeaders().status(), is(Status.OK_200));
+            assertThat(secondStream.readHeaders().status(), is(Status.OK_200));
+
+            CompletableFuture<Headers> firstTrailers = firstStream.trailers();
+            CompletableFuture<Headers> secondTrailers = secondStream.trailers();
+            AtomicBoolean callbackClaimed = new AtomicBoolean();
+            CountDownLatch callbackEntered = new CountDownLatch(1);
+            CountDownLatch releaseCallback = new CountDownLatch(1);
+            Runnable blockFirstCallback = () -> {
+                if (callbackClaimed.compareAndSet(false, true)) {
+                    callbackEntered.countDown();
+                    try {
+                        if (!releaseCallback.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+                            throw new IllegalStateException("Timed out waiting to release trailers callback");
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted while blocking trailers callback", e);
+                    }
+                }
+            };
+            firstTrailers.whenComplete((_, _) -> blockFirstCallback.run());
+            secondTrailers.whenComplete((_, _) -> blockFirstCallback.run());
+
+            try {
+                test.closeInbound();
+                test.assertConnectionClosed();
+                assertThat(callbackEntered.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+                assertThat(firstTrailers.isCompletedExceptionally(), is(true));
+                assertThat(secondTrailers.isCompletedExceptionally(), is(true));
+            } finally {
+                releaseCallback.countDown();
+                firstStream.close();
+                secondStream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @Test
     void connectionLossPreservesCompletedResponse() {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));

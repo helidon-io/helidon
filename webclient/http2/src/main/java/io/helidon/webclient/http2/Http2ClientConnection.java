@@ -582,7 +582,8 @@ public class Http2ClientConnection {
             try {
                 closeTransport();
             } finally {
-                failedStreams.forEach(stream -> stream.completeTrailersFailure(actualFailure));
+                failedStreams.forEach(stream ->
+                        Thread.startVirtualThread(() -> stream.completeTrailersFailure(actualFailure)));
             }
         }
     }
