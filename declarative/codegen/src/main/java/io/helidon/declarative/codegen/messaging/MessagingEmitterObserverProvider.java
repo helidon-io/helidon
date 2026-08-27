@@ -165,7 +165,7 @@ public class MessagingEmitterObserverProvider implements InjectCodegenObserverPr
                     .addAnnotation(Annotations.OVERRIDE)
                     .accessModifier(AccessModifier.PUBLIC)
                     .returnType(TypeName.create(void.class))
-                    .name("emitBatch")
+                    .name("emit")
                     .addParameter(messages -> messages
                             .type(messageBatchType(payloadType))
                             .name("messages"))

@@ -87,18 +87,18 @@ class ChannelMessagingTypes {
         Emitter<String> failingChannel;
 
         void emitChannelOne(String entity) {
-            channelOne.emitMessage(Message.builder(entity)
-                                           .header("key", "value")
-                                           .build());
+            channelOne.emit(Message.builder(entity)
+                                    .header("key", "value")
+                                    .build());
         }
 
         void emitChannelOneBatch(String first, String second) {
-            channelOne.emitBatch(MessageBatch.create(List.of(Message.builder(first)
-                                                                     .header("key", "batch-first")
-                                                                     .build(),
-                                                             Message.builder(second)
-                                                                     .header("key", "batch-second")
-                                                                     .build())));
+            channelOne.emit(MessageBatch.create(List.of(Message.builder(first)
+                                                                .header("key", "batch-first")
+                                                                .build(),
+                                                        Message.builder(second)
+                                                                .header("key", "batch-second")
+                                                                .build())));
         }
 
         void emitChannelTwo(String entity) {

@@ -181,9 +181,9 @@ class DeclarativeMessagingTest {
         try (MessagingGraph graph = builder.build()) {
             graph.start();
             graph.emitter(channel)
-                    .emitMessage(Message.builder("connector message")
-                                         .header("source", "test")
-                                         .build());
+                    .emit(Message.builder("connector message")
+                                 .header("source", "test")
+                                 .build());
 
             assertThat(sentMessages, hasSize(1));
             assertThat(sentMessages.getFirst().entity(), is("connector message"));
@@ -213,10 +213,10 @@ class DeclarativeMessagingTest {
         try (MessagingGraph graph = builder.build()) {
             graph.start();
             graph.emitter(channel)
-                    .emitBatch(MessageBatch.create(List.of(Message.builder("first")
-                                                                  .header("source", "batch")
-                                                                  .build(),
-                                                           Message.create("second"))));
+                    .emit(MessageBatch.create(List.of(Message.builder("first")
+                                                             .header("source", "batch")
+                                                             .build(),
+                                                      Message.create("second"))));
 
             assertThat(batches, hasSize(1));
             assertThat(batches.getFirst().size(), is(2));

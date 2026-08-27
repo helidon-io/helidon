@@ -70,7 +70,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     }
 
     @Override
-    public void emitBatch(MessageBatch<? extends T> batch) {
+    public void emit(MessageBatch<? extends T> batch) {
         emitBatchObject(batch);
     }
 

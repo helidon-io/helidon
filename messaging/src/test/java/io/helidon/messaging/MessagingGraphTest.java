@@ -1019,7 +1019,7 @@ class MessagingGraphTest {
         try (MessagingGraph graph = builder.build()) {
             graph.start();
             await(streamDelivered);
-            graph.emitter(upstream).emitMessage(message("from-upstream"));
+            graph.emitter(upstream).emit(message("from-upstream"));
 
             assertThat(delivered, is(List.of("from-stream", "from-upstream")));
         }

@@ -112,7 +112,7 @@ public class MessagingRuntimeJmhBenchmark {
     @Benchmark
     public String emitPrebuiltMessagesIndividually(BatchState state) {
         for (Message<String> message : state.messages) {
-            state.emitter.emitMessage(message);
+            state.emitter.emit(message);
         }
         return state.consumed;
     }
@@ -125,7 +125,7 @@ public class MessagingRuntimeJmhBenchmark {
      */
     @Benchmark
     public String emitBatch(BatchState state) {
-        state.emitter.emitBatch(MessageBatch.create(state.messages));
+        state.emitter.emit(MessageBatch.create(state.messages));
         return state.consumed;
     }
 
@@ -137,7 +137,7 @@ public class MessagingRuntimeJmhBenchmark {
      */
     @Benchmark
     public String emitPrebuiltBatch(BatchState state) {
-        state.emitter.emitBatch(state.batch);
+        state.emitter.emit(state.batch);
         return state.consumed;
     }
 

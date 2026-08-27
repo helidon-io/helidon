@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.GenericType;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -132,7 +133,7 @@ class MessagingGraphBuilderTest {
         try (MessagingGraph graph = builder.build()) {
             graph.start();
             graph.emitter(payloadInput).emit("four");
-            graph.emitter(messageInput).emitMessage(Message.builder("hello").header("trace", "123").build());
+            graph.emitter(messageInput).emit(Message.builder("hello").header("trace", "123").build());
         }
 
         assertThat(deliveredLengths, is(List.of(4)));
@@ -141,15 +142,55 @@ class MessagingGraphBuilderTest {
     }
 
     @Test
-    void subtypeMessagesRemainEnvelopesOnSupertypeChannelsAndProcessorTargets() {
+    void emitterOverloadsPreservePayloadMessageAndBatchBoundaries() {
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("overloaded-emitter", String.class);
+        List<MessageBatch<String>> delivered = new ArrayList<>();
+        builder.batchSink(channel, delivered::add);
+        Message<String> message = Message.builder("message").header("trace", "one").build();
+        MessageBatch<String> batch = MessageBatch.create(
+                List.of(Message.builder("batch").header("trace", "two").build()));
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+            Emitter<String> emitter = graph.emitter(channel);
+            emitter.emit("payload");
+            emitter.emit(message);
+            emitter.emit(batch);
+
+            String nullPayload = null;
+            Message<String> nullMessage = null;
+            MessageBatch<String> nullBatch = null;
+            assertThrows(NullPointerException.class, () -> emitter.emit(nullPayload));
+            assertThrows(NullPointerException.class, () -> emitter.emit(nullMessage));
+            assertThrows(NullPointerException.class, () -> emitter.emit(nullBatch));
+        }
+
+        assertThat(delivered.size(), is(3));
+        assertThat(delivered.get(0).payloads(), is(List.of("payload")));
+        assertThat(delivered.get(0).get(0).headers().isEmpty(), is(true));
+        assertThat(delivered.get(1).get(0), sameInstance(message));
+        assertThat(delivered.get(2), sameInstance(batch));
+    }
+
+    @Test
+    void messageSubtypeAndOuterMessagesDisambiguateObjectEmitter() {
         MessagingGraph.Builder builder = MessagingGraph.builder();
         MessagingChannel<Object> directChannel = builder.channel("direct-objects", Object.class);
         MessagingChannel<String> processorInput = builder.channel("processor-strings", String.class);
         MessagingChannel<Object> processorOutput = builder.channel("processor-objects", Object.class);
         List<Message<Object>> delivered = new ArrayList<>();
-        Message<String> messagePayload = Message.builder("payload-message").header("trace", "payload").build();
-        Message<String> direct = Message.builder("direct").header("trace", "one").build();
+        ConnectorMessage<String> connectorMessage = new ConnectorMessage<>(
+                "connector",
+                MessageHeaders.builder().add("trace", "connector").build());
+        Message<ConnectorMessage<String>> wrappedMessagePayload = Message.builder(connectorMessage)
+                .header("trace", "outer")
+                .build();
         Message<String> batched = Message.builder("batched").header("trace", "two").build();
+        MessageBatch<String> batchPayload = MessageBatch.create(Message.create("batch-payload"));
+        Message<MessageBatch<String>> wrappedBatchPayload = Message.builder(batchPayload)
+                .header("trace", "outer-batch")
+                .build();
         Message<String> processed = Message.builder("processed").header("trace", "three").build();
         builder.messageSink(directChannel, delivered::add)
                 .messageProcessor(processorInput, processorOutput, ignored -> processed)
@@ -157,22 +198,63 @@ class MessagingGraphBuilderTest {
 
         try (MessagingGraph graph = builder.build()) {
             graph.start();
-            graph.emitter(directChannel).emit(messagePayload);
-            graph.emitter(directChannel).emitMessage(direct);
-            graph.emitter(directChannel).emitBatch(MessageBatch.create(List.of(batched)));
+            Emitter<Object> emitter = graph.emitter(directChannel);
+            emitter.emit(connectorMessage);
+            emitter.emit((Object) connectorMessage);
+            emitter.emit(wrappedMessagePayload);
+            emitter.emit(MessageBatch.create(List.of(batched)));
+            emitter.emit(wrappedBatchPayload);
             graph.emitter(processorInput).emit("process");
         }
 
-        assertThat(delivered.get(0).entity(), sameInstance(messagePayload));
-        assertThat(delivered.get(0).headers().isEmpty(), is(true));
-        assertThat(delivered.get(1), sameInstance(direct));
-        assertThat(delivered.get(2), sameInstance(batched));
-        assertThat(delivered.get(3), sameInstance(processed));
-        assertThat(delivered.subList(1, 4)
-                           .stream()
-                           .map(message -> message.header("trace").orElseThrow())
-                           .toList(),
-                   is(List.of("one", "two", "three")));
+        assertThat(delivered.get(0), sameInstance(connectorMessage));
+        assertThat(delivered.get(0).header("trace").orElseThrow(), is("connector"));
+        assertThat(delivered.get(1).entity(), sameInstance(connectorMessage));
+        assertThat(delivered.get(1).headers().isEmpty(), is(true));
+        assertThat(delivered.get(2), sameInstance(wrappedMessagePayload));
+        assertThat(delivered.get(2).entity(), sameInstance(connectorMessage));
+        assertThat(delivered.get(2).header("trace").orElseThrow(), is("outer"));
+        assertThat(delivered.get(3), sameInstance(batched));
+        assertThat(delivered.get(4), sameInstance(wrappedBatchPayload));
+        assertThat(delivered.get(4).entity(), sameInstance(batchPayload));
+        assertThat(delivered.get(4).header("trace").orElseThrow(), is("outer-batch"));
+        assertThat(delivered.get(5), sameInstance(processed));
+        assertThat(delivered.get(3).header("trace").orElseThrow(), is("two"));
+        assertThat(delivered.get(5).header("trace").orElseThrow(), is("three"));
+    }
+
+    @Test
+    void stronglyTypedMessageImplementationUsesPayloadOverload() {
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<MessagePayload> channel = builder.channel("message-payload", MessagePayload.class);
+        AtomicReference<Message<MessagePayload>> delivered = new AtomicReference<>();
+        MessagePayload payload = new MessagePayload("payload");
+        builder.messageSink(channel, delivered::set);
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+            graph.emitter(channel).emit(payload);
+        }
+
+        assertThat(delivered.get().entity(), sameInstance(payload));
+        assertThat(delivered.get().headers().isEmpty(), is(true));
+    }
+
+    @Test
+    void stronglyTypedMessageBatchUsesPayloadOverload() {
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<MessageBatch<String>> channel = builder.channel("batch-payload", new GenericType<>() { });
+        AtomicReference<Message<MessageBatch<String>>> delivered = new AtomicReference<>();
+        MessageBatch<String> payload = MessageBatch.create(Message.create("payload"));
+        builder.messageSink(channel, delivered::set);
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+            graph.emitter(channel).emit(payload);
+        }
+
+        assertThat(delivered.get().entity(), sameInstance(payload));
+        assertThat(delivered.get().headers().isEmpty(), is(true));
     }
 
     @Test
@@ -630,7 +712,7 @@ class MessagingGraphBuilderTest {
                 .build();
         try (MessagingGraph graph = builder.build()) {
             graph.start();
-            graph.emitter(channel).emitBatch(batch);
+            graph.emitter(channel).emit(batch);
         }
 
         assertThat(received.get(), sameInstance(batch));
@@ -661,7 +743,7 @@ class MessagingGraphBuilderTest {
             graph.start();
             BatchDeliveryException failure = assertThrows(
                     BatchDeliveryException.class,
-                    () -> graph.emitter(source).emitBatch(MessageBatch.create(
+                    () -> graph.emitter(source).emit(MessageBatch.create(
                             List.of(Message.create("first"),
                                     Message.create("second"),
                                     Message.create("third")))));
@@ -807,6 +889,9 @@ class MessagingGraphBuilderTest {
         public MessageHeaders headers() {
             return MessageHeaders.empty();
         }
+    }
+
+    private record ConnectorMessage<T>(T entity, MessageHeaders headers) implements Message<T> {
     }
 
     private static final class TestConnector implements OutgoingConnector {

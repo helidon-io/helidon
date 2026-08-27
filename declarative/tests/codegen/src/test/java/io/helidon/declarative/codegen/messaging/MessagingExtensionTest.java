@@ -1112,7 +1112,8 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("com.example.MetadataEmitterProducer#emitter:orders"), is(true));
         assertThat(source, source.contains("new GenericType<List<String>>()"), is(true));
         assertThat(source, source.contains("new GenericType<Message<List<String>>>()"), is(true));
-        assertThat(source, source.contains("void emitBatch(MessageBatch<? extends List<String>> messages)"), is(true));
+        assertThat(source, source.contains("void emit(MessageBatch<? extends List<String>> messages)"), is(true));
+        assertThat(source, source.contains("void emitBatch("), is(false));
         assertThat(source, source.contains("void emitMessage("), is(false));
     }
 

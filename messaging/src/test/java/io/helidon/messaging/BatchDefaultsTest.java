@@ -32,7 +32,7 @@ class BatchDefaultsTest {
         Emitter<String> emitter = batch -> received.set(batch);
         Message<String> message = Message.create("one");
 
-        emitter.emitMessage(message);
+        emitter.emit(message);
 
         assertThat(received.get().size(), is(1));
         assertThat(received.get().get(0), sameInstance(message));

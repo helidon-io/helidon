@@ -1261,9 +1261,9 @@ final class DefaultMessagingGraph implements MessagingGraph {
 
     private record GraphEmitter<T>(DefaultMessagingGraph graph, Emitter<T> delegate) implements Emitter<T> {
         @Override
-        public void emitBatch(MessageBatch<? extends T> messages) {
+        public void emit(MessageBatch<? extends T> messages) {
             graph.requireEmissionPathOpen();
-            delegate.emitBatch(messages);
+            delegate.emit(messages);
         }
     }
 

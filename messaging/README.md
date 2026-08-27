@@ -230,14 +230,22 @@ final class OrderPublisher {
     }
 
     void publish(Message<Order> order) {
-        orders.emitMessage(order);
+        orders.emit(order);
     }
 
     void publish(MessageBatch<Order> orders) {
-        this.orders.emitBatch(orders);
+        this.orders.emit(orders);
     }
 }
 ```
+
+`emit` is overloaded for payloads, message envelopes, and batches. Java selects the overload from the declared emitter
+and argument types, not from the argument's runtime class. When the message overload is selected, connector-specific
+message subtypes retain their metadata; when the batch overload is selected, the supplied batch remains one delivery.
+If a `Message` or `MessageBatch` object is itself the intended payload and a structural overload would otherwise apply,
+make the nesting explicit with an outer message, for example `emitter.emit(Message.create(messagePayload))`. All three
+overloads reject null; an uncast null literal is ambiguous among the overloads, so use a typed variable or cast when
+validating null handling.
 
 Emitter calls are synchronous. A successful return means every required local receiver, processor route, and outgoing
 connector completed. The target channel must have at least one receiver or configured outgoing connector.
@@ -405,9 +413,9 @@ try (MessagingGraph.Builder builder = MessagingGraph.builder()) {
         graph.start();
 
         Emitter<String> emitter = graph.emitter(input);
-        emitter.emitMessage(Message.builder("hello")
-                                    .header("trace-id", "123")
-                                    .build());
+        emitter.emit(Message.builder("hello")
+                             .header("trace-id", "123")
+                             .build());
     }
 }
 ```
@@ -449,11 +457,12 @@ MessageBatch<String> batch = MessageBatch.create(List.of(
         Message.create("first"),
         Message.builder("second").header("trace-id", "123").build()));
 
-graph.emitter(input).emitBatch(batch);
+graph.emitter(input).emit(batch);
 ```
 
-`Emitter.emit` and `Emitter.emitMessage` create singleton batches. All emitter methods wait for end-to-end completion.
-A partial or indeterminate failure throws `BatchDeliveryException` with an outcome aligned to every original item.
+Payload and message-envelope overloads create singleton batches. The batch overload preserves the supplied delivery
+boundary. All emitter calls wait for end-to-end completion. A partial or indeterminate failure throws
+`BatchDeliveryException` with an outcome aligned to every original item.
 
 ### Configure execution and lifecycle
 

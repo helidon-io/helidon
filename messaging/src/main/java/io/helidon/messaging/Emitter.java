@@ -36,6 +36,13 @@ import io.helidon.service.registry.Service;
  * An emission captures the caller's active Helidon context. The runtime binds that same context while invoking every
  * synchronous processor, route, handler, interceptor, and outgoing connector in the delivery. When the caller has no
  * active context, the runtime creates a fresh context for that delivery.
+ * <p>
+ * Java selects the payload, message-envelope, or batch overload from the declared emitter and argument types. When the
+ * message overload is selected, a connector-specific {@link Message} subtype retains its envelope and native metadata.
+ * To emit a {@code Message} or {@link MessageBatch} object as the payload when a structural overload would otherwise
+ * apply, wrap it in an outer message, for example {@code emitter.emit(Message.create(messagePayload))}.
+ * All overloads reject {@code null}; an uncast {@code null} literal is ambiguous among the overloads, so
+ * null-validation code must use a typed variable or cast.
  *
  * @param <T> payload type
  */
@@ -54,7 +61,7 @@ public interface Emitter<T> {
      * @throws RuntimeException if a handler or outgoing connector fails
      */
     default void emit(T entity) {
-        emitBatch(MessageBatch.create(Message.create(entity)));
+        emit(MessageBatch.create(Message.create(entity)));
     }
 
     /**
@@ -65,10 +72,11 @@ public interface Emitter<T> {
      *
      * @param message message
      * @throws MessagingException if the target channel does not exist
+     * @throws NullPointerException if {@code message} is {@code null}
      * @throws RuntimeException if a handler or outgoing connector fails
      */
-    default void emitMessage(Message<? extends T> message) {
-        emitBatch(MessageBatch.create(message));
+    default void emit(Message<? extends T> message) {
+        emit(MessageBatch.create(message));
     }
 
     /**
@@ -76,7 +84,8 @@ public interface Emitter<T> {
      *
      * @param batch immutable message batch
      * @throws MessagingException if the target channel does not exist
+     * @throws NullPointerException if {@code batch} is {@code null}
      * @throws BatchDeliveryException if delivery completes partially or its outcome is indeterminate
      */
-    void emitBatch(MessageBatch<? extends T> batch);
+    void emit(MessageBatch<? extends T> batch);
 }

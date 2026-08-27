@@ -57,7 +57,7 @@ class MessageNullPayloadTest {
             graph.start();
 
             NullPointerException failure = assertThrows(NullPointerException.class,
-                                                        () -> graph.emitter(channel).emitMessage(nullMessage));
+                                                        () -> graph.emitter(channel).emit(nullMessage));
 
             assertThat(failure.getMessage(), is("Message entity"));
         }

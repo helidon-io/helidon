@@ -97,7 +97,7 @@ class DefaultMessagingChannelTest {
 
             BatchDeliveryException failure = assertThrows(
                     BatchDeliveryException.class,
-                    () -> graph.emitter(channel).emitBatch(batch));
+                    () -> graph.emitter(channel).emit(batch));
 
             assertThat(firstOutputInvocations.get(), is(1));
             assertThat(failure.batch(), sameInstance(batch));
@@ -134,7 +134,7 @@ class DefaultMessagingChannelTest {
 
             BatchDeliveryException failure = assertThrows(
                     BatchDeliveryException.class,
-                    () -> graph.emitter(channel).emitBatch(batch));
+                    () -> graph.emitter(channel).emit(batch));
 
             assertThat(firstOutputInvocations.get(), is(1));
             assertThat(laterOutputInvocations.get(), is(0));
@@ -166,7 +166,7 @@ class DefaultMessagingChannelTest {
 
             BatchDeliveryException failure = assertThrows(
                     BatchDeliveryException.class,
-                    () -> graph.emitter(source).emitBatch(batch));
+                    () -> graph.emitter(source).emit(batch));
 
             assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
@@ -198,7 +198,7 @@ class DefaultMessagingChannelTest {
 
             BatchDeliveryException failure = assertThrows(
                     BatchDeliveryException.class,
-                    () -> graph.emitter(source).emitBatch(batch));
+                    () -> graph.emitter(source).emit(batch));
 
             assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
@@ -229,7 +229,7 @@ class DefaultMessagingChannelTest {
 
             BatchDeliveryException failure = assertThrows(
                     BatchDeliveryException.class,
-                    () -> graph.emitter(source).emitBatch(batch));
+                    () -> graph.emitter(source).emit(batch));
 
             assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcome(0).status(), is(BatchItemStatus.INDETERMINATE));
@@ -250,8 +250,8 @@ class DefaultMessagingChannelTest {
                 MessagingExecutionConfig.builder().maxInFlightMessages(1).build());
         builder.batchSink(source, ignored -> {
                     sourceSideEffects.incrementAndGet();
-                    targetEmitter.get().emitBatch(MessageBatch.create(List.of(Message.create("first"),
-                                                                              Message.create("second"))));
+                    targetEmitter.get().emit(MessageBatch.create(List.of(Message.create("first"),
+                                                                         Message.create("second"))));
                 })
                 .batchSink(target, ignored -> targetInvocations.incrementAndGet());
         MessageBatch<String> batch = MessageBatch.create(Message.create("source-message"));
@@ -262,7 +262,7 @@ class DefaultMessagingChannelTest {
 
             BatchDeliveryException failure = assertThrows(
                     BatchDeliveryException.class,
-                    () -> graph.emitter(source).emitBatch(batch));
+                    () -> graph.emitter(source).emit(batch));
 
             assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcome(0).status(), is(BatchItemStatus.INDETERMINATE));
@@ -294,7 +294,7 @@ class DefaultMessagingChannelTest {
 
             BatchDeliveryException failure = assertThrows(
                     BatchDeliveryException.class,
-                    () -> graph.emitter(source).emitBatch(batch));
+                    () -> graph.emitter(source).emit(batch));
 
             assertThat(failure.batch(), sameInstance(batch));
             assertThat(failure.outcomes().stream().map(BatchItemOutcome::status).toList(),
