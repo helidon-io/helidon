@@ -29,6 +29,8 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 
+import io.helidon.http.HeaderValues;
+import io.helidon.http.sse.SseEvent;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
@@ -40,6 +42,7 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2ConnectionSelector;
+import io.helidon.webserver.sse.SseSink;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -65,6 +68,7 @@ public class ResponseFilterJmhBenchmark {
     private static final String STREAM_ENTITY = "/stream-entity";
     private static final String STREAM_NONE = "/stream-none";
     private static final String STREAM_PUBLIC = "/stream-public";
+    private static final String SSE = "/sse";
     private static final int REQUESTS_PER_INVOCATION = 16;
     private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.UTF_8);
     private static final Runnable BEFORE_SEND = () -> { };
@@ -101,7 +105,8 @@ public class ResponseFilterJmhBenchmark {
                         .get(DIRECT_ENTITY_BEFORE_SEND, ResponseFilterJmhBenchmark::sendDirect)
                         .get(STREAM_NONE, ResponseFilterJmhBenchmark::sendStream)
                         .get(STREAM_ENTITY, ResponseFilterJmhBenchmark::sendStream)
-                        .get(STREAM_PUBLIC, ResponseFilterJmhBenchmark::sendStream))
+                        .get(STREAM_PUBLIC, ResponseFilterJmhBenchmark::sendStream)
+                        .get(SSE, ResponseFilterJmhBenchmark::sendSse))
                 .build()
                 .start();
 
@@ -227,6 +232,19 @@ public class ResponseFilterJmhBenchmark {
         http2(STREAM_PUBLIC, blackhole);
     }
 
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2SseSink(Blackhole blackhole) {
+        for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
+            try (Http2ClientResponse response = http2Client.get(SSE)
+                    .header(HeaderValues.ACCEPT_EVENT_STREAM)
+                    .request()) {
+                blackhole.consume(response.status());
+                blackhole.consume(response.entity().as(byte[].class));
+            }
+        }
+    }
+
     private static HttpRequest request(String baseUri, String path) {
         return HttpRequest.newBuilder()
                 .GET()
@@ -255,6 +273,12 @@ public class ResponseFilterJmhBenchmark {
             outputStream.write(RESPONSE_BYTES);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private static void sendSse(ServerRequest request, ServerResponse response) {
+        try (SseSink sink = response.sink(SseSink.TYPE)) {
+            sink.emit(SseEvent.create(RESPONSE_BYTES));
         }
     }
 
