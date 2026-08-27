@@ -24,8 +24,8 @@ final class ServerSpanLifecycle {
     private boolean resourceMethodStarted;
     private boolean resourceMethodFinished;
     private boolean responseProcessingStarted;
-    private boolean responseCompleted;
-    private boolean responseSuccessful;
+    private boolean requestFinished;
+    private boolean responseWritten;
     private boolean requestScopeClosed;
     private boolean responseScopeClosed;
     private boolean spanEnded;
@@ -69,30 +69,14 @@ final class ServerSpanLifecycle {
         }
     }
 
-    void responseSent(Span span, Scope requestScope) {
-        responseCompleted(span, requestScope, true);
-    }
-
     void requestFinished(Span span, Scope requestScope, boolean responseWritten) {
-        boolean failed;
-        synchronized (this) {
-            failed = !responseWritten || failure != null;
-        }
-        if (failed) {
-            responseCompleted(span, requestScope, false);
-        } else {
-            responseProcessingFinished(span, requestScope);
-        }
-    }
-
-    private void responseCompleted(Span span, Scope requestScope, boolean successful) {
         Scope scopeToClose;
         boolean closeRequestScope;
         boolean endSpan;
         synchronized (this) {
-            if (!responseCompleted) {
-                responseCompleted = true;
-                responseSuccessful = successful;
+            if (!requestFinished) {
+                requestFinished = true;
+                this.responseWritten = responseWritten;
             }
             scopeToClose = claimResponseScope();
             closeRequestScope = !resourceMethodStarted && claimRequestScope();
@@ -108,22 +92,8 @@ final class ServerSpanLifecycle {
         }
     }
 
-    private void responseProcessingFinished(Span span, Scope requestScope) {
-        Scope scopeToClose;
-        boolean closeRequestScope;
-        synchronized (this) {
-            scopeToClose = claimResponseScope();
-            closeRequestScope = !resourceMethodStarted && claimRequestScope();
-        }
-        try {
-            if (scopeToClose != null) {
-                scopeToClose.close();
-            }
-        } finally {
-            if (closeRequestScope) {
-                requestScope.close();
-            }
-        }
+    synchronized boolean isFinished() {
+        return spanEnded && requestScopeClosed && (responseScope == null || responseScopeClosed);
     }
 
     private synchronized Scope claimResponseScope() {
@@ -143,7 +113,7 @@ final class ServerSpanLifecycle {
     }
 
     private boolean claimSpanEnd() {
-        if (spanEnded || !responseCompleted || (resourceMethodStarted && !resourceMethodFinished)) {
+        if (spanEnded || !requestFinished || (resourceMethodStarted && !resourceMethodFinished)) {
             return false;
         }
         spanEnded = true;
@@ -164,12 +134,12 @@ final class ServerSpanLifecycle {
 
     private void end(Span span) {
         Throwable throwable;
-        boolean successful;
+        boolean written;
         synchronized (this) {
             throwable = failure;
-            successful = responseSuccessful;
+            written = responseWritten;
         }
-        if (!successful || throwable != null) {
+        if (!written || throwable != null) {
             span.status(Span.Status.ERROR);
         }
         if (throwable == null) {

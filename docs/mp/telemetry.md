@@ -452,8 +452,23 @@ settings for automatic incoming REST request spans:
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
+| `telemetry.span.full.url` | `Boolean` | `false` | **Deprecated.** Whether the span name uses the absolute request path instead of the matched JAX-RS route. |
 | `telemetry.span.name-includes-method` | `Boolean` | `false` | **Deprecated.** Whether the span name includes the HTTP request method. |
 | `telemetry.span.includes-response-write` | `Boolean` | `false` | **Deprecated.** Whether the span includes preparing and writing the response entity. |
+
+By default, Helidon uses the matched, low-cardinality JAX-RS route in the span
+name, such as `/greet/{name}`. Setting `telemetry.span.full.url` to `true`
+uses the resolved absolute request path instead, such as
+`http://localhost:8080/greet/Joe`. The absolute path does not include the query
+string. Because resolved paths can contain user-supplied path values and
+therefore create high-cardinality span names, leave this setting `false` unless
+compatibility with an application that expects the older full-URL naming format
+requires it. The setting is deprecated because a future major release will use
+low-cardinality route-based span names unconditionally.
+
+The `telemetry.span.full.url` and `telemetry.span.name-includes-method` settings
+are independent. For example, setting both to `true` produces a span name such
+as `GET http://localhost:8080/greet/Joe`.
 
 Earlier Helidon 4 releases used OpenTelemetry semantic conventions which did
 not include the HTTP method in automatic incoming REST span names. Setting
@@ -466,21 +481,24 @@ naming convention unconditionally.
 When `telemetry.span.includes-response-write` is `false`, Helidon ends the
 span before serializing the response entity, preserving the behavior of earlier
 Helidon 4 releases. When it is `true`, Helidon ends the span after response
-serialization and encoding, when the last byte has been buffered for writing to
-the socket. Helidon propagates the automatic span to the thread which processes
-the response, including asynchronous JAX-RS responses. The span remains current
-during response filtering and entity materialization, so spans started by writer
-interceptors, message-body writers, or streaming output are children of the
-automatic span. If response processing or writing fails, Helidon records the
-available failure and ends the automatic span when Jersey finishes processing
-the failed request. An application exception which Jersey successfully maps to
-a response is not itself treated as a response-writing failure; the resulting
-HTTP status determines the automatic span status. This setting is deprecated
-for removal in a future major release.
+serialization and encoding have populated Helidon's response stream and Jersey
+has finished processing the response. Helidon propagates the automatic span to
+the thread which processes the response, including asynchronous JAX-RS
+responses. The span remains current during response filtering and entity
+materialization, so spans started by writer interceptors, message-body writers,
+or streaming output are children of the automatic span. If response processing
+or writing fails, Helidon records the available failure and ends the automatic
+span when Jersey finishes processing the failed request. An application
+exception which Jersey successfully maps to a response is not itself treated as
+a response-writing failure; the resulting HTTP status determines the automatic
+span status. This setting is deprecated for removal in a future major release.
 
 For `telemetry.span.includes-response-write`, `true` measures the
-server-side work of preparing the response. It does not measure network delivery
-or wait for the client to receive or acknowledge the response.
+server-side work of preparing the response. It does not measure the later
+WebServer socket commit, network delivery, or wait for the client to receive or
+acknowledge the response. A downstream transport failure after JAX-RS processing
+has finished might therefore not be recorded on the span, but it cannot leave
+the span unfinished.
 
 ### OpenTelemetry Java Agent
 

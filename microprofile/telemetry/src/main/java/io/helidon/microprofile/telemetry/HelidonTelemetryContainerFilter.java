@@ -28,7 +28,6 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
-import io.helidon.webserver.http.ServerResponse;
 
 import io.opentelemetry.semconv.ServerAttributes;
 import jakarta.enterprise.inject.Instance;
@@ -93,9 +92,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
     @jakarta.ws.rs.core.Context
     private ResourceInfo resourceInfo;
-
-    @jakarta.ws.rs.core.Context
-    private ServerResponse serverResponse;
 
     @Inject
     HelidonTelemetryContainerFilter(io.helidon.tracing.Tracer helidonTracer,
@@ -207,19 +203,10 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SERVER_ERROR) == 0) {
                 span.status(Span.Status.ERROR);
             }
-            if (autoSpanIncludesResponseWrite) {
-                ServerSpanLifecycle lifecycle = (ServerSpanLifecycle) request.getProperty(ServerSpanLifecycle.PROPERTY);
-                if (lifecycle == null) {
-                    lifecycle = new ServerSpanLifecycle();
-                    request.setProperty(ServerSpanLifecycle.PROPERTY, lifecycle);
-                }
-                ServerSpanLifecycle finalLifecycle = lifecycle;
-                serverResponse.whenSent(() -> finalLifecycle.responseSent(span, scope));
-            } else {
+            // Response-write-inclusive spans end at Jersey's FINISHED request event.
+            if (!autoSpanIncludesResponseWrite) {
                 span.end();
             }
-
-
         } finally {
             if (!autoSpanIncludesResponseWrite) {
                 request.removeProperty(SPAN);

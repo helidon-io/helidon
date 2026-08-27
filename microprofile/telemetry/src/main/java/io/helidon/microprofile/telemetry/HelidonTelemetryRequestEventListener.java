@@ -25,7 +25,7 @@ import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
 
 /**
- * Maintains response-write-inclusive server spans across Jersey request-processing phases.
+ * Maintains response-write-inclusive server spans across Jersey request-processing phases and ends them at FINISHED.
  */
 final class HelidonTelemetryRequestEventListener implements ApplicationEventListener {
 
@@ -53,7 +53,11 @@ final class HelidonTelemetryRequestEventListener implements ApplicationEventList
             break;
         case RESOURCE_METHOD_FINISHED:
             if (span != null && scope != null) {
-                lifecycle.resourceMethodFinished(span, scope);
+                try {
+                    lifecycle.resourceMethodFinished(span, scope);
+                } finally {
+                    cleanupIfFinished(request, lifecycle);
+                }
             }
             break;
         case RESP_FILTERS_START:
@@ -66,11 +70,23 @@ final class HelidonTelemetryRequestEventListener implements ApplicationEventList
             break;
         case FINISHED:
             if (span != null && scope != null) {
-                lifecycle.requestFinished(span, scope, event.isResponseWritten());
+                try {
+                    lifecycle.requestFinished(span, scope, event.isResponseWritten());
+                } finally {
+                    cleanupIfFinished(request, lifecycle);
+                }
             }
             break;
         default:
             break;
+        }
+    }
+
+    static void cleanupIfFinished(ContainerRequest request, ServerSpanLifecycle lifecycle) {
+        if (lifecycle.isFinished()) {
+            request.removeProperty(HelidonTelemetryContainerFilter.SPAN);
+            request.removeProperty(HelidonTelemetryContainerFilter.SPAN_SCOPE);
+            request.removeProperty(ServerSpanLifecycle.PROPERTY);
         }
     }
 }
