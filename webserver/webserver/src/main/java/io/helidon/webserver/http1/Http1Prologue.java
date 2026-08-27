@@ -336,6 +336,16 @@ public final class Http1Prologue {
                         || (Method.OPTIONS.equals(method) && "*".equals(requestTarget));
             }
             if (specialRequestTarget) {
+                if (Method.CONNECT.equals(method)
+                        && (requestTarget.startsWith("[v") || requestTarget.startsWith("[V"))) {
+                    throw RequestException.builder()
+                            .type(DirectHandler.EventType.OTHER)
+                            .status(Status.NOT_IMPLEMENTED_501)
+                            .request(DirectTransportRequest.create(protocol, method.text(), path))
+                            .message("CONNECT IP address mechanism is not supported")
+                            .safeMessage(true)
+                            .build();
+                }
                 return HttpPrologue.create(protocol,
                                            "HTTP",
                                            "1.1",

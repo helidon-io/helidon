@@ -31,6 +31,8 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -88,6 +90,14 @@ class SpecialRequestTargetTest {
     @Test
     void connectAuthorityPreservesEncodedDelimiter() {
         assertConnectTarget("example%40service:443", "http://example%40service:443");
+    }
+
+    @Test
+    void connectIpFutureIsNotImplemented() {
+        String response = client.sendAndReceive(Method.CONNECT, "[Vf.foo-bar]:443", null, List.of());
+
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Status.NOT_IMPLEMENTED_501));
+        assertThat(response, not(containsString("[Vf.foo-bar]:443|")));
     }
 
     private void assertConnectTarget(String requestTarget, String expectedUri) {

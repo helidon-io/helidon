@@ -185,12 +185,8 @@ class Http1PrologueTest {
     }
 
     @Test
-    void testConnectIpFutureAuthorityFormRemainsValid() {
-        DataReader reader = DataReader.create(() -> "CONNECT [Vf.foo-bar]:443 HTTP/1.1\r\n"
-                .getBytes(StandardCharsets.US_ASCII));
-        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
-
-        assertThat(prologue.uriPath().rawPath(), is("[Vf.foo-bar]:443"));
+    void testConnectIpFutureIsNotImplemented() {
+        assertUnsupportedRequestTarget("CONNECT [Vf.foo-bar]:443 HTTP/1.1\r\n");
     }
 
     @Test
@@ -218,5 +214,15 @@ class Http1PrologueTest {
 
         assertThat(e.status(), is(Status.BAD_REQUEST_400));
         assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+    }
+
+    private static void assertUnsupportedRequestTarget(String requestLine) {
+        DataReader reader = DataReader.create(() -> requestLine.getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue prologue = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, prologue::readPrologue);
+
+        assertThat(e.status(), is(Status.NOT_IMPLEMENTED_501));
+        assertThat(e.eventType(), is(DirectHandler.EventType.OTHER));
     }
 }
