@@ -266,18 +266,20 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     private UriInfo createUriInfo() {
+        boolean connect = Method.CONNECT.equals(prologue.method());
+        String authority = connect ? prologue.uriPath().rawPath() : null;
+        boolean authorityForm = connect && Http1Prologue.isAuthorityForm(authority);
         UriInfo requestedUri = ctx.listenerContext().config().requestedUriDiscoveryContext()
                 .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
                 .uriInfo(remotePeer().address(),
                          localPeer().address(),
-                         path.absolute().path(),
+                         connect ? "" : path.absolute().path(),
                          headers,
                          query(),
                          isSecure());
-        if (!Method.CONNECT.equals(prologue.method())) {
+        if (!authorityForm) {
             return requestedUri;
         }
-        String authority = prologue.uriPath().rawPath();
         UriInfo connectUri = UriInfo.builder()
                 .from(requestedUri)
                 .authority(authority)
