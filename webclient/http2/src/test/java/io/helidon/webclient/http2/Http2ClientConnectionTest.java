@@ -684,11 +684,12 @@ class Http2ClientConnectionTest {
             CompletableFuture<Headers> firstTrailers = firstStream.trailers();
             CompletableFuture<Headers> secondTrailers = secondStream.trailers();
             AtomicBoolean callbackClaimed = new AtomicBoolean();
-            CountDownLatch callbackEntered = new CountDownLatch(1);
+            CountDownLatch callbacksEntered = new CountDownLatch(2);
             CountDownLatch releaseCallback = new CountDownLatch(1);
             Runnable blockFirstCallback = () -> {
-                if (callbackClaimed.compareAndSet(false, true)) {
-                    callbackEntered.countDown();
+                boolean block = callbackClaimed.compareAndSet(false, true);
+                callbacksEntered.countDown();
+                if (block) {
                     try {
                         if (!releaseCallback.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
                             throw new IllegalStateException("Timed out waiting to release trailers callback");
@@ -705,7 +706,7 @@ class Http2ClientConnectionTest {
             try {
                 test.closeInbound();
                 test.assertConnectionClosed();
-                assertThat(callbackEntered.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+                assertThat(callbacksEntered.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
                 assertThat(firstTrailers.isCompletedExceptionally(), is(true));
                 assertThat(secondTrailers.isCompletedExceptionally(), is(true));
             } finally {
