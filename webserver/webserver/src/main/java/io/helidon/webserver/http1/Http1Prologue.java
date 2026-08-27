@@ -20,9 +20,7 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
-import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriValidator;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
@@ -162,20 +160,18 @@ public final class Http1Prologue {
         return maybePost == POST_INT;
     }
 
-    private static boolean validateRequestTarget(Method method, String requestTarget) {
+    private static boolean validateRequestTarget(Method method, String requestTarget, boolean hasQuery) {
         if (Method.CONNECT.equals(method)) {
-            if (isAuthorityForm(requestTarget)) {
+            if (!hasQuery && isAuthorityForm(requestTarget)) {
                 return true;
             }
         } else if ("*".equals(requestTarget)) {
-            if (Method.OPTIONS.equals(method)) {
+            if (!hasQuery && Method.OPTIONS.equals(method)) {
                 return true;
             }
         } else {
-            if (requestTarget.indexOf('#') >= 0) {
-                throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
-            }
-            if (requestTarget.charAt(0) == '/' || isAbsoluteForm(requestTarget)) {
+            if (!requestTarget.isEmpty()
+                    && (requestTarget.charAt(0) == '/' || isAbsoluteForm(requestTarget))) {
                 return false;
             }
             throw new IllegalArgumentException("Relative path in HTTP request-target");
@@ -317,28 +313,30 @@ public final class Http1Prologue {
         }
 
         try {
+            HttpPrologue prologue = HttpPrologue.create(protocol,
+                                                        "HTTP",
+                                                        "1.1",
+                                                        method,
+                                                        path,
+                                                        validatePath && !Method.CONNECT.equals(method));
+            String requestTarget = prologue.uriPath().rawPath();
             boolean specialRequestTarget;
             if (validatePath) {
-                specialRequestTarget = validateRequestTarget(method, path);
+                specialRequestTarget = validateRequestTarget(method, requestTarget, prologue.hasQuery());
             } else {
-                specialRequestTarget = (Method.CONNECT.equals(method) && isAuthorityForm(path))
-                        || (Method.OPTIONS.equals(method) && "*".equals(path));
+                specialRequestTarget = (Method.CONNECT.equals(method) && isAuthorityForm(requestTarget))
+                        || (Method.OPTIONS.equals(method) && "*".equals(requestTarget));
             }
             if (specialRequestTarget) {
                 return HttpPrologue.create(protocol,
                                            "HTTP",
                                            "1.1",
                                            method,
-                                           UriPath.createRelative(UriPath.root(), path),
-                                           UriQuery.empty(),
-                                           UriFragment.empty());
+                                           UriPath.createRelative(UriPath.root(), requestTarget),
+                                           prologue.query(),
+                                           prologue.fragment());
             }
-            return HttpPrologue.create(protocol,
-                                       "HTTP",
-                                       "1.1",
-                                       method,
-                                       path,
-                                       validatePath && !Method.CONNECT.equals(method));
+            return prologue;
         } catch (IllegalArgumentException e) {
             throw badRequest("Invalid path: " + e.getMessage(), method.text(), path, "HTTP", "1.1");
         }

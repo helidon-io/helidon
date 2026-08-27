@@ -417,12 +417,13 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void validatePrologue(HttpPrologue prologue) {
+        boolean hasFragment = prologue.fragment().hasValue();
         try {
             // scheme is not validated, as it is fixed and validated by the prologue reader
-            UriValidator.validateQuery(prologue.query().rawValue());
-            if (prologue.fragment().hasValue()) {
-                UriValidator.validateFragment(prologue.fragment().rawValue());
+            if (hasFragment) {
+                throw new IllegalArgumentException("Invalid path: Invalid HTTP/1.1 request-target form");
             }
+            UriValidator.validateQuery(prologue.query().rawValue());
         } catch (IllegalArgumentException e) {
             throw RequestException.builder()
                     .type(EventType.BAD_REQUEST)
@@ -430,7 +431,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     .request(DirectTransportRequest.create(prologue, ServerRequestHeaders.create()))
                     .setKeepAlive(false)
                     .message(e.getMessage())
-                    .safeMessage(true)
+                    .safeMessage(!hasFragment)
                     .cause(e)
                     .build();
         }
