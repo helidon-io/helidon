@@ -304,6 +304,26 @@ class OpenApiHttpFeature implements HttpFeature {
                 return EMPTY;
             }
 
+            private static boolean isLive(WeakServiceEntry entry, HttpService replacedService) {
+                if (entry == null) {
+                    return false;
+                }
+                HttpService service = entry.service.get();
+                return service != null && service != replacedService && entry.securedService.get() != null;
+            }
+
+            private static void insert(WeakServiceEntry[] entries, WeakServiceEntry entry) {
+                int index = index(entry.identityHash, entries.length);
+                while (entries[index] != null) {
+                    index = (index + 1) & (entries.length - 1);
+                }
+                entries[index] = entry;
+            }
+
+            private static int index(int identityHash, int tableLength) {
+                return (identityHash ^ (identityHash >>> 16)) & (tableLength - 1);
+            }
+
             private SecuredService get(HttpService service) {
                 if (entries.length == 0) {
                     return null;
@@ -345,26 +365,6 @@ class OpenApiHttpFeature implements HttpFeature {
                 }
                 insert(updatedEntries, new WeakServiceEntry(service, securedService));
                 return new WeakIdentityTable(updatedEntries);
-            }
-
-            private static boolean isLive(WeakServiceEntry entry, HttpService replacedService) {
-                if (entry == null) {
-                    return false;
-                }
-                HttpService service = entry.service.get();
-                return service != null && service != replacedService && entry.securedService.get() != null;
-            }
-
-            private static void insert(WeakServiceEntry[] entries, WeakServiceEntry entry) {
-                int index = index(entry.identityHash, entries.length);
-                while (entries[index] != null) {
-                    index = (index + 1) & (entries.length - 1);
-                }
-                entries[index] = entry;
-            }
-
-            private static int index(int identityHash, int tableLength) {
-                return (identityHash ^ (identityHash >>> 16)) & (tableLength - 1);
             }
         }
 
