@@ -1231,6 +1231,33 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void closeWaitsForBlockedErrorGoAway() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            assertThat(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
+
+            Http2Settings invalidSettings = Http2Settings.builder()
+                    .add(Http2Setting.INITIAL_WINDOW_SIZE, WindowSize.MAX_WIN_SIZE + 1L)
+                    .build();
+            MockedConnectionTestContext.BlockedWrite blockedErrorGoAway = test.blockNextWriteNow();
+            test.offerInbound(invalidSettings.toFrameData(null, 0, Http2Flag.SettingsFlags.create(0)));
+            assertThat(blockedErrorGoAway.awaitEntered(), is(true));
+
+            CompletableFuture<Void> closed = CompletableFuture.runAsync(connection::close);
+            try {
+                assertThrows(TimeoutException.class, () -> closed.get(200, TimeUnit.MILLISECONDS));
+                verify(test.clientConnection, never()).closeResource();
+            } finally {
+                blockedErrorGoAway.release();
+            }
+            closed.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            test.assertConnectionClosed();
+        }
+    }
+
+    @Test
     void closeBeforePrefaceDoesNotSendGoAway() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             AtomicReference<Http2ClientConnection> connectionRef = new AtomicReference<>();

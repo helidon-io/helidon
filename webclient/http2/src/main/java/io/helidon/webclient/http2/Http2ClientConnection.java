@@ -528,6 +528,7 @@ public class Http2ClientConnection {
             // A normal close must reach the transport to break an in-flight retirement GOAWAY write.
             if (errorCode == Http2ErrorCode.NO_ERROR
                     && state.get() == State.GO_AWAY
+                    && goAwayErrorCode.get() == Http2ErrorCode.NO_ERROR
                     && goAwayWriteComplete.getCount() != 0) {
                 return;
             }
