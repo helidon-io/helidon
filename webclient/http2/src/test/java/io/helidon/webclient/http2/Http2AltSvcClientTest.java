@@ -298,6 +298,22 @@ class Http2AltSvcClientTest {
     }
 
     @Test
+    void repeatedFallbackAdvertisementDoesNotClearFailureBackoff() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+            Http2AltSvcCache.Selection selection = context.client.connectionCache()
+                    .currentAlternative(context.target, false);
+            assertThat(selection, notNullValue());
+
+            context.client.connectionCache().recordAlternativeFailure(selection);
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    @Test
     void misdirectedAlternativeDoesNotReadvertiseItself() {
         try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
             context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID, false, Status.OK_200));

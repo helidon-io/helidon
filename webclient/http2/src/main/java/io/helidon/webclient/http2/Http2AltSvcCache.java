@@ -1151,7 +1151,6 @@ final class Http2AltSvcCache implements AutoCloseable {
             this.alternative = alternative;
             this.observedAt = observedAt;
             generation.establishUntil = alternative.expirationTime;
-            negativeUntil = null;
         }
     }
 

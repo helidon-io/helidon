@@ -393,13 +393,13 @@ class Http2AltSvcCacheTest {
     }
 
     @Test
-    void sameAuthorityRefreshClearsNegativeStateWithoutInvalidatingReplacement() {
+    void sameAuthorityRefreshPreservesNegativeStateWithoutInvalidatingReplacement() {
         MutableClock clock = new MutableClock(START);
         List<Http2AltSvcCache.Generation> invalidations = new ArrayList<>();
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, invalidations::add);
         ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
 
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
+        cache.record(target, header(clock, "h2=\":8443\"; ma=3600"), true, false, clock.nextObservation());
         Http2AltSvcCache.Selection failed = cache.select(target, false, _ -> false);
         cache.recordFailure(failed);
 
@@ -407,17 +407,24 @@ class Http2AltSvcCacheTest {
         assertThat(invalidations, hasSize(1));
 
         clock.advance(Duration.ofNanos(1));
-        cache.record(target, header(clock, "h2=\":8443\"; ma=120"), true, false, clock.nextObservation());
+        cache.record(target, header(clock, "h2=\":8443\"; ma=3600"), true, false, clock.nextObservation());
+
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), nullValue());
+        assertThat(invalidations, hasSize(1));
+
+        cache.record(target, header(clock, "h2=\":8443\"; ma=3600"), true, false, clock.nextObservation());
+
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+        assertThat(invalidations, hasSize(1));
+
+        clock.advance(Duration.ofMinutes(5));
 
         Http2AltSvcCache.Selection retry = cache.select(target, false, _ -> false);
         assertThat(retry, not(sameInstance(failed)));
         assertThat(cache.current(retry), is(true));
-        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
-        assertThat(invalidations, hasSize(1));
-
-        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
-
         assertThat(cache.select(target, false, _ -> false), sameInstance(retry));
+        assertThat(cache.selectRoute(target.lookupKey(), false), notNullValue());
         assertThat(invalidations, hasSize(1));
 
         cache.close();
