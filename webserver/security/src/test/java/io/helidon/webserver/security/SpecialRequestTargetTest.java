@@ -20,7 +20,9 @@ import java.util.List;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.security.Security;
+import io.helidon.security.SecurityContext;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -48,7 +50,15 @@ class SpecialRequestTargetTest {
                                     .build())
                 .routing(routing -> routing.any((req, res) -> {
                     var path = req.prologue().uriPath();
-                    res.send(path.rawPath() + '|' + path.absolute().path());
+                    var securityContext = req.context().get(SecurityContext.class).orElseThrow();
+                    var status = Method.CONNECT.equals(req.prologue().method())
+                            ? Status.NOT_IMPLEMENTED_501
+                            : Status.OK_200;
+                    res.status(status)
+                            .send(path.rawPath()
+                                          + '|' + path.absolute().path()
+                                          + '|' + req.requestedUri().toUri()
+                                          + '|' + securityContext.env().targetUri());
                 }));
     }
 
@@ -61,10 +71,19 @@ class SpecialRequestTargetTest {
     }
 
     @Test
-    void connectAuthorityReachesRouting() {
-        String response = client.sendAndReceive(Method.CONNECT, "example.com:443", null, List.of());
+    void connectAuthorityMatchesSecurityTarget() {
+        assertConnectTarget("example.com:443", "http://example.com:443");
+    }
 
-        assertThat(response, containsString("200 OK"));
-        assertThat(response, containsString("example.com:443|/"));
+    @Test
+    void encodedConnectAuthorityMatchesSecurityTarget() {
+        assertConnectTarget("example%2Ecom:443", "http://example.com:443");
+    }
+
+    private void assertConnectTarget(String requestTarget, String expectedUri) {
+        String response = client.sendAndReceive(Method.CONNECT, requestTarget, null, List.of());
+
+        assertThat(response, containsString("501 Not Implemented"));
+        assertThat(response, containsString(requestTarget + "|/|" + expectedUri + '|' + expectedUri));
     }
 }

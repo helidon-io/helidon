@@ -27,12 +27,14 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
@@ -262,7 +264,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     private UriInfo createUriInfo() {
-        return ctx.listenerContext().config().requestedUriDiscoveryContext()
+        UriInfo requestedUri = ctx.listenerContext().config().requestedUriDiscoveryContext()
                 .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
                 .uriInfo(remotePeer().address(),
                          localPeer().address(),
@@ -270,5 +272,14 @@ abstract class Http1ServerRequest implements RoutingRequest {
                          headers,
                          query(),
                          isSecure());
+        if (!Method.CONNECT.equals(prologue.method())) {
+            return requestedUri;
+        }
+        var requestTarget = prologue.uriPath();
+        return UriInfo.builder()
+                .from(requestedUri)
+                .authority(UriEncoding.decodeUri(requestTarget.rawPath()))
+                .path("")
+                .build();
     }
 }
