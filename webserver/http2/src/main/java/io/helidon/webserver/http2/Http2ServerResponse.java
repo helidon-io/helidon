@@ -121,7 +121,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         try {
             if (hasStreamFilter()) {
                 // in this case we must honor user's request to filter the stream
-                try (OutputStream os = outputStream()) {
+                // automatic encoders are skipped for an empty entity, but an explicit encoder still applies
+                boolean allowAutomaticEncoding = length > 0;
+                try (OutputStream os = outputStream(allowAutomaticEncoding)) {
                     if (!outputStream.noEntityResponse) {
                         os.write(entityBytes, position, length);
                     }
@@ -227,10 +229,18 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public OutputStream outputStream() {
-        return outputStream(() -> { });
+        return outputStream(true);
     }
 
     private OutputStream outputStream(Runnable responsePreparation) {
+        return outputStream(responsePreparation, true);
+    }
+
+    private OutputStream outputStream(boolean allowAutomaticEncoding) {
+        return outputStream(() -> { }, allowAutomaticEncoding);
+    }
+
+    private OutputStream outputStream(Runnable responsePreparation, boolean allowAutomaticEncoding) {
         Objects.requireNonNull(responsePreparation);
         if (preparingResponse) {
             throw new IllegalStateException("Response preparation already in progress");
@@ -256,7 +266,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         if (noEntityResponse) {
             return new ApplicationOutputStream(outputStream, outputStream);
         }
-        OutputStream encodedOutputStream = contentEncode(outputStream);
+        OutputStream encodedOutputStream = contentEncode(outputStream, allowAutomaticEncoding);
         OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
         return new ApplicationOutputStream(applicationOutputStream, outputStream);
     }

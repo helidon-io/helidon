@@ -240,6 +240,15 @@ class StaticContentEncodingTest {
         });
         builder.get("/explicit-empty", (req, res) -> res.contentEncoder(new TestEncoding().encoder()).send());
         builder.head("/explicit-empty", (req, res) -> res.contentEncoder(new TestEncoding().encoder()).send());
+        builder.get("/explicit-empty-filtered", (req, res) -> {
+            res.streamFilter(stream -> stream);
+            res.contentEncoder(new TestEncoding().encoder());
+            res.send();
+        });
+        builder.get("/automatic-empty-filtered", (req, res) -> {
+            res.streamFilter(stream -> stream);
+            res.send();
+        });
         builder.get("/explicit-empty-no-content", (req, res) -> {
             res.contentEncoder(new TestEncoding().encoder());
             res.status(Status.NO_CONTENT_204);
@@ -592,6 +601,31 @@ class StaticContentEncodingTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
             assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, encodedLength));
+            assertThat(response.entity().hasEntity(), is(false));
+        }
+    }
+
+    @Test
+    void explicitContentEncoderEncodesFilteredEmptyResponse() {
+        String encodedEntity = "runtime:";
+        String encodedLength = String.valueOf(encodedEntity.getBytes(StandardCharsets.UTF_8).length);
+
+        try (Http2ClientResponse response = client.get("/explicit-empty-filtered").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, encodedLength));
+            assertThat(response.as(String.class), is(encodedEntity));
+        }
+    }
+
+    @Test
+    void automaticContentEncoderSkipsFilteredEmptyResponse() {
+        try (Http2ClientResponse response = client.get("/automatic-empty-filtered")
+                .header(HeaderNames.ACCEPT_ENCODING, "test")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), noHeader(HeaderNames.VARY));
             assertThat(response.entity().hasEntity(), is(false));
         }
     }

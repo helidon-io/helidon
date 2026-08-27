@@ -641,6 +641,47 @@ class Http2ServerResponseTest {
     }
 
     @Test
+    void filteredEmptySendSkipsAutomaticContentEncoding() {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder());
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        response.streamFilter(output -> output);
+
+        response.send(BufferData.EMPTY_BYTES);
+        response.commit();
+
+        var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+        verify(stream).writeHeaders(responseHeaders.capture(), anyBoolean());
+        verify(contentEncodingContext, never()).encoder(any(Headers.class));
+        Headers sentHeaders = responseHeaders.getValue().httpHeaders();
+        assertAll(
+                () -> assertThat(sentHeaders.contains(HeaderNames.CONTENT_ENCODING), is(false)),
+                () -> assertThat(sentHeaders.contains(HeaderNames.VARY), is(false))
+        );
+    }
+
+    @Test
+    void filteredEmptySendHonorsExplicitContentEncoding() {
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.GET, ContentEncodingContext.create());
+        response.streamFilter(output -> output);
+        response.contentEncoder(testEncoder());
+
+        response.send(BufferData.EMPTY_BYTES);
+        response.commit();
+
+        var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+        verify(stream).writeHeaders(responseHeaders.capture(), anyBoolean());
+        Headers sentHeaders = responseHeaders.getValue().httpHeaders();
+        assertAll(
+                () -> assertThat(sentHeaders.get(HeaderNames.CONTENT_ENCODING).get(), is("test")),
+                () -> assertThat(sentHeaders.contains(HeaderNames.VARY), is(false))
+        );
+    }
+
+    @Test
     void filteredSendHonorsBeforeSendNoContent() {
         ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
         Http2ServerStream stream = mock(Http2ServerStream.class);
