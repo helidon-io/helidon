@@ -179,7 +179,7 @@ public final class Http1Prologue {
         throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
     }
 
-    static boolean isAuthorityForm(String requestTarget) {
+    private static boolean isAuthorityForm(String requestTarget) {
         int portDelimiter;
         String host;
         if (requestTarget.startsWith("[")) {
