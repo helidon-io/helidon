@@ -23,6 +23,7 @@ import java.util.function.Function;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HttpException;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -157,6 +158,28 @@ class OpenApiServiceAuthorizationTest {
     }
 
     @Test
+    void failedLocatedServiceDoesNotConsumeWrapperCapacity() {
+        var locator = new RecoveringLocator();
+        WebServer server = testServer(new LocatorOpenApiService("/recover/{service}", locator));
+
+        try {
+            server.start();
+            WebClient serverClient = testClient(server);
+
+            assertThat("cold initialization failure status",
+                       serverClient.get("/recover/failing/resource").request(String.class).status(),
+                       is(Status.I_AM_A_TEAPOT_418));
+            assertThat("healthy service remains admissible after the failure",
+                       serverClient.get("/recover/healthy/resource").request(String.class).status(),
+                       is(Status.FORBIDDEN_403));
+        } finally {
+            if (server.isRunning()) {
+                server.stop();
+            }
+        }
+    }
+
+    @Test
     void locatorAndLocatedServiceRetainLifecycle() {
         var service = new LifecycleService("/resource");
         var locator = new LifecycleLocator(service);
@@ -277,6 +300,24 @@ class OpenApiServiceAuthorizationTest {
         @Override
         public String type() {
             return "locator-test-openapi-service";
+        }
+    }
+
+    private static final class RecoveringLocator implements HttpServiceLocator {
+        private final Map<String, HttpService> services = Map.of(
+                "failing", rules -> {
+                    throw new HttpException("cold initialization failed", Status.I_AM_A_TEAPOT_418, true);
+                },
+                "healthy", rules -> rules.get("/resource", (req, res) -> res.send("unprotected")));
+
+        @Override
+        public Optional<HttpService> locate(ServerRequest request) {
+            return request.path().pathParameters().first("service").map(services::get);
+        }
+
+        @Override
+        public int maxServiceCacheSize() {
+            return 1;
         }
     }
 

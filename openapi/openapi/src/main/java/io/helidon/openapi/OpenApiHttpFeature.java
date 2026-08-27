@@ -274,9 +274,20 @@ class OpenApiHttpFeature implements HttpFeature {
             if (securedServices.size() >= maxServiceCacheSize) {
                 throw serviceUnavailable("size of " + maxServiceCacheSize + " exceeded");
             }
-            securedService = new SecuredService(service, secureHandler);
+            securedService = new SecuredService(service, secureHandler, this);
             securedServices.put(service, securedService);
             return securedService;
+        }
+
+        private void removeFailedService(HttpService service, HttpService securedService) {
+            lock.lock();
+            try {
+                if (securedServices.get(service) == securedService) {
+                    securedServices.remove(service);
+                }
+            } finally {
+                lock.unlock();
+            }
         }
 
         private void checkRunning() {
@@ -295,30 +306,57 @@ class OpenApiHttpFeature implements HttpFeature {
     private static final class SecuredService implements HttpService {
         private final HttpService delegate;
         private final SecureHandler secureHandler;
+        private final SecuredLocator locator;
 
         private SecuredService(HttpService delegate, SecureHandler secureHandler) {
+            this(delegate, secureHandler, null);
+        }
+
+        private SecuredService(HttpService delegate, SecureHandler secureHandler, SecuredLocator locator) {
             this.delegate = delegate;
             this.secureHandler = secureHandler;
+            this.locator = locator;
         }
 
         @Override
         public void routing(HttpRules rules) {
-            delegate.routing(new SecuredRules(rules, secureHandler));
+            try {
+                delegate.routing(new SecuredRules(rules, secureHandler));
+            } catch (RuntimeException | Error e) {
+                initializationFailed();
+                throw e;
+            }
         }
 
         @Override
         public void beforeStart() {
-            delegate.beforeStart();
+            try {
+                delegate.beforeStart();
+            } catch (RuntimeException | Error e) {
+                initializationFailed();
+                throw e;
+            }
         }
 
         @Override
         public void afterStart(WebServer webServer) {
-            delegate.afterStart(webServer);
+            try {
+                delegate.afterStart(webServer);
+            } catch (RuntimeException | Error e) {
+                initializationFailed();
+                throw e;
+            }
         }
 
         @Override
         public void afterStop() {
             delegate.afterStop();
+        }
+
+        private void initializationFailed() {
+            if (locator != null) {
+                locator.removeFailedService(delegate, this);
+            }
         }
     }
 
