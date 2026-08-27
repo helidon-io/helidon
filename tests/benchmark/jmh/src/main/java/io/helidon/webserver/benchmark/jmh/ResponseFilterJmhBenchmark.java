@@ -85,6 +85,7 @@ public class ResponseFilterJmhBenchmark {
     private HttpRequest http1StreamNone;
     private HttpRequest http1StreamEntity;
     private HttpRequest http1StreamPublic;
+    private HttpRequest http1Sse;
 
     @Setup
     public void setup() {
@@ -128,6 +129,11 @@ public class ResponseFilterJmhBenchmark {
         http1StreamNone = request(baseUri, STREAM_NONE);
         http1StreamEntity = request(baseUri, STREAM_ENTITY);
         http1StreamPublic = request(baseUri, STREAM_PUBLIC);
+        http1Sse = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(baseUri + SSE))
+                .header(HeaderValues.ACCEPT_EVENT_STREAM.name(), HeaderValues.ACCEPT_EVENT_STREAM.get())
+                .build();
     }
 
     @TearDown
@@ -182,6 +188,12 @@ public class ResponseFilterJmhBenchmark {
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http1StreamPublicFilter(Blackhole blackhole) throws IOException, InterruptedException {
         http1(http1StreamPublic, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1SseSink(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1Sse, blackhole);
     }
 
     @Benchmark
