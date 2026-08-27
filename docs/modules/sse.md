@@ -46,7 +46,7 @@ the WebServer.
 Sending events is accomplished by obtaining an `SseSink` instance from a
 `ServerResponse` using the `SseSink.TYPE` constant. The following example
 converts the response into an `SseSink`, emits two string messages and then
-closes the connection.
+closes the SSE response stream.
 
 ```java
 try (SseSink sseSink = res.sink(SseSink.TYPE)) {
@@ -153,7 +153,7 @@ try (Http1ClientResponse r = client.get("/sseJson")
 
 The `SseSource` type defines other methods such as `onOpen`, `onClose` and
 `onError`. The following example waits for zero or more string events until the
-connection is closed. A `CountDownLatch` is a convenient way to asynchronously
+event stream is closed. A `CountDownLatch` is a convenient way to asynchronously
 wait until all the events are received.
 
 ```java
