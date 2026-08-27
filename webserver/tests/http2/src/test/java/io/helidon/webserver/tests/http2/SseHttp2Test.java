@@ -189,6 +189,27 @@ class SseHttp2Test {
     }
 
     @Test
+    void headSseSendsOneHeaderBlockAndKeepsConnectionUsable(Http2TestClient client) {
+        try (Http2TestConnection connection = client.createConnection()) {
+            connection.completeHandshake(TIMEOUT);
+            FrameDemultiplexer frames = new FrameDemultiplexer(connection);
+            connection.request(1, Method.HEAD, "/sse-head", sseHeaders(), BufferData.empty());
+
+            StreamCapture head = new StreamCapture();
+            head.readUntilEnd(frames, 1);
+            assertThat("HEAD SSE response status", head.responseHeaders.status(), is(Status.OK_200));
+            assertThat("HEAD SSE must contain no entity", head.body(), is(""));
+            assertThat("HEAD SSE must end on its only HEADERS block",
+                       head.terminalFrameType, is(Http2FrameType.HEADERS));
+
+            request(connection, 3, "/ping", WritableHeaders.create());
+            assertPing(frames, 3);
+            assertThat("HEAD SSE must not emit a second response header block",
+                       frames.hasQueuedFrame(1), is(false));
+        }
+    }
+
+    @Test
     void concurrentSseStreamsCompleteIndependentlyOnOneConnection(Http2TestClient client) throws InterruptedException {
         StreamControl first = new StreamControl("open-one", "close-one", false);
         StreamControl second = new StreamControl("open-two", "close-two", false);
@@ -348,6 +369,11 @@ class SseHttp2Test {
                 .route(Http2Route.route(Method.GET, "/ping", (req, res) -> {
                     res.header(SOCKET_ID, req.socketId());
                     res.send("ok");
+                }))
+                .route(Http2Route.route(Method.HEAD, "/sse-head", (_, res) -> {
+                    try (SseSink _ = res.sink(SseSink.TYPE)) {
+                        // A HEAD response completes without an SSE entity.
+                    }
                 }))
                 .route(Http2Route.route(Method.GET, "/controlled", (req, res) -> controlled(req.query().get("id"), res)))
                 .route(Http2Route.route(Method.GET, "/lifecycle", (req, res) -> lifecycle(req.query().get("id"), res)));

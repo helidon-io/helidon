@@ -826,6 +826,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 responseSentRunnable.run();
                 return;
             }
+            if (headRequest) {
+                sendHeadResponse(false);
+                firstByte = false;
+                return;
+            }
             if (firstBuffer != null) {
                 try {
                     write(BufferData.empty());

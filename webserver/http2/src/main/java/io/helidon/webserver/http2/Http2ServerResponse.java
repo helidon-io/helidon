@@ -532,6 +532,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                     if (sendTrailers) {
                         sendTrailers();
                     }
+                } else if (sendTrailers) {
+                    sendTrailers();
                 }
             } else if (firstByte) {
                 // if sendTrailers, will not send end-of-stream
@@ -560,6 +562,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 return;
             }
             if (!firstByte) {
+                responseSentRunnable.run();
+                return;
+            }
+            if (headRequest) {
+                sendHeadHeaders(!Http2ServerResponse.sendTrailers(headers));
+                firstByte = false;
                 responseSentRunnable.run();
                 return;
             }

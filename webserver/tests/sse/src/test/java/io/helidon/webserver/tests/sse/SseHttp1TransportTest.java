@@ -74,6 +74,12 @@ class SseHttp1TransportTest {
                 sink.emit(SseEvent.create("world"));
             }
         });
+        rules.any("/sse-head", (req, res) -> {
+            res.header(SOCKET_ID, req.socketId());
+            try (SseSink _ = res.sink(SseSink.TYPE)) {
+                // A HEAD response completes without an SSE entity.
+            }
+        });
         rules.get("/connection", (req, res) -> res.send(req.socketId()));
     }
 
@@ -120,6 +126,25 @@ class SseHttp1TransportTest {
             assertThat("Gzip footer must record the complete uncompressed SSE entity",
                        gzipInputSize(response.entity()),
                        is((long) SSE_ENTITY.getBytes(StandardCharsets.UTF_8).length));
+
+            assertConnectionReuse(client, input, response.header(SOCKET_ID.defaultCase()));
+        }
+    }
+
+    @Test
+    void headSseSendsOneHeaderBlockAndKeepsConnectionReusable() throws Exception {
+        try (SocketHttpClient client = socketClient()) {
+            client.request(Method.HEAD,
+                           "/sse-head",
+                           null,
+                           List.of("Accept: text/event-stream"));
+            InputStream input = client.socketInputStream();
+            RawResponse response = readHeadResponse(input);
+
+            assertThat("HEAD SSE response status", response.statusCode(), is(200));
+            assertThat("HEAD SSE must contain no entity", response.entity().length, is(0));
+            assertThat("HEAD SSE response must expose its physical socket id",
+                       response.header(SOCKET_ID.defaultCase()), notNullValue());
 
             assertConnectionReuse(client, input, response.header(SOCKET_ID.defaultCase()));
         }
@@ -182,6 +207,21 @@ class SseHttp1TransportTest {
         assertThat("Non-chunked response must declare Content-Length", contentLength, notNullValue());
         byte[] entity = readBytes(input, Integer.parseInt(contentLength));
         return new RawResponse(statusCode, headers, Map.of(), entity, List.of(), null);
+    }
+
+    private static RawResponse readHeadResponse(InputStream input) throws IOException {
+        String statusLine = readCrlfLine(input);
+        assertThat("HTTP response must start with a status line", statusLine, notNullValue());
+        String[] statusParts = statusLine.split(" ", 3);
+        assertThat("HTTP status line must contain a numeric status code: " + statusLine,
+                   statusParts.length,
+                   greaterThan(1));
+        return new RawResponse(Integer.parseInt(statusParts[1]),
+                               readFields(input),
+                               Map.of(),
+                               new byte[0],
+                               List.of(),
+                               null);
     }
 
     private static RawResponse readChunkedResponse(int statusCode,
