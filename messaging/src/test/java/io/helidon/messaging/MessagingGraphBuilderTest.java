@@ -528,6 +528,91 @@ class MessagingGraphBuilderTest {
     }
 
     @Test
+    void gracefulCloseRescansChannelsAfterDescendantAdmission() throws InterruptedException {
+        CountDownLatch childCreated = new CountDownLatch(1);
+        CountDownLatch allowChildEmission = new CountDownLatch(1);
+        CountDownLatch targetStarted = new CountDownLatch(1);
+        CountDownLatch releaseTarget = new CountDownLatch(1);
+        CountDownLatch releaseParent = new CountDownLatch(1);
+        AtomicBoolean targetCompletedNaturally = new AtomicBoolean();
+        AtomicBoolean targetInterrupted = new AtomicBoolean();
+        AtomicReference<Emitter<String>> descendantEmitter = new AtomicReference<>();
+        AtomicReference<Thread> childThread = new AtomicReference<>();
+        AtomicReference<Throwable> childFailure = new AtomicReference<>();
+        AtomicReference<Throwable> parentFailure = new AtomicReference<>();
+        AtomicReference<Throwable> closeFailure = new AtomicReference<>();
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> first = builder.channel("a", String.class);
+        MessagingChannel<String> second = builder.channel("b", String.class);
+        builder.payloadSink(first, ignored -> {
+                    targetStarted.countDown();
+                    try {
+                        releaseTarget.await();
+                        targetCompletedNaturally.set(true);
+                    } catch (InterruptedException e) {
+                        targetInterrupted.set(true);
+                        Thread.currentThread().interrupt();
+                    }
+                })
+                .payloadSink(second, ignored -> {
+                    Thread child = Thread.ofPlatform().start(() -> {
+                        childCreated.countDown();
+                        await(allowChildEmission);
+                        runCapturing(() -> descendantEmitter.get().emit("child"), childFailure);
+                    });
+                    childThread.set(child);
+                    await(releaseParent);
+                });
+        MessagingGraph graph = builder.build();
+        descendantEmitter.set(graph.emitter(first));
+        Emitter<String> secondEmitter = graph.emitter(second);
+        graph.start();
+        Thread parent = Thread.ofVirtual().start(() -> runCapturing(() -> secondEmitter.emit("parent"), parentFailure));
+        Thread closer = null;
+        try {
+            await(childCreated);
+            closer = Thread.ofVirtual().start(() -> runCapturing(graph::close, closeFailure));
+            awaitState((DefaultMessagingGraph) graph, DefaultMessagingGraph.State.DRAINING);
+            awaitWaiting(closer);
+
+            allowChildEmission.countDown();
+            Thread child = childThread.get();
+            assertThat(targetStarted.await(5, TimeUnit.SECONDS), is(true));
+            releaseParent.countDown();
+            parent.join(TimeUnit.SECONDS.toMillis(5));
+            assertThat(parent.isAlive(), is(false));
+
+            closer.join(500);
+            assertThat("Graceful close stopped waiting for newly admitted work", closer.isAlive(), is(true));
+            assertThat(targetInterrupted.get(), is(false));
+
+            releaseTarget.countDown();
+            child.join(TimeUnit.SECONDS.toMillis(5));
+            closer.join(TimeUnit.SECONDS.toMillis(5));
+            assertThat(child.isAlive(), is(false));
+            assertThat(closer.isAlive(), is(false));
+            assertThat(targetCompletedNaturally.get(), is(true));
+            assertThat(targetInterrupted.get(), is(false));
+            assertThat(childFailure.get(), nullValue());
+            assertThat(parentFailure.get(), nullValue());
+            assertThat(closeFailure.get(), nullValue());
+            assertThat(((DefaultMessagingGraph) graph).state(), is(DefaultMessagingGraph.State.CLOSED));
+        } finally {
+            allowChildEmission.countDown();
+            releaseParent.countDown();
+            releaseTarget.countDown();
+            parent.join(TimeUnit.SECONDS.toMillis(5));
+            Thread child = childThread.get();
+            if (child != null) {
+                child.join(TimeUnit.SECONDS.toMillis(5));
+            }
+            if (closer != null) {
+                closer.join(TimeUnit.SECONDS.toMillis(5));
+            }
+        }
+    }
+
+    @Test
     void asynchronousStreamSourceFailureIsReportedByClose() {
         IllegalStateException sourceFailure = new IllegalStateException("stream delivery failed");
         MessagingGraph.Builder builder = MessagingGraph.builder();
@@ -548,7 +633,99 @@ class MessagingGraphBuilderTest {
     }
 
     @Test
-    void blockedStreamIterationDrainsCleanlyWithoutAdmittedWork() throws InterruptedException {
+    void checkedStreamIterationFailureIsRecorded() {
+        Exception sourceFailure = new Exception("checked stream iteration failure");
+        CountDownLatch iterationEntered = new CountDownLatch(1);
+        CountDownLatch releaseFailure = new CountDownLatch(1);
+        Iterator<String> iterator = new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                iterationEntered.countDown();
+                await(releaseFailure);
+                MessagingGraphBuilderTest.<RuntimeException>rethrow(sourceFailure);
+                return false;
+            }
+
+            @Override
+            public String next() {
+                throw new AssertionError("next must not be called after hasNext fails");
+            }
+        };
+        Stream<String> source = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
+                false);
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("checked-stream-failure", String.class);
+        builder.payloadSource(channel, source)
+                .payloadSink(channel, ignored -> { });
+        MessagingGraph graph = builder.build();
+        graph.start();
+        try {
+            await(iterationEntered);
+            assertThat(((DefaultMessagingGraph) graph).state(), is(DefaultMessagingGraph.State.RUNNING));
+            releaseFailure.countDown();
+            awaitState((DefaultMessagingGraph) graph, DefaultMessagingGraph.State.FAILED);
+
+            Throwable graphFailure = ((DefaultMessagingGraph) graph).failure().orElseThrow();
+            MessagingException closeFailure = assertThrows(MessagingException.class, graph::close);
+
+            assertThat(graphFailure, sameInstance(closeFailure));
+            assertThat(graphFailure.getCause(), sameInstance(sourceFailure));
+        } finally {
+            releaseFailure.countDown();
+        }
+    }
+
+    @Test
+    void streamCloseFailureIsSuppressedOnCheckedIterationFailure() {
+        Exception sourceFailure = new Exception("checked stream iteration failure");
+        Exception streamCloseFailure = new Exception("checked stream close failure");
+        CountDownLatch iterationEntered = new CountDownLatch(1);
+        CountDownLatch releaseFailure = new CountDownLatch(1);
+        Iterator<String> iterator = new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                iterationEntered.countDown();
+                await(releaseFailure);
+                MessagingGraphBuilderTest.<RuntimeException>rethrow(sourceFailure);
+                return false;
+            }
+
+            @Override
+            public String next() {
+                throw new AssertionError("next must not be called after hasNext fails");
+            }
+        };
+        Stream<String> source = StreamSupport.stream(
+                        Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
+                        false)
+                .onClose(() -> MessagingGraphBuilderTest.<RuntimeException>rethrow(streamCloseFailure));
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> channel = builder.channel("checked-stream-close-failure", String.class);
+        builder.payloadSource(channel, source)
+                .payloadSink(channel, ignored -> { });
+        MessagingGraph graph = builder.build();
+        graph.start();
+        try {
+            await(iterationEntered);
+            assertThat(((DefaultMessagingGraph) graph).state(), is(DefaultMessagingGraph.State.RUNNING));
+            releaseFailure.countDown();
+            awaitState((DefaultMessagingGraph) graph, DefaultMessagingGraph.State.FAILED);
+
+            Throwable graphFailure = ((DefaultMessagingGraph) graph).failure().orElseThrow();
+            MessagingException closeFailure = assertThrows(MessagingException.class, graph::close);
+
+            assertThat(graphFailure, sameInstance(closeFailure));
+            assertThat(graphFailure.getCause(), sameInstance(sourceFailure));
+            assertThat(sourceFailure.getSuppressed().length, is(1));
+            assertThat(sourceFailure.getSuppressed()[0], sameInstance(streamCloseFailure));
+        } finally {
+            releaseFailure.countDown();
+        }
+    }
+
+    @Test
+    void blockedStreamCheckedInterruptionDrainsCleanlyWithoutAdmittedWork() throws InterruptedException {
         CountDownLatch iterationEntered = new CountDownLatch(1);
         CountDownLatch releaseIteration = new CountDownLatch(1);
         CountDownLatch iterationInterrupted = new CountDownLatch(1);
@@ -564,7 +741,7 @@ class MessagingGraphBuilderTest {
                     return false;
                 } catch (InterruptedException e) {
                     iterationInterrupted.countDown();
-                    Thread.currentThread().interrupt();
+                    MessagingGraphBuilderTest.<RuntimeException>rethrow(e);
                     return false;
                 }
             }
@@ -876,12 +1053,29 @@ class MessagingGraphBuilderTest {
         assertThat(graph.state(), is(expected));
     }
 
+    private static void awaitWaiting(Thread thread) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (System.nanoTime() < deadline) {
+            Thread.State state = thread.getState();
+            if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
+                return;
+            }
+            Thread.onSpinWait();
+        }
+        throw new AssertionError("Timed out waiting for thread to block");
+    }
+
     private static void runCapturing(Runnable task, AtomicReference<Throwable> failure) {
         try {
             task.run();
         } catch (Throwable t) {
             failure.set(t);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void rethrow(Throwable failure) throws T {
+        throw (T) failure;
     }
 
     private record MessagePayload(String entity) implements Message<String> {

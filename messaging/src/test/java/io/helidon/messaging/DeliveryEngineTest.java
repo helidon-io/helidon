@@ -331,6 +331,74 @@ class DeliveryEngineTest {
     }
 
     @Test
+    void drainWaitsForAttemptThatCapturedAncestryBeforeAdmission() throws Exception {
+        CountDownLatch ancestryCaptured = new CountDownLatch(1);
+        CountDownLatch releaseAdmission = new CountDownLatch(1);
+        CountDownLatch releaseParent = new CountDownLatch(1);
+        CountDownLatch targetStarted = new CountDownLatch(1);
+        CountDownLatch releaseTarget = new CountDownLatch(1);
+        AtomicBoolean targetCompletedNaturally = new AtomicBoolean();
+        AtomicBoolean drained = new AtomicBoolean();
+        AtomicReference<Thread> childThread = new AtomicReference<>();
+        AtomicReference<Throwable> childFailure = new AtomicReference<>();
+        MessagingExecutionConfig config = configBuilder().build();
+        Runnable admissionHook = () -> {
+            if (Thread.currentThread().getName().equals("delayed-descendant-admission")) {
+                ancestryCaptured.countDown();
+                await(releaseAdmission);
+            }
+        };
+        try (DeliveryEngine engine = new DeliveryEngine(config, admissionHook)) {
+            engine.registerChannel("a", config);
+            engine.registerChannel("b", config);
+            AsyncTask parent = async(() -> dispatch(engine, "b", List.of(message(1)), () -> {
+                Thread child = Thread.ofPlatform().name("delayed-descendant-admission").start(() -> {
+                    try {
+                        dispatch(engine, "a", List.of(message(2)), () -> {
+                            targetStarted.countDown();
+                            await(releaseTarget);
+                            targetCompletedNaturally.set(true);
+                        });
+                    } catch (Throwable t) {
+                        childFailure.set(t);
+                    }
+                });
+                childThread.set(child);
+                await(releaseParent);
+            }));
+            await(ancestryCaptured);
+            engine.beginDrain();
+            AsyncTask drain = async(() -> drained.set(engine.awaitDrained(WAIT)));
+            try {
+                awaitWaiting(drain);
+                releaseParent.countDown();
+                await(parent);
+                awaitWaiting(drain);
+                assertThat(targetStarted.getCount(), is(1L));
+                assertThat(drained.get(), is(false));
+
+                releaseAdmission.countDown();
+                await(targetStarted);
+                awaitWaiting(drain);
+                assertThat(drained.get(), is(false));
+            } finally {
+                releaseAdmission.countDown();
+                releaseParent.countDown();
+                releaseTarget.countDown();
+                await(parent);
+                Thread child = childThread.get();
+                if (child != null) {
+                    join(child);
+                }
+                await(drain);
+            }
+            assertThat(drained.get(), is(true));
+            assertThat(targetCompletedNaturally.get(), is(true));
+            assertThat(childFailure.get(), nullValue());
+        }
+    }
+
+    @Test
     void reservationRejectsDispatcherContentionWithoutLeakingPendingBudget() throws Exception {
         MessagingExecutionConfig config = configBuilder()
                 .maxPendingAdmissions(1)

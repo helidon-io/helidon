@@ -325,9 +325,9 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
                 Iterator<?> iterator;
                 try {
                     iterator = stream.sequential().iterator();
-                } catch (RuntimeException e) {
+                } catch (Exception e) {
                     if (!cooperativeInterruption(e)) {
-                        throw e;
+                        StreamSource.<RuntimeException>rethrow(e);
                     }
                     return;
                 }
@@ -335,9 +335,9 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
                     boolean hasNext;
                     try {
                         hasNext = iterator.hasNext();
-                    } catch (RuntimeException e) {
+                    } catch (Exception e) {
                         if (!cooperativeInterruption(e)) {
-                            throw e;
+                            StreamSource.<RuntimeException>rethrow(e);
                         }
                         break;
                     }
@@ -347,9 +347,9 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
                     Object next;
                     try {
                         next = iterator.next();
-                    } catch (RuntimeException e) {
+                    } catch (Exception e) {
                         if (!cooperativeInterruption(e)) {
-                            throw e;
+                            StreamSource.<RuntimeException>rethrow(e);
                         }
                         break;
                     }
@@ -362,9 +362,9 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
                         endDelivery();
                     }
                 }
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 processingFailure = e;
-                throw e;
+                StreamSource.<RuntimeException>rethrow(e);
             } finally {
                 closed.set(true);
                 releaseOwner(current);
@@ -453,7 +453,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
             }
         }
 
-        private boolean cooperativeInterruption(RuntimeException failure) {
+        private boolean cooperativeInterruption(Exception failure) {
             if (!drainRequested.get() || forceCloseRequested.get()) {
                 return false;
             }
@@ -478,14 +478,20 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         private void closeStream(Throwable processingFailure) {
             try {
                 closeStream();
-            } catch (RuntimeException | Error closeFailure) {
+            } catch (Throwable closeFailure) {
                 if (processingFailure == null) {
-                    throw closeFailure;
+                    StreamSource.<RuntimeException>rethrow(closeFailure);
+                    return;
                 }
                 if (processingFailure != closeFailure) {
                     processingFailure.addSuppressed(closeFailure);
                 }
             }
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T extends Throwable> void rethrow(Throwable failure) throws T {
+            throw (T) failure;
         }
     }
 }

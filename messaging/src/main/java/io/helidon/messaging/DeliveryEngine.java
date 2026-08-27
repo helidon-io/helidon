@@ -50,6 +50,7 @@ import io.helidon.common.context.Contexts;
  */
 final class DeliveryEngine implements AutoCloseable {
     private static final System.Logger LOGGER = System.getLogger(DeliveryEngine.class.getName());
+    private static final Runnable NOOP = () -> { };
     private static final ThreadLocal<DeliveryContext> CURRENT_DELIVERY = new ThreadLocal<>();
     // Child threads inherit immutable ancestry, never the mutable connector lease held by CURRENT_DELIVERY.
     private static final InheritableThreadLocal<WeakReference<DeliveryAncestry>> CURRENT_ANCESTRY =
@@ -60,15 +61,22 @@ final class DeliveryEngine implements AutoCloseable {
     private final Set<Thread> dispatchThreads = ConcurrentHashMap.newKeySet();
     private final ReentrantLock sourceThreadsLock = new ReentrantLock();
     private final ReentrantLock dispatchThreadsLock = new ReentrantLock();
+    private final DeliveryAdmissionTracker admissionTracker = new DeliveryAdmissionTracker();
     private final ThreadFactory dispatchThreadFactory;
     private final ThreadFactory cleanupThreadFactory;
     private final ThreadFactory sourceThreadFactory;
     private final Duration shutdownTimeout;
     private final AtomicBoolean accepting = new AtomicBoolean(true);
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final Runnable dispatchAdmissionHook;
 
     DeliveryEngine(MessagingExecutionConfig defaultConfig) {
+        this(defaultConfig, NOOP);
+    }
+
+    DeliveryEngine(MessagingExecutionConfig defaultConfig, Runnable dispatchAdmissionHook) {
         this.shutdownTimeout = Objects.requireNonNull(defaultConfig).shutdownTimeout();
+        this.dispatchAdmissionHook = Objects.requireNonNull(dispatchAdmissionHook);
         this.dispatchThreadFactory = virtualThreadFactory("helidon-messaging-dispatch-", "Messaging delivery failed");
         this.cleanupThreadFactory = virtualThreadFactory("helidon-messaging-cleanup-",
                                                          "Messaging reservation cleanup failed");
@@ -94,38 +102,46 @@ final class DeliveryEngine implements AutoCloseable {
                   Runnable action) {
         Objects.requireNonNull(batch);
         Objects.requireNonNull(action);
-        ChannelDispatcher dispatcher = dispatcher(channel);
-        DeliveryContext parent = CURRENT_DELIVERY.get();
-        DeliveryAncestry ancestry = currentAncestry();
-        if (parent != null && parent.connectorLease(this, channel)) {
-            parent.dispatchWithinLease(batch, action);
-            return;
-        }
-        if (ancestry != null && ancestry.path().contains(new DeliveryNode(this, channel))) {
-            throw new MessagingException("Cyclic synchronous messaging emission: "
-                                                 + String.join(" -> ", ancestry.pathNames()) + " -> " + channel);
-        }
+        beginAdmissionAttempt(channel);
         DeliveryTask task;
         try {
-            AdmissionMode admissionMode = ancestry == null ? AdmissionMode.WAIT : AdmissionMode.NESTED;
-            Context helidonContext = localDeliveryContext(ancestry);
-            task = dispatcher.submit(batch.size(),
-                                     ancestry == null ? List.of() : ancestry.path(),
-                                     false,
-                                     admissionMode,
-                                     helidonContext,
-                                     null,
-                                     action);
-            if (task == null) {
-                throw rejected(channel,
-                               MessagingRejectedException.Reason.SATURATED,
-                               "Nested delivery cannot run immediately on channel " + channel);
+            ChannelDispatcher dispatcher = dispatcher(channel);
+            DeliveryContext parent = CURRENT_DELIVERY.get();
+            DeliveryAncestry ancestry = currentAncestry();
+            if (dispatchAdmissionHook != NOOP) {
+                dispatchAdmissionHook.run();
             }
-        } catch (MessagingRejectedException e) {
-            if (ancestry != null && canMarkNotAttempted(e)) {
-                throw new PreDispatchRejectedException(e);
+            if (parent != null && parent.connectorLease(this, channel)) {
+                parent.dispatchWithinLease(batch, action);
+                return;
             }
-            throw e;
+            if (ancestry != null && ancestry.path().contains(new DeliveryNode(this, channel))) {
+                throw new MessagingException("Cyclic synchronous messaging emission: "
+                                                     + String.join(" -> ", ancestry.pathNames()) + " -> " + channel);
+            }
+            try {
+                AdmissionMode admissionMode = ancestry == null ? AdmissionMode.WAIT : AdmissionMode.NESTED;
+                Context helidonContext = localDeliveryContext(ancestry);
+                task = dispatcher.submit(batch.size(),
+                                         ancestry == null ? List.of() : ancestry.path(),
+                                         false,
+                                         admissionMode,
+                                         helidonContext,
+                                         null,
+                                         action);
+                if (task == null) {
+                    throw rejected(channel,
+                                   MessagingRejectedException.Reason.SATURATED,
+                                   "Nested delivery cannot run immediately on channel " + channel);
+                }
+            } catch (MessagingRejectedException e) {
+                if (ancestry != null && canMarkNotAttempted(e)) {
+                    throw new PreDispatchRejectedException(e);
+                }
+                throw e;
+            }
+        } finally {
+            endAdmissionAttempt();
         }
         awaitCaller(task);
     }
@@ -135,17 +151,22 @@ final class DeliveryEngine implements AutoCloseable {
                                                Runnable action) {
         Objects.requireNonNull(batch);
         Objects.requireNonNull(action);
-        ChannelDispatcher dispatcher = dispatcher(channel);
-        if (currentAncestry() != null) {
-            throw new MessagingException("A connector delivery cannot be submitted from messaging dispatch");
+        beginAdmissionAttempt(channel);
+        try {
+            ChannelDispatcher dispatcher = dispatcher(channel);
+            if (currentAncestry() != null) {
+                throw new MessagingException("A connector delivery cannot be submitted from messaging dispatch");
+            }
+            return dispatcher.submit(batch.size(),
+                                     List.of(),
+                                     true,
+                                     AdmissionMode.WAIT,
+                                     Context.create(),
+                                     batch,
+                                     action);
+        } finally {
+            endAdmissionAttempt();
         }
-        return dispatcher.submit(batch.size(),
-                                 List.of(),
-                                 true,
-                                 AdmissionMode.WAIT,
-                                 Context.create(),
-                                 batch,
-                                 action);
     }
 
     Optional<ConnectorDelivery> trySubmitConnectorDelivery(String channel,
@@ -153,17 +174,22 @@ final class DeliveryEngine implements AutoCloseable {
                                                            Runnable action) {
         Objects.requireNonNull(batch);
         Objects.requireNonNull(action);
-        if (currentAncestry() != null) {
-            throw new MessagingException("A connector delivery cannot be submitted from messaging dispatch");
+        beginAdmissionAttempt(channel);
+        try {
+            if (currentAncestry() != null) {
+                throw new MessagingException("A connector delivery cannot be submitted from messaging dispatch");
+            }
+            DeliveryTask task = dispatcher(channel).submit(batch.size(),
+                                                           List.of(),
+                                                           true,
+                                                           AdmissionMode.TRY,
+                                                           Context.create(),
+                                                           batch,
+                                                           action);
+            return Optional.ofNullable(task);
+        } finally {
+            endAdmissionAttempt();
         }
-        DeliveryTask task = dispatcher(channel).submit(batch.size(),
-                                                       List.of(),
-                                                       true,
-                                                       AdmissionMode.TRY,
-                                                       Context.create(),
-                                                       batch,
-                                                       action);
-        return Optional.ofNullable(task);
     }
 
     ConnectorDeliveryReservation reserveConnectorDelivery(String channel,
@@ -176,13 +202,18 @@ final class DeliveryEngine implements AutoCloseable {
                                                            int maxMessages,
                                                            Consumer<MessageBatch<?>> processor,
                                                            BiConsumer<MessageBatch<?>, RuntimeException> failureProcessor) {
-        rejectConnectorReservationFromDispatch();
-        return dispatcher(channel).reserveConnectorDelivery(
-                connectorReservationMessages(channel, maxMessages),
-                AdmissionMode.WAIT,
-                -1,
-                Objects.requireNonNull(processor),
-                Objects.requireNonNull(failureProcessor));
+        beginAdmissionAttempt(channel);
+        try {
+            rejectConnectorReservationFromDispatch();
+            return dispatcher(channel).reserveConnectorDelivery(
+                    connectorReservationMessages(channel, maxMessages),
+                    AdmissionMode.WAIT,
+                    -1,
+                    Objects.requireNonNull(processor),
+                    Objects.requireNonNull(failureProcessor));
+        } finally {
+            endAdmissionAttempt();
+        }
     }
 
     Optional<ConnectorDeliveryReservation> tryReserveConnectorDelivery(String channel,
@@ -202,16 +233,21 @@ final class DeliveryEngine implements AutoCloseable {
             long remainingCapacityWaitNanos,
             Consumer<MessageBatch<?>> processor,
             BiConsumer<MessageBatch<?>, RuntimeException> failureProcessor) {
-        rejectConnectorReservationFromDispatch();
-        if (remainingCapacityWaitNanos < 0) {
-            throw new IllegalArgumentException("remainingCapacityWaitNanos must be zero or greater");
+        beginAdmissionAttempt(channel);
+        try {
+            rejectConnectorReservationFromDispatch();
+            if (remainingCapacityWaitNanos < 0) {
+                throw new IllegalArgumentException("remainingCapacityWaitNanos must be zero or greater");
+            }
+            return Optional.ofNullable(dispatcher(channel).reserveConnectorDelivery(
+                    connectorReservationMessages(channel, maxMessages),
+                    AdmissionMode.TRY,
+                    remainingCapacityWaitNanos,
+                    Objects.requireNonNull(processor),
+                    Objects.requireNonNull(failureProcessor)));
+        } finally {
+            endAdmissionAttempt();
         }
-        return Optional.ofNullable(dispatcher(channel).reserveConnectorDelivery(
-                connectorReservationMessages(channel, maxMessages),
-                AdmissionMode.TRY,
-                remainingCapacityWaitNanos,
-                Objects.requireNonNull(processor),
-                Objects.requireNonNull(failureProcessor)));
     }
 
     ConnectorDeliveryReservation reserveConnectorDelivery(String channel,
@@ -269,9 +305,9 @@ final class DeliveryEngine implements AutoCloseable {
                 Throwable failure = null;
                 try {
                     source.run();
-                } catch (RuntimeException | Error t) {
+                } catch (Throwable t) {
                     failure = t;
-                    throw t;
+                    DeliveryEngine.<RuntimeException>rethrow(t);
                 } finally {
                     // Publish failure before deregistration so shutdown cannot observe termination without its cause.
                     // Notify listeners only after deregistration so their cleanup never waits on this source thread.
@@ -316,16 +352,29 @@ final class DeliveryEngine implements AutoCloseable {
     boolean awaitDrained(Duration timeout) {
         Objects.requireNonNull(timeout);
         long deadline = saturatedAdd(System.nanoTime(), timeout.toNanos());
-        for (ChannelDispatcher dispatcher : dispatchers.values()) {
-            if (!dispatcher.awaitDrained(deadline)) {
+        while (true) {
+            long observedGeneration = admissionTracker.generation();
+            for (ChannelDispatcher dispatcher : dispatchers.values()) {
+                if (!dispatcher.awaitDrained(deadline)) {
+                    return false;
+                }
+            }
+            if (!awaitSourceTermination(deadline)) {
                 return false;
             }
+            DeliveryAdmissionTracker.Stability stability = admissionTracker.awaitStable(observedGeneration, deadline);
+            if (stability == DeliveryAdmissionTracker.Stability.TIMED_OUT) {
+                return false;
+            }
+            if (stability == DeliveryAdmissionTracker.Stability.STABLE) {
+                return true;
+            }
         }
-        return awaitSourceTermination(deadline);
     }
 
     void forceShutdown() {
         accepting.set(false);
+        admissionTracker.forceFinalize();
         if (!closed.compareAndSet(false, true)) {
             return;
         }
@@ -376,6 +425,18 @@ final class DeliveryEngine implements AutoCloseable {
 
     private static void throwDeliveryFailure(MessageBatch<?> batch, RuntimeException failure) {
         throw failure;
+    }
+
+    private void beginAdmissionAttempt(String channel) {
+        if (!admissionTracker.enter()) {
+            throw rejected(channel,
+                           MessagingRejectedException.Reason.SHUTDOWN,
+                           "Messaging runtime has finished draining");
+        }
+    }
+
+    private void endAdmissionAttempt() {
+        admissionTracker.exit();
     }
 
     private void awaitCaller(DeliveryTask task) {
@@ -527,6 +588,11 @@ final class DeliveryEngine implements AutoCloseable {
             return Long.MAX_VALUE;
         }
         return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void rethrow(Throwable failure) throws T {
+        throw (T) failure;
     }
 
     private MessagingRejectedException rejected(String channel,
@@ -831,6 +897,7 @@ final class DeliveryEngine implements AutoCloseable {
                                                                  processor,
                                                                  failureProcessor);
             reservations.add(result);
+            admissionTracker.advance();
             return result;
         }
 
@@ -1045,8 +1112,12 @@ final class DeliveryEngine implements AutoCloseable {
                     changed.signalAll();
                     throw e;
                 }
+                // The task cannot finish until it reacquires this dispatcher lock, so publish its successful
+                // admission before a drain scan can observe the dispatcher as empty.
+                admissionTracker.advance();
             } else {
                 queue.addLast(task);
+                admissionTracker.advance();
             }
         }
 
@@ -1436,60 +1507,75 @@ final class DeliveryEngine implements AutoCloseable {
 
         @Override
         public ConnectorDelivery start(MessageBatch<?> batch) {
-            claimStart();
+            beginAdmissionAttempt(dispatcher.channel);
             try {
-                Objects.requireNonNull(batch);
-                updateTryStartBudget();
-                return dispatcher.startReservation(this,
-                                                   batch.size(),
-                                                   batch,
-                                                   () -> processor.accept(batch),
-                                                   AdmissionMode.WAIT);
-            } catch (RuntimeException | Error e) {
-                dispatcher.closeReservation(this, ReservationState.CLOSED);
-                throw e;
+                claimStart();
+                try {
+                    Objects.requireNonNull(batch);
+                    updateTryStartBudget();
+                    return dispatcher.startReservation(this,
+                                                       batch.size(),
+                                                       batch,
+                                                       () -> processor.accept(batch),
+                                                       AdmissionMode.WAIT);
+                } catch (RuntimeException | Error e) {
+                    dispatcher.closeReservation(this, ReservationState.CLOSED);
+                    throw e;
+                }
+            } finally {
+                endAdmissionAttempt();
             }
         }
 
         @Override
         public ConnectorDelivery startFailed(MessageBatch<?> batch, RuntimeException failure) {
-            claimStart();
+            beginAdmissionAttempt(dispatcher.channel);
             try {
-                Objects.requireNonNull(batch);
-                Objects.requireNonNull(failure);
-                updateTryStartBudget();
-                return dispatcher.startReservation(this,
-                                                   batch.size(),
-                                                   batch,
-                                                   () -> failureProcessor.accept(batch, failure),
-                                                   AdmissionMode.WAIT);
-            } catch (RuntimeException | Error e) {
-                dispatcher.closeReservation(this, ReservationState.CLOSED);
-                throw e;
+                claimStart();
+                try {
+                    Objects.requireNonNull(batch);
+                    Objects.requireNonNull(failure);
+                    updateTryStartBudget();
+                    return dispatcher.startReservation(this,
+                                                       batch.size(),
+                                                       batch,
+                                                       () -> failureProcessor.accept(batch, failure),
+                                                       AdmissionMode.WAIT);
+                } catch (RuntimeException | Error e) {
+                    dispatcher.closeReservation(this, ReservationState.CLOSED);
+                    throw e;
+                }
+            } finally {
+                endAdmissionAttempt();
             }
         }
 
         @Override
         public Optional<ConnectorDelivery> tryStart(MessageBatch<?> batch) {
-            claimStart();
+            beginAdmissionAttempt(dispatcher.channel);
             try {
-                Objects.requireNonNull(batch);
-                long attemptStarted = System.nanoTime();
-                updateTryStartBudget();
-                DeliveryTask task = dispatcher.startReservation(this,
-                                                                batch.size(),
-                                                                batch,
-                                                                () -> processor.accept(batch),
-                                                                AdmissionMode.TRY);
-                if (task == null) {
-                    beginTryStartBudget(attemptStarted);
+                claimStart();
+                try {
+                    Objects.requireNonNull(batch);
+                    long attemptStarted = System.nanoTime();
                     updateTryStartBudget();
-                    startClaimed.set(false);
+                    DeliveryTask task = dispatcher.startReservation(this,
+                                                                    batch.size(),
+                                                                    batch,
+                                                                    () -> processor.accept(batch),
+                                                                    AdmissionMode.TRY);
+                    if (task == null) {
+                        beginTryStartBudget(attemptStarted);
+                        updateTryStartBudget();
+                        startClaimed.set(false);
+                    }
+                    return Optional.ofNullable(task);
+                } catch (RuntimeException | Error e) {
+                    dispatcher.closeReservation(this, ReservationState.CLOSED);
+                    throw e;
                 }
-                return Optional.ofNullable(task);
-            } catch (RuntimeException | Error e) {
-                dispatcher.closeReservation(this, ReservationState.CLOSED);
-                throw e;
+            } finally {
+                endAdmissionAttempt();
             }
         }
 
