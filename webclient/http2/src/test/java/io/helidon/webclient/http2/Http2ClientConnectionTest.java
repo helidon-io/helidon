@@ -971,7 +971,7 @@ class Http2ClientConnectionTest {
     }
 
     @Test
-    void protocolFailureUpgradesInFlightRetirementGoAway() throws Exception {
+    void protocolFailureBreaksBlockedRetirementGoAway() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));
             Http2ClientConnection connection = test.createConnection(false);
@@ -985,41 +985,12 @@ class Http2ClientConnectionTest {
             CompletableFuture<Void> drained = CompletableFuture.runAsync(stream::close);
             assertThat(blockedRetirement.awaitEntered(), is(true));
 
-            try {
-                test.offerInbound(dataFrame(stream.streamId() + 2,
-                                            "invalid".getBytes(StandardCharsets.UTF_8),
-                                            false));
-                assertThrows(TimeoutException.class, () -> drained.get(200, TimeUnit.MILLISECONDS));
-            } finally {
-                blockedRetirement.release();
-            }
+            test.offerInbound(dataFrame(stream.streamId() + 2,
+                                        "invalid".getBytes(StandardCharsets.UTF_8),
+                                        false));
+
+            test.assertConnectionClosed();
             drained.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-
-            ArgumentCaptor<BufferData> goAwayFrames = ArgumentCaptor.forClass(BufferData.class);
-            InOrder closeOrder = inOrder(test.dataWriter, test.clientConnection);
-            closeOrder.verify(test.dataWriter, timeout(TEST_WAIT_TIMEOUT.toMillis()).times(2))
-                    .writeNow(goAwayFrames.capture());
-            closeOrder.verify(test.clientConnection, timeout(TEST_WAIT_TIMEOUT.toMillis())).closeResource();
-
-            List<BufferData> frames = goAwayFrames.getAllValues();
-            BufferData retirementFrame = frames.get(0);
-            byte[] retirementHeaderBytes = new byte[Http2FrameHeader.LENGTH];
-            retirementFrame.read(retirementHeaderBytes);
-            Http2FrameHeader retirementHeader = Http2FrameHeader.create(BufferData.create(retirementHeaderBytes));
-            byte[] retirementPayloadBytes = new byte[retirementHeader.length()];
-            retirementFrame.read(retirementPayloadBytes);
-            assertThat(Http2GoAway.create(BufferData.create(retirementPayloadBytes)).errorCode(),
-                       is(Http2ErrorCode.NO_ERROR));
-
-            BufferData errorFrame = frames.get(1);
-            byte[] errorHeaderBytes = new byte[Http2FrameHeader.LENGTH];
-            errorFrame.read(errorHeaderBytes);
-            Http2FrameHeader errorHeader = Http2FrameHeader.create(BufferData.create(errorHeaderBytes));
-            byte[] errorPayloadBytes = new byte[errorHeader.length()];
-            errorFrame.read(errorPayloadBytes);
-            assertThat(Http2GoAway.create(BufferData.create(errorPayloadBytes)).errorCode(),
-                       is(Http2ErrorCode.PROTOCOL));
-            connection.close();
         }
     }
 
