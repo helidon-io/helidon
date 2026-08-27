@@ -170,6 +170,22 @@ class ByteRangeRequestTest {
     }
 
     @Test
+    void testMultipleIfRangeValuesDoNotMatch() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.IF_RANGE, "\"tag\"");
+        headers.add(HeaderNames.IF_RANGE, "\"other\"");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        Mockito.when(req.headers()).thenReturn(ServerRequestHeaders.create(headers));
+
+        assertThat(ByteRangeRequest.parse(req,
+                                          FIRST_BYTE_RANGE,
+                                          50,
+                                          "tag",
+                                          false),
+                   is(List.of()));
+    }
+
+    @Test
     void testMalformedIfRangeEntityTagDoesNotMatch() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderNames.IF_RANGE, "\"");

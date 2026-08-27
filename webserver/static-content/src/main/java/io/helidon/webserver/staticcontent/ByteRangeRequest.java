@@ -115,7 +115,12 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
             return true;
         }
 
-        String ifRange = req.headers().get(HeaderNames.IF_RANGE).get().trim();
+        Header ifRangeHeader = req.headers().get(HeaderNames.IF_RANGE);
+        if (ifRangeHeader.valueCount() != 1) {
+            return false;
+        }
+
+        String ifRange = ifRangeHeader.get().trim();
         if (ifRange.startsWith("\"") || StaticContentHandler.isWeakETag(ifRange)) {
             return !weakEtag
                     && etag != null
