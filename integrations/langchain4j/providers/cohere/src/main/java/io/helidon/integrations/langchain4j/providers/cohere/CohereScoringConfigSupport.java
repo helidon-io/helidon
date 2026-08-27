@@ -20,6 +20,7 @@ import java.net.Proxy;
 import java.util.Map;
 import java.util.Optional;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.builder.api.Prototype;
 
@@ -28,6 +29,7 @@ import dev.langchain4j.http.client.HttpClientBuilder;
 final class CohereScoringConfigSupport {
     // Generated preBuild processing reapplies programmatic values, while default service discovery invokes a setter
     // only once. Configuration paths identify direct and named values independently of setter order.
+    private static final ReentrantLock SETTER_COUNTS_LOCK = new ReentrantLock();
     private static final Map<CohereScoringModelConfig.BuilderBase<?, ?>, SetterCounts> SETTER_COUNTS = new WeakHashMap<>();
 
     private CohereScoringConfigSupport() {
@@ -40,40 +42,55 @@ final class CohereScoringConfigSupport {
     }
 
     private static int incrementHttpClientBuilder(CohereScoringModelConfig.BuilderBase<?, ?> builder) {
-        synchronized (SETTER_COUNTS) {
+        SETTER_COUNTS_LOCK.lock();
+        try {
             var counts = SETTER_COUNTS.getOrDefault(builder, SetterCounts.EMPTY);
             counts = new SetterCounts(counts.httpClientBuilder() + 1, counts.proxy());
             SETTER_COUNTS.put(builder, counts);
             return counts.httpClientBuilder();
+        } finally {
+            SETTER_COUNTS_LOCK.unlock();
         }
     }
 
     private static int incrementProxy(CohereScoringModelConfig.BuilderBase<?, ?> builder) {
-        synchronized (SETTER_COUNTS) {
+        SETTER_COUNTS_LOCK.lock();
+        try {
             var counts = SETTER_COUNTS.getOrDefault(builder, SetterCounts.EMPTY);
             counts = new SetterCounts(counts.httpClientBuilder(), counts.proxy() + 1);
             SETTER_COUNTS.put(builder, counts);
             return counts.proxy();
+        } finally {
+            SETTER_COUNTS_LOCK.unlock();
         }
     }
 
     private static int httpClientBuilderCount(CohereScoringModelConfig.BuilderBase<?, ?> builder) {
-        synchronized (SETTER_COUNTS) {
+        SETTER_COUNTS_LOCK.lock();
+        try {
             return SETTER_COUNTS.getOrDefault(builder, SetterCounts.EMPTY).httpClientBuilder();
+        } finally {
+            SETTER_COUNTS_LOCK.unlock();
         }
     }
 
     private static void clearHttpClientBuilderCount(CohereScoringModelConfig.BuilderBase<?, ?> builder) {
-        synchronized (SETTER_COUNTS) {
+        SETTER_COUNTS_LOCK.lock();
+        try {
             var counts = SETTER_COUNTS.getOrDefault(builder, SetterCounts.EMPTY);
             SETTER_COUNTS.put(builder, new SetterCounts(0, counts.proxy()));
+        } finally {
+            SETTER_COUNTS_LOCK.unlock();
         }
     }
 
     private static void clearProxyCount(CohereScoringModelConfig.BuilderBase<?, ?> builder) {
-        synchronized (SETTER_COUNTS) {
+        SETTER_COUNTS_LOCK.lock();
+        try {
             var counts = SETTER_COUNTS.getOrDefault(builder, SetterCounts.EMPTY);
             SETTER_COUNTS.put(builder, new SetterCounts(counts.httpClientBuilder(), 0));
+        } finally {
+            SETTER_COUNTS_LOCK.unlock();
         }
     }
 

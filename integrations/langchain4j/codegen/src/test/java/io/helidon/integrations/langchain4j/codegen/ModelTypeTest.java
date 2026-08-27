@@ -29,8 +29,9 @@ import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 
 class ModelTypeTest {
     private static final String TEST_PACKAGE = "io.helidon.integrations.langchain4j.codegen.test.";
@@ -49,7 +50,7 @@ class ModelTypeTest {
         List<TypeInfo> lineage = new ArrayList<>();
         ModelType.allParents(current, lineage);
 
-        assertEquals(expected, lineage.stream().map(TypeInfo::typeName).toList());
+        assertThat(lineage.stream().map(TypeInfo::typeName).toList(), is(expected));
     }
 
     @Test
@@ -65,8 +66,8 @@ class ModelTypeTest {
         List<TypeInfo> lineage = new ArrayList<>();
         ModelType.allParents(provider, lineage);
 
-        assertEquals(List.of(provider.typeName(), left.typeName(), right.typeName(), sharedFromLeft.typeName()),
-                     lineage.stream().map(TypeInfo::typeName).toList());
+        assertThat(lineage.stream().map(TypeInfo::typeName).toList(),
+                   is(List.of(provider.typeName(), left.typeName(), right.typeName(), sharedFromLeft.typeName())));
 
         TypeInfo modelType = interfaceType("TestModel", List.of(), List.of());
         TypeInfo builderType = classType("TestModelBuilder", null);
@@ -81,7 +82,7 @@ class ModelTypeTest {
                                                                                  "test",
                                                                                  modelAnnotation);
 
-        assertSame(rightOption, blueprintBuilder.resolveOverriddenProperties().get("endpoint"));
+        assertThat(blueprintBuilder.resolveOverriddenProperties().get("endpoint"), sameInstance(rightOption));
     }
 
     private static TypedElementInfo configuredMethod(String name) {

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import dev.langchain4j.exception.HttpException;
+import dev.langchain4j.exception.LangChain4jException;
 import dev.langchain4j.exception.TimeoutException;
 import dev.langchain4j.http.client.HttpClient;
 import dev.langchain4j.http.client.HttpClientBuilder;
@@ -37,6 +38,7 @@ import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.http.client.sse.ServerSentEventListener;
 import dev.langchain4j.http.client.sse.ServerSentEventParser;
 import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 
@@ -113,7 +115,7 @@ final class CohereHttpClientSupport {
 
         @Override
         public HttpClient build() {
-            var builder = new okhttp3.OkHttpClient.Builder()
+            var builder = new OkHttpClient.Builder()
                     .proxy(proxy);
             if (connectTimeout != null) {
                 builder.connectTimeout(connectTimeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -131,9 +133,9 @@ final class CohereHttpClientSupport {
         private static final MediaType JSON = MediaType.get("application/json");
         private static final RequestBody EMPTY_BODY = RequestBody.create(new byte[0]);
 
-        private final okhttp3.OkHttpClient client;
+        private final OkHttpClient client;
 
-        private SocksHttpClient(okhttp3.OkHttpClient client) {
+        private SocksHttpClient(OkHttpClient client) {
             this.client = client;
         }
 
@@ -170,7 +172,7 @@ final class CohereHttpClientSupport {
             } catch (SocketTimeoutException e) {
                 throw new TimeoutException(e);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new LangChain4jException(e);
             }
         }
 
