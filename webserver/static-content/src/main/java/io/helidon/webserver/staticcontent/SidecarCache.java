@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Per-resource sidecar lookup cache.
@@ -31,7 +32,8 @@ final class SidecarCache {
     private static final SidecarCache DISABLED = new SidecarCache(null);
 
     private final ConcurrentMap<String, CachedHandler> entries;
-    private final ConcurrentMap<String, CompletableFuture<Optional<CachedHandler>>> resolutions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, AtomicReference<CompletableFuture<Optional<CachedHandler>>>> resolutions =
+            new ConcurrentHashMap<>();
 
     private SidecarCache(ConcurrentMap<String, CachedHandler> entries) {
         this.entries = entries;
@@ -56,8 +58,15 @@ final class SidecarCache {
             return Optional.of(cachedHandler);
         }
 
+        AtomicReference<CompletableFuture<Optional<CachedHandler>>> slot =
+                resolutions.computeIfAbsent(coding, ignored -> new AtomicReference<>());
+        CompletableFuture<Optional<CachedHandler>> existing = slot.get();
+        if (existing != null) {
+            return await(existing);
+        }
+
         CompletableFuture<Optional<CachedHandler>> resolution = new CompletableFuture<>();
-        CompletableFuture<Optional<CachedHandler>> existing = resolutions.putIfAbsent(coding, resolution);
+        existing = slot.compareAndExchange(null, resolution);
         if (existing != null) {
             return await(existing);
         }
@@ -78,7 +87,7 @@ final class SidecarCache {
             resolution.completeExceptionally(e);
             throw e;
         } finally {
-            resolutions.remove(coding, resolution);
+            slot.compareAndSet(resolution, null);
         }
     }
 

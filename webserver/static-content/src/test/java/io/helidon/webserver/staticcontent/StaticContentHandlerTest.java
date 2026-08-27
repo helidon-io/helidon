@@ -1839,6 +1839,7 @@ class StaticContentHandlerTest {
 
             first.get(5, TimeUnit.SECONDS);
             second.get(5, TimeUnit.SECONDS);
+            assertThat(lookups.get(), is(1));
         }
     }
 
@@ -1887,6 +1888,60 @@ class StaticContentHandlerTest {
 
             assertThat(first.get(5, TimeUnit.SECONDS), is(Optional.empty()));
             assertThat(second.get(5, TimeUnit.SECONDS), is(Optional.empty()));
+        }
+
+        assertThat(sidecarCache.resolve("br", ".br", resolver), is(Optional.empty()));
+        assertThat(lookups.get(), is(2));
+    }
+
+    @Test
+    void preCompressedConcurrentSidecarLookupFailureIsCoalescedButNotCached() throws Exception {
+        SidecarCache sidecarCache = SidecarCache.create();
+        AtomicInteger lookups = new AtomicInteger();
+        IOException failure = new IOException("Sidecar lookup failed");
+        CountDownLatch firstResolverEntered = new CountDownLatch(1);
+        CountDownLatch releaseFirstResolver = new CountDownLatch(1);
+        CountDownLatch secondLookupStarted = new CountDownLatch(1);
+        AtomicReference<Thread> secondLookupThread = new AtomicReference<>();
+
+        SidecarCache.Resolver resolver = (coding, suffix) -> {
+            if (lookups.incrementAndGet() == 1) {
+                firstResolverEntered.countDown();
+                try {
+                    if (!releaseFirstResolver.await(10, TimeUnit.SECONDS)) {
+                        throw new IOException("Timed out awaiting release of the first lookup");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while awaiting release of the first lookup", e);
+                }
+                throw failure;
+            }
+            return Optional.empty();
+        };
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Future<IOException> first = executor.submit(() -> assertThrows(
+                    IOException.class,
+                    () -> sidecarCache.resolve("br", ".br", resolver)));
+            Future<IOException> second;
+            try {
+                assertThat(firstResolverEntered.await(5, TimeUnit.SECONDS), is(true));
+                second = executor.submit(() -> {
+                    secondLookupThread.set(Thread.currentThread());
+                    secondLookupStarted.countDown();
+                    return assertThrows(IOException.class,
+                                        () -> sidecarCache.resolve("br", ".br", resolver));
+                });
+                assertThat(secondLookupStarted.await(5, TimeUnit.SECONDS), is(true));
+                assertThatWithRetry(secondLookupThread.get()::getState, is(Thread.State.WAITING));
+                assertThat(lookups.get(), is(1));
+            } finally {
+                releaseFirstResolver.countDown();
+            }
+
+            assertThat(first.get(5, TimeUnit.SECONDS), sameInstance(failure));
+            assertThat(second.get(5, TimeUnit.SECONDS), sameInstance(failure));
         }
 
         assertThat(sidecarCache.resolve("br", ".br", resolver), is(Optional.empty()));
