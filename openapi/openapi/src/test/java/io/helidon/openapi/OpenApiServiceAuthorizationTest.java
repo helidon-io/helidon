@@ -53,6 +53,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 @RoutingTest
 class OpenApiServiceAuthorizationTest {
@@ -184,6 +185,69 @@ class OpenApiServiceAuthorizationTest {
                 server.stop();
             }
         }
+    }
+
+    @Test
+    void concurrentTransientFailureDoesNotSplitWrapperIdentity() throws Exception {
+        var cleanupStarted = new CountDownLatch(1);
+        var releaseCleanup = new CountDownLatch(1);
+        var duplicateRoutingStarted = new CountDownLatch(1);
+        var locatedTwice = new CountDownLatch(2);
+        var service = new TransientFailureService(cleanupStarted, releaseCleanup, duplicateRoutingStarted);
+        var locator = new TransientFailureLocator(service, locatedTwice);
+        WebServer server = testServer(new LocatorOpenApiService("/transient/{service}", locator));
+
+        try {
+            server.start();
+            WebClient serverClient = testClient(server);
+
+            try (var executor = Executors.newFixedThreadPool(2)) {
+                Future<Status> failedRequest = executor.submit(
+                        () -> serverClient.get("/transient/transient/resource").request(String.class).status());
+
+                assertThat("failed wrapper cleanup started",
+                           cleanupStarted.await(5, TimeUnit.SECONDS),
+                           is(true));
+
+                Future<Status> concurrentRetry = executor.submit(
+                        () -> serverClient.get("/transient/transient/resource").request(String.class).status());
+
+                try {
+                    assertThat("both requests located the same raw service",
+                               locatedTwice.await(5, TimeUnit.SECONDS),
+                               is(true));
+                    assertThat("no duplicate wrapper initialized while the failed wrapper remained in use",
+                               duplicateRoutingStarted.await(1, TimeUnit.SECONDS),
+                               is(false));
+                } finally {
+                    releaseCleanup.countDown();
+                }
+
+                assertThat("transient initialization failure status",
+                           failedRequest.get(5, TimeUnit.SECONDS),
+                           is(Status.I_AM_A_TEAPOT_418));
+                assertThat("concurrent retry did not split wrapper capacity",
+                           concurrentRetry.get(5, TimeUnit.SECONDS),
+                           not(is(Status.SERVICE_UNAVAILABLE_503)));
+            }
+
+            assertThat("subsequent retry is healthy",
+                       serverClient.get("/transient/transient/resource").request(String.class).status(),
+                       is(Status.FORBIDDEN_403));
+            assertThat("a second stable identity remains admissible",
+                       serverClient.get("/transient/healthy/resource").request(String.class).status(),
+                       is(Status.FORBIDDEN_403));
+            assertThat("transient service routing count", service.routingCount.get(), is(2));
+            assertThat("transient service beforeStart count", service.beforeStartCount.get(), is(2));
+            assertThat("transient service afterStart count", service.afterStartCount.get(), is(1));
+        } finally {
+            releaseCleanup.countDown();
+            if (server.isRunning()) {
+                server.stop();
+            }
+        }
+
+        assertThat("transient service afterStop count", service.afterStopCount.get(), is(2));
     }
 
     @Test
@@ -393,6 +457,82 @@ class OpenApiServiceAuthorizationTest {
         @Override
         public int maxServiceCacheSize() {
             return 1;
+        }
+    }
+
+    private static final class TransientFailureLocator implements HttpServiceLocator {
+        private final Map<String, HttpService> services;
+        private final CountDownLatch locateCalls;
+
+        private TransientFailureLocator(HttpService transientService, CountDownLatch locateCalls) {
+            this.services = Map.of(
+                    "transient", transientService,
+                    "healthy", rules -> rules.get("/resource", (req, res) -> res.send("unprotected")));
+            this.locateCalls = locateCalls;
+        }
+
+        @Override
+        public Optional<HttpService> locate(ServerRequest request) {
+            locateCalls.countDown();
+            return request.path().pathParameters().first("service").map(services::get);
+        }
+
+        @Override
+        public int maxServiceCacheSize() {
+            return 2;
+        }
+    }
+
+    private static final class TransientFailureService implements HttpService {
+        private final CountDownLatch cleanupStarted;
+        private final CountDownLatch releaseCleanup;
+        private final CountDownLatch duplicateRoutingStarted;
+        private final AtomicInteger routingCount = new AtomicInteger();
+        private final AtomicInteger beforeStartCount = new AtomicInteger();
+        private final AtomicInteger afterStartCount = new AtomicInteger();
+        private final AtomicInteger afterStopCount = new AtomicInteger();
+
+        private TransientFailureService(CountDownLatch cleanupStarted,
+                                        CountDownLatch releaseCleanup,
+                                        CountDownLatch duplicateRoutingStarted) {
+            this.cleanupStarted = cleanupStarted;
+            this.releaseCleanup = releaseCleanup;
+            this.duplicateRoutingStarted = duplicateRoutingStarted;
+        }
+
+        @Override
+        public void routing(HttpRules rules) {
+            if (routingCount.incrementAndGet() > 1 && releaseCleanup.getCount() != 0) {
+                duplicateRoutingStarted.countDown();
+            }
+            rules.get("/resource", (req, res) -> res.send("unprotected"));
+        }
+
+        @Override
+        public void beforeStart() {
+            if (beforeStartCount.incrementAndGet() == 1) {
+                throw new HttpException("transient initialization failed", Status.I_AM_A_TEAPOT_418, true);
+            }
+        }
+
+        @Override
+        public void afterStart(WebServer webServer) {
+            afterStartCount.incrementAndGet();
+        }
+
+        @Override
+        public void afterStop() {
+            if (afterStopCount.incrementAndGet() == 1) {
+                cleanupStarted.countDown();
+                try {
+                    if (!releaseCleanup.await(10, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Timed out waiting to release failed wrapper cleanup");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while waiting to release failed wrapper cleanup", e);
+                }
+            }
         }
     }
 

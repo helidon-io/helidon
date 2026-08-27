@@ -16,7 +16,10 @@
 
 package io.helidon.openapi;
 
-import java.util.IdentityHashMap;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -199,8 +202,9 @@ class OpenApiHttpFeature implements HttpFeature {
         private final HttpServiceLocator delegate;
         private final SecureHandler secureHandler;
         private final ReentrantLock lock = new ReentrantLock();
+        private final ReferenceQueue<HttpService> staleServices = new ReferenceQueue<>();
         private final int maxServiceCacheSize;
-        private volatile Map<HttpService, HttpService> securedServices = new IdentityHashMap<>();
+        private volatile Map<WeakIdentityKey, WeakReference<SecuredService>> securedServices = new HashMap<>();
         private volatile boolean stopped;
 
         private SecuredLocator(HttpServiceLocator delegate, SecureHandler secureHandler) {
@@ -249,7 +253,7 @@ class OpenApiHttpFeature implements HttpFeature {
             lock.lock();
             try {
                 stopped = true;
-                securedServices = new IdentityHashMap<>();
+                securedServices = new HashMap<>();
             } finally {
                 lock.unlock();
             }
@@ -257,8 +261,10 @@ class OpenApiHttpFeature implements HttpFeature {
         }
 
         private HttpService securedService(HttpService service) {
-            Map<HttpService, HttpService> currentServices = securedServices;
-            HttpService securedService = currentServices.get(service);
+            var lookupKey = new WeakIdentityKey(service);
+            Map<WeakIdentityKey, WeakReference<SecuredService>> currentServices = securedServices;
+            WeakReference<SecuredService> securedServiceReference = currentServices.get(lookupKey);
+            SecuredService securedService = securedServiceReference == null ? null : securedServiceReference.get();
             if (securedService != null) {
                 checkRunning();
                 return securedService;
@@ -268,16 +274,14 @@ class OpenApiHttpFeature implements HttpFeature {
             try {
                 checkRunning();
                 currentServices = securedServices;
-                securedService = currentServices.get(service);
+                securedServiceReference = currentServices.get(lookupKey);
+                securedService = securedServiceReference == null ? null : securedServiceReference.get();
                 if (securedService != null) {
                     return securedService;
                 }
-                if (currentServices.size() >= maxServiceCacheSize) {
-                    throw serviceUnavailable("size of " + maxServiceCacheSize + " exceeded");
-                }
-                securedService = new SecuredService(service, secureHandler, this);
-                Map<HttpService, HttpService> updatedServices = new IdentityHashMap<>(currentServices);
-                updatedServices.put(service, securedService);
+                securedService = new SecuredService(service, secureHandler);
+                Map<WeakIdentityKey, WeakReference<SecuredService>> updatedServices = copyWithoutStale(currentServices);
+                updatedServices.put(new WeakIdentityKey(service, staleServices), new WeakReference<>(securedService));
                 securedServices = updatedServices;
                 return securedService;
             } finally {
@@ -285,18 +289,15 @@ class OpenApiHttpFeature implements HttpFeature {
             }
         }
 
-        private void removeFailedService(HttpService service, HttpService securedService) {
-            lock.lock();
-            try {
-                Map<HttpService, HttpService> currentServices = securedServices;
-                if (currentServices.get(service) == securedService) {
-                    Map<HttpService, HttpService> updatedServices = new IdentityHashMap<>(currentServices);
-                    updatedServices.remove(service);
-                    securedServices = updatedServices;
-                }
-            } finally {
-                lock.unlock();
+        private Map<WeakIdentityKey, WeakReference<SecuredService>> copyWithoutStale(
+                Map<WeakIdentityKey, WeakReference<SecuredService>> currentServices) {
+            Map<WeakIdentityKey, WeakReference<SecuredService>> updatedServices = new HashMap<>(currentServices);
+            Reference<? extends HttpService> staleService;
+            while ((staleService = staleServices.poll()) != null) {
+                updatedServices.remove(staleService);
             }
+            updatedServices.entrySet().removeIf(entry -> entry.getKey().get() == null || entry.getValue().get() == null);
+            return updatedServices;
         }
 
         private void checkRunning() {
@@ -310,62 +311,62 @@ class OpenApiHttpFeature implements HttpFeature {
                                      Status.SERVICE_UNAVAILABLE_503,
                                      true);
         }
+
+        private static final class WeakIdentityKey extends WeakReference<HttpService> {
+            private final int hashCode;
+
+            private WeakIdentityKey(HttpService service) {
+                super(service);
+                this.hashCode = System.identityHashCode(service);
+            }
+
+            private WeakIdentityKey(HttpService service, ReferenceQueue<HttpService> queue) {
+                super(service, queue);
+                this.hashCode = System.identityHashCode(service);
+            }
+
+            @Override
+            public int hashCode() {
+                return hashCode;
+            }
+
+            @Override
+            public boolean equals(Object object) {
+                if (this == object) {
+                    return true;
+                }
+                return object instanceof WeakIdentityKey that && get() != null && get() == that.get();
+            }
+        }
     }
 
     private static final class SecuredService implements HttpService {
         private final HttpService delegate;
         private final SecureHandler secureHandler;
-        private final SecuredLocator locator;
 
         private SecuredService(HttpService delegate, SecureHandler secureHandler) {
-            this(delegate, secureHandler, null);
-        }
-
-        private SecuredService(HttpService delegate, SecureHandler secureHandler, SecuredLocator locator) {
             this.delegate = delegate;
             this.secureHandler = secureHandler;
-            this.locator = locator;
         }
 
         @Override
         public void routing(HttpRules rules) {
-            try {
-                delegate.routing(new SecuredRules(rules, secureHandler));
-            } catch (RuntimeException | Error e) {
-                initializationFailed();
-                throw e;
-            }
+            delegate.routing(new SecuredRules(rules, secureHandler));
         }
 
         @Override
         public void beforeStart() {
-            try {
-                delegate.beforeStart();
-            } catch (RuntimeException | Error e) {
-                initializationFailed();
-                throw e;
-            }
+            delegate.beforeStart();
         }
 
         @Override
         public void afterStart(WebServer webServer) {
-            try {
-                delegate.afterStart(webServer);
-            } catch (RuntimeException | Error e) {
-                initializationFailed();
-                throw e;
-            }
+            delegate.afterStart(webServer);
         }
 
         @Override
         public void afterStop() {
             delegate.afterStop();
-        }
-
-        private void initializationFailed() {
-            if (locator != null) {
-                locator.removeFailedService(delegate, this);
-            }
         }
     }
 
