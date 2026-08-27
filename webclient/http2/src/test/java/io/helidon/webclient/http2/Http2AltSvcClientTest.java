@@ -59,6 +59,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -251,6 +252,48 @@ class Http2AltSvcClientTest {
 
             assertThat(context.client.supports(context.request, context.uri),
                        is(HttpClientSpi.SupportLevel.SUPPORTED));
+        }
+    }
+
+    @Test
+    void misdirectedDirectResponseDoesNotInstallAlternative() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID,
+                                                                    false,
+                                                                    Status.MISDIRECTED_REQUEST_421));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    @Test
+    void misdirectedDirectResponseDoesNotReplaceOrClearAlternative() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            Instant observation = Instant.now();
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID,
+                                                                    false,
+                                                                    Status.OK_200,
+                                                                    responseHeaders(),
+                                                                    observation));
+
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID,
+                                                                    false,
+                                                                    Status.MISDIRECTED_REQUEST_421,
+                                                                    responseHeaders("h2=\":9443\"; ma=3600"),
+                                                                    observation.plusNanos(1)));
+            Http2AltSvcCache.Selection selection = context.client.connectionCache()
+                    .currentAlternative(context.target, false);
+            assertThat(selection, notNullValue());
+            assertThat(selection.port(), is(8443));
+
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID,
+                                                                    false,
+                                                                    Status.MISDIRECTED_REQUEST_421,
+                                                                    responseHeaders("clear"),
+                                                                    observation.plusNanos(2)));
+            assertThat(context.client.connectionCache().currentAlternative(context.target, false),
+                       sameInstance(selection));
         }
     }
 

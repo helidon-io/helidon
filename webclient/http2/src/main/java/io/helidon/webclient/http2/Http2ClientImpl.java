@@ -183,8 +183,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                 || !response.secure()
                 || !(Http1Client.PROTOCOL_ID.equals(response.protocolId())
                         || Http2Client.PROTOCOL_ID.equals(response.protocolId()))
-                || (response.status().code() == Status.MISDIRECTED_REQUEST_421_CODE
-                        && response.alternativeAuthority().isPresent())) {
+                || response.status().code() == Status.MISDIRECTED_REQUEST_421_CODE) {
             return;
         }
 
