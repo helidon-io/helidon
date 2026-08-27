@@ -21,11 +21,12 @@ import java.util.List;
 import io.helidon.common.Weight;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
+import io.helidon.webserver.spi.ConfiguredServerFeatureFactory;
 
 @Service.Singleton
 @Service.RunLevel(Service.RunLevel.SERVER)
 @Weight(ObserveFeature.WEIGHT)
-class ObserveFeatureServicesFactory implements Service.ServicesFactory<ObserveFeature> {
+class ObserveFeatureServicesFactory implements Service.ServicesFactory<ObserveFeature>, ConfiguredServerFeatureFactory {
     private final ObserveServices observeServices;
 
     @Service.Inject

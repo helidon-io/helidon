@@ -37,6 +37,7 @@ import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.spi.ConfiguredServerFeatureFactory;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -51,6 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Isolated
 class JunitExtensionBaseTest {
     private static final AtomicInteger FACTORY_CREATE_COUNT = new AtomicInteger();
+    private static final AtomicInteger UNRELATED_FACTORY_CREATE_COUNT = new AtomicInteger();
     private static final AtomicInteger PROVIDER_CREATE_COUNT = new AtomicInteger();
 
     @Test
@@ -138,6 +140,45 @@ class JunitExtensionBaseTest {
         }
     }
 
+    @Test
+    void unrelatedFactoryFeatureIsPreservedWithMatchingProvider() {
+        ServiceRegistry previousGlobal = GlobalServiceRegistry.registry();
+        UNRELATED_FACTORY_CREATE_COUNT.set(0);
+        PROVIDER_CREATE_COUNT.set(0);
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Config.class,
+                                                                                                     Config.empty())
+                                                                                .addServiceDescriptor(
+                                                                                        UnrelatedFeatureFactoryDescriptor.INSTANCE)
+                                                                                .addServiceDescriptor(
+                                                                                        TestFeatureProviderDescriptor.INSTANCE)
+                                                                                .build());
+        try {
+            GlobalServiceRegistry.registry(manager.registry());
+            WebServerConfig.Builder builder = WebServer.builder()
+                    .config(Config.empty());
+
+            JunitExtensionBase.setupWebServerFromRegistry(builder);
+
+            assertThat(UNRELATED_FACTORY_CREATE_COUNT.get(), is(1));
+            assertThat(PROVIDER_CREATE_COUNT.get(), is(0));
+
+            WebServerConfig serverConfig = builder.buildPrototype();
+            TestFeature feature = serverConfig.features()
+                    .stream()
+                    .filter(TestFeature.class::isInstance)
+                    .map(TestFeature.class::cast)
+                    .findFirst()
+                    .orElseThrow();
+
+            assertThat(PROVIDER_CREATE_COUNT.get(), is(0));
+            assertThat(feature.value(), is("unrelated"));
+        } finally {
+            manager.shutdown();
+            GlobalServiceRegistry.registry(previousGlobal);
+        }
+    }
+
     private static final class TestFeature implements ServerFeature {
         private static final String TYPE = "registry-feature";
         private final String value;
@@ -169,11 +210,21 @@ class JunitExtensionBaseTest {
         }
     }
 
-    private static final class TestFeatureFactory implements Service.ServicesFactory<TestFeature> {
+    private static final class TestFeatureFactory
+            implements Service.ServicesFactory<TestFeature>, ConfiguredServerFeatureFactory {
         @Override
         public List<Service.QualifiedInstance<TestFeature>> services() {
             FACTORY_CREATE_COUNT.incrementAndGet();
             return List.of(Service.QualifiedInstance.create(new TestFeature("registry"),
+                                                            Qualifier.createNamed(TestFeature.TYPE)));
+        }
+    }
+
+    private static final class UnrelatedFeatureFactory implements Service.ServicesFactory<TestFeature> {
+        @Override
+        public List<Service.QualifiedInstance<TestFeature>> services() {
+            UNRELATED_FACTORY_CREATE_COUNT.incrementAndGet();
+            return List.of(Service.QualifiedInstance.create(new TestFeature("unrelated"),
                                                             Qualifier.createNamed(TestFeature.TYPE)));
         }
     }
@@ -196,12 +247,10 @@ class JunitExtensionBaseTest {
         private static final TypeName SERVICE_TYPE = TypeName.create(TestFeatureFactory.class);
         private static final TypeName PROVIDED_TYPE = TypeName.create(TestFeature.class);
         private static final TypeName DESCRIPTOR_TYPE = TypeName.create(TestFeatureFactoryDescriptor.class);
-        private static final TypeName FACTORY_CONTRACT = TypeName.builder(TypeName.create(Service.ServicesFactory.class))
-                .addTypeArgument(PROVIDED_TYPE)
-                .build();
         private static final Set<ResolvedType> CONTRACTS = Set.of(ResolvedType.create(PROVIDED_TYPE),
                                                                   ResolvedType.create(ServerFeature.class));
-        private static final Set<ResolvedType> FACTORY_CONTRACTS = Set.of(ResolvedType.create(FACTORY_CONTRACT));
+        private static final Set<ResolvedType> FACTORY_CONTRACTS = Set.of(
+                ResolvedType.create(ConfiguredServerFeatureFactory.class));
 
         @Override
         public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
@@ -231,6 +280,43 @@ class JunitExtensionBaseTest {
         @Override
         public Set<ResolvedType> factoryContracts() {
             return FACTORY_CONTRACTS;
+        }
+
+        @Override
+        public FactoryType factoryType() {
+            return FactoryType.SERVICES;
+        }
+    }
+
+    private static final class UnrelatedFeatureFactoryDescriptor
+            implements ServiceDescriptor<UnrelatedFeatureFactory> {
+        private static final UnrelatedFeatureFactoryDescriptor INSTANCE = new UnrelatedFeatureFactoryDescriptor();
+        private static final TypeName SERVICE_TYPE = TypeName.create(UnrelatedFeatureFactory.class);
+        private static final TypeName DESCRIPTOR_TYPE = TypeName.create(UnrelatedFeatureFactoryDescriptor.class);
+
+        @Override
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
+            return new UnrelatedFeatureFactory();
+        }
+
+        @Override
+        public TypeName serviceType() {
+            return SERVICE_TYPE;
+        }
+
+        @Override
+        public TypeName providedType() {
+            return TestFeatureFactoryDescriptor.PROVIDED_TYPE;
+        }
+
+        @Override
+        public TypeName descriptorType() {
+            return DESCRIPTOR_TYPE;
+        }
+
+        @Override
+        public Set<ResolvedType> contracts() {
+            return TestFeatureFactoryDescriptor.CONTRACTS;
         }
 
         @Override

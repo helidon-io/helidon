@@ -34,6 +34,7 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.testing.junit5.TestJunitExtension;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.WebServerService__ServiceDescriptor;
+import io.helidon.webserver.spi.ConfiguredServerFeatureFactory;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -44,6 +45,7 @@ import static io.helidon.webserver.testing.junit5.Junit5Util.withStaticMethods;
 
 abstract class JunitExtensionBase extends TestJunitExtension implements AfterAllCallback {
     private static final TypeName SERVER_FEATURE_PROVIDER = TypeName.create(ServerFeatureProvider.class);
+    private static final ResolvedType CONFIGURED_FEATURE_FACTORY = ResolvedType.create(ConfiguredServerFeatureFactory.class);
 
     private Class<?> testClass;
 
@@ -163,6 +165,7 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
         for (ServiceInfo serviceInfo : featureServices) {
             // Config-backed factory products must be recreated from the final test server configuration.
             if (!serviceInfo.serviceType().equals(serviceInfo.providedType())
+                    && serviceInfo.factoryContracts().contains(CONFIGURED_FEATURE_FACTORY)
                     && hasProviderFor(serviceInfo, providerServices)) {
                 providerBackedFactoryTypes.add(serviceInfo.serviceType());
             }
