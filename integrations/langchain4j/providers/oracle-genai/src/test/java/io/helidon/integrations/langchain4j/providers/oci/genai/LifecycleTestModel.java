@@ -32,9 +32,9 @@ final class LifecycleTestModel implements ChatModel, AutoCloseable {
 
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicInteger closeCount = new AtomicInteger();
-    private final Runnable closeAction;
+    private final AutoCloseable closeAction;
 
-    private LifecycleTestModel(Runnable closeAction) {
+    private LifecycleTestModel(AutoCloseable closeAction) {
         this.closeAction = closeAction;
     }
 
@@ -42,7 +42,7 @@ final class LifecycleTestModel implements ChatModel, AutoCloseable {
         return new LifecycleTestModel(() -> { });
     }
 
-    static LifecycleTestModel create(Runnable closeAction) {
+    static LifecycleTestModel create(AutoCloseable closeAction) {
         return new LifecycleTestModel(closeAction);
     }
 
@@ -84,12 +84,12 @@ final class LifecycleTestModel implements ChatModel, AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
         closeCount.incrementAndGet();
         if (closed()) {
             return;
         }
-        closeAction.run();
+        closeAction.close();
         closed.set(true);
     }
 

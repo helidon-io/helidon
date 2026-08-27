@@ -39,7 +39,8 @@ interface OpenAiImageLc4jProvider {
     Optional<String> style();
 
     /**
-     * Legacy image response format option retained for configuration compatibility; this option is ignored.
+     * For chat models, response format enables JSON mode; for image models, this legacy compatibility option is
+     * deprecated and ignored.
      *
      * @return configured image response format
      * @deprecated this option is no longer supported by LangChain4j and is ignored

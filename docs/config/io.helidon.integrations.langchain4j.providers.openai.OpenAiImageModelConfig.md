@@ -284,7 +284,7 @@ Configuration for LangChain4j model OpenAiImageModel
 <td>
 <code>String</code>
 </td>
-<td>Legacy image response format option retained for configuration compatibility; this option is ignored</td>
+<td>For chat models, response format enables JSON mode; for image models, this legacy compatibility option is deprecated and ignored</td>
 </tr>
 <tr>
 <td>

@@ -437,7 +437,7 @@ Merged configuration for langchain4j.providers.open-ai
 </td>
 <td>
 </td>
-<td>Enable a "JSON mode" in the model configuration</td>
+<td>For chat models, response format enables JSON mode; for image models, this legacy compatibility option is deprecated and ignored</td>
 </tr>
 <tr>
 <td>

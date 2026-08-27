@@ -286,7 +286,7 @@ Configuration for LangChain4j model OciGenAiStreamingChatModel
 </td>
 <td>
 </td>
-<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>OciGen<wbr>AiStreaming<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>executor<wbr>Service(<wbr>java.<wbr>util.<wbr>concurrent.<wbr>Executor<wbr>Service)</code></td>
+<td>Custom executor for asynchronous request startup and stream processing</td>
 </tr>
 <tr>
 <td>

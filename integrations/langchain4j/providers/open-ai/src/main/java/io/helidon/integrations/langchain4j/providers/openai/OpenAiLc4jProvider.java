@@ -29,8 +29,9 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 interface OpenAiLc4jProvider {
 
     /**
-     * Enable a "JSON mode" in the model configuration. This way, the LLM will be forced to respond with a valid JSON.
-     * For newer models that support Structured Outputs use supported-capabilities.
+     * For chat models, response format enables JSON mode; for image models, this legacy compatibility option is
+     * deprecated and ignored.
+     * For newer chat models that support Structured Outputs, use supported-capabilities.
      *
      * @return "json_object" to enable JSON mode on older models like gpt-3.5-turbo or gpt-4
      */
