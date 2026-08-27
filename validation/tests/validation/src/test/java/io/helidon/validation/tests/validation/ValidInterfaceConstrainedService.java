@@ -26,4 +26,7 @@ interface ValidInterfaceConstrainedService {
     String validate(@Validation.Valid ValidatedType value);
 
     String validateAll(List<? super @Validation.Valid ValidatedType> values);
+
+    @Validation.Valid
+    ValidatedType nullableReturn();
 }
