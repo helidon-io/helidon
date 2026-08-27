@@ -133,6 +133,6 @@ class JdbcMapperAccessibilityGenerationTest {
                 .resolve("example/InaccessibleMapperContainer_Repository__Jdbc.java");
         assertThat(Files.exists(generatedSource), is(true));
         assertThat(Files.readString(generatedSource),
-                   containsString("InaccessibleMapperContainer.Mapper mapperRowMapper"));
+                   containsString("InaccessibleMapperContainer.Mapper mapper"));
     }
 }

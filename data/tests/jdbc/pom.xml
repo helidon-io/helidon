@@ -63,7 +63,6 @@
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.codegen</groupId>
@@ -132,6 +131,7 @@
                 <configuration>
                     <!-- Main sources need these JPMS modules through helidon-data-jdbc. -->
                     <ignoredNonTestScopedDependencies>
+                        <dependency>io.helidon.builder:helidon-builder-api</dependency>
                         <dependency>io.helidon.config:helidon-config</dependency>
                     </ignoredNonTestScopedDependencies>
                 </configuration>
