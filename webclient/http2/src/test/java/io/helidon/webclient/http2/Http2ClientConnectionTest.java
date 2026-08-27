@@ -1893,7 +1893,7 @@ class Http2ClientConnectionTest {
         }
 
         private void maybeFailWrites() {
-            if (failWrites.get()) {
+            if (failWrites.get() || transportClosed.get()) {
                 throw new UncheckedIOException(new IOException("expected test write failure"));
             }
         }

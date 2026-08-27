@@ -785,6 +785,9 @@ public class Http2ClientConnection {
     }
 
     private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
+        if (state.get() == State.CLOSED) {
+            return;
+        }
         if (streamId == 0) {
             writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             return;
