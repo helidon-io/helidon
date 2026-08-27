@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import java.net.InetSocketAddress;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +36,18 @@ class ProxyTest {
     void defaultProxy() {
         Proxy proxy = Proxy.create();
         assertThat(proxy.type(), is(Proxy.ProxyType.SYSTEM));
+    }
+
+    @Test
+    void configuredProxyTypeIgnoresCase() {
+        for (Proxy.ProxyType type : Proxy.ProxyType.values()) {
+            assertThat("exact " + type,
+                       configuredProxy(type.name()).type(),
+                       is(type));
+            assertThat("lowercase " + type,
+                       configuredProxy(type.name().toLowerCase(Locale.ROOT)).type(),
+                       is(type));
+        }
     }
 
     @Test
@@ -69,5 +86,11 @@ class ProxyTest {
 
     private InetSocketAddress address(String host, int port) {
         return new InetSocketAddress(host, port);
+    }
+
+    private Proxy configuredProxy(String type) {
+        Config config = Config.just(ConfigSources.create(Map.of("type", type,
+                                                                "host", "proxy.example")));
+        return Proxy.create(config);
     }
 }
