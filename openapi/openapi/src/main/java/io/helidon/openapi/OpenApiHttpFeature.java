@@ -16,18 +16,20 @@
 
 package io.helidon.openapi;
 
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatcher;
@@ -194,29 +196,56 @@ class OpenApiHttpFeature implements HttpFeature {
     }
 
     private static final class SecuredLocator implements HttpServiceLocator {
-        private final Map<HttpService, HttpService> securedServices = Collections.synchronizedMap(new IdentityHashMap<>());
+        private final Map<HttpService, HttpService> securedServices = new IdentityHashMap<>();
         private final HttpServiceLocator delegate;
         private final SecureHandler secureHandler;
+        private final ReentrantLock lock = new ReentrantLock();
+        private final int maxServiceCacheSize;
+        private boolean stopped;
 
         private SecuredLocator(HttpServiceLocator delegate, SecureHandler secureHandler) {
             this.delegate = delegate;
             this.secureHandler = secureHandler;
+            this.maxServiceCacheSize = delegate.maxServiceCacheSize();
+            if (maxServiceCacheSize < 1) {
+                throw new IllegalArgumentException("HttpServiceLocator maxServiceCacheSize must be greater than zero");
+            }
         }
 
         @Override
         public Optional<HttpService> locate(ServerRequest request) {
-            return delegate.locate(request)
-                    .map(service -> securedServices.computeIfAbsent(service,
-                                                                    key -> new SecuredService(key, secureHandler)));
+            lock.lock();
+            try {
+                checkRunning();
+            } finally {
+                lock.unlock();
+            }
+
+            Optional<HttpService> service = Objects.requireNonNull(delegate.locate(request),
+                                                                   "HttpServiceLocator must not return null");
+
+            lock.lock();
+            try {
+                checkRunning();
+                return service.map(this::securedService);
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
         public int maxServiceCacheSize() {
-            return delegate.maxServiceCacheSize();
+            return maxServiceCacheSize;
         }
 
         @Override
         public void beforeStart() {
+            lock.lock();
+            try {
+                stopped = false;
+            } finally {
+                lock.unlock();
+            }
             delegate.beforeStart();
         }
 
@@ -227,8 +256,39 @@ class OpenApiHttpFeature implements HttpFeature {
 
         @Override
         public void afterStop() {
+            lock.lock();
+            try {
+                stopped = true;
+                securedServices.clear();
+            } finally {
+                lock.unlock();
+            }
             delegate.afterStop();
-            securedServices.clear();
+        }
+
+        private HttpService securedService(HttpService service) {
+            HttpService securedService = securedServices.get(service);
+            if (securedService != null) {
+                return securedService;
+            }
+            if (securedServices.size() >= maxServiceCacheSize) {
+                throw serviceUnavailable("size of " + maxServiceCacheSize + " exceeded");
+            }
+            securedService = new SecuredService(service, secureHandler);
+            securedServices.put(service, securedService);
+            return securedService;
+        }
+
+        private void checkRunning() {
+            if (stopped) {
+                throw serviceUnavailable("is stopped");
+            }
+        }
+
+        private HttpException serviceUnavailable(String reason) {
+            return new HttpException("HttpServiceLocator service cache " + reason,
+                                     Status.SERVICE_UNAVAILABLE_503,
+                                     true);
         }
     }
 
