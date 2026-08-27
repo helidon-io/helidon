@@ -15,131 +15,100 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 
 final class ServerSpanLifecycle {
     static final String PROPERTY = ServerSpanLifecycle.class.getName();
 
-    private boolean resourceMethodStarted;
-    private boolean resourceMethodFinished;
-    private boolean responseProcessingStarted;
-    private boolean requestFinished;
-    private boolean responseWritten;
-    private boolean requestScopeClosed;
-    private boolean responseScopeClosed;
-    private boolean spanEnded;
-    private Throwable failure;
-    private Scope responseScope;
+    private static final int REQUEST_SCOPE_CLOSED = 1;
+    private static final int RESOURCE_METHOD_STARTED = 1 << 1;
+    private static final int RESOURCE_METHOD_FINISHED = 1 << 2;
+    private static final int RESPONSE_PROCESSING_STARTED = 1 << 3;
+    private static final int REQUEST_FINISHED = 1 << 4;
+    private static final int RESPONSE_WRITTEN = 1 << 5;
+    private static final int SPAN_ENDED = 1 << 6;
 
-    synchronized void resourceMethodStarted() {
-        resourceMethodStarted = true;
-    }
+    private final AtomicInteger state = new AtomicInteger();
+    private final AtomicReference<Scope> resourceScope = new AtomicReference<>();
+    private final AtomicReference<Throwable> failure = new AtomicReference<>();
 
-    void resourceMethodFinished(Span span, Scope requestScope) {
-        boolean closeRequestScope;
-        boolean endSpan;
-        synchronized (this) {
-            resourceMethodFinished = true;
-            closeRequestScope = claimRequestScope();
-            endSpan = claimSpanEnd();
+    void requestFiltered(Scope requestScope) {
+        int previous = state.getAndUpdate(value -> value | REQUEST_SCOPE_CLOSED);
+        if ((previous & REQUEST_SCOPE_CLOSED) == 0) {
+            requestScope.close();
         }
-        closeAndEnd(span, requestScope, closeRequestScope, endSpan);
     }
 
-    void responseProcessingStarted(Span span) {
-        synchronized (this) {
-            responseProcessingStarted = true;
-            if (responseScope != null || isCurrent(span)) {
+    void resourceMethodStarted(Span span) {
+        int previous = state.getAndUpdate(value -> value | RESOURCE_METHOD_STARTED);
+        if ((previous & RESOURCE_METHOD_STARTED) != 0) {
+            return;
+        }
+
+        Scope scope = span.activate();
+        resourceScope.set(scope);
+        if ((state.get() & RESOURCE_METHOD_FINISHED) != 0) {
+            closeResourceScope();
+        }
+    }
+
+    void resourceMethodFinished(Span span) {
+        closeResourceScope();
+        state.getAndUpdate(value -> value | RESOURCE_METHOD_FINISHED);
+        tryEnd(span);
+    }
+
+    void responseProcessingStarted() {
+        state.getAndUpdate(value -> value | RESPONSE_PROCESSING_STARTED);
+    }
+
+    void responseFailure(Throwable throwable) {
+        if ((state.get() & RESPONSE_PROCESSING_STARTED) != 0 && throwable != null) {
+            failure.compareAndSet(null, throwable);
+        }
+    }
+
+    void writerFailure(Throwable throwable) {
+        if (throwable != null) {
+            failure.compareAndSet(null, throwable);
+        }
+    }
+
+    void requestFinished(Span span, boolean responseWritten) {
+        int completion = REQUEST_FINISHED | (responseWritten ? RESPONSE_WRITTEN : 0);
+        state.getAndUpdate(value -> (value & REQUEST_FINISHED) == 0 ? value | completion : value);
+        tryEnd(span);
+    }
+
+    private void closeResourceScope() {
+        Scope scope = resourceScope.getAndSet(null);
+        if (scope != null) {
+            scope.close();
+        }
+    }
+
+    private void tryEnd(Span span) {
+        while (true) {
+            int current = state.get();
+            if ((current & SPAN_ENDED) != 0
+                    || (current & REQUEST_FINISHED) == 0
+                    || ((current & RESOURCE_METHOD_STARTED) != 0 && (current & RESOURCE_METHOD_FINISHED) == 0)) {
                 return;
             }
-            responseScope = span.activate();
-        }
-    }
-
-    synchronized void responseFailure(Throwable throwable) {
-        if (responseProcessingStarted && throwable != null && failure == null) {
-            failure = throwable;
-        }
-    }
-
-    synchronized void writerFailure(Throwable throwable) {
-        if (throwable != null && failure == null) {
-            failure = throwable;
-        }
-    }
-
-    void requestFinished(Span span, Scope requestScope, boolean responseWritten) {
-        Scope scopeToClose;
-        boolean closeRequestScope;
-        boolean endSpan;
-        synchronized (this) {
-            if (!requestFinished) {
-                requestFinished = true;
-                this.responseWritten = responseWritten;
-            }
-            scopeToClose = claimResponseScope();
-            closeRequestScope = !resourceMethodStarted && claimRequestScope();
-            endSpan = claimSpanEnd();
-        }
-
-        try {
-            if (scopeToClose != null) {
-                scopeToClose.close();
-            }
-        } finally {
-            closeAndEnd(span, requestScope, closeRequestScope, endSpan);
-        }
-    }
-
-    synchronized boolean isFinished() {
-        return spanEnded && requestScopeClosed && (responseScope == null || responseScopeClosed);
-    }
-
-    private synchronized Scope claimResponseScope() {
-        if (responseScopeClosed || responseScope == null) {
-            return null;
-        }
-        responseScopeClosed = true;
-        return responseScope;
-    }
-
-    private boolean claimRequestScope() {
-        if (requestScopeClosed) {
-            return false;
-        }
-        requestScopeClosed = true;
-        return true;
-    }
-
-    private boolean claimSpanEnd() {
-        if (spanEnded || !requestFinished || (resourceMethodStarted && !resourceMethodFinished)) {
-            return false;
-        }
-        spanEnded = true;
-        return true;
-    }
-
-    private void closeAndEnd(Span span, Scope requestScope, boolean closeRequestScope, boolean endSpan) {
-        try {
-            if (closeRequestScope) {
-                requestScope.close();
-            }
-        } finally {
-            if (endSpan) {
-                end(span);
+            if (state.compareAndSet(current, current | SPAN_ENDED)) {
+                end(span, current);
+                return;
             }
         }
     }
 
-    private void end(Span span) {
-        Throwable throwable;
-        boolean written;
-        synchronized (this) {
-            throwable = failure;
-            written = responseWritten;
-        }
-        if (!written || throwable != null) {
+    private void end(Span span, int completionState) {
+        Throwable throwable = failure.get();
+        if ((completionState & RESPONSE_WRITTEN) == 0 || throwable != null) {
             span.status(Span.Status.ERROR);
         }
         if (throwable == null) {
@@ -147,11 +116,5 @@ final class ServerSpanLifecycle {
         } else {
             span.end(throwable);
         }
-    }
-
-    private static boolean isCurrent(Span span) {
-        return Span.current()
-                .map(current -> current.context().spanId().equals(span.context().spanId()))
-                .orElse(false);
     }
 }

@@ -15,6 +15,8 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.util.Objects;
+
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 
@@ -31,10 +33,12 @@ final class HelidonTelemetryRequestEventListener implements ApplicationEventList
 
     @Override
     public void onEvent(ApplicationEvent event) {
+        Objects.requireNonNull(event);
     }
 
     @Override
     public RequestEventListener onRequest(RequestEvent requestEvent) {
+        Objects.requireNonNull(requestEvent);
         return HelidonTelemetryRequestEventListener::onRequestEvent;
     }
 
@@ -48,45 +52,33 @@ final class HelidonTelemetryRequestEventListener implements ApplicationEventList
         Span span = (Span) request.getProperty(HelidonTelemetryContainerFilter.SPAN);
         Scope scope = (Scope) request.getProperty(HelidonTelemetryContainerFilter.SPAN_SCOPE);
         switch (event.getType()) {
-        case RESOURCE_METHOD_START:
-            lifecycle.resourceMethodStarted();
-            break;
-        case RESOURCE_METHOD_FINISHED:
-            if (span != null && scope != null) {
-                try {
-                    lifecycle.resourceMethodFinished(span, scope);
-                } finally {
-                    cleanupIfFinished(request, lifecycle);
-                }
+        case REQUEST_FILTERED -> {
+            if (scope != null) {
+                lifecycle.requestFiltered(scope);
             }
-            break;
-        case RESP_FILTERS_START:
-            if (span != null) {
-                lifecycle.responseProcessingStarted(span);
-            }
-            break;
-        case ON_EXCEPTION:
-            lifecycle.responseFailure(event.getException());
-            break;
-        case FINISHED:
-            if (span != null && scope != null) {
-                try {
-                    lifecycle.requestFinished(span, scope, event.isResponseWritten());
-                } finally {
-                    cleanupIfFinished(request, lifecycle);
-                }
-            }
-            break;
-        default:
-            break;
         }
-    }
-
-    static void cleanupIfFinished(ContainerRequest request, ServerSpanLifecycle lifecycle) {
-        if (lifecycle.isFinished()) {
-            request.removeProperty(HelidonTelemetryContainerFilter.SPAN);
-            request.removeProperty(HelidonTelemetryContainerFilter.SPAN_SCOPE);
-            request.removeProperty(ServerSpanLifecycle.PROPERTY);
+        case RESOURCE_METHOD_START -> {
+            if (span != null) {
+                lifecycle.resourceMethodStarted(span);
+            }
+        }
+        case RESOURCE_METHOD_FINISHED -> {
+            if (span != null) {
+                lifecycle.resourceMethodFinished(span);
+            }
+        }
+        case RESP_FILTERS_START -> lifecycle.responseProcessingStarted();
+        case ON_EXCEPTION -> lifecycle.responseFailure(event.getException());
+        case FINISHED -> {
+            if (span != null) {
+                lifecycle.requestFinished(span, event.isResponseWritten());
+            }
+        }
+        case START, MATCHING_START, LOCATOR_MATCHED, SUBRESOURCE_LOCATED, REQUEST_MATCHED, RESP_FILTERS_FINISHED,
+                EXCEPTION_MAPPER_FOUND, EXCEPTION_MAPPING_FINISHED -> {
+        }
+        default -> {
+        }
         }
     }
 }

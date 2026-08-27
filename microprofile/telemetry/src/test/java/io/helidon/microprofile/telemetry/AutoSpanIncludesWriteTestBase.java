@@ -21,7 +21,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -53,9 +52,12 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.Suspended;
+import jakarta.ws.rs.core.Configuration;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -63,13 +65,16 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import jakarta.ws.rs.ext.WriterInterceptor;
 import jakarta.ws.rs.ext.WriterInterceptorContext;
+import org.glassfish.jersey.server.ManagedAsync;
 import org.junit.jupiter.api.BeforeEach;
 
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 @HelidonTest
 @AddBean(TestSpanExporter.class)
@@ -80,9 +85,9 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddConfig(key = "otel.traces.exporter", value = "in-memory")
 class AutoSpanIncludesWriteTestBase {
 
-    private static final String BASE_PATH = "/auto-span-includes-write";
     static final String WRITER_CHILD_SPAN_NAME = "writerChild";
     static final String STREAMING_CHILD_SPAN_NAME = "streamingChild";
+    private static final String BASE_PATH = "/auto-span-includes-write";
 
     @Inject
     private WebTarget webTarget;
@@ -128,7 +133,7 @@ class AutoSpanIncludesWriteTestBase {
                    writeProbe.spanWasCurrent(), is(expectedCurrentAtWrite));
         assertThat("Span eventually ended", spanListener.awaitEnded(observedSpan), is(true));
         assertThat("Span ended once", spanListener.endCount(observedSpan), is(1));
-        spanExporter.spanData(2);
+        spanExporter.spanData(observedSpan);
     }
 
     void checkErrorStatus() {
@@ -167,15 +172,8 @@ class AutoSpanIncludesWriteTestBase {
         assertThat("Automatic span eventually ended", spanListener.awaitEnded(serverSpanAtWrite), is(true));
         assertThat("Automatic span ended once", spanListener.endCount(serverSpanAtWrite), is(1));
 
-        List<SpanData> spans = spanExporter.spanData(3);
-        SpanData serverSpan = spans.stream()
-                .filter(span -> span.getKind() == SpanKind.SERVER)
-                .findFirst()
-                .orElseThrow();
-        SpanData childSpan = spans.stream()
-                .filter(span -> span.getName().equals(childSpanName))
-                .findFirst()
-                .orElseThrow();
+        SpanData serverSpan = spanExporter.spanData(serverSpanAtWrite);
+        SpanData childSpan = spanExporter.spanData(childSpanName, serverSpanAtWrite);
 
         assertThat("Response-write child span parent",
                    childSpan.getParentSpanContext().getSpanId(),
@@ -185,7 +183,7 @@ class AutoSpanIncludesWriteTestBase {
     void checkAsyncResponseWriteSpanParent() {
         checkResponseWriteSpanParent("/async-streaming-child", STREAMING_CHILD_SPAN_NAME, "async-streaming-child");
         assertThat("Asynchronous entity writing used another thread",
-                   writeProbe.writeThread(), org.hamcrest.Matchers.not(equalTo(writeProbe.resourceThread())));
+                   writeProbe.writeThread(), not(equalTo(writeProbe.resourceThread())));
     }
 
     void checkMappedApplicationException() {
@@ -201,19 +199,20 @@ class AutoSpanIncludesWriteTestBase {
         assertThat("Mapped response span eventually ended", spanListener.awaitEnded(observedSpan), is(true));
         assertThat("Mapped response span ended once", spanListener.endCount(observedSpan), is(1));
         assertThat("Mapped application exception was not treated as a write failure",
-                   spanListener.failure(observedSpan), org.hamcrest.Matchers.nullValue());
+                   spanListener.failure(observedSpan), nullValue());
 
         SpanData serverSpan = spanExporter.spanData(observedSpan);
         assertThat("Mapped 404 server span status", serverSpan.getStatus().getStatusCode(), is(StatusCode.UNSET));
     }
 
     void checkFailedWriteEndsSpan() {
-        try (Response ignored = webTarget.path(BASE_PATH + "/write-error")
+        try (Response response = webTarget.path(BASE_PATH + "/write-error")
                 .request(MediaType.TEXT_PLAIN)
                 .get()) {
-            // Depending on how far response writing progressed, the client can receive an error response or an exception.
-        } catch (ProcessingException ignored) {
-            // The server-side lifecycle assertions below are authoritative for this test.
+            assertThat("Failed write response family",
+                       response.getStatusInfo().getFamily(), not(Response.Status.Family.SUCCESSFUL));
+        } catch (ProcessingException expected) {
+            assertThat("Client observed the failed write", expected, notNullValue());
         }
 
         Span observedSpan = writeProbe.observedSpan();
@@ -229,12 +228,13 @@ class AutoSpanIncludesWriteTestBase {
     }
 
     void checkFailedResponseFilterEndsSpan() {
-        try (Response ignored = webTarget.path(BASE_PATH + "/response-filter-error")
+        try (Response response = webTarget.path(BASE_PATH + "/response-filter-error")
                 .request(MediaType.TEXT_PLAIN)
                 .get()) {
-            // Depending on how far response processing progressed, the client can receive an error response or an exception.
-        } catch (ProcessingException ignored) {
-            // The server-side lifecycle assertions below are authoritative for this test.
+            assertThat("Failed response-filter response family",
+                       response.getStatusInfo().getFamily(), not(Response.Status.Family.SUCCESSFUL));
+        } catch (ProcessingException expected) {
+            assertThat("Client observed the response-filter failure", expected, notNullValue());
         }
 
         Span resourceSpan = writeProbe.resourceSpan();
@@ -254,15 +254,63 @@ class AutoSpanIncludesWriteTestBase {
             assertThat("Response status", response.getStatus(), is(204));
         }
 
-        List<SpanData> spans = spanExporter.spanData(2);
+        Span resourceSpan = writeProbe.resourceSpan();
+        assertThat("Entity-less resource observed the automatic span", resourceSpan, notNullValue());
+        assertThat("Entity-less response ended its automatic span", spanListener.awaitEnded(resourceSpan), is(true));
         assertThat("Entity-less response exported its server span",
-                   spans.stream().anyMatch(span -> span.getKind() == SpanKind.SERVER), is(true));
+                   spanExporter.spanData(resourceSpan).getKind(), is(SpanKind.SERVER));
+    }
+
+    void checkDeferredProvidersRegistered(boolean expected) {
+        try (Response response = webTarget.path(BASE_PATH + "/deferred-providers-registered")
+                .request(MediaType.TEXT_PLAIN)
+                .get()) {
+            assertThat("Response status", response.getStatus(), is(200));
+            assertThat("Deferred providers registration", response.readEntity(Boolean.class), is(expected));
+        }
+    }
+
+    void checkManagedAsyncResourceScope() {
+        try (Response response = webTarget.path(BASE_PATH + "/managed-async")
+                .request(MediaType.TEXT_PLAIN)
+                .get()) {
+            assertThat("Response status", response.getStatus(), is(200));
+            assertThat("Response entity", response.readEntity(String.class), is("managed-async"));
+        }
+
+        assertThat("Managed resource ran on another thread",
+                   writeProbe.resourceThread(), not(equalTo(writeProbe.requestThread())));
+        assertThat("Automatic span was current in managed resource", writeProbe.spanWasCurrentInResource(), is(true));
     }
 
     @NameBinding
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE, ElementType.METHOD})
     public @interface ObserveWrite {
+    }
+
+    @NameBinding
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    public @interface WriterChild {
+    }
+
+    @NameBinding
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    public @interface FailWrite {
+    }
+
+    @NameBinding
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    public @interface FailResponseFilter {
+    }
+
+    @NameBinding
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    public @interface ManagedAsyncProbe {
     }
 
     @ApplicationScoped
@@ -281,8 +329,8 @@ class AutoSpanIncludesWriteTestBase {
 
         @Override
         public void ended(Span span) {
-            endCounts.computeIfAbsent(span, ignored -> new AtomicInteger()).incrementAndGet();
-            ended.computeIfAbsent(span, ignored -> new CompletableFuture<>()).complete(null);
+            endCounter(span).incrementAndGet();
+            completion(span).complete(null);
         }
 
         @Override
@@ -301,12 +349,10 @@ class AutoSpanIncludesWriteTestBase {
         }
 
         boolean awaitEnded(Span span) {
-            try {
-                ended.computeIfAbsent(span, ignored -> new CompletableFuture<>()).get(5, TimeUnit.SECONDS);
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
+            return completion(span)
+                    .orTimeout(5, TimeUnit.SECONDS)
+                    .handle((result, failure) -> result == null && failure == null)
+                    .join();
         }
 
         int endCount(Span span) {
@@ -324,6 +370,18 @@ class AutoSpanIncludesWriteTestBase {
             endCounts.clear();
             failures.clear();
         }
+
+        private AtomicInteger endCounter(Span span) {
+            AtomicInteger newCounter = new AtomicInteger();
+            AtomicInteger previous = endCounts.putIfAbsent(span, newCounter);
+            return previous == null ? newCounter : previous;
+        }
+
+        private CompletableFuture<Void> completion(Span span) {
+            CompletableFuture<Void> newCompletion = new CompletableFuture<>();
+            CompletableFuture<Void> previous = ended.putIfAbsent(span, newCompletion);
+            return previous == null ? newCompletion : previous;
+        }
     }
 
     @Provider
@@ -334,11 +392,13 @@ class AutoSpanIncludesWriteTestBase {
 
         private final TestSpanListener spanListener;
         private final AtomicReference<Span> observedSpan = new AtomicReference<>();
+        private final AtomicReference<Span> resourceSpan = new AtomicReference<>();
         private volatile boolean spanEnded;
         private volatile boolean spanWasCurrent;
+        private volatile boolean spanWasCurrentInResource;
+        private volatile String requestThread;
         private volatile String resourceThread;
         private volatile String writeThread;
-        private final AtomicReference<Span> resourceSpan = new AtomicReference<>();
 
         @Inject
         WriteProbe(TestSpanListener spanListener) {
@@ -381,6 +441,27 @@ class AutoSpanIncludesWriteTestBase {
             return writeThread;
         }
 
+        void requestThread(String threadName) {
+            requestThread = threadName;
+        }
+
+        String requestThread() {
+            return requestThread;
+        }
+
+        void observeResourceExecution() {
+            Span span = spanListener.latestStarted();
+            resourceSpan.set(span);
+            resourceThread = Thread.currentThread().getName();
+            spanWasCurrentInResource = Span.current()
+                    .map(current -> current.context().spanId().equals(span.context().spanId()))
+                    .orElse(false);
+        }
+
+        boolean spanWasCurrentInResource() {
+            return spanWasCurrentInResource;
+        }
+
         void observeResourceSpan() {
             resourceSpan.set(spanListener.latestStarted());
         }
@@ -393,6 +474,8 @@ class AutoSpanIncludesWriteTestBase {
             observedSpan.set(null);
             spanEnded = false;
             spanWasCurrent = false;
+            spanWasCurrentInResource = false;
+            requestThread = null;
             resourceThread = null;
             writeThread = null;
             resourceSpan.set(null);
@@ -415,9 +498,11 @@ class AutoSpanIncludesWriteTestBase {
         @Override
         public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
             Span childSpan = tracer.spanBuilder(WRITER_CHILD_SPAN_NAME).build();
-            try (Scope ignored = childSpan.activate()) {
+            Scope scope = childSpan.activate();
+            try {
                 context.proceed();
             } finally {
+                scope.close();
                 childSpan.end();
             }
         }
@@ -430,6 +515,7 @@ class AutoSpanIncludesWriteTestBase {
     public static class FailingWriterInterceptor implements WriterInterceptor {
         @Override
         public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
+            assertThat("Writer context", context, notNullValue());
             throw new IOException("Deliberate response write failure");
         }
     }
@@ -441,6 +527,8 @@ class AutoSpanIncludesWriteTestBase {
         @Override
         public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
                 throws IOException {
+            assertThat("Request context", requestContext, notNullValue());
+            assertThat("Response context", responseContext, notNullValue());
             throw new IOException("Deliberate response filter failure");
         }
     }
@@ -450,6 +538,7 @@ class AutoSpanIncludesWriteTestBase {
     public static class MappedNotFoundExceptionMapper implements ExceptionMapper<MappedNotFoundException> {
         @Override
         public Response toResponse(MappedNotFoundException exception) {
+            assertThat("Mapped exception", exception, notNullValue());
             return Response.status(Response.Status.NOT_FOUND)
                     .type(MediaType.TEXT_PLAIN)
                     .entity("mapped-not-found")
@@ -460,22 +549,23 @@ class AutoSpanIncludesWriteTestBase {
     public static class MappedNotFoundException extends WebApplicationException {
     }
 
-    @NameBinding
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.TYPE, ElementType.METHOD})
-    public @interface WriterChild {
-    }
+    @Provider
+    @ManagedAsyncProbe
+    @Priority(Priorities.USER)
+    @ApplicationScoped
+    public static class ManagedAsyncRequestProbe implements ContainerRequestFilter {
+        private final WriteProbe writeProbe;
 
-    @NameBinding
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.TYPE, ElementType.METHOD})
-    public @interface FailWrite {
-    }
+        @Inject
+        ManagedAsyncRequestProbe(WriteProbe writeProbe) {
+            this.writeProbe = writeProbe;
+        }
 
-    @NameBinding
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.TYPE, ElementType.METHOD})
-    public @interface FailResponseFilter {
+        @Override
+        public void filter(ContainerRequestContext requestContext) {
+            assertThat("Request context", requestContext, notNullValue());
+            writeProbe.requestThread(Thread.currentThread().getName());
+        }
     }
 
     @Path(BASE_PATH)
@@ -485,6 +575,9 @@ class AutoSpanIncludesWriteTestBase {
 
         private final Tracer tracer;
         private final WriteProbe writeProbe;
+
+        @Context
+        private Configuration configuration;
 
         @Inject
         TestResource(Tracer tracer, WriteProbe writeProbe) {
@@ -558,15 +651,36 @@ class AutoSpanIncludesWriteTestBase {
         @GET
         @Path("/no-content")
         public Response noContent() {
+            writeProbe.observeResourceSpan();
             return Response.noContent().build();
+        }
+
+        @GET
+        @Path("/deferred-providers-registered")
+        @Produces(MediaType.TEXT_PLAIN)
+        public boolean deferredProvidersRegistered() {
+            return configuration.isRegistered(HelidonTelemetryWriterInterceptor.class)
+                    && configuration.isRegistered(HelidonTelemetryRequestEventListener.class);
+        }
+
+        @GET
+        @Path("/managed-async")
+        @Produces(MediaType.TEXT_PLAIN)
+        @ManagedAsync
+        @ManagedAsyncProbe
+        public String managedAsync() {
+            writeProbe.observeResourceExecution();
+            return "managed-async";
         }
 
         private StreamingOutput streamingOutput(String value) {
             return output -> {
                 Span childSpan = tracer.spanBuilder(STREAMING_CHILD_SPAN_NAME).build();
-                try (Scope ignored = childSpan.activate()) {
+                Scope scope = childSpan.activate();
+                try {
                     output.write(value.getBytes(StandardCharsets.UTF_8));
                 } finally {
+                    scope.close();
                     childSpan.end();
                 }
             };

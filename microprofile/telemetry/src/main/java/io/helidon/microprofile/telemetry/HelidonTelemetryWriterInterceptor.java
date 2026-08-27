@@ -46,8 +46,11 @@ final class HelidonTelemetryWriterInterceptor implements WriterInterceptor {
             return;
         }
 
-        try (Scope ignored = span.activate()) {
+        Scope scope = span.activate();
+        try {
             proceed(context, lifecycle);
+        } finally {
+            scope.close();
         }
     }
 

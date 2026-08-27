@@ -482,16 +482,21 @@ When `telemetry.span.includes-response-write` is `false`, Helidon ends the
 span before serializing the response entity, preserving the behavior of earlier
 Helidon 4 releases. When it is `true`, Helidon ends the span after response
 serialization and encoding have populated Helidon's response stream and Jersey
-has finished processing the response. Helidon propagates the automatic span to
-the thread which processes the response, including asynchronous JAX-RS
-responses. The span remains current during response filtering and entity
-materialization, so spans started by writer interceptors, message-body writers,
-or streaming output are children of the automatic span. If response processing
-or writing fails, Helidon records the available failure and ends the automatic
-span when Jersey finishes processing the failed request. An application
-exception which Jersey successfully maps to a response is not itself treated as
-a response-writing failure; the resulting HTTP status determines the automatic
-span status. This setting is deprecated for removal in a future major release.
+has finished processing the response. The span remains open during response
+filtering, but Helidon makes it current only during discrete, thread-owned
+phases: request filtering, resource-method execution, and entity
+materialization. This includes asynchronous JAX-RS responses. Spans started by
+writer interceptors, message-body writers, or streaming output are therefore
+children of the automatic span, without leaving its scope attached to a thread
+between phases. If response processing or writing fails, Helidon records the
+available failure and ends the automatic span when Jersey finishes processing
+the failed request. An application exception which Jersey successfully maps to
+a response is not itself treated as a response-writing failure; the resulting
+HTTP status determines the automatic span status.
+
+This setting is deprecated for removal in a future major release. After its
+removal, automatic incoming REST spans will always include response preparation
+through the end of Jersey response processing.
 
 For `telemetry.span.includes-response-write`, `true` measures the
 server-side work of preparing the response. It does not measure the later

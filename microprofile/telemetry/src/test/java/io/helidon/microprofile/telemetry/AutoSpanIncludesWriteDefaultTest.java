@@ -23,4 +23,9 @@ class AutoSpanIncludesWriteDefaultTest extends AutoSpanIncludesWriteTestBase {
     void testDefaultEndsSpanBeforeWrite() {
         checkSpanAtWrite(true, false);
     }
+
+    @Test
+    void testDefaultDoesNotRegisterDeferredProviders() {
+        checkDeferredProvidersRegistered(false);
+    }
 }

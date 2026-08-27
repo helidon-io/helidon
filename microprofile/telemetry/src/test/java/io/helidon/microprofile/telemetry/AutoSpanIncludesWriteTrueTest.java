@@ -55,4 +55,9 @@ class AutoSpanIncludesWriteTrueTest extends AutoSpanIncludesWriteTestBase {
     void testMappedApplicationExceptionIsNotAWriteFailure() {
         checkMappedApplicationException();
     }
+
+    @Test
+    void testTrueRegistersDeferredProviders() {
+        checkDeferredProvidersRegistered(true);
+    }
 }

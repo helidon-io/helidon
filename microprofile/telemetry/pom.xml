@@ -248,6 +248,9 @@
                             <goal>test</goal>
                         </goals>
                         <configuration>
+                            <systemPropertyVariables>
+                                <io.opentelemetry.context.enableStrictContext>true</io.opentelemetry.context.enableStrictContext>
+                            </systemPropertyVariables>
                             <includes>
                                 <include>**/TestFilterSpanNesting.java</include>
                             </includes>

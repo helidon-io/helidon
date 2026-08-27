@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.tracing.Span;
@@ -29,9 +28,8 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import jakarta.enterprise.context.ApplicationScoped;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.iterableWithSize;
+import static org.hamcrest.Matchers.notNullValue;
 
 // Partially inspired by the MP Telemetry TCK InMemorySpanExporter.
 @ApplicationScoped
@@ -42,9 +40,6 @@ public class TestSpanExporter implements SpanExporter {
 
     private final int RETRY_COUNT = Integer.getInteger(TestSpanExporter.class.getName() + ".test.retryCount", 120);
     private final int RETRY_DELAY_MS = Integer.getInteger(TestSpanExporter.class.getName() + ".test.retryDelayMs", 500);
-
-
-    private enum State {READY, STOPPED}
 
     private State state = State.READY;
 
@@ -94,7 +89,22 @@ public class TestSpanExporter implements SpanExporter {
                                                             .filter(item -> item.getSpanContext().getSpanId().equals(spanId))
                                                             .findFirst()
                                                             .orElse(null),
-                                                    org.hamcrest.Matchers.notNullValue(),
+                                                    notNullValue(),
+                                                    RETRY_COUNT,
+                                                    RETRY_DELAY_MS);
+    }
+
+    SpanData spanData(String spanName, Span parent) {
+        String parentSpanId = parent.context().spanId();
+        return MatcherWithRetry.assertThatWithRetry("Expected exported child span",
+                                                    () -> spanData.stream()
+                                                            .filter(item -> item.getName().equals(spanName))
+                                                            .filter(item -> item.getParentSpanContext()
+                                                                    .getSpanId()
+                                                                    .equals(parentSpanId))
+                                                            .findFirst()
+                                                            .orElse(null),
+                                                    notNullValue(),
                                                     RETRY_COUNT,
                                                     RETRY_DELAY_MS);
     }
@@ -102,4 +112,6 @@ public class TestSpanExporter implements SpanExporter {
     void clear() {
         spanData.clear();
     }
+
+    private enum State {READY, STOPPED}
 }
