@@ -70,7 +70,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_QUALIFIER;
 class ModelFactoryCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(ModelConfigCodegen.class);
     private static final double DEFAULT_FACTORY_WEIGHT = Weighted.DEFAULT_WEIGHT - 2;
-    private static final double LIFECYCLE_COORDINATOR_RUN_LEVEL = Double.MIN_VALUE;
+    private static final double LIFECYCLE_COORDINATOR_RUN_LEVEL = -Double.MAX_VALUE;
     private static final double LIFECYCLE_COORDINATOR_WEIGHT = Double.MAX_VALUE;
 
     @Override
@@ -1040,9 +1040,7 @@ class ModelFactoryCodegen implements CodegenExtension {
                 .addAnnotation(Annotation.builder()
                                        .typeName(SERVICE_ANNOTATION_RUN_LEVEL)
                                        .putProperty("value",
-                                                    AnnotationProperty.create(LIFECYCLE_COORDINATOR_RUN_LEVEL,
-                                                                              TypeNames.BOXED_DOUBLE,
-                                                                              "MIN_VALUE"))
+                                                    AnnotationProperty.create(LIFECYCLE_COORDINATOR_RUN_LEVEL))
                                        .build())
                 .addAnnotation(Annotation.builder()
                                        .typeName(WEIGHT)

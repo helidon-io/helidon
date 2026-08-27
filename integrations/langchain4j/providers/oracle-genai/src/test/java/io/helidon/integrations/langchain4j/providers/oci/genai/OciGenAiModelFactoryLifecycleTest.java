@@ -420,7 +420,7 @@ class OciGenAiModelFactoryLifecycleTest {
     void lifecycleCoordinatorUsesTerminalShutdownOrder() {
         assertThat(OciGenAiChatModelFactoryLifecycle__ServiceDescriptor.INSTANCE.weight(), is(Double.MAX_VALUE));
         assertThat(OciGenAiChatModelFactoryLifecycle__ServiceDescriptor.INSTANCE.runLevel(),
-                   is(Optional.of(Double.MIN_VALUE)));
+                   is(Optional.of(-Double.MAX_VALUE)));
     }
 
     @Test
@@ -454,8 +454,13 @@ class OciGenAiModelFactoryLifecycleTest {
     }
 
     @Test
+    void registryShutdownClosesModelAfterRunLevelZeroConsumer() {
+        assertEagerConsumerShutdownOrder(shutdownObserverDescriptor(0.0, 100.0));
+    }
+
+    @Test
     void registryShutdownClosesModelAfterSameRunLevelHigherWeightConsumer() {
-        assertEagerConsumerShutdownOrder(shutdownObserverDescriptor(Double.MIN_VALUE, 200.0));
+        assertEagerConsumerShutdownOrder(shutdownObserverDescriptor(-Double.MAX_VALUE, 200.0));
     }
 
     private static long closeInvocationCount(Object client) {
