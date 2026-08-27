@@ -60,7 +60,9 @@ class SpecialRequestTargetTest {
                             .send(path.rawPath()
                                           + '|' + path.absolute().path()
                                           + '|' + req.requestedUri().toUri()
-                                          + '|' + securityContext.env().targetUri());
+                                          + '|' + securityContext.env().targetUri()
+                                          + '|' + req.requestedUri().authority()
+                                          + '|' + req.requestedUri().port());
                 }));
     }
 
@@ -74,22 +76,27 @@ class SpecialRequestTargetTest {
 
     @Test
     void connectAuthorityMatchesSecurityTarget() {
-        assertConnectTarget("example.com:443", "http://example.com:443");
+        assertConnectTarget("example.com:443", "http://example.com:443", "example.com:443", 443);
     }
 
     @Test
     void encodedConnectAuthorityMatchesSecurityTarget() {
-        assertConnectTarget("example%2Ecom:443", "http://example%2Ecom:443");
+        assertConnectTarget("example%2Ecom:443", "http://example%2Ecom:443", "example%2Ecom:443", 443);
     }
 
     @Test
     void connectAuthorityPreservesPlus() {
-        assertConnectTarget("example+service:443", "http://example+service:443");
+        assertConnectTarget("example+service:443", "http://example+service:443", "example+service:443", 443);
     }
 
     @Test
     void connectAuthorityPreservesEncodedDelimiter() {
-        assertConnectTarget("example%40service:443", "http://example%40service:443");
+        assertConnectTarget("example%40service:443", "http://example%40service:443", "example%40service:443", 443);
+    }
+
+    @Test
+    void connectAuthorityNormalizesPort() {
+        assertConnectTarget("example.com:0443", "http://example.com:443", "example.com:443", 443);
     }
 
     @Test
@@ -100,10 +107,15 @@ class SpecialRequestTargetTest {
         assertThat(response, not(containsString("[Vf.foo-bar]:443|")));
     }
 
-    private void assertConnectTarget(String requestTarget, String expectedUri) {
+    private void assertConnectTarget(String requestTarget, String expectedUri, String expectedAuthority, int expectedPort) {
         String response = client.sendAndReceive(Method.CONNECT, requestTarget, null, List.of());
 
         assertThat(response, containsString("501 Not Implemented"));
-        assertThat(response, containsString(requestTarget + "|/|" + expectedUri + '|' + expectedUri));
+        assertThat(response,
+                   containsString(requestTarget
+                                          + "|/|" + expectedUri
+                                          + '|' + expectedUri
+                                          + '|' + expectedAuthority
+                                          + '|' + expectedPort));
     }
 }

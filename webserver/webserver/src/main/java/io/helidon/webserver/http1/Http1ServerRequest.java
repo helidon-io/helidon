@@ -286,7 +286,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                 .path("")
                 .query(UriQuery.empty())
                 .build();
-        return new ConnectUriInfo(connectUri, authority);
+        return new ConnectUriInfo(connectUri, connectUri.authority());
     }
 
     private static final class ConnectUriInfo implements UriInfo {
