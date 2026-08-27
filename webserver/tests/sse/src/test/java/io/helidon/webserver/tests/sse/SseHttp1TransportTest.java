@@ -35,10 +35,12 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.sse.SseEvent;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.sse.SseSink;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +65,11 @@ class SseHttp1TransportTest {
         this.webServer = webServer;
     }
 
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        server.putSocket("unbuffered", socket -> socket.writeBufferSize(0));
+    }
+
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.get("/sse", (req, res) -> {
@@ -78,6 +85,19 @@ class SseHttp1TransportTest {
             res.header(SOCKET_ID, req.socketId());
             try (SseSink _ = res.sink(SseSink.TYPE)) {
                 // A HEAD response completes without an SSE entity.
+            }
+        });
+        rules.get("/connection", (req, res) -> res.send(req.socketId()));
+    }
+
+    @SetUpRoute("unbuffered")
+    static void unbufferedRouting(HttpRules rules) {
+        rules.get("/sse-empty", (req, res) -> {
+            res.header(SOCKET_ID, req.socketId());
+            res.header(HeaderNames.TRAILER, SSE_TRAILER.defaultCase());
+            res.beforeTrailers(trailers -> trailers.set(SSE_TRAILER, COMPLETE));
+            try (SseSink sink = res.sink(SseSink.TYPE)) {
+                sink.emit(SseEvent.create(""));
             }
         });
         rules.get("/connection", (req, res) -> res.send(req.socketId()));
@@ -100,6 +120,25 @@ class SseHttp1TransportTest {
             assertThat("SSE response must contain at least one data chunk",
                        response.chunkSizes().size(),
                        greaterThan(0));
+
+            assertConnectionReuse(client, input, response.header(SOCKET_ID.defaultCase()));
+        }
+    }
+
+    @Test
+    void emptyDataValueDoesNotTerminateChunkedBody() throws Exception {
+        try (SocketHttpClient client = socketClient("unbuffered")) {
+            client.request(Method.GET,
+                           "/sse-empty",
+                           null,
+                           List.of("Accept: text/event-stream", "TE: trailers"));
+            InputStream input = client.socketInputStream();
+            RawResponse response = readResponse(input);
+
+            assertSseResponse(response);
+            assertThat("Empty SSE data value must preserve complete event framing",
+                       new String(response.entity(), StandardCharsets.UTF_8),
+                       is("data:\n\n"));
 
             assertConnectionReuse(client, input, response.header(SOCKET_ID.defaultCase()));
         }
@@ -316,6 +355,10 @@ class SseHttp1TransportTest {
 
     private SocketHttpClient socketClient() {
         return SocketHttpClient.create("localhost", webServer.port(), SOCKET_TIMEOUT);
+    }
+
+    private SocketHttpClient socketClient(String socketName) {
+        return SocketHttpClient.create("localhost", webServer.port(socketName), SOCKET_TIMEOUT);
     }
 
     private record RawResponse(int statusCode,

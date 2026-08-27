@@ -1002,6 +1002,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         private void writeChunked(BufferData buffer) {
             int available = buffer.available();
+            if (available == 0) {
+                return;
+            }
             byte[] hex = Integer.toHexString(available).getBytes(StandardCharsets.US_ASCII);
 
             BufferData toWrite = BufferData.create(available + hex.length + 4); // \r\n after size, another after chunk
