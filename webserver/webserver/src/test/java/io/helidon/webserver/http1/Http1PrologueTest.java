@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -135,14 +136,22 @@ class Http1PrologueTest {
     }
 
     @Test
+    void testConnectRejectsInvalidPort() {
+        assertAll(
+                () -> assertInvalidRequestTarget("CONNECT example.com:0 HTTP/1.1\r\n"),
+                () -> assertInvalidRequestTarget("CONNECT example.com:65536 HTTP/1.1\r\n"),
+                () -> assertInvalidRequestTarget("CONNECT example.com:2147483648 HTTP/1.1\r\n"));
+    }
+
+    @Test
     void testConnectAuthorityFormRemainsValid() {
-        DataReader reader = DataReader.create(() -> "CONNECT example.com:443 HTTP/1.1\r\n"
+        DataReader reader = DataReader.create(() -> "CONNECT example.com:65535 HTTP/1.1\r\n"
                 .getBytes(StandardCharsets.US_ASCII));
         HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
 
         assertThat(prologue.method(), is(Method.CONNECT));
-        assertThat(prologue.uriPath().rawPath(), is("example.com:443"));
-        assertThat(prologue.uriPath().path(), is("example.com:443"));
+        assertThat(prologue.uriPath().rawPath(), is("example.com:65535"));
+        assertThat(prologue.uriPath().path(), is("example.com:65535"));
         assertThat(prologue.uriPath().absolute().path(), is("/"));
     }
 

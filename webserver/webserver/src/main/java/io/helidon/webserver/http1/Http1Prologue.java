@@ -203,11 +203,19 @@ public final class Http1Prologue {
         if (port.isEmpty()) {
             return false;
         }
+        int portNumber = 0;
         for (int i = 0; i < port.length(); i++) {
             char c = port.charAt(i);
             if (c < '0' || c > '9') {
                 return false;
             }
+            portNumber = portNumber * 10 + c - '0';
+            if (portNumber > 65535) {
+                return false;
+            }
+        }
+        if (portNumber == 0) {
+            return false;
         }
 
         try {
