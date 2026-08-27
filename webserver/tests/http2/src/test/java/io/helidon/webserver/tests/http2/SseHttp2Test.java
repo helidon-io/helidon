@@ -286,6 +286,53 @@ class SseHttp2Test {
     }
 
     @Test
+    void clientCancelReleasesZeroWindowSseHandler(Http2TestClient client) throws InterruptedException {
+        StreamControl canceled = new StreamControl(null, "late-cancel", false);
+        STREAM_CONTROLS.put("zero-window-cancel", canceled);
+        try (Http2TestConnection connection = client.createConnection()) {
+            connection.completeHandshake(TIMEOUT);
+            connection.sendSettings(Http2Settings.builder()
+                                            .add(Http2Setting.INITIAL_WINDOW_SIZE, 0L)
+                                            .build());
+            FrameDemultiplexer frames = new FrameDemultiplexer(connection);
+            request(connection, 1, "/controlled?id=zero-window-cancel", sseHeaders());
+
+            Http2FrameData settingsAck = frames.next(0, "zero-window SETTINGS acknowledgment").frame();
+            assertThat("Zero-window response frame type", settingsAck.header().type(), is(Http2FrameType.SETTINGS));
+            assertThat("Zero-window SETTINGS must be acknowledged before response headers",
+                       settingsAck.header().flags(Http2FrameTypes.SETTINGS).ack(), is(true));
+
+            StreamCapture canceledCapture = new StreamCapture();
+            canceledCapture.accept(frames.next(1, "zero-window SSE response headers"));
+            assertThat("Zero-window SSE response must start with HEADERS",
+                       canceledCapture.responseHeaders, notNullValue());
+            assertThat("Zero-window SSE response must remain open after HEADERS", canceledCapture.ended, is(false));
+
+            connection.writer().write(new Http2RstStream(Http2ErrorCode.CANCEL)
+                                              .toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            request(connection, 3, "/ping", WritableHeaders.create());
+
+            StreamCapture ping = new StreamCapture();
+            ping.accept(frames.next(3, "sibling ping response headers after client reset"));
+            assertThat("Sibling ping response status", ping.responseHeaders.status(), is(Status.OK_200));
+            assertThat("Sibling ping must remain flow-control blocked before WINDOW_UPDATE", ping.ended, is(false));
+
+            canceled.release.countDown();
+            await("Canceled zero-window SSE handler completion", canceled.completed);
+            assertThat("Canceled zero-window SSE handler must observe stream cancellation",
+                       canceled.failure.get(), notNullValue());
+
+            connection.writer().write(new Http2WindowUpdate(2)
+                                              .toFrameData(null, 3, Http2Flag.NoFlags.create()));
+            ping.readUntilEnd(frames, 3);
+            assertThat("Sibling ping survives zero-window SSE cancellation", ping.body(), is("ok"));
+        } finally {
+            canceled.release.countDown();
+            STREAM_CONTROLS.remove("zero-window-cancel");
+        }
+    }
+
+    @Test
     void sustainedSseHonorsStreamFlowControl(Http2TestClient client) throws InterruptedException {
         String payload = "x".repeat(1024);
         StreamControl control = new StreamControl(payload, null, true);

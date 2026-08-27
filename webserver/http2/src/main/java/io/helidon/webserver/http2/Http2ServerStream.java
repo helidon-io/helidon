@@ -278,7 +278,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
         resetCompletionLock.lock();
         try {
             remoteResetReceived = true;
-            rapidReset = writeState.get() == WriteState.INIT;
+            rapidReset = writeState.getAndSet(WriteState.END) == WriteState.INIT;
         } finally {
             resetCompletionLock.unlock();
         }
