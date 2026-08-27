@@ -154,6 +154,15 @@ class ContentEncodingContextTest {
                         res.send("hello webserver");
                     }
                 })
+                .get("/not-modified-no-automatic-encoding", (req, res) -> {
+                    ((RoutingResponse) res).automaticContentEncoding(false);
+                    res.header(HeaderNames.ETAG, ETAG);
+                    if (req.headers().contains(HeaderValues.create(HeaderNames.IF_NONE_MATCH, ETAG))) {
+                        res.status(Status.NOT_MODIFIED_304).send();
+                    } else {
+                        res.send("hello webserver");
+                    }
+                })
                 .get("/reset", (_, res) -> {
                     RoutingResponse routingResponse = (RoutingResponse) res;
                     routingResponse.automaticContentEncoding(false);
@@ -483,6 +492,30 @@ class ContentEncodingContextTest {
             var varyValues = response.headers().values(HeaderNames.VARY);
             assertThat("Vary response header " + varyValues,
                        response.headers().containsToken(VARY_ACCEPT_ENCODING), is(true));
+        }
+    }
+
+    @Test
+    void testAutomaticContentEncodingOptOutDoesNotAddVaryToNotModified() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/not-modified-no-automatic-encoding")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.VARY));
+            assertThat(response.entity().as(String.class), is("hello webserver"));
+        }
+
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/not-modified-no-automatic-encoding")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .header(HeaderNames.IF_NONE_MATCH, ETAG)
+                .request()) {
+            assertThat(response.status(), is(Status.NOT_MODIFIED_304));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.VARY));
+            assertThat(response.entity().hasEntity(), is(false));
         }
     }
 

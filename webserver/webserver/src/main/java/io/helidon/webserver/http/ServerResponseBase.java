@@ -550,6 +550,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         beforeSend.forEach(Runnable::run);
         if (status().code() == Status.NOT_MODIFIED_304.code()
                 && contentEncodingContext.contentEncodingEnabled()
+                && automaticContentEncoding
                 && !headers().contains(HeaderNames.CONTENT_ENCODING)
                 && !headers().containsToken(VARY_ACCEPT_ENCODING)) {
             headers().add(VARY_ACCEPT_ENCODING);
