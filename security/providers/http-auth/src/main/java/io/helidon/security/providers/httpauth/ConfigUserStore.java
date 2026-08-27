@@ -35,7 +35,10 @@ public class ConfigUserStore implements SecureUserStore {
 
     /**
      * Create an empty configuration-backed user store.
+     *
+     * @deprecated Use {@link #create(Config)} instead.
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     public ConfigUserStore() {
     }
 
