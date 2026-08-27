@@ -54,7 +54,6 @@ module io.helidon.webserver.http2 {
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.http2.Http2ProtocolConfigProvider;
 
-    uses io.helidon.webserver.http.spi.SinkProvider;
     uses io.helidon.webserver.http2.spi.Http2SubProtocolProvider;
 
 }

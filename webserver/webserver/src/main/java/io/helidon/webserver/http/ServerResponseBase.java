@@ -22,11 +22,15 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import io.helidon.common.Api;
 import io.helidon.common.GenericType;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -47,6 +51,9 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.UnsupportedTypeException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.spi.Sink;
+import io.helidon.webserver.http.spi.SinkProvider;
+import io.helidon.webserver.http.spi.SinkProviderContext;
 
 /**
  * Base class for common server response tasks that can be shared across HTTP versions.
@@ -76,6 +83,9 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private static final HeaderName REPR_DIGEST_NAME = HeaderNames.create("Repr-Digest");
     private static final Header VARY_ACCEPT_ENCODING =
             HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
+    @SuppressWarnings("rawtypes")
+    private static final List<SinkProvider> SINK_PROVIDERS =
+            HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
     private final ContentEncodingContext contentEncodingContext;
     private final MediaContext mediaContext;
     private final ServerRequestHeaders requestHeaders;
@@ -296,6 +306,74 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      */
     protected Consumer<ServerResponseTrailers> beforeTrailers() {
         return beforeTrailers;
+    }
+
+    /**
+     * Find a sink provider for the requested sink type.
+     *
+     * @param sinkType sink type
+     * @param request server request
+     * @return matching sink provider
+     */
+    protected final SinkProvider<?> findSinkProvider(GenericType<? extends Sink<?>> sinkType, ServerRequest request) {
+        for (SinkProvider<?> provider : SINK_PROVIDERS) {
+            if (provider.supports(sinkType, request)) {
+                return provider;
+            }
+        }
+        throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
+    }
+
+    /**
+     * Create a sink using the shared provider context and protocol-specific callbacks.
+     *
+     * @param provider sink provider
+     * @param request server request
+     * @param connectionContext connection context
+     * @param entityOutputStreamProvider protocol entity stream provider
+     * @param closeRunnable protocol close callback
+     * @param flushHeadersRunnable protocol header flush callback
+     * @param <X> sink type
+     * @return created sink
+     */
+    @SuppressWarnings("unchecked")
+    protected final <X extends Sink<?>> X createSink(SinkProvider<?> provider,
+                                                     ServerRequest request,
+                                                     ConnectionContext connectionContext,
+                                                     Function<Runnable, Optional<OutputStream>> entityOutputStreamProvider,
+                                                     Runnable closeRunnable,
+                                                     Runnable flushHeadersRunnable) {
+        return (X) provider.create(new SinkProviderContext() {
+            @Override
+            public ServerResponse serverResponse() {
+                return ServerResponseBase.this;
+            }
+
+            @Override
+            public ServerRequest serverRequest() {
+                return request;
+            }
+
+            @Override
+            public ConnectionContext connectionContext() {
+                return connectionContext;
+            }
+
+            @Override
+            public Optional<OutputStream> entityOutputStream(Runnable responsePreparation) {
+                return entityOutputStreamProvider.apply(responsePreparation);
+            }
+
+            @Override
+            public Runnable closeRunnable() {
+                return closeRunnable;
+            }
+
+            @Override
+            public void flushHeaders() {
+                flushHeadersRunnable.run();
+            }
+        });
     }
 
     /**
