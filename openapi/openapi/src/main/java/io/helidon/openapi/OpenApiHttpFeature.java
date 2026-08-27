@@ -16,11 +16,7 @@
 
 package io.helidon.openapi;
 
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -202,9 +198,8 @@ class OpenApiHttpFeature implements HttpFeature {
         private final HttpServiceLocator delegate;
         private final SecureHandler secureHandler;
         private final ReentrantLock lock = new ReentrantLock();
-        private final ReferenceQueue<HttpService> staleServices = new ReferenceQueue<>();
         private final int maxServiceCacheSize;
-        private volatile Map<WeakIdentityKey, WeakReference<SecuredService>> securedServices = new HashMap<>();
+        private volatile WeakIdentityTable securedServices = WeakIdentityTable.empty();
         private volatile boolean stopped;
 
         private SecuredLocator(HttpServiceLocator delegate, SecureHandler secureHandler) {
@@ -253,7 +248,7 @@ class OpenApiHttpFeature implements HttpFeature {
             lock.lock();
             try {
                 stopped = true;
-                securedServices = new HashMap<>();
+                securedServices = WeakIdentityTable.empty();
             } finally {
                 lock.unlock();
             }
@@ -261,10 +256,8 @@ class OpenApiHttpFeature implements HttpFeature {
         }
 
         private HttpService securedService(HttpService service) {
-            var lookupKey = new WeakIdentityKey(service);
-            Map<WeakIdentityKey, WeakReference<SecuredService>> currentServices = securedServices;
-            WeakReference<SecuredService> securedServiceReference = currentServices.get(lookupKey);
-            SecuredService securedService = securedServiceReference == null ? null : securedServiceReference.get();
+            WeakIdentityTable currentServices = securedServices;
+            SecuredService securedService = currentServices.get(service);
             if (securedService != null) {
                 checkRunning();
                 return securedService;
@@ -274,30 +267,16 @@ class OpenApiHttpFeature implements HttpFeature {
             try {
                 checkRunning();
                 currentServices = securedServices;
-                securedServiceReference = currentServices.get(lookupKey);
-                securedService = securedServiceReference == null ? null : securedServiceReference.get();
+                securedService = currentServices.get(service);
                 if (securedService != null) {
                     return securedService;
                 }
                 securedService = new SecuredService(service, secureHandler);
-                Map<WeakIdentityKey, WeakReference<SecuredService>> updatedServices = copyWithoutStale(currentServices);
-                updatedServices.put(new WeakIdentityKey(service, staleServices), new WeakReference<>(securedService));
-                securedServices = updatedServices;
+                securedServices = currentServices.with(service, securedService);
                 return securedService;
             } finally {
                 lock.unlock();
             }
-        }
-
-        private Map<WeakIdentityKey, WeakReference<SecuredService>> copyWithoutStale(
-                Map<WeakIdentityKey, WeakReference<SecuredService>> currentServices) {
-            Map<WeakIdentityKey, WeakReference<SecuredService>> updatedServices = new HashMap<>(currentServices);
-            Reference<? extends HttpService> staleService;
-            while ((staleService = staleServices.poll()) != null) {
-                updatedServices.remove(staleService);
-            }
-            updatedServices.entrySet().removeIf(entry -> entry.getKey().get() == null || entry.getValue().get() == null);
-            return updatedServices;
         }
 
         private void checkRunning() {
@@ -312,30 +291,92 @@ class OpenApiHttpFeature implements HttpFeature {
                                      true);
         }
 
-        private static final class WeakIdentityKey extends WeakReference<HttpService> {
-            private final int hashCode;
+        private static final class WeakIdentityTable {
+            private static final WeakIdentityTable EMPTY = new WeakIdentityTable(new WeakServiceEntry[0]);
 
-            private WeakIdentityKey(HttpService service) {
-                super(service);
-                this.hashCode = System.identityHashCode(service);
+            private final WeakServiceEntry[] entries;
+
+            private WeakIdentityTable(WeakServiceEntry[] entries) {
+                this.entries = entries;
             }
 
-            private WeakIdentityKey(HttpService service, ReferenceQueue<HttpService> queue) {
-                super(service, queue);
-                this.hashCode = System.identityHashCode(service);
+            private static WeakIdentityTable empty() {
+                return EMPTY;
             }
 
-            @Override
-            public int hashCode() {
-                return hashCode;
-            }
-
-            @Override
-            public boolean equals(Object object) {
-                if (this == object) {
-                    return true;
+            private SecuredService get(HttpService service) {
+                if (entries.length == 0) {
+                    return null;
                 }
-                return object instanceof WeakIdentityKey that && get() != null && get() == that.get();
+
+                int identityHash = System.identityHashCode(service);
+                int index = index(identityHash, entries.length);
+                for (int i = 0; i < entries.length; i++) {
+                    WeakServiceEntry entry = entries[index];
+                    if (entry == null) {
+                        return null;
+                    }
+                    if (entry.identityHash == identityHash && entry.service.get() == service) {
+                        return entry.securedService.get();
+                    }
+                    index = (index + 1) & (entries.length - 1);
+                }
+                return null;
+            }
+
+            private WeakIdentityTable with(HttpService service, SecuredService securedService) {
+                int liveEntries = 1;
+                for (WeakServiceEntry entry : entries) {
+                    if (isLive(entry, service)) {
+                        liveEntries++;
+                    }
+                }
+
+                int capacity = 4;
+                while (capacity < liveEntries * 2) {
+                    capacity <<= 1;
+                }
+
+                WeakServiceEntry[] updatedEntries = new WeakServiceEntry[capacity];
+                for (WeakServiceEntry entry : entries) {
+                    if (isLive(entry, service)) {
+                        insert(updatedEntries, entry);
+                    }
+                }
+                insert(updatedEntries, new WeakServiceEntry(service, securedService));
+                return new WeakIdentityTable(updatedEntries);
+            }
+
+            private static boolean isLive(WeakServiceEntry entry, HttpService replacedService) {
+                if (entry == null) {
+                    return false;
+                }
+                HttpService service = entry.service.get();
+                return service != null && service != replacedService && entry.securedService.get() != null;
+            }
+
+            private static void insert(WeakServiceEntry[] entries, WeakServiceEntry entry) {
+                int index = index(entry.identityHash, entries.length);
+                while (entries[index] != null) {
+                    index = (index + 1) & (entries.length - 1);
+                }
+                entries[index] = entry;
+            }
+
+            private static int index(int identityHash, int tableLength) {
+                return (identityHash ^ (identityHash >>> 16)) & (tableLength - 1);
+            }
+        }
+
+        private static final class WeakServiceEntry {
+            private final int identityHash;
+            private final WeakReference<HttpService> service;
+            private final WeakReference<SecuredService> securedService;
+
+            private WeakServiceEntry(HttpService service, SecuredService securedService) {
+                this.identityHash = System.identityHashCode(service);
+                this.service = new WeakReference<>(service);
+                this.securedService = new WeakReference<>(securedService);
             }
         }
     }
