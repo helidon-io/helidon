@@ -196,12 +196,12 @@ class OpenApiHttpFeature implements HttpFeature {
     }
 
     private static final class SecuredLocator implements HttpServiceLocator {
-        private final Map<HttpService, HttpService> securedServices = new IdentityHashMap<>();
         private final HttpServiceLocator delegate;
         private final SecureHandler secureHandler;
         private final ReentrantLock lock = new ReentrantLock();
         private final int maxServiceCacheSize;
-        private boolean stopped;
+        private volatile Map<HttpService, HttpService> securedServices = new IdentityHashMap<>();
+        private volatile boolean stopped;
 
         private SecuredLocator(HttpServiceLocator delegate, SecureHandler secureHandler) {
             this.delegate = delegate;
@@ -214,23 +214,13 @@ class OpenApiHttpFeature implements HttpFeature {
 
         @Override
         public Optional<HttpService> locate(ServerRequest request) {
-            lock.lock();
-            try {
-                checkRunning();
-            } finally {
-                lock.unlock();
-            }
+            checkRunning();
 
             Optional<HttpService> service = Objects.requireNonNull(delegate.locate(request),
                                                                    "HttpServiceLocator must not return null");
 
-            lock.lock();
-            try {
-                checkRunning();
-                return service.map(this::securedService);
-            } finally {
-                lock.unlock();
-            }
+            checkRunning();
+            return service.map(this::securedService);
         }
 
         @Override
@@ -259,7 +249,7 @@ class OpenApiHttpFeature implements HttpFeature {
             lock.lock();
             try {
                 stopped = true;
-                securedServices.clear();
+                securedServices = new IdentityHashMap<>();
             } finally {
                 lock.unlock();
             }
@@ -267,23 +257,42 @@ class OpenApiHttpFeature implements HttpFeature {
         }
 
         private HttpService securedService(HttpService service) {
-            HttpService securedService = securedServices.get(service);
+            Map<HttpService, HttpService> currentServices = securedServices;
+            HttpService securedService = currentServices.get(service);
             if (securedService != null) {
+                checkRunning();
                 return securedService;
             }
-            if (securedServices.size() >= maxServiceCacheSize) {
-                throw serviceUnavailable("size of " + maxServiceCacheSize + " exceeded");
+
+            lock.lock();
+            try {
+                checkRunning();
+                currentServices = securedServices;
+                securedService = currentServices.get(service);
+                if (securedService != null) {
+                    return securedService;
+                }
+                if (currentServices.size() >= maxServiceCacheSize) {
+                    throw serviceUnavailable("size of " + maxServiceCacheSize + " exceeded");
+                }
+                securedService = new SecuredService(service, secureHandler, this);
+                Map<HttpService, HttpService> updatedServices = new IdentityHashMap<>(currentServices);
+                updatedServices.put(service, securedService);
+                securedServices = updatedServices;
+                return securedService;
+            } finally {
+                lock.unlock();
             }
-            securedService = new SecuredService(service, secureHandler, this);
-            securedServices.put(service, securedService);
-            return securedService;
         }
 
         private void removeFailedService(HttpService service, HttpService securedService) {
             lock.lock();
             try {
-                if (securedServices.get(service) == securedService) {
-                    securedServices.remove(service);
+                Map<HttpService, HttpService> currentServices = securedServices;
+                if (currentServices.get(service) == securedService) {
+                    Map<HttpService, HttpService> updatedServices = new IdentityHashMap<>(currentServices);
+                    updatedServices.remove(service);
+                    securedServices = updatedServices;
                 }
             } finally {
                 lock.unlock();

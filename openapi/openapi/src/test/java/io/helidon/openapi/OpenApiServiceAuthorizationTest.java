@@ -15,8 +15,14 @@
  */
 package io.helidon.openapi;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -50,6 +56,7 @@ import static org.hamcrest.Matchers.is;
 
 @RoutingTest
 class OpenApiServiceAuthorizationTest {
+    private static final int CONCURRENT_REQUESTS = 8;
     private static final HeaderName HEADER_PREDICATE = HeaderNames.create("X-OpenAPI-Service-Route");
 
     private final WebClient client;
@@ -177,6 +184,74 @@ class OpenApiServiceAuthorizationTest {
                 server.stop();
             }
         }
+    }
+
+    @Test
+    void concurrentLocatedServiceCacheHitsReuseSingleWrapper() throws Exception {
+        var allLocated = new CountDownLatch(CONCURRENT_REQUESTS);
+        var routingStarted = new CountDownLatch(1);
+        var releaseRouting = new CountDownLatch(1);
+        var service = new LifecycleService("/resource", routingStarted, releaseRouting);
+        var locator = new LifecycleLocator(service, allLocated);
+        WebServer server = testServer(new LocatorOpenApiService("/located", locator));
+
+        try {
+            server.start();
+            WebClient serverClient = testClient(server);
+            var workersReady = new CountDownLatch(CONCURRENT_REQUESTS);
+            var startRequests = new CountDownLatch(1);
+
+            try (var executor = Executors.newFixedThreadPool(CONCURRENT_REQUESTS)) {
+                List<Future<Status>> requests = new ArrayList<>(CONCURRENT_REQUESTS);
+                for (int i = 0; i < CONCURRENT_REQUESTS; i++) {
+                    requests.add(executor.submit(() -> {
+                        workersReady.countDown();
+                        if (!startRequests.await(5, TimeUnit.SECONDS)) {
+                            throw new IllegalStateException("Timed out waiting to start concurrent request");
+                        }
+                        return serverClient.get("/located/resource").request(String.class).status();
+                    }));
+                }
+
+                try {
+                    assertThat("all request workers became ready",
+                               workersReady.await(5, TimeUnit.SECONDS),
+                               is(true));
+                    startRequests.countDown();
+                    assertThat("cold route initialization started",
+                               routingStarted.await(5, TimeUnit.SECONDS),
+                               is(true));
+                    assertThat("all concurrent requests resolved the stable service",
+                               allLocated.await(5, TimeUnit.SECONDS),
+                               is(true));
+                    releaseRouting.countDown();
+
+                    for (int i = 0; i < requests.size(); i++) {
+                        assertThat("secured response for concurrent request " + i,
+                                   requests.get(i).get(5, TimeUnit.SECONDS),
+                                   is(Status.FORBIDDEN_403));
+                    }
+                } finally {
+                    startRequests.countDown();
+                    releaseRouting.countDown();
+                }
+            }
+
+            assertThat("locator invocation count", locator.locateCount.get(), is(CONCURRENT_REQUESTS));
+            assertThat("locator beforeStart", locator.beforeStartCount.get(), is(1));
+            assertThat("locator afterStart", locator.afterStartCount.get(), is(1));
+            assertThat("located service routing", service.routingCount.get(), is(1));
+            assertThat("located service beforeStart", service.beforeStartCount.get(), is(1));
+            assertThat("located service afterStart", service.afterStartCount.get(), is(1));
+        } finally {
+            releaseRouting.countDown();
+            if (server.isRunning()) {
+                server.stop();
+            }
+        }
+
+        assertThat("locator afterStop", locator.afterStopCount.get(), is(1));
+        assertThat("located service afterStop", service.afterStopCount.get(), is(1));
     }
 
     @Test
@@ -345,16 +420,25 @@ class OpenApiServiceAuthorizationTest {
 
     private static final class LifecycleLocator implements HttpServiceLocator {
         private final HttpService service;
+        private final CountDownLatch locateCalls;
+        private final AtomicInteger locateCount = new AtomicInteger();
         private final AtomicInteger beforeStartCount = new AtomicInteger();
         private final AtomicInteger afterStartCount = new AtomicInteger();
         private final AtomicInteger afterStopCount = new AtomicInteger();
 
         private LifecycleLocator(HttpService service) {
+            this(service, new CountDownLatch(0));
+        }
+
+        private LifecycleLocator(HttpService service, CountDownLatch locateCalls) {
             this.service = service;
+            this.locateCalls = locateCalls;
         }
 
         @Override
         public Optional<HttpService> locate(ServerRequest request) {
+            locateCount.incrementAndGet();
+            locateCalls.countDown();
             return Optional.of(service);
         }
 
@@ -376,18 +460,37 @@ class OpenApiServiceAuthorizationTest {
 
     private static final class LifecycleService implements HttpService {
         private final String routePath;
+        private final CountDownLatch routingStarted;
+        private final CountDownLatch releaseRouting;
         private final AtomicInteger routingCount = new AtomicInteger();
         private final AtomicInteger beforeStartCount = new AtomicInteger();
         private final AtomicInteger afterStartCount = new AtomicInteger();
         private final AtomicInteger afterStopCount = new AtomicInteger();
 
         private LifecycleService(String routePath) {
+            this(routePath, new CountDownLatch(0), new CountDownLatch(0));
+        }
+
+        private LifecycleService(String routePath,
+                                 CountDownLatch routingStarted,
+                                 CountDownLatch releaseRouting) {
             this.routePath = routePath;
+            this.routingStarted = routingStarted;
+            this.releaseRouting = releaseRouting;
         }
 
         @Override
         public void routing(HttpRules rules) {
             routingCount.incrementAndGet();
+            routingStarted.countDown();
+            try {
+                if (!releaseRouting.await(10, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Timed out waiting to release located service routing");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while waiting to release located service routing", e);
+            }
             rules.get(routePath, (req, res) -> res.send("unprotected"));
         }
 
