@@ -80,7 +80,10 @@ final class DeliveryAdmissionTracker {
                         if (remaining <= 0) {
                             return Stability.TIMED_OUT;
                         }
-                        stabilityChanged.awaitNanos(remaining);
+                        long updated = stabilityChanged.awaitNanos(remaining);
+                        if (updated <= 0 && attempts.get() != 0) {
+                            return Stability.TIMED_OUT;
+                        }
                     }
                     if (observedGeneration != generation.get()) {
                         return Stability.CHANGED;
