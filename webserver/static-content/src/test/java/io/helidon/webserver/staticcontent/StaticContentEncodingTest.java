@@ -24,8 +24,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -145,6 +147,53 @@ class StaticContentEncodingTest {
     }
 
     @Test
+    void cachedShorterSidecarReplacementDoesNotReuseStaleMetadata() throws IOException {
+        String resourceName = "shorter-replacement-http1.txt";
+        String identity = "Identity content";
+        String original = "Original Brotli content";
+        String replacement = "New br";
+        Path resource = tempDir.resolve(resourceName);
+        Path sidecar = tempDir.resolve(resourceName + ".br");
+        Files.writeString(resource, identity);
+        Files.writeString(sidecar, original);
+
+        String originalEtag;
+        try (Http1ClientResponse response = client.get("/path/" + resourceName)
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_LENGTH,
+                                                                        Integer.toString(original.length())));
+            originalEtag = response.headers().get(HeaderNames.ETAG).get();
+            assertThat(response.as(String.class), is(original));
+        }
+
+        replaceFile(sidecar, replacement);
+
+        try (Http1ClientResponse response = client.head("/path/" + resourceName)
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .header(HeaderNames.IF_NONE_MATCH, originalEtag)
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_LENGTH,
+                                                                        Integer.toString(identity.length())));
+            assertThat(response.entity().hasEntity(), is(false));
+        }
+
+        try (Http1ClientResponse response = client.get("/path/" + resourceName)
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_LENGTH,
+                                                                        Integer.toString(replacement.length())));
+            assertThat(response.as(String.class), is(replacement));
+        }
+    }
+
+    @Test
     void runtimeEncodingSatisfiesRejectedIdentityWhenSidecarMissing() {
         try (Http1ClientResponse response = client.get("/path/nested/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "gzip, identity;q=0")
@@ -211,6 +260,21 @@ class StaticContentEncodingTest {
     }
 
     @Test
+    void preCompressedDisabledGetIgnoresRangeForRuntimeEncoding() {
+        try (Http1ClientResponse response = client.get("/path-disabled/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip, identity;q=0")
+                .header(HeaderNames.RANGE, "bytes=0-3")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_RANGE));
+            assertThat(response.as(String.class), is("runtime:Content"));
+        }
+    }
+
+    @Test
     void identitySelectionSuppressesAutomaticRuntimeEncoding() {
         try (Http1ClientResponse response = client.get("/path/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "gzip;q=0.5, identity;q=1")
@@ -265,6 +329,19 @@ class StaticContentEncodingTest {
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY,
                                                                        HeaderNames.ACCEPT_ENCODING_NAME));
             assertThat(response.as(String.class), is(CUSTOM_INTERNAL_ERROR));
+        }
+    }
+
+    private static void replaceFile(Path target, String content) throws IOException {
+        Path replacement = target.resolveSibling(target.getFileName() + ".replacement");
+        Files.writeString(replacement, content);
+        try {
+            Files.move(replacement,
+                       target,
+                       StandardCopyOption.ATOMIC_MOVE,
+                       StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException _) {
+            Files.move(replacement, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

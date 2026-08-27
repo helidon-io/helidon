@@ -30,6 +30,7 @@ import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -37,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SecureDirectoryStream;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
@@ -92,8 +94,8 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -772,7 +774,7 @@ class CachedHandlerTest {
                                                                response,
                                                                "resource.txt"));
 
-        assertSame(failure, actual);
+        assertThat(actual, sameInstance(failure));
         verify(response).outputStream();
     }
 
@@ -1367,6 +1369,100 @@ class CachedHandlerTest {
                                     false), is(true));
         assertThat(staleHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
         assertThat(staleBody.toString(StandardCharsets.UTF_8), is("Content"));
+    }
+
+    @Test
+    void testFileSystemCachedShorterSidecarReplacementInvalidatesConditionalHead() throws IOException {
+        Path resource = tempDir.resolve("shorter.txt");
+        Path gzip = tempDir.resolve("shorter.txt.gz");
+        Files.writeString(resource, "Content");
+        Files.writeString(gzip, "Original gzip content");
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(tempDir)
+                        .build());
+
+        ServerResponseHeaders initialHeaders = ServerResponseHeaders.create();
+        assertThat(handler.doHandle(Method.GET,
+                                    "shorter.txt",
+                                    request("/shorter.txt", acceptEncodingHeaders("gzip")),
+                                    response(initialHeaders, new ByteArrayOutputStream()),
+                                    false), is(true));
+        String originalEtag = initialHeaders.get(HeaderNames.ETAG).get();
+
+        replaceFile(gzip, "New gzip");
+
+        WritableHeaders<?> conditionalHeaders = WritableHeaders.create();
+        conditionalHeaders.add(HeaderNames.ACCEPT_ENCODING, "gzip");
+        conditionalHeaders.add(HeaderNames.IF_NONE_MATCH, originalEtag);
+        ServerResponseHeaders fallbackHeaders = ServerResponseHeaders.create();
+        assertThat(handler.doHandle(Method.HEAD,
+                                    "shorter.txt",
+                                    request(Method.HEAD,
+                                            "/shorter.txt",
+                                            ServerRequestHeaders.create(conditionalHeaders)),
+                                    response(fallbackHeaders, new ByteArrayOutputStream()),
+                                    false), is(true));
+        assertThat(fallbackHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(fallbackHeaders, hasHeader(HeaderNames.CONTENT_LENGTH, "7"));
+
+        ServerResponseHeaders refreshedHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream refreshedBody = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "shorter.txt",
+                                    request("/shorter.txt", acceptEncodingHeaders("gzip")),
+                                    response(refreshedHeaders, refreshedBody),
+                                    false), is(true));
+        assertThat(refreshedHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(refreshedHeaders, hasHeader(HeaderNames.CONTENT_LENGTH, "8"));
+        assertThat(refreshedBody.toString(StandardCharsets.UTF_8), is("New gzip"));
+    }
+
+    @Test
+    void testFileSystemCachedLongerSidecarReplacementInvalidatesRange() throws IOException {
+        Path resource = tempDir.resolve("longer.txt");
+        Path gzip = tempDir.resolve("longer.txt.gz");
+        Files.writeString(resource, "Content");
+        Files.writeString(gzip, "Old gzip");
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(tempDir)
+                        .build());
+
+        assertThat(handler.doHandle(Method.GET,
+                                    "longer.txt",
+                                    request("/longer.txt", acceptEncodingHeaders("gzip")),
+                                    response(ServerResponseHeaders.create(), new ByteArrayOutputStream()),
+                                    false), is(true));
+
+        String replacement = "New gzip content is longer";
+        replaceFile(gzip, replacement);
+
+        WritableHeaders<?> rangeHeaders = WritableHeaders.create();
+        rangeHeaders.add(HeaderNames.ACCEPT_ENCODING, "gzip");
+        rangeHeaders.add(HeaderNames.RANGE, "bytes=0-2");
+        ServerResponseHeaders fallbackHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream fallbackBody = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "longer.txt",
+                                    request("/longer.txt", ServerRequestHeaders.create(rangeHeaders)),
+                                    response(fallbackHeaders, fallbackBody),
+                                    false), is(true));
+        assertThat(fallbackHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(fallbackHeaders, hasHeader(HeaderNames.CONTENT_RANGE, "bytes 0-2/7"));
+        assertThat(fallbackBody.toString(StandardCharsets.UTF_8), is("Con"));
+
+        ServerResponseHeaders refreshedHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream refreshedBody = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "longer.txt",
+                                    request("/longer.txt", ServerRequestHeaders.create(rangeHeaders)),
+                                    response(refreshedHeaders, refreshedBody),
+                                    false), is(true));
+        assertThat(refreshedHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(refreshedHeaders,
+                   hasHeader(HeaderNames.CONTENT_RANGE, "bytes 0-2/" + replacement.length()));
+        assertThat(refreshedBody.toString(StandardCharsets.UTF_8), is("New"));
     }
 
     @Test
@@ -2561,15 +2657,32 @@ class CachedHandlerTest {
     }
 
     private static ServerRequest request(String rawPath, ServerRequestHeaders headers) {
+        return request(Method.GET, rawPath, headers);
+    }
+
+    private static ServerRequest request(Method method, String rawPath, ServerRequestHeaders headers) {
         ServerRequest request = mock(ServerRequest.class);
         when(request.headers()).thenReturn(headers);
         when(request.prologue()).thenReturn(HttpPrologue.create("http/1.1",
                                                                 "http",
                                                                 "1.1",
-                                                                Method.GET,
+                                                                method,
                                                                 rawPath,
                                                                 false));
         return request;
+    }
+
+    private static void replaceFile(Path target, String content) throws IOException {
+        Path replacement = target.resolveSibling(target.getFileName() + ".replacement");
+        Files.writeString(replacement, content);
+        try {
+            Files.move(replacement,
+                       target,
+                       StandardCopyOption.ATOMIC_MOVE,
+                       StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(replacement, target, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     private static ServerResponse response(ServerResponseHeaders headers, ByteArrayOutputStream outputStream)

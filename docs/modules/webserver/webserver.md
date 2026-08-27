@@ -1516,22 +1516,22 @@ Helidon recognizes `gzip` and `x-gzip` as sidecar aliases, and likewise
 Helidon emits that accepted spelling in the response `Content-Encoding` header.
 
 A selected sidecar is a distinct response representation. Its bytes determine
-`Content-Length`, its file metadata determines `Last-Modified`, and its ETag
-differs from the identity representation. Conditional requests are evaluated
+`Content-Length`, its file metadata determines `Last-Modified`, and its weak
+ETag differs from the identity representation. Conditional requests are evaluated
 against the selected representation. `304 Not Modified` responses retain its
 `Content-Encoding`, `Vary`, and ETag metadata. `412 Precondition Failed`
 responses retain `Vary` and the selected representation's ETag but omit
 `Content-Encoding`. Byte ranges and `Content-Range` apply to the encoded sidecar
-bytes. A matching strong sidecar ETag in `If-Range` permits a partial response;
-otherwise Helidon ignores the range and sends the complete selected sidecar.
+bytes. A sidecar ETag cannot satisfy `If-Range` because it is weak, so Helidon
+ignores such a range and sends the complete selected sidecar.
 
 > [!NOTE]
 > Helidon derives static-content ETags from resource metadata rather than
-> hashing the content bytes. Deployments that replace a static resource must
-> ensure its observed last-modified time changes at millisecond precision. In
-> particular, replacing a sidecar with different bytes of the same length while
-> preserving that timestamp can reuse the previous ETag, so caches can continue
-> to treat the sidecar as unchanged.
+> hashing the content bytes. Sidecar ETags are weak. Deployments that replace a
+> static resource must ensure its observed last-modified time changes at
+> millisecond precision. In particular, replacing a sidecar with different
+> bytes of the same length while preserving that timestamp can reuse the
+> previous ETag, so caches can continue to treat the sidecar as unchanged.
 
 When listener content encoding is configured, static content can dynamically
 encode the logical resource when that runtime candidate is the best acceptable
@@ -1547,14 +1547,16 @@ equal-quality ties. For equal quality, implicit `identity` follows acceptable
 concrete sidecar and runtime candidates but precedes wildcard-derived runtime
 candidates. If no acceptable sidecar or runtime encoder exists and the client
 rejects `identity`, Helidon responds with `406 Not Acceptable`. Dynamically
-encoded static responses ignore byte ranges, omit `Content-Length`, and use weak
-entity tags. When pre-compressed lookup is disabled, range requests are served
+encoded static responses ignore byte ranges and use weak entity tags. When
+pre-compressed lookup is disabled, range requests are served
 from the identity representation when identity is acceptable, even if listener
 content encoding is configured and the request includes `Accept-Encoding`. If
-identity is rejected, Helidon responds with `406 Not Acceptable` and
-`Vary: Accept-Encoding`. Malformed `Accept-Encoding` values, such as invalid
-coding tokens, unsupported parameters, or invalid `q` values, are rejected with
-`400 Bad Request`.
+identity is rejected but an acceptable listener content encoder is configured,
+Helidon ignores the range and sends the complete dynamically encoded
+representation. If no acceptable representation exists, Helidon responds with
+`406 Not Acceptable` and `Vary: Accept-Encoding`. Malformed `Accept-Encoding`
+values, such as invalid coding tokens, unsupported parameters, or invalid `q`
+values, are rejected with `400 Bad Request`.
 
 ```yaml [application.yaml]
 server:

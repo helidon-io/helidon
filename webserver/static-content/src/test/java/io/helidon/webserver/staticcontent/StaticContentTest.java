@@ -48,6 +48,7 @@ import org.junit.jupiter.api.io.TempDir;
 import static io.helidon.webserver.staticcontent.StaticContentFeature.createService;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -409,13 +410,14 @@ class StaticContentTest {
     }
 
     @Test
-    void testFileSystemPreCompressedIfRangeAllowsMatchingSelectedRepresentationEtag() {
+    void testFileSystemPreCompressedIfRangeRejectsWeakSelectedRepresentationEtag() {
         String brotliEtag;
         try (Http1ClientResponse response = testClient.get("/path/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "br")
                 .request()) {
             assertThat(response.status(), is(Status.OK_200));
             brotliEtag = response.headers().get(HeaderNames.ETAG).get();
+            assertThat(brotliEtag, startsWith("W/"));
         }
 
         try (Http1ClientResponse response = testClient.get("/path/resource.txt")
@@ -424,11 +426,11 @@ class StaticContentTest {
                 .header(HeaderNames.IF_RANGE, brotliEtag)
                 .request()) {
 
-            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-5/14"));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_RANGE));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
-            assertThat(response.as(String.class), is("otli"));
+            assertThat(response.as(String.class), is("Brotli content"));
         }
     }
 
@@ -925,6 +927,7 @@ class StaticContentTest {
 
             assertThat(path + " status for bytes=-0",
                        response.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes */0"));
         }
 
         try (Http1ClientResponse response = testClient.get(path)
@@ -933,6 +936,7 @@ class StaticContentTest {
 
             assertThat(path + " status for bytes=0-",
                        response.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes */0"));
         }
     }
 

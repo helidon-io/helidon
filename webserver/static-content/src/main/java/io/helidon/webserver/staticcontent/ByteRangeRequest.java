@@ -104,7 +104,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
         }
         if (fileLength == 0 && !satisfiableEmptyRange) {
             throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true)
-                    .header(HeaderValues.create(HeaderNames.CONTENT_RANGE, "*/0"));
+                    .header(HeaderValues.create(HeaderNames.CONTENT_RANGE, "bytes */0"));
         }
 
         return parts;
@@ -134,7 +134,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
     private static ByteRangeRequest create(long offset, long last, long fileLength) {
         if (offset >= fileLength || last < offset) {
             throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true)
-                    .header(HeaderValues.create(HeaderNames.CONTENT_RANGE, "*/" + fileLength));
+                    .header(HeaderValues.create(HeaderNames.CONTENT_RANGE, "bytes */" + fileLength));
         }
 
         last = Math.min(last, fileLength - 1);

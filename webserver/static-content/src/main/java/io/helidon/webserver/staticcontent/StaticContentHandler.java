@@ -315,14 +315,8 @@ abstract class StaticContentHandler implements HttpService {
         }
         if ((!preCompressedEnabled || preCompressedEncodings.isEmpty())
                 && request.prologue().method() == Method.GET
-                && request.headers().contains(HeaderNames.RANGE)) {
-            if (acceptEncoding.identity().isEmpty()) {
-                throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true)
-                        .header(HeaderValues.create(HeaderNames.VARY,
-                                                   true,
-                                                   false,
-                                                   HeaderNames.ACCEPT_ENCODING_NAME));
-            }
+                && request.headers().contains(HeaderNames.RANGE)
+                && acceptEncoding.identity().isPresent()) {
             return identityHandler.withRepresentation(ResponseRepresentation.identity(true));
         }
 

@@ -24,8 +24,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -138,6 +140,11 @@ class StaticContentEncodingTest {
                 })
                 .register("/filtered-path", StaticContentFeature.createService(FileSystemHandlerConfig.create(tempDir)))
                 .register("/path", StaticContentFeature.createService(FileSystemHandlerConfig.create(tempDir)))
+                .register("/path-disabled",
+                          StaticContentFeature.createService(FileSystemHandlerConfig.builder()
+                                                                     .location(tempDir)
+                                                                     .preCompressedEnabled(false)
+                                                                     .build()))
                 .register("/failing-sidecar", StaticContentFeature.createService(ClasspathHandlerConfig.builder()
                                                                                           .location("/web")
                                                                                           .classLoader(
@@ -250,6 +257,21 @@ class StaticContentEncodingTest {
             assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
             assertThat(response.headers(), hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
             assertThat(response.headers(), noHeader(HeaderNames.CONTENT_LENGTH));
+        }
+    }
+
+    @Test
+    void preCompressedDisabledGetIgnoresRangeForRuntimeEncoding() {
+        try (Http2ClientResponse response = client.get("/path-disabled/nested/resource.txt")
+                .header(HeaderNames.ACCEPT_ENCODING, "test, identity;q=0")
+                .header(HeaderNames.RANGE, "bytes=0-3")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
+            assertThat(response.headers(), hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.headers(), noHeader(HeaderNames.CONTENT_RANGE));
+            assertThat(response.as(String.class), is("runtime:Nested content"));
         }
     }
 
@@ -420,6 +442,53 @@ class StaticContentEncodingTest {
     }
 
     @Test
+    void cachedLongerSidecarReplacementDoesNotReuseStaleMetadata() throws IOException {
+        String resourceName = "longer-replacement-http2.txt";
+        String identity = "Identity";
+        String original = "Old br";
+        String replacement = "New Brotli content is longer";
+        Path resource = tempDir.resolve(resourceName);
+        Path sidecar = tempDir.resolve(resourceName + ".br");
+        Files.writeString(resource, identity);
+        Files.writeString(sidecar, original);
+
+        try (Http2ClientResponse response = client.get("/path/" + resourceName)
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, Integer.toString(original.length())));
+            assertThat(response.as(String.class), is(original));
+        }
+
+        replaceFile(sidecar, replacement);
+
+        try (Http2ClientResponse response = client.get("/path/" + resourceName)
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .header(HeaderNames.RANGE, "bytes=0-2")
+                .request()) {
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, "3"));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_RANGE,
+                                                      "bytes 0-2/" + identity.length()));
+            assertThat(response.as(String.class), is("Ide"));
+        }
+
+        try (Http2ClientResponse response = client.get("/path/" + resourceName)
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .header(HeaderNames.RANGE, "bytes=0-2")
+                .request()) {
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, "3"));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_RANGE,
+                                                      "bytes 0-2/" + replacement.length()));
+            assertThat(response.as(String.class), is("New"));
+        }
+    }
+
+    @Test
     void preCompressedSidecarHead() {
         try (Http2ClientResponse response = client.head("/path/nested/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "br")
@@ -533,6 +602,19 @@ class StaticContentEncodingTest {
             assertThat(response.status(), is(Status.NO_CONTENT_204));
             assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
             assertThat(response.entity().hasEntity(), is(false));
+        }
+    }
+
+    private static void replaceFile(Path target, String content) throws IOException {
+        Path replacement = target.resolveSibling(target.getFileName() + ".replacement");
+        Files.writeString(replacement, content);
+        try {
+            Files.move(replacement,
+                       target,
+                       StandardCopyOption.ATOMIC_MOVE,
+                       StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException _) {
+            Files.move(replacement, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

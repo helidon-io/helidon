@@ -80,8 +80,8 @@ import static io.helidon.http.HeaderNames.IF_MODIFIED_SINCE;
 import static io.helidon.http.HeaderNames.IF_NONE_MATCH;
 import static io.helidon.http.HeaderNames.LOCATION;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -524,21 +524,30 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void preCompressedDisabledRangeRejectsRejectedIdentity() throws IOException, URISyntaxException {
+    void preCompressedDisabledRangeUsesRuntimeWhenIdentityRejected() throws IOException, URISyntaxException {
         TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
                                                                  .location(Paths.get("."))
                                                                  .preCompressedEnabled(false)
                                                                  .build(),
                                                              true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
-        ServerRequest request = mockRequestWithHeaders("identity;q=0", "bytes=0-3", runtimeContentEncodingContext());
+        ServerRequest request = mockRequestWithHeaders("gzip, identity;q=0",
+                                                       "bytes=0-3",
+                                                       runtimeContentEncodingContext());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream sent = new ByteArrayOutputStream();
+        ServerResponse response = mockEncodingResponse(responseHeaders, sent);
 
-        HttpException actual = assertThrows(HttpException.class,
-                                            () -> handler.selectHandler(identityHandler,
-                                                                       request,
-                                                                       (coding, suffix) -> Optional.empty()));
+        CachedHandler selected = handler.selectHandler(identityHandler, request, (coding, suffix) -> Optional.empty());
 
-        assertThat(actual.status(), is(Status.NOT_ACCEPTABLE_406));
+        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_RANGE));
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_LENGTH));
+        assertThat(sent.toString(StandardCharsets.UTF_8), is("runtime:Nested content"));
+        verify(response, never()).status(Status.PARTIAL_CONTENT_206);
     }
 
     @Test
@@ -576,7 +585,7 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void emptyPreCompressedEncodingsRangeRejectsRejectedIdentity() {
+    void emptyPreCompressedEncodingsRangeUsesRuntimeWhenIdentityRejected() throws IOException, URISyntaxException {
         TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
                                                                  .location(Paths.get("."))
                                                                  .preCompressedEncodings(List.of())
@@ -586,13 +595,20 @@ class StaticContentHandlerTest {
         ServerRequest request = mockRequestWithHeaders("gzip, identity;q=0",
                                                        "bytes=0-3",
                                                        runtimeContentEncodingContext());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream sent = new ByteArrayOutputStream();
+        ServerResponse response = mockEncodingResponse(responseHeaders, sent);
 
-        HttpException actual = assertThrows(HttpException.class,
-                                            () -> handler.selectHandler(identityHandler,
-                                                                       request,
-                                                                       (coding, suffix) -> Optional.empty()));
+        CachedHandler selected = handler.selectHandler(identityHandler, request, (coding, suffix) -> Optional.empty());
 
-        assertThat(actual.status(), is(Status.NOT_ACCEPTABLE_406));
+        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_RANGE));
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_LENGTH));
+        assertThat(sent.toString(StandardCharsets.UTF_8), is("runtime:Nested content"));
+        verify(response, never()).status(Status.PARTIAL_CONTENT_206);
     }
 
     @Test
@@ -1628,7 +1644,7 @@ class StaticContentHandlerTest {
                                                                 response,
                                                                 "nested/resource.txt"));
 
-        assertSame(failure, actual);
+        assertThat(actual, sameInstance(failure));
         verify(response).outputStream();
         assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
         assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
@@ -1747,7 +1763,7 @@ class StaticContentHandlerTest {
                                                     request,
                                                     (coding, suffix) -> Optional.empty()));
 
-        assertSame(HttpException.class, actual.getClass());
+        assertThat(actual.getClass().getName(), is(HttpException.class.getName()));
         assertThat(actual.status(), is(Status.BAD_REQUEST_400));
     }
 
@@ -1824,6 +1840,57 @@ class StaticContentHandlerTest {
             first.get(5, TimeUnit.SECONDS);
             second.get(5, TimeUnit.SECONDS);
         }
+    }
+
+    @Test
+    void preCompressedConcurrentMissingSidecarLookupIsCoalescedButNotCached() throws Exception {
+        SidecarCache sidecarCache = SidecarCache.create();
+        AtomicInteger lookups = new AtomicInteger();
+        CountDownLatch firstResolverEntered = new CountDownLatch(1);
+        CountDownLatch releaseFirstResolver = new CountDownLatch(1);
+        CountDownLatch secondLookupStarted = new CountDownLatch(1);
+        AtomicReference<Thread> secondLookupThread = new AtomicReference<>();
+
+        SidecarCache.Resolver resolver = (coding, suffix) -> {
+            int lookup = lookups.incrementAndGet();
+            if (lookup == 1) {
+                firstResolverEntered.countDown();
+                try {
+                    if (!releaseFirstResolver.await(10, TimeUnit.SECONDS)) {
+                        throw new IOException("Timed out awaiting release of the first lookup");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while awaiting release of the first lookup", e);
+                }
+            }
+            return Optional.empty();
+        };
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Future<Optional<CachedHandler>> first =
+                    executor.submit(() -> sidecarCache.resolve("br", ".br", resolver));
+            Future<Optional<CachedHandler>> second;
+            try {
+                assertThat(firstResolverEntered.await(5, TimeUnit.SECONDS), is(true));
+                second = executor.submit(() -> {
+                    secondLookupThread.set(Thread.currentThread());
+                    secondLookupStarted.countDown();
+                    return sidecarCache.resolve("br", ".br", resolver);
+                });
+                assertThat(secondLookupStarted.await(5, TimeUnit.SECONDS), is(true));
+                assertThatWithRetry(secondLookupThread.get()::getState, is(Thread.State.WAITING));
+                assertThat(lookups.get(), is(1));
+            } finally {
+                releaseFirstResolver.countDown();
+            }
+
+            assertThat(first.get(5, TimeUnit.SECONDS), is(Optional.empty()));
+            assertThat(second.get(5, TimeUnit.SECONDS), is(Optional.empty()));
+        }
+
+        assertThat(sidecarCache.resolve("br", ".br", resolver), is(Optional.empty()));
+        assertThat(lookups.get(), is(2));
     }
 
     @Test
@@ -2102,6 +2169,7 @@ class StaticContentHandlerTest {
                                                                  "resource.txt"));
 
         assertThat(actual.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+        assertThat(actual.headers(), hasHeader(HeaderNames.CONTENT_RANGE, "bytes */14"));
         assertThat(actual.headers(), hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
         assertThat(actual.headers(), noHeader(HeaderNames.CONTENT_ENCODING));
         assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
@@ -2129,6 +2197,7 @@ class StaticContentHandlerTest {
                                                                  "resource.txt"));
 
         assertThat(actual.status(), is(Status.REQUESTED_RANGE_NOT_SATISFIABLE_416));
+        assertThat(actual.headers(), hasHeader(HeaderNames.CONTENT_RANGE, "bytes */14"));
         assertThat(actual.headers(), hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
         assertThat(actual.headers(), noHeader(HeaderNames.CONTENT_ENCODING));
         assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));

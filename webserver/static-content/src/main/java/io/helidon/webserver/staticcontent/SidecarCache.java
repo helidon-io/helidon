@@ -19,9 +19,10 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Per-resource sidecar lookup cache.
@@ -30,7 +31,7 @@ final class SidecarCache {
     private static final SidecarCache DISABLED = new SidecarCache(null);
 
     private final ConcurrentMap<String, CachedHandler> entries;
-    private final ConcurrentMap<String, ReentrantLock> resolutionLocks = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CompletableFuture<Optional<CachedHandler>>> resolutions = new ConcurrentHashMap<>();
 
     private SidecarCache(ConcurrentMap<String, CachedHandler> entries) {
         this.entries = entries;
@@ -55,19 +56,29 @@ final class SidecarCache {
             return Optional.of(cachedHandler);
         }
 
-        ReentrantLock resolutionLock = resolutionLocks.computeIfAbsent(coding, _ -> new ReentrantLock());
-        resolutionLock.lock();
+        CompletableFuture<Optional<CachedHandler>> resolution = new CompletableFuture<>();
+        CompletableFuture<Optional<CachedHandler>> existing = resolutions.putIfAbsent(coding, resolution);
+        if (existing != null) {
+            return await(existing);
+        }
+
         try {
             cachedHandler = reusable(coding);
             if (cachedHandler != null) {
-                return Optional.of(cachedHandler);
+                Optional<CachedHandler> resolved = Optional.of(cachedHandler);
+                resolution.complete(resolved);
+                return resolved;
             }
 
             Optional<CachedHandler> resolved = resolver.resolve(coding, suffix);
             resolved.ifPresent(handler -> entries.put(coding, handler));
+            resolution.complete(resolved);
             return resolved;
+        } catch (IOException | URISyntaxException | RuntimeException | Error e) {
+            resolution.completeExceptionally(e);
+            throw e;
         } finally {
-            resolutionLock.unlock();
+            resolutions.remove(coding, resolution);
         }
     }
 
@@ -79,6 +90,28 @@ final class SidecarCache {
 
     private CachedHandler reusable(String coding) {
         return entries.get(coding);
+    }
+
+    private static Optional<CachedHandler> await(CompletableFuture<Optional<CachedHandler>> resolution)
+            throws IOException, URISyntaxException {
+        try {
+            return resolution.join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException ioException) {
+                throw ioException;
+            }
+            if (cause instanceof URISyntaxException uriSyntaxException) {
+                throw uriSyntaxException;
+            }
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            throw new IllegalStateException("Unexpected sidecar resolution failure", cause);
+        }
     }
 
     @FunctionalInterface

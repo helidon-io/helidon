@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +30,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.UnaryOperator;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 import io.helidon.common.LruCache;
 import io.helidon.common.context.Context;
@@ -69,17 +73,23 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.Threads;
 
 @State(Scope.Benchmark)
 public class StaticContentPreCompressedJmhTest {
     private static final String RESOURCE = "resource.txt";
+    private static final String CLASSPATH_RESOURCE = "benchmark/" + RESOURCE;
 
     private StaticContentHandler handler;
     private StaticContentHandler disabledHandler;
+    private ClassPathContentHandler classpathHandler;
+    private ClassPathContentHandler disabledClasspathHandler;
     private SidecarCache.Resolver sidecarResolver;
     private SidecarCache.Resolver fileSidecarResolver;
     private CachedHandler identityHandler;
     private CachedHandler fileIdentityHandler;
+    private CachedHandler classpathIdentityHandler;
+    private CachedHandler disabledClasspathIdentityHandler;
     private LruCache<String, CachedHandler> fileHandlerCache;
     private ServerRequest noAcceptEncodingRequest;
     private ServerRequest identityRequest;
@@ -89,8 +99,10 @@ public class StaticContentPreCompressedJmhTest {
     private ServerRequest gzipRequest;
     private ServerRequest runtimeGzipRequest;
     private Path benchmarkDirectory;
+    private Path classpathJarPath;
     private Path identityPath;
     private Path sidecarPath;
+    private URLClassLoader classpathClassLoader;
 
     @Setup
     public void setup() throws IOException, URISyntaxException {
@@ -101,6 +113,17 @@ public class StaticContentPreCompressedJmhTest {
         sidecarPath = Files.writeString(benchmarkDirectory.resolve(RESOURCE + ".br"),
                                         "Brotli content",
                                         StandardCharsets.UTF_8).toRealPath();
+        classpathJarPath = benchmarkDirectory.resolve("classpath-resources.jar");
+        try (var jarOutput = new JarOutputStream(Files.newOutputStream(classpathJarPath))) {
+            jarOutput.putNextEntry(new JarEntry(CLASSPATH_RESOURCE));
+            jarOutput.write("Content".getBytes(StandardCharsets.UTF_8));
+            jarOutput.closeEntry();
+        }
+        classpathClassLoader = new URLClassLoader(new URL[] {classpathJarPath.toUri().toURL()}, null);
+        URL classpathIdentityUrl = classpathClassLoader.getResource(CLASSPATH_RESOURCE);
+        if (classpathIdentityUrl == null) {
+            throw new IllegalStateException("Benchmark classpath resource was not found in the generated JAR");
+        }
 
         handler = new BenchmarkStaticContentHandler(FileSystemHandlerConfig.builder()
                                                            .location(benchmarkDirectory)
@@ -109,6 +132,15 @@ public class StaticContentPreCompressedJmhTest {
                                                                    .location(benchmarkDirectory)
                                                                    .preCompressedEnabled(false)
                                                                    .build());
+        classpathHandler = new ClassPathContentHandler(ClasspathHandlerConfig.builder()
+                                                               .location("benchmark")
+                                                               .classLoader(classpathClassLoader)
+                                                               .build());
+        disabledClasspathHandler = new ClassPathContentHandler(ClasspathHandlerConfig.builder()
+                                                                       .location("benchmark")
+                                                                       .classLoader(classpathClassLoader)
+                                                                       .preCompressedEnabled(false)
+                                                                       .build());
         identityHandler = inMemoryHandler("Content");
         CachedHandler brHandler = inMemoryHandler("Brotli content")
                 .withRepresentation(ResponseRepresentation.encoded("br"));
@@ -117,6 +149,13 @@ public class StaticContentPreCompressedJmhTest {
                                                        MediaTypes.TEXT_PLAIN,
                                                        false,
                                                        benchmarkDirectory);
+        classpathIdentityHandler = new ClassPathContentHandler.CachedClassPathHandler(inMemoryHandler("Content"),
+                                                                                      CLASSPATH_RESOURCE,
+                                                                                      classpathIdentityUrl);
+        disabledClasspathIdentityHandler =
+                new ClassPathContentHandler.CachedClassPathHandler(inMemoryHandler("Content"),
+                                                                   CLASSPATH_RESOURCE,
+                                                                   classpathIdentityUrl);
         CachedHandler fileBrHandler = CachedHandlerPath.create(sidecarPath,
                                                                sidecarPath,
                                                                MediaTypes.TEXT_PLAIN,
@@ -147,8 +186,10 @@ public class StaticContentPreCompressedJmhTest {
 
     @TearDown
     public void tearDown() throws IOException {
+        classpathClassLoader.close();
         Files.deleteIfExists(sidecarPath);
         Files.deleteIfExists(identityPath);
+        Files.deleteIfExists(classpathJarPath);
         Files.deleteIfExists(benchmarkDirectory);
     }
 
@@ -180,6 +221,24 @@ public class StaticContentPreCompressedJmhTest {
     @Benchmark
     public CachedHandler cachedSidecarMiss() throws IOException, URISyntaxException {
         return handler.selectHandler(identityHandler, gzipRequest, sidecarResolver);
+    }
+
+    @Benchmark
+    @Threads(4)
+    public CachedHandler classpathJarMissingSidecarEnabled(JarMissingSidecarRequestState state)
+            throws IOException, URISyntaxException {
+        return classpathHandler.selectCachedClassPathHandler(CLASSPATH_RESOURCE,
+                                                             classpathIdentityHandler,
+                                                             state.request);
+    }
+
+    @Benchmark
+    @Threads(4)
+    public CachedHandler classpathJarMissingSidecarDisabled(JarMissingSidecarRequestState state)
+            throws IOException, URISyntaxException {
+        return disabledClasspathHandler.selectCachedClassPathHandler(CLASSPATH_RESOURCE,
+                                                                     disabledClasspathIdentityHandler,
+                                                                     state.request);
     }
 
     @Benchmark
@@ -229,6 +288,16 @@ public class StaticContentPreCompressedJmhTest {
         return ContentEncodingContext.builder()
                 .addContentEncoding(new TestEncoding())
                 .build();
+    }
+
+    @State(Scope.Thread)
+    public static class JarMissingSidecarRequestState {
+        private ServerRequest request;
+
+        @Setup
+        public void setup() {
+            request = request("gzip, identity;q=0.5", ContentEncodingContext.create());
+        }
     }
 
     private static UnsupportedOperationException unsupported() {
