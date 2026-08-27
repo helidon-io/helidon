@@ -1124,6 +1124,41 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void secondCloseBreaksBlockedConnectionWriter() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), false);
+
+            MockedConnectionTestContext.BlockedWrite blockedWrite = test.blockNextWriteNow();
+            CompletableFuture<Void> write = CompletableFuture.runAsync(
+                    () -> connection.writer().write(dataFrame(stream.streamId(), new byte[] {1}, false)));
+            assertThat(blockedWrite.awaitEntered(), is(true));
+
+            Http2ClientProtocolConfig noPing = Http2ClientProtocolConfig.builder()
+                    .ping(false)
+                    .buildPrototype();
+            CompletableFuture<Void> firstClose = CompletableFuture.runAsync(connection::close);
+            long deadline = System.nanoTime() + TEST_WAIT_TIMEOUT.toNanos();
+            while (!connection.closed(noPing) && System.nanoTime() < deadline) {
+                Thread.onSpinWait();
+            }
+            assertThat(connection.closed(noPing), is(true));
+
+            CompletableFuture<Void> secondClose = CompletableFuture.runAsync(connection::close);
+            secondClose.get(1, TimeUnit.SECONDS);
+            test.assertConnectionClosed();
+            firstClose.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            ExecutionException writeFailure = assertThrows(ExecutionException.class,
+                                                            () -> write.get(TEST_WAIT_TIMEOUT.toMillis(),
+                                                                            TimeUnit.MILLISECONDS));
+            assertThat(writeFailure.getCause(), instanceOf(UncheckedIOException.class));
+            stream.close();
+        }
+    }
+
+    @Test
     void closeBeforePrefaceDoesNotSendGoAway() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             AtomicReference<Http2ClientConnection> connectionRef = new AtomicReference<>();
@@ -1750,6 +1785,7 @@ class Http2ClientConnectionTest {
         private final AtomicBoolean failWrites = new AtomicBoolean();
         private final AtomicBoolean transportClosed = new AtomicBoolean();
         private final AtomicReference<BlockedWrite> blockedWrite = new AtomicReference<>();
+        private final AtomicReference<BlockedWrite> activeBlockedWrite = new AtomicReference<>();
         private final DataWriter dataWriter = mock(DataWriter.class);
         private final io.helidon.common.socket.HelidonSocket socket = mock(io.helidon.common.socket.HelidonSocket.class);
         private final Http2ClientConfig clientConfig;
@@ -1802,6 +1838,7 @@ class Http2ClientConnectionTest {
             when(clientConnection.helidonSocket()).thenReturn(socket);
             doAnswer(_ -> {
                 transportClosed.set(true);
+                failBlockedWrite();
                 return null;
             }).when(clientConnection).closeResource();
             when(socket.socketId()).thenReturn("test-socket");
@@ -1864,7 +1901,23 @@ class Http2ClientConnectionTest {
         private void maybeBlockWriteNow() {
             BlockedWrite block = blockedWrite.getAndSet(null);
             if (block != null) {
-                block.block();
+                activeBlockedWrite.set(block);
+                try {
+                    block.block();
+                } finally {
+                    activeBlockedWrite.compareAndSet(block, null);
+                }
+            }
+        }
+
+        private void failBlockedWrite() {
+            BlockedWrite block = blockedWrite.get();
+            if (block != null) {
+                block.releaseAndFail();
+            }
+            block = activeBlockedWrite.get();
+            if (block != null) {
+                block.releaseAndFail();
             }
         }
 
@@ -1883,16 +1936,17 @@ class Http2ClientConnectionTest {
 
         @Override
         public void close() {
+            failBlockedWrite();
             connectionExecutor.shutdownNow();
         }
 
         private static final class BlockedWrite {
             private final CountDownLatch entered = new CountDownLatch(1);
             private final CountDownLatch released = new CountDownLatch(1);
-            private final boolean failAfterRelease;
+            private final AtomicBoolean failAfterRelease;
 
             private BlockedWrite(boolean failAfterRelease) {
-                this.failAfterRelease = failAfterRelease;
+                this.failAfterRelease = new AtomicBoolean(failAfterRelease);
             }
 
             private boolean awaitEntered() throws InterruptedException {
@@ -1903,13 +1957,18 @@ class Http2ClientConnectionTest {
                 released.countDown();
             }
 
+            private void releaseAndFail() {
+                failAfterRelease.set(true);
+                release();
+            }
+
             private void block() {
                 entered.countDown();
                 try {
                     if (!released.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
                         throw new IllegalStateException("Timed out waiting for test to release blocked write");
                     }
-                    if (failAfterRelease) {
+                    if (failAfterRelease.get()) {
                         throw new UncheckedIOException(new IOException("expected blocked test write failure"));
                     }
                 } catch (InterruptedException e) {

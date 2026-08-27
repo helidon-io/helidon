@@ -516,7 +516,10 @@ public class Http2ClientConnection {
             closeConnection(failure);
             return;
         }
-        closeOrderingLock.lock();
+        if (!closeOrderingLock.tryLock()) {
+            closeConnection(failure);
+            return;
+        }
         try {
             closeFailure.compareAndSet(null, failure);
             Http2ErrorCode errorCode = failure instanceof Http2Exception http2Exception
