@@ -57,7 +57,7 @@ public class TypeValidationTest {
         var value = new NullableCascadingType(null,
                                               Collections.singletonList(null),
                                               map);
-        var arrayValue = new NullableCascadingArrayType(new ValidatedType[]{null});
+        var arrayValue = new NullableCascadingArrayType(new ValidatedType[] {null});
 
         assertThat(validator.validate(NullableCascadingType.class, value).valid(), is(true));
         assertThat(validator.validate(NullableCascadingArrayType.class, arrayValue).valid(), is(true));
