@@ -24,7 +24,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -410,15 +409,12 @@ class GrpcTeTrailersTest {
                 .build();
         AtomicInteger requestsProduced = new AtomicInteger();
         AtomicInteger responsesReceived = new AtomicInteger();
-        AtomicBoolean requestProductionResumed = new AtomicBoolean();
-        AtomicBoolean firstResponseReceived = new AtomicBoolean();
         AtomicReference<Throwable> failure = new AtomicReference<>();
         AtomicReference<Stream<Strings.StringMessage>> responseStream = new AtomicReference<>();
         AtomicReference<CountDownLatch> nextRequestProduced = new AtomicReference<>();
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         CountDownLatch requestProductionStarted = new CountDownLatch(1);
-        CountDownLatch postReleaseProgress = new CountDownLatch(2);
         pausedStarted.set(started);
         pausedRelease.set(release);
         pausedConsumed.set(0);
@@ -433,10 +429,6 @@ class GrpcTeTrailersTest {
                                        if (requestProduced != null) {
                                            requestProduced.countDown();
                                        }
-                                       if (release.getCount() == 0
-                                               && requestProductionResumed.compareAndSet(false, true)) {
-                                           postReleaseProgress.countDown();
-                                       }
                                        return request;
                                    }).limit(BIDI_MESSAGE_COUNT))) {
                 responseStream.set(responses);
@@ -445,12 +437,6 @@ class GrpcTeTrailersTest {
                     while (iterator.hasNext()) {
                         iterator.next();
                         responsesReceived.incrementAndGet();
-                        if (firstResponseReceived.compareAndSet(false, true)) {
-                            postReleaseProgress.countDown();
-                        }
-                        if (postReleaseProgress.getCount() == 0) {
-                            break;
-                        }
                     }
                 } finally {
                     responseStream.compareAndSet(responses, null);
@@ -460,7 +446,6 @@ class GrpcTeTrailersTest {
             }
         });
 
-        boolean postReleaseProgressObserved;
         boolean callCompleted;
         try {
             try {
@@ -491,10 +476,7 @@ class GrpcTeTrailersTest {
             } finally {
                 release.countDown();
             }
-            postReleaseProgressObserved = postReleaseProgress.await(30, TimeUnit.SECONDS);
-            if (postReleaseProgressObserved) {
-                call.join(TimeUnit.SECONDS.toMillis(10));
-            }
+            call.join(TimeUnit.SECONDS.toMillis(30));
             callCompleted = !call.isAlive();
         } finally {
             if (call.isAlive()) {
@@ -514,19 +496,20 @@ class GrpcTeTrailersTest {
             }
         }
 
-        assertThat("request production and response consumption resumed after server demand; produced="
-                           + requestsProduced.get()
-                           + ", consumed=" + pausedConsumed.get()
-                           + ", responses=" + responsesReceived.get(),
-                   postReleaseProgressObserved,
-                   is(true));
-        assertThat("request production resumed after server demand", requestProductionResumed.get(), is(true));
-        assertThat("response received after server demand", firstResponseReceived.get(), is(true));
-        assertThat("bidirectional call completed after post-demand progress; produced=" + requestsProduced.get()
+        assertThat("bidirectional call completed after server demand resumed; produced=" + requestsProduced.get()
                            + ", consumed=" + pausedConsumed.get()
                            + ", responses=" + responsesReceived.get(),
                    callCompleted,
                    is(true));
+        assertThat("request production completed after server demand resumed",
+                   requestsProduced.get(),
+                   is(BIDI_MESSAGE_COUNT));
+        assertThat("server consumed all requests after demand resumed",
+                   pausedConsumed.get(),
+                   is(BIDI_MESSAGE_COUNT));
+        assertThat("client consumed all responses after server demand resumed",
+                   responsesReceived.get(),
+                   is(BIDI_MESSAGE_COUNT));
         assertThat("bidirectional call failure", failure.get(), nullValue());
     }
 
