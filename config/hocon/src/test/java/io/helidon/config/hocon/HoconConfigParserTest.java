@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link HoconConfigParser}.
@@ -81,6 +82,226 @@ public class HoconConfigParserTest {
 
         assertThat(node.entrySet(), hasSize(1));
         assertThat(node.get("env-var"), valueNode("This Is My ENV VARS Value."));
+    }
+
+    @Test
+    void testReferencePathRegexSupportsHoconSyntaxAndHelidonEscaping() {
+        com.typesafe.config.Config hocon = com.typesafe.config.ConfigFactory.parseString(""
+                + "required = ${root.target}\n"
+                + "optional = ${? root.optional }\n"
+                + "requiredWithWhitespace = ${ root.spaced }\n"
+                + "quoted = ${root.\"oracle.com\"}\n");
+
+        assertThat(HoconConfigParser.references(hocon.root().get("required")),
+                   is(List.of(new HoconConfigParser.HoconReference(List.of("root", "target"), false))));
+        assertThat(HoconConfigParser.references(hocon.root().get("optional")),
+                   is(List.of(new HoconConfigParser.HoconReference(List.of("root", "optional"), true))));
+        assertThat(HoconConfigParser.references(hocon.root().get("requiredWithWhitespace")),
+                   is(List.of(new HoconConfigParser.HoconReference(List.of("root", "spaced"), false))));
+        assertThat(HoconConfigParser.references(hocon.root().get("quoted")),
+                   is(List.of(new HoconConfigParser.HoconReference(List.of("root", "oracle.com"), false))));
+        assertThat(HoconConfigParser.references(com.typesafe.config.ConfigValueFactory.fromAnyRef("${?same}${same}")),
+                   is(List.of(new HoconConfigParser.HoconReference(List.of("same"), true),
+                              new HoconConfigParser.HoconReference(List.of("same"), false))));
+        assertThat(HoconConfigParser.references(com.typesafe.config.ConfigValueFactory.fromAnyRef("\\${root.escaped}")),
+                   is(List.of()));
+        assertThat(HoconConfigParser.references(com.typesafe.config.ConfigValueFactory.fromAnyRef("${bad[}")),
+                   is(List.of()));
+        assertThat(HoconConfigParser.helidonPath(List.of("root", "oracle.com")),
+                   is("root.oracle~1com"));
+    }
+
+    @Test
+    void testUnresolvedMergeKeepsReferenceDeferred() {
+        String hocon = ""
+                + "root.object {\n"
+                + "  target: \"base\"\n"
+                + "  value: \"base\"\n"
+                + "}\n"
+                + "root.object {\n"
+                + "  value: ${root.object.target}\n"
+                + "}\n";
+
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create(Map.of("root.object.target", "override")))
+                .addSource(ConfigSources.create(hocon, MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("root.object.value").asString().orElse(null), is("override"));
+    }
+
+    @Test
+    void testUnresolvedMergeInListKeepsReferenceDeferred() {
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create(Map.of("T", "override")))
+                .addSource(ConfigSources.create("items = [{ a = \"base\", a = ${T} }]\n",
+                                                MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("items.0.a").asString().orElse(null), is("override"));
+    }
+
+    @Test
+    void testHiddenUnresolvedSubstitutionIsNotEvaluated() {
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create("foo = ${does-not-exist}\nfoo = 42\n",
+                                                MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("foo").asString().orElse(null), is("42"));
+    }
+
+    @Test
+    void testObjectReferenceUsesFinalMergedValue() {
+        String hocon = ""
+                + "bar : { foo : 42,\n"
+                + "        baz : ${bar.foo}\n"
+                + "      }\n"
+                + "bar : { foo : 43 }\n";
+
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create(hocon, MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("bar.baz").asString().orElse(null), is("43"));
+    }
+
+    @Test
+    void testIncludedSelfReferenceUsesIncludedValue() {
+        ConfigParser parser = HoconConfigParser.create();
+        ObjectNode node = parser.parse((StringContent) () -> ""
+                                               + "include \"prod\"\n"
+                                               + "basicAuthEnabledServices: ${basicAuthEnabledServices} [\n"
+                                               + "  \"canary-unstable-alpha\",\n"
+                                               + "  \"canary-unstable-beta\",\n"
+                                               + "  \"canary-unstable-gamma\"\n"
+                                               + "]\n",
+                                       name -> {
+                                           if ("prod.conf".equals(name)) {
+                                               return Optional.of(new ByteArrayInputStream((""
+                                                       + "basicAuthEnabledServices = [\"prod-service\"]\n")
+                                                       .getBytes(StandardCharsets.UTF_8)));
+                                           }
+                                           return Optional.empty();
+                                       });
+
+        ListNode services = (ListNode) node.get("basicAuthEnabledServices");
+        assertThat(services, hasSize(4));
+        assertThat(services.get(0), valueNode("prod-service"));
+        assertThat(services.get(1), valueNode("canary-unstable-alpha"));
+        assertThat(services.get(2), valueNode("canary-unstable-beta"));
+        assertThat(services.get(3), valueNode("canary-unstable-gamma"));
+    }
+
+    @Test
+    void testMissingSelfReferenceStillFails() {
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create(""
+                                                        + "basicAuthEnabledServices: ${basicAuthEnabledServices} [\n"
+                                                        + "  \"canary-unstable-alpha\",\n"
+                                                        + "  \"canary-unstable-beta\",\n"
+                                                        + "  \"canary-unstable-gamma\"\n"
+                                                        + "]\n",
+                                                MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                       () -> config.get("basicAuthEnabledServices")
+                                                               .asList(String.class)
+                                                               .get());
+        assertThat(exception.getMessage(), is("Recursive update"));
+    }
+
+    @Test
+    void testMetricsOverrideReferenceMaterializesDelayedMerge() {
+        String hocon = ""
+                + "metrics.publishers.oci {\n"
+                + "  type: oci\n"
+                + "  enabled: false\n"
+                + "  sample-gauges: false\n"
+                + "  gauge-sample-interval = \"PT3S\"\n"
+                + "  project = \"emailMessageTransformerApi\"\n"
+                + "  fleet = \"\"\n"
+                + "}\n"
+                + "metrics.publishers.oci {\n"
+                + "  type: oci\n"
+                + "  enabled: true\n"
+                + "  project: ${T2_PROJECT}\n"
+                + "  fleet: ${T2_FLEET}\n"
+                + "  sample-gauges: false\n"
+                + "  default-dimensions {\n"
+                + "    project: ${T2_PROJECT}\n"
+                + "    fleet: ${T2_FLEET}\n"
+                + "  }\n"
+                + "}\n";
+
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create(Map.of("T2_PROJECT", "ed_dedicated_intc",
+                                                       "T2_FLEET", "ed-intc-omta")))
+                .addSource(ConfigSources.create(hocon, MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("metrics.publishers.oci.project").asString().orElse(null), is("ed_dedicated_intc"));
+        assertThat(config.get("metrics.publishers.oci.fleet").asString().orElse(null), is("ed-intc-omta"));
+        assertThat(config.get("metrics.publishers.oci.default-dimensions.project").asString().orElse(null),
+                   is("ed_dedicated_intc"));
+        assertThat(config.get("metrics.publishers.oci.default-dimensions.fleet").asString().orElse(null),
+                   is("ed-intc-omta"));
+    }
+
+    @Test
+    void testMixedOptionalAndRequiredReferenceDefersOnlyRequiredOccurrence() {
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create(Map.of("external", "override")))
+                .addSource(ConfigSources.create("value = ${?external}${external}\n",
+                                                MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("value").asString().orElse(null), is("override"));
+    }
+
+    @Test
+    void testQuotedReferenceUsesHelidonEscapedKey() {
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create("root.\"oracle.com\" = override\n",
+                                                MediaTypes.APPLICATION_HOCON))
+                .addSource(ConfigSources.create("value = ${root.\"oracle.com\"}\n",
+                                                MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("value").asString().orElse(null), is("override"));
     }
 
     @Test
