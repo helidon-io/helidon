@@ -391,6 +391,15 @@ identity and workflow state exchange. The key difference is that agent results
 are commonly written into shared agentic context (for example via `outputKey`)
 so that other agents can consume them in subsequent workflow steps.
 
+> [!WARNING]
+> When upgrading from an earlier Helidon LangChain4j integration to the
+> 1.18.1-based version, run a clean build (for example, `mvn clean package`) to
+> regenerate all Helidon Agentic service classes. Previously generated classes
+> invoke an upstream `AgenticServices.createAgenticSystem(...)` overload removed
+> in LangChain4j 1.18.1, so stale generated sources can fail compilation and
+> stale compiled classes can throw `NoSuchMethodError` when initialized. Current
+> generated classes use the replacement `AgentConfigurator` API.
+
 To define a named agent create an interface using `@Ai.Agent` and annotate the
 method with LangChain4j `@Agent`:
 
