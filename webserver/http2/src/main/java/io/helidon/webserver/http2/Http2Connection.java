@@ -34,6 +34,9 @@ import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.http.DateTime;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -874,13 +877,22 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
         HttpPrologue httpPrologue;
         try {
-            validateRequestTarget(method, path);
-            httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
-                                               PROTOCOL,
-                                               PROTOCOL_VERSION,
-                                               method,
-                                               path,
-                                               http2Config.validatePath());
+            if (validateRequestTarget(method, path)) {
+                httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
+                                                   PROTOCOL,
+                                                   PROTOCOL_VERSION,
+                                                   method,
+                                                   UriPath.createRelative(UriPath.root(), path),
+                                                   UriQuery.empty(),
+                                                   UriFragment.empty());
+            } else {
+                httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
+                                                   PROTOCOL,
+                                                   PROTOCOL_VERSION,
+                                                   method,
+                                                   path,
+                                                   http2Config.validatePath());
+            }
         } catch (IllegalArgumentException ignored) {
             stream.resetProtocolError(0, endOfStream);
             state = State.READ_FRAME;
@@ -901,17 +913,18 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
     }
 
-    private void validateRequestTarget(Method method, String requestTarget) {
+    private boolean validateRequestTarget(Method method, String requestTarget) {
+        boolean specialRequestTarget = Method.OPTIONS.equals(method) && "*".equals(requestTarget);
         if (!http2Config.validatePath()) {
-            return;
+            return specialRequestTarget;
         }
-        if (Method.OPTIONS.equals(method) && "*".equals(requestTarget)) {
-            return;
+        if (specialRequestTarget) {
+            return true;
         }
         if (!requestTarget.isEmpty()
                 && requestTarget.charAt(0) == '/'
                 && requestTarget.indexOf('#') == -1) {
-            return;
+            return false;
         }
         throw new IllegalArgumentException("Invalid HTTP/2 request-target form");
     }

@@ -20,6 +20,9 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriValidator;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
@@ -159,21 +162,21 @@ public final class Http1Prologue {
         return maybePost == POST_INT;
     }
 
-    private static void validateRequestTarget(Method method, String requestTarget) {
+    private static boolean validateRequestTarget(Method method, String requestTarget) {
         if (Method.CONNECT.equals(method)) {
             if (isAuthorityForm(requestTarget)) {
-                return;
+                return true;
             }
         } else if ("*".equals(requestTarget)) {
             if (Method.OPTIONS.equals(method)) {
-                return;
+                return true;
             }
         } else {
             if (requestTarget.indexOf('#') >= 0) {
                 throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
             }
             if (requestTarget.charAt(0) == '/' || isAbsoluteForm(requestTarget)) {
-                return;
+                return false;
             }
             throw new IllegalArgumentException("Relative path in HTTP request-target");
         }
@@ -314,8 +317,21 @@ public final class Http1Prologue {
         }
 
         try {
+            boolean specialRequestTarget;
             if (validatePath) {
-                validateRequestTarget(method, path);
+                specialRequestTarget = validateRequestTarget(method, path);
+            } else {
+                specialRequestTarget = (Method.CONNECT.equals(method) && isAuthorityForm(path))
+                        || (Method.OPTIONS.equals(method) && "*".equals(path));
+            }
+            if (specialRequestTarget) {
+                return HttpPrologue.create(protocol,
+                                           "HTTP",
+                                           "1.1",
+                                           method,
+                                           UriPath.createRelative(UriPath.root(), path),
+                                           UriQuery.empty(),
+                                           UriFragment.empty());
             }
             return HttpPrologue.create(protocol,
                                        "HTTP",

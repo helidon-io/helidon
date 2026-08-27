@@ -104,6 +104,8 @@ class Http1PrologueTest {
 
         assertThat(prologue.method(), is(Method.OPTIONS));
         assertThat(prologue.uriPath().rawPath(), is("*"));
+        assertThat(prologue.uriPath().path(), is("*"));
+        assertThat(prologue.uriPath().absolute().path(), is("/"));
     }
 
     @Test
@@ -129,6 +131,8 @@ class Http1PrologueTest {
 
         assertThat(prologue.method(), is(Method.CONNECT));
         assertThat(prologue.uriPath().rawPath(), is("example.com:443"));
+        assertThat(prologue.uriPath().path(), is("example.com:443"));
+        assertThat(prologue.uriPath().absolute().path(), is("/"));
     }
 
     @Test
