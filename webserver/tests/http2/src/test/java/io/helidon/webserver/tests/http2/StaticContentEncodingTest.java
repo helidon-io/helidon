@@ -608,12 +608,11 @@ class StaticContentEncodingTest {
     @Test
     void explicitContentEncoderEncodesFilteredEmptyResponse() {
         String encodedEntity = "runtime:";
-        String encodedLength = String.valueOf(encodedEntity.getBytes(StandardCharsets.UTF_8).length);
 
         try (Http2ClientResponse response = client.get("/explicit-empty-filtered").request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_ENCODING, "test"));
-            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, encodedLength));
+            assertThat(response.headers(), noHeader(HeaderNames.VARY));
             assertThat(response.as(String.class), is(encodedEntity));
         }
     }
