@@ -1159,6 +1159,26 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void closeBreaksBlockedRetirementGoAway() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(1));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), false);
+
+            connection.retire();
+            MockedConnectionTestContext.BlockedWrite blockedRetirement = test.blockNextWriteNow();
+            CompletableFuture<Void> drained = CompletableFuture.runAsync(stream::close);
+            assertThat(blockedRetirement.awaitEntered(), is(true));
+
+            CompletableFuture<Void> closed = CompletableFuture.runAsync(connection::close);
+            closed.get(1, TimeUnit.SECONDS);
+            test.assertConnectionClosed();
+            drained.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        }
+    }
+
+    @Test
     void closeBeforePrefaceDoesNotSendGoAway() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             AtomicReference<Http2ClientConnection> connectionRef = new AtomicReference<>();

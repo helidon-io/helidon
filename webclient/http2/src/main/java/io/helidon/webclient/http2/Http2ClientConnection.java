@@ -525,6 +525,12 @@ public class Http2ClientConnection {
             Http2ErrorCode errorCode = failure instanceof Http2Exception http2Exception
                     ? http2Exception.code()
                     : Http2ErrorCode.NO_ERROR;
+            // A normal close must reach the transport to break an in-flight retirement GOAWAY write.
+            if (errorCode == Http2ErrorCode.NO_ERROR
+                    && state.get() == State.GO_AWAY
+                    && goAwayWriteComplete.getCount() != 0) {
+                return;
+            }
             // A protocol error must put GOAWAY on the wire before a failed request can make its caller exit.
             this.goAway(0, errorCode, failure.getMessage());
         } catch (Throwable e) {
