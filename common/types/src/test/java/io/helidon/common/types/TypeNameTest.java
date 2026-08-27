@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -356,6 +356,86 @@ class TypeNameTest {
                    is("java.util.List"));
     }
 
+    @Test
+    void arrayTypeArgumentsFromString() {
+        TypeName typeName = TypeName.create("pkg.Emitter<byte[]>");
+        TypeName typeArgument = typeName.typeArguments().getFirst();
+
+        assertThat(typeName.resolvedName(), is("pkg.Emitter<byte[]>"));
+        assertThat(typeArgument.name(), is("byte"));
+        assertThat(typeArgument.resolvedName(), is("byte[]"));
+        assertThat(typeArgument.primitive(), is(true));
+        assertThat(typeArgument.array(), is(true));
+        assertThat(typeArgument.vararg(), is(false));
+        assertThat(typeArgument.componentType(), is(Optional.of(TypeNames.PRIMITIVE_BYTE)));
+
+        typeName = TypeName.create("pkg.Emitter<int[][]>");
+        typeArgument = typeName.typeArguments().getFirst();
+
+        assertThat(typeName.resolvedName(), is("pkg.Emitter<int[][]>"));
+        assertThat(typeArgument.primitive(), is(true));
+        assertThat(typeArgument.array(), is(true));
+        assertThat(typeArgument.componentType().orElseThrow().resolvedName(), is("int[]"));
+
+        typeName = TypeName.create("pkg.Emitter<java.lang.String[]>");
+        typeArgument = typeName.typeArguments().getFirst();
+
+        assertThat(typeName.resolvedName(), is("pkg.Emitter<java.lang.String[]>"));
+        assertThat(typeArgument.name(), is("java.lang.String"));
+        assertThat(typeArgument.array(), is(true));
+        assertThat(typeArgument.primitive(), is(false));
+        assertThat(typeArgument.componentType(), is(Optional.of(TypeNames.STRING)));
+    }
+
+    @Test
+    void genericAliasTypeArgumentsRemainGeneric() {
+        TypeName typeName = TypeName.create("pkg.Emitter<T>");
+        TypeName typeArgument = typeName.typeArguments().getFirst();
+
+        assertThat(typeName.resolvedName(), is("pkg.Emitter<T>"));
+        assertThat(typeArgument.className(), is("T"));
+        assertThat(typeArgument.generic(), is(true));
+        assertThat(typeArgument.array(), is(false));
+
+        typeName = TypeName.create("pkg.Emitter<T[]>");
+        typeArgument = typeName.typeArguments().getFirst();
+
+        assertThat(typeName.resolvedName(), is("pkg.Emitter<T[]>"));
+        assertThat(typeArgument.array(), is(true));
+        assertThat(typeArgument.componentType().orElseThrow().className(), is("T"));
+        assertThat(typeArgument.componentType().orElseThrow().generic(), is(true));
+    }
+
+    @Test
+    void genericAliasArrayBoundsRetainDimensions() {
+        TypeName typeName = TypeName.create("pkg.Box<? extends T[]>");
+        TypeName bound = typeName.typeArguments().getFirst().upperBounds().getFirst();
+
+        assertThat(typeName.resolvedName(), is("pkg.Box<? extends T[]>"));
+        assertThat(bound.resolvedName(), is("T[]"));
+
+        typeName = TypeName.create("pkg.Box<? super T[][]>");
+        bound = typeName.typeArguments().getFirst().lowerBounds().getFirst();
+
+        assertThat(typeName.resolvedName(), is("pkg.Box<? super T[][]>"));
+        assertThat(bound.resolvedName(), is("T[][]"));
+    }
+
+    @Test
+    void reflectedGenericArraysRetainTheSameRecursiveStructure() throws NoSuchFieldException {
+        TypeName parsedOne = TypeName.create("pkg.Emitter<T[]>").typeArguments().getFirst();
+        TypeName reflectedOne = TypeName.create(GenericArrays.class.getDeclaredField("one").getGenericType());
+
+        assertThat(reflectedOne.resolvedName(), is("T[]"));
+        assertThat(reflectedOne.componentType().orElseThrow().resolvedName(), is("T"));
+        assertThat(reflectedOne, is(parsedOne));
+
+        TypeName reflectedTwo = TypeName.create(GenericArrays.class.getDeclaredField("two").getGenericType());
+        assertThat(reflectedTwo.resolvedName(), is("T[][]"));
+        assertThat(reflectedTwo.componentType().orElseThrow().resolvedName(), is("T[]"));
+        assertThat(reflectedTwo.componentType().orElseThrow().componentType().orElseThrow().resolvedName(), is("T"));
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void declaredName() {
@@ -628,6 +708,11 @@ class TypeNameTest {
                                false),
                 new EqualsData(create(TypeNameTest.class), "Some string", false, false)
         );
+    }
+
+    private static final class GenericArrays<T> {
+        private T[] one;
+        private T[][] two;
     }
 
     @SuppressWarnings("rawtypes")

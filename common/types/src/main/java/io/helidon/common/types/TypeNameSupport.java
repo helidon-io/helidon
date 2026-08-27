@@ -248,7 +248,9 @@ final class TypeNameSupport {
         }
         if (reflectGenericType instanceof TypeVariable<?> tv) {
             for (Type bound : tv.getBounds()) {
-                builder.addUpperBound(TypeName.create(bound));
+                if (!Object.class.equals(bound)) {
+                    builder.addUpperBound(TypeName.create(bound));
+                }
             }
 
             builder.className(tv.getName())
@@ -259,6 +261,7 @@ final class TypeNameSupport {
             TypeName componentType = TypeName.create(ga.getGenericComponentType());
 
             builder.from(componentType)
+                    .componentType(componentType)
                     .array(true);
             return;
         }
@@ -343,21 +346,7 @@ final class TypeNameSupport {
             // A, java.lang.String, B
             Stream.of(genericSection.split(","))
                     .map(String::trim) // remove possible spaces
-                    .map(it -> {
-                        if (it.contains(" extends ")) {
-                            // T extends io.helidon.webserver.spi.ServerFeature
-                            return createExtends(it);
-                        } else if (it.contains(" super ")) {
-                            // T super java.lang.String
-                            return createSuper(it);
-                        } else {
-                            if (it.contains(".")) {
-                                return TypeName.create(it);
-                            } else {
-                                return TypeName.createFromGenericDeclaration(it);
-                            }
-                        }
-                    })
+                    .map(TypeNameSupport::createTypeArgument)
                     .forEach(builder::addTypeArgument);
         }
         // a.b.c.SomeClass
@@ -409,6 +398,37 @@ final class TypeNameSupport {
                 .build();
     }
 
+    private static TypeName createTypeArgument(String declaration) {
+        if (declaration.contains(" extends ")) {
+            return createExtends(declaration);
+        }
+        if (declaration.contains(" super ")) {
+            return createSuper(declaration);
+        }
+        if (declaration.endsWith("[]")) {
+            TypeName componentType = createTypeArgument(declaration.substring(0, declaration.length() - 2));
+            return TypeName.builder(componentType)
+                    .componentType(componentType)
+                    .array(true)
+                    .build();
+        }
+        if (declaration.endsWith("...")) {
+            TypeName componentType = createTypeArgument(declaration.substring(0, declaration.length() - 3));
+            return TypeName.builder(componentType)
+                    .componentType(componentType)
+                    .array(true)
+                    .vararg(true)
+                    .build();
+        }
+        TypeName primitive = PRIMITIVES.get(declaration);
+        if (primitive != null) {
+            return primitive;
+        }
+        return declaration.contains(".")
+                ? TypeName.create(declaration)
+                : TypeName.createFromGenericDeclaration(declaration);
+    }
+
     private static TypeName createExtends(String typeNames) {
         // T extends io.helidon.webserver.spi.ServerFeature
         int index = typeNames.indexOf(" extends ");
@@ -417,11 +437,7 @@ final class TypeNameSupport {
                 .generic(true)
                 .className(typeNames.substring(0, index));
         String theOtherPart = typeNames.substring(index + 9);
-        if (theOtherPart.contains(".")) {
-            builder.addUpperBound(TypeName.create(theOtherPart));
-        } else {
-            builder.addUpperBound(TypeName.createFromGenericDeclaration(theOtherPart));
-        }
+        builder.addUpperBound(createTypeArgument(theOtherPart));
         return builder.build();
     }
 
@@ -433,37 +449,43 @@ final class TypeNameSupport {
                 .generic(true)
                 .className(typeNames.substring(0, index));
         String theOtherPart = typeNames.substring(index + 7);
-        if (theOtherPart.contains(".")) {
-            builder.addLowerBound(TypeName.create(theOtherPart));
-        } else {
-            builder.addLowerBound(TypeName.createFromGenericDeclaration(theOtherPart));
-        }
+        builder.addLowerBound(createTypeArgument(theOtherPart));
         return builder.build();
     }
 
     private static String resolveGenericName(TypeName instance) {
         // ?, ? super Something; ? extends Something
         String prefix = instance.wildcard() ? "?" : instance.className();
+        String resolvedName;
         if (instance.upperBounds().isEmpty() && instance.lowerBounds().isEmpty()) {
-            return prefix;
-        }
-        if (instance.lowerBounds().isEmpty()) {
-            return prefix + " extends " + instance.upperBounds()
+            resolvedName = prefix;
+        } else if (instance.lowerBounds().isEmpty()) {
+            resolvedName = prefix + " extends " + instance.upperBounds()
                     .stream()
-                    .map(it -> {
-                        if (it.generic()) {
-                            return it.wildcard() ? "?" : it.className();
-                        }
-                        return it.resolvedName();
-                    })
+                    .map(TypeNameSupport::resolveBoundName)
                     .collect(Collectors.joining(" & "));
+        } else {
+            TypeName lowerBound = instance.lowerBounds().getFirst();
+            resolvedName = prefix + " super " + resolveBoundName(lowerBound);
         }
-        TypeName lowerBound = instance.lowerBounds().getFirst();
-        if (lowerBound.generic()) {
-            return prefix + " super " + (lowerBound.wildcard() ? "?" : lowerBound.className());
-        }
-        return prefix + " super " + lowerBound.resolvedName();
 
+        StringBuilder result = new StringBuilder(resolvedName);
+        if (instance.array()) {
+            addArrayBrackets(instance, result, true);
+        }
+        return result.toString();
+    }
+
+    private static String resolveBoundName(TypeName bound) {
+        if (!bound.generic()) {
+            return bound.resolvedName();
+        }
+
+        StringBuilder result = new StringBuilder(bound.wildcard() ? "?" : bound.className());
+        if (bound.array()) {
+            addArrayBrackets(bound, result, true);
+        }
+        return result.toString();
     }
 
     private static String resolveClassName(TypeName instance) {
