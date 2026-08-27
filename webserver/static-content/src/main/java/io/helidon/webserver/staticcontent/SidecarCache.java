@@ -59,7 +59,7 @@ final class SidecarCache {
         }
 
         AtomicReference<CompletableFuture<Optional<CachedHandler>>> slot =
-                resolutions.computeIfAbsent(coding, ignored -> new AtomicReference<>());
+                resolutions.computeIfAbsent(coding, _ -> new AtomicReference<>());
         CompletableFuture<Optional<CachedHandler>> existing = slot.get();
         if (existing != null) {
             return await(existing);

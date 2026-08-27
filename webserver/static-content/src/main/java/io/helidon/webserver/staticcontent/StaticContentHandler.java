@@ -766,6 +766,24 @@ abstract class StaticContentHandler implements HttpService {
         return Integer.compare(firstOrder, second.order());
     }
 
+    private static RepresentationCandidate bestCandidate(List<RepresentationCandidate> candidates) {
+        RepresentationCandidate best = null;
+        for (RepresentationCandidate candidate : candidates) {
+            if (best == null || compareCandidates(candidate, best) < 0) {
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    private static void removeCandidates(List<RepresentationCandidate> candidates, SidecarSource sidecar) {
+        for (int i = candidates.size() - 1; i >= 0; i--) {
+            if (candidates.get(i).sidecar() == sidecar) {
+                candidates.remove(i);
+            }
+        }
+    }
+
     private CachedHandler selectCandidate(List<RepresentationCandidate> staticCandidates,
                                           AcceptEncoding acceptEncoding,
                                           ServerRequest request,
@@ -851,24 +869,6 @@ abstract class StaticContentHandler implements HttpService {
                                                                                     selected.encoder()));
         }
         return identityHandler.withRepresentation(identityRepresentation);
-    }
-
-    private static RepresentationCandidate bestCandidate(List<RepresentationCandidate> candidates) {
-        RepresentationCandidate best = null;
-        for (RepresentationCandidate candidate : candidates) {
-            if (best == null || compareCandidates(candidate, best) < 0) {
-                best = candidate;
-            }
-        }
-        return best;
-    }
-
-    private static void removeCandidates(List<RepresentationCandidate> candidates, SidecarSource sidecar) {
-        for (int i = candidates.size() - 1; i >= 0; i--) {
-            if (candidates.get(i).sidecar() == sidecar) {
-                candidates.remove(i);
-            }
-        }
     }
 
     private enum CandidateType {
