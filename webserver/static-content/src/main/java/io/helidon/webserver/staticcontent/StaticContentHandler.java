@@ -325,7 +325,7 @@ abstract class StaticContentHandler implements HttpService {
             return identityHandler.withRepresentation(identityRepresentation);
         }
 
-        List<RepresentationCandidate> staticCandidates = new ArrayList<>();
+        List<RepresentationCandidate> staticCandidates = new ArrayList<>(preCompressedEncodings.size() + 1);
         RepresentationCandidate identityCandidate = acceptEncoding.identity()
                 .map(RepresentationCandidate::identity)
                 .orElse(null);
@@ -780,26 +780,22 @@ abstract class StaticContentHandler implements HttpService {
         CachedHandlerSelection selectedSidecarHandler = null;
 
         while (true) {
-            bestStaticCandidate = availableStaticCandidates.stream()
-                    .min(StaticContentHandler::compareCandidates)
-                    .orElse(null);
+            bestStaticCandidate = bestCandidate(availableStaticCandidates);
             if (bestStaticCandidate == null || bestStaticCandidate.type() != CandidateType.SIDECAR) {
                 break;
             }
 
             SidecarSource sidecar = bestStaticCandidate.sidecar();
-            List<RepresentationCandidate> remainingStaticCandidates = new ArrayList<>(availableStaticCandidates);
-            remainingStaticCandidates.removeIf(candidate -> candidate.sidecar() == sidecar);
             Optional<CachedHandler> resolved;
             try {
                 resolved = sidecarCache.resolve(sidecar.coding(), sidecar.suffix(), sidecarResolver);
             } catch (ForbiddenException | IOException | URISyntaxException e) {
                 LOGGER.log(Level.TRACE, "Failed to resolve pre-compressed static resource", e);
-                availableStaticCandidates = remainingStaticCandidates;
+                removeCandidates(availableStaticCandidates, sidecar);
                 continue;
             }
             if (resolved.isEmpty()) {
-                availableStaticCandidates = remainingStaticCandidates;
+                removeCandidates(availableStaticCandidates, sidecar);
                 continue;
             }
 
@@ -808,30 +804,31 @@ abstract class StaticContentHandler implements HttpService {
                                                                 sidecarCache,
                                                                 sidecar.coding())
                     .withRepresentation(ResponseRepresentation.encoded(bestStaticCandidate.contentEncoding()));
-            fallbackStaticCandidates = remainingStaticCandidates;
+            fallbackStaticCandidates = new ArrayList<>(availableStaticCandidates);
+            removeCandidates(fallbackStaticCandidates, sidecar);
             break;
         }
 
-        List<RepresentationCandidate> candidates = new ArrayList<>();
-        if (bestStaticCandidate != null) {
-            candidates.add(bestStaticCandidate);
-        }
         List<RuntimeEncoding> runtimeEncodings = runtimeEncodings(request, acceptEncoding, bestStaticCandidate);
-        for (int i = 0; i < runtimeEncodings.size(); i++) {
-            RuntimeEncoding runtimeEncoding = runtimeEncodings.get(i);
-            candidates.add(RepresentationCandidate.runtime(runtimeEncoding.quality(),
-                                                           i,
-                                                           runtimeEncoding.encoder(),
-                                                           runtimeEncoding.contentEncoding()));
+        RepresentationCandidate selected = bestStaticCandidate;
+        if (!runtimeEncodings.isEmpty()) {
+            List<RepresentationCandidate> candidates = new ArrayList<>(runtimeEncodings.size() + 1);
+            if (bestStaticCandidate != null) {
+                candidates.add(bestStaticCandidate);
+            }
+            for (int i = 0; i < runtimeEncodings.size(); i++) {
+                RuntimeEncoding runtimeEncoding = runtimeEncodings.get(i);
+                candidates.add(RepresentationCandidate.runtime(runtimeEncoding.quality(),
+                                                               i,
+                                                               runtimeEncoding.encoder(),
+                                                               runtimeEncoding.contentEncoding()));
+            }
+            selected = bestCandidate(candidates);
         }
 
-        if (candidates.isEmpty()) {
+        if (selected == null) {
             return new CachedHandlerNotAcceptable(identityHandler, identityRepresentation);
         }
-
-        RepresentationCandidate selected = candidates.stream()
-                .min(StaticContentHandler::compareCandidates)
-                .orElseThrow();
 
         if (selected.type() == CandidateType.SIDECAR) {
             CachedHandlerSelection sidecarHandler = selectedSidecarHandler;
@@ -854,6 +851,24 @@ abstract class StaticContentHandler implements HttpService {
                                                                                     selected.encoder()));
         }
         return identityHandler.withRepresentation(identityRepresentation);
+    }
+
+    private static RepresentationCandidate bestCandidate(List<RepresentationCandidate> candidates) {
+        RepresentationCandidate best = null;
+        for (RepresentationCandidate candidate : candidates) {
+            if (best == null || compareCandidates(candidate, best) < 0) {
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    private static void removeCandidates(List<RepresentationCandidate> candidates, SidecarSource sidecar) {
+        for (int i = candidates.size() - 1; i >= 0; i--) {
+            if (candidates.get(i).sidecar() == sidecar) {
+                candidates.remove(i);
+            }
+        }
     }
 
     private enum CandidateType {
