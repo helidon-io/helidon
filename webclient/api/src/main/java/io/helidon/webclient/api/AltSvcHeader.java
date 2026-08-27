@@ -422,6 +422,7 @@ public final class AltSvcHeader {
         int emptyElements = initialEmptyElements;
         boolean quoted = false;
         boolean escaped = false;
+        boolean malformed = emptyElements > MAX_EMPTY_LIST_ELEMENTS;
         boolean tooMany = false;
         boolean clear = false;
         for (int index = 0; index <= value.length(); index++) {
@@ -448,9 +449,11 @@ public final class AltSvcHeader {
 
             String element = trimOws(value.substring(elementStart, index));
             if (element.isEmpty()) {
-                emptyElements++;
+                if (emptyElements <= MAX_EMPTY_LIST_ELEMENTS) {
+                    emptyElements++;
+                }
                 if (emptyElements > MAX_EMPTY_LIST_ELEMENTS) {
-                    return new AlternativeListResult(clear, true, tooMany, emptyElements);
+                    malformed = true;
                 }
             } else if ("clear".equals(element)) {
                 clear = true;
@@ -461,7 +464,7 @@ public final class AltSvcHeader {
             }
             elementStart = index + 1;
         }
-        return new AlternativeListResult(clear, false, tooMany, emptyElements);
+        return new AlternativeListResult(clear, malformed, tooMany, emptyElements);
     }
 
     private static Optional<List<String>> splitValues(String value, char delimiter) {

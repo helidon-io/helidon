@@ -383,7 +383,8 @@ class AltSvcHeaderTest {
 
         String flood = ",".repeat(33) + "h3=\":443\"";
         assertThat(AltSvcHeader.create(responseHeaders(flood), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.create(responseHeaders(flood + ",clear"), RECEIVED_AT).isEmpty(), is(true));
+        assertClear(responseHeaders(",".repeat(33) + "clear"));
+        assertClear(responseHeaders(flood + ",clear"));
         assertThat(AltSvcHeader.create(responseHeaders(",".repeat(16) + "h3=\":443\"",
                                                      ",".repeat(17) + "h2=\":8443\""),
                                       RECEIVED_AT).isEmpty(),

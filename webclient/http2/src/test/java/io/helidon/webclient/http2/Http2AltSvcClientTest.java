@@ -202,6 +202,28 @@ class Http2AltSvcClientTest {
     }
 
     @Test
+    void clearAfterEmptyElementBoundInvalidatesAlternative() {
+        try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
+            Instant advertisementTime = Instant.now();
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID,
+                                                                    false,
+                                                                    Status.OK_200,
+                                                                    responseHeaders(),
+                                                                    advertisementTime));
+            assertThat(context.client.supports(context.request, context.uri), is(HttpClientSpi.SupportLevel.SUPPORTED));
+
+            context.client.responseReceived(context.directResponse(Http1Client.PROTOCOL_ID,
+                                                                    false,
+                                                                    Status.OK_200,
+                                                                    responseHeaders(",".repeat(33) + "clear"),
+                                                                    advertisementTime.plusNanos(1)));
+
+            assertThat(context.client.supports(context.request, context.uri),
+                       is(HttpClientSpi.SupportLevel.NOT_SUPPORTED));
+        }
+    }
+
+    @Test
     void ignoresAdvertisementFromExplicitConnection() {
         try (TestContext context = TestContext.create(ClientAltSvcConfig.create())) {
             context.client.responseReceived(context.directResponse(Http2Client.PROTOCOL_ID, true, Status.OK_200));
