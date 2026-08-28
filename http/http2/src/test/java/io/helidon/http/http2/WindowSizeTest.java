@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -122,33 +123,37 @@ class WindowSizeTest {
     }
 
     @Test
-    void streamCloseReleasesConnectionWindowWaitWithoutClosingSibling() throws InterruptedException {
+    void streamCloseReleasesConnectionWindowWaitWithoutWakingSibling() throws InterruptedException {
         ConnectionFlowControl connection = ConnectionFlowControl.clientBuilder((_, _) -> { })
                 .blockTimeout(Duration.ofSeconds(10))
                 .build();
-        WindowSize.Outbound connectionWindow = connection.outbound();
+        WindowSizeImpl.Outbound connectionWindow = (WindowSizeImpl.Outbound) connection.outbound();
         connectionWindow.decrementWindowSize(connectionWindow.getRemainingWindowSize());
-        FlowControl.Outbound first = connection.createStreamFlowControl(1,
-                                                                         WindowSize.DEFAULT_WIN_SIZE,
-                                                                         WindowSize.DEFAULT_MAX_FRAME_SIZE)
-                .outbound();
-        FlowControl.Outbound sibling = connection.createStreamFlowControl(3,
-                                                                           WindowSize.DEFAULT_WIN_SIZE,
-                                                                           WindowSize.DEFAULT_MAX_FRAME_SIZE)
-                .outbound();
+        AtomicBoolean firstClosed = new AtomicBoolean();
+        AtomicBoolean siblingClosed = new AtomicBoolean();
+        AtomicInteger firstChecks = new AtomicInteger();
+        AtomicInteger siblingChecks = new AtomicInteger();
+        WindowSizeImpl.Outbound.ConnectionWindowWaiter first = connectionWindow.createConnectionWindowWaiter(() -> {
+            firstChecks.incrementAndGet();
+            return firstClosed.get();
+        });
+        WindowSizeImpl.Outbound.ConnectionWindowWaiter sibling = connectionWindow.createConnectionWindowWaiter(() -> {
+            siblingChecks.incrementAndGet();
+            return siblingClosed.get();
+        });
         AtomicReference<Throwable> firstFailure = new AtomicReference<>();
         AtomicReference<Throwable> siblingFailure = new AtomicReference<>();
         AtomicBoolean siblingReturned = new AtomicBoolean();
         Thread firstBlocker = Thread.ofVirtual().start(() -> {
             try {
-                first.blockTillUpdate();
+                connectionWindow.blockTillUpdate(first);
             } catch (Throwable t) {
                 firstFailure.set(t);
             }
         });
         Thread siblingBlocker = Thread.ofVirtual().start(() -> {
             try {
-                sibling.blockTillUpdate();
+                connectionWindow.blockTillUpdate(sibling);
                 siblingReturned.set(true);
             } catch (Throwable t) {
                 siblingFailure.set(t);
@@ -164,25 +169,138 @@ class WindowSizeTest {
             assertThat("first flow-control wait must start", firstBlocker.getState(), is(Thread.State.TIMED_WAITING));
             assertThat("sibling flow-control wait must start", siblingBlocker.getState(), is(Thread.State.TIMED_WAITING));
 
-            first.streamClosed();
+            int siblingChecksBeforeReset = siblingChecks.get();
+            assertThat("first stream cancellation must be checked before waiting", firstChecks.get(), greaterThan(0));
+            assertThat("sibling cancellation must be checked before waiting", siblingChecksBeforeReset, greaterThan(0));
+            firstClosed.set(true);
+            connectionWindow.triggerUpdate(first);
             firstBlocker.join(1000);
             assertThat("closed stream flow-control wait must finish", firstBlocker.isAlive(), is(false));
             assertThat(firstFailure.get(), instanceOf(Http2Exception.class));
             assertThat(((Http2Exception) firstFailure.get()).code(), is(Http2ErrorCode.CANCEL));
             assertThat("sibling flow-control wait must remain blocked", siblingBlocker.isAlive(), is(true));
+            assertThat("targeted stream cancellation must not wake the sibling",
+                       siblingChecks.get(), is(siblingChecksBeforeReset));
 
             connectionWindow.incrementWindowSize(1);
             siblingBlocker.join(1000);
         } finally {
-            first.streamClosed();
-            sibling.streamClosed();
+            firstClosed.set(true);
+            siblingClosed.set(true);
+            connectionWindow.triggerUpdate(first);
+            connectionWindow.triggerUpdate(sibling);
             connectionWindow.incrementWindowSize(1);
             firstBlocker.join();
             siblingBlocker.join();
         }
 
         assertThat("sibling flow-control wait must resume normally", siblingReturned.get(), is(true));
+        assertThat("connection credit must wake the sibling", siblingChecks.get(), greaterThan(1));
         assertThat(siblingFailure.get(), is(nullValue()));
+    }
+
+    @Test
+    void interruptedConnectionWaiterRemainsRegisteredForSiblingWriter() throws InterruptedException {
+        ConnectionFlowControl connection = ConnectionFlowControl.clientBuilder((_, _) -> { })
+                .blockTimeout(Duration.ofSeconds(10))
+                .build();
+        WindowSizeImpl.Outbound connectionWindow = (WindowSizeImpl.Outbound) connection.outbound();
+        connectionWindow.decrementWindowSize(connectionWindow.getRemainingWindowSize());
+        AtomicBoolean streamClosed = new AtomicBoolean();
+        WindowSizeImpl.Outbound.ConnectionWindowWaiter waiter =
+                connectionWindow.createConnectionWindowWaiter(streamClosed::get);
+        AtomicReference<Throwable> firstFailure = new AtomicReference<>();
+        AtomicReference<Throwable> secondFailure = new AtomicReference<>();
+        AtomicBoolean secondReturned = new AtomicBoolean();
+        Thread firstBlocker = Thread.ofVirtual().start(() -> {
+            try {
+                connectionWindow.blockTillUpdate(waiter);
+            } catch (Throwable t) {
+                firstFailure.set(t);
+            }
+        });
+        Thread secondBlocker = Thread.ofVirtual().start(() -> {
+            try {
+                connectionWindow.blockTillUpdate(waiter);
+                secondReturned.set(true);
+            } catch (Throwable t) {
+                secondFailure.set(t);
+            }
+        });
+        try {
+            long waitDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+            while ((firstBlocker.getState() != Thread.State.TIMED_WAITING
+                    || secondBlocker.getState() != Thread.State.TIMED_WAITING)
+                    && System.nanoTime() < waitDeadline) {
+                Thread.onSpinWait();
+            }
+            assertThat("first flow-control wait must start", firstBlocker.getState(), is(Thread.State.TIMED_WAITING));
+            assertThat("second flow-control wait must start", secondBlocker.getState(), is(Thread.State.TIMED_WAITING));
+
+            firstBlocker.interrupt();
+            firstBlocker.join(1000);
+            assertThat(firstFailure.get(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) firstFailure.get()).code(), is(Http2ErrorCode.FLOW_CONTROL));
+            assertThat("second writer must remain blocked after its sibling is interrupted",
+                       secondBlocker.isAlive(), is(true));
+
+            connectionWindow.incrementWindowSize(1);
+            secondBlocker.join(1000);
+        } finally {
+            streamClosed.set(true);
+            connectionWindow.triggerUpdate(waiter);
+            connectionWindow.incrementWindowSize(1);
+            firstBlocker.join();
+            secondBlocker.join();
+        }
+
+        assertThat("remaining writer must resume on connection credit", secondReturned.get(), is(true));
+        assertThat(secondFailure.get(), is(nullValue()));
+    }
+
+    @Test
+    void concurrentFirstConnectionWaitsShareLazyStreamWaiter() throws InterruptedException {
+        ConnectionFlowControl connection = ConnectionFlowControl.clientBuilder((_, _) -> { })
+                .blockTimeout(Duration.ofSeconds(10))
+                .build();
+        WindowSize.Outbound connectionWindow = connection.outbound();
+        connectionWindow.decrementWindowSize(connectionWindow.getRemainingWindowSize());
+        FlowControl.Outbound stream = connection.createStreamFlowControl(1,
+                                                                          WindowSize.DEFAULT_WIN_SIZE,
+                                                                          WindowSize.DEFAULT_MAX_FRAME_SIZE)
+                .outbound();
+        AtomicReference<Throwable> firstFailure = new AtomicReference<>();
+        AtomicReference<Throwable> secondFailure = new AtomicReference<>();
+        CountDownLatch start = new CountDownLatch(1);
+        Thread firstBlocker = Thread.ofVirtual().start(() -> blockAfter(start, stream, firstFailure));
+        Thread secondBlocker = Thread.ofVirtual().start(() -> blockAfter(start, stream, secondFailure));
+        try {
+            start.countDown();
+            long waitDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+            while ((firstBlocker.getState() != Thread.State.TIMED_WAITING
+                    || secondBlocker.getState() != Thread.State.TIMED_WAITING)
+                    && System.nanoTime() < waitDeadline) {
+                Thread.onSpinWait();
+            }
+            assertThat("first flow-control wait must start", firstBlocker.getState(), is(Thread.State.TIMED_WAITING));
+            assertThat("second flow-control wait must start", secondBlocker.getState(), is(Thread.State.TIMED_WAITING));
+
+            stream.streamClosed();
+            firstBlocker.join(1000);
+            secondBlocker.join(1000);
+            assertThat("first targeted flow-control cancellation must finish", firstBlocker.isAlive(), is(false));
+            assertThat("second targeted flow-control cancellation must finish", secondBlocker.isAlive(), is(false));
+            assertThat(firstFailure.get(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) firstFailure.get()).code(), is(Http2ErrorCode.CANCEL));
+            assertThat(secondFailure.get(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) secondFailure.get()).code(), is(Http2ErrorCode.CANCEL));
+        } finally {
+            start.countDown();
+            stream.streamClosed();
+            connectionWindow.incrementWindowSize(1);
+            firstBlocker.join();
+            secondBlocker.join();
+        }
     }
 
     @Test
@@ -325,5 +443,16 @@ class WindowSizeTest {
         stream.incrementStreamWindowSize(WindowSize.DEFAULT_MAX_FRAME_SIZE);
         assertThat(connectionUpdate.get(), is(WindowSize.DEFAULT_MAX_FRAME_SIZE));
         assertThat(streamUpdate.get(), is(WindowSize.DEFAULT_MAX_FRAME_SIZE));
+    }
+
+    private static void blockAfter(CountDownLatch start,
+                                   FlowControl.Outbound flowControl,
+                                   AtomicReference<Throwable> failure) {
+        try {
+            start.await();
+            flowControl.blockTillUpdate();
+        } catch (Throwable t) {
+            failure.set(t);
+        }
     }
 }

@@ -15,6 +15,8 @@
  */
 package io.helidon.http.http2;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 
@@ -133,9 +135,23 @@ abstract class FlowControlImpl implements FlowControl {
 
     static class Outbound extends FlowControlImpl implements FlowControl.Outbound {
 
+        private static final VarHandle CONNECTION_WINDOW_WAITER;
+
+        static {
+            try {
+                CONNECTION_WINDOW_WAITER = MethodHandles.lookup()
+                        .findVarHandle(FlowControlImpl.Outbound.class,
+                                       "connectionWindowWaiter",
+                                       WindowSizeImpl.Outbound.ConnectionWindowWaiter.class);
+            } catch (ReflectiveOperationException e) {
+                throw new Error("Unable to obtain connection window waiter VarHandle", e);
+            }
+        }
+
         private final ConnectionFlowControl.Type type;
         private final ConnectionFlowControl connectionFlowControl;
         private final WindowSizeImpl.Outbound streamWindowSize;
+        private volatile WindowSizeImpl.Outbound.ConnectionWindowWaiter connectionWindowWaiter;
 
         Outbound(ConnectionFlowControl.Type type,
                  int streamId,
@@ -186,7 +202,7 @@ abstract class FlowControlImpl implements FlowControl {
 
         @Override
         public void blockTillUpdate() {
-            connectionFlowControl.blockTillUpdate(streamWindowSize::isStreamClosed);
+            connectionFlowControl.blockTillUpdate(connectionWindowWaiter());
             streamWindowSize.blockTillUpdate();
         }
 
@@ -199,12 +215,29 @@ abstract class FlowControlImpl implements FlowControl {
         @Override
         public void streamClosed() {
             streamWindowSize.streamClosed();
-            connectionFlowControl.streamClosed();
+            WindowSizeImpl.Outbound.ConnectionWindowWaiter waiter = connectionWindowWaiter;
+            if (waiter != null) {
+                connectionFlowControl.streamClosed(waiter);
+            }
         }
 
         @Override
         public int maxFrameSize() {
             return connectionFlowControl.maxFrameSize();
+        }
+
+        private WindowSizeImpl.Outbound.ConnectionWindowWaiter connectionWindowWaiter() {
+            WindowSizeImpl.Outbound.ConnectionWindowWaiter waiter = connectionWindowWaiter;
+            if (waiter == null) {
+                WindowSizeImpl.Outbound.ConnectionWindowWaiter newWaiter =
+                        connectionFlowControl.createConnectionWindowWaiter(streamWindowSize::isStreamClosed);
+                if (CONNECTION_WINDOW_WAITER.compareAndSet(this, null, newWaiter)) {
+                    waiter = newWaiter;
+                } else {
+                    waiter = connectionWindowWaiter;
+                }
+            }
+            return waiter;
         }
     }
 

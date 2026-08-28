@@ -167,12 +167,16 @@ public class ConnectionFlowControl {
         outboundConnectionWindowSize.connectionClosed();
     }
 
-    void streamClosed() {
-        outboundConnectionWindowSize.triggerUpdate();
+    WindowSizeImpl.Outbound.ConnectionWindowWaiter createConnectionWindowWaiter(BooleanSupplier streamClosed) {
+        return outboundConnectionWindowSize.createConnectionWindowWaiter(streamClosed);
     }
 
-    void blockTillUpdate(BooleanSupplier streamClosed) {
-        outboundConnectionWindowSize.blockTillUpdate(streamClosed);
+    void streamClosed(WindowSizeImpl.Outbound.ConnectionWindowWaiter waiter) {
+        outboundConnectionWindowSize.triggerUpdate(waiter);
+    }
+
+    void blockTillUpdate(WindowSizeImpl.Outbound.ConnectionWindowWaiter waiter) {
+        outboundConnectionWindowSize.blockTillUpdate(waiter);
     }
 
     /**
