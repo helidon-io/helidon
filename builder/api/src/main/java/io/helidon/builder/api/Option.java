@@ -397,7 +397,9 @@ public final class Option {
     }
 
     /**
-     * Can be used to define a list of possible values of an option.
+     * Defines one possible value for an option.
+     * For enum options, an allowed value that matches the lower-case {@link java.lang.Enum#name()} is also accepted. The
+     * explicitly declared allowed value is retained in generated configuration metadata.
      */
     @Target(ElementType.METHOD)
     @Inherited
