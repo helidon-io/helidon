@@ -1516,22 +1516,23 @@ Helidon recognizes `gzip` and `x-gzip` as sidecar aliases, and likewise
 Helidon emits that accepted spelling in the response `Content-Encoding` header.
 
 A selected sidecar is a distinct response representation. Its bytes determine
-`Content-Length`, its file metadata determines `Last-Modified`, and its weak
+`Content-Length`, its file metadata determines `Last-Modified`, and its strong
 ETag differs from the identity representation. Conditional requests are evaluated
 against the selected representation. `304 Not Modified` responses retain its
 `Content-Encoding`, `Vary`, and ETag metadata. `412 Precondition Failed`
 responses retain `Vary` and the selected representation's ETag but omit
 `Content-Encoding`. Byte ranges and `Content-Range` apply to the encoded sidecar
-bytes. A sidecar ETag cannot satisfy `If-Range` because it is weak, so Helidon
-ignores such a range and sends the complete selected sidecar.
+bytes. A sidecar ETag satisfies `If-Range` only when it strongly matches, in
+which case Helidon can send a range of the selected sidecar.
 
 > [!NOTE]
 > Helidon derives static-content ETags from resource metadata rather than
-> hashing the content bytes. Sidecar ETags are weak. Deployments that replace a
-> static resource must ensure its observed last-modified time changes at
-> millisecond precision. In particular, replacing a sidecar with different
-> bytes of the same length while preserving that timestamp can reuse the
-> previous ETag, so caches can continue to treat the sidecar as unchanged.
+> hashing the content bytes. Sidecar ETags are strong and
+> representation-specific. Deployments that replace a static resource must
+> ensure its observed last-modified time changes at millisecond precision. In
+> particular, replacing a sidecar with different bytes of the same length while
+> preserving that timestamp can reuse the previous ETag, so caches can continue
+> to treat the sidecar as unchanged.
 
 When listener content encoding is configured, static content can dynamically
 encode the logical resource when that runtime candidate is the best acceptable
