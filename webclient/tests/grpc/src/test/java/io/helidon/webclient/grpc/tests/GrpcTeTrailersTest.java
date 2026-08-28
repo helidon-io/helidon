@@ -89,6 +89,7 @@ class GrpcTeTrailersTest {
             Metadata.Key.of("grpc-message", Metadata.ASCII_STRING_MARSHALLER);
     private static final int FLOOD_MESSAGE_COUNT = 128;
     private static final int BIDI_MESSAGE_COUNT = 128;
+    private static final Duration BIDI_RELEASE_TIMEOUT = Duration.ofMinutes(1);
     private static final Duration BIDI_COMPLETION_TIMEOUT = Duration.ofMinutes(2);
     private static final Duration BIDI_PROGRESS_TIMEOUT = Duration.ofSeconds(30);
     private static final Strings.StringMessage FLOOD_MESSAGE = Strings.StringMessage.newBuilder()
@@ -603,7 +604,9 @@ class GrpcTeTrailersTest {
         return GrpcStreams.bidirectional(requests -> {
             pausedStarted.get().countDown();
             try {
-                pausedRelease.get().await();
+                if (!pausedRelease.get().await(BIDI_RELEASE_TIMEOUT.toNanos(), TimeUnit.NANOSECONDS)) {
+                    throw new IllegalStateException("Timed out waiting to release paused gRPC request stream");
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException("Interrupted while waiting to release paused gRPC request stream", e);
