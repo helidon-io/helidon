@@ -115,14 +115,8 @@ class Http1PrologueTest {
     }
 
     @Test
-    void testAsteriskFormPreservesFragmentForPrologueValidation() {
-        DataReader reader = DataReader.create(() -> "OPTIONS *#fragment HTTP/1.1\r\n"
-                .getBytes(StandardCharsets.US_ASCII));
-        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
-
-        assertThat(prologue.uriPath().rawPath(), is("*"));
-        assertThat(prologue.uriPath().absolute().path(), is("/"));
-        assertThat(prologue.fragment().rawValue(), is("fragment"));
+    void testAsteriskFormRejectsFragment() {
+        assertInvalidRequestTarget("OPTIONS *#fragment HTTP/1.1\r\n");
     }
 
     @Test
@@ -156,14 +150,8 @@ class Http1PrologueTest {
     }
 
     @Test
-    void testConnectAuthorityFormPreservesFragmentForPrologueValidation() {
-        DataReader reader = DataReader.create(() -> "CONNECT example.com:443#fragment HTTP/1.1\r\n"
-                .getBytes(StandardCharsets.US_ASCII));
-        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
-
-        assertThat(prologue.uriPath().rawPath(), is("example.com:443"));
-        assertThat(prologue.uriPath().absolute().path(), is("/"));
-        assertThat(prologue.fragment().rawValue(), is("fragment"));
+    void testConnectAuthorityFormRejectsFragment() {
+        assertInvalidRequestTarget("CONNECT example.com:443#fragment HTTP/1.1\r\n");
     }
 
     @Test

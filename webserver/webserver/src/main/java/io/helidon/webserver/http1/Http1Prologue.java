@@ -160,7 +160,13 @@ public final class Http1Prologue {
         return maybePost == POST_INT;
     }
 
-    private static boolean validateRequestTarget(Method method, String requestTarget, boolean hasQuery) {
+    private static boolean validateRequestTarget(Method method,
+                                                 String requestTarget,
+                                                 boolean hasQuery,
+                                                 boolean hasFragment) {
+        if (hasFragment) {
+            throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
+        }
         if (Method.CONNECT.equals(method)) {
             if (!hasQuery && isAuthorityForm(requestTarget)) {
                 return true;
@@ -330,14 +336,16 @@ public final class Http1Prologue {
             String requestTarget = prologue.uriPath().rawPath();
             boolean specialRequestTarget;
             if (validatePath) {
-                specialRequestTarget = validateRequestTarget(method, requestTarget, prologue.hasQuery());
+                specialRequestTarget = validateRequestTarget(method,
+                                                             requestTarget,
+                                                             prologue.hasQuery(),
+                                                             prologue.fragment().hasValue());
             } else {
                 specialRequestTarget = (Method.CONNECT.equals(method) && isAuthorityForm(requestTarget))
                         || (Method.OPTIONS.equals(method) && "*".equals(requestTarget));
             }
             if (specialRequestTarget) {
                 if (Method.CONNECT.equals(method)
-                        && !prologue.fragment().hasValue()
                         && (requestTarget.startsWith("[v") || requestTarget.startsWith("[V"))) {
                     throw RequestException.builder()
                             .type(DirectHandler.EventType.OTHER)
