@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.ServerRequestHeaders;
@@ -28,6 +29,7 @@ import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.sse.SseEvent;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -37,6 +39,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -82,6 +85,7 @@ class DataWriterSseSinkTest {
         when(request.headers()).thenReturn(ServerRequestHeaders.create());
         when(connectionContext.listenerContext()).thenReturn(listenerContext);
         when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
+        enableBuffering(listenerContext);
 
         try (DataWriterSseSink sink = new DataWriterSseSink(context)) {
             sink.emit(SseEvent.create("hello".getBytes(StandardCharsets.UTF_8)));
@@ -114,6 +118,7 @@ class DataWriterSseSinkTest {
         when(request.headers()).thenReturn(ServerRequestHeaders.create());
         when(connectionContext.listenerContext()).thenReturn(listenerContext);
         when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
+        enableBuffering(listenerContext);
 
         try (DataWriterSseSink sink = new DataWriterSseSink(context)) {
             sink.emit(SseEvent.create("hello".getBytes(StandardCharsets.UTF_8)));
@@ -145,6 +150,7 @@ class DataWriterSseSinkTest {
         when(response.status()).thenReturn(Status.OK_200);
         when(response.headers()).thenReturn(responseHeaders);
         when(connectionContext.listenerContext()).thenReturn(listenerContext);
+        enableBuffering(listenerContext);
 
         try (DataWriterSseSink _ = new DataWriterSseSink(context)) {
             // Close the protocol stream before committing the response.
@@ -179,12 +185,82 @@ class DataWriterSseSinkTest {
         when(response.status()).thenReturn(Status.OK_200);
         when(response.headers()).thenReturn(ServerResponseHeaders.create());
         when(connectionContext.listenerContext()).thenReturn(listenerContext);
+        enableBuffering(listenerContext);
 
         try (DataWriterSseSink _ = new DataWriterSseSink(context)) {
             assertThat("protocol headers flushed after entity stream creation",
                        headersFlushedAfterStreamCreation.get(),
                        is(true));
             assertThat("entity bytes before first event", entityOutputStream.size(), is(0));
+        }
+    }
+
+    @Test
+    void shouldWriteSmallProtocolEventOnce() {
+        AtomicInteger writes = new AtomicInteger();
+        ByteArrayOutputStream entityOutputStream = new ByteArrayOutputStream() {
+            @Override
+            public synchronized void write(byte[] bytes, int offset, int length) {
+                writes.incrementAndGet();
+                super.write(bytes, offset, length);
+            }
+        };
+        SinkProviderContext context = mock(SinkProviderContext.class);
+        ServerResponse response = mock(ServerResponse.class);
+        ConnectionContext connectionContext = mock(ConnectionContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+
+        when(context.serverResponse()).thenReturn(response);
+        when(context.connectionContext()).thenReturn(connectionContext);
+        when(context.entityOutputStream(any())).thenAnswer(invocation -> {
+            invocation.<Runnable>getArgument(0).run();
+            return Optional.of(entityOutputStream);
+        });
+        when(context.closeRunnable()).thenReturn(() -> { });
+        when(response.status()).thenReturn(Status.OK_200);
+        when(response.headers()).thenReturn(ServerResponseHeaders.create());
+        when(connectionContext.listenerContext()).thenReturn(listenerContext);
+        enableBuffering(listenerContext);
+
+        try (DataWriterSseSink sink = new DataWriterSseSink(context)) {
+            sink.emit(SseEvent.create("hello".getBytes(StandardCharsets.UTF_8)));
+            assertThat("one protocol write per small event", writes.get(), is(1));
+            assertThat(entityOutputStream.toString(StandardCharsets.UTF_8), equalTo("data:hello\n\n"));
+        }
+    }
+
+    @Test
+    void shouldStreamProtocolEventLargerThanConfiguredBuffer() {
+        AtomicInteger writes = new AtomicInteger();
+        ByteArrayOutputStream entityOutputStream = new ByteArrayOutputStream() {
+            @Override
+            public synchronized void write(byte[] bytes, int offset, int length) {
+                writes.incrementAndGet();
+                super.write(bytes, offset, length);
+            }
+        };
+        SinkProviderContext context = mock(SinkProviderContext.class);
+        ServerResponse response = mock(ServerResponse.class);
+        ConnectionContext connectionContext = mock(ConnectionContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        String payload = "x".repeat(64);
+
+        when(context.serverResponse()).thenReturn(response);
+        when(context.connectionContext()).thenReturn(connectionContext);
+        when(context.entityOutputStream(any())).thenAnswer(invocation -> {
+            invocation.<Runnable>getArgument(0).run();
+            return Optional.of(entityOutputStream);
+        });
+        when(context.closeRunnable()).thenReturn(() -> { });
+        when(response.status()).thenReturn(Status.OK_200);
+        when(response.headers()).thenReturn(ServerResponseHeaders.create());
+        when(connectionContext.listenerContext()).thenReturn(listenerContext);
+        writeBufferSize(listenerContext, 8);
+
+        try (DataWriterSseSink sink = new DataWriterSseSink(context)) {
+            sink.emit(SseEvent.create(payload.getBytes(StandardCharsets.UTF_8)));
+            assertThat("event larger than the configured buffer must stream", writes.get(), greaterThan(1));
+            assertThat(entityOutputStream.toString(StandardCharsets.UTF_8), equalTo("data:" + payload + "\n\n"));
         }
     }
 
@@ -210,5 +286,15 @@ class DataWriterSseSinkTest {
 
         assertThrows(IllegalStateException.class, () -> new DataWriterSseSink(context));
         assertThat("entity stream created after invalid response", entityStreamCreated.get(), is(false));
+    }
+
+    private static void enableBuffering(ListenerContext listenerContext) {
+        writeBufferSize(listenerContext, 4096);
+    }
+
+    private static void writeBufferSize(ListenerContext listenerContext, int size) {
+        ListenerConfig config = mock(ListenerConfig.class);
+        when(config.writeBufferSize()).thenReturn(size);
+        when(listenerContext.config()).thenReturn(config);
     }
 }

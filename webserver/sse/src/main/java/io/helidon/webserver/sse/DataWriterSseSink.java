@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.sse;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -88,7 +89,11 @@ class DataWriterSseSink implements SseSink {
         prepareResponseHeaders(true);
         Optional<OutputStream> entityOutputStream = context.entityOutputStream(() -> prepareResponseHeaders(false));
         if (entityOutputStream.isPresent()) {
-            this.outputStream = entityOutputStream.orElseThrow();
+            OutputStream protocolOutputStream = entityOutputStream.orElseThrow();
+            int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
+            this.outputStream = writeBufferSize > 0
+                    ? new BufferedOutputStream(protocolOutputStream, writeBufferSize)
+                    : protocolOutputStream;
             this.closeServerSocket = false;
             this.closeOutputStreamBeforeCommit = true;
             context.flushHeaders();
