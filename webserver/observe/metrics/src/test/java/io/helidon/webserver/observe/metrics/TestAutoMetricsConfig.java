@@ -128,7 +128,7 @@ class TestAutoMetricsConfig {
 
     @Test
     @SuppressWarnings("removal")
-    void testLegacyHttpMetricsOptOut() {
+    void testDeprecatedFalseSettingIsAccepted() {
         var config = AutoHttpMetricsConfig.create(Config.just("use-updated-http-metrics: false", MediaTypes.APPLICATION_YAML));
 
         assertThat(config.useUpdatedHttpMetrics(), is(false));

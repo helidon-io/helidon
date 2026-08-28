@@ -73,7 +73,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     @Test
     void measuredRequestUsesMatchingPatternAtResponseCompletion() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
-        Filter filter = filter(recordedAttributes::set, true);
+        Filter filter = filter(recordedAttributes::set);
         RoutingRequest request = request();
         FilterChain chain = mock(FilterChain.class);
         AtomicInteger routeInvocations = new AtomicInteger();
@@ -98,7 +98,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     @Test
     void measuredRequestOmitsUnavailableMatchingPattern() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
-        Filter filter = filter(recordedAttributes::set, true);
+        Filter filter = filter(recordedAttributes::set);
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
 
         filter.filter(mock(FilterChain.class), request(), response(whenSent));
@@ -111,7 +111,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     @Test
     void measuredRequestUsesRootMatchingPattern() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
-        Filter filter = filter(recordedAttributes::set, true);
+        Filter filter = filter(recordedAttributes::set);
         RoutingRequest request = request();
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
         when(request.matchingPattern()).thenReturn(Optional.of("/"));
@@ -124,7 +124,6 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     @Test
-    @SuppressWarnings("removal")
     void unmeasuredRequestDoesNotReadMatchingPattern() throws Exception {
         AtomicInteger routeInvocations = new AtomicInteger();
         DoubleHistogram histogram = mock(DoubleHistogram.class);
@@ -139,7 +138,6 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         when(autoConfig.enabled()).thenReturn(true);
         when(autoConfig.isMeasured(any(), any())).thenReturn(false);
         when(autoConfig.optIn()).thenReturn(List.of());
-        when(autoConfig.useUpdatedHttpMetrics()).thenReturn(true);
         when(request.matchingPattern()).thenAnswer(invocation -> {
             routeInvocations.incrementAndGet();
             return Optional.of("/providedRoute");
@@ -155,7 +153,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     @Test
     void filterLogsMetricsFailureAfterSuccessfulChain() throws Exception {
         AssertionError failure = new AssertionError("metrics failure");
-        Filter filter = filter(failure, true);
+        Filter filter = filter(failure);
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
 
         try (TestLogHandler handler = TestLogHandler.install()) {
@@ -173,7 +171,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     void filterLogsMetricsFailureAfterExceptionalChain() throws Exception {
         AssertionError metricsFailure = new AssertionError("metrics failure");
         IllegalArgumentException chainFailure = new IllegalArgumentException("chain failure");
-        Filter filter = filter(metricsFailure, true);
+        Filter filter = filter(metricsFailure);
         FilterChain chain = mock(FilterChain.class);
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
         doThrow(chainFailure).when(chain).proceed();
@@ -198,7 +196,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         Filter filter = filter(attributes -> {
             recordedAttributes.set(attributes);
             recorded.incrementAndGet();
-        }, true);
+        });
         FilterChain chain = mock(FilterChain.class);
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
         IllegalArgumentException failure = new IllegalArgumentException("chain failure");
@@ -219,7 +217,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     @Test
     void recordsOnceWhenChainFailsBeforeResponseIsSent() throws Exception {
         AtomicInteger recorded = new AtomicInteger();
-        Filter filter = filter(attributes -> recorded.incrementAndGet(), true);
+        Filter filter = filter(attributes -> recorded.incrementAndGet());
         FilterChain chain = mock(FilterChain.class);
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
         IllegalArgumentException failure = new IllegalArgumentException("transport failure");
@@ -236,7 +234,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     @Test
     void doesNotRecordWhenChainFailsWithoutResponse() throws Exception {
         AtomicInteger recorded = new AtomicInteger();
-        Filter filter = filter(attributes -> recorded.incrementAndGet(), true);
+        Filter filter = filter(attributes -> recorded.incrementAndGet());
         FilterChain chain = mock(FilterChain.class);
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
         IllegalArgumentException failure = new IllegalArgumentException("transport failure");
@@ -250,47 +248,34 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     @Test
-    void legacyMetricsUseMatchingPatternWithoutWhenSent() throws Exception {
+    @SuppressWarnings("removal")
+    void deprecatedFalseSettingDoesNotChangeMetricsBehavior() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
-        CountDownLatch recorded = new CountDownLatch(1);
-        Filter filter = filter(attributes -> {
+        AtomicInteger recorded = new AtomicInteger();
+        Filter filter = filterWithDeprecatedSetting(attributes -> {
             recordedAttributes.set(attributes);
-            recorded.countDown();
+            recorded.incrementAndGet();
         }, false);
         RoutingRequest request = request();
-        RoutingResponse response = response(new AtomicReference<>());
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+        RoutingResponse response = response(whenSent);
         when(request.matchingPattern()).thenReturn(Optional.of("/matchingPattern"));
 
         filter.filter(mock(FilterChain.class), request, response);
 
-        assertThat(recorded.await(5, TimeUnit.SECONDS), is(true));
-        verify(response, never()).whenSent(any(Runnable.class));
+        assertThat(recorded.get(), is(0));
+        when(response.status()).thenReturn(Status.CREATED_201);
+        whenSent.get().run();
+        whenSent.get().run();
+
+        assertThat(recorded.get(), is(1));
         assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE)),
                    is("/matchingPattern"));
-    }
-
-    @Test
-    void legacyMetricsUseZeroStatusAfterChainFailure() throws Exception {
-        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
-        CountDownLatch recorded = new CountDownLatch(1);
-        Filter filter = filter(attributes -> {
-            recordedAttributes.set(attributes);
-            recorded.countDown();
-        }, false);
-        FilterChain chain = mock(FilterChain.class);
-        IllegalArgumentException failure = new IllegalArgumentException("chain failure");
-        doThrow(failure).when(chain).proceed();
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                                                         () -> filter.filter(chain, request(), response(new AtomicReference<>())));
-
-        assertThat(exception, sameInstance(failure));
-        assertThat(recorded.await(5, TimeUnit.SECONDS), is(true));
         assertThat(recordedAttributes.get().get(AttributeKey.longKey(OpenTelemetryMetricsHttpSemanticConventions.STATUS_CODE)),
-                   is(0L));
+                   is(201L));
     }
 
-    private static Filter filter(Throwable failure, boolean useUpdatedHttpMetrics) {
+    private static Filter filter(Throwable failure) {
         return filter(attributes -> {
             if (failure instanceof RuntimeException runtimeException) {
                 throw runtimeException;
@@ -299,11 +284,21 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
                 throw error;
             }
             throw new RuntimeException(failure);
-        }, useUpdatedHttpMetrics);
+        });
+    }
+
+    private static Filter filter(Consumer<Attributes> recorder) {
+        return filter(recorder, AutoHttpMetricsConfig.create());
     }
 
     @SuppressWarnings("removal")
-    private static Filter filter(Consumer<Attributes> recorder, boolean useUpdatedHttpMetrics) {
+    private static Filter filterWithDeprecatedSetting(Consumer<Attributes> recorder, boolean useUpdatedHttpMetrics) {
+        return filter(recorder, AutoHttpMetricsConfig.builder()
+                .useUpdatedHttpMetrics(useUpdatedHttpMetrics)
+                .build());
+    }
+
+    private static Filter filter(Consumer<Attributes> recorder, AutoHttpMetricsConfig autoHttpMetricsConfig) {
         DoubleHistogram histogram = mock(DoubleHistogram.class);
         doAnswer(invocation -> {
             recorder.accept(invocation.getArgument(1));
@@ -311,9 +306,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         }).when(histogram).record(anyDouble(), any(Attributes.class));
 
         MetricsObserverConfig config = MetricsObserverConfig.builder()
-                .autoHttpMetrics(AutoHttpMetricsConfig.builder()
-                                         .useUpdatedHttpMetrics(useUpdatedHttpMetrics)
-                                         .build())
+                .autoHttpMetrics(autoHttpMetricsConfig)
                 .buildPrototype();
         return filter(histogram, config);
     }

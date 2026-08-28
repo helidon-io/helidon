@@ -73,10 +73,11 @@ interface AutoHttpMetricsConfigBlueprint {
     List<String> optIn();
 
     /**
-     * Whether to use the updated automatic HTTP metrics behavior.
+     * Retained for configuration compatibility with Helidon 4.x; Helidon 27 ignores the value and always uses the updated
+     * automatic HTTP metrics behavior.
      *
-     * @return whether to use updated automatic HTTP metrics behavior
-     * @deprecated Set this only to {@code false} as a temporary compatibility workaround for legacy metric output.
+     * @return configured value, which does not affect automatic HTTP metrics behavior
+     * @deprecated This option is ignored and will be removed in a future release.
      */
     @Deprecated
     @Option.Configured
