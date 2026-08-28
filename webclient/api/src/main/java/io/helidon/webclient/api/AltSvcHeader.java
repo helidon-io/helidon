@@ -311,7 +311,7 @@ public final class AltSvcHeader {
                 }
                 char highCharacter = encodedProtocolId.charAt(index + 1);
                 char lowCharacter = encodedProtocolId.charAt(index + 2);
-                if (!uppercaseHex(highCharacter) || !uppercaseHex(lowCharacter)) {
+                if (!hexDigit(highCharacter) || !hexDigit(lowCharacter)) {
                     return Optional.empty();
                 }
                 int highNibble = Character.digit(highCharacter, 16);
@@ -330,8 +330,10 @@ public final class AltSvcHeader {
         return Optional.of(new String(protocolId, 0, protocolIdLength, StandardCharsets.ISO_8859_1));
     }
 
-    private static boolean uppercaseHex(char character) {
-        return character >= '0' && character <= '9' || character >= 'A' && character <= 'F';
+    private static boolean hexDigit(char character) {
+        return character >= '0' && character <= '9'
+                || character >= 'A' && character <= 'F'
+                || character >= 'a' && character <= 'f';
     }
 
     private static boolean tokenByte(int value) {

@@ -134,8 +134,15 @@ class AltSvcHeaderTest {
         assertThat(AltSvcHeader.create(responseHeaders("h%3=\":443\""), RECEIVED_AT).isEmpty(), is(true));
         assertThat(AltSvcHeader.create(responseHeaders("h%GG=\":443\""), RECEIVED_AT).isEmpty(), is(true));
         assertThat(AltSvcHeader.create(responseHeaders("h%32=\":443\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.create(responseHeaders("h%3a=\":443\""), RECEIVED_AT).isEmpty(), is(true));
-        assertThat(AltSvcHeader.create(responseHeaders("%ff=\":443\""), RECEIVED_AT).isEmpty(), is(true));
+
+        AltSvcHeader lowercaseHex = AltSvcHeader.create(
+                responseHeaders("h2=\":8443\", foo%3abar%ff=\":9443\""),
+                RECEIVED_AT).orElseThrow();
+        assertThat(lowercaseHex.alternatives(), hasSize(2));
+        assertThat(lowercaseHex.alternatives().get(0).protocolId(), is("h2"));
+        String lowercaseProtocolId = lowercaseHex.alternatives().get(1).protocolId();
+        assertThat(lowercaseProtocolId.substring(0, 7), is("foo:bar"));
+        assertThat((int) lowercaseProtocolId.charAt(7), is(255));
     }
 
     @Test
