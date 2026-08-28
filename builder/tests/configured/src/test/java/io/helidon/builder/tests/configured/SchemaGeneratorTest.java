@@ -1134,6 +1134,7 @@ class SchemaGeneratorTest {
                              * @return option1
                              */
                             @Option.Configured
+                            @Option.Default("MODE1")
                             @Option.AllowedValue(value = "mode1", description = "Mode1")
                             @Option.AllowedValue(value = "MODE2", description = "Mode2")
                             AcmeMode option1();
@@ -1157,7 +1158,7 @@ class SchemaGeneratorTest {
                             key = "option1",
                             description = "Option1",
                             type = AcmeMode.class,
-                            required = true,
+                            value = "mode1",
                             allowedValues = {
                                 @ConfiguredValue(value = "mode1", description = "Mode1"),
                                 @ConfiguredValue(value = "MODE2", description = "Mode2")
