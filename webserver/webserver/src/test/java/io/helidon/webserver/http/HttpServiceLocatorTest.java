@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -56,6 +58,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class HttpServiceLocatorTest {
@@ -488,6 +491,23 @@ class HttpServiceLocatorTest {
     }
 
     @Test
+    void testSecuredLocatedServiceCreatedDuringStartReceivesLifecycleOnce() {
+        var service = new LifecycleService();
+        HttpServiceLocator locator = SecureHandler.authorize("user").wrapLocator(new LifecycleLocator(service));
+        var route = locatorRoute(locator);
+
+        route.beforeStart();
+        locate(route);
+        route.afterStart(mock(WebServer.class));
+        route.afterStop();
+
+        assertThat(service.routingCount.get(), is(1));
+        assertThat(service.beforeStartCount.get(), is(1));
+        assertThat(service.afterStartCount.get(), is(1));
+        assertThat(service.afterStopCount.get(), is(1));
+    }
+
+    @Test
     void testCachedLocatedServiceWaitsForAfterStartCompletion() throws Exception {
         var service = new BlockingAfterStartService();
         var locateCount = new AtomicInteger();
@@ -550,6 +570,91 @@ class HttpServiceLocatorTest {
     }
 
     @Test
+    void testSecureHandlerWrapPreservesLocatedServiceCacheIdentity() {
+        var first = new LifecycleService("first");
+        var second = new LifecycleService("second");
+        var locator = new SwitchingLocator(first, false, 1);
+        HttpServiceLocator securedLocator = SecureHandler.authorize().wrapLocator(locator);
+        var route = locatorRoute(securedLocator);
+
+        locate(route);
+        locate(route);
+        locator.service(second);
+
+        assertThrows(HttpException.class, () -> locate(route));
+
+        assertThat(first.routingCount.get(), is(1));
+        assertThat(second.routingCount.get(), is(0));
+    }
+
+    @Test
+    void testOuterLocatorDecoratorPreservesSecureHandlerWrap() throws Exception {
+        var rawHandlerInvoked = new AtomicBoolean();
+        HttpService service = rules -> rules.get("/resource", (req, res) -> rawHandlerInvoked.set(true));
+        HttpServiceLocator locator = request -> Optional.of(service);
+        HttpServiceLocator securedLocator = SecureHandler.authorize().wrapLocator(locator);
+        HttpServiceLocator decoratedLocator = request -> securedLocator.locate(request);
+        var route = locatorRoute(decoratedLocator);
+        Handler handler = locatedRoutes(route, "/pipe/resource").getFirst().handler();
+        ServerRequest request = mock(ServerRequest.class);
+        ServerResponse response = mock(ServerResponse.class);
+        HttpSecurity security = mock(HttpSecurity.class);
+
+        when(request.context()).thenReturn(Context.create());
+        when(request.security()).thenReturn(security);
+
+        handler.handle(request, response);
+
+        assertThat(rawHandlerInvoked.get(), is(false));
+        verify(security).authorize(any(), any(), any(String[].class));
+    }
+
+    @Test
+    void testSecureHandlerPoliciesRemainDistinctForSameLocatedService() throws Exception {
+        var rawHandlerInvoked = new AtomicBoolean();
+        HttpService service = rules -> rules.get("/resource", (req, res) -> rawHandlerInvoked.set(true));
+        HttpServiceLocator locator = request -> Optional.of(service);
+        HttpServiceLocator userLocator = SecureHandler.authorize("user").wrapLocator(locator);
+        HttpServiceLocator adminLocator = SecureHandler.authorize("admin").wrapLocator(locator);
+        HttpServiceLocator policyLocator = request -> request.path()
+                .pathParameters()
+                .first("item")
+                .filter("admin"::equals)
+                .map(_ -> adminLocator)
+                .orElse(userLocator)
+                .locate(request);
+        var route = locatorRoute(policyLocator);
+        Handler userHandler = locatedRoutes(route, "/user/resource").getFirst().handler();
+        Handler adminHandler = locatedRoutes(route, "/admin/resource").getFirst().handler();
+        ServerRequest request = mock(ServerRequest.class);
+        ServerResponse response = mock(ServerResponse.class);
+        var observedRole = new AtomicReference<String>();
+        HttpSecurity security = new HttpSecurity() {
+            @Override
+            public boolean authenticate(ServerRequest request, ServerResponse response, boolean requiredHint) {
+                return false;
+            }
+
+            @Override
+            public boolean authorize(ServerRequest request, ServerResponse response, String... roleHint) {
+                observedRole.set(roleHint[0]);
+                return false;
+            }
+        };
+
+        when(request.context()).thenReturn(Context.create());
+        when(request.security()).thenReturn(security);
+
+        userHandler.handle(request, response);
+        assertThat(observedRole.get(), is("user"));
+        observedRole.set(null);
+
+        adminHandler.handle(request, response);
+        assertThat(observedRole.get(), is("admin"));
+        assertThat(rawHandlerInvoked.get(), is(false));
+    }
+
+    @Test
     void testCachedLocatedServiceDoesNotWaitForColdServiceCreation() throws Exception {
         var fast = new LifecycleService();
         var slow = new BlockingRoutingService();
@@ -589,6 +694,10 @@ class HttpServiceLocatorTest {
     }
 
     private static void locate(ServiceLocatorRoute route, String path) {
+        locatedRoutes(route, path);
+    }
+
+    private static List<HttpRouteBase> locatedRoutes(ServiceLocatorRoute route, String path) {
         RoutingRequest request = mock(RoutingRequest.class);
         AtomicReference<RoutedPath> requestPath = new AtomicReference<>();
         PathMatchers.PrefixMatchResult match = route.acceptsPrefix(prologue(path));
@@ -599,7 +708,7 @@ class HttpServiceLocatorTest {
             return request;
         });
 
-        route.routes(mock(ConnectionContext.class), request, match.matchedPath(), "/{item}");
+        return route.routes(mock(ConnectionContext.class), request, match.matchedPath(), "/{item}");
     }
 
     private static HttpPrologue prologue(String path) {

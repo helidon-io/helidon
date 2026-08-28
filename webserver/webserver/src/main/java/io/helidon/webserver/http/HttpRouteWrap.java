@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Optional;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
+import io.helidon.http.ServerRequestHeaders;
 import io.helidon.webserver.WebServer;
 
 class HttpRouteWrap extends HttpRouteBase {
@@ -48,6 +49,11 @@ class HttpRouteWrap extends HttpRouteBase {
     @Override
     public PathMatchers.MatchResult accepts(HttpPrologue prologue) {
         return route.accepts(prologue);
+    }
+
+    @Override
+    public PathMatchers.MatchResult accepts(HttpPrologue prologue, ServerRequestHeaders headers) {
+        return route.accepts(prologue, headers);
     }
 
     @Override
