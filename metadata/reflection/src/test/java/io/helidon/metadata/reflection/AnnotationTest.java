@@ -110,6 +110,23 @@ public class AnnotationTest {
 
     @Order(1)
     @Test
+    public void testSyntheticAnnotationWithNullContextClassLoader() {
+        Thread thread = Thread.currentThread();
+        ClassLoader original = thread.getContextClassLoader();
+        try {
+            thread.setContextClassLoader(null);
+
+            Optional<MyAnnotation> synthesizedAnnotation = AnnotationFactory.synthesize(helidonAnnotation);
+
+            assertThat(synthesizedAnnotation, optionalPresent());
+            assertThat(synthesizedAnnotation.get().annotationType(), sameInstance(MyAnnotation.class));
+        } finally {
+            thread.setContextClassLoader(original);
+        }
+    }
+
+    @Order(1)
+    @Test
     public void testSyntheticAnnotationWithUnrelatedContextClassLoader() {
         Thread thread = Thread.currentThread();
         ClassLoader original = thread.getContextClassLoader();
