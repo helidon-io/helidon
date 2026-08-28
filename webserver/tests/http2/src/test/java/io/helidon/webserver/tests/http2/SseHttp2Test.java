@@ -49,10 +49,12 @@ import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.encoding.gzip.GzipEncoding;
+import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2GoAway;
@@ -348,6 +350,63 @@ class SseHttp2Test {
         } finally {
             canceled.release.countDown();
             STREAM_CONTROLS.remove("zero-window-cancel");
+        }
+    }
+
+    @Test
+    void invalidContentLengthResetReleasesBlockedZeroWindowSseHandler(Http2TestClient client)
+            throws InterruptedException {
+        String payload = "x".repeat(FLOW_WINDOW);
+        StreamControl reset = new StreamControl(payload, null, false);
+        STREAM_CONTROLS.put("zero-window-local-reset", reset);
+        try (Http2TestConnection connection = client.createConnection()) {
+            connection.completeHandshake(TIMEOUT);
+            connection.sendSettings(Http2Settings.builder()
+                                            .add(Http2Setting.INITIAL_WINDOW_SIZE, (long) FLOW_WINDOW)
+                                            .build());
+
+            WritableHeaders<?> headers = sseHeaders();
+            headers.add(HeaderNames.CONTENT_LENGTH, 0);
+            Http2Headers requestHeaders = Http2Headers.create(headers);
+            requestHeaders.method(Method.GET);
+            requestHeaders.path("/controlled?id=zero-window-local-reset");
+            requestHeaders.scheme(connection.clientUri().scheme());
+            requestHeaders.authority(connection.clientUri().authority());
+            connection.writer().writeHeaders(requestHeaders,
+                                              1,
+                                              Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                              FlowControl.Outbound.NOOP);
+
+            FrameDemultiplexer frames = new FrameDemultiplexer(connection);
+            Http2FrameData settingsAck = frames.next(0, "local-reset SETTINGS acknowledgment").frame();
+            assertThat("Local-reset response frame type", settingsAck.header().type(), is(Http2FrameType.SETTINGS));
+            assertThat("Local-reset SETTINGS must be acknowledged before response headers",
+                       settingsAck.header().flags(Http2FrameTypes.SETTINGS).ack(), is(true));
+
+            StreamCapture resetCapture = new StreamCapture();
+            resetCapture.readUntilBytes(frames, 1, FLOW_WINDOW);
+            assertThat("SSE handler must consume all advertised stream credit before local reset",
+                       resetCapture.data.size(), is(FLOW_WINDOW));
+            assertThat("SSE handler must remain blocked before local reset", reset.completed.getCount(), is(1L));
+
+            BufferData invalidData = BufferData.create("x");
+            Http2FrameHeader invalidDataHeader = Http2FrameHeader.create(invalidData.available(),
+                                                                          Http2FrameTypes.DATA,
+                                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                          1);
+            connection.writer().writeData(new Http2FrameData(invalidDataHeader, invalidData),
+                                          FlowControl.Outbound.NOOP);
+
+            assertThat(connection.assertRstStream(1, TIMEOUT).errorCode(), is(Http2ErrorCode.PROTOCOL));
+            await("Locally reset zero-window SSE handler completion", reset.completed);
+            assertThat(reset.failure.get(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) reset.failure.get()).code(), is(Http2ErrorCode.CANCEL));
+
+            request(connection, 3, "/ping", WritableHeaders.create());
+            assertPing(frames, 3);
+        } finally {
+            reset.release.countDown();
+            STREAM_CONTROLS.remove("zero-window-local-reset");
         }
     }
 
