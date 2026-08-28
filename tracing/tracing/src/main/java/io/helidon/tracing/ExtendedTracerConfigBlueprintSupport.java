@@ -16,20 +16,27 @@
 
 package io.helidon.tracing;
 
-import java.util.Locale;
-
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigMappingException;
 
 class ExtendedTracerConfigBlueprintSupport {
+    private static final System.Logger LOGGER = System.getLogger(ExtendedTracerConfigBlueprintSupport.class.getName());
 
     private ExtendedTracerConfigBlueprintSupport() {
     }
 
     @Prototype.ConfigFactoryMethod("samplerType")
     static SamplerType createSamplerType(Config config) {
-        String samplerType = config.asString().get().toUpperCase(Locale.ROOT);
-        samplerType = "CONST".equals(samplerType) ? SamplerType.CONSTANT.name() : samplerType;
-        return SamplerType.valueOf(samplerType);
+        try {
+            return config.as(SamplerType.class).get();
+        } catch (ConfigMappingException e) {
+            if (config.isLeaf() && "const".equalsIgnoreCase(config.asString().get())) {
+                LOGGER.log(System.Logger.Level.WARNING,
+                           "Sampler type \"const\" is deprecated; use \"constant\" instead");
+                return SamplerType.CONSTANT;
+            }
+            throw e;
+        }
     }
 }

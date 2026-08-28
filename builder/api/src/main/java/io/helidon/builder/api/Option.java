@@ -381,6 +381,8 @@ public final class Option {
      * Allowed values for this option.
      * The allowed value is always configured as a string, and is compared to {@link java.lang.String#valueOf(Object)} of the
      * value.
+     * For enum options, an allowed value that matches the lower-case {@link java.lang.Enum#name()} is also accepted. The
+     * explicitly declared allowed value is retained in generated configuration metadata.
      */
     @Target(ElementType.METHOD)
     @Inherited

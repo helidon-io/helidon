@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.builder.test;
 
+import io.helidon.builder.test.testsubjects.AllowedValueEnum;
 import io.helidon.builder.test.testsubjects.AllowedValues;
 import io.helidon.common.Errors;
 
@@ -91,6 +92,66 @@ class AllowedValuesTest {
         // we use a set, may be different order
         assertThat(message, containsString("GOOD_1"));
         assertThat(message, containsString("GOOD_2"));
+    }
+
+    @Test
+    void testLowerCaseEnumValueAllowed() {
+        AllowedValues allowedValues = AllowedValues.builder()
+                .restrictedEnum(AllowedValueEnum.GOOD_1)
+                .build();
+
+        assertThat(allowedValues.restrictedEnum(), optionalValue(is(AllowedValueEnum.GOOD_1)));
+    }
+
+    @Test
+    void testExactEnumValueAllowed() {
+        AllowedValues allowedValues = AllowedValues.builder()
+                .restrictedEnum(AllowedValueEnum.GOOD_2)
+                .build();
+
+        assertThat(allowedValues.restrictedEnum(), optionalValue(is(AllowedValueEnum.GOOD_2)));
+    }
+
+    @Test
+    void testEnumValueNotAllowed() {
+        var thrown = assertThrows(Errors.ErrorMessagesException.class, () -> AllowedValues.builder()
+                .restrictedEnum(AllowedValueEnum.BAD)
+                .build());
+
+        String message = thrown.getMessage();
+        assertThat(message,
+                   containsString("Property \"restrictedEnum\" value is not within allowed values. "
+                                          + "Configured: \"BAD\", expected one of: \""));
+        assertThat(message, containsString("good_1"));
+        assertThat(message, containsString("GOOD_2"));
+    }
+
+    @Test
+    void testLowerCaseEnumListValueAllowed() {
+        AllowedValues allowedValues = AllowedValues.builder()
+                .addRestrictedEnumToList(AllowedValueEnum.GOOD_1)
+                .addRestrictedEnumToList(AllowedValueEnum.GOOD_2)
+                .build();
+
+        assertThat(allowedValues.restrictedEnums(), hasItems(AllowedValueEnum.GOOD_1, AllowedValueEnum.GOOD_2));
+    }
+
+    @Test
+    void testEnumListValueNotAllowed() {
+        var thrown = assertThrows(Errors.ErrorMessagesException.class, () -> AllowedValues.builder()
+                .addRestrictedEnumToList(AllowedValueEnum.BAD)
+                .build());
+
+        assertThat(thrown.getMessage(),
+                   containsString("Property \"restrictedEnums\" contains value that is not within allowed values. "
+                                          + "Configured: \"BAD\", expected one of: \""));
+    }
+
+    @Test
+    void testStringAllowedValuesRemainCaseSensitive() {
+        assertThrows(Errors.ErrorMessagesException.class, () -> AllowedValues.builder()
+                .restrictedOptions("good_1")
+                .build());
     }
 
 }

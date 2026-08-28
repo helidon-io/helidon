@@ -18,10 +18,15 @@ package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.testing.junit5.InMemoryLoggingHandler;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
+import io.helidon.tracing.ExtendedTracerConfig;
 import io.helidon.tracing.SamplerType;
 
 import io.opentelemetry.api.common.AttributeKey;
@@ -38,6 +43,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestOtelTracingConfig {
 
@@ -187,14 +193,67 @@ class TestOtelTracingConfig {
                 """.formatted(samplerType);
         Config config = Config.just(ConfigSources.create(configSettings, MediaTypes.APPLICATION_YAML));
 
-        OpenTelemetryTracer tracer = OpenTelemetryTracer.builder()
-                .config(config.get("tracing"))
+        Logger logger = Logger.getLogger("io.helidon.tracing.ExtendedTracerConfigBlueprintSupport");
+        try (var loggingHandler = InMemoryLoggingHandler.create(logger)) {
+            OpenTelemetryTracer tracer = OpenTelemetryTracer.builder()
+                    .config(config.get("tracing"))
+                    .build();
+
+            assertThat("Sampler type", tracer.prototype().samplerType(), equalTo(SamplerType.CONSTANT));
+            assertThat("OpenTelemetry",
+                       tracer.prototype().openTelemetry().toString(),
+                       containsString("sampler=AlwaysOnSampler"));
+
+            long deprecationWarnings = loggingHandler.logRecords()
+                    .stream()
+                    .filter(record -> record.getLevel() == Level.WARNING)
+                    .filter(record -> record.getMessage().contains("const"))
+                    .filter(record -> record.getMessage().contains("constant"))
+                    .count();
+            assertThat("Deprecation warning count",
+                       deprecationWarnings,
+                       equalTo(samplerType.equalsIgnoreCase("const") ? 1L : 0L));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ratio", "RATIO"})
+    void testRatioSamplerType(String samplerType) {
+        Config config = Config.builder(ConfigSources.create(Map.of(
+                        "service", "tracing-test",
+                        "sampler-type", samplerType,
+                        "sampler-param", "0.5")))
                 .build();
 
-        assertThat("Sampler type", tracer.prototype().samplerType(), equalTo(SamplerType.CONSTANT));
-        assertThat("OpenTelemetry",
-                   tracer.prototype().openTelemetry().toString(),
-                   containsString("sampler=AlwaysOnSampler"));
+        ExtendedTracerConfig tracingConfig = ExtendedTracerConfig.create(config);
+
+        assertThat("Sampler type", tracingConfig.samplerType(), equalTo(SamplerType.RATIO));
+        assertThat("Sampler parameter", tracingConfig.samplerParam(), equalTo(0.5));
+    }
+
+    @Test
+    void testCustomSamplerTypeMapperHasPriority() {
+        Config config = Config.builder(ConfigSources.create(Map.of(
+                        "service", "tracing-test",
+                        "sampler-type", "custom")))
+                .addMapper(SamplerType.class, _ -> SamplerType.RATIO)
+                .build();
+
+        ExtendedTracerConfig tracingConfig = ExtendedTracerConfig.create(config);
+
+        assertThat("Sampler type", tracingConfig.samplerType(), equalTo(SamplerType.RATIO));
+    }
+
+    @Test
+    void testSamplerTypeMustBeLeaf() {
+        Config config = Config.just(ConfigSources.create(Map.of(
+                "service", "tracing-test",
+                "sampler-type", "ratio",
+                "sampler-type.param", "0.0")));
+
+        var exception = assertThrows(ConfigMappingException.class, () -> ExtendedTracerConfig.create(config));
+
+        assertThat(exception.getMessage(), containsString("config node must be a leaf but is not"));
     }
 
 

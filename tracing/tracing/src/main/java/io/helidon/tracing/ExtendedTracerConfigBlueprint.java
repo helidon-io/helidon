@@ -215,6 +215,9 @@ interface ExtendedTracerConfigBlueprint {
      */
     @Option.Configured
     @Option.Default("CONSTANT")
+    @Option.AllowedValue(value = "constant", description = "Sampling of every span")
+    @Option.AllowedValue(value = "const", description = "Deprecated. Use constant instead")
+    @Option.AllowedValue(value = "ratio", description = "Sampling of a proportion of spans")
     SamplerType samplerType();
 
     /**

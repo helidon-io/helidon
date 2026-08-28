@@ -390,6 +390,9 @@ class SchemaGenerator {
         if (optionInfo.prototypedBy().isPresent()) {
             return optionInfo.prototypedBy().get();
         }
+        if (!optionInfo.allowedValues().isEmpty()) {
+            return typeName.boxed();
+        }
 
         // check configured factory method
         var configuredDeclaredTypeName = optionInfo.configured()

@@ -1077,6 +1077,100 @@ class SchemaGeneratorTest {
     }
 
     @Test
+    void testExplicitEnumAllowedValues() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .options(OPTS)
+                .addSource("AcmeMode.java", """
+                        package com.acme;
+
+                        /**
+                         * ACME mode.
+                         */
+                        enum AcmeMode {
+                            /**
+                             * Mode1.
+                             */
+                            MODE1,
+                            /**
+                             * Mode2.
+                             */
+                            MODE2,
+                        }
+                        """)
+                .addSource("AcmeConfigSupport.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        class AcmeConfigSupport {
+
+                            @Prototype.ConfigFactoryMethod("option1")
+                            static AcmeMode createMode(Config config) {
+                                return config.as(AcmeMode.class).get();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.builder.api.Option;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeConfigSupport.class)
+                        interface AcmeConfigBlueprint {
+
+                            /**
+                             * Option1.
+                             *
+                             * @return option1
+                             */
+                            @Option.Configured
+                            @Option.AllowedValue(value = "mode1", description = "Mode1")
+                            @Option.AllowedValue(value = "MODE2", description = "Mode2")
+                            AcmeMode option1();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(result.success(), is(true));
+        var schema = result.sourceOutput().resolve("com/acme/AcmeConfig.java");
+        assertThat(Files.exists(schema), is(true));
+
+        var actual = Files.readString(schema);
+        assertThat(actual, matches("""
+                //...
+                package com.acme;
+                //...
+                @Configured(
+                    description = "ACME config",
+                    options = {
+                        @ConfiguredOption(
+                            key = "option1",
+                            description = "Option1",
+                            type = AcmeMode.class,
+                            required = true,
+                            allowedValues = {
+                                @ConfiguredValue(value = "mode1", description = "Mode1"),
+                                @ConfiguredValue(value = "MODE2", description = "Mode2")
+                            })
+                    })
+                //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                //...
+                }
+                """));
+    }
+
+    @Test
     void testPrefixWithConstant() throws IOException {
         var compiler = TestCompiler.builder()
                 .currentRelease()
