@@ -282,13 +282,13 @@ class Http2ServerStream implements Runnable, Http2Stream {
             return;
         }
         if (expectedLength != -1 && expectedLength < dataLength) {
-            resetInvalidContentLength(header.length(), endOfStream);
+            resetProtocolError(header.length(), endOfStream);
             return;
         }
         if (expectedLength != -1) {
             expectedLength -= dataLength;
             if (endOfStream && expectedLength != 0) {
-                resetInvalidContentLength(header.length(), true);
+                resetProtocolError(header.length(), true);
                 return;
             }
         }
@@ -438,7 +438,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     void closeFromRemote() {
         if (expectedLength != -1 && expectedLength != 0) {
-            resetInvalidContentLength(0, true);
+            resetProtocolError(0, true);
             return;
         }
         inboundDataLock.lock();
@@ -589,7 +589,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
         this.requestLimit = limit;
     }
 
-    private void resetInvalidContentLength(int currentFrameLength, boolean endOfStream) {
+    void resetProtocolError(int currentFrameLength, boolean endOfStream) {
         state = Http2StreamState.CLOSED;
         writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
         if (!endOfStream) {

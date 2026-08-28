@@ -65,7 +65,7 @@ HTTP/1.1 server configuration
 <td>
 <code>true</code>
 </td>
-<td>If set to false, any query and fragment is accepted (even containing illegal characters)</td>
+<td>Disables query and fragment syntax validation when set to <code>false</code>; intended only for closed systems receiving trusted, valid request targets, as behavior for invalid input is unspecified</td>
 </tr>
 <tr>
 <td>
@@ -77,7 +77,7 @@ HTTP/1.1 server configuration
 <td>
 <code>true</code>
 </td>
-<td>If set to false, any path is accepted (even containing illegal characters)</td>
+<td>Whether to validate path characters and HTTP/1.1 request-target forms</td>
 </tr>
 <tr>
 <td>

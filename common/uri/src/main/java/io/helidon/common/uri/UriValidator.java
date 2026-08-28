@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,10 +156,10 @@ public final class UriValidator {
         // pct-encoded = "%" HEXDIG HEXDIG
         // sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
 
-        char[] chars = rawQuery.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            validateAscii(Segment.QUERY, chars, i, c);
+        int length = rawQuery.length();
+        for (int i = 0; i < length; i++) {
+            char c = rawQuery.charAt(i);
+            validateAscii(Segment.QUERY, rawQuery, i, c);
             if (UNRESERVED[c]) {
                 continue;
             }
@@ -181,11 +181,11 @@ public final class UriValidator {
             // done with pchar validation except for percent encoded
             if (c == '%') {
                 // percent encoding
-                validatePercentEncoding(Segment.QUERY, rawQuery, chars, i);
+                validatePercentEncoding(Segment.QUERY, rawQuery, i);
                 i += 2;
                 continue;
             }
-            failInvalidChar(Segment.QUERY, chars, i, c);
+            failInvalidChar(Segment.QUERY, rawQuery, i, c);
         }
     }
 
@@ -233,7 +233,7 @@ public final class UriValidator {
 
         String host = ipLiteral.substring(1, ipLiteral.length() - 1);
         checkNotBlank(Segment.HOST, "Host", ipLiteral, host);
-        if (host.charAt(0) == 'v') {
+        if (host.charAt(0) == 'v' || host.charAt(0) == 'V') {
             // IP future - starts with version `v1` etc.
             validateIpFuture(ipLiteral, host);
             return;
@@ -265,6 +265,11 @@ public final class UriValidator {
         int segments = 0; // max segments is 8 (full IPv6 address)
         String inProgress = host;
         while (!inProgress.isEmpty()) {
+            if (segments >= 8) {
+                throw new UriValidationException(Segment.HOST,
+                                                 ipLiteral.toCharArray(),
+                                                 "Host IPv6 address contains too many segments");
+            }
             if (inProgress.length() == 1) {
                 segments++;
                 validateH16(ipLiteral, inProgress);
@@ -302,6 +307,12 @@ public final class UriValidator {
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(2));
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(3));
                         validateIpOctet("Host IPv6 dual address contains invalid IPv4 address", ipLiteral, matcher.group(4));
+                        segments += 2;
+                        if (segments > 8) {
+                            throw new UriValidationException(Segment.HOST,
+                                                             ipLiteral.toCharArray(),
+                                                             "Host IPv6 address contains too many segments");
+                        }
                     } else {
                         throw new UriValidationException(Segment.HOST,
                                                          ipLiteral.toCharArray(),
@@ -330,6 +341,11 @@ public final class UriValidator {
             throw new UriValidationException(Segment.HOST,
                                              ipLiteral.toCharArray(),
                                              "Host IPv6 address contains too many segments");
+        }
+        if (!skipped && segments < 8) {
+            throw new UriValidationException(Segment.HOST,
+                                             ipLiteral.toCharArray(),
+                                             "Host IPv6 address contains too few segments");
         }
     }
 
@@ -468,11 +484,26 @@ public final class UriValidator {
                                          c);
     }
 
+    private static void failInvalidChar(Segment segment, String value, int i, char c) {
+        failInvalidChar(segment, value.toCharArray(), i, c);
+    }
+
     private static void validateAscii(Segment segment, char[] chars, int i, char c) {
         if (c > 254) {
             // in general only ASCII characters are allowed
             throw new UriValidationException(segment,
                                              chars,
+                                             segment.text() + " contains invalid char (non-ASCII)",
+                                             i,
+                                             c);
+        }
+    }
+
+    private static void validateAscii(Segment segment, String value, int i, char c) {
+        if (c > 254) {
+            // in general only ASCII characters are allowed
+            throw new UriValidationException(segment,
+                                             value.toCharArray(),
                                              segment.text() + " contains invalid char (non-ASCII)",
                                              i,
                                              c);
@@ -499,6 +530,32 @@ public final class UriValidator {
         // %p1p2
         validateHex(segment, value, chars, p1, segment.text(), i + 1, true);
         validateHex(segment, value, chars, p2, segment.text(), i + 2, true);
+    }
+
+    private static void validatePercentEncoding(Segment segment, String value, int i) {
+        if (i + 2 >= value.length()) {
+            throw new UriValidationException(segment,
+                                             value.toCharArray(),
+                                             segment.text()
+                                                     + " contains invalid % encoding, not enough chars left at index "
+                                                     + i);
+        }
+        char p1 = value.charAt(i + 1);
+        char p2 = value.charAt(i + 2);
+        // %p1p2
+        validateHex(segment, value, p1, segment.text(), i + 1, true);
+        validateHex(segment, value, p2, segment.text(), i + 2, true);
+    }
+
+    private static void validateHex(Segment segment,
+                                    String value,
+                                    char c,
+                                    String type,
+                                    int index,
+                                    boolean isPercentEncoding) {
+        if (c > 255 || !HEXDIGIT[c]) {
+            validateHex(segment, value, value.toCharArray(), c, type, index, isPercentEncoding);
+        }
     }
 
     private static void validateHex(Segment segment,
@@ -577,6 +634,9 @@ public final class UriValidator {
     }
 
     private static void validateIpOctet(String message, String host, String octet) {
+        if (octet.length() > 1 && octet.charAt(0) == '0') {
+            throw new UriValidationException(Segment.HOST, host.toCharArray(), message);
+        }
         int octetInt = Integer.parseInt(octet);
         // cannot be negative, as the regexp will not match
         if (octetInt > 255) {

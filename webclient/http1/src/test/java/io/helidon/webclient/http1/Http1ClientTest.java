@@ -66,6 +66,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
@@ -256,6 +257,64 @@ class Http1ClientTest {
             String message = messages.getFirst();
             assertThat(message, containsString("Authorization: Bearer secret-token"));
             assertThat(message, containsString("Cookie: session=secret-cookie"));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testRequestFragmentOmittedFromWireAndSendLog(boolean outputStream) {
+        String fragment = "send-listener-fragment";
+        Logger logger = Logger.getLogger(CLIENT_SEND_LOGGER_NAME);
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        List<String> messages = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                messages.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.FINER);
+
+        try {
+            Http1Client client = Http1Client.builder()
+                    .protocolConfig(it -> it.log(log -> log.sendLog(true)
+                            .receiveLog(false)
+                            .unsafeRawData(true)))
+                    .build();
+            FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+            Http1ClientRequest request = client.put("http://localhost:" + dummyPort + "/test")
+                    .fragment(fragment);
+            request.connection(connection);
+
+            Http1ClientResponse response = outputStream
+                    ? getHttp1ClientResponseFromOutputStream(request, new String[] {"Sending Something"})
+                    : request.submit("Sending Something");
+            assertThat(response.entity().as(String.class), is("Sending Something"));
+
+            assertThat(connection.getPrologue(), not(containsString(fragment)));
+            List<String> prologueMessages = messages.stream()
+                    .filter(message -> message.contains(" prologue: "))
+                    .toList();
+            assertThat(prologueMessages.isEmpty(), is(false));
+            assertThat(prologueMessages.toString(), not(containsString(fragment)));
         } finally {
             logger.removeHandler(handler);
             logger.setLevel(previousLevel);

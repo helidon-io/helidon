@@ -16,10 +16,16 @@
 
 package io.helidon.webserver.http1;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.parameters.Parameters;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriPathSegment;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -158,6 +164,107 @@ public final class Http1Prologue {
         return maybePost == POST_INT;
     }
 
+    private static boolean validateRequestTarget(Method method,
+                                                 String requestTarget,
+                                                 boolean hasQuery,
+                                                 boolean hasFragment) {
+        if (hasFragment) {
+            throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
+        }
+        if (Method.CONNECT.equals(method)) {
+            if (!hasQuery && isAuthorityForm(requestTarget)) {
+                return true;
+            }
+        } else if ("*".equals(requestTarget)) {
+            if (!hasQuery && Method.OPTIONS.equals(method)) {
+                return true;
+            }
+        } else {
+            if (!requestTarget.isEmpty()
+                    && (requestTarget.charAt(0) == '/' || isAbsoluteForm(requestTarget))) {
+                return false;
+            }
+            throw new IllegalArgumentException("Relative path in HTTP request-target");
+        }
+        throw new IllegalArgumentException("Invalid HTTP/1.1 request-target form");
+    }
+
+    private static boolean isAuthorityForm(String requestTarget) {
+        int portDelimiter;
+        String host;
+        if (requestTarget.startsWith("[")) {
+            int closingBracket = requestTarget.indexOf(']');
+            if (closingBracket < 0
+                    || closingBracket + 1 >= requestTarget.length()
+                    || requestTarget.charAt(closingBracket + 1) != ':') {
+                return false;
+            }
+            host = requestTarget.substring(0, closingBracket + 1);
+            portDelimiter = closingBracket + 1;
+        } else {
+            portDelimiter = requestTarget.lastIndexOf(':');
+            if (portDelimiter <= 0 || requestTarget.indexOf(':') != portDelimiter) {
+                return false;
+            }
+            host = requestTarget.substring(0, portDelimiter);
+        }
+
+        String port = requestTarget.substring(portDelimiter + 1);
+        if (port.isEmpty()) {
+            return false;
+        }
+        int portNumber = 0;
+        for (int i = 0; i < port.length(); i++) {
+            char c = port.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+            portNumber = portNumber * 10 + c - '0';
+            if (portNumber > 65535) {
+                return false;
+            }
+        }
+        if (portNumber == 0) {
+            return false;
+        }
+
+        try {
+            UriValidator.validateHost(host);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private static boolean isAbsoluteForm(String requestTarget) {
+        int colon = requestTarget.indexOf(':');
+        if (colon <= 0) {
+            return false;
+        }
+        char first = requestTarget.charAt(0);
+        if ((first < 'a' || first > 'z') && (first < 'A' || first > 'Z')) {
+            return false;
+        }
+        for (int i = 1; i < colon; i++) {
+            char c = requestTarget.charAt(i);
+            if ((c >= 'a' && c <= 'z')
+                    || (c >= 'A' && c <= 'Z')
+                    || (c >= '0' && c <= '9')
+                    || c == '+' || c == '-' || c == '.') {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private static UriPath authorityPath(String requestTarget) {
+        String decoded = requestTarget.indexOf('%') == -1
+                ? requestTarget
+                : URI.create("//" + requestTarget).getAuthority();
+        return new AuthorityPath(requestTarget, decoded);
+    }
+
     private HttpPrologue doRead() {
         int eol;
 
@@ -231,12 +338,45 @@ public final class Http1Prologue {
         }
 
         try {
-            return HttpPrologue.create(protocol,
-                                       "HTTP",
-                                       "1.1",
-                                       method,
-                                       path,
-                                       validatePath);
+            HttpPrologue prologue = HttpPrologue.create(protocol,
+                                                        "HTTP",
+                                                        "1.1",
+                                                        method,
+                                                        path,
+                                                        validatePath && !Method.CONNECT.equals(method));
+            String requestTarget = prologue.uriPath().rawPath();
+            boolean specialRequestTarget;
+            if (validatePath) {
+                specialRequestTarget = validateRequestTarget(method,
+                                                             requestTarget,
+                                                             prologue.hasQuery(),
+                                                             prologue.fragment().hasValue());
+            } else {
+                specialRequestTarget = (Method.CONNECT.equals(method) && isAuthorityForm(requestTarget))
+                        || (Method.OPTIONS.equals(method) && "*".equals(requestTarget));
+            }
+            if (specialRequestTarget) {
+                if (Method.CONNECT.equals(method)
+                        && (requestTarget.startsWith("[v") || requestTarget.startsWith("[V"))) {
+                    throw RequestException.builder()
+                            .type(DirectHandler.EventType.OTHER)
+                            .status(Status.NOT_IMPLEMENTED_501)
+                            .request(DirectTransportRequest.create(protocol, method.text(), path))
+                            .message("CONNECT IP address mechanism is not supported")
+                            .safeMessage(true)
+                            .build();
+                }
+                return HttpPrologue.create(protocol,
+                                           "HTTP",
+                                           "1.1",
+                                           method,
+                                           Method.CONNECT.equals(method)
+                                                   ? authorityPath(requestTarget)
+                                                   : UriPath.createRelative(UriPath.root(), requestTarget),
+                                           prologue.query(),
+                                           prologue.fragment());
+            }
+            return prologue;
         } catch (IllegalArgumentException e) {
             throw badRequest("Invalid path: " + e.getMessage(), method.text(), path, "HTTP", "1.1");
         }
@@ -259,5 +399,39 @@ public final class Http1Prologue {
         }
 
         return new String(bytes, StandardCharsets.US_ASCII);
+    }
+
+    private record AuthorityPath(String rawPath, String path) implements UriPath {
+        private static final Parameters EMPTY_PARAMETERS = Parameters.empty("uri/path");
+        private static final UriPath ROOT = UriPath.root();
+
+        @Override
+        public String rawPathNoParams() {
+            return rawPath;
+        }
+
+        @Override
+        public Parameters matrixParameters() {
+            return EMPTY_PARAMETERS;
+        }
+
+        @Override
+        public UriPath absolute() {
+            return ROOT;
+        }
+
+        @Override
+        public List<UriPathSegment> segments() {
+            return List.of();
+        }
+
+        @Override
+        public void validate() {
+        }
+
+        @Override
+        public String toString() {
+            return rawPath;
+        }
     }
 }

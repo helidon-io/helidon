@@ -1,0 +1,179 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.webserver.security;
+
+import java.util.List;
+
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.common.uri.UriPath;
+import io.helidon.http.Method;
+import io.helidon.http.PathMatcher;
+import io.helidon.http.PathMatchers;
+import io.helidon.http.Status;
+import io.helidon.security.Security;
+import io.helidon.security.SecurityContext;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
+import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@ServerTest
+class SpecialRequestTargetTest {
+    private static final String MATCHED_HEADER = "X-Decoded-Authority-Matched";
+    private static final PathMatcher DECODED_AUTHORITY_MATCHER = new PathMatcher() {
+        @Override
+        public PathMatchers.MatchResult match(UriPath path) {
+            return "example.com:443".equals(path.path())
+                    ? PathMatchers.any().match(path)
+                    : PathMatchers.MatchResult.notAccepted();
+        }
+
+        @Override
+        public PathMatchers.PrefixMatchResult prefixMatch(UriPath path) {
+            return PathMatchers.PrefixMatchResult.notAccepted();
+        }
+    };
+
+    private final SocketHttpClient client;
+
+    SpecialRequestTargetTest(SocketHttpClient client) {
+        this.client = client;
+    }
+
+    @SetUpServer
+    static void setup(WebServerConfig.Builder server) {
+        Handler handler = (req, res) -> {
+            var path = req.prologue().uriPath();
+            var securityContext = req.context().get(SecurityContext.class).orElseThrow();
+            var status = Method.CONNECT.equals(req.prologue().method())
+                    ? Status.NOT_IMPLEMENTED_501
+                    : Status.OK_200;
+            res.status(status)
+                    .send(path.rawPath()
+                                  + '|' + path.path()
+                                  + '|' + path.absolute().path()
+                                  + '|' + req.requestedUri().toUri()
+                                  + '|' + securityContext.env().targetUri()
+                                  + '|' + req.requestedUri().authority()
+                                  + '|' + req.requestedUri().port());
+        };
+        server.featuresDiscoverServices(false)
+                .addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.builder()
+                                    .security(Security.builder().build())
+                                    .build())
+                .routing(routing -> routing
+                        .route(Method.CONNECT, DECODED_AUTHORITY_MATCHER, (req, res) -> {
+                            res.header(MATCHED_HEADER, "true");
+                            handler.handle(req, res);
+                        })
+                        .any(handler));
+    }
+
+    @Test
+    void optionsAsteriskReachesRouting() {
+        String response = client.sendAndReceive(Method.OPTIONS, "*", null, List.of());
+
+        assertThat(response, containsString("200 OK"));
+        assertThat(response, containsString("*|/"));
+    }
+
+    @Test
+    void connectAuthorityMatchesSecurityTarget() {
+        String response = assertConnectTarget("example.com:443",
+                                              "example.com:443",
+                                              "http://example.com:443",
+                                              "example.com:443",
+                                              443);
+        assertThat(response, containsString(MATCHED_HEADER + ": true"));
+    }
+
+    @Test
+    void encodedConnectAuthorityMatchesSecurityTarget() {
+        String response = assertConnectTarget("example%2Ecom:443",
+                                              "example.com:443",
+                                              "http://example%2Ecom:443",
+                                              "example%2Ecom:443",
+                                              443);
+        assertThat(response, containsString(MATCHED_HEADER + ": true"));
+    }
+
+    @Test
+    void connectAuthorityPreservesPlus() {
+        assertConnectTarget("example+service:443",
+                            "example+service:443",
+                            "http://example+service:443",
+                            "example+service:443",
+                            443);
+    }
+
+    @Test
+    void connectAuthorityPreservesEncodedDelimiter() {
+        assertConnectTarget("example%40service:443",
+                            "example@service:443",
+                            "http://example%40service:443",
+                            "example%40service:443",
+                            443);
+    }
+
+    @Test
+    void connectAuthorityNormalizesPort() {
+        assertConnectTarget("example.com:0443", "example.com:0443", "http://example.com:443", "example.com:443", 443);
+    }
+
+    @Test
+    void connectIpFutureIsNotImplemented() {
+        String response = client.sendAndReceive(Method.CONNECT, "[Vf.foo-bar]:443", null, List.of());
+
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Status.NOT_IMPLEMENTED_501));
+        assertThat(response, not(containsString("[Vf.foo-bar]:443|")));
+    }
+
+    @Test
+    void connectIpFutureWithFragmentIsBadRequest() {
+        String response = client.sendAndReceive(Method.CONNECT, "[Vf.foo-bar]:443#fragment", null, List.of());
+
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Status.BAD_REQUEST_400));
+        assertThat(response, not(containsString("[Vf.foo-bar]:443|")));
+    }
+
+    private String assertConnectTarget(String requestTarget,
+                                       String expectedPath,
+                                       String expectedUri,
+                                       String expectedAuthority,
+                                       int expectedPort) {
+        String response = client.sendAndReceive(Method.CONNECT, requestTarget, null, List.of());
+
+        assertThat(response, containsString("501 Not Implemented"));
+        assertThat(response,
+                   containsString(requestTarget
+                                          + '|' + expectedPath
+                                          + "|/|" + expectedUri
+                                          + '|' + expectedUri
+                                          + '|' + expectedAuthority
+                                          + '|' + expectedPort));
+        return response;
+    }
+}

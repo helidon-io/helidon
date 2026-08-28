@@ -17,17 +17,21 @@
 package io.helidon.webclient.http2;
 
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.api.ClientRequest;
+import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 
@@ -41,6 +45,18 @@ import static org.mockito.Mockito.when;
 
 class Http2CallOutputStreamChainTest {
     private static final String BLOCKED_REDIRECT_MESSAGE = "Cross-origin redirect with request entity is disabled.";
+
+    @Test
+    void fragmentIsNotWrittenToPathPseudoHeader() {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com/resource?query=value#fragment"));
+
+        Http2Headers headers = Http2CallChainBase.prepareHeaders(Method.GET,
+                                                                 ClientRequestHeaders.create(WritableHeaders.create()),
+                                                                 uri);
+
+        assertThat(headers.path(), is("/resource?query=value"));
+        assertThat(uri.fragment().value(), is("fragment"));
+    }
 
     @Test
     void doesNotProbeOneShotHandlerAfterHttp1FallbackAlreadySentEntity() throws Exception {
