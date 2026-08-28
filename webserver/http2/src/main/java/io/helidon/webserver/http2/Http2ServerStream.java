@@ -1161,14 +1161,17 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     private void writeResetStream(Http2RstStream reset, Http2Settings settings) {
-        flowControl.outbound().streamClosed();
         resetCompletionLock.lock();
         try {
             windowUpdatesClosed = true;
         } finally {
             resetCompletionLock.unlock();
         }
-        writer.write(reset.toFrameData(settings, streamId, Http2Flag.NoFlags.create()));
+        try {
+            writer.write(reset.toFrameData(settings, streamId, Http2Flag.NoFlags.create()));
+        } finally {
+            flowControl.outbound().streamClosed();
+        }
     }
 
     private void remoteCompleteAfterReset() {
