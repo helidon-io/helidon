@@ -63,7 +63,7 @@ record ResponseRepresentation(String contentEncoding,
     }
 
     boolean weakEtag() {
-        return contentEncoding != null;
+        return runtimeEncoded();
     }
 
     boolean runtimeEncoded() {

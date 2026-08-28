@@ -410,14 +410,14 @@ class StaticContentTest {
     }
 
     @Test
-    void testFileSystemPreCompressedIfRangeRejectsWeakSelectedRepresentationEtag() {
+    void testFileSystemPreCompressedIfRangeAllowsMatchingSelectedRepresentationEtag() {
         String brotliEtag;
         try (Http1ClientResponse response = testClient.get("/path/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "br")
                 .request()) {
             assertThat(response.status(), is(Status.OK_200));
             brotliEtag = response.headers().get(HeaderNames.ETAG).get();
-            assertThat(brotliEtag, startsWith("W/"));
+            assertThat(brotliEtag, not(startsWith("W/")));
         }
 
         try (Http1ClientResponse response = testClient.get("/path/resource.txt")
@@ -426,11 +426,11 @@ class StaticContentTest {
                 .header(HeaderNames.IF_RANGE, brotliEtag)
                 .request()) {
 
-            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.status(), is(Status.PARTIAL_CONTENT_206));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
-            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_RANGE));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_RANGE, "bytes 2-5/14"));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
-            assertThat(response.as(String.class), is("Brotli content"));
+            assertThat(response.as(String.class), is("otli"));
         }
     }
 
