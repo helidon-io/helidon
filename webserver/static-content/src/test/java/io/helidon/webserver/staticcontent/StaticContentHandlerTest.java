@@ -435,14 +435,14 @@ class StaticContentHandlerTest {
     @Test
     void preCompressedEncodingsNormalizeCodingAndSuffix() {
         Map<String, String> normalized = StaticContentConfigSupport.normalizePreCompressedEncodings(
-                List.of(PreCompressedEncodingConfig.create("GZIP", ".gz")));
+                Map.of("GZIP", ".gz"));
 
         assertThat(normalized, is(Map.of("gzip", "gz")));
     }
 
     @Test
-    void preCompressedEncodingsAllowEmptyList() {
-        Map<String, String> normalized = StaticContentConfigSupport.normalizePreCompressedEncodings(List.of());
+    void preCompressedEncodingsAllowEmptyMap() {
+        Map<String, String> normalized = StaticContentConfigSupport.normalizePreCompressedEncodings(Map.of());
 
         assertThat(normalized, is(Map.of()));
     }
@@ -451,25 +451,24 @@ class StaticContentHandlerTest {
     void preCompressedEncodingsRejectReservedCoding() {
         assertThrows(IllegalArgumentException.class,
                      () -> StaticContentConfigSupport.normalizePreCompressedEncodings(
-                             List.of(PreCompressedEncodingConfig.create("identity", "gz"))));
+                             Map.of("identity", "gz")));
         assertThrows(IllegalArgumentException.class,
                      () -> StaticContentConfigSupport.normalizePreCompressedEncodings(
-                             List.of(PreCompressedEncodingConfig.create("*", "gz"))));
+                             Map.of("*", "gz")));
     }
 
     @Test
     void preCompressedEncodingsRejectInvalidCoding() {
         assertThrows(IllegalArgumentException.class,
                      () -> StaticContentConfigSupport.normalizePreCompressedEncodings(
-                             List.of(PreCompressedEncodingConfig.create("\u00e9", "gz"))));
+                             Map.of("\u00e9", "gz")));
     }
 
     @Test
     void preCompressedEncodingsRejectDuplicateCoding() {
         assertThrows(IllegalArgumentException.class,
                      () -> StaticContentConfigSupport.normalizePreCompressedEncodings(
-                             List.of(PreCompressedEncodingConfig.create("gzip", "gz"),
-                                     PreCompressedEncodingConfig.create("GZIP", "gzip"))));
+                             Map.of("gzip", "gz", "GZIP", "gzip")));
     }
 
     @Test
@@ -554,7 +553,7 @@ class StaticContentHandlerTest {
     void emptyPreCompressedEncodingsRangeSelectsIdentity() throws IOException, URISyntaxException {
         TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
                                                                  .location(Paths.get("."))
-                                                                 .preCompressedEncodings(List.of())
+                                                                 .preCompressedEncodings(Map.of())
                                                                  .build(),
                                                              true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
@@ -588,7 +587,7 @@ class StaticContentHandlerTest {
     void emptyPreCompressedEncodingsRangeUsesRuntimeWhenIdentityRejected() throws IOException, URISyntaxException {
         TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
                                                                  .location(Paths.get("."))
-                                                                 .preCompressedEncodings(List.of())
+                                                                 .preCompressedEncodings(Map.of())
                                                                  .build(),
                                                              true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
@@ -974,9 +973,7 @@ class StaticContentHandlerTest {
             String acceptedCoding = alias.getValue();
             TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
                                                                     .location(Paths.get("."))
-                                                                    .preCompressedEncodings(List.of(
-                                                                            PreCompressedEncodingConfig.create(coding,
-                                                                                                               "sidecar")))
+                                                                    .putPreCompressedEncoding(coding, "sidecar")
                                                                     .build(),
                                                                 true);
             CachedHandler identityHandler = inMemoryHandler("Nested content");

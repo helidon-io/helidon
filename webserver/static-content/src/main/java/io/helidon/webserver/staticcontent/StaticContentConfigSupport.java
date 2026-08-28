@@ -17,10 +17,8 @@
 package io.helidon.webserver.staticcontent;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -34,29 +32,23 @@ final class StaticContentConfigSupport {
     private StaticContentConfigSupport() {
     }
 
-    static List<PreCompressedEncodingConfig> defaultPreCompressedEncodings() {
-        List<PreCompressedEncodingConfig> result = new ArrayList<>();
-        result.add(PreCompressedEncodingConfig.create("br", "br"));
-        result.add(PreCompressedEncodingConfig.create("gzip", "gz"));
+    static Map<String, String> defaultPreCompressedEncodings() {
+        Map<String, String> result = new LinkedHashMap<>();
+        result.put("br", "br");
+        result.put("gzip", "gz");
         return result;
     }
 
-    static Map<String, String> normalizePreCompressedEncodings(List<PreCompressedEncodingConfig> configured) {
+    static Map<String, String> normalizePreCompressedEncodings(Map<String, String> configured) {
         Map<String, String> result = new LinkedHashMap<>();
-        for (PreCompressedEncodingConfig entry : configured) {
-            String coding = normalizeCoding(entry.coding());
-            String suffix = normalizeSuffix(entry.suffix());
+        for (Map.Entry<String, String> entry : configured.entrySet()) {
+            String coding = normalizeCoding(entry.getKey());
+            String suffix = normalizeSuffix(entry.getValue());
             if (result.put(coding, suffix) != null) {
                 throw new IllegalArgumentException("Duplicate pre-compressed content coding: " + coding);
             }
         }
         return Collections.unmodifiableMap(result);
-    }
-
-    static List<PreCompressedEncodingConfig> preCompressedEncodingConfigs(Map<String, String> configured) {
-        List<PreCompressedEncodingConfig> result = new ArrayList<>(configured.size());
-        configured.forEach((coding, suffix) -> result.add(PreCompressedEncodingConfig.create(coding, suffix)));
-        return List.copyOf(result);
     }
 
     private static MediaType createContentTypes(Config config) {
@@ -102,26 +94,6 @@ final class StaticContentConfigSupport {
         @Prototype.ConfigFactoryMethod("contentTypes")
         static MediaType createContentTypes(Config config) {
             return StaticContentConfigSupport.createContentTypes(config);
-        }
-    }
-
-    static class PreCompressedEncodingMethods {
-        private PreCompressedEncodingMethods() {
-        }
-
-        /**
-         * Create a pre-compressed representation configuration.
-         *
-         * @param coding HTTP content coding
-         * @param suffix sidecar file suffix
-         * @return pre-compressed representation configuration
-         */
-        @Prototype.PrototypeFactoryMethod
-        static PreCompressedEncodingConfig create(String coding, String suffix) {
-            return PreCompressedEncodingConfig.builder()
-                    .coding(coding)
-                    .suffix(suffix)
-                    .build();
         }
     }
 

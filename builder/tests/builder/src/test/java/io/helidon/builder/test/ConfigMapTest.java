@@ -94,15 +94,18 @@ public class ConfigMapTest {
         second.put("second", "two");
 
         ConfigMap configMap = ConfigMap.builder()
+                .putOptionalProperty("zero", "zero")
                 .addOptionalProperties(first)
                 .addOptionalProperties(second)
+                .putOptionalProperty("first", "updated")
                 .build();
 
         first.clear();
         second.clear();
 
         Map<String, String> builtMap = configMap.optionalProperties().orElseThrow();
-        assertThat(builtMap, is(Map.of("first", "one", "second", "two")));
+        assertThat(builtMap, is(Map.of("zero", "zero", "first", "updated", "second", "two")));
+        assertThat(new ArrayList<>(builtMap.keySet()), is(List.of("zero", "first", "second")));
         assertThrows(UnsupportedOperationException.class, () -> builtMap.put("third", "three"));
 
         configMap = ConfigMap.builder()

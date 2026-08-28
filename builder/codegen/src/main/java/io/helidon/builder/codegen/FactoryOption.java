@@ -503,7 +503,10 @@ final class FactoryOption {
 
             String singularSetterName;
             if (singularAddPrefix) {
-                String prefix = returnType.isMap() ? "put" : "add";
+                TypeName singularType = returnType.isOptional()
+                        ? returnType.typeArguments().getFirst()
+                        : returnType;
+                String prefix = singularType.isMap() ? "put" : "add";
                 singularSetterName = prefix + capitalize(singularName);
             } else {
                 singularSetterName = singularName;

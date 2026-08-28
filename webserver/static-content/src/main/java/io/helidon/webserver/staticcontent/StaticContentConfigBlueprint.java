@@ -171,16 +171,16 @@ interface StaticContentConfigBlueprint extends Prototype.Factory<StaticContentFe
     boolean preCompressedCrossOriginSourcingEnabled();
 
     /**
-     * Ordered pre-compressed content coding and file suffix entries; the default order is br to br and gzip to gz,
-     * handler-level entries replace these entries rather than merging with them, an explicit empty list disables sidecar
+     * Ordered pre-compressed content coding to file suffix mappings; the default order is br to br and gzip to gz,
+     * handler-level mappings replace these mappings rather than merging with them, an explicit empty map disables sidecar
      * lookups by default, codings must be unique concrete valid HTTP tokens other than {@code identity} and {@code *},
      * and suffixes have leading dots ignored and must not contain path separators.
      *
-     * @return ordered content coding and file suffix entries
+     * @return ordered content coding to file suffix mappings
      */
     @Option.Configured
     @Option.DefaultMethod(type = StaticContentConfigSupport.class, value = "defaultPreCompressedEncodings")
     @Option.Singular("preCompressedEncoding")
-    List<PreCompressedEncodingConfig> preCompressedEncodings();
+    Map<String, String> preCompressedEncodings();
 
 }

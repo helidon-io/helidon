@@ -21,10 +21,7 @@ server:
     static-content:
       pre-compressed-enabled: false
       pre-compressed-encodings:
-        - coding: gzip
-          suffix: zz
-        - coding: br
-          suffix: br
+        gzip: zz
       temporary-storage:
         directory: "./target/helidon/tmp"
         file-prefix: "helidon-custom"
@@ -50,12 +47,11 @@ server:
         - context: "/path-empty-encodings"
           location: "./src/test/resources/web"
           pre-compressed-enabled: true
-          pre-compressed-encodings: []
+          pre-compressed-encodings: {}
         - context: "/path-custom-encodings"
           location: "./src/test/resources/web"
           pre-compressed-enabled: true
           pre-compressed-encodings:
-            - coding: gzip
-              suffix: gz
+            gzip: gz
         - context: "/singlepath"
           location: "./src/test/resources/web/resource.txt"

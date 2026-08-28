@@ -173,7 +173,7 @@ class StaticContentConfigTest {
     }
 
     @Test
-    void testFileSystemPreCompressedHandlerPreservesConfiguredOrder() {
+    void testFileSystemPreCompressedHandlerUsesConfiguredMap() {
         try (Http1ClientResponse response = testClient.get("/path-enabled/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "*, identity;q=0")
                 .request()) {
@@ -185,7 +185,7 @@ class StaticContentConfigTest {
     }
 
     @Test
-    void testFileSystemPreCompressedHandlerOverrideWithEmptyEncodingList() {
+    void testFileSystemPreCompressedHandlerOverrideWithEmptyEncodingMap() {
         try (Http1ClientResponse response = testClient.get("/path-empty-encodings/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "gzip")
                 .request()) {

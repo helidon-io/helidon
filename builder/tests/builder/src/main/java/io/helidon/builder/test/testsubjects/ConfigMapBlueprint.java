@@ -32,6 +32,7 @@ interface ConfigMapBlueprint {
     Map<String, String> properties();
 
     @Option.Configured
+    @Option.Singular("optionalProperty")
     Optional<Map<String, String>> optionalProperties();
 
     @Option.Configured

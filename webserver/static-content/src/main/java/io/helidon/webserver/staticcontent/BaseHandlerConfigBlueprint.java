@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.staticcontent;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -147,13 +146,14 @@ interface BaseHandlerConfigBlueprint {
     Optional<Boolean> preCompressedEnabled();
 
     /**
-     * Ordered pre-compressed content coding and file suffix entries; handler entries replace inherited feature-level
-     * entries rather than merging with them, an explicit empty list disables sidecar lookups for this handler, codings
+     * Ordered pre-compressed content coding to file suffix mappings; handler mappings replace inherited feature-level
+     * mappings rather than merging with them, an explicit empty map disables sidecar lookups for this handler, codings
      * must be unique concrete valid HTTP tokens other than {@code identity} and {@code *}, and suffixes have leading
      * dots ignored and must not contain path separators.
      *
-     * @return ordered content coding and file suffix entries
+     * @return ordered content coding to file suffix mappings
      */
     @Option.Configured
-    Optional<List<PreCompressedEncodingConfig>> preCompressedEncodings();
+    @Option.Singular("preCompressedEncoding")
+    Optional<Map<String, String>> preCompressedEncodings();
 }

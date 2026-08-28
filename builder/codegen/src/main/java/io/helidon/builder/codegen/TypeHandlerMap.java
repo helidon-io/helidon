@@ -198,7 +198,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                 .update(it -> option().annotations().forEach(it::addAnnotation));
 
         if (sameGeneric) {
-            sameGenericArgs(method, keyType, singularName, type());
+            sameGenericArgs(option(), method, keyType, singularName, type());
         } else {
             method.addParameterArgument(param -> param
                             .kind(ElementKind.PARAMETER)
@@ -260,7 +260,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                 .update(it -> option().annotations().forEach(it::addAnnotation));
 
         if (sameGeneric) {
-            sameGenericArgs(method, keyType, singularName, valueParamType);
+            sameGenericArgs(option(), method, keyType, singularName, valueParamType);
         } else {
             method.addParameterArgument(param -> param
                             .kind(ElementKind.PARAMETER)
@@ -328,7 +328,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                 .update(it -> option().annotations().forEach(it::addAnnotation));
 
         if (sameGeneric) {
-            sameGenericArgs(method, keyType, name, type());
+            sameGenericArgs(option(), method, keyType, name, type());
         } else {
             method.addParameterArgument(param -> param
                             .kind(ElementKind.PARAMETER)
@@ -551,10 +551,11 @@ class TypeHandlerMap extends TypeHandlerContainer {
                 .build();
     }
 
-    private void sameGenericArgs(TypedElementInfo.Builder method,
-                                 TypeName keyType,
-                                 String value,
-                                 TypeName valueType) {
+    static void sameGenericArgs(OptionInfo option,
+                                TypedElementInfo.Builder method,
+                                TypeName keyType,
+                                String value,
+                                TypeName valueType) {
 
         TypeName genericTypeBase;
         TypeName resolvedKeyType;
@@ -591,7 +592,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                     .typeArguments(List.of(SAME_GENERIC_TYPE))
                     .build();
         } else {
-            throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
+            throw new IllegalArgumentException("Property " + option.name() + " with type " + option.declaredType()
                     .fqName() + " is annotated"
                                                        + " with @SameGeneric, yet the key generic type cannot be determined."
                                                        + " Either the key must be a simple type, or a type with one type"
@@ -607,7 +608,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
         // now resolve value
         if (valueType.typeArguments().isEmpty()) {
             if (!genericTypeBase.equals(valueType)) {
-                throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
+                throw new IllegalArgumentException("Property " + option.name() + " with type " + option.declaredType()
                         .fqName() + " is "
                                                            + "annotated"
                                                            + " with @SameGeneric, yet the type of value is not the"
@@ -616,7 +617,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
             resolvedValueType = SAME_GENERIC_TYPE;
         } else if (valueType.typeArguments().size() == 1) {
             if (!genericTypeBase.equals(valueType.typeArguments().getFirst())) {
-                throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
+                throw new IllegalArgumentException("Property " + option.name() + " with type " + option.declaredType()
                         .fqName() + " is "
                                                            + "annotated"
                                                            + " with @SameGeneric, yet type of value is not the"
@@ -626,7 +627,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                     .typeArguments(List.of(SAME_GENERIC_TYPE))
                     .build();
         } else {
-            throw new IllegalArgumentException("Property " + option().name() + " with type " + option().declaredType()
+            throw new IllegalArgumentException("Property " + option.name() + " with type " + option.declaredType()
                     .fqName() + " is annotated"
                                                        + " with @SameGeneric, yet the value generic type cannot be determined."
                                                        + " Either the value must be a simple type, or a type with one type"
@@ -643,7 +644,7 @@ class TypeHandlerMap extends TypeHandlerContainer {
                         .description("new value for the key"));
     }
 
-    private void secondArgToPut(ContentBuilder<?> contentBuilder, TypeName typeName, String singularName) {
+    static void secondArgToPut(ContentBuilder<?> contentBuilder, TypeName typeName, String singularName) {
         TypeName genericTypeName = typeName.genericTypeName();
         if (genericTypeName.equals(LIST)) {
             contentBuilder.addContent(List.class)

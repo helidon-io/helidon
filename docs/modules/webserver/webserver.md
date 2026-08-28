@@ -1484,13 +1484,13 @@ named `big-file.html`, Helidon checks for sidecars such as `big-file.html.br` an
 static-content rules.
 
 The feature is enabled by default. The default ordered sidecar entries are
-`br -> br` and `gzip -> gz`. A custom `pre-compressed-encodings` list replaces
+`br -> br` and `gzip -> gz`. A custom `pre-compressed-encodings` map replaces
 the defaults, so include `br` and `gzip` explicitly if they should remain
-available. An explicitly empty `pre-compressed-encodings` list disables sidecar
-lookup for that configuration level. Each entry's `coding` must be unique, must
-be a concrete content coding other than `identity` or `*`, and must be a valid
-HTTP token. The `suffix` identifies the corresponding sidecar file; Helidon
-ignores leading dots and rejects suffixes that contain path separators.
+available. An explicitly empty `pre-compressed-encodings` map disables sidecar
+lookup for that configuration level. Each key must be a unique concrete content
+coding other than `identity` or `*`, and must be a valid HTTP token. The value
+identifies the corresponding sidecar file suffix; Helidon ignores leading dots
+and rejects suffixes that contain path separators.
 
 For a static-content handler configured with a single filesystem file, a
 sidecar must resolve to the derived sibling path itself. Helidon ignores
@@ -1565,10 +1565,8 @@ server:
       pre-compressed-enabled: true
       pre-compressed-cross-origin-sourcing-enabled: true
       pre-compressed-encodings:
-        - coding: br
-          suffix: br
-        - coding: gzip
-          suffix: gz
+        br: br
+        gzip: gz
       classpath:
         - context: "/assets"
           location: "/public"
