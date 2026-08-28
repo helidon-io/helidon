@@ -58,6 +58,7 @@ class SpecialRequestTargetTest {
                             : Status.OK_200;
                     res.status(status)
                             .send(path.rawPath()
+                                          + '|' + path.path()
                                           + '|' + path.absolute().path()
                                           + '|' + req.requestedUri().toUri()
                                           + '|' + securityContext.env().targetUri()
@@ -76,27 +77,35 @@ class SpecialRequestTargetTest {
 
     @Test
     void connectAuthorityMatchesSecurityTarget() {
-        assertConnectTarget("example.com:443", "http://example.com:443", "example.com:443", 443);
+        assertConnectTarget("example.com:443", "example.com:443", "http://example.com:443", "example.com:443", 443);
     }
 
     @Test
     void encodedConnectAuthorityMatchesSecurityTarget() {
-        assertConnectTarget("example%2Ecom:443", "http://example%2Ecom:443", "example%2Ecom:443", 443);
+        assertConnectTarget("example%2Ecom:443", "example.com:443", "http://example%2Ecom:443", "example%2Ecom:443", 443);
     }
 
     @Test
     void connectAuthorityPreservesPlus() {
-        assertConnectTarget("example+service:443", "http://example+service:443", "example+service:443", 443);
+        assertConnectTarget("example+service:443",
+                            "example+service:443",
+                            "http://example+service:443",
+                            "example+service:443",
+                            443);
     }
 
     @Test
     void connectAuthorityPreservesEncodedDelimiter() {
-        assertConnectTarget("example%40service:443", "http://example%40service:443", "example%40service:443", 443);
+        assertConnectTarget("example%40service:443",
+                            "example@service:443",
+                            "http://example%40service:443",
+                            "example%40service:443",
+                            443);
     }
 
     @Test
     void connectAuthorityNormalizesPort() {
-        assertConnectTarget("example.com:0443", "http://example.com:443", "example.com:443", 443);
+        assertConnectTarget("example.com:0443", "example.com:0443", "http://example.com:443", "example.com:443", 443);
     }
 
     @Test
@@ -115,12 +124,17 @@ class SpecialRequestTargetTest {
         assertThat(response, not(containsString("[Vf.foo-bar]:443|")));
     }
 
-    private void assertConnectTarget(String requestTarget, String expectedUri, String expectedAuthority, int expectedPort) {
+    private void assertConnectTarget(String requestTarget,
+                                     String expectedPath,
+                                     String expectedUri,
+                                     String expectedAuthority,
+                                     int expectedPort) {
         String response = client.sendAndReceive(Method.CONNECT, requestTarget, null, List.of());
 
         assertThat(response, containsString("501 Not Implemented"));
         assertThat(response,
                    containsString(requestTarget
+                                          + '|' + expectedPath
                                           + "|/|" + expectedUri
                                           + '|' + expectedUri
                                           + '|' + expectedAuthority

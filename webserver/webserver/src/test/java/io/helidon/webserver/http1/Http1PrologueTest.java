@@ -150,6 +150,14 @@ class Http1PrologueTest {
     }
 
     @Test
+    void testConnectAuthorityFormPreservesRawAndDecodedValues() {
+        assertConnectAuthorityPath("example%2Ecom:443", "example.com:443");
+        assertConnectAuthorityPath("example+service:443", "example+service:443");
+        assertConnectAuthorityPath("m%C3%BCnich.example:443", "münich.example:443");
+        assertConnectAuthorityPath("example%40service:443", "example@service:443");
+    }
+
+    @Test
     void testConnectAuthorityFormRejectsFragment() {
         assertInvalidRequestTarget("CONNECT example.com:443#fragment HTTP/1.1\r\n");
     }
@@ -202,6 +210,16 @@ class Http1PrologueTest {
 
         assertThat(e.status(), is(Status.BAD_REQUEST_400));
         assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+    }
+
+    private static void assertConnectAuthorityPath(String requestTarget, String expectedPath) {
+        DataReader reader = DataReader.create(() -> ("CONNECT " + requestTarget + " HTTP/1.1\r\n")
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.uriPath().rawPath(), is(requestTarget));
+        assertThat(prologue.uriPath().path(), is(expectedPath));
+        assertThat(prologue.uriPath().absolute().path(), is("/"));
     }
 
     private static void assertUnsupportedRequestTarget(String requestLine) {
