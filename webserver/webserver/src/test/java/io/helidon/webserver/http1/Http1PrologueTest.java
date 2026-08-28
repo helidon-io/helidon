@@ -107,6 +107,8 @@ class Http1PrologueTest {
         assertThat(prologue.uriPath().rawPath(), is("*"));
         assertThat(prologue.uriPath().path(), is("*"));
         assertThat(prologue.uriPath().absolute().path(), is("/"));
+        assertThat(prologue.uriPath().segments().size(), is(1));
+        assertThat(prologue.uriPath().segments().get(0).value(), is("*"));
     }
 
     @Test

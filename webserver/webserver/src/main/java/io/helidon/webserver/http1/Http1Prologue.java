@@ -370,7 +370,9 @@ public final class Http1Prologue {
                                            "HTTP",
                                            "1.1",
                                            method,
-                                           authorityPath(requestTarget),
+                                           Method.CONNECT.equals(method)
+                                                   ? authorityPath(requestTarget)
+                                                   : UriPath.createRelative(UriPath.root(), requestTarget),
                                            prologue.query(),
                                            prologue.fragment());
             }
