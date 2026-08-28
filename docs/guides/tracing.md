@@ -165,7 +165,7 @@ tracing:
   tags:
     env: development
   enabled: true
-  sampler-type: "const"
+  sampler-type: "constant"
   sampler-param: 1
   log-spans: true
   propagation: b3
@@ -369,7 +369,7 @@ tracing:
   tags:
     env: development
   enabled: true
-  sampler-type: "const"
+  sampler-type: "constant"
   sampler-param: 1
   log-spans: true
   propagation: b3
