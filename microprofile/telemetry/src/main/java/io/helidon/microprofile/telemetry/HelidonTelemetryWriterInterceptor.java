@@ -18,7 +18,6 @@ package io.helidon.microprofile.telemetry;
 import java.io.IOException;
 
 import io.helidon.tracing.Scope;
-import io.helidon.tracing.Span;
 
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.ext.Provider;
@@ -35,22 +34,17 @@ final class HelidonTelemetryWriterInterceptor implements WriterInterceptor {
     @Override
     public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
         ServerSpanLifecycle lifecycle = (ServerSpanLifecycle) context.getProperty(ServerSpanLifecycle.PROPERTY);
-        Span span = (Span) context.getProperty(HelidonTelemetryContainerFilter.SPAN);
-        if (lifecycle == null || span == null) {
+        if (lifecycle == null) {
             context.proceed();
             return;
         }
 
-        if (isCurrent(span)) {
-            proceed(context, lifecycle);
-            return;
-        }
-
-        Scope scope = span.activate();
+        Scope scope = lifecycle.activate();
         try {
             proceed(context, lifecycle);
         } finally {
             scope.close();
+            context.removeProperty(ServerSpanLifecycle.PROPERTY);
         }
     }
 
@@ -61,11 +55,5 @@ final class HelidonTelemetryWriterInterceptor implements WriterInterceptor {
             lifecycle.writerFailure(e);
             throw e;
         }
-    }
-
-    private static boolean isCurrent(Span span) {
-        return Span.current()
-                .map(current -> current.context().spanId().equals(span.context().spanId()))
-                .orElse(false);
     }
 }

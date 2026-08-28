@@ -19,6 +19,7 @@ import io.helidon.tracing.Tracer;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.core.FeatureContext;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
@@ -46,7 +47,7 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
     @Override
     public void configure(FeatureContext ctx) {
         ctx.register(HelidonTelemetryContainerFilter.class);
-        if (includesResponseWrite()) {
+        if (ctx.getConfiguration().getRuntimeType() == RuntimeType.SERVER && includesResponseWrite()) {
             ctx.register(HelidonTelemetryWriterInterceptor.class);
             ctx.register(new HelidonTelemetryRequestEventListener());
         }

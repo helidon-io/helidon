@@ -18,16 +18,15 @@ package io.helidon.microprofile.telemetry;
 import java.util.Objects;
 
 import io.helidon.tracing.Scope;
-import io.helidon.tracing.Span;
 
-import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.monitoring.ApplicationEvent;
 import org.glassfish.jersey.server.monitoring.ApplicationEventListener;
 import org.glassfish.jersey.server.monitoring.RequestEvent;
 import org.glassfish.jersey.server.monitoring.RequestEventListener;
 
 /**
- * Maintains response-write-inclusive server spans across Jersey request-processing phases and ends them at FINISHED.
+ * Maintains response-write-inclusive server spans across Jersey request-processing phases. FINISHED makes a span eligible
+ * to end; if an asynchronous resource method is still executing, the span ends when that method returns.
  */
 final class HelidonTelemetryRequestEventListener implements ApplicationEventListener {
 
@@ -39,46 +38,84 @@ final class HelidonTelemetryRequestEventListener implements ApplicationEventList
     @Override
     public RequestEventListener onRequest(RequestEvent requestEvent) {
         Objects.requireNonNull(requestEvent);
-        return HelidonTelemetryRequestEventListener::onRequestEvent;
+        return new RequestListener();
     }
 
-    private static void onRequestEvent(RequestEvent event) {
-        ContainerRequest request = event.getContainerRequest();
-        ServerSpanLifecycle lifecycle = (ServerSpanLifecycle) request.getProperty(ServerSpanLifecycle.PROPERTY);
-        if (lifecycle == null) {
-            return;
+    private static void close(Scope scope) {
+        if (scope != null) {
+            scope.close();
+        }
+    }
+
+    private static final class RequestListener implements RequestEventListener {
+        private volatile ServerSpanLifecycle lifecycle;
+        private Scope resourceScope;
+        private Scope exceptionMapperScope;
+        private volatile boolean initialized;
+
+        @Override
+        public void onEvent(RequestEvent event) {
+            initialize(event);
+            ServerSpanLifecycle currentLifecycle = lifecycle;
+            if (currentLifecycle == null) {
+                return;
+            }
+
+            switch (event.getType()) {
+            case REQUEST_FILTERED -> currentLifecycle.closeRequestScopeIfCurrent();
+            case RESOURCE_METHOD_START -> {
+                if (currentLifecycle.resourceMethodStarted()) {
+                    resourceScope = currentLifecycle.activate();
+                }
+            }
+            case RESOURCE_METHOD_FINISHED -> {
+                close(resourceScope);
+                resourceScope = null;
+                releaseIfFinished(currentLifecycle, currentLifecycle.resourceMethodFinished());
+            }
+            case RESP_FILTERS_START -> currentLifecycle.responseProcessingStarted();
+            case EXCEPTION_MAPPER_FOUND -> {
+                exceptionMapperScope = currentLifecycle.activate();
+            }
+            case EXCEPTION_MAPPING_FINISHED -> {
+                close(exceptionMapperScope);
+                exceptionMapperScope = null;
+            }
+            case ON_EXCEPTION -> currentLifecycle.responseFailure(event.getException());
+            case FINISHED -> {
+                currentLifecycle.closeRequestScopeIfCurrent();
+                if (event.getContainerResponse() != null) {
+                    currentLifecycle.responseStatus(event.getContainerResponse().getStatus());
+                }
+                releaseIfFinished(currentLifecycle, currentLifecycle.requestFinished(event.isResponseWritten()));
+            }
+            case START, MATCHING_START, LOCATOR_MATCHED, SUBRESOURCE_LOCATED, REQUEST_MATCHED, RESP_FILTERS_FINISHED -> {
+            }
+            default -> {
+            }
+            }
         }
 
-        Span span = (Span) request.getProperty(HelidonTelemetryContainerFilter.SPAN);
-        Scope scope = (Scope) request.getProperty(HelidonTelemetryContainerFilter.SPAN_SCOPE);
-        switch (event.getType()) {
-        case REQUEST_FILTERED -> {
-            if (scope != null) {
-                lifecycle.requestFiltered(scope);
+        private void releaseIfFinished(ServerSpanLifecycle currentLifecycle, boolean finished) {
+            if (finished && lifecycle == currentLifecycle) {
+                lifecycle = null;
             }
         }
-        case RESOURCE_METHOD_START -> {
-            if (span != null) {
-                lifecycle.resourceMethodStarted(span);
+
+        private static boolean initializes(RequestEvent.Type type) {
+            return switch (type) {
+            case REQUEST_FILTERED, RESOURCE_METHOD_START, RESOURCE_METHOD_FINISHED, RESP_FILTERS_START,
+                    RESP_FILTERS_FINISHED, ON_EXCEPTION, EXCEPTION_MAPPER_FOUND, EXCEPTION_MAPPING_FINISHED, FINISHED -> true;
+            case START, MATCHING_START, LOCATOR_MATCHED, SUBRESOURCE_LOCATED, REQUEST_MATCHED -> false;
+            };
+        }
+
+        private void initialize(RequestEvent event) {
+            if (initialized || !initializes(event.getType())) {
+                return;
             }
-        }
-        case RESOURCE_METHOD_FINISHED -> {
-            if (span != null) {
-                lifecycle.resourceMethodFinished(span);
-            }
-        }
-        case RESP_FILTERS_START -> lifecycle.responseProcessingStarted();
-        case ON_EXCEPTION -> lifecycle.responseFailure(event.getException());
-        case FINISHED -> {
-            if (span != null) {
-                lifecycle.requestFinished(span, event.isResponseWritten());
-            }
-        }
-        case START, MATCHING_START, LOCATOR_MATCHED, SUBRESOURCE_LOCATED, REQUEST_MATCHED, RESP_FILTERS_FINISHED,
-                EXCEPTION_MAPPER_FOUND, EXCEPTION_MAPPING_FINISHED -> {
-        }
-        default -> {
-        }
+            lifecycle = (ServerSpanLifecycle) event.getContainerRequest().getProperty(ServerSpanLifecycle.PROPERTY);
+            initialized = true;
         }
     }
 }

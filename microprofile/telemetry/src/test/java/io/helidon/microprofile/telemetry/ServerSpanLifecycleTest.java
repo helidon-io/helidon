@@ -15,6 +15,9 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,8 +30,17 @@ import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.WritableBaggage;
 
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.ContextKey;
+import jakarta.ws.rs.core.Response;
+import org.glassfish.jersey.internal.MapPropertiesDelegate;
+import org.glassfish.jersey.server.ContainerRequest;
+import org.glassfish.jersey.server.ContainerResponse;
+import org.glassfish.jersey.server.monitoring.RequestEvent;
+import org.glassfish.jersey.server.monitoring.RequestEventListener;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -37,24 +49,22 @@ class ServerSpanLifecycleTest {
 
     @Test
     void successfulFinishedEventEndsSpanWithoutWebServerCallback() {
-        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle();
         RecordingSpan span = new RecordingSpan();
         RecordingScope requestScope = new RecordingScope();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, requestScope);
 
-        lifecycle.requestFiltered(requestScope);
-        lifecycle.requestFinished(span, true);
+        lifecycle.requestFinished(true);
 
         assertThat("Span ended", span.endCount.get(), is(1));
         assertThat("Span status", span.status, is(Span.Status.UNSET));
-        assertThat("Request scope closed", requestScope.closeCount.get(), is(1));
     }
 
     @Test
     void unsuccessfulFinishedEventEndsSpanWithError() {
-        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle();
         RecordingSpan span = new RecordingSpan();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
 
-        lifecycle.requestFinished(span, false);
+        lifecycle.requestFinished(false);
 
         assertThat("Span ended", span.endCount.get(), is(1));
         assertThat("Span status", span.status, is(Span.Status.ERROR));
@@ -63,68 +73,133 @@ class ServerSpanLifecycleTest {
 
     @Test
     void repeatedFinishedEventsEndSpanOnce() {
-        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle();
         RecordingSpan span = new RecordingSpan();
         RecordingScope requestScope = new RecordingScope();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, requestScope);
 
-        lifecycle.requestFiltered(requestScope);
-        lifecycle.requestFiltered(requestScope);
-        IntStream.range(0, 100).parallel().forEach(index -> lifecycle.requestFinished(span, index < 100));
+        IntStream.range(0, 100).parallel().forEach(index -> lifecycle.requestFinished(index % 2 == 0));
 
         assertThat("Span ended once", span.endCount.get(), is(1));
-        assertThat("Request scope closed once", requestScope.closeCount.get(), is(1));
+    }
+
+    @Test
+    void requestScopeRemainsOpenUnderNestedContext() {
+        RecordingScope requestScope = new RecordingScope();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(new RecordingSpan(), requestScope);
+        ContextKey<String> nestedValue = ContextKey.named("nested-value");
+
+        try (io.opentelemetry.context.Scope ignored = Context.current().with(nestedValue, "nested").makeCurrent()) {
+            lifecycle.closeRequestScopeIfCurrent();
+            assertThat("Request scope remains open under a nested context", requestScope.closeCount.get(), is(0));
+        }
+
+        lifecycle.closeRequestScopeIfCurrent();
+        assertThat("Request scope closes after restoring its context", requestScope.closeCount.get(), is(1));
+    }
+
+    @Test
+    void finalResponseStatusReplacesEarlierStatus() {
+        RecordingSpan span = new RecordingSpan();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
+
+        lifecycle.responseStatus(200);
+        lifecycle.responseStatus(500);
+        lifecycle.requestFinished(true);
+
+        assertThat("Final HTTP status", span.httpStatus, is(500));
+        assertThat("Span status", span.status, is(Span.Status.ERROR));
+    }
+
+    @Test
+    void finishedEventFinalizesStatusAndReleasesLifecycleReference() throws ReflectiveOperationException {
+        RecordingSpan span = new RecordingSpan();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
+        lifecycle.responseStatus(200);
+        ContainerRequest request = containerRequest();
+        request.setProperty(ServerSpanLifecycle.PROPERTY, lifecycle);
+        ContainerResponse response = new ContainerResponse(request, Response.status(503).build());
+        RequestEvent finishedEvent = requestEvent(request, response, RequestEvent.Type.FINISHED, false);
+        RequestEventListener requestListener = new HelidonTelemetryRequestEventListener().onRequest(finishedEvent);
+
+        requestListener.onEvent(finishedEvent);
+
+        Field lifecycleField = requestListener.getClass().getDeclaredField("lifecycle");
+        lifecycleField.setAccessible(true);
+        assertThat("Listener releases lifecycle", lifecycleField.get(requestListener), nullValue());
+        assertThat("Monitoring listener does not mutate request properties",
+                   request.getProperty(ServerSpanLifecycle.PROPERTY), is(lifecycle));
+        assertThat("FINISHED response status", span.httpStatus, is(503));
+        assertThat("Unwritten response status", span.status, is(Span.Status.ERROR));
+        assertThat("Span ended", span.endCount.get(), is(1));
+    }
+
+    @Test
+    void listenerReleasesLifecycleAfterAsynchronousResourceFinishes() throws ReflectiveOperationException {
+        RecordingSpan span = new RecordingSpan();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
+        ContainerRequest request = containerRequest();
+        request.setProperty(ServerSpanLifecycle.PROPERTY, lifecycle);
+        ContainerResponse response = new ContainerResponse(request, Response.ok().build());
+        RequestEventListener requestListener = new HelidonTelemetryRequestEventListener()
+                .onRequest(requestEvent(request, response, RequestEvent.Type.RESOURCE_METHOD_START, false));
+        Field lifecycleField = requestListener.getClass().getDeclaredField("lifecycle");
+        lifecycleField.setAccessible(true);
+
+        requestListener.onEvent(requestEvent(request, response, RequestEvent.Type.RESOURCE_METHOD_START, false));
+        requestListener.onEvent(requestEvent(request, response, RequestEvent.Type.FINISHED, true));
+
+        assertThat("Span remains open until resource completion", span.endCount.get(), is(0));
+        assertThat("Listener retains lifecycle until resource completion", lifecycleField.get(requestListener), is(lifecycle));
+
+        requestListener.onEvent(requestEvent(request, response, RequestEvent.Type.RESOURCE_METHOD_FINISHED, false));
+
+        assertThat("Span ends at resource completion", span.endCount.get(), is(1));
+        assertThat("Listener releases lifecycle after resource completion", lifecycleField.get(requestListener), nullValue());
     }
 
     @Test
     void resourceMethodCanFinishBeforeRequest() {
-        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle();
         RecordingSpan span = new RecordingSpan();
         RecordingScope requestScope = new RecordingScope();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, requestScope);
 
-        lifecycle.requestFiltered(requestScope);
-        lifecycle.resourceMethodStarted(span);
-        lifecycle.resourceMethodFinished(span);
+        lifecycle.resourceMethodStarted();
+        lifecycle.resourceMethodFinished();
 
-        assertThat("Request scope closed", requestScope.closeCount.get(), is(1));
-        assertThat("Resource scope closed", span.resourceScope.closeCount.get(), is(1));
         assertThat("Span remains open", span.endCount.get(), is(0));
 
-        lifecycle.requestFinished(span, true);
+        lifecycle.requestFinished(true);
 
         assertThat("Span ended", span.endCount.get(), is(1));
     }
 
     @Test
     void requestCanFinishBeforeResourceMethod() {
-        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle();
         RecordingSpan span = new RecordingSpan();
         RecordingScope requestScope = new RecordingScope();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, requestScope);
 
-        lifecycle.requestFiltered(requestScope);
-        lifecycle.resourceMethodStarted(span);
-        lifecycle.requestFinished(span, true);
+        lifecycle.resourceMethodStarted();
+        lifecycle.requestFinished(true);
 
-        assertThat("Request scope closed", requestScope.closeCount.get(), is(1));
-        assertThat("Resource scope remains open", span.resourceScope.closeCount.get(), is(0));
         assertThat("Span remains open", span.endCount.get(), is(0));
 
-        lifecycle.resourceMethodFinished(span);
+        lifecycle.resourceMethodFinished();
 
-        assertThat("Resource scope closed", span.resourceScope.closeCount.get(), is(1));
         assertThat("Span ended", span.endCount.get(), is(1));
     }
 
     @Test
     void responseFailureIsCapturedOnlyAfterResponseProcessingStarts() {
-        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle();
         RecordingSpan span = new RecordingSpan();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
         RuntimeException mappedResourceFailure = new RuntimeException("mapped");
         RuntimeException responseFailure = new RuntimeException("response");
 
         lifecycle.responseFailure(mappedResourceFailure);
         lifecycle.responseProcessingStarted();
         lifecycle.responseFailure(responseFailure);
-        lifecycle.requestFinished(span, true);
+        lifecycle.requestFinished(true);
 
         assertThat("Response failure recorded", span.failure, is(responseFailure));
         assertThat("Span status", span.status, is(Span.Status.ERROR));
@@ -132,15 +207,35 @@ class ServerSpanLifecycleTest {
 
     @Test
     void writerFailureIsCaptured() {
-        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle();
         RecordingSpan span = new RecordingSpan();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
         RuntimeException writerFailure = new RuntimeException("writer");
 
         lifecycle.writerFailure(writerFailure);
-        lifecycle.requestFinished(span, false);
+        lifecycle.requestFinished(false);
 
         assertThat("Writer failure recorded", span.failure, is(writerFailure));
         assertThat("Span status", span.status, is(Span.Status.ERROR));
+    }
+
+    private static ContainerRequest containerRequest() {
+        URI uri = URI.create("http://localhost/test");
+        return new ContainerRequest(uri, uri, "GET", null, new MapPropertiesDelegate());
+    }
+
+    private static RequestEvent requestEvent(ContainerRequest request,
+                                             ContainerResponse response,
+                                             RequestEvent.Type type,
+                                             boolean responseWritten) {
+        return (RequestEvent) Proxy.newProxyInstance(RequestEvent.class.getClassLoader(),
+                                                     new Class<?>[] {RequestEvent.class},
+                                                     (proxy, method, args) -> switch (method.getName()) {
+                                                     case "getType" -> type;
+                                                     case "getContainerRequest" -> request;
+                                                     case "getContainerResponse" -> response;
+                                                     case "isResponseWritten" -> responseWritten;
+                                                     default -> method.getReturnType() == boolean.class ? false : null;
+                                                     });
     }
 
     private static final class RecordingSpan implements Span {
@@ -166,10 +261,10 @@ class ServerSpanLifecycleTest {
             }
         };
 
-        private final RecordingScope resourceScope = new RecordingScope();
         private final AtomicInteger endCount = new AtomicInteger();
         private volatile Status status = Status.UNSET;
         private volatile Throwable failure;
+        private volatile int httpStatus;
 
         @Override
         public Span tag(String key, String value) {
@@ -189,6 +284,9 @@ class ServerSpanLifecycleTest {
         public Span tag(String key, Number value) {
             Objects.requireNonNull(key);
             Objects.requireNonNull(value);
+            if (HTTP_STATUS_CODE.equals(key)) {
+                httpStatus = value.intValue();
+            }
             return this;
         }
 
@@ -221,7 +319,7 @@ class ServerSpanLifecycleTest {
 
         @Override
         public Scope activate() {
-            return resourceScope;
+            return new RecordingScope();
         }
 
         @Override

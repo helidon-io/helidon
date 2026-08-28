@@ -57,6 +57,8 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddBean(TestSpanExporter.class)
 @AddBean(TestFilterSpanNesting.TestBean.class)
 @AddBean(TestFilterSpanNesting.IngressSpanSetter.class)
+@AddBean(TestFilterSpanNesting.LateChildSpanSetter.class)
+@AddBean(TestFilterSpanNesting.LateBaggageSetter.class)
 @AddConfig(key = "otel.sdk.disabled", value = "false")
 @AddConfig(key = "otel.traces.exporter", value = "in-memory")
 @AddConfig(key = HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE, value = "true")
@@ -92,7 +94,7 @@ class TestFilterSpanNesting {
         }
 
         // Check structure of nested spans.
-        List<SpanData> spanData = testSpanExporter.spanData(6);
+        List<SpanData> spanData = testSpanExporter.spanData(8);
         List<SpanData> ingressSpans = spanData.stream()
                 .filter(sd -> sd.getName().equals("ingressSpan"))
                 .toList();
@@ -102,9 +104,13 @@ class TestFilterSpanNesting {
         List<SpanData> clientSpans = spanData.stream()
                 .filter(sd -> sd.getKind() == SpanKind.CLIENT)
                 .toList();
+        List<SpanData> lateFilterSpans = spanData.stream()
+                .filter(sd -> sd.getName().equals("lateFilterSpan"))
+                .toList();
         assertThat("ingress span count", ingressSpans.size(), is(2));
         assertThat("server span count", serverSpans.size(), is(2));
         assertThat("client span count", clientSpans.size(), is(2));
+        assertThat("late filter span count", lateFilterSpans.size(), is(2));
 
         for (SpanData serverSpan : serverSpans) {
             Optional<SpanData> ingressSpan = ingressSpans.stream()
@@ -121,6 +127,13 @@ class TestFilterSpanNesting {
             assertThat("Ingress span parent is the corresponding client span",
                        clientSpans.stream().anyMatch(clientSpan -> clientSpan.getSpanContext().getSpanId()
                                .equals(ingressSpan.getParentSpanContext().getSpanId())),
+                       is(true));
+        }
+
+        for (SpanData lateFilterSpan : lateFilterSpans) {
+            assertThat("Later request-filter span is a child of the automatic server span",
+                       serverSpans.stream().anyMatch(serverSpan -> serverSpan.getSpanContext().getSpanId()
+                               .equals(lateFilterSpan.getParentSpanContext().getSpanId())),
                        is(true));
         }
 
@@ -145,9 +158,8 @@ class TestFilterSpanNesting {
     @Provider
     @Priority(Priorities.HEADER_DECORATOR)
     static class IngressSpanSetter implements ContainerRequestFilter, ContainerResponseFilter {
-
-        private Span pseudoIngressSpan;
-        private Scope pseudoIngressScope;
+        private static final String SCOPE_PROPERTY = IngressSpanSetter.class.getName() + ".scope";
+        private static final String SPAN_PROPERTY = IngressSpanSetter.class.getName() + ".span";
 
         @Override
         public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -158,18 +170,77 @@ class TestFilterSpanNesting {
             Optional<SpanContext> helidonSpanContext =
                     staticTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()));
 
-            pseudoIngressSpan = staticTracer.spanBuilder("ingressSpan")
+            Span pseudoIngressSpan = staticTracer.spanBuilder("ingressSpan")
                     .update(spanBuilder -> helidonSpanContext.ifPresent(spanBuilder::parent))
                     .build();
-            pseudoIngressScope = pseudoIngressSpan.activate();
+            requestContext.setProperty(SPAN_PROPERTY, pseudoIngressSpan);
+            requestContext.setProperty(SCOPE_PROPERTY, pseudoIngressSpan.activate());
         }
 
         @Override
         public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
             assertThat("Request context", requestContext, notNullValue());
             assertThat("Response context", responseContext, notNullValue());
-            pseudoIngressScope.close();
-            pseudoIngressSpan.end();
+            ((Scope) requestContext.getProperty(SCOPE_PROPERTY)).close();
+            ((Span) requestContext.getProperty(SPAN_PROPERTY)).end();
+            requestContext.removeProperty(SCOPE_PROPERTY);
+            requestContext.removeProperty(SPAN_PROPERTY);
+        }
+    }
+
+    /**
+     * Opens a child scope after the telemetry request filter and closes it from the paired response filter.
+     */
+    @Provider
+    @Priority(Priorities.USER + 1000)
+    static class LateChildSpanSetter implements ContainerRequestFilter, ContainerResponseFilter {
+        private static final String SCOPE_PROPERTY = LateChildSpanSetter.class.getName() + ".scope";
+        private static final String SPAN_PROPERTY = LateChildSpanSetter.class.getName() + ".span";
+
+        @Override
+        public void filter(ContainerRequestContext requestContext) {
+            assertThat("Request context", requestContext, notNullValue());
+            Span span = staticTracer.spanBuilder("lateFilterSpan").build();
+            requestContext.setProperty(SPAN_PROPERTY, span);
+            requestContext.setProperty(SCOPE_PROPERTY, span.activate());
+        }
+
+        @Override
+        public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
+            assertThat("Request context", requestContext, notNullValue());
+            assertThat("Response context", responseContext, notNullValue());
+            ((Scope) requestContext.getProperty(SCOPE_PROPERTY)).close();
+            ((Span) requestContext.getProperty(SPAN_PROPERTY)).end();
+            requestContext.removeProperty(SCOPE_PROPERTY);
+            requestContext.removeProperty(SPAN_PROPERTY);
+        }
+    }
+
+    /**
+     * Opens a nested context which retains the automatic span and changes only baggage. Comparing current span IDs cannot
+     * distinguish this scope from the automatic request scope.
+     */
+    @Provider
+    @Priority(Priorities.USER + 1100)
+    static class LateBaggageSetter implements ContainerRequestFilter, ContainerResponseFilter {
+        private static final String SCOPE_PROPERTY = LateBaggageSetter.class.getName() + ".scope";
+
+        @Override
+        public void filter(ContainerRequestContext requestContext) {
+            io.opentelemetry.context.Scope scope = io.opentelemetry.api.baggage.Baggage.current()
+                    .toBuilder()
+                    .put("late-filter", "active")
+                    .build()
+                    .makeCurrent();
+            requestContext.setProperty(SCOPE_PROPERTY, scope);
+        }
+
+        @Override
+        public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
+            assertThat("Request context", requestContext, notNullValue());
+            assertThat("Response context", responseContext, notNullValue());
+            ((io.opentelemetry.context.Scope) requestContext.getProperty(SCOPE_PROPERTY)).close();
+            requestContext.removeProperty(SCOPE_PROPERTY);
         }
     }
 }

@@ -480,19 +480,26 @@ naming convention unconditionally.
 
 When `telemetry.span.includes-response-write` is `false`, Helidon ends the
 span before serializing the response entity, preserving the behavior of earlier
-Helidon 4 releases. When it is `true`, Helidon ends the span after response
+Helidon 4 releases. When it is `true`, Helidon keeps the span open until response
 serialization and encoding have populated Helidon's response stream and Jersey
-has finished processing the response. The span remains open during response
+has finished processing the response. If an asynchronous resource method is
+still executing at that point, the span ends when the resource method returns.
+The span remains open during response
 filtering, but Helidon makes it current only during discrete, thread-owned
-phases: request filtering, resource-method execution, and entity
-materialization. This includes asynchronous JAX-RS responses. Spans started by
-writer interceptors, message-body writers, or streaming output are therefore
-children of the automatic span, without leaving its scope attached to a thread
-between phases. If response processing or writing fails, Helidon records the
-available failure and ends the automatic span when Jersey finishes processing
-the failed request. An application exception which Jersey successfully maps to
-a response is not itself treated as a response-writing failure; the resulting
-HTTP status determines the automatic span status.
+phases: request filtering, resource-method execution, exception mapping, and
+entity materialization. This includes asynchronous JAX-RS responses. Spans
+started by exception mappers, writer interceptors, message-body writers, or
+streaming output are therefore children of the automatic span, without leaving
+its scope attached to a thread between phases. Helidon does not force the
+automatic span to be current across arbitrary response filters because a
+request filter can establish a nested scope which its paired response filter
+must close in nesting order. The automatic span still remains open during that
+work. If response processing or writing fails, Helidon records the available
+failure and ends the automatic span after Jersey finishes processing the failed
+request and any still-running asynchronous resource method returns. An
+application exception which Jersey successfully maps to a response
+is not itself treated as a response-writing failure; the resulting HTTP status
+determines the automatic span status.
 
 This setting is deprecated for removal in a future major release. After its
 removal, automatic incoming REST spans will always include response preparation
@@ -503,7 +510,9 @@ server-side work of preparing the response. It does not measure the later
 WebServer socket commit, network delivery, or wait for the client to receive or
 acknowledge the response. A downstream transport failure after JAX-RS processing
 has finished might therefore not be recorded on the span, but it cannot leave
-the span unfinished.
+the span unfinished. For long-lived `ChunkedOutput` and server-sent event
+responses, the span covers initial JAX-RS response processing but not the later
+serialization and transmission of individual chunks or events.
 
 ### OpenTelemetry Java Agent
 

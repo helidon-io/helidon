@@ -164,10 +164,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
         Scope helidonScope = helidonSpan.activate();
 
-        requestContext.setProperty(SPAN, helidonSpan);
-        requestContext.setProperty(SPAN_SCOPE, helidonScope);
         if (autoSpanIncludesResponseWrite) {
-            requestContext.setProperty(ServerSpanLifecycle.PROPERTY, new ServerSpanLifecycle());
+            requestContext.setProperty(ServerSpanLifecycle.PROPERTY, new ServerSpanLifecycle(helidonSpan, helidonScope));
+        } else {
+            requestContext.setProperty(SPAN, helidonSpan);
+            requestContext.setProperty(SPAN_SCOPE, helidonScope);
         }
 
     }
@@ -189,21 +190,33 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         }
 
         try {
-            Span span = (Span) request.getProperty(SPAN);
+            ServerSpanLifecycle lifecycle = null;
+            Span span;
+            if (autoSpanIncludesResponseWrite) {
+                lifecycle = (ServerSpanLifecycle) request.getProperty(ServerSpanLifecycle.PROPERTY);
+                span = lifecycle == null ? null : lifecycle.span();
+            } else {
+                span = (Span) request.getProperty(SPAN);
+            }
             if (span == null) {
                 return;
             }
-            Scope scope = (Scope) request.getProperty(SPAN_SCOPE);
-            if (!autoSpanIncludesResponseWrite) {
-                scope.close();
+            if (autoSpanIncludesResponseWrite) {
+                lifecycle.closeRequestScopeIfCurrent();
+            } else {
+                ((Scope) request.getProperty(SPAN_SCOPE)).close();
             }
 
-            span.tag(HTTP_STATUS_CODE, response.getStatus());
+            if (autoSpanIncludesResponseWrite) {
+                lifecycle.responseStatus(response.getStatus());
+            } else {
+                span.tag(HTTP_STATUS_CODE, response.getStatus());
 
-            // OpenTelemetry semantic conventions dictate what the span status should be.
-            // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
-            if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SERVER_ERROR) == 0) {
-                span.status(Span.Status.ERROR);
+                // OpenTelemetry semantic conventions dictate what the span status should be.
+                // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+                if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SERVER_ERROR) == 0) {
+                    span.status(Span.Status.ERROR);
+                }
             }
             // Response-write-inclusive spans end at Jersey's FINISHED request event.
             if (!autoSpanIncludesResponseWrite) {

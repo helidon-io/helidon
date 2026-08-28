@@ -87,6 +87,7 @@ class AutoSpanIncludesWriteTestBase {
 
     static final String WRITER_CHILD_SPAN_NAME = "writerChild";
     static final String STREAMING_CHILD_SPAN_NAME = "streamingChild";
+    static final String EXCEPTION_MAPPER_CHILD_SPAN_NAME = "exceptionMapperChild";
     private static final String BASE_PATH = "/auto-span-includes-write";
 
     @Inject
@@ -194,15 +195,21 @@ class AutoSpanIncludesWriteTestBase {
             assertThat("Response entity", response.readEntity(String.class), is("mapped-not-found"));
         }
 
-        Span observedSpan = writeProbe.observedSpan();
-        assertThat("Mapped response writer observed the automatic span", observedSpan, notNullValue());
-        assertThat("Mapped response span eventually ended", spanListener.awaitEnded(observedSpan), is(true));
-        assertThat("Mapped response span ended once", spanListener.endCount(observedSpan), is(1));
+        Span serverSpanAtResource = writeProbe.resourceSpan();
+        assertThat("Mapped resource observed the automatic span", serverSpanAtResource, notNullValue());
+        assertThat("Mapped response span eventually ended", spanListener.awaitEnded(serverSpanAtResource), is(true));
+        assertThat("Mapped response span ended once", spanListener.endCount(serverSpanAtResource), is(1));
         assertThat("Mapped application exception was not treated as a write failure",
-                   spanListener.failure(observedSpan), nullValue());
+                   spanListener.failure(serverSpanAtResource), nullValue());
+        assertThat("Automatic span was current in the exception mapper",
+                   writeProbe.spanWasCurrentInExceptionMapper(), is(true));
 
-        SpanData serverSpan = spanExporter.spanData(observedSpan);
+        SpanData serverSpan = spanExporter.spanData(serverSpanAtResource);
         assertThat("Mapped 404 server span status", serverSpan.getStatus().getStatusCode(), is(StatusCode.UNSET));
+        SpanData exceptionMapperSpan = spanExporter.spanData(EXCEPTION_MAPPER_CHILD_SPAN_NAME, serverSpanAtResource);
+        assertThat("Exception mapper child span parent",
+                   exceptionMapperSpan.getParentSpanContext().getSpanId(),
+                   equalTo(serverSpan.getSpanContext().getSpanId()));
     }
 
     void checkFailedWriteEndsSpan() {
@@ -225,6 +232,8 @@ class AutoSpanIncludesWriteTestBase {
 
         SpanData serverSpan = spanExporter.spanData(observedSpan);
         assertThat("Failed response span status", serverSpan.getStatus().getStatusCode(), is(StatusCode.ERROR));
+        assertThat("Failed response HTTP status",
+                   serverSpan.getAttributes().get(AttributeKey.longKey(HTTP_STATUS_CODE)), is(500L));
     }
 
     void checkFailedResponseFilterEndsSpan() {
@@ -395,6 +404,7 @@ class AutoSpanIncludesWriteTestBase {
         private final AtomicReference<Span> resourceSpan = new AtomicReference<>();
         private volatile boolean spanEnded;
         private volatile boolean spanWasCurrent;
+        private volatile boolean spanWasCurrentInExceptionMapper;
         private volatile boolean spanWasCurrentInResource;
         private volatile String requestThread;
         private volatile String resourceThread;
@@ -410,7 +420,7 @@ class AutoSpanIncludesWriteTestBase {
             Span span = spanListener.latestStarted();
             observedSpan.set(span);
             spanEnded = spanListener.isEnded(span);
-            spanWasCurrent = Span.current()
+            spanWasCurrent |= Span.current()
                     .map(current -> current.context().spanId().equals(span.context().spanId()))
                     .orElse(false);
             writeThread = Thread.currentThread().getName();
@@ -458,6 +468,17 @@ class AutoSpanIncludesWriteTestBase {
                     .orElse(false);
         }
 
+        void observeExceptionMapperExecution() {
+            Span span = spanListener.latestStarted();
+            spanWasCurrentInExceptionMapper = Span.current()
+                    .map(current -> current.context().spanId().equals(span.context().spanId()))
+                    .orElse(false);
+        }
+
+        boolean spanWasCurrentInExceptionMapper() {
+            return spanWasCurrentInExceptionMapper;
+        }
+
         boolean spanWasCurrentInResource() {
             return spanWasCurrentInResource;
         }
@@ -474,6 +495,7 @@ class AutoSpanIncludesWriteTestBase {
             observedSpan.set(null);
             spanEnded = false;
             spanWasCurrent = false;
+            spanWasCurrentInExceptionMapper = false;
             spanWasCurrentInResource = false;
             requestThread = null;
             resourceThread = null;
@@ -536,13 +558,30 @@ class AutoSpanIncludesWriteTestBase {
     @Provider
     @ApplicationScoped
     public static class MappedNotFoundExceptionMapper implements ExceptionMapper<MappedNotFoundException> {
+        private final Tracer tracer;
+        private final WriteProbe writeProbe;
+
+        @Inject
+        MappedNotFoundExceptionMapper(Tracer tracer, WriteProbe writeProbe) {
+            this.tracer = tracer;
+            this.writeProbe = writeProbe;
+        }
+
         @Override
         public Response toResponse(MappedNotFoundException exception) {
             assertThat("Mapped exception", exception, notNullValue());
-            return Response.status(Response.Status.NOT_FOUND)
-                    .type(MediaType.TEXT_PLAIN)
-                    .entity("mapped-not-found")
-                    .build();
+            writeProbe.observeExceptionMapperExecution();
+            Span childSpan = tracer.spanBuilder(EXCEPTION_MAPPER_CHILD_SPAN_NAME).build();
+            Scope scope = childSpan.activate();
+            try {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .type(MediaType.TEXT_PLAIN)
+                        .entity("mapped-not-found")
+                        .build();
+            } finally {
+                scope.close();
+                childSpan.end();
+            }
         }
     }
 
@@ -628,6 +667,7 @@ class AutoSpanIncludesWriteTestBase {
         @Path("/mapped-not-found")
         @Produces(MediaType.TEXT_PLAIN)
         public String mappedNotFound() {
+            writeProbe.observeResourceSpan();
             throw new MappedNotFoundException();
         }
 
