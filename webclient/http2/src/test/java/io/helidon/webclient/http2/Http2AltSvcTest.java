@@ -34,8 +34,10 @@ import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.api.AltSvcHeader;
 import io.helidon.webclient.api.ClientAltSvcConfig;
 import io.helidon.webclient.api.ClientConnectionTarget;
@@ -277,7 +279,7 @@ class Http2AltSvcTest {
     }
 
     @Test
-    void staleReusableAlternativeReleasesReservedStream() {
+    void staleReusableAlternativeReleasesReservedStreamAndRemainsTrackedUntilClose() {
         Tls tls = clientTls();
         Http2Client client = Http2Client.create(builder -> builder
                 .baseUri("https://localhost:" + originPort)
@@ -349,8 +351,16 @@ class Http2AltSvcTest {
 
                 assertThat(currentChecks.get(), is(2));
                 assertThat(reservationAttempted.get(), is(true));
-                recovered.stream().close();
                 handler.retire(selection);
+                handler.close();
+
+                Http2Headers requestHeaders = Http2Headers.create(WritableHeaders.create())
+                        .method(Method.GET)
+                        .scheme("https")
+                        .path("/")
+                        .authority("localhost");
+                assertThrows(IllegalStateException.class,
+                             () -> recovered.stream().writeHeaders(requestHeaders, true));
             } finally {
                 handler.close();
             }

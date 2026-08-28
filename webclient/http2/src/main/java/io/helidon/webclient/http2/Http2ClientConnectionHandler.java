@@ -235,7 +235,6 @@ class Http2ClientConnectionHandler {
                 for (Http2ClientConnection connection : List.copyOf(allConnections.keySet())) {
                     ConnectionRoute route = allConnections.get(connection);
                     if (route != null && route.matches(selection)) {
-                        allConnections.remove(connection, route);
                         removeSelectableConnection(connection);
                         toRetire.add(connection);
                     }
@@ -261,7 +260,6 @@ class Http2ClientConnectionHandler {
                 for (Http2ClientConnection connection : List.copyOf(allConnections.keySet())) {
                     ConnectionRoute route = allConnections.get(connection);
                     if (route != null && route.matches(generation)) {
-                        allConnections.remove(connection, route);
                         removeSelectableConnection(connection);
                         toRetire.add(connection);
                     }
