@@ -99,8 +99,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
         try {
             transition = lifecycle.stopping();
             lifecycle = transition;
-            entries = new ArrayList<>(routes.values());
-            entries.addAll(decoratedRoutes.values());
+            entries = routeEntries();
             routes = new IdentityHashMap<>();
             decoratedRoutes = new HashMap<>();
         } finally {
@@ -131,7 +130,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
                 return;
             }
             lifecycle = completed;
-            entries = List.copyOf(routes.values());
+            entries = routeEntries();
         } finally {
             lock.unlock();
         }
@@ -139,6 +138,12 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
         for (RouteEntry entry : entries) {
             entry.requestCatchUp(this);
         }
+    }
+
+    private List<RouteEntry> routeEntries() {
+        List<RouteEntry> entries = new ArrayList<>(routes.values());
+        entries.addAll(decoratedRoutes.values());
+        return entries;
     }
 
     @Override

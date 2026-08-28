@@ -491,6 +491,23 @@ class HttpServiceLocatorTest {
     }
 
     @Test
+    void testSecuredLocatedServiceCreatedDuringStartReceivesLifecycleOnce() {
+        var service = new LifecycleService();
+        HttpServiceLocator locator = SecureHandler.authorize("user").wrap(new LifecycleLocator(service));
+        var route = locatorRoute(locator);
+
+        route.beforeStart();
+        locate(route);
+        route.afterStart(mock(WebServer.class));
+        route.afterStop();
+
+        assertThat(service.routingCount.get(), is(1));
+        assertThat(service.beforeStartCount.get(), is(1));
+        assertThat(service.afterStartCount.get(), is(1));
+        assertThat(service.afterStopCount.get(), is(1));
+    }
+
+    @Test
     void testCachedLocatedServiceWaitsForAfterStartCompletion() throws Exception {
         var service = new BlockingAfterStartService();
         var locateCount = new AtomicInteger();
