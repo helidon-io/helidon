@@ -24,6 +24,7 @@ import io.helidon.http.encoding.spi.ContentEncodingProvider;
 /**
  * Support for {@code deflate} content encoding.
  */
+@Api.Stable
 public class DeflateEncodingProvider implements ContentEncodingProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

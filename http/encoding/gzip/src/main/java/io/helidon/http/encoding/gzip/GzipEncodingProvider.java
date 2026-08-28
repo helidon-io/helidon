@@ -25,6 +25,7 @@ import io.helidon.http.encoding.spi.ContentEncodingProvider;
 /**
  * Support for gzip content encoding.
  */
+@Api.Stable
 public class GzipEncodingProvider implements ContentEncodingProvider, Weighted {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
