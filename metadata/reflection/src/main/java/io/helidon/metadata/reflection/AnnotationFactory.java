@@ -98,7 +98,7 @@ public final class AnnotationFactory {
         }
 
         // type is available, we can synthesize the annotation
-        return Optional.of((T) Proxy.newProxyInstance(classLoader(),
+        return Optional.of((T) Proxy.newProxyInstance(annotationType.getClassLoader(),
                                                       new Class[] {annotationType},
                                                       new AnnotationInvocationHandler(annotationType, annotation)));
     }
@@ -219,14 +219,6 @@ public final class AnnotationFactory {
             return result;
         }
         throw new IllegalArgumentException("Unknown primitive type: " + componentType.getName());
-    }
-
-    private static ClassLoader classLoader() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (loader == null) {
-            return AnnotationFactory.class.getClassLoader();
-        }
-        return loader;
     }
 
     private static class AnnotationInvocationHandler implements InvocationHandler {
