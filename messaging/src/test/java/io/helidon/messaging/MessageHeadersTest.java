@@ -28,6 +28,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessageHeadersTest {
     @Test
+    void messageHeaderRetainsValueSemantics() {
+        MessageHeader first = MessageHeader.create("trace", HeaderValue.integer(42));
+        MessageHeader equal = MessageHeader.create("trace", HeaderValue.integer(42));
+
+        assertThat(first.name(), is("trace"));
+        assertThat(first.value(), is(HeaderValue.integer(42)));
+        assertThat(first, is(equal));
+        assertThat(first.hashCode(), is(equal.hashCode()));
+        assertThat(first.toString(), is("MessageHeader[name=trace, value=IntegerValue[value=42]]"));
+    }
+
+    @Test
     void preservesGlobalOrderDuplicatesAndExactNames() {
         HeaderValue.TextValue first = HeaderValue.text("first");
         HeaderValue.BooleanValue middle = HeaderValue.booleanValue(true);

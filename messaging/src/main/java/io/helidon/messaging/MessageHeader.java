@@ -25,18 +25,15 @@ import io.helidon.common.Api;
  * <p>
  * Header names are exact and case-sensitive. The core model does not impose a transport-specific name grammar;
  * connectors validate names when mapping a message to their transport.
- *
- * @param name exact header name
- * @param value header value
  */
 @Api.Preview
-public record MessageHeader(String name, HeaderValue value) {
-    /**
-     * Create a header entry.
-     */
-    public MessageHeader {
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(value);
+public final class MessageHeader {
+    private final String name;
+    private final HeaderValue value;
+
+    private MessageHeader(String name, HeaderValue value) {
+        this.name = Objects.requireNonNull(name);
+        this.value = Objects.requireNonNull(value);
     }
 
     /**
@@ -59,5 +56,41 @@ public record MessageHeader(String name, HeaderValue value) {
      */
     public static MessageHeader create(String name, String value) {
         return new MessageHeader(name, HeaderValue.text(value));
+    }
+
+    /**
+     * Exact header name.
+     *
+     * @return header name
+     */
+    public String name() {
+        return name;
+    }
+
+    /**
+     * Header value.
+     *
+     * @return header value
+     */
+    public HeaderValue value() {
+        return value;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        return this == object
+                || object instanceof MessageHeader that
+                && name.equals(that.name)
+                && value.equals(that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * name.hashCode() + value.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "MessageHeader[name=" + name + ", value=" + value + "]";
     }
 }

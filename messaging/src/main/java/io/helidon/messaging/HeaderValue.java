@@ -171,35 +171,86 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     /**
      * Explicit null header value.
      */
-    enum NullValue implements HeaderValue {
-        /**
-         * Singleton instance.
-         */
-        INSTANCE
+    final class NullValue implements HeaderValue {
+        private static final NullValue INSTANCE = new NullValue();
+
+        private NullValue() {
+        }
+
+        @Override
+        public String toString() {
+            return "INSTANCE";
+        }
     }
 
     /**
      * Text header value.
-     *
-     * @param value text
      */
-    record TextValue(String value) implements HeaderValue {
+    final class TextValue implements HeaderValue {
+        private final String value;
+
+        private TextValue(String value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
         /**
-         * Create a text value.
+         * Text value.
          *
-         * @param value text
+         * @return text
          */
-        public TextValue {
-            Objects.requireNonNull(value);
+        public String value() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this == object || object instanceof TextValue that && value.equals(that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return value.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "TextValue[value=" + value + "]";
         }
     }
 
     /**
      * Boolean header value.
-     *
-     * @param value boolean
      */
-    record BooleanValue(boolean value) implements HeaderValue {
+    final class BooleanValue implements HeaderValue {
+        private final boolean value;
+
+        private BooleanValue(boolean value) {
+            this.value = value;
+        }
+
+        /**
+         * Boolean value.
+         *
+         * @return boolean
+         */
+        public boolean value() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this == object || object instanceof BooleanValue that && value == that.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Boolean.hashCode(value);
+        }
+
+        @Override
+        public String toString() {
+            return "BooleanValue[value=" + value + "]";
+        }
     }
 
     /**
@@ -207,81 +258,211 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
      * <p>
      * The portable representation intentionally does not retain a transport's signedness or encoded integer width.
      * A connector requiring exact wire-type identity can use {@link NativeValue}.
-     *
-     * @param value integer
      */
-    record IntegerValue(BigInteger value) implements HeaderValue {
+    final class IntegerValue implements HeaderValue {
+        private final BigInteger value;
+
+        private IntegerValue(BigInteger value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
         /**
-         * Create an integer value.
+         * Integer value.
          *
-         * @param value integer
+         * @return integer
          */
-        public IntegerValue {
-            Objects.requireNonNull(value);
+        public BigInteger value() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this == object || object instanceof IntegerValue that && value.equals(that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return value.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "IntegerValue[value=" + value + "]";
         }
     }
 
     /**
      * Arbitrary-precision decimal header value.
-     *
-     * @param value decimal
      */
-    record DecimalValue(BigDecimal value) implements HeaderValue {
+    final class DecimalValue implements HeaderValue {
+        private final BigDecimal value;
+
+        private DecimalValue(BigDecimal value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
         /**
-         * Create a decimal value.
+         * Decimal value.
          *
-         * @param value decimal
+         * @return decimal
          */
-        public DecimalValue {
-            Objects.requireNonNull(value);
+        public BigDecimal value() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this == object || object instanceof DecimalValue that && value.equals(that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return value.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "DecimalValue[value=" + value + "]";
         }
     }
 
     /**
      * 32-bit IEEE 754 floating-point header value.
-     *
-     * @param value floating-point value
      */
-    record Float32Value(float value) implements HeaderValue {
+    final class Float32Value implements HeaderValue {
+        private final float value;
+
+        private Float32Value(float value) {
+            this.value = value;
+        }
+
+        /**
+         * Floating-point value.
+         *
+         * @return floating-point value
+         */
+        public float value() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this == object || object instanceof Float32Value that && Float.compare(value, that.value) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return Float.hashCode(value);
+        }
+
+        @Override
+        public String toString() {
+            return "Float32Value[value=" + value + "]";
+        }
     }
 
     /**
      * 64-bit IEEE 754 floating-point header value.
-     *
-     * @param value floating-point value
      */
-    record Float64Value(double value) implements HeaderValue {
+    final class Float64Value implements HeaderValue {
+        private final double value;
+
+        private Float64Value(double value) {
+            this.value = value;
+        }
+
+        /**
+         * Floating-point value.
+         *
+         * @return floating-point value
+         */
+        public double value() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this == object || object instanceof Float64Value that && Double.compare(value, that.value) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return Double.hashCode(value);
+        }
+
+        @Override
+        public String toString() {
+            return "Float64Value[value=" + value + "]";
+        }
     }
 
     /**
      * Timestamp header value.
-     *
-     * @param value timestamp
      */
-    record TimestampValue(Instant value) implements HeaderValue {
+    final class TimestampValue implements HeaderValue {
+        private final Instant value;
+
+        private TimestampValue(Instant value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
         /**
-         * Create a timestamp value.
+         * Timestamp value.
          *
-         * @param value timestamp
+         * @return timestamp
          */
-        public TimestampValue {
-            Objects.requireNonNull(value);
+        public Instant value() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this == object || object instanceof TimestampValue that && value.equals(that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return value.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "TimestampValue[value=" + value + "]";
         }
     }
 
     /**
      * UUID header value.
-     *
-     * @param value UUID
      */
-    record UuidValue(UUID value) implements HeaderValue {
+    final class UuidValue implements HeaderValue {
+        private final UUID value;
+
+        private UuidValue(UUID value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
         /**
-         * Create a UUID value.
+         * UUID value.
          *
-         * @param value UUID
+         * @return UUID
          */
-        public UuidValue {
-            Objects.requireNonNull(value);
+        public UUID value() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this == object || object instanceof UuidValue that && value.equals(that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return value.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "UuidValue[value=" + value + "]";
         }
     }
 

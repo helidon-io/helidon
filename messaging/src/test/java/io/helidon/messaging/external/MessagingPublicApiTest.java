@@ -17,11 +17,17 @@
 package io.helidon.messaging.external;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 import io.helidon.messaging.ConnectorDelivery;
+import io.helidon.messaging.HeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessageHeader;
 import io.helidon.messaging.MessagingEntryPoint;
 
 import org.junit.jupiter.api.Test;
@@ -37,6 +43,38 @@ class MessagingPublicApiTest {
         assertNoDeclaredExceptions(MessagingEntryPoint.Handler.class.getMethod("handle", Object.class, Message.class));
         assertNoDeclaredExceptions(
                 MessagingEntryPoint.BatchHandler.class.getMethod("handle", Object.class, MessageBatch.class));
+    }
+
+    @Test
+    void headerModelsAreClosedFinalFactoryOnlyTypes() {
+        List<Class<?>> valueTypes = List.of(HeaderValue.NullValue.class,
+                                            HeaderValue.TextValue.class,
+                                            HeaderValue.BinaryValue.class,
+                                            HeaderValue.BooleanValue.class,
+                                            HeaderValue.IntegerValue.class,
+                                            HeaderValue.DecimalValue.class,
+                                            HeaderValue.Float32Value.class,
+                                            HeaderValue.Float64Value.class,
+                                            HeaderValue.TimestampValue.class,
+                                            HeaderValue.UuidValue.class,
+                                            HeaderValue.NativeValue.class);
+        Set<Class<?>> permittedTypes = Set.copyOf(Arrays.asList(HeaderValue.class.getPermittedSubclasses()));
+
+        assertThat(HeaderValue.class.isSealed(), is(true));
+        assertThat(permittedTypes, is(Set.copyOf(valueTypes)));
+        for (Class<?> type : valueTypes) {
+            assertThat(type.getName(), Modifier.isFinal(type.getModifiers()), is(true));
+            assertThat(type.getName(), type.isRecord(), is(false));
+            assertThat(type.getName(), type.isEnum(), is(false));
+            assertThat(type.getName(), type.getConstructors().length, is(0));
+        }
+        assertThat(Modifier.isFinal(MessageHeader.class.getModifiers()), is(true));
+        assertThat(MessageHeader.class.isRecord(), is(false));
+        assertThat(MessageHeader.class.getConstructors().length, is(0));
+
+        MessageHeader header = MessageHeader.create("trace", HeaderValue.text("value"));
+        assertThat(header.name(), is("trace"));
+        assertThat(header.value(), is(HeaderValue.text("value")));
     }
 
     private static void assertNoDeclaredExceptions(Method method) {

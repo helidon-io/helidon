@@ -36,17 +36,64 @@ class HeaderValueTest {
         Instant timestamp = Instant.parse("2026-08-26T10:15:30Z");
         UUID uuid = UUID.fromString("01234567-89ab-cdef-0123-456789abcdef");
 
-        assertThat(HeaderValue.nullValue(), sameInstance(HeaderValue.NullValue.INSTANCE));
-        assertThat(HeaderValue.text("text"), is(new HeaderValue.TextValue("text")));
-        assertThat(HeaderValue.booleanValue(true), is(new HeaderValue.BooleanValue(true)));
-        assertThat(HeaderValue.integer(42), is(new HeaderValue.IntegerValue(BigInteger.valueOf(42))));
-        assertThat(HeaderValue.integer(BigInteger.TEN), is(new HeaderValue.IntegerValue(BigInteger.TEN)));
-        assertThat(HeaderValue.decimal(new BigDecimal("12.30")),
-                   is(new HeaderValue.DecimalValue(new BigDecimal("12.30"))));
-        assertThat(HeaderValue.floatingPoint(1.5F), is(new HeaderValue.Float32Value(1.5F)));
-        assertThat(HeaderValue.floatingPoint(2.5D), is(new HeaderValue.Float64Value(2.5D)));
-        assertThat(HeaderValue.timestamp(timestamp), is(new HeaderValue.TimestampValue(timestamp)));
-        assertThat(HeaderValue.uuid(uuid), is(new HeaderValue.UuidValue(uuid)));
+        HeaderValue.TextValue text = HeaderValue.text("text");
+        HeaderValue.BooleanValue booleanValue = HeaderValue.booleanValue(true);
+        HeaderValue.IntegerValue integer = HeaderValue.integer(42);
+        HeaderValue.DecimalValue decimal = HeaderValue.decimal(new BigDecimal("12.30"));
+        HeaderValue.Float32Value float32 = HeaderValue.floatingPoint(1.5F);
+        HeaderValue.Float64Value float64 = HeaderValue.floatingPoint(2.5D);
+        HeaderValue.TimestampValue timestampValue = HeaderValue.timestamp(timestamp);
+        HeaderValue.UuidValue uuidValue = HeaderValue.uuid(uuid);
+
+        assertThat(HeaderValue.nullValue(), sameInstance(HeaderValue.nullValue()));
+        assertThat(text.value(), is("text"));
+        assertThat(text, is(HeaderValue.text("text")));
+        assertThat(booleanValue.value(), is(true));
+        assertThat(booleanValue, is(HeaderValue.booleanValue(true)));
+        assertThat(integer.value(), is(BigInteger.valueOf(42)));
+        assertThat(integer, is(HeaderValue.integer(BigInteger.valueOf(42))));
+        assertThat(HeaderValue.integer(BigInteger.TEN), is(HeaderValue.integer(BigInteger.TEN)));
+        assertThat(decimal.value(), is(new BigDecimal("12.30")));
+        assertThat(decimal, is(HeaderValue.decimal(new BigDecimal("12.30"))));
+        assertThat(decimal, not(HeaderValue.decimal(new BigDecimal("12.3"))));
+        assertThat(float32.value(), is(1.5F));
+        assertThat(float32, is(HeaderValue.floatingPoint(1.5F)));
+        assertThat(float64.value(), is(2.5D));
+        assertThat(float64, is(HeaderValue.floatingPoint(2.5D)));
+        assertThat(timestampValue.value(), is(timestamp));
+        assertThat(timestampValue, is(HeaderValue.timestamp(timestamp)));
+        assertThat(uuidValue.value(), is(uuid));
+        assertThat(uuidValue, is(HeaderValue.uuid(uuid)));
+
+        assertEqualHash(text, HeaderValue.text("text"));
+        assertEqualHash(booleanValue, HeaderValue.booleanValue(true));
+        assertEqualHash(integer, HeaderValue.integer(42));
+        assertEqualHash(decimal, HeaderValue.decimal(new BigDecimal("12.30")));
+        assertEqualHash(float32, HeaderValue.floatingPoint(1.5F));
+        assertEqualHash(float64, HeaderValue.floatingPoint(2.5D));
+        assertEqualHash(timestampValue, HeaderValue.timestamp(timestamp));
+        assertEqualHash(uuidValue, HeaderValue.uuid(uuid));
+    }
+
+    @Test
+    void floatingPointValuesRetainRecordSemantics() {
+        assertThat(HeaderValue.floatingPoint(Float.NaN),
+                   is(HeaderValue.floatingPoint(Float.intBitsToFloat(0x7f800001))));
+        assertThat(HeaderValue.floatingPoint(0.0F), not(HeaderValue.floatingPoint(-0.0F)));
+        assertThat(HeaderValue.floatingPoint(Double.NaN),
+                   is(HeaderValue.floatingPoint(Double.longBitsToDouble(0x7ff0000000000001L))));
+        assertThat(HeaderValue.floatingPoint(0.0D), not(HeaderValue.floatingPoint(-0.0D)));
+    }
+
+    @Test
+    void scalarValuesRetainRecordStyleDiagnostics() {
+        assertThat(HeaderValue.nullValue().toString(), is("INSTANCE"));
+        assertThat(HeaderValue.text("text").toString(), is("TextValue[value=text]"));
+        assertThat(HeaderValue.booleanValue(true).toString(), is("BooleanValue[value=true]"));
+        assertThat(HeaderValue.integer(42).toString(), is("IntegerValue[value=42]"));
+        assertThat(HeaderValue.decimal(new BigDecimal("12.30")).toString(), is("DecimalValue[value=12.30]"));
+        assertThat(HeaderValue.floatingPoint(1.5F).toString(), is("Float32Value[value=1.5]"));
+        assertThat(HeaderValue.floatingPoint(2.5D).toString(), is("Float64Value[value=2.5]"));
     }
 
     @Test
@@ -97,5 +144,10 @@ class HeaderValueTest {
         assertThrows(NullPointerException.class, () -> HeaderValue.nativeValue(null, new byte[0]));
         assertThrows(IllegalArgumentException.class, () -> HeaderValue.nativeValue(" ", new byte[0]));
         assertThrows(NullPointerException.class, () -> HeaderValue.nativeValue("test:value", null));
+    }
+
+    private static void assertEqualHash(HeaderValue first, HeaderValue second) {
+        assertThat(first, is(second));
+        assertThat(first.hashCode(), is(second.hashCode()));
     }
 }
