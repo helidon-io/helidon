@@ -48,9 +48,9 @@ public final class MessagingEntryPoint {
          * @param serviceInstance intercepted service instance
          * @param message incoming message
          * @return produced message for a processor, or empty for a terminal consumer
-         * @throws Exception if invocation fails
+         * @throws RuntimeException if invocation fails
          */
-        Optional<Message<?>> handle(T serviceInstance, Message<?> message) throws Exception;
+        Optional<Message<?>> handle(T serviceInstance, Message<?> message);
     }
 
     /**
@@ -65,9 +65,9 @@ public final class MessagingEntryPoint {
          *
          * @param serviceInstance intercepted service instance
          * @param messages immutable message batch
-         * @throws Exception if invocation fails
+         * @throws RuntimeException if invocation fails
          */
-        void handle(T serviceInstance, MessageBatch<?> messages) throws Exception;
+        void handle(T serviceInstance, MessageBatch<?> messages);
     }
 
     /**

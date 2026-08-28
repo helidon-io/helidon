@@ -55,6 +55,7 @@ import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ArrayPayload
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.BatchChannelOneConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.BroadCustomMessageConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.ChannelTwoConsumer;
+import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.CheckedFailingConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.CustomMessage;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.CustomMessageConsumer;
 import io.helidon.declarative.tests.messaging.ChannelMessagingTypes.FailingConsumer;
@@ -518,6 +519,14 @@ class DeclarativeMessagingTest {
         var consumer = registry.get(FailingConsumer.class);
 
         assertBatchFailure(consumer.failure(), () -> producer.emitFailingChannel("test message"));
+    }
+
+    @Test
+    void testGeneratedEmitterWrapsCheckedHandlerFailure() {
+        var producer = registry.get(Producer.class);
+        var consumer = registry.get(CheckedFailingConsumer.class);
+
+        assertBatchFailure(consumer.failure(), () -> producer.emitCheckedFailingChannel("test message"));
     }
 
     @Test

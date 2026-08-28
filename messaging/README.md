@@ -716,12 +716,12 @@ final class AcmeIncomingConnector implements IncomingConnector {
                                                  reservation,
                                                  maxMessages,
                                                  context.channel());
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                if (closed.get() || draining.get()) {
+                            } catch (MessagingException e) {
+                                if (e.getCause() instanceof InterruptedException
+                                        && (closed.get() || draining.get())) {
                                     break;
                                 }
-                                throw new MessagingException("Incoming connector was interrupted", e);
+                                throw e;
                             }
                         }
                     } catch (MessagingRejectedException e) {
@@ -749,7 +749,7 @@ final class AcmeIncomingConnector implements IncomingConnector {
                                   AcmeTransportBatch transportBatch,
                                   ConnectorDeliveryReservation reservation,
                                   int maxMessages,
-                                  String channel) throws InterruptedException {
+                                  String channel) {
         MessageBatch<?> batch;
         try {
             batch = toMessageBatch(transportBatch);
@@ -779,11 +779,11 @@ final class AcmeIncomingConnector implements IncomingConnector {
                     delivery.await();
                     // Commit only after runtime processing, retries, drop, or dead-letter handling succeeds.
                     transport.commit(transportBatch);
-                } catch (InterruptedException e) {
-                    delivery.cancel();
-                    abandon(transport, transportBatch, e);
-                    throw e;
                 } catch (RuntimeException | Error failure) {
+                    if (failure instanceof MessagingException
+                            && failure.getCause() instanceof InterruptedException) {
+                        delivery.cancel();
+                    }
                     abandon(transport, transportBatch, failure);
                     throw failure;
                 }
@@ -858,6 +858,11 @@ transport data between reservation and start is excluded from that budget.
 throws, do not acknowledge or commit the transport delivery. Either leave it available for transport redelivery or
 apply a documented transport-specific negative acknowledgement. A connector that needs heartbeats while processing
 can call timed `await(Duration)` and perform transport maintenance between waits.
+
+If an `await` call is interrupted, the runtime restores the interrupt flag and throws `MessagingException` with the
+`InterruptedException` as its cause; the connector still owns cancellation and transport settlement. Connector close
+code invoked reentrantly from delivery processing must use `isCurrentThread()` to skip any connector-owned completion
+wait that depends on the current delivery returning.
 
 If transport-to-message mapping fails before dispatch, create a metadata-only envelope and call
 `reservation.startFailed(batch, failure)`. The runtime does not own the native transport record or mapper, so it cannot

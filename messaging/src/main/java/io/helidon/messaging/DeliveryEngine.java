@@ -441,7 +441,7 @@ final class DeliveryEngine implements AutoCloseable {
 
     private void awaitCaller(DeliveryTask task) {
         try {
-            task.await();
+            task.awaitInterruptibly();
         } catch (InterruptedException e) {
             task.cancel(MessagingRejectedException.Reason.CANCELLED,
                         "Messaging delivery caller was interrupted");
@@ -1700,24 +1700,20 @@ final class DeliveryEngine implements AutoCloseable {
         }
 
         @Override
-        public void await() throws InterruptedException {
+        public void await() {
             try {
-                completion.get();
-            } catch (ExecutionException e) {
-                rethrow(e);
+                awaitInterruptibly();
+            } catch (InterruptedException e) {
+                throw interrupted(e);
             }
         }
 
         @Override
-        public boolean await(Duration timeout) throws InterruptedException {
+        public boolean await(Duration timeout) {
             try {
-                completion.get(timeout.toNanos(), TimeUnit.NANOSECONDS);
-                return true;
-            } catch (ExecutionException e) {
-                rethrow(e);
-                return true;
-            } catch (TimeoutException e) {
-                return false;
+                return awaitInterruptibly(timeout);
+            } catch (InterruptedException e) {
+                throw interrupted(e);
             }
         }
 
@@ -1784,6 +1780,32 @@ final class DeliveryEngine implements AutoCloseable {
 
         private Context helidonContext() {
             return context.helidonContext();
+        }
+
+        private void awaitInterruptibly() throws InterruptedException {
+            try {
+                completion.get();
+            } catch (ExecutionException e) {
+                rethrow(e);
+            }
+        }
+
+        private boolean awaitInterruptibly(Duration timeout) throws InterruptedException {
+            try {
+                completion.get(timeout.toNanos(), TimeUnit.NANOSECONDS);
+                return true;
+            } catch (ExecutionException e) {
+                rethrow(e);
+                return true;
+            } catch (TimeoutException e) {
+                return false;
+            }
+        }
+
+        private MessagingException interrupted(InterruptedException cause) {
+            Thread.currentThread().interrupt();
+            return new MessagingException("Interrupted while waiting for connector delivery on channel " + channel(),
+                                          cause);
         }
 
         private void rethrow(ExecutionException exception) {

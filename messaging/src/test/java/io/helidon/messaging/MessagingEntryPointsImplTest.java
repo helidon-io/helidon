@@ -97,6 +97,30 @@ class MessagingEntryPointsImplTest {
     }
 
     @Test
+    void wrapsCheckedInterceptorFailure() {
+        Exception expected = new Exception("checked interceptor failure");
+        Interception.EntryPointInterceptor interceptor = new Interception.EntryPointInterceptor() {
+            @Override
+            public <T> T proceed(InterceptionContext context,
+                                 Interception.Interceptor.Chain<T> chain,
+                                 Object... arguments) throws Exception {
+                throw expected;
+            }
+        };
+        MessagingEntryPointsImpl entryPoints = new MessagingEntryPointsImpl(List.of(serviceInstance(interceptor)));
+        MessagingEntryPoint.Handler<Object> handler = entryPoints.handler(
+                DESCRIPTOR,
+                Set.of(),
+                List.of(),
+                METHOD,
+                (ignoredService, message) -> Optional.of(message));
+
+        MessagingException actual = assertThrows(MessagingException.class,
+                                                  () -> handler.handle(new Object(), Message.create("test")));
+        assertThat(actual.getCause(), sameInstance(expected));
+    }
+
+    @Test
     void interceptsACompleteImmutableBatchExactlyOnce() throws Exception {
         RecordingInterceptor interceptor = new RecordingInterceptor();
         MessagingEntryPointsImpl entryPoints = new MessagingEntryPointsImpl(List.of(serviceInstance(interceptor)));
@@ -128,6 +152,36 @@ class MessagingEntryPointsImplTest {
         assertThat(received.get().size(), is(2));
         assertThat(handlerInvocations.get(), is(1));
         assertThrows(UnsupportedOperationException.class, () -> received.get().messages().clear());
+    }
+
+    @Test
+    void restoresInterruptWhenBatchInterceptorIsInterrupted() {
+        InterruptedException expected = new InterruptedException("interceptor interrupted");
+        Interception.EntryPointInterceptor interceptor = new Interception.EntryPointInterceptor() {
+            @Override
+            public <T> T proceed(InterceptionContext context,
+                                 Interception.Interceptor.Chain<T> chain,
+                                 Object... arguments) throws Exception {
+                throw expected;
+            }
+        };
+        MessagingEntryPointsImpl entryPoints = new MessagingEntryPointsImpl(List.of(serviceInstance(interceptor)));
+        MessagingEntryPoint.BatchHandler<Object> handler = entryPoints.batchHandler(
+                DESCRIPTOR,
+                Set.of(),
+                List.of(),
+                METHOD,
+                (ignoredService, ignoredBatch) -> { });
+
+        try {
+            MessagingException actual = assertThrows(
+                    MessagingException.class,
+                    () -> handler.handle(new Object(), MessageBatch.create(Message.create("test"))));
+            assertThat(actual.getCause(), sameInstance(expected));
+            assertThat(Thread.currentThread().isInterrupted(), is(true));
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     @Test

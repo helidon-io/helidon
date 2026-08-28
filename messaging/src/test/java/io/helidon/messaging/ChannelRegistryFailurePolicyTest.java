@@ -1837,7 +1837,7 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     private static void deliver(IncomingConnectorContext context,
-                                MessageBatch<?> batch) throws InterruptedException {
+                                MessageBatch<?> batch) {
         try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
              ConnectorDelivery delivery = reservation.start(batch)) {
             delivery.await();
@@ -1846,7 +1846,7 @@ class ChannelRegistryFailurePolicyTest {
 
     private static void deliverFailed(IncomingConnectorContext context,
                                       MessageBatch<?> batch,
-                                      RuntimeException failure) throws InterruptedException {
+                                      RuntimeException failure) {
         try (ConnectorDeliveryReservation reservation = context.reserveDelivery();
              ConnectorDelivery delivery = reservation.startFailed(batch, failure)) {
             delivery.await();

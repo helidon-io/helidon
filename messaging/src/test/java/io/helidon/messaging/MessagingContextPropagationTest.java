@@ -70,7 +70,7 @@ class MessagingContextPropagationTest {
     }
 
     @Test
-    void connectorDeliveriesUseFreshIsolatedContexts() throws InterruptedException {
+    void connectorDeliveriesUseFreshIsolatedContexts() {
         Context connectorContext = Context.create();
         Object connectorMarker = new Object();
         connectorContext.register(MARKER, connectorMarker);
@@ -263,7 +263,7 @@ class MessagingContextPropagationTest {
                                                Context connectorContext,
                                                String value,
                                                AtomicReference<Context> handlerContext,
-                                               AtomicReference<Thread> handlerThread) throws InterruptedException {
+                                               AtomicReference<Thread> handlerThread) {
         try (ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery(
                 "orders",
                 1,
@@ -282,8 +282,7 @@ class MessagingContextPropagationTest {
                                                      String value,
                                                      RuntimeException mappingFailure,
                                                      AtomicReference<Context> handlerContext,
-                                                     AtomicReference<RuntimeException> observedFailure)
-            throws InterruptedException {
+                                                     AtomicReference<RuntimeException> observedFailure) {
         try (ConnectorDeliveryReservation reservation = engine.reserveConnectorDelivery(
                 "orders",
                 1,

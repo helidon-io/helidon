@@ -146,10 +146,9 @@ public class MessagingRuntimeJmhBenchmark {
      *
      * @param state benchmark state
      * @return last consumed value
-     * @throws InterruptedException if the benchmark worker is interrupted
      */
     @Benchmark
-    public String settleIncomingConnectorDelivery(IncomingState state) throws InterruptedException {
+    public String settleIncomingConnectorDelivery(IncomingState state) {
         try (ConnectorDeliveryReservation reservation = state.context.reserveDelivery();
              ConnectorDelivery delivery = reservation.start(state.batch)) {
             delivery.await();

@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -1188,6 +1189,16 @@ class DeliveryEngineTest {
     }
 
     @Test
+    void untimedConnectorWaitTranslatesInterruption() throws Exception {
+        assertConnectorWaitTranslatesInterruption(ConnectorDelivery::await);
+    }
+
+    @Test
+    void timedConnectorWaitTranslatesInterruption() throws Exception {
+        assertConnectorWaitTranslatesInterruption(delivery -> delivery.await(WAIT));
+    }
+
+    @Test
     void boundsPendingAdmissionCallersAndSupportsNonBlockingConnectorAdmission() throws Exception {
         MessagingExecutionConfig config = configBuilder()
                 .maxPendingAdmissions(1)
@@ -1759,11 +1770,68 @@ class DeliveryEngineTest {
         task.completion().get(WAIT.toMillis(), TimeUnit.MILLISECONDS);
     }
 
-    private static void await(ConnectorDelivery delivery) throws InterruptedException {
+    private static void await(ConnectorDelivery delivery) {
         try {
             assertThat("delivery did not complete", delivery.await(WAIT), is(true));
         } finally {
             delivery.close();
+        }
+    }
+
+    private static void assertConnectorWaitTranslatesInterruption(Consumer<ConnectorDelivery> wait) throws Exception {
+        MessagingExecutionConfig config = configBuilder()
+                .maxInFlightMessages(1)
+                .build();
+        try (DeliveryEngine engine = engine(config, "orders")) {
+            CountDownLatch deliveryPublished = new CountDownLatch(1);
+            CountDownLatch deliveryEntered = new CountDownLatch(1);
+            CountDownLatch releaseDelivery = new CountDownLatch(1);
+            AtomicReference<ConnectorDelivery> deliveryReference = new AtomicReference<>();
+            AtomicBoolean executingOnCurrentThread = new AtomicBoolean();
+            ConnectorDelivery delivery = submitConnectorDelivery(engine,
+                                                                  "orders",
+                                                                  List.of(message(1)),
+                                                                  () -> {
+                                                                      await(deliveryPublished);
+                                                                      executingOnCurrentThread.set(
+                                                                              deliveryReference.get().isCurrentThread());
+                                                                      deliveryEntered.countDown();
+                                                                      await(releaseDelivery);
+                                                                  });
+            deliveryReference.set(delivery);
+            deliveryPublished.countDown();
+            await(deliveryEntered);
+            assertThat(delivery.isCurrentThread(), is(false));
+            assertThat(executingOnCurrentThread.get(), is(true));
+
+            AtomicReference<MessagingException> failure = new AtomicReference<>();
+            AtomicBoolean interruptRestored = new AtomicBoolean();
+            AsyncTask waiter = async(() -> {
+                try {
+                    wait.accept(delivery);
+                    fail("interrupted connector wait returned normally");
+                } catch (MessagingException e) {
+                    failure.set(e);
+                    interruptRestored.set(Thread.currentThread().isInterrupted());
+                }
+            });
+            awaitWaiting(waiter);
+            waiter.thread().interrupt();
+            await(waiter);
+
+            assertThat(failure.get().getCause(), instanceOf(InterruptedException.class));
+            assertThat(failure.get().getMessage(), containsString("orders"));
+            assertThat(interruptRestored.get(), is(true));
+            assertThat(delivery.isDone(), is(false));
+            assertThat(trySubmitConnectorDelivery(engine, "orders", List.of(message(2)), () -> { }).isEmpty(),
+                       is(true));
+
+            releaseDelivery.countDown();
+            assertThat(delivery.await(WAIT), is(true));
+            delivery.close();
+            ConnectorDelivery recovered = trySubmitConnectorDelivery(engine, "orders", List.of(message(3)), () -> { })
+                    .orElseThrow();
+            await(recovered);
         }
     }
 

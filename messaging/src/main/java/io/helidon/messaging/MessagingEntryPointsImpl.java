@@ -55,11 +55,12 @@ class MessagingEntryPointsImpl implements MessagingEntryPoint.EntryPoints {
         }
 
         InterceptionContext baseContext = context(descriptor, typeAnnotations, methodInfo);
-        return (serviceInstance, message) -> new Invocation<>(context(baseContext, serviceInstance),
-                                                               interceptors,
-                                                               serviceInstance,
-                                                               actualHandler)
-                .proceed(new Object[] {message});
+        return (serviceInstance, message) -> proceed(new Invocation<>(context(baseContext, serviceInstance),
+                                                                      interceptors,
+                                                                      serviceInstance,
+                                                                      actualHandler),
+                                                     new Object[] {message},
+                                                     methodInfo);
     }
 
     @Override
@@ -73,11 +74,12 @@ class MessagingEntryPointsImpl implements MessagingEntryPoint.EntryPoints {
         }
 
         InterceptionContext baseContext = context(descriptor, typeAnnotations, methodInfo);
-        return (serviceInstance, messages) -> new BatchInvocation<>(context(baseContext, serviceInstance),
-                                                                     interceptors,
-                                                                     serviceInstance,
-                                                                     actualHandler)
-                .proceed(new Object[] {messages});
+        return (serviceInstance, messages) -> proceed(new BatchInvocation<>(context(baseContext, serviceInstance),
+                                                                            interceptors,
+                                                                            serviceInstance,
+                                                                            actualHandler),
+                                                       new Object[] {messages},
+                                                       methodInfo);
     }
 
     private static InterceptionContext context(ServiceDescriptor<?> descriptor,
@@ -94,6 +96,22 @@ class MessagingEntryPointsImpl implements MessagingEntryPoint.EntryPoints {
         return InterceptionContext.builder(baseContext)
                 .serviceInstance(serviceInstance)
                 .build();
+    }
+
+    private static <T> T proceed(Interception.Interceptor.Chain<T> chain,
+                                 Object[] arguments,
+                                 TypedElementInfo methodInfo) {
+        try {
+            return chain.proceed(arguments);
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Throwable t) {
+            if (t instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new MessagingException("Messaging entry point failed for " + methodInfo.signature().text(),
+                                         t);
+        }
     }
 
     private static List<Interception.EntryPointInterceptor> interceptors(

@@ -61,6 +61,7 @@ class ChannelMessagingTypes {
     static final String TYPED_HEADER_CHANNEL = "typed-header-channel";
     static final String PER_LOOKUP_INTERCEPTED_CHANNEL = "per-lookup-intercepted-channel";
     static final String FAILING_CHANNEL = "failing-channel";
+    static final String CHECKED_FAILING_CHANNEL = "checked-failing-channel";
     static final String ANNOTATED_FAILURE_CHANNEL = "annotated-failure-channel";
     static final String ANNOTATED_FAILURE_DLQ_CHANNEL = "annotated-failure-dlq-channel";
     static final String TEST_CONNECTOR = "test";
@@ -85,6 +86,10 @@ class ChannelMessagingTypes {
         @Service.Inject
         Emitter<String> failingChannel;
 
+        @Service.Named(CHECKED_FAILING_CHANNEL)
+        @Service.Inject
+        Emitter<String> checkedFailingChannel;
+
         void emitChannelOne(String entity) {
             channelOne.emit(Message.builder(entity)
                                     .header("key", "value")
@@ -108,8 +113,12 @@ class ChannelMessagingTypes {
             failingChannel.emit(entity);
         }
 
+        void emitCheckedFailingChannel(String entity) {
+            checkedFailingChannel.emit(entity);
+        }
+
         boolean emittersInjected() {
-            return channelOne != null && channelTwo != null && failingChannel != null;
+            return channelOne != null && channelTwo != null && failingChannel != null && checkedFailingChannel != null;
         }
     }
 
@@ -358,6 +367,20 @@ class ChannelMessagingTypes {
     }
 
     @Service.Singleton
+    static class CheckedFailingConsumer {
+        private final IOException failure = new IOException("checked handler failed");
+
+        @Messaging.ReceiveFrom(CHECKED_FAILING_CHANNEL)
+        void consume(String payload) throws IOException {
+            throw failure;
+        }
+
+        IOException failure() {
+            return failure;
+        }
+    }
+
+    @Service.Singleton
     static class AnnotatedFailureConsumer {
         private final AtomicInteger attempts = new AtomicInteger();
 
@@ -505,9 +528,6 @@ class ChannelMessagingTypes {
                 try (var reservation = context.reserveDelivery();
                      var delivery = reservation.start(batch)) {
                     delivery.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    failure = new MessagingException("Test connector delivery was interrupted", e);
                 } catch (RuntimeException e) {
                     failure = e;
                 } finally {

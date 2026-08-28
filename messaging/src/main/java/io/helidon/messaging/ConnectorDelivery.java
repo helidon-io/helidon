@@ -36,29 +36,38 @@ public interface ConnectorDelivery extends AutoCloseable {
     boolean isDone();
 
     /**
-     * Whether the calling thread is the runtime thread executing this delivery.
+     * Whether the calling thread is the messaging-runtime thread currently executing this delivery.
+     * <p>
+     * Connector shutdown code must not wait for connector completion that depends on the current delivery returning;
+     * this method allows that reentrant path to skip such a self-wait without exposing the runtime thread.
      *
-     * @return {@code true} when called by this delivery task
+     * @return {@code true} when called from this delivery's execution
      */
     boolean isCurrentThread();
 
     /**
      * Await delivery termination and propagate its processing failure.
+     * <p>
+     * If the waiting connector owner is interrupted, its interrupt status is restored before the failure is reported.
      *
-     * @throws InterruptedException if the waiting connector owner is interrupted
-     * @throws RuntimeException if delivery processing fails
+     * @throws MessagingException if the waiting connector owner is interrupted or processing fails with a checked
+     *                            cause
+     * @throws RuntimeException if delivery processing fails with a runtime exception
      */
-    void await() throws InterruptedException;
+    void await();
 
     /**
      * Await delivery termination for at most the supplied duration and propagate its processing failure.
+     * <p>
+     * If the waiting connector owner is interrupted, its interrupt status is restored before the failure is reported.
      *
      * @param timeout maximum wait
      * @return {@code true} if processing terminated, {@code false} on timeout
-     * @throws InterruptedException if the waiting connector owner is interrupted
-     * @throws RuntimeException if delivery processing fails
+     * @throws MessagingException if the waiting connector owner is interrupted or processing fails with a checked
+     *                            cause
+     * @throws RuntimeException if delivery processing fails with a runtime exception
      */
-    boolean await(Duration timeout) throws InterruptedException;
+    boolean await(Duration timeout);
 
     /**
      * Cancel delivery processing.

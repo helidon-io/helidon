@@ -291,7 +291,7 @@ class MessagingExtension implements RegistryCodegenExtension {
                     .addParameter(messages -> messages
                             .type(messageBatchWildcardType())
                             .name("messages"))
-                    .update(method -> addBatchHandlerInvocation(method, typeInfo, element, singleton)));
+                    .update(method -> addBatchHandlerInvocation(method, singleton)));
             return;
         }
 
@@ -382,8 +382,6 @@ class MessagingExtension implements RegistryCodegenExtension {
                                       TypedElementInfo element,
                                       boolean singleton) {
         String description = handlerId(typeInfo, element);
-        method.addContentLine("try {")
-                .increaseContentPadding();
         if (element.hasAnnotation(MessagingTypes.SEND_TO)) {
             method.addContent("return handler.handle(")
                     .addContent(singleton ? "consumer" : "consumer.get()")
@@ -400,46 +398,12 @@ class MessagingExtension implements RegistryCodegenExtension {
                     .addContent(singleton ? "consumer" : "consumer.get()")
                     .addContentLine(", message);");
         }
-        method.decreaseContentPadding()
-                .addContentLine("} catch (RuntimeException | Error e) {")
-                .increaseContentPadding()
-                .addContentLine("throw e;")
-                .decreaseContentPadding()
-                .addContentLine("} catch (Exception e) {")
-                .increaseContentPadding()
-                .addContent("throw new ")
-                .addContent(MessagingTypes.MESSAGING_EXCEPTION)
-                .addContent("(")
-                .addContentLiteral("Messaging handler " + description + " failed")
-                .addContentLine(", e);")
-                .decreaseContentPadding()
-                .addContentLine("}");
     }
 
-    private void addBatchHandlerInvocation(Method.Builder method,
-                                           TypeInfo typeInfo,
-                                           TypedElementInfo element,
-                                           boolean singleton) {
-        String description = handlerId(typeInfo, element);
-        method.addContentLine("try {")
-                .increaseContentPadding()
-                .addContent("batchHandler.handle(")
+    private void addBatchHandlerInvocation(Method.Builder method, boolean singleton) {
+        method.addContent("batchHandler.handle(")
                 .addContent(singleton ? "consumer" : "consumer.get()")
-                .addContentLine(", messages);")
-                .decreaseContentPadding()
-                .addContentLine("} catch (RuntimeException | Error e) {")
-                .increaseContentPadding()
-                .addContentLine("throw e;")
-                .decreaseContentPadding()
-                .addContentLine("} catch (Exception e) {")
-                .increaseContentPadding()
-                .addContent("throw new ")
-                .addContent(MessagingTypes.MESSAGING_EXCEPTION)
-                .addContent("(")
-                .addContentLiteral("Messaging batch handler " + description + " failed")
-                .addContentLine(", e);")
-                .decreaseContentPadding()
-                .addContentLine("}");
+                .addContentLine(", messages);");
     }
 
     private void addProcessorMetadata(ClassModel.Builder classModel, ConsumerMethod consumerMethod) {
@@ -492,7 +456,6 @@ class MessagingExtension implements RegistryCodegenExtension {
                     .accessModifier(AccessModifier.PRIVATE)
                     .returnType(TypeNames.PRIMITIVE_VOID)
                     .name("invokeBatch")
-                    .addThrows(thrown -> thrown.type(Exception.class))
                     .addParameter(consumer -> consumer
                             .type(typeInfo.typeName())
                             .name("consumerInstance"))
@@ -515,7 +478,6 @@ class MessagingExtension implements RegistryCodegenExtension {
                 .accessModifier(AccessModifier.PRIVATE)
                 .returnType(optionalMessageWildcardType())
                 .name("invoke")
-                .addThrows(thrown -> thrown.type(Exception.class))
                 .addParameter(consumer -> consumer
                         .type(typeInfo.typeName())
                         .name("consumerInstance"))
@@ -580,20 +542,21 @@ class MessagingExtension implements RegistryCodegenExtension {
 
     private void addInvocationThrowableBoundary(Method.Builder method, String handlerId) {
         method.decreaseContentPadding()
-                .addContentLine("} catch (Exception e) {")
-                .increaseContentPadding()
-                .addContentLine("throw e;")
-                .decreaseContentPadding()
-                .addContentLine("} catch (Error e) {")
+                .addContentLine("} catch (RuntimeException | Error e) {")
                 .increaseContentPadding()
                 .addContentLine("throw e;")
                 .decreaseContentPadding()
                 .addContentLine("} catch (Throwable t) {")
                 .increaseContentPadding()
+                .addContentLine("if (t instanceof InterruptedException) {")
+                .increaseContentPadding()
+                .addContentLine("Thread.currentThread().interrupt();")
+                .decreaseContentPadding()
+                .addContentLine("}")
                 .addContent("throw new ")
                 .addContent(MessagingTypes.MESSAGING_EXCEPTION)
                 .addContent("(")
-                .addContentLiteral("Messaging handler " + handlerId + " threw a checked Throwable outside Exception")
+                .addContentLiteral("Messaging handler " + handlerId + " failed")
                 .addContentLine(", t);")
                 .decreaseContentPadding()
                 .addContentLine("}");

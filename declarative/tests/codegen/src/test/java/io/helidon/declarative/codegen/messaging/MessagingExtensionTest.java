@@ -554,7 +554,9 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("typedMessage.headerValue(\"typed-optional\")"), is(true));
         assertThat(source, source.contains("typedMessage.headers().all(\"all\")"), is(true));
         assertThat(source, source.contains("catch (RuntimeException | Error e)"), is(true));
-        assertThat(source, source.contains("catch (Exception e)"), is(true));
+        assertThat(source, source.contains("catch (Exception e)"), is(false));
+        assertThat(source, source.contains("catch (Throwable t)"), is(true));
+        assertThat(source, source.contains("throws Exception"), is(false));
     }
 
     @Test
@@ -1226,6 +1228,8 @@ class MessagingExtensionTest {
         assertThat(source, source.contains("consumerInstance.consume(typedMessages);"), is(true));
         assertThat(source, source.contains("consumer.get().consume("), is(false));
         assertThat(source, source.contains("consumer.get()"), is(false));
+        assertThat(source, source.contains("catch (Throwable t)"), is(true));
+        assertThat(source, source.contains("throws Exception"), is(false));
     }
 
     @Test
@@ -2192,7 +2196,33 @@ class MessagingExtensionTest {
         assertCompilationSucceeded(result);
         String source = generatedSource(result, "ThrowableConsumer__MessagingConsumer_");
         assertThat(source, source.contains("catch (Throwable t)"), is(true));
-        assertThat(source, source.contains("threw a checked Throwable outside Exception"), is(true));
+        assertThat(source, source.contains("Messaging handler com.example.ThrowableConsumer#consume"), is(true));
+        assertThat(source, source.contains("failed"), is(true));
+        assertThat(source, source.contains("throws Exception"), is(false));
+    }
+
+    @Test
+    void generatedCheckedInterruptionRestoresInterruptBeforeWrapping() throws IOException {
+        TestCompiler.Result result = compile("""
+                package com.example;
+
+                import io.helidon.messaging.Messaging;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class InterruptedConsumer {
+                    @Messaging.ReceiveFrom("orders")
+                    void consume(String value) throws InterruptedException {
+                        throw new InterruptedException("interrupted");
+                    }
+                }
+                """);
+
+        assertCompilationSucceeded(result);
+        String source = generatedSource(result, "InterruptedConsumer__MessagingConsumer_");
+        assertThat(source, source.contains("if (t instanceof InterruptedException)"), is(true));
+        assertThat(source, source.contains("Thread.currentThread().interrupt();"), is(true));
+        assertThat(source, source.contains("throws Exception"), is(false));
     }
 
     private TestCompiler.Result compile(String source) {
