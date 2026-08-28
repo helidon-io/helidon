@@ -539,6 +539,12 @@ class Http2AltSvcCacheTest {
         cache.record(httpTarget, advertisement, true, false, clock.nextObservation());
         assertThat(cache.select(httpTarget, false, _ -> false), nullValue());
 
+        ClientConnectionTarget unauthenticatedAuthority = targetWithAuthority(tls,
+                                                                               "gateway.example",
+                                                                               "origin.example");
+        cache.record(unauthenticatedAuthority, advertisement, true, false, clock.nextObservation());
+        assertThat(cache.select(unauthenticatedAuthority, false, _ -> false), nullValue());
+
         Proxy proxy = Proxy.builder().host("proxy.example").port(8181).build();
         ClientConnectionTarget proxyTarget = target(tls, "https", "origin.example", proxy, DNS);
         cache.record(proxyTarget, advertisement, true, false, clock.nextObservation());
@@ -1437,6 +1443,20 @@ class Http2AltSvcCacheTest {
                                                            DnsAddressLookup.IPV4,
                                                            proxy);
         return ClientConnectionTarget.create(connectionKey, scheme);
+    }
+
+    private static ClientConnectionTarget targetWithAuthority(Tls tls, String routingHost, String originAuthority) {
+        ConnectionKey connectionKey = ConnectionKey.create("https",
+                                                           routingHost,
+                                                           443,
+                                                           tls,
+                                                           DNS,
+                                                           DnsAddressLookup.IPV4,
+                                                           Proxy.noProxy());
+        ClientUri uri = ClientUri.create(URI.create("https://" + routingHost));
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.set(HeaderNames.HOST, originAuthority);
+        return ClientConnectionTarget.create(connectionKey, uri, ClientRequestHeaders.create(headers));
     }
 
     private static ClientConnectionTarget udsTarget(Tls tls, String host) {

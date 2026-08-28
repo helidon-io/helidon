@@ -450,6 +450,7 @@ final class Http2AltSvcCache implements AutoCloseable {
         return target.currentTlsGeneration()
                 && "https".equals(target.scheme())
                 && target.connectionKey().tls().enabled()
+                && sameHost(target.originAuthority().host().value(), target.connectionKey().tlsPeerHost())
                 && target.connectionKey().proxy().type() == Proxy.ProxyType.NONE
                 && target.transportAddress().isEmpty()
                 && target.proxyRoute().direct()
