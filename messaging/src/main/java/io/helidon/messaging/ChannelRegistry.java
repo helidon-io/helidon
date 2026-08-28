@@ -145,9 +145,9 @@ class ChannelRegistry implements MessagingRuntime {
 
         Map<String, MessagingChannel<?>> channels = new HashMap<>();
         grouped.forEach((channel, consumers) -> channels.put(channel, createChannel(config, channel, consumers)));
-        configuredChannels(config, ConnectorConfig.OUTGOING_PREFIX)
+        configuredChannels(config, MessagingConfigSupport.OUTGOING_PREFIX)
                 .forEach(channel -> ensureChannel(config, channels, channel));
-        configuredChannels(config, ConnectorConfig.INCOMING_PREFIX)
+        configuredChannels(config, MessagingConfigSupport.INCOMING_PREFIX)
                 .forEach(channel -> ensureChannel(config, channels, channel));
         this.channels = Map.copyOf(channels);
 
@@ -899,8 +899,8 @@ class ChannelRegistry implements MessagingRuntime {
     private List<OutgoingBinding> prepareOutgoingBindings(Config root,
                                                           Map<String, ConnectorProvider> providers) {
         List<OutgoingBinding> bindings = new ArrayList<>();
-        for (String channel : configuredChannels(root, ConnectorConfig.OUTGOING_PREFIX)) {
-            Config channelConfig = channelConfig(root, ConnectorConfig.OUTGOING_PREFIX, channel);
+        for (String channel : configuredChannels(root, MessagingConfigSupport.OUTGOING_PREFIX)) {
+            Config channelConfig = channelConfig(root, MessagingConfigSupport.OUTGOING_PREFIX, channel);
             String connectorType = requireConnectorType(channelConfig, "outgoing", channel);
             ConnectorProvider provider = providers.get(connectorType);
             if (provider == null) {
@@ -927,8 +927,8 @@ class ChannelRegistry implements MessagingRuntime {
             Map<String, ConnectorProvider> providers,
             Map<String, List<ConsumerRegistration>> registrations) {
         List<IncomingDescriptor> descriptors = new ArrayList<>();
-        for (String channel : configuredChannels(root, ConnectorConfig.INCOMING_PREFIX)) {
-            Config channelConfig = channelConfig(root, ConnectorConfig.INCOMING_PREFIX, channel);
+        for (String channel : configuredChannels(root, MessagingConfigSupport.INCOMING_PREFIX)) {
+            Config channelConfig = channelConfig(root, MessagingConfigSupport.INCOMING_PREFIX, channel);
             String connectorType = requireConnectorType(channelConfig, "incoming", channel);
             ConnectorProvider provider = providers.get(connectorType);
             if (provider == null) {
@@ -1157,7 +1157,7 @@ class ChannelRegistry implements MessagingRuntime {
 
     static MessagingExecutionConfig executionConfig(Config root, String channel) {
         Map<String, String> properties = new LinkedHashMap<>();
-        root.get(MessagingConfigKeys.EXECUTION).detach().asMap().ifPresent(properties::putAll);
+        root.get(MessagingConfigSupport.EXECUTION).detach().asMap().ifPresent(properties::putAll);
         if (channel != null) {
             Map<String, String> channelProperties = new LinkedHashMap<>();
             root.get("helidon.messaging.channel." + Config.Key.escapeName(channel) + ".execution")
@@ -1178,7 +1178,7 @@ class ChannelRegistry implements MessagingRuntime {
     }
 
     private static String requireConnectorType(Config channelConfig, String direction, String channel) {
-        return channelConfig.get(ConnectorConfig.CONNECTOR_ATTRIBUTE)
+        return channelConfig.get(MessagingConfigSupport.CONNECTOR_ATTRIBUTE)
                 .asString()
                 .filter(connector -> !connector.isBlank())
                 .orElseThrow(() -> new IllegalArgumentException("Configured " + direction + " channel " + channel
@@ -1190,7 +1190,7 @@ class ChannelRegistry implements MessagingRuntime {
                                    ConnectorDirection direction,
                                    String channel,
                                    String connector) {
-        Config connectorDefaults = root.get(ConnectorConfig.CONNECTOR_PREFIX + Config.Key.escapeName(connector));
+        Config connectorDefaults = root.get(MessagingConfigSupport.CONNECTOR_PREFIX + Config.Key.escapeName(connector));
         return Config.builder(ConfigSources.create(configObjectNode(channelConfig)),
                               ConfigSources.create(configObjectNode(connectorDefaults)))
                 .mergingStrategy(nodes -> mergeConnectorConfig(nodes, direction, channel, connector))
@@ -1209,8 +1209,8 @@ class ChannelRegistry implements MessagingRuntime {
         ConfigNode.ObjectNode.Builder result = ConfigNode.ObjectNode.builder();
         merged.value().ifPresent(result::value);
         merged.forEach(result::addNode);
-        return result.addValue(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE, channel)
-                .addValue(ConnectorConfig.CONNECTOR_ATTRIBUTE, connector)
+        return result.addValue(MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE, channel)
+                .addValue(MessagingConfigSupport.CONNECTOR_ATTRIBUTE, connector)
                 .addValue("direction", direction.name())
                 .build();
     }
@@ -1229,10 +1229,10 @@ class ChannelRegistry implements MessagingRuntime {
     private boolean reservedConnectorProperty(String key) {
         return key.equals("failure")
                 || key.startsWith("failure.")
-                || key.equals(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE)
-                || key.startsWith(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE + ".")
-                || key.equals(ConnectorConfig.CONNECTOR_ATTRIBUTE)
-                || key.startsWith(ConnectorConfig.CONNECTOR_ATTRIBUTE + ".")
+                || key.equals(MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE)
+                || key.startsWith(MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE + ".")
+                || key.equals(MessagingConfigSupport.CONNECTOR_ATTRIBUTE)
+                || key.startsWith(MessagingConfigSupport.CONNECTOR_ATTRIBUTE + ".")
                 || key.equals("direction")
                 || key.startsWith("direction.");
     }

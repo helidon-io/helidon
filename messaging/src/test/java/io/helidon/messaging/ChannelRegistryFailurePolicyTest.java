@@ -171,7 +171,7 @@ class ChannelRegistryFailurePolicyTest {
             assertThat(incoming.createdCount(), is(1));
             assertThat(outgoing.createdCount(), is(1));
             TestConnectorConfig connectorConfig = incoming.config("orders.v1");
-            assertThat(connectorConfig.channel(), is("orders.v1"));
+            assertThat(connectorConfig.channelName(), is("orders.v1"));
             assertThat(connectorConfig.connector(), is("test-in"));
             assertThat(connectorConfig.properties().get("destination"), is("orders-v1"));
         } finally {
@@ -2111,15 +2111,15 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     public record TestConnectorConfig(ConnectorDirection direction,
-                                      String channel,
+                                      String channelName,
                                       String connector,
                                       Map<String, String> properties,
                                       Config config) implements ConnectorConfig {
         private static TestConnectorConfig from(Config config) {
             return new TestConnectorConfig(
                     ConnectorDirection.valueOf(config.get("direction").asString().orElseThrow()),
-                    config.get(ConnectorConfig.CHANNEL_NAME_ATTRIBUTE).asString().orElseThrow(),
-                    config.get(ConnectorConfig.CONNECTOR_ATTRIBUTE).asString().orElseThrow(),
+                    config.get(MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE).asString().orElseThrow(),
+                    config.get(MessagingConfigSupport.CONNECTOR_ATTRIBUTE).asString().orElseThrow(),
                     Map.copyOf(config.detach().asMap().orElse(Map.of())),
                     config.detach());
         }
@@ -2151,14 +2151,14 @@ class ChannelRegistryFailurePolicyTest {
             configCreated.incrementAndGet();
             TestConnectorConfig connectorConfig = TestConnectorConfig.from(config);
             created.incrementAndGet();
-            configs.put(connectorConfig.channel(), connectorConfig);
+            configs.put(connectorConfig.channelName(), connectorConfig);
             return new IncomingConnector() {
                 private final CountDownLatch stopped = new CountDownLatch(1);
                 private final AtomicBoolean closed = new AtomicBoolean();
 
                 @Override
                 public void run(IncomingConnectorContext context) {
-                    contexts.put(connectorConfig.channel(), context);
+                    contexts.put(connectorConfig.channelName(), context);
                     anyStart.countDown();
                     if (!context.awaitRunning()) {
                         return;

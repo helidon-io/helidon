@@ -16,9 +16,26 @@
 
 package io.helidon.messaging;
 
-final class MessagingConfigKeys {
-    static final String EXECUTION = "helidon.messaging.execution";
+import io.helidon.builder.api.Prototype;
 
-    private MessagingConfigKeys() {
+final class MessagingConfigSupport {
+    /**
+     * Channel name attribute.
+     */
+    @Prototype.Constant
+    static final String CHANNEL_NAME_ATTRIBUTE = "channel-name";
+
+    /**
+     * Connector name attribute.
+     */
+    @Prototype.Constant
+    static final String CONNECTOR_ATTRIBUTE = "connector";
+
+    static final String CONNECTOR_PREFIX = "helidon.messaging.connector.";
+    static final String EXECUTION = "helidon.messaging.execution";
+    static final String INCOMING_PREFIX = "helidon.messaging.incoming.";
+    static final String OUTGOING_PREFIX = "helidon.messaging.outgoing.";
+
+    private MessagingConfigSupport() {
     }
 }

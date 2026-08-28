@@ -26,32 +26,8 @@ import io.helidon.common.Api;
 @Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
+@Prototype.CustomMethods(MessagingConfigSupport.class)
 interface ConnectorConfigBlueprint {
-    /**
-     * Channel name attribute.
-     */
-    String CHANNEL_NAME_ATTRIBUTE = "channel-name";
-
-    /**
-     * Connector name attribute.
-     */
-    String CONNECTOR_ATTRIBUTE = "connector";
-
-    /**
-     * Incoming channel config prefix.
-     */
-    String INCOMING_PREFIX = "helidon.messaging.incoming.";
-
-    /**
-     * Outgoing channel config prefix.
-     */
-    String OUTGOING_PREFIX = "helidon.messaging.outgoing.";
-
-    /**
-     * Connector-level defaults config prefix.
-     */
-    String CONNECTOR_PREFIX = "helidon.messaging.connector.";
-
     /**
      * Runtime-supplied channel direction.
      *
@@ -65,8 +41,8 @@ interface ConnectorConfigBlueprint {
      *
      * @return channel name
      */
-    @Option.Configured(CHANNEL_NAME_ATTRIBUTE)
-    String channel();
+    @Option.Configured
+    String channelName();
 
     /**
      * Selected connector provider type.

@@ -102,7 +102,7 @@ class MessagingGeneratedArtifactsTest {
 
         CmType execution = type(model, MessagingExecutionConfig.class);
         assertThat(execution.standalone(), is(true));
-        assertThat(execution.prefix(), is(Optional.of(MessagingConfigKeys.EXECUTION)));
+        assertThat(execution.prefix(), is(Optional.of(MessagingConfigSupport.EXECUTION)));
         Map<String, CmOption> executionOptions = options(execution);
         assertThat(executionOptions.keySet(),
                    is(Set.of("admission-timeout",

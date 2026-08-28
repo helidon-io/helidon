@@ -28,7 +28,7 @@ import io.helidon.common.Api;
  */
 @Api.Preview
 @Prototype.Blueprint(decorator = MessagingExecutionConfigBuilderDecorator.class)
-@Prototype.Configured(MessagingConfigKeys.EXECUTION)
+@Prototype.Configured(MessagingConfigSupport.EXECUTION)
 interface MessagingExecutionConfigBlueprint {
     /**
      * Maximum number of admitted tasks that may wait for an execution slot; must be zero or greater.

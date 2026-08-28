@@ -28,19 +28,28 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class ConnectorConfigGeneratedArtifactsTest {
     @Test
-    void generatedArtifactsUsePublicConnectorDirection() throws IOException {
+    void generatedArtifactsUsePublicConnectorApi() throws IOException {
         Path generatedSource = Path.of("target/generated-sources/annotations/io/helidon/messaging/ConnectorConfig.java");
         Path metadataFile = Path.of("target/classes/META-INF/helidon/config-metadata.json");
         assertThat(Files.isRegularFile(generatedSource), is(true));
         assertThat(Files.isRegularFile(metadataFile), is(true));
+        assertThat(ConnectorConfigBlueprint.class.getDeclaredFields().length, is(0));
 
         String source = Files.readString(generatedSource);
+        assertThat(source,
+                   containsString("String CHANNEL_NAME_ATTRIBUTE = MessagingConfigSupport.CHANNEL_NAME_ATTRIBUTE"));
+        assertThat(source,
+                   containsString("String CONNECTOR_ATTRIBUTE = MessagingConfigSupport.CONNECTOR_ATTRIBUTE"));
         assertThat(source, containsString("type = ConnectorDirection.class"));
         assertThat(source, containsString("ConnectorDirection direction()"));
         assertThat(source, containsString("direction(ConnectorDirection direction)"));
+        assertThat(source, containsString("String channelName()"));
+        assertThat(source, containsString("channelName(String channelName)"));
+        assertThat(source.contains("String channel()"), is(false));
         assertThat(source.contains("ConnectorConfigBlueprint.Direction"), is(false));
 
         String metadata = Files.readString(metadataFile);
+        assertThat(metadata, containsString("\"key\":\"channel-name\""));
         assertThat(metadata,
                    containsString("\"key\":\"direction\","
                                           + "\"type\":\"io.helidon.messaging.ConnectorDirection\""));
