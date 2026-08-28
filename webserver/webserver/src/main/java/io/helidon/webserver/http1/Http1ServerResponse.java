@@ -798,6 +798,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 responseSentRunnable.run();
                 return;
             }
+            if (request.headers().containsToken(HeaderValues.TE_TRAILERS)) {
+                headers.add(STREAM_TRAILERS);
+            }
             sendHeadersAndPrepare();
             firstByte = false;
             responseSentRunnable.run();

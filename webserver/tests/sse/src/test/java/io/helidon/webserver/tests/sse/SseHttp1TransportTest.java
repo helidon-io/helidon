@@ -27,13 +27,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.sse.SseEvent;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webclient.sse.SseSource;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
@@ -44,6 +50,7 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -59,11 +66,14 @@ class SseHttp1TransportTest {
     private static final String COMPLETE = "complete";
     private static final HeaderName SOCKET_ID = HeaderNames.create("x-socket-id");
     private static final HeaderName SSE_TRAILER = HeaderNames.create("x-sse-complete");
+    private static final HeaderName STREAM_RESULT = HeaderNames.create("stream-result");
 
     private final WebServer webServer;
+    private final Http1Client http1Client;
 
-    SseHttp1TransportTest(WebServer webServer) {
+    SseHttp1TransportTest(WebServer webServer, Http1Client http1Client) {
         this.webServer = webServer;
+        this.http1Client = http1Client;
     }
 
     @SetUpServer
@@ -178,6 +188,44 @@ class SseHttp1TransportTest {
             assertThat("Connection probe status", probe.statusCode(), is(200));
             assertThat("Probe must use the same physical server socket after SSE completion",
                        new String(probe.entity(), StandardCharsets.UTF_8),
+                       is(socketId));
+        }
+    }
+
+    @Test
+    void teTrailersWithoutRouteTrailerKeepsHelidonClientConnectionReusable() throws InterruptedException {
+        CountDownLatch complete = new CountDownLatch(1);
+        String socketId;
+        try (Http1ClientResponse response = http1Client.get("/content-length-sse")
+                .header(ACCEPT_EVENT_STREAM)
+                .header(HeaderValues.TE_TRAILERS)
+                .request()) {
+            socketId = response.headers().first(SOCKET_ID).orElse(null);
+            assertThat("SSE response must expose its physical socket id", socketId, notNullValue());
+            assertThat("SSE response must declare the stream-result trailer",
+                       response.headers().first(HeaderNames.TRAILER).orElse(null),
+                       is("stream-result"));
+            response.source(SseSource.TYPE, new SseSource() {
+                @Override
+                public void onEvent(SseEvent event) {
+                }
+
+                @Override
+                public void onClose() {
+                    complete.countDown();
+                }
+            });
+            assertThat("Helidon client must consume the complete SSE response",
+                       complete.await(SOCKET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
+            assertThat("Helidon client must consume the declared stream-result trailer",
+                       response.trailers().first(STREAM_RESULT).orElse(null),
+                       is(""));
+        }
+
+        try (Http1ClientResponse response = http1Client.get("/connection").request()) {
+            assertThat("Helidon client must reuse the same physical server socket after SSE completion",
+                       response.as(String.class),
                        is(socketId));
         }
     }
