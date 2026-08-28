@@ -79,15 +79,25 @@ class LruCacheTest {
         Object defaultValue = new Object();
         LruCache<String, Object> objectCache = LruCache.create();
         assertThat(objectCache.peek("missing", defaultValue), sameInstance(defaultValue));
-        // Unsupported; validate only for backward compatibility until null values are rejected in the next major version.
-        objectCache.put("null", null);
-        assertThat(objectCache.peek("null", defaultValue), sameInstance(defaultValue));
-        assertThrows(NullPointerException.class, () -> cache.peek(null, "default"));
-        assertThrows(NullPointerException.class, () -> cache.peek("first", null));
 
         cache.put("fourth", "fourth-value");
         assertThat(cache.get("first"), is(Optional.empty()));
         assertThat(cache.get("second"), is(Optional.of("second-value")));
+    }
+
+    @Test
+    void testNullParameters() {
+        LruCache<String, String> cache = LruCache.create();
+
+        assertThrows(NullPointerException.class, () -> cache.get(null));
+        assertThrows(NullPointerException.class, () -> cache.peek(null, "default"));
+        assertThrows(NullPointerException.class, () -> cache.peek("key", null));
+        assertThrows(NullPointerException.class, () -> cache.remove(null));
+        assertThrows(NullPointerException.class, () -> cache.put(null, "value"));
+        assertThrows(NullPointerException.class, () -> cache.put("key", null));
+        assertThrows(NullPointerException.class, () -> cache.computeValue(null, Optional::empty));
+        cache.put("key", "value");
+        assertThrows(NullPointerException.class, () -> cache.computeValue("key", null));
     }
 
     @Test

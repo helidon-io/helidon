@@ -46,6 +46,7 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
 
     @Override
     public Optional<V> get(K key) {
+        Objects.requireNonNull(key);
         readLock.lock();
         V value;
         try {
@@ -80,8 +81,7 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
         Objects.requireNonNull(defaultValue);
         readLock.lock();
         try {
-            V value = backingMap.get(key);
-            return value == null ? defaultValue : value;
+            return backingMap.getOrDefault(key, defaultValue);
         } finally {
             readLock.unlock();
         }
@@ -89,7 +89,7 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
 
     @Override
     public Optional<V> remove(K key) {
-
+        Objects.requireNonNull(key);
         writeLock.lock();
         try {
             return Optional.ofNullable(backingMap.remove(key));
@@ -100,6 +100,8 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
 
     @Override
     public Optional<V> put(K key, V value) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
         writeLock.lock();
         try {
             V oldValue = backingMap.putLast(key, value);
@@ -119,6 +121,8 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
 
     @Override
     public Optional<V> computeValue(K key, Supplier<Optional<V>> valueSupplier) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(valueSupplier);
         // get is properly synchronized
         Optional<V> currentValue = get(key);
         if (currentValue.isPresent()) {
