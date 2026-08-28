@@ -264,6 +264,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             afterSend();
         }, beforeTrailers(), noEntityResponse);
         if (noEntityResponse) {
+            if (isNoEntityStatus(status())) {
+                contentEncode(outputStream, false);
+            }
             return new ApplicationOutputStream(outputStream, outputStream);
         }
         OutputStream encodedOutputStream = contentEncode(outputStream, allowAutomaticEncoding);

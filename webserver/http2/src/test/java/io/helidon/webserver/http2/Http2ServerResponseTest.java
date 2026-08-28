@@ -641,6 +641,43 @@ class Http2ServerResponseTest {
     }
 
     @Test
+    void filteredNoEntityStatusesHonorExplicitContentEncoding() {
+        for (Status status : NO_ENTITY_STATUSES) {
+            Http2ServerStream stream = mock(Http2ServerStream.class);
+            Http2ServerResponse response = createResponse(stream, Method.GET, ContentEncodingContext.create());
+            AtomicBoolean filterCalled = new AtomicBoolean();
+            response.status(status);
+            response.contentLength(23);
+            response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
+            response.streamFilter(output -> {
+                filterCalled.set(true);
+                return output;
+            });
+            response.contentEncoder(testEncoder());
+
+            response.send("entity".getBytes(StandardCharsets.UTF_8));
+            response.commit();
+
+            var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+            verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
+            verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+            verify(stream, never()).writeData(any(), anyBoolean());
+            verify(stream, never()).writeTrailers(any());
+            Http2Headers sentHeaders = responseHeaders.getValue();
+            Headers sentHttpHeaders = sentHeaders.httpHeaders();
+            assertAll(
+                    () -> assertThat(filterCalled.get(), is(false)),
+                    () -> assertThat(sentHeaders.status(), is(status)),
+                    () -> assertThat(sentHttpHeaders.get(HeaderNames.CONTENT_ENCODING).get(), is("test")),
+                    () -> assertThat(sentHttpHeaders.contains(HeaderNames.VARY), is(false)),
+                    () -> assertThat(sentHttpHeaders.contains(HeaderNames.TRANSFER_ENCODING), is(false)),
+                    () -> assertThat(sentHttpHeaders.contains(HeaderNames.TRAILER), is(false))
+            );
+        }
+    }
+
+    @Test
     void filteredEmptySendSkipsAutomaticContentEncoding() {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
