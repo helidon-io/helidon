@@ -17,5 +17,4 @@
 package io.helidon.webserver.http;
 
 interface LocatedServiceCacheKey {
-    HttpService cacheKey();
 }

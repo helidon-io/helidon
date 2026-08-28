@@ -593,6 +593,51 @@ class HttpServiceLocatorTest {
     }
 
     @Test
+    void testSecureHandlerPoliciesRemainDistinctForSameLocatedService() throws Exception {
+        var rawHandlerInvoked = new AtomicBoolean();
+        HttpService service = rules -> rules.get("/resource", (req, res) -> rawHandlerInvoked.set(true));
+        HttpServiceLocator locator = request -> Optional.of(service);
+        HttpServiceLocator userLocator = SecureHandler.authorize("user").wrap(locator);
+        HttpServiceLocator adminLocator = SecureHandler.authorize("admin").wrap(locator);
+        HttpServiceLocator policyLocator = request -> request.path()
+                .pathParameters()
+                .first("item")
+                .filter("admin"::equals)
+                .map(_ -> adminLocator)
+                .orElse(userLocator)
+                .locate(request);
+        var route = locatorRoute(policyLocator);
+        Handler userHandler = locatedRoutes(route, "/user/resource").getFirst().handler();
+        Handler adminHandler = locatedRoutes(route, "/admin/resource").getFirst().handler();
+        ServerRequest request = mock(ServerRequest.class);
+        ServerResponse response = mock(ServerResponse.class);
+        var observedRole = new AtomicReference<String>();
+        HttpSecurity security = new HttpSecurity() {
+            @Override
+            public boolean authenticate(ServerRequest request, ServerResponse response, boolean requiredHint) {
+                return false;
+            }
+
+            @Override
+            public boolean authorize(ServerRequest request, ServerResponse response, String... roleHint) {
+                observedRole.set(roleHint[0]);
+                return false;
+            }
+        };
+
+        when(request.context()).thenReturn(Context.create());
+        when(request.security()).thenReturn(security);
+
+        userHandler.handle(request, response);
+        assertThat(observedRole.get(), is("user"));
+        observedRole.set(null);
+
+        adminHandler.handle(request, response);
+        assertThat(observedRole.get(), is("admin"));
+        assertThat(rawHandlerInvoked.get(), is(false));
+    }
+
+    @Test
     void testCachedLocatedServiceDoesNotWaitForColdServiceCreation() throws Exception {
         var fast = new LifecycleService();
         var slow = new BlockingRoutingService();

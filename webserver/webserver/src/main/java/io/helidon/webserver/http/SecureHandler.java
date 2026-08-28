@@ -264,8 +264,25 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
         }
 
         @Override
-        public HttpService cacheKey() {
-            return delegate instanceof LocatedServiceCacheKey locatedService ? locatedService.cacheKey() : delegate;
+        public boolean equals(Object object) {
+            if (this == object) {
+                return true;
+            }
+            if (!(object instanceof WrappedService that) || secureHandler != that.secureHandler) {
+                return false;
+            }
+            if (delegate instanceof WrappedService wrappedDelegate) {
+                return wrappedDelegate.equals(that.delegate);
+            }
+            return delegate == that.delegate;
+        }
+
+        @Override
+        public int hashCode() {
+            int delegateHash = delegate instanceof WrappedService wrappedDelegate
+                    ? wrappedDelegate.hashCode()
+                    : System.identityHashCode(delegate);
+            return 31 * delegateHash + System.identityHashCode(secureHandler);
         }
     }
 
