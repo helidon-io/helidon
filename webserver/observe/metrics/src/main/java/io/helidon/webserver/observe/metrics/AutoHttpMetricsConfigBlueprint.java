@@ -82,6 +82,8 @@ interface AutoHttpMetricsConfigBlueprint {
      * to retain.
      * <p>
      * Method names are canonicalized using Helidon's HTTP method model.
+     * See the <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/http/#http-request-method">
+     * OpenTelemetry semantic convention for HTTP request methods</a>.
      *
      * @return known HTTP methods
      */
