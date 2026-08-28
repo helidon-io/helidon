@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,6 +106,23 @@ public class AnnotationTest {
         assertThat(annotation.annotationValues("lannotation"), optionalPresent());
         assertThat(annotation.stringValues("emptyList"), optionalValue(is(List.of())));
         assertThat(annotation.stringValues("singletonList"), optionalValue(is(List.of("value"))));
+    }
+
+    @Order(1)
+    @Test
+    public void testSyntheticAnnotationWithUnrelatedContextClassLoader() {
+        Thread thread = Thread.currentThread();
+        ClassLoader original = thread.getContextClassLoader();
+        try {
+            thread.setContextClassLoader(ClassLoader.getPlatformClassLoader());
+
+            Optional<MyAnnotation> synthesizedAnnotation = AnnotationFactory.synthesize(helidonAnnotation);
+
+            assertThat(synthesizedAnnotation, optionalPresent());
+            assertThat(synthesizedAnnotation.get().annotationType(), sameInstance(MyAnnotation.class));
+        } finally {
+            thread.setContextClassLoader(original);
+        }
     }
 
     @Order(2)
