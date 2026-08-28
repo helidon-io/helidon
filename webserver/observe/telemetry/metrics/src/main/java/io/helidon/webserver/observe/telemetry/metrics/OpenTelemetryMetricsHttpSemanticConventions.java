@@ -18,6 +18,7 @@ package io.helidon.webserver.observe.telemetry.metrics;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
@@ -125,28 +126,48 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
         public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
             var startTime = System.nanoTime();
             var exception = new AtomicReference<Exception>();
+            var chainComplete = new AtomicBoolean();
+            var responseSent = new AtomicBoolean();
+            var recorded = new AtomicBoolean();
+            var measured = config.isMeasured(req.prologue().method(), req.prologue().uriPath());
             /*
             Update the timer in whenSent rather than here in this filter. That way we include time spent in running succeeding
             filters and in preparing the response entity, to more accurately capture as much as possible the full time the
             server spent responding to the request.
              */
+            Runnable recordMetrics = () -> {
+                if (recorded.compareAndSet(false, true)) {
+                    try {
+                        updateMetricsIfMeasured(req, res, measured, startTime, System.nanoTime(), exception.get());
+                    } catch (Throwable e) {
+                        LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
+                    }
+                }
+            };
             res.whenSent(() -> {
-                try {
-                    updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), exception.get());
-                } catch (Throwable e) {
-                    LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
+                responseSent.set(true);
+                if (chainComplete.get()) {
+                    recordMetrics.run();
                 }
             });
 
             try {
                 chain.proceed();
+                chainComplete.set(true);
+                if (responseSent.get()) {
+                    recordMetrics.run();
+                }
             } catch (Exception e) {
                 exception.set(e);
+                chainComplete.set(true);
+                if (responseSent.get()) {
+                    recordMetrics.run();
+                }
                 throw e;
             }
         }
 
-        private static MetricsRecordingFilter create(DoubleHistogram httpRequestDuration, AutoHttpMetricsConfig config) {
+        static MetricsRecordingFilter create(DoubleHistogram httpRequestDuration, AutoHttpMetricsConfig config) {
             return new MetricsRecordingFilter(httpRequestDuration, config);
         }
 
@@ -157,10 +178,11 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
 
         private void updateMetricsIfMeasured(RoutingRequest req,
                                              RoutingResponse resp,
+                                             boolean measured,
                                              Long startTime,
                                              long endTime,
                                              Exception exception) {
-            if (!config.isMeasured(req.prologue().method(), req.prologue().uriPath())) {
+            if (!measured) {
                 return;
             }
             AttributesBuilder attrBuilder = Attributes.builder();
@@ -169,8 +191,10 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
-                    .put(AttributeKey.stringKey(HTTP_ROUTE), req.matchingPattern().orElse(""))
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
+
+            req.matchingPattern().filter(route -> !route.isBlank())
+                    .ifPresent(route -> attrBuilder.put(AttributeKey.stringKey(HTTP_ROUTE), route));
 
             if (isOptedIn(config, SERVER_ADDRESS)) {
                 attrBuilder.put(AttributeKey.stringKey(SERVER_ADDRESS), req.requestedUri().host());

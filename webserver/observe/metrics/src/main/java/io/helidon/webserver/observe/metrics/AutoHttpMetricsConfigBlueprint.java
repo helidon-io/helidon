@@ -28,6 +28,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Blueprint(decorator = AutoHttpMetricsConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(AutoHttpMetricsConfigSupport.CustomMethods.class)
+@Prototype.IncludeDefaultMethods
 interface AutoHttpMetricsConfigBlueprint {
 
     /**
@@ -70,5 +71,19 @@ interface AutoHttpMetricsConfigBlueprint {
      */
     @Option.Configured
     List<String> optIn();
+
+    /**
+     * Retained for configuration compatibility with Helidon 4.x; Helidon 27 ignores the value and always uses the updated
+     * automatic HTTP metrics behavior.
+     *
+     * @return configured value, which does not affect automatic HTTP metrics behavior
+     * @deprecated This option is ignored and will be removed in a future release.
+     */
+    @Deprecated
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    default boolean useUpdatedHttpMetrics() {
+        return true;
+    }
 
 }

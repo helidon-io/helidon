@@ -113,6 +113,14 @@ Helidon decides whether to measure incoming requests as follows:
 
 The `auto-http-metrics.sockets` setting controls which sockets are included in the measurements; if not set, Helidon measures requests on all sockets.
 
+[NOTE]
+====
+The `auto-http-metrics.use-updated-http-metrics` setting is deprecated and retained only for configuration compatibility
+with Helidon 4.x. Helidon 27 ignores its value and always records OpenTelemetry HTTP request duration in seconds after the
+response is sent, preserves the final response status, and includes `http.route` only when a non-blank matching route is
+available.
+====
+
 ifdef::se-flavor[]
 [source,yaml]
 endif::se-flavor[]

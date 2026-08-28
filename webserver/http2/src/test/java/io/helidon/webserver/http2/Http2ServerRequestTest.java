@@ -18,6 +18,9 @@ package io.helidon.webserver.http2;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderNames;
@@ -39,9 +42,43 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 class Http2ServerRequestTest {
+    @Test
+    void matchingPatternSupplierIsLazyAndReplaceable() {
+        Http2ServerRequest request = request();
+        AtomicInteger invocations = new AtomicInteger();
+        request.matchingPattern(() -> {
+            invocations.incrementAndGet();
+            return Optional.of("/resource/{id}");
+        });
+
+        assertThat(request.matchingPattern(), is(Optional.of("/resource/{id}")));
+        assertThat(request.matchingPattern(), is(Optional.of("/resource/{id}")));
+        assertThat(invocations.get(), is(1));
+        assertThrows(NullPointerException.class, () -> request.matchingPattern((Supplier<Optional<String>>) null));
+        request.matchingPattern(Optional::empty);
+        assertThat(request.matchingPattern(), is(Optional.empty()));
+        request.matchingPattern("/final");
+        assertThat(request.matchingPattern(), is(Optional.of("/final")));
+    }
+
+    @Test
+    void matchingPatternSupplierRejectsNullResult() {
+        Http2ServerRequest request = request();
+        request.matchingPattern(() -> null);
+        assertThrows(NullPointerException.class, request::matchingPattern);
+    }
+
+    private static Http2ServerRequest request() {
+        return Http2ServerRequest.create(mock(ConnectionContext.class), HttpSecurity.create(),
+                                         HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.GET, "/resource", false),
+                                         Http2Headers.create(WritableHeaders.create()), ContentDecoder.NO_OP, 1, false,
+                                         () -> null, null, 0, 0);
+    }
+
     @Test
     void testHeadersSynthesizeHostFromAuthority() {
         Http2Headers headers = Http2Headers.create(WritableHeaders.create())
