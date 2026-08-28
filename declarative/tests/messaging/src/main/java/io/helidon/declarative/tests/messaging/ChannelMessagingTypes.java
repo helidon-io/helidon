@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.messaging.DeadLetterMessage;
 import io.helidon.messaging.Emitter;
@@ -602,9 +601,8 @@ class ChannelMessagingTypes {
         }
     }
 
-    @Weight(0)
     @Service.Singleton
-    @Service.RunLevel(Double.MAX_VALUE)
+    @Service.RunLevel(Service.RunLevel.NORMAL + 2)
     static class ShutdownSingletonProbe {
         private static final AtomicReference<CountDownLatch> SHUTDOWN_STARTED =
                 new AtomicReference<>(new CountDownLatch(0));

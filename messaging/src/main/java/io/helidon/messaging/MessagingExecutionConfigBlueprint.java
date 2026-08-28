@@ -39,7 +39,7 @@ interface MessagingExecutionConfigBlueprint {
      * @return queue capacity
      */
     @Option.Configured
-    @Option.Default("0")
+    @Option.DefaultInt(0)
     int queueCapacity();
 
     /**
@@ -52,7 +52,7 @@ interface MessagingExecutionConfigBlueprint {
      * @return maximum pending admissions
      */
     @Option.Configured
-    @Option.Default("64")
+    @Option.DefaultInt(64)
     int maxPendingAdmissions();
 
     /**
@@ -65,7 +65,7 @@ interface MessagingExecutionConfigBlueprint {
      * @return maximum pending messages
      */
     @Option.Configured
-    @Option.Default("1024")
+    @Option.DefaultInt(1024)
     int maxPendingMessages();
 
     /**
@@ -77,7 +77,7 @@ interface MessagingExecutionConfigBlueprint {
      * @return maximum in-flight message count
      */
     @Option.Configured
-    @Option.Default("1024")
+    @Option.DefaultInt(1024)
     int maxInFlightMessages();
 
     /**

@@ -21,13 +21,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.service.registry.Service;
 
 /**
- * Ensures messaging admission stops before application consumer services are destroyed.
+ * Ensures messaging admission stops before normal-run-level application consumer services are destroyed.
  * <p>
- * The graph itself starts at the messaging run level. This guard is activated as its dependency and owns only the
- * earlier shutdown signal; the graph's own pre-destroy hook remains as an idempotent fallback.
+ * The graph itself starts at the messaging run level, activating this guard as its dependency. The guard's declared
+ * run level is immediately above normal application services, so reverse shutdown signals the graph before those
+ * services are destroyed. The graph's own pre-destroy hook remains as an idempotent fallback.
  */
 @Service.Singleton
-@Service.RunLevel(Double.MAX_VALUE)
+@Service.RunLevel(Service.RunLevel.NORMAL + 1)
 final class MessagingLifecycleGuard {
     private final AtomicReference<ChannelRegistry> registry = new AtomicReference<>();
 

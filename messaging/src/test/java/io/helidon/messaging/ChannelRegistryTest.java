@@ -18,6 +18,8 @@ package io.helidon.messaging;
 
 import java.util.Optional;
 
+import io.helidon.service.registry.Service;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -37,6 +39,6 @@ class ChannelRegistryTest {
     @Test
     void lifecycleGuardStopsMessagingBeforeApplicationServices() {
         assertThat(MessagingLifecycleGuard__ServiceDescriptor.INSTANCE.runLevel(),
-                   is(Optional.of(Double.MAX_VALUE)));
+                   is(Optional.of(Service.RunLevel.NORMAL + 1)));
     }
 }

@@ -50,7 +50,7 @@ interface FailurePolicyBlueprint {
      * @return maximum delivery attempts, or zero for unlimited attempts
      */
     @Option.Configured("retry.max-attempts")
-    @Option.Default("0")
+    @Option.DefaultInt(0)
     int maxAttempts();
 
     /**
