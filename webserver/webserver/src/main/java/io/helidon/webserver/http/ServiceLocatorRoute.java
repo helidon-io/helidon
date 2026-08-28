@@ -262,7 +262,11 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
 
     private LocatedRoutes createRoutes(HttpService service) {
         ServiceRules subRules = new ServiceRules(service, PathMatchers.any(), methodPredicate);
-        service.routing(subRules);
+        if (locator instanceof LocatedServiceRouting locatedServiceRouting) {
+            locatedServiceRouting.routing(service, subRules);
+        } else {
+            service.routing(subRules);
+        }
         return new LocatedRoutes(subRules.build(), subRules.buildProtocolUpgrade());
     }
 

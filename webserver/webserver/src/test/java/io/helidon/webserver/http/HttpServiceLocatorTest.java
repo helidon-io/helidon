@@ -48,6 +48,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -545,6 +546,26 @@ class HttpServiceLocatorTest {
 
         assertThat(failure.status(), is(Status.SERVICE_UNAVAILABLE_503));
         assertThat(failure.getMessage(), is("HttpServiceLocator service cache size of 1 exceeded"));
+        assertThat(first.routingCount.get(), is(1));
+        assertThat(second.routingCount.get(), is(0));
+    }
+
+    @Test
+    void testSecureHandlerWrapPreservesLocatedServiceCacheIdentity() {
+        var first = new LifecycleService("first");
+        var second = new LifecycleService("second");
+        var locator = new SwitchingLocator(first, false, 1);
+        HttpServiceLocator securedLocator = SecureHandler.authorize().wrap(locator);
+        var route = locatorRoute(securedLocator);
+
+        assertThat(securedLocator.locate(mock(ServerRequest.class)).orElseThrow(), sameInstance(first));
+
+        locate(route);
+        locate(route);
+        locator.service(second);
+
+        assertThrows(HttpException.class, () -> locate(route));
+
         assertThat(first.routingCount.get(), is(1));
         assertThat(second.routingCount.get(), is(0));
     }

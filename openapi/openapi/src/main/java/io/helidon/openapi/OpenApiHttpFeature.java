@@ -16,19 +16,15 @@
 
 package io.helidon.openapi;
 
-import java.lang.ref.WeakReference;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatcher;
@@ -169,13 +165,13 @@ class OpenApiHttpFeature implements HttpFeature {
 
         @Override
         public HttpRules registerLocator(HttpServiceLocator locator) {
-            delegate.registerLocator(new SecuredLocator(locator, secureHandler));
+            delegate.registerLocator(secureHandler.wrap(locator));
             return this;
         }
 
         @Override
         public HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
-            delegate.registerLocator(pathPattern, new SecuredLocator(locator, secureHandler));
+            delegate.registerLocator(pathPattern, secureHandler.wrap(locator));
             return this;
         }
 
@@ -191,193 +187,6 @@ class OpenApiHttpFeature implements HttpFeature {
                 securedServices[i] = new SecuredService(services[i], secureHandler);
             }
             return securedServices;
-        }
-    }
-
-    private static final class SecuredLocator implements HttpServiceLocator {
-        private final HttpServiceLocator delegate;
-        private final SecureHandler secureHandler;
-        private final ReentrantLock lock = new ReentrantLock();
-        private final int maxServiceCacheSize;
-        private volatile WeakIdentityTable securedServices = WeakIdentityTable.empty();
-        private volatile boolean stopped;
-
-        private SecuredLocator(HttpServiceLocator delegate, SecureHandler secureHandler) {
-            this.delegate = delegate;
-            this.secureHandler = secureHandler;
-            this.maxServiceCacheSize = delegate.maxServiceCacheSize();
-            if (maxServiceCacheSize < 1) {
-                throw new IllegalArgumentException("HttpServiceLocator maxServiceCacheSize must be greater than zero");
-            }
-        }
-
-        @Override
-        public Optional<HttpService> locate(ServerRequest request) {
-            checkRunning();
-
-            Optional<HttpService> service = Objects.requireNonNull(delegate.locate(request),
-                                                                   "HttpServiceLocator must not return null");
-
-            checkRunning();
-            return service.map(this::securedService);
-        }
-
-        @Override
-        public int maxServiceCacheSize() {
-            return maxServiceCacheSize;
-        }
-
-        @Override
-        public void beforeStart() {
-            lock.lock();
-            try {
-                stopped = false;
-            } finally {
-                lock.unlock();
-            }
-            delegate.beforeStart();
-        }
-
-        @Override
-        public void afterStart(WebServer webServer) {
-            delegate.afterStart(webServer);
-        }
-
-        @Override
-        public void afterStop() {
-            lock.lock();
-            try {
-                stopped = true;
-                securedServices = WeakIdentityTable.empty();
-            } finally {
-                lock.unlock();
-            }
-            delegate.afterStop();
-        }
-
-        private HttpService securedService(HttpService service) {
-            WeakIdentityTable currentServices = securedServices;
-            SecuredService securedService = currentServices.get(service);
-            if (securedService != null) {
-                checkRunning();
-                return securedService;
-            }
-
-            lock.lock();
-            try {
-                checkRunning();
-                currentServices = securedServices;
-                securedService = currentServices.get(service);
-                if (securedService != null) {
-                    return securedService;
-                }
-                securedService = new SecuredService(service, secureHandler);
-                securedServices = currentServices.with(service, securedService);
-                return securedService;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        private void checkRunning() {
-            if (stopped) {
-                throw serviceUnavailable("is stopped");
-            }
-        }
-
-        private HttpException serviceUnavailable(String reason) {
-            return new HttpException("HttpServiceLocator service cache " + reason,
-                                     Status.SERVICE_UNAVAILABLE_503,
-                                     true);
-        }
-
-        private static final class WeakIdentityTable {
-            private static final WeakIdentityTable EMPTY = new WeakIdentityTable(new WeakServiceEntry[0]);
-
-            private final WeakServiceEntry[] entries;
-
-            private WeakIdentityTable(WeakServiceEntry[] entries) {
-                this.entries = entries;
-            }
-
-            private static WeakIdentityTable empty() {
-                return EMPTY;
-            }
-
-            private static boolean isLive(WeakServiceEntry entry, HttpService replacedService) {
-                if (entry == null) {
-                    return false;
-                }
-                HttpService service = entry.service.get();
-                return service != null && service != replacedService && entry.securedService.get() != null;
-            }
-
-            private static void insert(WeakServiceEntry[] entries, WeakServiceEntry entry) {
-                int index = index(entry.identityHash, entries.length);
-                while (entries[index] != null) {
-                    index = (index + 1) & (entries.length - 1);
-                }
-                entries[index] = entry;
-            }
-
-            private static int index(int identityHash, int tableLength) {
-                return (identityHash ^ (identityHash >>> 16)) & (tableLength - 1);
-            }
-
-            private SecuredService get(HttpService service) {
-                if (entries.length == 0) {
-                    return null;
-                }
-
-                int identityHash = System.identityHashCode(service);
-                int index = index(identityHash, entries.length);
-                for (int i = 0; i < entries.length; i++) {
-                    WeakServiceEntry entry = entries[index];
-                    if (entry == null) {
-                        return null;
-                    }
-                    if (entry.identityHash == identityHash && entry.service.get() == service) {
-                        return entry.securedService.get();
-                    }
-                    index = (index + 1) & (entries.length - 1);
-                }
-                return null;
-            }
-
-            private WeakIdentityTable with(HttpService service, SecuredService securedService) {
-                int liveEntries = 1;
-                for (WeakServiceEntry entry : entries) {
-                    if (isLive(entry, service)) {
-                        liveEntries++;
-                    }
-                }
-
-                int capacity = 4;
-                while (capacity < liveEntries * 2) {
-                    capacity <<= 1;
-                }
-
-                WeakServiceEntry[] updatedEntries = new WeakServiceEntry[capacity];
-                for (WeakServiceEntry entry : entries) {
-                    if (isLive(entry, service)) {
-                        insert(updatedEntries, entry);
-                    }
-                }
-                insert(updatedEntries, new WeakServiceEntry(service, securedService));
-                return new WeakIdentityTable(updatedEntries);
-            }
-        }
-
-        private static final class WeakServiceEntry {
-            private final int identityHash;
-            private final WeakReference<HttpService> service;
-            private final WeakReference<SecuredService> securedService;
-
-            private WeakServiceEntry(HttpService service, SecuredService securedService) {
-                this.identityHash = System.identityHashCode(service);
-                this.service = new WeakReference<>(service);
-                this.securedService = new WeakReference<>(securedService);
-            }
         }
     }
 

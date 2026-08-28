@@ -144,7 +144,7 @@ class OpenApiServiceAuthorizationTest {
     }
 
     @Test
-    void locatedServiceWrapperCacheIsIdentityBounded() {
+    void locatedServiceCacheIsIdentityBounded() {
         var locator = new BoundedLocator();
         WebServer server = testServer(new LocatorOpenApiService("/bounded/{service}", locator));
 

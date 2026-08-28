@@ -16,10 +16,12 @@
 
 package io.helidon.webserver.http;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
 import io.helidon.common.security.SecurityContext;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.spi.ProtocolUpgradeHandler;
 
 /**
@@ -90,6 +92,19 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
         return new WrappedHandler(this, handler);
     }
 
+    /**
+     * Creates a new service locator that applies the configured security requirements to each located service.
+     * <p>
+     * WebServer caches the located service's original identity and applies the security wrapper only after admitting that
+     * identity to the locator's service cache.
+     *
+     * @param locator service locator to wrap
+     * @return a new wrapped service locator
+     */
+    public HttpServiceLocator wrap(HttpServiceLocator locator) {
+        return new WrappedLocator(this, Objects.requireNonNull(locator));
+    }
+
     @Override
     public void handle(ServerRequest req, ServerResponse res) throws Exception {
         if (doHandle(req, res)) {
@@ -127,7 +142,152 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
         return true;
     }
 
-    private static class WrappedHandler implements Handler, ProtocolUpgradeHandler {
+    private HttpService wrap(HttpService service) {
+        return new WrappedService(service, this);
+    }
+
+    private HttpRoute wrap(HttpRoute route) {
+        return new WrappedRoute(route, this);
+    }
+
+    private static final class WrappedLocator implements HttpServiceLocator, LocatedServiceRouting {
+        private final SecureHandler secureHandler;
+        private final HttpServiceLocator delegate;
+
+        private WrappedLocator(SecureHandler secureHandler, HttpServiceLocator delegate) {
+            this.secureHandler = secureHandler;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Optional<HttpService> locate(ServerRequest request) {
+            return delegate.locate(request);
+        }
+
+        @Override
+        public int maxServiceCacheSize() {
+            return delegate.maxServiceCacheSize();
+        }
+
+        @Override
+        public void beforeStart() {
+            delegate.beforeStart();
+        }
+
+        @Override
+        public void afterStart(WebServer webServer) {
+            delegate.afterStart(webServer);
+        }
+
+        @Override
+        public void afterStop() {
+            delegate.afterStop();
+        }
+
+        @Override
+        public void routing(HttpService service, HttpRules rules) {
+            HttpRules securedRules = new WrappedRules(rules, secureHandler);
+            if (delegate instanceof LocatedServiceRouting locatedServiceRouting) {
+                locatedServiceRouting.routing(service, securedRules);
+            } else {
+                service.routing(securedRules);
+            }
+        }
+    }
+
+    private static final class WrappedRules implements HttpRules {
+        private final HttpRules delegate;
+        private final SecureHandler secureHandler;
+
+        private WrappedRules(HttpRules delegate, SecureHandler secureHandler) {
+            this.delegate = delegate;
+            this.secureHandler = secureHandler;
+        }
+
+        @Override
+        public HttpRules register(HttpService... services) {
+            delegate.register(wrappedServices(services));
+            return this;
+        }
+
+        @Override
+        public HttpRules register(String pathPattern, HttpService... services) {
+            delegate.register(pathPattern, wrappedServices(services));
+            return this;
+        }
+
+        @Override
+        public HttpRules registerLocator(HttpServiceLocator locator) {
+            delegate.registerLocator(secureHandler.wrap(locator));
+            return this;
+        }
+
+        @Override
+        public HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
+            delegate.registerLocator(pathPattern, secureHandler.wrap(locator));
+            return this;
+        }
+
+        @Override
+        public HttpRules route(HttpRoute route) {
+            delegate.route(secureHandler.wrap(route));
+            return this;
+        }
+
+        private HttpService[] wrappedServices(HttpService[] services) {
+            HttpService[] wrappedServices = new HttpService[services.length];
+            for (int i = 0; i < services.length; i++) {
+                wrappedServices[i] = secureHandler.wrap(services[i]);
+            }
+            return wrappedServices;
+        }
+    }
+
+    private static final class WrappedService implements HttpService {
+        private final HttpService delegate;
+        private final SecureHandler secureHandler;
+
+        private WrappedService(HttpService delegate, SecureHandler secureHandler) {
+            this.delegate = delegate;
+            this.secureHandler = secureHandler;
+        }
+
+        @Override
+        public void routing(HttpRules rules) {
+            delegate.routing(new WrappedRules(rules, secureHandler));
+        }
+
+        @Override
+        public void beforeStart() {
+            delegate.beforeStart();
+        }
+
+        @Override
+        public void afterStart(WebServer webServer) {
+            delegate.afterStart(webServer);
+        }
+
+        @Override
+        public void afterStop() {
+            delegate.afterStop();
+        }
+    }
+
+    private static final class WrappedRoute extends HttpRouteWrap {
+        private final Handler handler;
+
+        private WrappedRoute(HttpRoute route, SecureHandler secureHandler) {
+            super(route);
+            this.handler = secureHandler.wrap(route.handler());
+        }
+
+        @Override
+        public Handler handler() {
+            return handler;
+        }
+    }
+
+    private static final class WrappedHandler implements Handler, ProtocolUpgradeHandler {
         private final SecureHandler secureHandler;
         private final Handler handler;
 
