@@ -140,12 +140,6 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
         }
     }
 
-    private List<RouteEntry> routeEntries() {
-        List<RouteEntry> entries = new ArrayList<>(routes.values());
-        entries.addAll(decoratedRoutes.values());
-        return entries;
-    }
-
     @Override
     public PathMatchers.MatchResult accepts(HttpPrologue prologue) {
         throw new IllegalStateException("List routes must use acceptsPrefix");
@@ -226,6 +220,12 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
     @Override
     public String toString() {
         return methodPredicate + " (" + pathMatcher + ") with service locator: " + locator;
+    }
+
+    private List<RouteEntry> routeEntries() {
+        List<RouteEntry> entries = new ArrayList<>(routes.values());
+        entries.addAll(decoratedRoutes.values());
+        return entries;
     }
 
     private LocatedRoutes route(HttpService service) {
