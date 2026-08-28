@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -48,7 +50,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -57,6 +58,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class HttpServiceLocatorTest {
@@ -558,8 +560,6 @@ class HttpServiceLocatorTest {
         HttpServiceLocator securedLocator = SecureHandler.authorize().wrap(locator);
         var route = locatorRoute(securedLocator);
 
-        assertThat(securedLocator.locate(mock(ServerRequest.class)).orElseThrow(), sameInstance(first));
-
         locate(route);
         locate(route);
         locator.service(second);
@@ -568,6 +568,28 @@ class HttpServiceLocatorTest {
 
         assertThat(first.routingCount.get(), is(1));
         assertThat(second.routingCount.get(), is(0));
+    }
+
+    @Test
+    void testOuterLocatorDecoratorPreservesSecureHandlerWrap() throws Exception {
+        var rawHandlerInvoked = new AtomicBoolean();
+        HttpService service = rules -> rules.get("/resource", (req, res) -> rawHandlerInvoked.set(true));
+        HttpServiceLocator locator = request -> Optional.of(service);
+        HttpServiceLocator securedLocator = SecureHandler.authorize().wrap(locator);
+        HttpServiceLocator decoratedLocator = request -> securedLocator.locate(request);
+        var route = locatorRoute(decoratedLocator);
+        Handler handler = locatedRoutes(route, "/pipe/resource").getFirst().handler();
+        ServerRequest request = mock(ServerRequest.class);
+        ServerResponse response = mock(ServerResponse.class);
+        HttpSecurity security = mock(HttpSecurity.class);
+
+        when(request.context()).thenReturn(Context.create());
+        when(request.security()).thenReturn(security);
+
+        handler.handle(request, response);
+
+        assertThat(rawHandlerInvoked.get(), is(false));
+        verify(security).authorize(any(), any(), any(String[].class));
     }
 
     @Test
@@ -610,6 +632,10 @@ class HttpServiceLocatorTest {
     }
 
     private static void locate(ServiceLocatorRoute route, String path) {
+        locatedRoutes(route, path);
+    }
+
+    private static List<HttpRouteBase> locatedRoutes(ServiceLocatorRoute route, String path) {
         RoutingRequest request = mock(RoutingRequest.class);
         AtomicReference<RoutedPath> requestPath = new AtomicReference<>();
         PathMatchers.PrefixMatchResult match = route.acceptsPrefix(prologue(path));
@@ -620,7 +646,7 @@ class HttpServiceLocatorTest {
             return request;
         });
 
-        route.routes(mock(ConnectionContext.class), request, match.matchedPath(), "/{item}");
+        return route.routes(mock(ConnectionContext.class), request, match.matchedPath(), "/{item}");
     }
 
     private static HttpPrologue prologue(String path) {

@@ -16,6 +16,6 @@
 
 package io.helidon.webserver.http;
 
-interface LocatedServiceRouting {
-    void routing(HttpService service, HttpRules rules);
+interface LocatedServiceCacheKey {
+    HttpService cacheKey();
 }

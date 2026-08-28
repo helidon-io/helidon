@@ -220,11 +220,13 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
 
     private LocatedRoutes route(HttpService service) {
         Objects.requireNonNull(service, "HttpServiceLocator must not locate a null service");
+        HttpService cacheKey = service instanceof LocatedServiceCacheKey locatedService ? locatedService.cacheKey() : service;
+        Objects.requireNonNull(cacheKey, "Located service cache key must not be null");
 
         if (!lifecycle.acceptsRoutes()) {
             return null;
         }
-        RouteEntry entry = routes.get(service);
+        RouteEntry entry = routes.get(cacheKey);
 
         if (entry == null) {
             lock.lock();
@@ -232,7 +234,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
                 if (!lifecycle.acceptsRoutes()) {
                     return null;
                 }
-                entry = routes.get(service);
+                entry = routes.get(cacheKey);
                 if (entry == null) {
                     if (routes.size() >= maxServiceCacheSize) {
                         throw new HttpException("HttpServiceLocator service cache size of "
@@ -243,7 +245,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
                     }
                     entry = new RouteEntry();
                     Map<HttpService, RouteEntry> updatedRoutes = new IdentityHashMap<>(routes);
-                    updatedRoutes.put(service, entry);
+                    updatedRoutes.put(cacheKey, entry);
                     routes = updatedRoutes;
                 }
             } finally {
@@ -252,21 +254,17 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
         }
 
         try {
-            LocatedRoutes locatedRoutes = entry.routes(this, service);
+            LocatedRoutes locatedRoutes = entry.routes(this, cacheKey, service);
             return lifecycle.acceptsRoutes() ? locatedRoutes : null;
         } catch (RuntimeException | Error e) {
-            entry.removeIfEmpty(this, service);
+            entry.removeIfEmpty(this, cacheKey);
             throw e;
         }
     }
 
     private LocatedRoutes createRoutes(HttpService service) {
         ServiceRules subRules = new ServiceRules(service, PathMatchers.any(), methodPredicate);
-        if (locator instanceof LocatedServiceRouting locatedServiceRouting) {
-            locatedServiceRouting.routing(service, subRules);
-        } else {
-            service.routing(subRules);
-        }
+        service.routing(subRules);
         return new LocatedRoutes(subRules.build(), subRules.buildProtocolUpgrade());
     }
 
@@ -300,7 +298,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
         private volatile boolean initialized;
         private volatile LifecycleStamp lifecycleStamp = LifecycleStamp.initial();
 
-        private LocatedRoutes routes(ServiceLocatorRoute owner, HttpService service) {
+        private LocatedRoutes routes(ServiceLocatorRoute owner, HttpService cacheKey, HttpService service) {
             LocatedRoutes current = routes;
             Lifecycle target = owner.lifecycle;
             if (initialized && current != null && lifecycleStamp.covers(target) && !lock.isLocked()) {
@@ -312,7 +310,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
                 if (!initialized) {
                     owner.lock.lock();
                     try {
-                        if (!owner.lifecycle.acceptsRoutes() || owner.routes.get(service) != this) {
+                        if (!owner.lifecycle.acceptsRoutes() || owner.routes.get(cacheKey) != this) {
                             return null;
                         }
                     } finally {
@@ -332,7 +330,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
             return owner.lifecycle.acceptsRoutes() ? routes : null;
         }
 
-        private void removeIfEmpty(ServiceLocatorRoute owner, HttpService service) {
+        private void removeIfEmpty(ServiceLocatorRoute owner, HttpService cacheKey) {
             lock.lock();
             try {
                 if (routes != null) {
@@ -341,9 +339,9 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
 
                 owner.lock.lock();
                 try {
-                    if (owner.routes.get(service) == this) {
+                    if (owner.routes.get(cacheKey) == this) {
                         Map<HttpService, RouteEntry> updatedRoutes = new IdentityHashMap<>(owner.routes);
-                        updatedRoutes.remove(service);
+                        updatedRoutes.remove(cacheKey);
                         owner.routes = updatedRoutes;
                     }
                 } finally {

@@ -150,7 +150,7 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
         return new WrappedRoute(route, this);
     }
 
-    private static final class WrappedLocator implements HttpServiceLocator, LocatedServiceRouting {
+    private static final class WrappedLocator implements HttpServiceLocator {
         private final SecureHandler secureHandler;
         private final HttpServiceLocator delegate;
 
@@ -161,7 +161,7 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
 
         @Override
         public Optional<HttpService> locate(ServerRequest request) {
-            return delegate.locate(request);
+            return delegate.locate(request).map(secureHandler::wrap);
         }
 
         @Override
@@ -184,15 +184,6 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
             delegate.afterStop();
         }
 
-        @Override
-        public void routing(HttpService service, HttpRules rules) {
-            HttpRules securedRules = new WrappedRules(rules, secureHandler);
-            if (delegate instanceof LocatedServiceRouting locatedServiceRouting) {
-                locatedServiceRouting.routing(service, securedRules);
-            } else {
-                service.routing(securedRules);
-            }
-        }
     }
 
     private static final class WrappedRules implements HttpRules {
@@ -243,7 +234,7 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
         }
     }
 
-    private static final class WrappedService implements HttpService {
+    private static final class WrappedService implements HttpService, LocatedServiceCacheKey {
         private final HttpService delegate;
         private final SecureHandler secureHandler;
 
@@ -270,6 +261,11 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
         @Override
         public void afterStop() {
             delegate.afterStop();
+        }
+
+        @Override
+        public HttpService cacheKey() {
+            return delegate instanceof LocatedServiceCacheKey locatedService ? locatedService.cacheKey() : delegate;
         }
     }
 
