@@ -74,6 +74,7 @@ import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.SniContext;
 import io.helidon.webserver.SniRequestSupport;
+import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.http2.spi.SubProtocolResult;
@@ -424,13 +425,13 @@ class Http2ServerStream implements Runnable, Http2Stream {
             return;
         }
         if (expectedLength != -1 && expectedLength < dataLength) {
-            resetInvalidContentLength(header.length(), endOfStream);
+            resetProtocolError(header.length(), endOfStream);
             return;
         }
         if (expectedLength != -1) {
             expectedLength -= dataLength;
             if (endOfStream && expectedLength != 0) {
-                resetInvalidContentLength(header.length(), true);
+                resetProtocolError(header.length(), true);
                 return;
             }
         }
@@ -796,7 +797,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     void closeFromRemote() {
         if (expectedLength != -1 && expectedLength != 0) {
-            resetInvalidContentLength(0, true);
+            resetProtocolError(0, true);
             return;
         }
         resetCompletionLock.lock();
@@ -956,7 +957,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
         this.requestLimit = limit;
     }
 
-    private void resetInvalidContentLength(int currentFrameLength, boolean endOfStream) {
+    void resetProtocolError(int currentFrameLength, boolean endOfStream) {
         Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
         boolean sendReset = false;
         resetCompletionLock.lock();
@@ -1247,6 +1248,15 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     private void handle() {
         Headers httpHeaders = headers.httpHeaders();
+        if (Method.CONNECT.equals(prologue.method())) {
+            throw RequestException.builder()
+                    .type(DirectHandler.EventType.OTHER)
+                    .status(Status.NOT_IMPLEMENTED_501)
+                    .request(DirectTransportRequest.create(prologue, httpHeaders))
+                    .message("CONNECT is not supported over HTTP/2")
+                    .safeMessage(true)
+                    .build();
+        }
         if (httpHeaders.containsToken(HeaderValues.EXPECT_100)) {
             writeState.updateAndGet(s -> s.checkAndMove(WriteState.EXPECTED_100));
         }

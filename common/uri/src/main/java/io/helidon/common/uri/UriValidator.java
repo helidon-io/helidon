@@ -163,10 +163,10 @@ public final class UriValidator {
         // pct-encoded = "%" HEXDIG HEXDIG
         // sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
 
-        char[] chars = rawQuery.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            validateAscii(Segment.QUERY, chars, i, c);
+        int length = rawQuery.length();
+        for (int i = 0; i < length; i++) {
+            char c = rawQuery.charAt(i);
+            validateAscii(Segment.QUERY, rawQuery, i, c);
             if (UNRESERVED[c]) {
                 continue;
             }
@@ -188,11 +188,11 @@ public final class UriValidator {
             // done with pchar validation except for percent encoded
             if (c == '%') {
                 // percent encoding
-                validatePercentEncoding(Segment.QUERY, rawQuery, chars, i);
+                validatePercentEncoding(Segment.QUERY, rawQuery, i);
                 i += 2;
                 continue;
             }
-            failInvalidChar(Segment.QUERY, chars, i, c);
+            failInvalidChar(Segment.QUERY, rawQuery, i, c);
         }
     }
 
@@ -525,11 +525,26 @@ public final class UriValidator {
                                          c);
     }
 
+    private static void failInvalidChar(Segment segment, String value, int i, char c) {
+        failInvalidChar(segment, value.toCharArray(), i, c);
+    }
+
     private static void validateAscii(Segment segment, char[] chars, int i, char c) {
         if (c > 254) {
             // in general only ASCII characters are allowed
             throw new UriValidationException(segment,
                                              chars,
+                                             segment.text() + " contains invalid char (non-ASCII)",
+                                             i,
+                                             c);
+        }
+    }
+
+    private static void validateAscii(Segment segment, String value, int i, char c) {
+        if (c > 254) {
+            // in general only ASCII characters are allowed
+            throw new UriValidationException(segment,
+                                             value.toCharArray(),
                                              segment.text() + " contains invalid char (non-ASCII)",
                                              i,
                                              c);
@@ -556,6 +571,32 @@ public final class UriValidator {
         // %p1p2
         validateHex(segment, value, chars, p1, segment.text(), i + 1, true);
         validateHex(segment, value, chars, p2, segment.text(), i + 2, true);
+    }
+
+    private static void validatePercentEncoding(Segment segment, String value, int i) {
+        if (i + 2 >= value.length()) {
+            throw new UriValidationException(segment,
+                                             value.toCharArray(),
+                                             segment.text()
+                                                     + " contains invalid % encoding, not enough chars left at index "
+                                                     + i);
+        }
+        char p1 = value.charAt(i + 1);
+        char p2 = value.charAt(i + 2);
+        // %p1p2
+        validateHex(segment, value, p1, segment.text(), i + 1, true);
+        validateHex(segment, value, p2, segment.text(), i + 2, true);
+    }
+
+    private static void validateHex(Segment segment,
+                                    String value,
+                                    char c,
+                                    String type,
+                                    int index,
+                                    boolean isPercentEncoding) {
+        if (c > 255 || !HEXDIGIT[c]) {
+            validateHex(segment, value, value.toCharArray(), c, type, index, isPercentEncoding);
+        }
     }
 
     private static void validateHex(Segment segment,
@@ -634,6 +675,9 @@ public final class UriValidator {
     }
 
     private static void validateIpOctet(String message, String host, String octet) {
+        if (octet.length() > 1 && octet.charAt(0) == '0') {
+            throw new UriValidationException(Segment.HOST, host.toCharArray(), message);
+        }
         int octetInt = Integer.parseInt(octet);
         // cannot be negative, as the regexp will not match
         if (octetInt > 255) {

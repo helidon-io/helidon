@@ -390,8 +390,10 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
     protected static Http2Headers prepareHeaders(Method method, ClientRequestHeaders headers, ClientUri uri) {
         Http2Headers h2Headers = Http2Headers.create(headers);
         h2Headers.method(method);
-        h2Headers.path(uri.pathWithQueryAndFragment());
-        h2Headers.scheme(uri.scheme());
+        if (!Method.CONNECT.equals(method)) {
+            h2Headers.path(requestTarget(uri));
+            h2Headers.scheme(uri.scheme());
+        }
 
         return h2Headers;
     }
@@ -425,6 +427,17 @@ abstract class Http2CallChainBase implements WebClientService.WireProtocolChain 
         requestHeaders.first(Http2Headers.AUTHORITY_NAME)
                 .ifPresentOrElse(authority -> requestHeaders.set(HeaderValues.create(HeaderNames.HOST, authority)),
                                  () -> requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority())));
+    }
+
+    private static String requestTarget(ClientUri uri) {
+        String requestTarget = uri.pathWithQueryAndFragment();
+        var fragment = uri.fragment();
+        if (!fragment.hasValue()) {
+            return requestTarget;
+        }
+        String rawFragment = fragment.rawValue();
+        int fragmentLength = requestTarget.endsWith(rawFragment) ? rawFragment.length() : fragment.value().length();
+        return requestTarget.substring(0, requestTarget.length() - fragmentLength - 1);
     }
 
     private static final class LogHeaderConsumer implements Consumer<Header> {

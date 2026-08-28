@@ -380,14 +380,24 @@ public class Http2Headers {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "te in headers with other value than trailers");
             }
         }
-        if (!pseudoHeaders.hasScheme()) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :scheme pseudo header");
-        }
-        if (!pseudoHeaders.hasPath()) {
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :path pseudo header");
-        }
         if (!pseudoHeaders.hasMethod()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :method pseudo header");
+        }
+        boolean connect = Method.CONNECT.equals(pseudoHeaders.method());
+        if (connect) {
+            if (pseudoHeaders.hasScheme()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":scheme in CONNECT request headers");
+            }
+            if (pseudoHeaders.hasPath()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":path in CONNECT request headers");
+            }
+        } else {
+            if (!pseudoHeaders.hasScheme()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :scheme pseudo header");
+            }
+            if (!pseudoHeaders.hasPath()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :path pseudo header");
+            }
         }
         List<String> hostValues = headers.all(HeaderNames.HOST, List::of);
         if (hostValues.size() > 1) {
@@ -395,7 +405,10 @@ public class Http2Headers {
         }
         boolean hasHost = hostValues.size() == 1 && !hostValues.get(0).isEmpty();
         boolean hasAuthority = pseudoHeaders.hasAuthority() && !pseudoHeaders.authority().isEmpty();
-        if (!hasAuthority && !hasHost) {
+        if (connect && !hasAuthority) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :authority pseudo header in CONNECT request");
+        }
+        if (!connect && !hasAuthority && !hasHost) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :authority pseudo header or Host header");
         }
         if (pseudoHeaders.hasAuthority() && !hostValues.isEmpty()
@@ -543,7 +556,7 @@ public class Http2Headers {
 
     private static boolean authoritiesMatch(String scheme, String authority, String host) {
         try {
-            int defaultPort = defaultPort(scheme);
+            int defaultPort = scheme == null ? UriAuthority.UNDEFINED_PORT : defaultPort(scheme);
             UriAuthority authorityValue = UriAuthority.create(authority);
             UriAuthority hostValue = UriAuthority.create(host);
             return authorityValue.host().equals(hostValue.host())

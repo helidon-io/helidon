@@ -197,6 +197,54 @@ class Http2HeadersTest {
     }
 
     @Test
+    void testRequestAcceptsOrdinaryConnect() {
+        String hexEncoded = connectRequestHeaders("proxy.example:443", "proxy.example:443");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        http2Headers.validateRequest();
+
+        assertThat(http2Headers.method(), is(Method.CONNECT));
+        assertThat(http2Headers.authority(), is("proxy.example:443"));
+    }
+
+    @Test
+    void testRequestRejectsConnectWithScheme() {
+        Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create())
+                .method(Method.CONNECT)
+                .scheme("https")
+                .authority("proxy.example:443");
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestRejectsConnectWithPath() {
+        Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create())
+                .method(Method.CONNECT)
+                .path("/")
+                .authority("proxy.example:443");
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void testRequestRejectsConnectWithHostOnly() {
+        String hexEncoded = literalWithIndexedName(2, "CONNECT")
+                + " " + literalWithNewName("host", "proxy.example:443");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
     void testRequestAcceptsMatchingHostAuthority() {
         String hexEncoded = requestHeaders("signed.example", "signed.example");
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
@@ -439,6 +487,17 @@ class Http2HeadersTest {
         Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
 
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    private static String connectRequestHeaders(String authority, String... hostValues) {
+        StringBuilder headers = new StringBuilder(literalWithIndexedName(2, "CONNECT"));
+        headers.append(' ')
+                .append(literalWithIndexedName(1, authority));
+        for (String hostValue : hostValues) {
+            headers.append(' ')
+                    .append(literalWithNewName("host", hostValue));
+        }
+        return headers.toString();
     }
 
     private Http2Headers headers(String hexEncoded, DynamicTable dynamicTable) {

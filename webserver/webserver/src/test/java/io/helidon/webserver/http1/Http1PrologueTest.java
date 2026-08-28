@@ -81,9 +81,7 @@ class Http1PrologueTest {
             "service+name:443",
             "service%2Dname:443",
             "192.0.2.10:8443",
-            "[2001:db8::1]:9443",
-            "[v1.fe80]:443",
-            "[Vf.foo-bar]:443"
+            "[2001:db8::1]:9443"
     })
     void testConnectAuthorityForm(String authority) {
         DataReader reader = DataReader.create(() -> ("CONNECT " + authority + " HTTP/1.1\r\n")
@@ -100,6 +98,7 @@ class Http1PrologueTest {
     @ValueSource(strings = {
             "example.com",
             ":443",
+            "boards/",
             "user@example.com:443",
             "http://example.com:443",
             "example.com:443?query=value",
@@ -109,12 +108,15 @@ class Http1PrologueTest {
             "[2001:db8::1]",
             "[1:2:3]:443",
             "[1.2.3.4]:443",
+            "[1:2:3:4:5:6:010.000.000.001]:443",
             "[v1.]:443",
             "[vG.fe80]:443",
             "[v1.fe80]x:443",
             "2001:db8::1:443",
             "example.com:not-a-port",
-            "example.com:65536"
+            "example.com:0",
+            "example.com:65536",
+            "example.com:2147483648"
     })
     void testInvalidConnectAuthorityForm(String authority) {
         DataReader reader = DataReader.create(() -> ("CONNECT " + authority + " HTTP/1.1\r\n")
@@ -126,4 +128,90 @@ class Http1PrologueTest {
         assertThat(exception.status(), is(Status.BAD_REQUEST_400));
         assertThat(exception.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[v1.fe80]:443", "[Vf.foo-bar]:443"})
+    void testConnectIpFutureIsNotImplemented(String authority) {
+        DataReader reader = DataReader.create(() -> ("CONNECT " + authority + " HTTP/1.1\r\n")
+                .getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue prologue = new Http1Prologue(reader, 100, true);
+
+        RequestException exception = assertThrows(RequestException.class, prologue::readPrologue);
+
+        assertThat(exception.status(), is(Status.NOT_IMPLEMENTED_501));
+        assertThat(exception.eventType(), is(DirectHandler.EventType.OTHER));
+    }
+
+    @Test
+    void testRelativeOriginFormIsBadRequest() {
+        DataReader reader = DataReader.create(() -> "GET boards/ HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue p = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, p::readPrologue);
+
+        assertThat(e.status(), is(Status.BAD_REQUEST_400));
+        assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+        assertThat(e.getMessage(), containsString("Relative path in HTTP request-target"));
+    }
+
+    @Test
+    void testQueryOnlyOriginFormIsBadRequest() {
+        DataReader reader = DataReader.create(() -> "GET ?q=1 HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue p = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, p::readPrologue);
+
+        assertThat(e.status(), is(Status.BAD_REQUEST_400));
+        assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+        assertThat(e.getMessage(), containsString("Relative path in HTTP request-target"));
+    }
+
+    @Test
+    void testAsteriskFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "OPTIONS * HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method(), is(Method.OPTIONS));
+        assertThat(prologue.uriPath().rawPath(), is("*"));
+        assertThat(prologue.uriPath().path(), is("*"));
+        assertThat(prologue.uriPath().absolute().path(), is("/"));
+        assertThat(prologue.uriPath().segments().size(), is(1));
+        assertThat(prologue.uriPath().segments().get(0).value(), is("*"));
+    }
+
+    @Test
+    void testAsteriskFormRequiresOptions() {
+        assertInvalidRequestTarget("GET * HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testAsteriskFormRejectsFragment() {
+        assertInvalidRequestTarget("OPTIONS *#fragment HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testAsteriskFormDoesNotAllowQuery() {
+        assertInvalidRequestTarget("OPTIONS *?q=1 HTTP/1.1\r\n");
+    }
+
+    @Test
+    void testAbsoluteFormRemainsValid() {
+        DataReader reader = DataReader.create(() -> "GET http://example.com/boards/ HTTP/1.1\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method(), is(Method.GET));
+        assertThat(prologue.uriPath().path(), is("/boards/"));
+    }
+
+    private static void assertInvalidRequestTarget(String requestLine) {
+        DataReader reader = DataReader.create(() -> requestLine.getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue prologue = new Http1Prologue(reader, 100, true);
+
+        RequestException e = assertThrows(RequestException.class, prologue::readPrologue);
+
+        assertThat(e.status(), is(Status.BAD_REQUEST_400));
+        assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+    }
+
 }

@@ -29,6 +29,7 @@ import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
@@ -425,7 +426,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                                                request.method(),
                                                                uri.path(),
                                                                uri.query(),
-                                                               uri.fragment()));
+                                                               UriFragment.empty()));
             }
 
             writeHeaders(connection,
