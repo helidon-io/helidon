@@ -11,6 +11,28 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## 4.5.4
+
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### NOTABLE CHANGES
+
+Helidon's OpenTelemetry Zipkin exporter integration is deprecated. Users should move to the OTLP exporter. See [12318](https://github.com/helidon-io/helidon/pull/12318)
+
+### CHANGES
+
+- Config: Support char[] in @Configuration.Value injection [12303](https://github.com/helidon-io/helidon/pull/12303)
+- Telemetry: Deprecate OpenTelemetry Zipkin exporter in Helidon [12318](https://github.com/helidon-io/helidon/pull/12318)
+- Validation: Fix nullable cascading validation [12376](https://github.com/helidon-io/helidon/pull/12376)
+- WebServer: Close HTTP/1.1 connections after Connection: close [12326](https://github.com/helidon-io/helidon/pull/12326)
+- WebServer: Reject relative HTTP/1.1 origin-form request-targets with 400 [12329](https://github.com/helidon-io/helidon/pull/12329)
+- Security: Avoid CDI tracing lookup during OIDC metadata load [12286](https://github.com/helidon-io/helidon/pull/12286)
+- Dependencies: Upgrade Jackson to 2.21.6. [12306](https://github.com/helidon-io/helidon/pull/12306)
+- Dependencies: Upgrade OCI SDK to 3.95.0 [12336](https://github.com/helidon-io/helidon/pull/12336)
+- Tests: IDCS startup test module version [12311](https://github.com/helidon-io/helidon/pull/12311)
+
 ## 4.5.3
 
 This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
@@ -2805,6 +2827,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.5.4]: https://github.com/oracle/helidon/compare/4.5.3...4.5.4
 [4.5.3]: https://github.com/oracle/helidon/compare/4.5.2...4.5.3
 [4.5.2]: https://github.com/oracle/helidon/compare/4.5.1...4.5.2
 [4.5.1]: https://github.com/oracle/helidon/compare/4.5.0...4.5.1
