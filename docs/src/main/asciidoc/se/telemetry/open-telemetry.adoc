@@ -216,6 +216,11 @@ OpenTelemetry prescribes its own link:{metrics-semconv-link}[semantic convention
 </dependency>
 ----
 
+Helidon limits the values recorded for the OpenTelemetry `http.request.method` attribute, mapping methods not in the
+configured known-method list to `_OTHER`. See the
+xref:{rootdir}/se/metrics/metrics.adoc#auto-http-known-methods[automatic HTTP metrics configuration] for the default
+method list and customization details.
+
 === Enabling OpenTelemetry for Outgoing Helidon Webclient Traffic
 Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the xref:{rootdir}/se/webclient.adoc#_configuring_telemetry[Helidon WebClient documentation].
 

@@ -73,6 +73,24 @@ interface AutoHttpMetricsConfigBlueprint {
     List<String> optIn();
 
     /**
+     * HTTP methods to be used in the HTTP method tag for automatic metrics, defaulted to the standard HTTP methods plus
+     * {@code LIST}; assigning this value fully replaces the set of method names.
+     * <p>
+     * Default known HTTP methods: {@code CONNECT}, {@code DELETE}, {@code GET}, {@code HEAD}, {@code LIST},
+     * {@code OPTIONS}, {@code PATCH}, {@code POST}, {@code PUT}, and {@code TRACE}. Unlisted methods are reported as
+     * {@code _OTHER}, so configurations that add additional method names must also include default methods they intend
+     * to retain.
+     * <p>
+     * Method names are canonicalized using Helidon's HTTP method model.
+     *
+     * @return known HTTP methods
+     */
+    @Option.Configured
+    @Option.DefaultCode("new java.util.ArrayList<>(AutoHttpMetricsConfigSupport.DEFAULT_KNOWN_METHODS)")
+    @Option.Singular
+    List<String> knownMethods();
+
+    /**
      * Retained for configuration compatibility with Helidon 4.x; Helidon 27 ignores the value and always uses the updated
      * automatic HTTP metrics behavior.
      *
