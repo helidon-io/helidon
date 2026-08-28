@@ -79,6 +79,8 @@ class LruCacheTest {
         Object defaultValue = new Object();
         LruCache<String, Object> objectCache = LruCache.create();
         assertThat(objectCache.peek("missing", defaultValue), sameInstance(defaultValue));
+        objectCache.put("null", null);
+        assertThat(objectCache.peek("null", defaultValue), sameInstance(defaultValue));
         assertThrows(NullPointerException.class, () -> cache.peek(null, "default"));
         assertThrows(NullPointerException.class, () -> cache.peek("first", null));
 

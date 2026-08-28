@@ -80,7 +80,8 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
         Objects.requireNonNull(defaultValue);
         readLock.lock();
         try {
-            return backingMap.getOrDefault(key, defaultValue);
+            V value = backingMap.get(key);
+            return value == null ? defaultValue : value;
         } finally {
             readLock.unlock();
         }
