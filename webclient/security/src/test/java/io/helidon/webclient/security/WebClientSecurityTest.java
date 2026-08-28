@@ -60,6 +60,7 @@ class WebClientSecurityTest {
                                                                       return List.of();
                                                                   }
                                                                   return switch (method.getName()) {
+                                                                      case "enabled" -> true;
                                                                       case "equals" -> proxy == args[0];
                                                                       case "hashCode" -> System.identityHashCode(proxy);
                                                                       case "toString" -> "Security without outbound providers";
@@ -84,6 +85,38 @@ class WebClientSecurityTest {
             assertThrows(TestException.class, () -> client.get().request());
 
             assertThat("Outbound provider lookups", providerLookups.get(), is(1));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void registryWebClientSkipsDisabledSecurityWithOutboundProvider() {
+        AtomicInteger outboundCalls = new AtomicInteger();
+        Security security = Security.builder()
+                .enabled(false)
+                .addOutboundSecurityProvider((request, environment, config) -> {
+                    outboundCalls.incrementAndGet();
+                    return OutboundSecurityResponse.abstain();
+                })
+                .build();
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Security.class, security)
+                                                                                .build());
+        try {
+            WebClientService stopBeforeNetwork = (chain, request) -> {
+                throw new TestException();
+            };
+            Http1Client client = Http1Client.builder()
+                    .baseUri("https://example.test")
+                    .servicesDiscoverServices(false)
+                    .addService(managedSecurityService(manager))
+                    .addService(stopBeforeNetwork)
+                    .build();
+
+            assertThrows(TestException.class, () -> client.get().request());
+
+            assertThat("Disabled security outbound provider calls", outboundCalls.get(), is(0));
         } finally {
             manager.shutdown();
         }

@@ -312,7 +312,7 @@ WebClient provides three DNS resolver implementations out of the box:
 See [Configuration options][io-helidon-webcl].
 <!--/include-->
 
-### Registry-managed WebClients
+## Registry-managed WebClients
 
 The service registry provides a default `WebClient` even when no clients are
 configured. The unqualified `WebClient` service and the client named `@default`

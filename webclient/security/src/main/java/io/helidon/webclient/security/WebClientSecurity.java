@@ -100,9 +100,10 @@ public class WebClientSecurity implements WebClientService {
 
         String explicitProvider = request.properties().get(PROVIDER_NAME);
         if (security != null
-                && (explicitProvider == null
-                        ? !defaultOutboundSecurity
-                        : security.resolveOutboundProvider(explicitProvider).isEmpty())) {
+                && (!security.enabled()
+                        || (explicitProvider == null
+                                ? !defaultOutboundSecurity
+                                : security.resolveOutboundProvider(explicitProvider).isEmpty()))) {
             return chain.proceed(request);
         }
 
