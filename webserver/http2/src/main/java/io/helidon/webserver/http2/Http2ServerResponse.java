@@ -384,7 +384,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         headers.remove(HeaderNames.TRAILER);
     }
 
-    private void flushHeaders() {
+    void flushHeaders() {
         if (outputStream != null) {
             outputStream.flushHeaders();
         }
@@ -471,13 +471,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             boolean sendTrailers = Http2ServerResponse.sendTrailers(headers);
 
             if (noEntityResponse) {
-                headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
-
-                Http2Headers http2Headers = Http2Headers.create(headers);
-                http2Headers.status(status);
-                response.validateResponse(http2Headers);
                 if (!headResponseSent) {
-                    bytesWritten += stream.writeHeaders(http2Headers, true);
+                    sendNoEntityHeaders();
                 }
             } else if (headRequest) {
                 if (!headResponseSent) {
@@ -528,6 +523,13 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 responseSentRunnable.run();
                 return;
             }
+            if (noEntityResponse) {
+                normalizeNoEntityHeaders(headers, status);
+                sendNoEntityHeaders();
+                firstByte = false;
+                responseSentRunnable.run();
+                return;
+            }
             if (firstBuffer != null) {
                 try {
                     write(BufferData.empty());
@@ -540,6 +542,16 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             sendHeadersAndPrepare();
             firstByte = false;
             responseSentRunnable.run();
+        }
+
+        private void sendNoEntityHeaders() {
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
+
+            Http2Headers http2Headers = Http2Headers.create(headers);
+            http2Headers.status(status);
+            response.validateResponse(http2Headers);
+            bytesWritten += stream.writeHeaders(http2Headers, true);
+            headResponseSent = true;
         }
 
         private void write(BufferData buffer) throws IOException {

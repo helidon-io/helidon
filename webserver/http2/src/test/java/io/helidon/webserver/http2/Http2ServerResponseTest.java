@@ -350,6 +350,34 @@ class Http2ServerResponseTest {
     }
 
     @Test
+    void eagerlyFlushedNoEntityStatusIsSentOnce() {
+        for (Status status : NO_ENTITY_STATUSES) {
+            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            Http2ServerStream stream = mock(Http2ServerStream.class);
+            Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+            response.status(status);
+            response.contentLength(23);
+            response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
+
+            response.outputStream();
+            response.flushHeaders();
+            response.commit();
+
+            var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+            verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
+            verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+            verify(stream, never()).writeData(any(), anyBoolean());
+            verify(stream, never()).writeTrailers(any());
+            assertAll(
+                    () -> assertThat(responseHeaders.getValue().status(), is(status)),
+                    () -> assertNoEntityContentLength(status, responseHeaders.getValue().httpHeaders())
+            );
+        }
+    }
+
+    @Test
     void beforeSendNoEntityStatusesBypassNegotiatedGzip() {
         for (Status status : NO_ENTITY_STATUSES) {
             ContentEncodingContext contentEncodingContext = ContentEncodingContext.builder()

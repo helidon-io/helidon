@@ -390,7 +390,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         return Optional.of(outputStream(false));
     }
 
-    private void flushHeaders() {
+    void flushHeaders() {
         if (outputStream != null) {
             outputStream.flushHeaders();
         }
@@ -720,13 +720,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                 || headers.contains(HeaderNames.TRAILER));
 
             if (noEntityResponse && !headResponseSent) {
-                sendListener.status(ctx, usedStatus);
-                sendListener.headers(ctx, headers);
-                BufferData bufferData = BufferData.growing(256);
-                nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
-                sendListener.data(ctx, bufferData);
-                responseBytesTotal += bufferData.available();
-                writeResponse(dataWriter, bufferData, "Failed to write response");
+                sendNoEntityResponse(usedStatus);
             } else if (headRequest) {
                 if (!headResponseSent) {
                     if (sendTrailers && beforeTrailers != null) {
@@ -789,6 +783,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 firstByte = false;
                 return;
             }
+            Status usedStatus = status.get();
+            if (isNoEntityStatus(usedStatus)) {
+                normalizeNoEntityHeaders(headers, usedStatus);
+                sendNoEntityResponse(usedStatus);
+                firstByte = false;
+                responseSentRunnable.run();
+                return;
+            }
             if (firstBuffer != null) {
                 try {
                     write(BufferData.empty());
@@ -804,6 +806,17 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             sendHeadersAndPrepare();
             firstByte = false;
             responseSentRunnable.run();
+        }
+
+        private void sendNoEntityResponse(Status usedStatus) {
+            sendListener.status(ctx, usedStatus);
+            sendListener.headers(ctx, headers);
+            BufferData bufferData = BufferData.growing(256);
+            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
+            sendListener.data(ctx, bufferData);
+            responseBytesTotal += bufferData.available();
+            writeResponse(dataWriter, bufferData, "Failed to write response");
+            headResponseSent = true;
         }
 
         long totalBytesWritten() {

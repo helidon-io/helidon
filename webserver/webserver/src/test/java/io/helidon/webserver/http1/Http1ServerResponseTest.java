@@ -358,6 +358,33 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void eagerlyFlushedNoEntityStatusIsSentOnce() {
+        for (Status status : NO_ENTITY_STATUSES) {
+            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            DataWriter writer = mock(DataWriter.class);
+            Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+            response.status(status);
+            response.contentLength(23);
+            response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            response.header(HeaderNames.TRAILER, "test-trailer");
+
+            response.outputStream();
+            response.flushHeaders();
+            response.commit();
+
+            var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+            verify(writer).write(responseBuffer.capture());
+            String responseText = responseText(responseBuffer);
+            assertAll(
+                    () -> assertThat(responseText, containsString("HTTP/1.1 " + status + "\r\n")),
+                    () -> assertNoEntityHeaders(status, responseText),
+                    () -> assertThat(responseText, endsWith("\r\n\r\n"))
+            );
+        }
+    }
+
+    @Test
     void headRejectsEntityBeforeSendingResponse() {
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
