@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.common;
 
 import java.util.LinkedHashMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.SequencedMap;
 import java.util.concurrent.locks.Lock;
@@ -70,6 +71,19 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
             return Optional.of(value);
         } finally {
             writeLock.unlock();
+        }
+    }
+
+    @Override
+    public V peek(K key, V defaultValue) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(defaultValue);
+        readLock.lock();
+        try {
+            V value = backingMap.get(key);
+            return value == null ? defaultValue : value;
+        } finally {
+            readLock.unlock();
         }
     }
 
