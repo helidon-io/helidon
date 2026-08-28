@@ -96,18 +96,18 @@ final class HelidonTelemetryRequestEventListener implements ApplicationEventList
             }
         }
 
-        private void releaseIfFinished(ServerSpanLifecycle currentLifecycle, boolean finished) {
-            if (finished && lifecycle == currentLifecycle) {
-                lifecycle = null;
-            }
-        }
-
         private static boolean initializes(RequestEvent.Type type) {
             return switch (type) {
             case REQUEST_FILTERED, RESOURCE_METHOD_START, RESOURCE_METHOD_FINISHED, RESP_FILTERS_START,
                     RESP_FILTERS_FINISHED, ON_EXCEPTION, EXCEPTION_MAPPER_FOUND, EXCEPTION_MAPPING_FINISHED, FINISHED -> true;
             case START, MATCHING_START, LOCATOR_MATCHED, SUBRESOURCE_LOCATED, REQUEST_MATCHED -> false;
             };
+        }
+
+        private void releaseIfFinished(ServerSpanLifecycle currentLifecycle, boolean finished) {
+            if (finished && lifecycle == currentLifecycle) {
+                lifecycle = null;
+            }
         }
 
         private void initialize(RequestEvent event) {

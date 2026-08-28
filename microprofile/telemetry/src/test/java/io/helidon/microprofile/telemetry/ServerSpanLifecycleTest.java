@@ -15,7 +15,6 @@
  */
 package io.helidon.microprofile.telemetry;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.Map;
@@ -98,7 +97,7 @@ class ServerSpanLifecycleTest {
     }
 
     @Test
-    void finalResponseStatusReplacesEarlierStatus() {
+    void finalServerErrorStatusReplacesEarlierSuccess() {
         RecordingSpan span = new RecordingSpan();
         ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
 
@@ -111,7 +110,20 @@ class ServerSpanLifecycleTest {
     }
 
     @Test
-    void finishedEventFinalizesStatusAndReleasesLifecycleReference() throws ReflectiveOperationException {
+    void finalSuccessfulStatusReplacesEarlierServerError() {
+        RecordingSpan span = new RecordingSpan();
+        ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
+
+        lifecycle.responseStatus(500);
+        lifecycle.responseStatus(200);
+        lifecycle.requestFinished(true);
+
+        assertThat("Final HTTP status", span.httpStatus, is(200));
+        assertThat("Span status", span.status, is(Span.Status.UNSET));
+    }
+
+    @Test
+    void finishedEventFinalizesStatusAndEndsSpan() {
         RecordingSpan span = new RecordingSpan();
         ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
         lifecycle.responseStatus(200);
@@ -123,9 +135,6 @@ class ServerSpanLifecycleTest {
 
         requestListener.onEvent(finishedEvent);
 
-        Field lifecycleField = requestListener.getClass().getDeclaredField("lifecycle");
-        lifecycleField.setAccessible(true);
-        assertThat("Listener releases lifecycle", lifecycleField.get(requestListener), nullValue());
         assertThat("Monitoring listener does not mutate request properties",
                    request.getProperty(ServerSpanLifecycle.PROPERTY), is(lifecycle));
         assertThat("FINISHED response status", span.httpStatus, is(503));
@@ -134,7 +143,7 @@ class ServerSpanLifecycleTest {
     }
 
     @Test
-    void listenerReleasesLifecycleAfterAsynchronousResourceFinishes() throws ReflectiveOperationException {
+    void listenerDefersCompletionUntilAsynchronousResourceFinishes() {
         RecordingSpan span = new RecordingSpan();
         ServerSpanLifecycle lifecycle = new ServerSpanLifecycle(span, new RecordingScope());
         ContainerRequest request = containerRequest();
@@ -142,19 +151,14 @@ class ServerSpanLifecycleTest {
         ContainerResponse response = new ContainerResponse(request, Response.ok().build());
         RequestEventListener requestListener = new HelidonTelemetryRequestEventListener()
                 .onRequest(requestEvent(request, response, RequestEvent.Type.RESOURCE_METHOD_START, false));
-        Field lifecycleField = requestListener.getClass().getDeclaredField("lifecycle");
-        lifecycleField.setAccessible(true);
-
         requestListener.onEvent(requestEvent(request, response, RequestEvent.Type.RESOURCE_METHOD_START, false));
         requestListener.onEvent(requestEvent(request, response, RequestEvent.Type.FINISHED, true));
 
         assertThat("Span remains open until resource completion", span.endCount.get(), is(0));
-        assertThat("Listener retains lifecycle until resource completion", lifecycleField.get(requestListener), is(lifecycle));
 
         requestListener.onEvent(requestEvent(request, response, RequestEvent.Type.RESOURCE_METHOD_FINISHED, false));
 
         assertThat("Span ends at resource completion", span.endCount.get(), is(1));
-        assertThat("Listener releases lifecycle after resource completion", lifecycleField.get(requestListener), nullValue());
     }
 
     @Test

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 @AddBean(AutoSpanIncludesWriteTestBase.FailingWriterInterceptor.class)
 @AddBean(AutoSpanIncludesWriteTestBase.FailingResponseFilter.class)
 @AddBean(AutoSpanIncludesWriteTestBase.MappedNotFoundExceptionMapper.class)
+@AddBean(AutoSpanIncludesWriteTestBase.RewriteServerErrorFilter.class)
 class AutoSpanIncludesWriteTrueTest extends AutoSpanIncludesWriteTestBase {
 
     @Test
@@ -34,6 +35,11 @@ class AutoSpanIncludesWriteTrueTest extends AutoSpanIncludesWriteTestBase {
     @Test
     void testTruePreservesErrorStatus() {
         checkErrorStatus();
+    }
+
+    @Test
+    void testFinalResponseStatusOverridesProvisionalServerError() {
+        checkFinalResponseStatusOverridesProvisionalServerError();
     }
 
     @Test

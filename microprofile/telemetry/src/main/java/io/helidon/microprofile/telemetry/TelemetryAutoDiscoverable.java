@@ -15,12 +15,15 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import io.helidon.config.mp.MpConfig;
 import io.helidon.tracing.Tracer;
+import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.core.FeatureContext;
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
@@ -47,7 +50,7 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
     @Override
     public void configure(FeatureContext ctx) {
         ctx.register(HelidonTelemetryContainerFilter.class);
-        if (ctx.getConfiguration().getRuntimeType() == RuntimeType.SERVER && includesResponseWrite()) {
+        if (ctx.getConfiguration().getRuntimeType() == RuntimeType.SERVER && shouldRegisterResponseWriteProviders()) {
             ctx.register(HelidonTelemetryWriterInterceptor.class);
             ctx.register(new HelidonTelemetryRequestEventListener());
         }
@@ -69,11 +72,13 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
     }
 
     @SuppressWarnings("removal")
-    private static boolean includesResponseWrite() {
+    private static boolean shouldRegisterResponseWriteProviders() {
         try {
-            return ConfigProvider.getConfig()
-                    .getOptionalValue(HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE, Boolean.class)
-                    .orElse(false);
+            Config mpConfig = ConfigProvider.getConfig();
+            return mpConfig.getOptionalValue(HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE,
+                                             Boolean.class)
+                    .orElse(false)
+                    && !HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
         } catch (IllegalStateException e) {
             LOGGER.log(System.Logger.Level.TRACE,
                        "Skipping response-write-inclusive telemetry because MP Config is unavailable",

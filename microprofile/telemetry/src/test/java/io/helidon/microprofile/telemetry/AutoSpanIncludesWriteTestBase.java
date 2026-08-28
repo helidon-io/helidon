@@ -156,6 +156,25 @@ class AutoSpanIncludesWriteTestBase {
                    is(500L));
     }
 
+    void checkFinalResponseStatusOverridesProvisionalServerError() {
+        try (Response response = webTarget.path(BASE_PATH + "/rewritten-error")
+                .request(MediaType.TEXT_PLAIN)
+                .get()) {
+            assertThat("Response status", response.getStatus(), is(200));
+            assertThat("Response entity", response.readEntity(String.class), is("rewritten-error"));
+        }
+
+        Span observedSpan = writeProbe.observedSpan();
+        assertThat("Writer observed a span", observedSpan, notNullValue());
+        assertThat("Span eventually ended", spanListener.awaitEnded(observedSpan), is(true));
+
+        SpanData serverSpan = spanExporter.spanData(observedSpan);
+        assertThat("Final successful server span status",
+                   serverSpan.getStatus().getStatusCode(), is(StatusCode.UNSET));
+        assertThat("Final HTTP status attribute",
+                   serverSpan.getAttributes().get(AttributeKey.longKey(HTTP_STATUS_CODE)), is(200L));
+    }
+
     void checkResponseWriteSpanParent(String path, String childSpanName, String expectedEntity) {
         try (Response response = webTarget.path(BASE_PATH + path)
                 .request(MediaType.TEXT_PLAIN)
@@ -320,6 +339,12 @@ class AutoSpanIncludesWriteTestBase {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE, ElementType.METHOD})
     public @interface ManagedAsyncProbe {
+    }
+
+    @NameBinding
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    public @interface RewriteServerError {
     }
 
     @ApplicationScoped
@@ -556,6 +581,18 @@ class AutoSpanIncludesWriteTestBase {
     }
 
     @Provider
+    @RewriteServerError
+    @Priority(Priorities.HEADER_DECORATOR)
+    @ApplicationScoped
+    public static class RewriteServerErrorFilter implements ContainerResponseFilter {
+        @Override
+        public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
+            assertThat("Request context", requestContext, notNullValue());
+            responseContext.setStatus(Response.Status.OK.getStatusCode());
+        }
+    }
+
+    @Provider
     @ApplicationScoped
     public static class MappedNotFoundExceptionMapper implements ExceptionMapper<MappedNotFoundException> {
         private final Tracer tracer;
@@ -636,6 +673,14 @@ class AutoSpanIncludesWriteTestBase {
         @Produces(MediaType.TEXT_PLAIN)
         public Response error() {
             return Response.serverError().entity("error").build();
+        }
+
+        @GET
+        @Path("/rewritten-error")
+        @Produces(MediaType.TEXT_PLAIN)
+        @RewriteServerError
+        public Response rewrittenError() {
+            return Response.serverError().entity("rewritten-error").build();
         }
 
         @GET

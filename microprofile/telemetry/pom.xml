@@ -195,6 +195,7 @@
                             </systemPropertyVariables>
                             <excludes>
                                 <exclude>**/AgentDetectorTest.java</exclude>
+                                <exclude>**/AutoSpanIncludesWriteAgentTest.java</exclude>
                                 <exclude>**/TestSpanListenersWithInjection.java</exclude>
                                 <exclude>**/TestFilterSpanNesting.java</exclude>
                                 <exclude>**/PlainJerseyClientTest.java</exclude>
@@ -228,6 +229,7 @@
                         <configuration>
                             <includes>
                                 <include>**/AgentDetectorTest.java</include>
+                                <include>**/AutoSpanIncludesWriteAgentTest.java</include>
                             </includes>
                         </configuration>
                     </execution>

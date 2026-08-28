@@ -28,6 +28,7 @@ import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_S
 final class ServerSpanLifecycle {
     static final String PROPERTY = ServerSpanLifecycle.class.getName();
 
+    private static final int NO_RESPONSE_STATUS = -1;
     private static final int REQUEST_SCOPE_CLOSED = 1;
     private static final int RESOURCE_METHOD_STARTED = 1 << 1;
     private static final int RESOURCE_METHOD_FINISHED = 1 << 2;
@@ -54,6 +55,7 @@ final class ServerSpanLifecycle {
     private final Context requestContext;
     private volatile int state;
     private volatile Throwable failure;
+    private volatile int responseStatus = NO_RESPONSE_STATUS;
 
     ServerSpanLifecycle(Span span, Scope requestScope) {
         this.span = span;
@@ -108,10 +110,7 @@ final class ServerSpanLifecycle {
     }
 
     void responseStatus(int status) {
-        span.tag(HTTP_STATUS_CODE, status);
-        if (status >= 500 && status < 600) {
-            span.status(Span.Status.ERROR);
-        }
+        responseStatus = status;
     }
 
     boolean requestFinished(boolean responseWritten) {
@@ -144,7 +143,13 @@ final class ServerSpanLifecycle {
 
     private void end(int completionState) {
         Throwable throwable = (Throwable) FAILURE.getVolatile(this);
-        if ((completionState & RESPONSE_WRITTEN) == 0 || throwable != null) {
+        int finalResponseStatus = responseStatus;
+        if (finalResponseStatus != NO_RESPONSE_STATUS) {
+            span.tag(HTTP_STATUS_CODE, finalResponseStatus);
+        }
+        if ((completionState & RESPONSE_WRITTEN) == 0
+                || throwable != null
+                || (finalResponseStatus >= 500 && finalResponseStatus < 600)) {
             span.status(Span.Status.ERROR);
         }
         if (throwable == null) {
