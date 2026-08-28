@@ -95,8 +95,9 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
     /**
      * Creates a new service locator that applies the configured security requirements to each located service.
      * <p>
-     * WebServer caches the located service's original identity and applies the security wrapper only after admitting that
-     * identity to the locator's service cache.
+     * WebServer uses the located service's original identity together with the complete security handler chain as the
+     * cache identity. The same service wrapped by different security handler instances therefore uses separate entries in
+     * the locator's cache, all bounded by {@link HttpServiceLocator#maxServiceCacheSize()}.
      *
      * @param locator service locator to wrap
      * @return a new wrapped service locator
