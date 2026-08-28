@@ -19,12 +19,16 @@ package io.helidon.webserver.security;
 import java.util.List;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.common.uri.UriPath;
 import io.helidon.http.Method;
+import io.helidon.http.PathMatcher;
+import io.helidon.http.PathMatchers;
 import io.helidon.http.Status;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
+import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
@@ -37,6 +41,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class SpecialRequestTargetTest {
+    private static final String MATCHED_HEADER = "X-Decoded-Authority-Matched";
+    private static final PathMatcher DECODED_AUTHORITY_MATCHER = new PathMatcher() {
+        @Override
+        public PathMatchers.MatchResult match(UriPath path) {
+            return "example.com:443".equals(path.path())
+                    ? PathMatchers.any().match(path)
+                    : PathMatchers.MatchResult.notAccepted();
+        }
+
+        @Override
+        public PathMatchers.PrefixMatchResult prefixMatch(UriPath path) {
+            return PathMatchers.PrefixMatchResult.notAccepted();
+        }
+    };
+
     private final SocketHttpClient client;
 
     SpecialRequestTargetTest(SocketHttpClient client) {
@@ -45,26 +64,32 @@ class SpecialRequestTargetTest {
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
+        Handler handler = (req, res) -> {
+            var path = req.prologue().uriPath();
+            var securityContext = req.context().get(SecurityContext.class).orElseThrow();
+            var status = Method.CONNECT.equals(req.prologue().method())
+                    ? Status.NOT_IMPLEMENTED_501
+                    : Status.OK_200;
+            res.status(status)
+                    .send(path.rawPath()
+                                  + '|' + path.path()
+                                  + '|' + path.absolute().path()
+                                  + '|' + req.requestedUri().toUri()
+                                  + '|' + securityContext.env().targetUri()
+                                  + '|' + req.requestedUri().authority()
+                                  + '|' + req.requestedUri().port());
+        };
         server.featuresDiscoverServices(false)
                 .addFeature(ContextFeature.create())
                 .addFeature(SecurityFeature.builder()
                                     .security(Security.builder().build())
                                     .build())
-                .routing(routing -> routing.any((req, res) -> {
-                    var path = req.prologue().uriPath();
-                    var securityContext = req.context().get(SecurityContext.class).orElseThrow();
-                    var status = Method.CONNECT.equals(req.prologue().method())
-                            ? Status.NOT_IMPLEMENTED_501
-                            : Status.OK_200;
-                    res.status(status)
-                            .send(path.rawPath()
-                                          + '|' + path.path()
-                                          + '|' + path.absolute().path()
-                                          + '|' + req.requestedUri().toUri()
-                                          + '|' + securityContext.env().targetUri()
-                                          + '|' + req.requestedUri().authority()
-                                          + '|' + req.requestedUri().port());
-                }));
+                .routing(routing -> routing
+                        .route(Method.CONNECT, DECODED_AUTHORITY_MATCHER, (req, res) -> {
+                            res.header(MATCHED_HEADER, "true");
+                            handler.handle(req, res);
+                        })
+                        .any(handler));
     }
 
     @Test
@@ -77,12 +102,22 @@ class SpecialRequestTargetTest {
 
     @Test
     void connectAuthorityMatchesSecurityTarget() {
-        assertConnectTarget("example.com:443", "example.com:443", "http://example.com:443", "example.com:443", 443);
+        String response = assertConnectTarget("example.com:443",
+                                              "example.com:443",
+                                              "http://example.com:443",
+                                              "example.com:443",
+                                              443);
+        assertThat(response, containsString(MATCHED_HEADER + ": true"));
     }
 
     @Test
     void encodedConnectAuthorityMatchesSecurityTarget() {
-        assertConnectTarget("example%2Ecom:443", "example.com:443", "http://example%2Ecom:443", "example%2Ecom:443", 443);
+        String response = assertConnectTarget("example%2Ecom:443",
+                                              "example.com:443",
+                                              "http://example%2Ecom:443",
+                                              "example%2Ecom:443",
+                                              443);
+        assertThat(response, containsString(MATCHED_HEADER + ": true"));
     }
 
     @Test
@@ -124,11 +159,11 @@ class SpecialRequestTargetTest {
         assertThat(response, not(containsString("[Vf.foo-bar]:443|")));
     }
 
-    private void assertConnectTarget(String requestTarget,
-                                     String expectedPath,
-                                     String expectedUri,
-                                     String expectedAuthority,
-                                     int expectedPort) {
+    private String assertConnectTarget(String requestTarget,
+                                       String expectedPath,
+                                       String expectedUri,
+                                       String expectedAuthority,
+                                       int expectedPort) {
         String response = client.sendAndReceive(Method.CONNECT, requestTarget, null, List.of());
 
         assertThat(response, containsString("501 Not Implemented"));
@@ -139,5 +174,6 @@ class SpecialRequestTargetTest {
                                           + '|' + expectedUri
                                           + '|' + expectedAuthority
                                           + '|' + expectedPort));
+        return response;
     }
 }

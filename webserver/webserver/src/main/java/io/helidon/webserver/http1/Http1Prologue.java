@@ -258,6 +258,13 @@ public final class Http1Prologue {
         return true;
     }
 
+    private static UriPath authorityPath(String requestTarget) {
+        String decoded = requestTarget.indexOf('%') == -1
+                ? requestTarget
+                : URI.create("//" + requestTarget).getAuthority();
+        return new AuthorityPath(requestTarget, decoded);
+    }
+
     private HttpPrologue doRead() {
         int eol;
 
@@ -375,13 +382,6 @@ public final class Http1Prologue {
 
     private int nextSpace(byte[] prologueBytes, int currentIndex) {
         return Bytes.firstIndexOf(prologueBytes, currentIndex, prologueBytes.length - 1, Bytes.SPACE_BYTE);
-    }
-
-    private static UriPath authorityPath(String requestTarget) {
-        String decoded = requestTarget.indexOf('%') == -1
-                ? requestTarget
-                : URI.create("//" + requestTarget).getAuthority();
-        return new AuthorityPath(requestTarget, decoded);
     }
 
     private String readProtocol(byte[] bytes, int index) {
