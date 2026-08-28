@@ -191,8 +191,19 @@ jobs:
             mvn ${MVN_ARGS} \
               -Dcache.recordSuffix=docs \
               -f docs/pom.xml \
-              -Pjavadoc \
               install
+      - name: Verify generated configuration documentation
+        shell: bash
+        run: |
+          changes="$(git status --porcelain=v1 --untracked-files=all -- docs/config)"
+          if [[ -n "${changes}" ]]; then
+            echo "${changes}"
+            git diff -- docs/config
+            echo "::error::Generated configuration documentation is out of date."
+            echo "Regenerate with:"
+            echo "  mvn -f docs/pom.xml generate-sources"
+            exit 1
+          fi
   examples:
     needs: build
     timeout-minutes: 30

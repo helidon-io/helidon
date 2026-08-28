@@ -33,7 +33,8 @@ import java.util.SequencedSet;
  * <h2>Acquisition</h2>
  *
  * <p>To acquire a {@link Discovery} instance, <a
- * href="https://helidon.io/docs/latest/se/injection#_injection_points">inject</a> an instance of {@link Discovery},
+ * href="https://helidon.io/docs/latest/modules/injection#injection-points">inject</a> an instance of
+ * {@link Discovery},
  * using the {@link io.helidon.service.registry.Service.Inject} annotation. Alternatively, and equivalently, use the
  * {@code static} {@link io.helidon.service.registry.Services#get(Class)} method, supplying {@code Discovery.class} as
  * its sole argument.</p>

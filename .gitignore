@@ -53,9 +53,6 @@ nb-configuration.xml
 .classpath
 .factorypath
 
-# Asciidoctor
-.asciidoctor/
-
 # Vim
 *.swp
 
@@ -83,7 +80,7 @@ ObjectStore/
 PutObjectStoreDirHere/
 package-lock.json
 RUNTIMEDB/
-docs/se/config/images
+docs/modules/config/images
 .helidon-oidc-secret
 .helidon-oidc-secret.*.tmp
 

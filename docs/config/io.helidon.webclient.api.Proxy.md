@@ -1,0 +1,116 @@
+# io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>Proxy
+
+## Description
+
+A definition of a proxy server to use for outgoing requests
+
+## Configuration options
+
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>password</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>Sets a new password for the proxy</td>
+</tr>
+<tr>
+<td>
+<code>port</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+</td>
+<td>Sets a port value</td>
+</tr>
+<tr>
+<td>
+<code>host</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Sets a new host value</td>
+</tr>
+<tr>
+<td>
+<code>force-<wbr>http-<wbr>connect</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+</td>
+<td>Forces HTTP CONNECT with the proxy server</td>
+</tr>
+<tr>
+<td>
+<code>no-<wbr>proxy</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>Configure a host or IP pattern that is not going through a proxy; IP patterns resolve host-name targets locally and bind direct routes to the matching address</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.webclient.api.Proxy.ProxyType.md">
+<code>type</code>
+</a>
+</td>
+<td>
+<code>Proxy<wbr>Type</code>
+</td>
+<td>
+<code>HTTP</code>
+</td>
+<td>Sets a new proxy type</td>
+</tr>
+<tr>
+<td>
+<code>username</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Sets a new username for the proxy</td>
+</tr>
+</tbody>
+</table>
+
+
+
+## Usages
+
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>clients.<wbr>proxy</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>proxy</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>proxy</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>proxy</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>proxy</code></a>
+
+---
+
+See the [manifest](manifest.md) for all available types.

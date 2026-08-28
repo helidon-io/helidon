@@ -9,7 +9,6 @@ assignees: ''
 
 ## Environment Details
 * Helidon Version:
-* Helidon SE or Helidon MP
 * JDK version:
 * OS:
 
@@ -23,5 +22,4 @@ assignees: ''
 ## Steps to reproduce
 [//]: # "Step by step instructions to reproduce the problem"
 [//]: # "Provide sample code/application if relevant"
-
 

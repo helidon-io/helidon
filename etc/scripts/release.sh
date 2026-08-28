@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -176,19 +176,13 @@ replace() {
 }
 
 update_version(){
-  local version current_version is_release
+  local version current_version
 
   version=${1-${VERSION}}
   if [ -z "${version+x}" ] ; then
     echo "ERROR: version required" >&2
     usage
     exit 1
-  fi
-
-  if [[ "${version}" == *-SNAPSHOT ]]; then
-    is_release="false"
-  else
-    is_release="true"
   fi
 
   # find current version
@@ -207,14 +201,9 @@ update_version(){
 
   # update docs
   replace \
-    --pattern=":helidon-version: .*" \
-    --value="${version}" \
-    --include="attributes.adoc"
-
-  replace \
-    --pattern=":helidon-version-is-release: .*" \
-    --value="${is_release}" \
-    --include="attributes.adoc"
+    --pattern="^  version: \".*\"$" \
+    --replace="  version: \"${version}\"" \
+    --include="README.md"
 }
 
 create_tag() {

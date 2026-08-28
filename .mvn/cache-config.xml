@@ -21,7 +21,7 @@
     <lifecycleConfig>
         <project path="docs/pom.xml">
             <projectFilesExcludes>
-                <exclude>src/main/asciidoc/config/*</exclude>
+                <exclude>config/*</exclude>
             </projectFilesExcludes>
         </project>
         <project glob="**/*">

@@ -3,14 +3,15 @@ Helidon Declarative
 
 _This documentation is for developers of Helidon, or for developers of additional features for Helidon Declarative_
 
-A declarative programming model for Helidon SE.
+A declarative programming model for Helidon.
 
 _Declarative_: a programming model where we declare intention by annotating elements, to achieve functionality that would
 otherwise require significant programming effort
 
 Rules for Helidon Declarative:
 
-1. Required APIs will be part of the existing SE module (Annotations, support for generated code, new APIs)
+1. Required APIs will be part of the existing Helidon module (Annotations,
+   support for generated code, new APIs)
 2. Annotations will use the "nested" approach we have started with builders, i.e. `@Http.Path`; the class that annotations are
    nested in should not be used in any other way (i.e. it should not have methods); find an alternative name if an existing class
    would be the best fit, or deprecate existing methods and move them elsewhere (See `FaultTolerance` vs. `Ft`)
@@ -111,9 +112,11 @@ Definition of Helidon declarative features.
 
 Defines a Server HTTP Service.
 Each method is a route with its own path (see declaration below).
-The method has a choice of using the "core" Helidon SE approach - getting `ServerRequest` and `ServerResponse` as parameters and
-doing everything manually, or by using qualified parameters to obtain the desired information from the request, and returning an
-object that will be sent as the response entity.
+The method has a choice of using the Helidon Core approach - getting
+`ServerRequest` and `ServerResponse` as parameters and doing everything
+manually, or by using qualified parameters to obtain the desired information
+from the request, and returning an object that will be sent as the response
+entity.
 To a certain degree, these approaches can be combined (i.e. we can get `ServerRequest` and return an entity, or get annotated
 parameters and `ServerResponse`).
 
@@ -144,8 +147,8 @@ Annotations on method(s), may be defined on the endpoint type, or on an interfac
 
 Parameters defined by type:
 
-- `ServerRequest` - SE webserver request
-- `ServerResponse` - SE webserver response
+- `ServerRequest` - Helidon WebServer request
+- `ServerResponse` - Helidon WebServer response
 - `io.helidon.common.context.Context` - server request context
 - other parameters as supported by code generators for other features (i.e. `SecurityContext` will be supported as soon as
   security feature is implemented) - see `io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider`

@@ -47,7 +47,6 @@
 archetypes/
 conf/secrets/
 config/metadata/docs/src/test/resources/
-docs/src/main/asciidoc/config
 empty_file
 etc/dependency-check-suppression.xml
 etc/HELIDON_THIRD_PARTY_LICENSES.xml

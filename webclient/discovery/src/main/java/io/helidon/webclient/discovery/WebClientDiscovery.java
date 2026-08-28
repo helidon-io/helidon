@@ -297,7 +297,7 @@ public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryCo
      *
      * @return a non-{@code null} {@link WebClientDiscoveryConfig.Builder}
      * @see WebClientDiscoveryConfig#builder()
-     * @see <a href="https://helidon.io/docs/latest/se/builder#_specification_3">Helidon Builder</a>
+     * @see <a href="https://helidon.io/docs/latest/modules/builder#creating-a-runtime-type">Helidon Builder</a>
      */
     static WebClientDiscoveryConfig.Builder builder() {
         return WebClientDiscoveryConfig.builder();
@@ -314,7 +314,7 @@ public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryCo
      * @see #builder()
      * @see WebClientDiscoveryConfig.Builder#update(Consumer)
      * @see WebClientDiscoveryConfig.Builder#build()
-     * @see <a href="https://helidon.io/docs/latest/se/builder#_specification_3">Helidon Builder</a>
+     * @see <a href="https://helidon.io/docs/latest/modules/builder#creating-a-runtime-type">Helidon Builder</a>
      */
     static WebClientDiscovery create(Consumer<WebClientDiscoveryConfig.Builder> consumer) {
         return builder().update(consumer).build();
@@ -332,7 +332,7 @@ public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryCo
      * @exception NullPointerException if {@code prototype} is {@code null}
      * @see WebClientDiscoveryConfig.Builder#build()
      * @see WebClientDiscoveryConfig.Builder#buildPrototype()
-     * @see <a href="https://helidon.io/docs/latest/se/builder#_specification_3">Helidon Builder</a>
+     * @see <a href="https://helidon.io/docs/latest/modules/builder#creating-a-runtime-type">Helidon Builder</a>
      */
     static WebClientDiscovery create(WebClientDiscoveryConfig prototype) {
         return new DefaultWebClientDiscovery(prototype);
