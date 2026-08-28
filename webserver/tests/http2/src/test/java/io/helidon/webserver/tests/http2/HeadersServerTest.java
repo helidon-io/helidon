@@ -379,6 +379,11 @@ public class HeadersServerTest {
     }
 
     @Test
+    void malformedQueryRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
+        assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, GET, "/ok?q=%GG");
+    }
+
+    @Test
     void absoluteRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
         assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, GET, "http://example/a");
     }

@@ -44,6 +44,9 @@ public class Http2ServerRequestTargetBenchmark {
     @Param({"32", "4000"})
     private int targetLength;
 
+    @Param({"false"})
+    private boolean withQuery;
+
     private WebServer server;
     private HttpClient client;
     private HttpRequest request;
@@ -72,7 +75,9 @@ public class Http2ServerRequestTargetBenchmark {
                 .version(HttpClient.Version.HTTP_2)
                 .connectTimeout(EXCHANGE_TIMEOUT)
                 .build();
-        String path = "/" + "a".repeat(targetLength - 1);
+        String path = withQuery
+                ? "/a?q=" + "b".repeat(targetLength - 5)
+                : "/" + "a".repeat(targetLength - 1);
         request = HttpRequest.newBuilder()
                 .uri(URI.create("http://127.0.0.1:" + server.port() + path))
                 .timeout(EXCHANGE_TIMEOUT)

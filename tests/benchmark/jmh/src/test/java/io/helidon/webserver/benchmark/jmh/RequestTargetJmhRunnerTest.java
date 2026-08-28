@@ -55,12 +55,29 @@ class RequestTargetJmhRunnerTest {
         new Runner(options).run();
     }
 
+    @Test
+    void http2QueryThroughputAndAllocation() throws RunnerException {
+        Options options = commonOptions(new OptionsBuilder()
+                                                .include(exact(Http2ServerRequestTargetBenchmark.class, "exchange"))
+                                                .param("withQuery", "true"))
+                .mode(Mode.Throughput)
+                .timeUnit(TimeUnit.SECONDS)
+                .addProfiler(GCProfiler.class)
+                .result("target/request-target-http2-query-throughput.json")
+                .build();
+        new Runner(options).run();
+    }
+
     private static ChainedOptionsBuilder options() {
-        return new OptionsBuilder()
+        return commonOptions(new OptionsBuilder()
                 .include(exact(Http1ServerRequestTargetBenchmark.class, "parse"))
                 .include(exact(Http2ServerRequestTargetBenchmark.class, "exchange"))
                 .include(exact(Http1ClientRequestTargetBenchmark.class, "prologue"))
-                .include(exact(Http2ClientRequestTargetBenchmark.class, "prepareHeaders"))
+                .include(exact(Http2ClientRequestTargetBenchmark.class, "prepareHeaders")));
+    }
+
+    private static ChainedOptionsBuilder commonOptions(ChainedOptionsBuilder options) {
+        return options
                 .forks(3)
                 .threads(1)
                 .warmupIterations(5)

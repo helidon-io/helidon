@@ -37,6 +37,7 @@ import io.helidon.common.tls.TlsUtils;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.DateTime;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -892,6 +893,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                    method,
                                                    path,
                                                    http2Config.validatePath());
+            }
+            if (http2Config.validatePath() && httpPrologue.hasQuery()) {
+                UriValidator.validateQuery(httpPrologue.query().rawValue());
             }
         } catch (IllegalArgumentException ignored) {
             stream.resetProtocolError(0, endOfStream);
