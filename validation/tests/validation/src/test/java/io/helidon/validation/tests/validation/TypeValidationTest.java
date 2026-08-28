@@ -17,6 +17,8 @@
 package io.helidon.validation.tests.validation;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashMap;
 
 import io.helidon.testing.junit5.Testing;
 import io.helidon.validation.TypeValidation;
@@ -46,6 +48,19 @@ public class TypeValidationTest {
         response = validator.validate(ValidatedType.class, validatedType);
         assertThat(response.valid(), is(false));
         assertThat(response.message(), is("41 is less than 42"));
+    }
+
+    @Test
+    public void validateNullableCascadingBoundaries() {
+        var map = new HashMap<String, ValidatedType>();
+        map.put("null", null);
+        var value = new NullableCascadingType(null,
+                                              Collections.singletonList(null),
+                                              map);
+        var arrayValue = new NullableCascadingArrayType(new ValidatedType[] {null});
+
+        assertThat(validator.validate(NullableCascadingType.class, value).valid(), is(true));
+        assertThat(validator.validate(NullableCascadingArrayType.class, arrayValue).valid(), is(true));
     }
 
     @Test

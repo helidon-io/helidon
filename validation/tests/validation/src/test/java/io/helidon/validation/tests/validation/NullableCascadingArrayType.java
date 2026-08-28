@@ -16,24 +16,8 @@
 
 package io.helidon.validation.tests.validation;
 
-import java.util.List;
+import io.helidon.validation.Validation;
 
-import io.helidon.service.registry.Service;
-
-@Service.Singleton
-class ValidInterfaceConstrainedServiceImpl implements ValidInterfaceConstrainedService {
-    @Override
-    public String validate(ValidatedType value) {
-        return "ok";
-    }
-
-    @Override
-    public String validateAll(List<? super ValidatedType> values) {
-        return "ok";
-    }
-
-    @Override
-    public ValidatedType nullableReturn() {
-        return null;
-    }
+@Validation.Validated
+record NullableCascadingArrayType(@Validation.Valid ValidatedType[] array) {
 }
