@@ -18,9 +18,10 @@ package io.helidon.webserver.staticcontent;
 
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.media.type.MediaType;
@@ -33,14 +34,14 @@ final class StaticContentConfigSupport {
     }
 
     static Map<String, String> defaultPreCompressedEncodings() {
-        Map<String, String> result = new LinkedHashMap<>();
+        Map<String, String> result = new HashMap<>();
         result.put("br", "br");
         result.put("gzip", "gz");
         return result;
     }
 
     static Map<String, String> normalizePreCompressedEncodings(Map<String, String> configured) {
-        Map<String, String> result = new LinkedHashMap<>();
+        Map<String, String> result = new TreeMap<>();
         for (Map.Entry<String, String> entry : configured.entrySet()) {
             String coding = normalizeCoding(entry.getKey());
             String suffix = normalizeSuffix(entry.getValue());

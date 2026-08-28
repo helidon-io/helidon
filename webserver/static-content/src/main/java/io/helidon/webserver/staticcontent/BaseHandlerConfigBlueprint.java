@@ -146,12 +146,12 @@ interface BaseHandlerConfigBlueprint {
     Optional<Boolean> preCompressedEnabled();
 
     /**
-     * Ordered pre-compressed content coding to file suffix mappings; handler mappings replace inherited feature-level
-     * mappings rather than merging with them, an explicit empty map disables sidecar lookups for this handler, codings
-     * must be unique concrete valid HTTP tokens other than {@code identity} and {@code *}, and suffixes have leading
-     * dots ignored and must not contain path separators.
+     * Pre-compressed content coding to file suffix mappings; handler mappings replace inherited feature-level mappings
+     * rather than merging with them, an explicit empty map disables sidecar lookups for this handler, codings must be
+     * unique concrete valid HTTP tokens other than {@code identity} and {@code *}, and suffixes have leading dots ignored
+     * and must not contain path separators.
      *
-     * @return ordered content coding to file suffix mappings
+     * @return content coding to file suffix mappings
      */
     @Option.Configured
     @Option.Singular("preCompressedEncoding")

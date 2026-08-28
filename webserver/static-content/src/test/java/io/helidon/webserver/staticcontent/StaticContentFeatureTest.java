@@ -22,8 +22,6 @@ import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -96,7 +94,6 @@ class StaticContentFeatureTest {
                 .buildPrototype();
 
         assertThat(featureConfig.preCompressedEncodings(), is(Map.of("gzip", "gz", "br", "br")));
-        assertThat(new ArrayList<>(featureConfig.preCompressedEncodings().keySet()), is(List.of("gzip", "br")));
 
         FileSystemHandlerConfig handlerConfig = FileSystemHandlerConfig.builder()
                 .location(Path.of("."))

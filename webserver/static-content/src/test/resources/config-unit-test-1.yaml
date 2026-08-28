@@ -22,6 +22,7 @@ server:
       pre-compressed-enabled: false
       pre-compressed-encodings:
         gzip: zz
+        br: br
       temporary-storage:
         directory: "./target/helidon/tmp"
         file-prefix: "helidon-custom"

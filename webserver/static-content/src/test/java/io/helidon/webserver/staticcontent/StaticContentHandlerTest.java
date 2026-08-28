@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1469,6 +1470,20 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void preCompressedWildcardTieDoesNotUseMapOrder() throws IOException, URISyntaxException {
+        Map<String, String> encodings = new LinkedHashMap<>();
+        encodings.put("gzip", "gz");
+        encodings.put("br", "br");
+        TestContentHandler handler = new TestContentHandler(FileSystemHandlerConfig.builder()
+                                                                    .location(Paths.get("."))
+                                                                    .preCompressedEncodings(encodings)
+                                                                    .build(),
+                                                            true);
+
+        assertSidecarSelected(handler, "*, identity;q=0", "br", "Brotli content");
+    }
+
+    @Test
     void preCompressedWildcardPrefersSidecarOverRuntimeEncoding() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
@@ -2406,7 +2421,13 @@ class StaticContentHandlerTest {
 
     private void assertSidecarSelected(String acceptEncoding, String contentEncoding, String body)
             throws IOException, URISyntaxException {
-        TestContentHandler handler = TestContentHandler.create(true);
+        assertSidecarSelected(TestContentHandler.create(true), acceptEncoding, contentEncoding, body);
+    }
+
+    private void assertSidecarSelected(TestContentHandler handler,
+                                       String acceptEncoding,
+                                       String contentEncoding,
+                                       String body) throws IOException, URISyntaxException {
         CachedHandler identityHandler = inMemoryHandler("Nested content");
         CachedHandler brHandler = inMemoryHandler("Brotli content")
                 .withRepresentation(ResponseRepresentation.encoded("br"));

@@ -173,14 +173,14 @@ class StaticContentConfigTest {
     }
 
     @Test
-    void testFileSystemPreCompressedHandlerUsesConfiguredMap() {
+    void testFileSystemPreCompressedHandlerDoesNotUseConfiguredMapOrder() {
         try (Http1ClientResponse response = testClient.get("/path-enabled/resource.txt")
                 .header(HeaderNames.ACCEPT_ENCODING, "*, identity;q=0")
                 .request()) {
 
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
-            assertThat(response.as(String.class), is("Custom gzip content"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+            assertThat(response.as(String.class), is("Brotli content\n"));
         }
     }
 

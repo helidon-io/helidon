@@ -1483,7 +1483,7 @@ named `big-file.html`, Helidon checks for sidecars such as `big-file.html.br` an
 `big-file.html.gz` after the logical resource has been resolved by the normal
 static-content rules.
 
-The feature is enabled by default. The default ordered sidecar entries are
+The feature is enabled by default. The default sidecar entries are
 `br -> br` and `gzip -> gz`. A custom `pre-compressed-encodings` map replaces
 the defaults, so include `br` and `gzip` explicitly if they should remain
 available. An explicitly empty `pre-compressed-encodings` map disables sidecar
@@ -1540,10 +1540,10 @@ rejected or has a lower quality. If `identity` is omitted, the implicit
 `identity` representation is preferred over a runtime encoder matched only by
 the wildcard. For equal-quality concrete codings, Helidon follows the client
 `Accept-Encoding` header order. If the header order does not decide the result,
-Helidon prefers sidecars over runtime encoders and then uses the configured
-`pre-compressed-encodings` order for sidecars; the default order prefers `br`
-before `gzip`. Explicit `identity` follows the same client-order rule for
-equal-quality ties. For equal quality, implicit `identity` follows acceptable
+Helidon prefers sidecars over runtime encoders and then uses alphabetical order
+of normalized content-coding names as a deterministic tie-break for sidecars.
+Explicit `identity` follows the same client-order rule for equal-quality ties.
+For equal quality, implicit `identity` follows acceptable
 concrete sidecar and runtime candidates but precedes wildcard-derived runtime
 candidates. If no acceptable sidecar or runtime encoder exists and the client
 rejects `identity`, Helidon responds with `406 Not Acceptable`. Dynamically

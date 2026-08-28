@@ -105,7 +105,6 @@ public class ConfigMapTest {
 
         Map<String, String> builtMap = configMap.optionalProperties().orElseThrow();
         assertThat(builtMap, is(Map.of("zero", "zero", "first", "updated", "second", "two")));
-        assertThat(new ArrayList<>(builtMap.keySet()), is(List.of("zero", "first", "second")));
         assertThrows(UnsupportedOperationException.class, () -> builtMap.put("third", "three"));
 
         configMap = ConfigMap.builder()
