@@ -16,15 +16,8 @@
 
 package io.helidon.validation.tests.validation;
 
-import java.util.List;
-
 import io.helidon.validation.Validation;
 
-interface ValidInterfaceConstrainedService {
-    String validate(@Validation.Valid ValidatedType value);
-
-    String validateAll(List<? super @Validation.Valid ValidatedType> values);
-
-    @Validation.Valid
-    ValidatedType nullableReturn();
+@Validation.Validated
+record NullableCascadingArrayType(@Validation.Valid ValidatedType[] array) {
 }

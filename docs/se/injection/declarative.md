@@ -497,6 +497,10 @@ interceptor. Type-use validation is supported on nested `Optional`,
 `Collection`, `List`, `Set`, `Map` key/value types, array component types, and
 wildcard bounds.
 
+Cascaded validation is skipped when a value annotated with `@Validation.Valid`
+is `null`. The annotation does not make the value required; add
+`@Validation.NotNull` when `null` must be rejected.
+
 #### Usage
 
 Example of a validated type

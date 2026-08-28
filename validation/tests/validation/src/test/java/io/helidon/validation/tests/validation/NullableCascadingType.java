@@ -17,14 +17,22 @@
 package io.helidon.validation.tests.validation;
 
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.validation.Validation;
 
-interface ValidInterfaceConstrainedService {
-    String validate(@Validation.Valid ValidatedType value);
-
-    String validateAll(List<? super @Validation.Valid ValidatedType> values);
-
+@Validation.Validated
+class NullableCascadingType {
     @Validation.Valid
-    ValidatedType nullableReturn();
+    final ValidatedType direct;
+    final List<@Validation.Valid ValidatedType> list;
+    final Map<String, @Validation.Valid ValidatedType> map;
+
+    NullableCascadingType(ValidatedType direct,
+                          List<ValidatedType> list,
+                          Map<String, ValidatedType> map) {
+        this.direct = direct;
+        this.list = list;
+        this.map = map;
+    }
 }
