@@ -180,7 +180,9 @@ public final class AltSvcHeader {
     private static long responseAge(ClientResponseHeaders headers, Instant receivedAt) {
         long responseAge = 0;
         if (headers.contains(HeaderNames.AGE)) {
-            long parsedAge = parseDeltaSeconds(headers.get(HeaderNames.AGE).get());
+            String age = headers.get(HeaderNames.AGE).get();
+            int comma = age.indexOf(',');
+            long parsedAge = parseDeltaSeconds(comma < 0 ? age : trimOws(age.substring(0, comma)));
             if (parsedAge >= 0) {
                 responseAge = parsedAge;
             }

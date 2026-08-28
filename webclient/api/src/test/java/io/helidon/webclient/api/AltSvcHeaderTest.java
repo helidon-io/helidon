@@ -205,6 +205,17 @@ class AltSvcHeaderTest {
     }
 
     @Test
+    void usesFirstMemberOfListBasedAge() {
+        AltSvcHeader.Alternative alternative = AltSvcHeader.create(
+                        timedResponseHeaders("h3=\":443\"; ma=60", "50, 10", "not a date"), RECEIVED_AT)
+                .orElseThrow()
+                .alternatives()
+                .getFirst();
+
+        assertThat(alternative.expirationTime(), is(RECEIVED_AT.plusSeconds(10)));
+    }
+
+    @Test
     void materializesMemoizedGrammarForEachResponse() {
         String value = "h3=\":443\"; ma=120; persist=1";
         Instant laterReceivedAt = RECEIVED_AT.plusSeconds(150);

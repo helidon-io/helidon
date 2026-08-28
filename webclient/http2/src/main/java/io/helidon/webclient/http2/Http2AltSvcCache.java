@@ -234,12 +234,10 @@ final class Http2AltSvcCache implements AutoCloseable {
             }
             boolean withdrawal = alternative == null;
             Instant latestObservation = previous == null ? tombstones.get(routeKey) : previous.observedAt;
-            // Equal-time withdrawals win; advertisements must be strictly newer than state and network barriers.
-            if (observedAt.isBefore(networkChangedAt)
-                    || (!withdrawal && observedAt.equals(networkChangedAt))
-                    || (latestObservation != null
-                            && (observedAt.isBefore(latestObservation)
-                                    || (!withdrawal && observedAt.equals(latestObservation))))) {
+            // Withdrawals always win; advertisements must be strictly newer than state and network barriers.
+            if (!withdrawal
+                    && (!observedAt.isAfter(networkChangedAt)
+                            || (latestObservation != null && !observedAt.isAfter(latestObservation)))) {
                 return;
             }
             if (alternative != null
