@@ -102,7 +102,7 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
      * @param locator service locator to wrap
      * @return a new wrapped service locator
      */
-    public HttpServiceLocator wrap(HttpServiceLocator locator) {
+    public HttpServiceLocator wrapLocator(HttpServiceLocator locator) {
         return new WrappedLocator(this, Objects.requireNonNull(locator));
     }
 
@@ -210,13 +210,13 @@ public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
 
         @Override
         public HttpRules registerLocator(HttpServiceLocator locator) {
-            delegate.registerLocator(secureHandler.wrap(locator));
+            delegate.registerLocator(secureHandler.wrapLocator(locator));
             return this;
         }
 
         @Override
         public HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
-            delegate.registerLocator(pathPattern, secureHandler.wrap(locator));
+            delegate.registerLocator(pathPattern, secureHandler.wrapLocator(locator));
             return this;
         }
 

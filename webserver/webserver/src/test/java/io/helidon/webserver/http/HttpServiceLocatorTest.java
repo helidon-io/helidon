@@ -493,7 +493,7 @@ class HttpServiceLocatorTest {
     @Test
     void testSecuredLocatedServiceCreatedDuringStartReceivesLifecycleOnce() {
         var service = new LifecycleService();
-        HttpServiceLocator locator = SecureHandler.authorize("user").wrap(new LifecycleLocator(service));
+        HttpServiceLocator locator = SecureHandler.authorize("user").wrapLocator(new LifecycleLocator(service));
         var route = locatorRoute(locator);
 
         route.beforeStart();
@@ -574,7 +574,7 @@ class HttpServiceLocatorTest {
         var first = new LifecycleService("first");
         var second = new LifecycleService("second");
         var locator = new SwitchingLocator(first, false, 1);
-        HttpServiceLocator securedLocator = SecureHandler.authorize().wrap(locator);
+        HttpServiceLocator securedLocator = SecureHandler.authorize().wrapLocator(locator);
         var route = locatorRoute(securedLocator);
 
         locate(route);
@@ -592,7 +592,7 @@ class HttpServiceLocatorTest {
         var rawHandlerInvoked = new AtomicBoolean();
         HttpService service = rules -> rules.get("/resource", (req, res) -> rawHandlerInvoked.set(true));
         HttpServiceLocator locator = request -> Optional.of(service);
-        HttpServiceLocator securedLocator = SecureHandler.authorize().wrap(locator);
+        HttpServiceLocator securedLocator = SecureHandler.authorize().wrapLocator(locator);
         HttpServiceLocator decoratedLocator = request -> securedLocator.locate(request);
         var route = locatorRoute(decoratedLocator);
         Handler handler = locatedRoutes(route, "/pipe/resource").getFirst().handler();
@@ -614,8 +614,8 @@ class HttpServiceLocatorTest {
         var rawHandlerInvoked = new AtomicBoolean();
         HttpService service = rules -> rules.get("/resource", (req, res) -> rawHandlerInvoked.set(true));
         HttpServiceLocator locator = request -> Optional.of(service);
-        HttpServiceLocator userLocator = SecureHandler.authorize("user").wrap(locator);
-        HttpServiceLocator adminLocator = SecureHandler.authorize("admin").wrap(locator);
+        HttpServiceLocator userLocator = SecureHandler.authorize("user").wrapLocator(locator);
+        HttpServiceLocator adminLocator = SecureHandler.authorize("admin").wrapLocator(locator);
         HttpServiceLocator policyLocator = request -> request.path()
                 .pathParameters()
                 .first("item")

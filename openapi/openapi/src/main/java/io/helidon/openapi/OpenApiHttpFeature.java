@@ -165,13 +165,13 @@ class OpenApiHttpFeature implements HttpFeature {
 
         @Override
         public HttpRules registerLocator(HttpServiceLocator locator) {
-            delegate.registerLocator(secureHandler.wrap(locator));
+            delegate.registerLocator(secureHandler.wrapLocator(locator));
             return this;
         }
 
         @Override
         public HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
-            delegate.registerLocator(pathPattern, secureHandler.wrap(locator));
+            delegate.registerLocator(pathPattern, secureHandler.wrapLocator(locator));
             return this;
         }
 
