@@ -92,7 +92,8 @@ interface Http1ConfigBlueprint extends HttpConfig, ProtocolConfig {
     boolean sendKeepAliveHeader();
 
     /**
-     * If set to false, any query and fragment is accepted (even containing illegal characters).
+     * Disables query and fragment syntax validation when set to {@code false}; intended only for closed systems receiving
+     * trusted, valid request targets, as behavior for invalid input is unspecified.
      * Validation of path is controlled by {@link #validatePath()}.
      *
      * @return whether to validate prologue query and fragment
