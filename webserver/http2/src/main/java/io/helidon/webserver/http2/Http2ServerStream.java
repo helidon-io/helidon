@@ -972,7 +972,6 @@ class Http2ServerStream implements Runnable, Http2Stream {
         } finally {
             resetCompletionLock.unlock();
         }
-        flowControl.outbound().streamClosed();
         try {
             if (currentFrameLength > 0) {
                 discardDataAfterReset(currentFrameLength);
@@ -1162,6 +1161,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     private void writeResetStream(Http2RstStream reset, Http2Settings settings) {
+        flowControl.outbound().streamClosed();
         resetCompletionLock.lock();
         try {
             windowUpdatesClosed = true;

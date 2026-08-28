@@ -411,6 +411,50 @@ class SseHttp2Test {
     }
 
     @Test
+    void invalidWindowUpdateResetReleasesBlockedZeroWindowSseHandler(Http2TestClient client)
+            throws InterruptedException {
+        String payload = "x".repeat(FLOW_WINDOW);
+        StreamControl reset = new StreamControl(payload, null, false);
+        STREAM_CONTROLS.put("zero-window-update-reset", reset);
+        try (Http2TestConnection connection = client.createConnection()) {
+            connection.completeHandshake(TIMEOUT);
+            connection.sendSettings(Http2Settings.builder()
+                                            .add(Http2Setting.INITIAL_WINDOW_SIZE, (long) FLOW_WINDOW)
+                                            .build());
+
+            FrameDemultiplexer frames = new FrameDemultiplexer(connection);
+            request(connection, 1, "/controlled?id=zero-window-update-reset", sseHeaders());
+
+            Http2FrameData settingsAck = frames.next(0, "window-update-reset SETTINGS acknowledgment").frame();
+            assertThat("Window-update-reset response frame type",
+                       settingsAck.header().type(), is(Http2FrameType.SETTINGS));
+            assertThat("Window-update-reset SETTINGS must be acknowledged before response headers",
+                       settingsAck.header().flags(Http2FrameTypes.SETTINGS).ack(), is(true));
+
+            StreamCapture resetCapture = new StreamCapture();
+            resetCapture.readUntilBytes(frames, 1, FLOW_WINDOW);
+            assertThat("SSE handler must consume all advertised stream credit before invalid WINDOW_UPDATE",
+                       resetCapture.data.size(), is(FLOW_WINDOW));
+            assertThat("SSE handler must remain blocked before invalid WINDOW_UPDATE",
+                       reset.completed.getCount(), is(1L));
+
+            connection.writer().write(new Http2WindowUpdate(0)
+                                              .toFrameData(null, 1, Http2Flag.NoFlags.create()));
+
+            assertThat(connection.assertRstStream(1, TIMEOUT).errorCode(), is(Http2ErrorCode.PROTOCOL));
+            await("Invalid-window-update zero-window SSE handler completion", reset.completed);
+            assertThat(reset.failure.get(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) reset.failure.get()).code(), is(Http2ErrorCode.CANCEL));
+
+            request(connection, 3, "/ping", WritableHeaders.create());
+            assertPing(frames, 3);
+        } finally {
+            reset.release.countDown();
+            STREAM_CONTROLS.remove("zero-window-update-reset");
+        }
+    }
+
+    @Test
     void sustainedSseHonorsStreamFlowControl(Http2TestClient client) throws InterruptedException {
         String payload = "x".repeat(1024);
         StreamControl control = new StreamControl(payload, null, true);
