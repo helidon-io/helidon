@@ -89,6 +89,9 @@ class GrpcTeTrailersTest {
             Metadata.Key.of("grpc-message", Metadata.ASCII_STRING_MARSHALLER);
     private static final int FLOOD_MESSAGE_COUNT = 128;
     private static final int BIDI_MESSAGE_COUNT = 128;
+    private static final Duration BIDI_RELEASE_TIMEOUT = Duration.ofMinutes(1);
+    private static final Duration BIDI_COMPLETION_TIMEOUT = Duration.ofMinutes(2);
+    private static final Duration BIDI_PROGRESS_TIMEOUT = Duration.ofSeconds(30);
     private static final Strings.StringMessage FLOOD_MESSAGE = Strings.StringMessage.newBuilder()
             .setText("x".repeat(128 * 1024))
             .build();
@@ -415,6 +418,7 @@ class GrpcTeTrailersTest {
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         CountDownLatch requestProductionStarted = new CountDownLatch(1);
+        CountDownLatch callFinished = new CountDownLatch(1);
         pausedStarted.set(started);
         pausedRelease.set(release);
         pausedConsumed.set(0);
@@ -443,6 +447,8 @@ class GrpcTeTrailersTest {
                 }
             } catch (Throwable t) {
                 failure.set(t);
+            } finally {
+                callFinished.countDown();
             }
         });
 
@@ -457,9 +463,11 @@ class GrpcTeTrailersTest {
                 boolean requestProductionStopped = false;
                 long stopDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
                 do {
+                    int producedBeforeWait = requestsProduced.get();
                     CountDownLatch requestProduced = new CountDownLatch(1);
                     nextRequestProduced.set(requestProduced);
-                    requestProductionStopped = !requestProduced.await(1, TimeUnit.SECONDS);
+                    requestProductionStopped = !requestProduced.await(1, TimeUnit.SECONDS)
+                            && requestsProduced.get() == producedBeforeWait;
                 } while (!requestProductionStopped
                         && requestsProduced.get() < BIDI_MESSAGE_COUNT
                         && System.nanoTime() < stopDeadline);
@@ -476,8 +484,7 @@ class GrpcTeTrailersTest {
             } finally {
                 release.countDown();
             }
-            call.join(TimeUnit.SECONDS.toMillis(30));
-            callCompleted = !call.isAlive();
+            callCompleted = awaitCompletion(callFinished, requestsProduced, pausedConsumed, responsesReceived);
         } finally {
             if (call.isAlive()) {
                 Stream<Strings.StringMessage> responses = responseStream.get();
@@ -501,6 +508,7 @@ class GrpcTeTrailersTest {
                            + ", responses=" + responsesReceived.get(),
                    callCompleted,
                    is(true));
+        assertThat("bidirectional call failure", failure.get(), nullValue());
         assertThat("request production completed after server demand resumed",
                    requestsProduced.get(),
                    is(BIDI_MESSAGE_COUNT));
@@ -510,7 +518,30 @@ class GrpcTeTrailersTest {
         assertThat("client consumed all responses after server demand resumed",
                    responsesReceived.get(),
                    is(BIDI_MESSAGE_COUNT));
-        assertThat("bidirectional call failure", failure.get(), nullValue());
+    }
+
+    private static boolean awaitCompletion(CountDownLatch callFinished,
+                                           AtomicInteger requestsProduced,
+                                           AtomicInteger requestsConsumed,
+                                           AtomicInteger responsesReceived) throws InterruptedException {
+        long now = System.nanoTime();
+        long completionDeadline = now + BIDI_COMPLETION_TIMEOUT.toNanos();
+        long progressDeadline = now + BIDI_PROGRESS_TIMEOUT.toNanos();
+        int lastProgress = requestsProduced.get() + requestsConsumed.get() + responsesReceived.get();
+        while (!callFinished.await(1, TimeUnit.SECONDS)) {
+            now = System.nanoTime();
+            if (now >= completionDeadline) {
+                return false;
+            }
+            int progress = requestsProduced.get() + requestsConsumed.get() + responsesReceived.get();
+            if (progress != lastProgress) {
+                lastProgress = progress;
+                progressDeadline = now + BIDI_PROGRESS_TIMEOUT.toNanos();
+            } else if (now >= progressDeadline) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void upper(Strings.StringMessage req, StreamObserver<Strings.StringMessage> observer) {
@@ -573,7 +604,7 @@ class GrpcTeTrailersTest {
         return GrpcStreams.bidirectional(requests -> {
             pausedStarted.get().countDown();
             try {
-                if (!pausedRelease.get().await(30, TimeUnit.SECONDS)) {
+                if (!pausedRelease.get().await(BIDI_RELEASE_TIMEOUT.toNanos(), TimeUnit.NANOSECONDS)) {
                     throw new IllegalStateException("Timed out waiting to release paused gRPC request stream");
                 }
             } catch (InterruptedException e) {
