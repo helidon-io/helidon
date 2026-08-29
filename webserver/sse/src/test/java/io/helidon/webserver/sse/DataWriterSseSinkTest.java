@@ -200,7 +200,7 @@ class DataWriterSseSinkTest {
         AtomicInteger writes = new AtomicInteger();
         ByteArrayOutputStream entityOutputStream = new ByteArrayOutputStream() {
             @Override
-            public synchronized void write(byte[] bytes, int offset, int length) {
+            public void write(byte[] bytes, int offset, int length) {
                 writes.incrementAndGet();
                 super.write(bytes, offset, length);
             }
@@ -234,7 +234,7 @@ class DataWriterSseSinkTest {
         AtomicInteger writes = new AtomicInteger();
         ByteArrayOutputStream entityOutputStream = new ByteArrayOutputStream() {
             @Override
-            public synchronized void write(byte[] bytes, int offset, int length) {
+            public void write(byte[] bytes, int offset, int length) {
                 writes.incrementAndGet();
                 super.write(bytes, offset, length);
             }
