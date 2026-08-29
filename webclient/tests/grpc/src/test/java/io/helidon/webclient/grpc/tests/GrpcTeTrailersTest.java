@@ -515,9 +515,9 @@ class GrpcTeTrailersTest {
         assertThat("server consumed all requests after demand resumed",
                    pausedConsumed.get(),
                    is(BIDI_MESSAGE_COUNT));
-        assertThat("client consumed all responses after server demand resumed",
+        assertThat("client received completion response after server demand resumed",
                    responsesReceived.get(),
-                   is(BIDI_MESSAGE_COUNT));
+                   is(1));
     }
 
     private static boolean awaitCompletion(CountDownLatch callFinished,
@@ -611,9 +611,9 @@ class GrpcTeTrailersTest {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException("Interrupted while waiting to release paused gRPC request stream", e);
             }
-            // Keep response flow control out of this request-side backpressure test.
-            return requests.peek(_ -> pausedConsumed.incrementAndGet())
-                    .map(_ -> Strings.StringMessage.getDefaultInstance());
+            // Keep response demand and flow control out of this request-side backpressure test.
+            requests.forEach(_ -> pausedConsumed.incrementAndGet());
+            return Stream.of(Strings.StringMessage.getDefaultInstance());
         }, observer);
     }
 
