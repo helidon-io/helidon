@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLException;
 
@@ -60,10 +61,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -230,6 +233,34 @@ class Http1ServerResponseTest {
                 () -> assertThat(exception.getCause(), instanceOf(SocketWriterException.class)),
                 () -> assertThat(exception.getCause().getCause(), instanceOf(UncheckedIOException.class)),
                 () -> assertThat(exception.getCause().getCause().getCause(), instanceOf(SocketException.class))
+        );
+    }
+
+    @Test
+    void failedStreamingWriteDiscardsEncoderCloseBytes() throws IOException {
+        AtomicInteger writes = new AtomicInteger();
+        DataWriter writer = mock(DataWriter.class);
+        doThrowingWrite(writer, writes);
+
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder(() -> { }, true));
+
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        OutputStream outputStream = response.outputStream();
+        response.flushHeaders();
+        outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
+
+        ServerConnectionException failure = assertThrows(ServerConnectionException.class, outputStream::flush);
+        ServerConnectionException repeatedFailure = assertThrows(ServerConnectionException.class,
+                                                                  () -> outputStream.write('y'));
+        outputStream.close();
+        ServerConnectionException commitFailure = assertThrows(ServerConnectionException.class, response::commit);
+
+        assertAll(
+                () -> assertThat(repeatedFailure, sameInstance(failure)),
+                () -> assertThat(commitFailure, sameInstance(failure)),
+                () -> assertThat(writes.get(), is(2))
         );
     }
 
@@ -864,6 +895,10 @@ class Http1ServerResponseTest {
     }
 
     private static ContentEncoder testEncoder(Runnable onWrite) {
+        return testEncoder(onWrite, false);
+    }
+
+    private static ContentEncoder testEncoder(Runnable onWrite, boolean writeOnClose) {
         return new ContentEncoder() {
             @Override
             public OutputStream apply(OutputStream network) {
@@ -883,7 +918,15 @@ class Http1ServerResponseTest {
                     }
 
                     @Override
+                    public void flush() throws IOException {
+                        network.flush();
+                    }
+
+                    @Override
                     public void close() throws IOException {
+                        if (writeOnClose) {
+                            network.write('z');
+                        }
                         network.close();
                     }
                 };
@@ -895,6 +938,15 @@ class Http1ServerResponseTest {
                 headers.remove(HeaderNames.CONTENT_LENGTH);
             }
         };
+    }
+
+    private static void doThrowingWrite(DataWriter dataWriter, AtomicInteger writes) {
+        doAnswer(_ -> {
+            if (writes.incrementAndGet() == 1) {
+                return null;
+            }
+            throw new SocketWriterException(new UncheckedIOException(new SocketException("Connection reset by peer")));
+        }).when(dataWriter).write(any(BufferData.class));
     }
 
     private static Http1ServerResponse createResponse(DataWriter dataWriter,

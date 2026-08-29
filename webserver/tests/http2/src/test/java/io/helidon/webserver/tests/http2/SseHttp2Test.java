@@ -455,6 +455,48 @@ class SseHttp2Test {
     }
 
     @Test
+    void invalidWindowUpdateResetRejectsAvailableCreditSseWrite(Http2TestClient client)
+            throws InterruptedException {
+        StreamControl reset = new StreamControl(null, "late-after-reset", false);
+        STREAM_CONTROLS.put("post-reset-window-update", reset);
+        try (Http2TestConnection connection = client.createConnection()) {
+            connection.completeHandshake(TIMEOUT);
+            FrameDemultiplexer frames = new FrameDemultiplexer(connection);
+            request(connection, 1, "/controlled?id=post-reset-window-update", sseHeaders());
+            await("post-reset SSE sink creation", reset.sinkCreated);
+
+            StreamCapture capture = new StreamCapture();
+            capture.accept(frames.next(1, "post-reset SSE response headers"));
+            assertThat("Post-reset SSE response headers", capture.responseHeaders, notNullValue());
+            assertThat("Post-reset SSE must remain open before invalid WINDOW_UPDATE", capture.ended, is(false));
+
+            connection.writer().write(new Http2WindowUpdate(0)
+                                              .toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            assertThat(connection.assertRstStream(1, TIMEOUT).errorCode(), is(Http2ErrorCode.PROTOCOL));
+
+            reset.release.countDown();
+            await("Invalid-window-update post-reset SSE handler completion", reset.completed);
+            assertThat("SSE write after local reset must fail", reset.failure.get(), notNullValue());
+
+            Http2FrameData postResetFrame = connection.awaitNextFrame(Duration.ofMillis(500));
+            String postResetFrameDescription = postResetFrame == null
+                    ? "none"
+                    : postResetFrame.header().type() + " on stream " + postResetFrame.header().streamId()
+                            + (postResetFrame.header().type() == Http2FrameType.RST_STREAM
+                            ? " with error " + Http2RstStream.create(postResetFrame.data()).errorCode()
+                            : "");
+            assertThat("Unexpected frame after local RST_STREAM: " + postResetFrameDescription,
+                       postResetFrame, nullValue());
+
+            request(connection, 3, "/ping", WritableHeaders.create());
+            assertPing(frames, 3);
+        } finally {
+            reset.release.countDown();
+            STREAM_CONTROLS.remove("post-reset-window-update");
+        }
+    }
+
+    @Test
     void sustainedSseHonorsStreamFlowControl(Http2TestClient client) throws InterruptedException {
         String payload = "x".repeat(1024);
         StreamControl control = new StreamControl(payload, null, true);

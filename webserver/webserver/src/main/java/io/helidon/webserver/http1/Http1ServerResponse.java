@@ -531,7 +531,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             outputStream.applicationFacing();
             return outputStream;
         }
-        return new ApplicationOutputStream(applicationOutputStream, bos);
+        return new ApplicationOutputStream(applicationOutputStream, outputStream);
     }
 
     boolean keepConnectionOpen() {
@@ -1067,6 +1067,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private final BlockingOutputStream closingDelegate;
         private final OutputStream delegate;
         private boolean applicationFacing;
+        private boolean discardWrites;
+        private RuntimeException writeFailure;
 
         ClosingBufferedOutputStream(BlockingOutputStream out, int size) {
             this.closingDelegate = out;
@@ -1075,34 +1077,94 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         @Override
         public void write(int b) throws IOException {
-            checkApplicationWrite(1);
-            delegate.write(b);
+            if (applicationFacing) {
+                checkApplicationWrite(1);
+            }
+            if (discardWrites) {
+                return;
+            }
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b) throws IOException {
-            checkApplicationWrite(b.length);
-            delegate.write(b);
+            if (applicationFacing) {
+                checkApplicationWrite(b.length);
+            }
+            if (discardWrites) {
+                return;
+            }
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            checkApplicationWrite(len);
-            delegate.write(b, off, len);
+            if (applicationFacing) {
+                checkApplicationWrite(len);
+            }
+            if (discardWrites) {
+                return;
+            }
+            try {
+                delegate.write(b, off, len);
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void flush() throws IOException {
-            delegate.flush();
+            if (applicationFacing) {
+                checkApplicationWrite(0);
+            }
+            if (discardWrites) {
+                return;
+            }
+            try {
+                delegate.flush();
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void close() {
             closingDelegate.closing();     // inform of imminent call to close for last flush
+            if (discardWrites) {
+                closingDelegate.close();
+                return;
+            }
             try {
                 delegate.close();
             } catch (IOException | UncheckedIOException | SocketWriterException e) {
-                throw new ServerConnectionException("Failed to close server output stream", e);
+                ServerConnectionException failure =
+                        new ServerConnectionException("Failed to close server output stream", e);
+                failedWrite(failure);
+                throw failure;
             }
         }
 
@@ -1119,18 +1181,39 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         private void checkApplicationWrite(int length) throws IOException {
-            if (applicationFacing) {
-                closingDelegate.checkWriteAllowed(length);
+            if (writeFailure != null) {
+                throw writeFailure;
             }
+            closingDelegate.checkWriteAllowed(length);
+        }
+
+        private void failedWrite(IOException e) {
+            discardWrites = true;
+            writeFailure = new UncheckedIOException(e);
+        }
+
+        private void failedWrite(RuntimeException e) {
+            discardWrites = true;
+            writeFailure = e;
         }
 
         void commit() {
+            if (discardWrites) {
+                closingDelegate.close();
+                if (writeFailure != null) {
+                    throw writeFailure;
+                }
+                return;
+            }
             closingDelegate.committing();
             try {
                 flush();
                 closingDelegate.commit();
             } catch (IOException | UncheckedIOException | SocketWriterException e) {
-                throw new ServerConnectionException("Failed to flush server output stream", e);
+                ServerConnectionException failure =
+                        new ServerConnectionException("Failed to flush server output stream", e);
+                failedWrite(failure);
+                throw failure;
             }
         }
 
@@ -1146,33 +1229,34 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
     private static class ApplicationOutputStream extends OutputStream {
         private final OutputStream delegate;
-        private final BlockingOutputStream blockingOutputStream;
+        private final ClosingBufferedOutputStream responseOutputStream;
 
-        private ApplicationOutputStream(OutputStream delegate, BlockingOutputStream blockingOutputStream) {
+        private ApplicationOutputStream(OutputStream delegate, ClosingBufferedOutputStream responseOutputStream) {
             this.delegate = delegate;
-            this.blockingOutputStream = blockingOutputStream;
+            this.responseOutputStream = responseOutputStream;
         }
 
         @Override
         public void write(int b) throws IOException {
-            blockingOutputStream.checkWriteAllowed(1);
+            responseOutputStream.checkApplicationWrite(1);
             delegate.write(b);
         }
 
         @Override
         public void write(byte[] b) throws IOException {
-            blockingOutputStream.checkWriteAllowed(b.length);
+            responseOutputStream.checkApplicationWrite(b.length);
             delegate.write(b);
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            blockingOutputStream.checkWriteAllowed(len);
+            responseOutputStream.checkApplicationWrite(len);
             delegate.write(b, off, len);
         }
 
         @Override
         public void flush() throws IOException {
+            responseOutputStream.checkApplicationWrite(0);
             delegate.flush();
         }
 

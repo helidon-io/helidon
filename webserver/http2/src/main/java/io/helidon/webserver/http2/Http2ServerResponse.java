@@ -252,9 +252,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
         OutputStream encodedOutputStream = contentEncode(outputStream);
         OutputStream applicationOutputStream = applyStreamFilters(encodedOutputStream);
-        return outputStream.headRequest
-                ? new ApplicationOutputStream(applicationOutputStream, outputStream)
-                : applicationOutputStream;
+        return new ApplicationOutputStream(applicationOutputStream, outputStream);
     }
 
     private boolean prepareResponse() {
@@ -409,6 +407,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private boolean headResponseSent;
         private long bytesWritten;
         private long headRepresentationLength;
+        private boolean discardWrites;
+        private RuntimeException writeFailure;
         private final Consumer<ServerResponseTrailers> beforeTrailers;
 
         private BlockingOutputStream(Http2ServerRequest request,
@@ -432,26 +432,70 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
         @Override
         public void write(int b) throws IOException {
-            write(BufferData.create(1).write(b));
+            if (discardWrites) {
+                return;
+            }
+            try {
+                write(BufferData.create(1).write(b));
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b) throws IOException {
-            write(BufferData.create(b));
+            if (discardWrites) {
+                return;
+            }
+            try {
+                write(BufferData.create(b));
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            write(BufferData.create(b, off, len));
+            if (discardWrites) {
+                return;
+            }
+            try {
+                write(BufferData.create(b, off, len));
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void flush() throws IOException {
+            if (discardWrites) {
+                return;
+            }
             if (headRequest) {
                 return;
             }
             if (firstByte && firstBuffer != null) {
-                write(BufferData.empty());
+                try {
+                    write(BufferData.empty());
+                } catch (IOException e) {
+                    failedWrite(e);
+                    throw e;
+                } catch (RuntimeException e) {
+                    failedWrite(e);
+                    throw e;
+                }
             }
         }
 
@@ -462,6 +506,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
         void commit() {
             if (closed) {
+                return;
+            }
+            if (discardWrites) {
+                if (writeFailure != null) {
+                    throw writeFailure;
+                }
                 return;
             }
             this.closed = true;
@@ -513,6 +563,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             if (closed) {
                 return;
             }
+            if (discardWrites) {
+                return;
+            }
             if (!firstByte) {
                 responseSentRunnable.run();
                 return;
@@ -555,6 +608,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void write(BufferData buffer) throws IOException {
+            if (discardWrites) {
+                return;
+            }
             if (closed) {
                 throw new IOException("Stream already closed");
             }
@@ -653,12 +709,28 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void checkWriteAllowed(int length) throws IOException {
+            if (discardWrites) {
+                if (writeFailure != null) {
+                    throw writeFailure;
+                }
+                return;
+            }
             if (length > 0 && headRequest) {
                 throw new IllegalStateException("Cannot write response entity for a HEAD request");
             }
             if (length > 0 && noEntityResponse) {
                 throw new IllegalStateException("Attempting to write data on a response with status " + status);
             }
+        }
+
+        private void failedWrite(IOException e) {
+            discardWrites = true;
+            writeFailure = new UncheckedIOException(e);
+        }
+
+        private void failedWrite(RuntimeException e) {
+            discardWrites = true;
+            writeFailure = e;
         }
     }
 
@@ -691,6 +763,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
         @Override
         public void flush() throws IOException {
+            blockingOutputStream.checkWriteAllowed(0);
             delegate.flush();
         }
 

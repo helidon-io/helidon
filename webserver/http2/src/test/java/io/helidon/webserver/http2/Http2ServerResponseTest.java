@@ -38,6 +38,8 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.encoding.gzip.GzipEncoding;
+import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
@@ -52,6 +54,7 @@ import org.mockito.ArgumentCaptor;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -115,6 +118,36 @@ class Http2ServerResponseTest {
                 () -> assertThat(responseHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(6L)),
                 () -> assertThat(new String(responseEntity.getValue().readBytes(), StandardCharsets.UTF_8), is("xerror"))
         );
+    }
+
+    @Test
+    void failedStreamingWriteDiscardsEncoderCloseBytes() throws IOException {
+        AtomicInteger dataWrites = new AtomicInteger();
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder(() -> { }, true));
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        when(stream.writeData(any(BufferData.class), eq(false))).thenAnswer(_ -> {
+            dataWrites.incrementAndGet();
+            throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait time-out.");
+        });
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        OutputStream outputStream = response.outputStream();
+        response.flushHeaders();
+
+        Http2Exception failure = assertThrows(Http2Exception.class,
+                                              () -> outputStream.write("hello".getBytes(StandardCharsets.UTF_8)));
+        Http2Exception repeatedFailure = assertThrows(Http2Exception.class, () -> outputStream.write('y'));
+        outputStream.close();
+        Http2Exception commitFailure = assertThrows(Http2Exception.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure.code(), is(Http2ErrorCode.FLOW_CONTROL)),
+                () -> assertThat(repeatedFailure, sameInstance(failure)),
+                () -> assertThat(commitFailure, sameInstance(failure)),
+                () -> assertThat(dataWrites.get(), is(1))
+        );
+        verify(stream, never()).writeData(any(BufferData.class), eq(true));
     }
 
     @Test
@@ -767,6 +800,10 @@ class Http2ServerResponseTest {
     }
 
     private static ContentEncoder testEncoder(Runnable onWrite) {
+        return testEncoder(onWrite, false);
+    }
+
+    private static ContentEncoder testEncoder(Runnable onWrite, boolean writeOnClose) {
         return new ContentEncoder() {
             @Override
             public OutputStream apply(OutputStream network) {
@@ -786,7 +823,15 @@ class Http2ServerResponseTest {
                     }
 
                     @Override
+                    public void flush() throws IOException {
+                        network.flush();
+                    }
+
+                    @Override
                     public void close() throws IOException {
+                        if (writeOnClose) {
+                            network.write('z');
+                        }
                         network.close();
                     }
                 };

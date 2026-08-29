@@ -16,12 +16,12 @@
 
 package io.helidon.webserver.sse;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
@@ -77,8 +77,11 @@ class DataWriterSseSink implements SseSink {
     private final Runnable closeRunnable;
     private final ConnectionContext ctx;
     private final OutputStream outputStream;
+    private final EventBufferedOutputStream bufferedOutputStream;
     private final boolean closeServerSocket;
     private final boolean closeOutputStreamBeforeCommit;
+    private boolean emitFailed;
+    private RuntimeException emitFailure;
 
     DataWriterSseSink(SinkProviderContext context) {
         this.response = context.serverResponse();
@@ -91,9 +94,11 @@ class DataWriterSseSink implements SseSink {
         if (entityOutputStream.isPresent()) {
             OutputStream protocolOutputStream = entityOutputStream.orElseThrow();
             int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
-            this.outputStream = writeBufferSize > 0
-                    ? new BufferedOutputStream(protocolOutputStream, writeBufferSize)
-                    : protocolOutputStream;
+            EventBufferedOutputStream eventBufferedOutputStream = writeBufferSize > 0
+                    ? new EventBufferedOutputStream(protocolOutputStream, writeBufferSize)
+                    : null;
+            this.outputStream = eventBufferedOutputStream == null ? protocolOutputStream : eventBufferedOutputStream;
+            this.bufferedOutputStream = eventBufferedOutputStream;
             this.closeServerSocket = false;
             this.closeOutputStreamBeforeCommit = true;
             context.flushHeaders();
@@ -114,6 +119,7 @@ class DataWriterSseSink implements SseSink {
             OutputStream headersOutputStream = new DataWriterOutputStream(ctx.dataWriter());
             writeStatusAndHeaders(headersOutputStream);
             this.outputStream = (encoder != null) ? encoder.apply(headersOutputStream) : headersOutputStream;
+            this.bufferedOutputStream = null;
             this.closeServerSocket = true;
             this.closeOutputStreamBeforeCommit = false;
         }
@@ -121,6 +127,10 @@ class DataWriterSseSink implements SseSink {
 
     @Override
     public DataWriterSseSink emit(SseEvent sseEvent) {
+        if (emitFailure != null) {
+            throw emitFailure;
+        }
+        boolean completed = false;
         try {
             Optional<String> comment = sseEvent.comment();
             if (comment.isPresent()) {
@@ -144,9 +154,19 @@ class DataWriterSseSink implements SseSink {
             // write event to the output
             outputStream.flush();
 
+            completed = true;
             return this;
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            UncheckedIOException failure = new UncheckedIOException(e);
+            emitFailure = failure;
+            throw failure;
+        } catch (RuntimeException e) {
+            emitFailure = e;
+            throw e;
+        } finally {
+            if (!completed) {
+                emitFailed = true;
+            }
         }
     }
 
@@ -155,8 +175,15 @@ class DataWriterSseSink implements SseSink {
         try {
             if (closeOutputStreamBeforeCommit) {
                 // Protocol responses commit after stream wrappers finish so final bytes are sent before FIN/trailers.
-                outputStream.close();
-                closeRunnable.run();
+                if (emitFailed) {
+                    if (bufferedOutputStream != null) {
+                        bufferedOutputStream.discardBuffer();
+                    }
+                    outputStream.close();
+                } else {
+                    outputStream.close();
+                    closeRunnable.run();
+                }
                 return;
             }
 
@@ -286,6 +313,89 @@ class DataWriterSseSink implements SseSink {
             outputStream.write(field);
             outputStream.write(value, start, value.length - start);
             outputStream.write(SSE_NL);
+        }
+    }
+
+    private static final class EventBufferedOutputStream extends OutputStream {
+        private final OutputStream delegate;
+        private final byte[] buffer;
+
+        private int count;
+        private boolean discardOnClose;
+        private boolean closed;
+
+        private EventBufferedOutputStream(OutputStream delegate, int size) {
+            this.delegate = Objects.requireNonNull(delegate);
+            this.buffer = new byte[size];
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            ensureOpen();
+            if (count >= buffer.length) {
+                flushBuffer();
+            }
+            buffer[count++] = (byte) b;
+        }
+
+        @Override
+        public void write(byte[] bytes, int offset, int length) throws IOException {
+            Objects.checkFromIndexSize(offset, length, bytes.length);
+            ensureOpen();
+            if (length == 0) {
+                return;
+            }
+            if (length >= buffer.length) {
+                flushBuffer();
+                delegate.write(bytes, offset, length);
+                return;
+            }
+            if (length > buffer.length - count) {
+                flushBuffer();
+            }
+            System.arraycopy(bytes, offset, buffer, count, length);
+            count += length;
+        }
+
+        @Override
+        public void flush() throws IOException {
+            ensureOpen();
+            flushBuffer();
+            delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (closed) {
+                return;
+            }
+            try {
+                if (!discardOnClose) {
+                    flushBuffer();
+                    delegate.flush();
+                }
+            } finally {
+                closed = true;
+                delegate.close();
+            }
+        }
+
+        private void discardBuffer() {
+            count = 0;
+            discardOnClose = true;
+        }
+
+        private void flushBuffer() throws IOException {
+            if (count > 0) {
+                delegate.write(buffer, 0, count);
+                count = 0;
+            }
+        }
+
+        private void ensureOpen() throws IOException {
+            if (closed) {
+                throw new IOException("Stream already closed");
+            }
         }
     }
 }
