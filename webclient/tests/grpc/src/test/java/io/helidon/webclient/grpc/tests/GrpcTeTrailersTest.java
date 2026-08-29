@@ -167,7 +167,7 @@ class GrpcTeTrailersTest {
                 .serverStream(Strings.getDescriptor(), "StringService", "ResetAfterOne", GrpcTeTrailersTest::resetAfterOne)
                 .serverStream(Strings.getDescriptor(), "StringService", "PauseAfterTwo", GrpcTeTrailersTest::pauseAfterTwo)
                 .bidi(Strings.getDescriptor(), "StringService", "Echo", GrpcTeTrailersTest::echo)
-                .bidi(Strings.getDescriptor(), "StringService", "PausedEcho", GrpcTeTrailersTest::pausedEcho);
+                .bidi(Strings.getDescriptor(), "StringService", "PausedEcho", GrpcTeTrailersTest::pausedRequests);
     }
 
     @Test
@@ -600,7 +600,7 @@ class GrpcTeTrailersTest {
         return GrpcStreams.bidirectional(requests -> requests.peek(ignored -> echoMessages.incrementAndGet()), observer);
     }
 
-    private static StreamObserver<Strings.StringMessage> pausedEcho(StreamObserver<Strings.StringMessage> observer) {
+    private static StreamObserver<Strings.StringMessage> pausedRequests(StreamObserver<Strings.StringMessage> observer) {
         return GrpcStreams.bidirectional(requests -> {
             pausedStarted.get().countDown();
             try {
@@ -611,7 +611,9 @@ class GrpcTeTrailersTest {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException("Interrupted while waiting to release paused gRPC request stream", e);
             }
-            return requests.peek(ignored -> pausedConsumed.incrementAndGet());
+            // Keep response flow control out of this request-side backpressure test.
+            return requests.peek(_ -> pausedConsumed.incrementAndGet())
+                    .map(_ -> Strings.StringMessage.getDefaultInstance());
         }, observer);
     }
 
