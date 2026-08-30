@@ -69,7 +69,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * Stream status trailers.
      */
     protected static final Header STREAM_TRAILERS =
-            HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
+            HeaderValues.createCached(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
     private static final HeaderName CONTENT_DIGEST_NAME = HeaderNames.create("Content-Digest");
     private static final HeaderName CONTENT_MD5_NAME = HeaderNames.create("Content-MD5");
     private static final HeaderName DIGEST_NAME = HeaderNames.create("Digest");
