@@ -501,6 +501,10 @@ application exception which Jersey successfully maps to a response
 is not itself treated as a response-writing failure; the resulting HTTP status
 determines the automatic span status.
 
+This setting controls only automatic spans created by Helidon. When the
+OpenTelemetry Java Agent is present, the agent owns the automatic server span,
+so `telemetry.span.includes-response-write` has no effect.
+
 This setting is deprecated for removal in a future major release. After its
 removal, automatic incoming REST spans will always include response preparation
 through the end of Jersey response processing.

@@ -28,6 +28,7 @@ import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import jakarta.annotation.Priority;
@@ -227,7 +228,7 @@ class TestFilterSpanNesting {
 
         @Override
         public void filter(ContainerRequestContext requestContext) {
-            io.opentelemetry.context.Scope scope = io.opentelemetry.api.baggage.Baggage.current()
+            io.opentelemetry.context.Scope scope = Baggage.current()
                     .toBuilder()
                     .put("late-filter", "active")
                     .build()
