@@ -265,6 +265,79 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void failedFilterWriteDiscardsEncoderCloseBytes() throws IOException {
+        AtomicInteger writes = new AtomicInteger();
+        DataWriter writer = mock(DataWriter.class);
+        doAnswer(_ -> {
+            writes.incrementAndGet();
+            return null;
+        }).when(writer).write(any(BufferData.class));
+
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder(() -> { }, true));
+
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        IllegalStateException filterFailure = new IllegalStateException("Filter write failed.");
+        response.streamFilter(delegate -> new FilterOutputStream(delegate) {
+            @Override
+            public void write(int value) {
+                throw filterFailure;
+            }
+
+            @Override
+            public void write(byte[] bytes, int offset, int length) {
+                throw filterFailure;
+            }
+        });
+        OutputStream outputStream = response.outputStream();
+        response.flushHeaders();
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                     () -> outputStream.write("hello".getBytes(StandardCharsets.UTF_8)));
+        outputStream.close();
+        IllegalStateException commitFailure = assertThrows(IllegalStateException.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure, sameInstance(filterFailure)),
+                () -> assertThat(commitFailure, sameInstance(filterFailure)),
+                () -> assertThat(writes.get(), is(1))
+        );
+    }
+
+    @Test
+    void failedFilterCloseDoesNotCompleteResponse() throws IOException {
+        AtomicInteger writes = new AtomicInteger();
+        DataWriter writer = mock(DataWriter.class);
+        doAnswer(_ -> {
+            writes.incrementAndGet();
+            return null;
+        }).when(writer).write(any(BufferData.class));
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        IllegalStateException filterFailure = new IllegalStateException("Filter close failed.");
+        response.streamFilter(delegate -> new FilterOutputStream(delegate) {
+            @Override
+            public void close() {
+                throw filterFailure;
+            }
+        });
+        OutputStream outputStream = response.outputStream();
+        response.flushHeaders();
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class, outputStream::close);
+        IllegalStateException commitFailure = assertThrows(IllegalStateException.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure, sameInstance(filterFailure)),
+                () -> assertThat(commitFailure, sameInstance(filterFailure)),
+                () -> assertThat(writes.get(), is(1))
+        );
+    }
+
+    @Test
     void lateNoEntityStatusSuppressesBufferedEntity() throws IOException {
         for (Status status : NO_ENTITY_STATUSES) {
             ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);

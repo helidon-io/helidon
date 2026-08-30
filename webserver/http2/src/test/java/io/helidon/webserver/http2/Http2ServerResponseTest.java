@@ -151,6 +151,99 @@ class Http2ServerResponseTest {
     }
 
     @Test
+    void failedFilterWriteDiscardsEncoderCloseBytes() throws IOException {
+        AtomicInteger dataWrites = new AtomicInteger();
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder(() -> { }, true));
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        when(stream.writeData(any(BufferData.class), eq(false))).thenAnswer(_ -> dataWrites.incrementAndGet());
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        Http2Exception filterFailure = new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Filter write failed.");
+        response.streamFilter(delegate -> new FilterOutputStream(delegate) {
+            @Override
+            public void write(int value) {
+                throw filterFailure;
+            }
+
+            @Override
+            public void write(byte[] bytes, int offset, int length) {
+                throw filterFailure;
+            }
+        });
+        OutputStream outputStream = response.outputStream();
+        response.flushHeaders();
+
+        Http2Exception failure = assertThrows(Http2Exception.class,
+                                              () -> outputStream.write("hello".getBytes(StandardCharsets.UTF_8)));
+        outputStream.close();
+        Http2Exception commitFailure = assertThrows(Http2Exception.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure, sameInstance(filterFailure)),
+                () -> assertThat(commitFailure, sameInstance(filterFailure)),
+                () -> assertThat(dataWrites.get(), is(0))
+        );
+        verify(stream, never()).writeData(any(BufferData.class), anyBoolean());
+    }
+
+    @Test
+    void failedFilterCloseDoesNotCompleteResponse() throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        Http2Exception filterFailure = new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Filter close failed.");
+        response.streamFilter(delegate -> new FilterOutputStream(delegate) {
+            @Override
+            public void close() {
+                throw filterFailure;
+            }
+        });
+        OutputStream outputStream = response.outputStream();
+        response.flushHeaders();
+
+        Http2Exception failure = assertThrows(Http2Exception.class, outputStream::close);
+        Http2Exception commitFailure = assertThrows(Http2Exception.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure, sameInstance(filterFailure)),
+                () -> assertThat(commitFailure, sameInstance(filterFailure))
+        );
+        verify(stream, never()).writeData(any(BufferData.class), anyBoolean());
+        verify(stream, never()).writeTrailers(any());
+    }
+
+    @Test
+    void failedEagerGzipFlushDoesNotCompleteResponse() {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.builder()
+                .addContentEncoding(GzipEncoding.create())
+                .build();
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ACCEPT_ENCODING, "gzip");
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2Exception flowControlFailure =
+                new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait time-out.");
+        when(stream.writeData(any(BufferData.class), eq(false))).thenThrow(flowControlFailure);
+        Http2ServerResponse response = createResponse(stream,
+                                                      Method.GET,
+                                                      contentEncodingContext,
+                                                      ServerRequestHeaders.create(requestHeaders));
+        response.outputStream();
+
+        Http2Exception failure = assertThrows(Http2Exception.class, response::flushHeaders);
+        Http2Exception commitFailure = assertThrows(Http2Exception.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure, sameInstance(flowControlFailure)),
+                () -> assertThat(commitFailure, sameInstance(flowControlFailure))
+        );
+        verify(stream).writeData(any(BufferData.class), eq(false));
+        verify(stream, never()).writeData(any(BufferData.class), eq(true));
+        verify(stream, never()).writeTrailers(any());
+    }
+
+    @Test
     void directHandlerHeadPreservesContentLengthWithoutEntity() {
         ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);

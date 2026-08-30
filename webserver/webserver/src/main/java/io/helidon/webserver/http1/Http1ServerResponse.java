@@ -1188,13 +1188,17 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         private void failedWrite(IOException e) {
-            discardWrites = true;
-            writeFailure = new UncheckedIOException(e);
+            if (!discardWrites) {
+                discardWrites = true;
+                writeFailure = new UncheckedIOException(e);
+            }
         }
 
         private void failedWrite(RuntimeException e) {
-            discardWrites = true;
-            writeFailure = e;
+            if (!discardWrites) {
+                discardWrites = true;
+                writeFailure = e;
+            }
         }
 
         void commit() {
@@ -1239,30 +1243,70 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         @Override
         public void write(int b) throws IOException {
             responseOutputStream.checkApplicationWrite(1);
-            delegate.write(b);
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b) throws IOException {
             responseOutputStream.checkApplicationWrite(b.length);
-            delegate.write(b);
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
             responseOutputStream.checkApplicationWrite(len);
-            delegate.write(b, off, len);
+            try {
+                delegate.write(b, off, len);
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void flush() throws IOException {
             responseOutputStream.checkApplicationWrite(0);
-            delegate.flush();
+            try {
+                delegate.flush();
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void close() throws IOException {
-            delegate.close();
+            try {
+                delegate.close();
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
     }
 }

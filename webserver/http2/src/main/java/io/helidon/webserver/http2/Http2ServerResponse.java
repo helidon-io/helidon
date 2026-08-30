@@ -587,7 +587,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 try {
                     write(BufferData.empty());
                 } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+                    UncheckedIOException failure = new UncheckedIOException(e);
+                    failedWrite(failure);
+                    throw failure;
+                } catch (RuntimeException e) {
+                    failedWrite(e);
+                    throw e;
                 }
                 responseSentRunnable.run();
                 return;
@@ -724,13 +729,17 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void failedWrite(IOException e) {
-            discardWrites = true;
-            writeFailure = new UncheckedIOException(e);
+            if (!discardWrites) {
+                discardWrites = true;
+                writeFailure = new UncheckedIOException(e);
+            }
         }
 
         private void failedWrite(RuntimeException e) {
-            discardWrites = true;
-            writeFailure = e;
+            if (!discardWrites) {
+                discardWrites = true;
+                writeFailure = e;
+            }
         }
     }
 
@@ -746,30 +755,70 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         @Override
         public void write(int b) throws IOException {
             blockingOutputStream.checkWriteAllowed(1);
-            delegate.write(b);
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b) throws IOException {
             blockingOutputStream.checkWriteAllowed(b.length);
-            delegate.write(b);
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
             blockingOutputStream.checkWriteAllowed(len);
-            delegate.write(b, off, len);
+            try {
+                delegate.write(b, off, len);
+            } catch (IOException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void flush() throws IOException {
             blockingOutputStream.checkWriteAllowed(0);
-            delegate.flush();
+            try {
+                delegate.flush();
+            } catch (IOException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void close() throws IOException {
-            delegate.close();
+            try {
+                delegate.close();
+            } catch (IOException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                blockingOutputStream.failedWrite(e);
+                throw e;
+            }
         }
     }
 

@@ -300,8 +300,9 @@ class DataWriterSseSinkTest {
         try (DataWriterSseSink sink = new DataWriterSseSink(context)) {
             Http2Exception failure = assertThrows(Http2Exception.class,
                                                   () -> sink.emit(SseEvent.create("hello".getBytes(StandardCharsets.UTF_8))));
+            SseEvent repeatedEvent = SseEvent.create("again".getBytes(StandardCharsets.UTF_8));
             Http2Exception repeatedFailure = assertThrows(Http2Exception.class,
-                                                          () -> sink.emit(SseEvent.create("again".getBytes(StandardCharsets.UTF_8))));
+                                                          () -> sink.emit(repeatedEvent));
 
             assertThat(failure.code(), is(Http2ErrorCode.FLOW_CONTROL));
             assertThat("subsequent emits must report the original transport failure",
