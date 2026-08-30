@@ -1,0 +1,239 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon SE Logging Guide
+:description: Helidon logging guide
+:keywords: helidon, logging, MDC, jul, log4j, logback, slf4j
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/se.adoc[]
+
+This guide describes various aspects of logging support in Helidon.
+
+== Contents
+
+* <<Helidon Logging,Helidon Logging>>
+* <<Customizing Logging with Java Util Logging,Customizing Logging with Java Util Logging>>
+* <<log4j and slf4j support,log4j and slf4j support>>
+* <<Mapped Diagnostic Context (MDC) support,Mapped Diagnostic Context (MDC) support>>
+* <<Additional Information,Additional Information>>
+
+== Helidon Logging
+
+Helidon modules use the Java Platform Logging API (`System.Logger`) for logging. Therefore,
+Helidon applications will use Java Util Logging (JUL) as the default log framework.
+
+If you wish to use another logging framework such as log4j or slf4j,
+then you can do so. See section <<log4j and slf4j support,log4j and slf4j support>>
+
+== Customizing Logging with Java Util Logging
+
+Since by default Helidon uses the Java Util Logging framework, you will see a
+`logging.properties` file in most Helidon examples. It will be similar to this:
+
+[source]
+----
+handlers=io.helidon.logging.jul.HelidonConsoleHandler
+
+java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS.%1$tL %4$s %3$s !thread!: %5$s%6$s%n
+
+# Global logging level. Can be overridden by specific loggers
+.level=FINE
+----
+
+`HelidonConsoleHandler` is similar to the JUL `ConsoleHandler` with these additional capabilities:
+
+1. Defaults the Handler log level to ALL so level filtering is performed only by the Logger
+2. Uses `HelidonFormatter` which is compatible with JUL `SimpleFormatter` and adds support for MDC tags and the `!thread!` keyword
+
+Helidon's internal loggers are usually defined per-class. So to enable finer grained logging in a specific Helidon package, you can add entries like the following to `logging.properties`:
+
+[source]
+----
+io.helidon.webserver.level=INFO
+----
+
+== log4j and slf4j support
+
+If you wish to use another log framework, such has log4j or slf4j, and you wish to consolidate Helidon logging
+with that framework, then you have a couple options:
+
+1. Use the log framework's support for Java Platform Logging (such as `log4j-jp` or `slf4j-jdk-platform-logging`)
+2. Use the log framework's bridge for Java Util Logging (such as `log4j-jul` or `jul-to-slf4j`)
+
+This section focuses on the second option as it aligns with what most Helidon examples use and leverages some of Helidon's JUL specific features.
+
+=== log4j
+
+To use `log4j` with your Helidon application add the following dependencies:
+
+[source]
+----
+<dependency>
+    <groupId>io.helidon.logging</groupId>
+    <artifactId>helidon-logging-log4j</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-api</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-core</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-jul</artifactId>
+</dependency>
+----
+
+This achieves four things:
+
+1. Makes the log4j API available to your application.
+2. Bridges all of Helidon's Java Util Logging to log4j.
+3. Enables the use of MDC with log4j (see <<Mapped Diagnostic Context (MDC) support,Mapped Diagnostic Context (MDC) support>>).
+4. Ensures GraalVM native-image support for log4j.
+
+For more information see link:{helidon-github-examples-url}/logging/log4j[Helidon log4j example]
+
+=== slf4j
+
+To use `slf4j` with your Helidon application add the following dependencies:
+
+[source]
+----
+<dependency>
+    <groupId>io.helidon.logging</groupId>
+    <artifactId>helidon-logging-slf4j</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-api</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>jul-to-slf4j</artifactId>
+</dependency>
+<dependency>
+    <groupId>ch.qos.logback</groupId>
+    <artifactId>logback-classic</artifactId>
+    <version>${version.lib.logback}</version>
+</dependency>
+----
+
+The above snippet uses logback as the slf4j logging provider.
+
+This achieves four things:
+
+1. Makes the slf4j API available to your application.
+2. Bridges all of Helidon's Java Util Logging to slf4j
+3. Enables the use of MDC with slf4j
+4. Ensures GraalVM native-image support for slf4j
+
+For more information see link:{helidon-github-examples-url}/logging/slf4j[Helidon slf4j example]
+
+== Mapped Diagnostic Context (MDC) support
+
+The Mapped Diagnostic Context provides a mechanism for Helidon and application code to store
+values in a context that can then be included in log output. These values could
+be a tracing ID, the current user, or a similar contextual value, and they are
+propagated by Helidon across threads.
+
+Some logging frameworks, such as slf4j and log4j, have support for MDC. But
+Java Util Logging does not. Therefore, Helidon provides an API, `HelidonMdc`,
+that you can use to store contextual values. `HelidonMdc` not only works with JUL
+but also works with the other supported frameworks (slf4j or log4j).
+
+To use Helidon MDC, you need to do three things:
+
+1. Add a dependency on one of the supported logging frameworks. See previous sections.
+2. Store values in the MDC in your code.
+3. Configure logging to display the values in its output.
+
+=== MDC values provided by Helidon
+If you include tracing in your project, Helidon automatically provides the MDC key `trace_id`. Logging inserts the trace ID of the current span (if there is one) or the string "none" if no span is active.
+
+=== Storing values in MDC
+
+To set your own values in the MDC you can use the `io.helidon.logging.common.HelidonMdc` class:
+
+[source,java]
+----
+HelidonMdc.set("name", "Joe"); // <1>
+HelidonMdc.set("otherName", () -> retrieveStringValue()); // <2>
+----
+<1> Stores an attribute named "name" with the fixed value "Joe" in the MDC.
+<2> Stores an attribute named "otherName" with the given `Supplier<String>`.
+
+The `set(<String, String>)` method associates the name with a fixed value. The `set(<String>, <Supplier<String>>)` form associates the name with a lambda or method reference. This second form might be useful if your code (or Helidon) maintains the value you want to log in some context that your code can access and if that value changes as the server runs. In both cases, when your logging format refers to the name logging extracts the corresponding fixed value or invokes the supplier to obtain the value, using the result in log output.
+
+`HelidonMdc` works with the supported logging frameworks. But if you prefer, you can
+use a logging framework specific API. Such as `org.slf4j.MDC` or `org.apache.logging.log4j.ThreadContext` instead.
+
+=== MDC output with Java Util Logging
+
+You must use `HelidonConsoleHandler` or `HelidonFormatter` in order to reference MDC values in the
+log format string. To reference MDC values in your format string using the token `%X{name}` where
+`name` is the property used in MDC. For example:
+
+[source]
+----
+handlers=io.helidon.logging.jul.HelidonConsoleHandler
+java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s "%X{name}"%n
+.level=INFO
+----
+
+=== MDC output with slf4j and logback
+
+Logback expects `lockback.xml` on the classpath as one of the configuration
+options. You can reference MDC values using the token `%X{name}` where `name`
+is the property used in MDC. For example:
+
+[source]
+----
+<configuration>
+    <appender name="STDOUT"
+            class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg %X{name}%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
+----
+
+=== MDC output with log4j
+
+There are a variety of ways to configure log4j, but once again the important part
+for MDC is you can use the token `%X{name}` to reference MDC values in the log output.
+
+[source]
+----
+<PatternLayout pattern="%-5p [%t]: %X{name} %m%n"/>
+----
+
+== Additional Information
+
+* link:{helidon-github-examples-url}/logging[Helidon logging examples]
+* link:{https://medium.com/helidon/helidon-logging-and-mdc-5de272cf085d}[Helidon, Logging, and MDC Blog]
+* link:{javadoc-base-url}/io.helidon.logging.common/io/helidon/logging/common/HelidonMdc.html[HelidonMdc Javadoc]
