@@ -1875,6 +1875,33 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void pseudoHeaderTrailersWithoutEndStreamCloseConnection() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+
+            Http2Headers trailers = encodedTrailers().path("/forbidden");
+            test.offerInbound(encodedHeaderFrame(stream.streamId(), trailers, inboundTable, huffman, false));
+
+            test.assertConnectionClosed();
+
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
     void createWaitsForInitialSettingsAndHonorsPeerMaxConcurrentStreams() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             CompletableFuture<Http2ClientConnection> connectionFuture = new CompletableFuture<>();

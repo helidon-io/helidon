@@ -733,6 +733,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 return;
             }
             boolean trailerBlock = readState == ReadState.DATA || readState == ReadState.TRAILERS;
+            if (trailerBlock && !endOfStream) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                         "Received trailers without END_STREAM");
+            }
             try {
                 if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
                     headers.validateResponse();
