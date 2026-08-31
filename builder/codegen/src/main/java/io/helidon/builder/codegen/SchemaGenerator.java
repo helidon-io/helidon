@@ -240,14 +240,18 @@ class SchemaGenerator {
         if (typeInfo == null || typeInfo.kind() != ElementKind.ENUM) {
             return defaultValues;
         }
+        var allowedValues = optionInfo.allowedValues()
+                .stream()
+                .map(OptionAllowedValue::value)
+                .toList();
         return defaultValues.stream()
-                .map(defaultValue -> optionInfo.allowedValues()
-                        .stream()
-                        .map(OptionAllowedValue::value)
-                        .filter(value -> value.equals(value.toLowerCase(Locale.ROOT)))
-                        .filter(value -> value.equals(defaultValue.toLowerCase(Locale.ROOT)))
-                        .findFirst()
-                        .orElse(defaultValue))
+                .map(defaultValue -> allowedValues.contains(defaultValue)
+                        ? defaultValue
+                        : allowedValues.stream()
+                                .filter(value -> value.equals(value.toLowerCase(Locale.ROOT)))
+                                .filter(value -> value.equals(defaultValue.toLowerCase(Locale.ROOT)))
+                                .findFirst()
+                                .orElse(defaultValue))
                 .toList();
     }
 

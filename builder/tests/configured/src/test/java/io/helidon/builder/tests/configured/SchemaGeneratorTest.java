@@ -1100,6 +1100,23 @@ class SchemaGeneratorTest {
                             MODE2,
                         }
                         """)
+                .addSource("AcmeCaseMode.java", """
+                        package com.acme;
+
+                        /**
+                         * ACME case-distinct mode.
+                         */
+                        enum AcmeCaseMode {
+                            /**
+                             * Upper-case mode.
+                             */
+                            MODE,
+                            /**
+                             * Lower-case mode.
+                             */
+                            mode,
+                        }
+                        """)
                 .addSource("AcmeConfigSupport.java", """
                         package com.acme;
 
@@ -1111,6 +1128,11 @@ class SchemaGeneratorTest {
                             @Prototype.ConfigFactoryMethod("option1")
                             static AcmeMode createMode(Config config) {
                                 return config.as(AcmeMode.class).get();
+                            }
+
+                            @Prototype.ConfigFactoryMethod("option2")
+                            static AcmeCaseMode createCaseMode(Config config) {
+                                return config.as(AcmeCaseMode.class).get();
                             }
                         }
                         """)
@@ -1138,6 +1160,17 @@ class SchemaGeneratorTest {
                             @Option.AllowedValue(value = "mode1", description = "Mode1")
                             @Option.AllowedValue(value = "MODE2", description = "Mode2")
                             AcmeMode option1();
+
+                            /**
+                             * Option2.
+                             *
+                             * @return option2
+                             */
+                            @Option.Configured
+                            @Option.Default("MODE")
+                            @Option.AllowedValue(value = "mode", description = "Lower-case mode")
+                            @Option.AllowedValue(value = "MODE", description = "Upper-case mode")
+                            AcmeCaseMode option2();
                         }
                         """)
                 .build()
@@ -1162,6 +1195,15 @@ class SchemaGeneratorTest {
                             allowedValues = {
                                 @ConfiguredValue(value = "mode1", description = "Mode1"),
                                 @ConfiguredValue(value = "MODE2", description = "Mode2")
+                            }),
+                        @ConfiguredOption(
+                            key = "option2",
+                            description = "Option2",
+                            type = AcmeCaseMode.class,
+                            value = "MODE",
+                            allowedValues = {
+                                @ConfiguredValue(value = "mode", description = "Lower-case mode"),
+                                @ConfiguredValue(value = "MODE", description = "Upper-case mode")
                             })
                     })
                 //...
