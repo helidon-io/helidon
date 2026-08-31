@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,59 @@
 
 package io.helidon.json.schema;
 
+import java.util.List;
+
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValue;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class SchemaParseTest {
+
+    @Test
+    void testParseDefaultValues() {
+        List<String> defaultValues = List.of(
+                "\"text\"",
+                "42",
+                "4.2",
+                "true",
+                "null",
+                "[1, true, null]",
+                "{\"nested\": \"value\"}");
+
+        for (String defaultValue : defaultValues) {
+            String jsonSchema = """
+                    {
+                        "type": "string",
+                        "default": %s
+                    }
+                    """.formatted(defaultValue);
+            JsonValue expected = JsonParser.create(defaultValue).readJsonValue();
+
+            Schema schema = Schema.parse(jsonSchema);
+            JsonValue parsedDefault = schema.root().defaultValue().orElseThrow();
+            JsonValue generatedDefault = JsonParser.create(schema.generateNoKeywords())
+                    .readJsonObject()
+                    .value("default")
+                    .orElseThrow();
+
+            assertThat("parsed default " + defaultValue,
+                       parsedDefault.type(),
+                       is(expected.type()));
+            assertThat("parsed default " + defaultValue,
+                       parsedDefault.toString(),
+                       is(expected.toString()));
+            assertThat("generated default " + defaultValue,
+                       generatedDefault.type(),
+                       is(expected.type()));
+            assertThat("generated default " + defaultValue,
+                       generatedDefault.toString(),
+                       is(expected.toString()));
+        }
+    }
 
     @Test
     void testParseInteger() {
@@ -201,7 +248,8 @@ class SchemaParseTest {
                     "additionalProperties": true,
                     "properties": {
                         "test": {
-                            "type": "string"
+                            "type": "string",
+                            "default": "fallback"
                         },
                         "test2": {
                             "type": "integer"
@@ -226,6 +274,8 @@ class SchemaParseTest {
         assertThat(schemaObject.properties().size(), is(2));
         assertThat(schemaObject.stringProperties().size(), is(1));
         assertThat(schemaObject.integerProperties().size(), is(1));
+        assertThat(schemaObject.stringProperties().get("test").defaultValue().orElseThrow().asString().value(),
+                   is("fallback"));
     }
 
 }

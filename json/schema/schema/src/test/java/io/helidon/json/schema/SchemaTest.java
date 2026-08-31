@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.json.schema;
 
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonString;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -23,6 +26,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SchemaTest {
+
+    @Test
+    void testDefaultValue() {
+        JsonString defaultValue = JsonString.create("fallback");
+        Schema schema = Schema.builder()
+                .rootString(builder -> builder.defaultValue(defaultValue))
+                .build();
+
+        assertThat(schema.root().defaultValue().orElseThrow(), is(defaultValue));
+        assertThat(JsonParser.create(schema.generateNoKeywords())
+                           .readJsonObject()
+                           .value("default")
+                           .orElseThrow(),
+                   is(defaultValue));
+    }
 
     @Test
     void testSchema() {

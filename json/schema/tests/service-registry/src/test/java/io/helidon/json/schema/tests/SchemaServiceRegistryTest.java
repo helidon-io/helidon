@@ -37,6 +37,7 @@ public class SchemaServiceRegistryTest {
                    "properties": {
                       "color": {
                          "description": "The color of my car",
+                         "default": "red",
                          "type": "string"
                       },
                       "spz": {

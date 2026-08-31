@@ -36,6 +36,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 
 import static java.util.function.Predicate.not;
 
@@ -87,6 +88,11 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_DESCRIPTION)
                 .flatMap(it -> it.stringValue())
                 .ifPresent(it -> builder.set("description", it));
+        annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_DEFAULT)
+                .flatMap(it -> it.stringValue())
+                .map(JsonParser::create)
+                .map(JsonParser::readJsonValue)
+                .ifPresent(it -> builder.set("default", it));
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_REQUIRED).ifPresent(it -> required.set(true));
     }
 
