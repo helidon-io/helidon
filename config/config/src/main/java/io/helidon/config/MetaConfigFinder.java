@@ -95,7 +95,7 @@ final class MetaConfigFinder {
 
     static Optional<ConfigSource> findConfigSource(Function<MediaType, Boolean> supportedMediaType,
                                                    List<String> supportedSuffixes) {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        ClassLoader cl = contextClassLoader();
         return findSource(supportedMediaType, cl, CONFIG_PREFIX, "config source", supportedSuffixes);
     }
 
@@ -139,7 +139,7 @@ final class MetaConfigFinder {
 
     private static Optional<ConfigSource> findMetaConfigSource(Function<MediaType, Boolean> supportedMediaType,
                                                                List<String> supportedSuffixes) {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        ClassLoader cl = contextClassLoader();
         Optional<ConfigSource> source;
 
         // check if meta configuration is configured using system property
@@ -374,5 +374,10 @@ final class MetaConfigFinder {
             return Optional.of(ConfigSources.classpath(name).build());
         }
         return Optional.empty();
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? MetaConfigFinder.class.getClassLoader() : classLoader;
     }
 }

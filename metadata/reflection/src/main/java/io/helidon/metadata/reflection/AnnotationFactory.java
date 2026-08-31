@@ -98,17 +98,9 @@ public final class AnnotationFactory {
         }
 
         // type is available, we can synthesize the annotation
-        return Optional.of((T) Proxy.newProxyInstance(classLoader(),
+        return Optional.of((T) Proxy.newProxyInstance(annotationType.getClassLoader(),
                                                       new Class[] {annotationType},
                                                       new AnnotationInvocationHandler(annotationType, annotation)));
-    }
-
-    private static ClassLoader classLoader() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (loader == null) {
-            return loader;
-        }
-        return AnnotationFactory.class.getClassLoader();
     }
 
     // basically the same semantics as in `AptAnnotationFactory` (and scan based annotation factory)

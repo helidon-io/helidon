@@ -238,7 +238,7 @@ public final class ConfigSources {
 
         List<UrlConfigSource.Builder> result = new LinkedList<>();
         try {
-            Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(resource);
+            Enumeration<URL> resources = contextClassLoader().getResources(resource);
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 result.add(url(url));
@@ -293,6 +293,11 @@ public final class ConfigSources {
      */
     public static UrlConfigSource.Builder url(URL url) {
         return UrlConfigSource.builder().url(url);
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? ConfigSources.class.getClassLoader() : classLoader;
     }
 
     /**
