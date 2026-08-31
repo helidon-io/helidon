@@ -2610,46 +2610,6 @@ class CachedHandlerTest {
         }
     }
 
-    private void assertClasspathSidecarSymlinkOutsideOriginIsRejected(boolean singleFile)
-            throws IOException, URISyntaxException {
-        Path classPathRoot = tempDir.resolve(singleFile ? "single-classpath" : "classpath");
-        Path resourceRoot = classPathRoot.resolve("web");
-        Path resource = resourceRoot.resolve("resource.txt");
-        Path gzip = resourceRoot.resolve("resource.txt.gz");
-        Path secret = tempDir.resolve(singleFile ? "single-secret.gz" : "secret.gz");
-        Files.createDirectories(resourceRoot);
-        Files.writeString(resource, "Content");
-        Files.writeString(secret, "Secret content");
-        createSymbolicLink(gzip, secret);
-
-        try (var classLoader = new URLClassLoader(new URL[] {classPathRoot.toUri().toURL()}, null)) {
-            ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
-                    ClasspathHandlerConfig.builder()
-                            .location(singleFile ? "/web/resource.txt" : "/web")
-                            .singleFile(singleFile)
-                            .classLoader(classLoader)
-                            .build());
-            if (singleFile) {
-                handler.beforeStart();
-            }
-
-            ByteArrayOutputStream rejectedBody = new ByteArrayOutputStream();
-            ServerResponse rejectedResponse = response(ServerResponseHeaders.create(), rejectedBody);
-            HttpException actual = assertThrows(HttpException.class,
-                                                () -> handler.doHandle(
-                                                        Method.GET,
-                                                        singleFile ? "" : "resource.txt",
-                                                        request("/resource.txt",
-                                                                acceptEncodingHeaders("gzip, identity;q=0")),
-                                                        rejectedResponse,
-                                                        false));
-            assertThat(actual.status(), is(Status.NOT_ACCEPTABLE_406));
-            assertThat(actual.headers(), noHeader(HeaderNames.CONTENT_ENCODING));
-            assertThat(actual.headers(), hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
-            assertThat(rejectedBody.size(), is(0));
-        }
-    }
-
     private static ServerRequestHeaders acceptEncodingHeaders(String acceptEncoding) {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderNames.ACCEPT_ENCODING, acceptEncoding);
@@ -2756,6 +2716,46 @@ class CachedHandlerTest {
             assumeTrue(false, "Symbolic links are not supported");
         } catch (IOException e) {
             assumeTrue(false, "Symbolic links cannot be created: " + e.getMessage());
+        }
+    }
+
+    private void assertClasspathSidecarSymlinkOutsideOriginIsRejected(boolean singleFile)
+            throws IOException, URISyntaxException {
+        Path classPathRoot = tempDir.resolve(singleFile ? "single-classpath" : "classpath");
+        Path resourceRoot = classPathRoot.resolve("web");
+        Path resource = resourceRoot.resolve("resource.txt");
+        Path gzip = resourceRoot.resolve("resource.txt.gz");
+        Path secret = tempDir.resolve(singleFile ? "single-secret.gz" : "secret.gz");
+        Files.createDirectories(resourceRoot);
+        Files.writeString(resource, "Content");
+        Files.writeString(secret, "Secret content");
+        createSymbolicLink(gzip, secret);
+
+        try (var classLoader = new URLClassLoader(new URL[] {classPathRoot.toUri().toURL()}, null)) {
+            ClassPathContentHandler handler = (ClassPathContentHandler) StaticContentFeature.createService(
+                    ClasspathHandlerConfig.builder()
+                            .location(singleFile ? "/web/resource.txt" : "/web")
+                            .singleFile(singleFile)
+                            .classLoader(classLoader)
+                            .build());
+            if (singleFile) {
+                handler.beforeStart();
+            }
+
+            ByteArrayOutputStream rejectedBody = new ByteArrayOutputStream();
+            ServerResponse rejectedResponse = response(ServerResponseHeaders.create(), rejectedBody);
+            HttpException actual = assertThrows(HttpException.class,
+                                                () -> handler.doHandle(
+                                                        Method.GET,
+                                                        singleFile ? "" : "resource.txt",
+                                                        request("/resource.txt",
+                                                                acceptEncodingHeaders("gzip, identity;q=0")),
+                                                        rejectedResponse,
+                                                        false));
+            assertThat(actual.status(), is(Status.NOT_ACCEPTABLE_406));
+            assertThat(actual.headers(), noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(actual.headers(), hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(rejectedBody.size(), is(0));
         }
     }
 
