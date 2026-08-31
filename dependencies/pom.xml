@@ -56,7 +56,7 @@
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.google-api-client>2.8.1</version.lib.google-api-client>
         <version.lib.google-error-prone-annotations>2.30.0</version.lib.google-error-prone-annotations>
-        <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
+        <version.lib.google-protobuf>4.36.0</version.lib.google-protobuf>
         <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
