@@ -374,7 +374,7 @@ class ContentLengthTest {
     void emptyRequestTargetInTrailersResetsStream(Http2TestClient client) {
         Http2TestConnection h2conn = client.createConnection();
 
-        writeRequestHeaders(h2conn, 1, ZERO_DATA_PATH, requestHeadersWithContentLength(0), false);
+        writeRequestHeaders(h2conn, 1, LONGER_DATA_PATH, WritableHeaders.create(), false);
         Http2Headers trailers = Http2Headers.create(WritableHeaders.create());
         trailers.path("");
         h2conn.writer().writeHeaders(trailers,
