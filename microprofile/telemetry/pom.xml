@@ -195,10 +195,26 @@
                             </systemPropertyVariables>
                             <excludes>
                                 <exclude>**/AgentDetectorTest.java</exclude>
+                                <exclude>**/AutoSpanIncludesWriteAgentTest.java</exclude>
                                 <exclude>**/TestSpanListenersWithInjection.java</exclude>
                                 <exclude>**/TestFilterSpanNesting.java</exclude>
                                 <exclude>**/PlainJerseyClientTest.java</exclude>
+                                <exclude>**/AutoSpanIncludesWriteAsyncTest.java</exclude>
                             </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>auto-span-async-context-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <io.opentelemetry.context.enableStrictContext>true</io.opentelemetry.context.enableStrictContext>
+                            </systemPropertyVariables>
+                            <includes>
+                                <include>**/AutoSpanIncludesWriteAsyncTest.java</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>
@@ -213,6 +229,7 @@
                         <configuration>
                             <includes>
                                 <include>**/AgentDetectorTest.java</include>
+                                <include>**/AutoSpanIncludesWriteAgentTest.java</include>
                             </includes>
                         </configuration>
                     </execution>
@@ -233,6 +250,9 @@
                             <goal>test</goal>
                         </goals>
                         <configuration>
+                            <systemPropertyVariables>
+                                <io.opentelemetry.context.enableStrictContext>true</io.opentelemetry.context.enableStrictContext>
+                            </systemPropertyVariables>
                             <includes>
                                 <include>**/TestFilterSpanNesting.java</include>
                             </includes>

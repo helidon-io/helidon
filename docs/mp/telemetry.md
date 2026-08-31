@@ -54,7 +54,9 @@ telemetry.span.name-includes-method = true
 
 The ability to use the older format is deprecated, and you should plan for its
 removal in a future major release of Helidon. For that reason Helidon logs a
-warning message if you use the older REST span naming convention.
+warning message if you use the older REST span naming convention. See
+[Helidon automatic span compatibility](#helidon-automatic-span-compatibility)
+for details about this setting and the response-writing compatibility setting.
 
 ## Usage
 
@@ -442,6 +444,79 @@ use a different exporter set `otel.traces.exporter` in your configuration to the
 appropriate value. The `zipkin` value is deprecated because OpenTelemetry
 stopped publishing its Zipkin exporter in 1.65.0; use `otlp` for traces. See
 the [examples](#examples) section below.
+
+### Helidon Automatic Span Compatibility
+
+Helidon supports the following deprecated vendor-specific compatibility
+settings for automatic incoming REST request spans:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `telemetry.span.full.url` | `Boolean` | `false` | **Deprecated.** Whether the span name uses the absolute request path instead of the matched JAX-RS route. |
+| `telemetry.span.name-includes-method` | `Boolean` | `false` | **Deprecated.** Whether the span name includes the HTTP request method. |
+| `telemetry.span.includes-response-write` | `Boolean` | `false` | **Deprecated.** Whether the span includes preparing and writing the response entity. |
+
+By default, Helidon uses the matched, low-cardinality JAX-RS route in the span
+name, such as `/greet/{name}`. Setting `telemetry.span.full.url` to `true`
+uses the resolved absolute request path instead, such as
+`http://localhost:8080/greet/Joe`. The absolute path does not include the query
+string. Because resolved paths can contain user-supplied path values and
+therefore create high-cardinality span names, leave this setting `false` unless
+compatibility with an application that expects the older full-URL naming format
+requires it. The setting is deprecated because a future major release will use
+low-cardinality route-based span names unconditionally.
+
+The `telemetry.span.full.url` and `telemetry.span.name-includes-method` settings
+are independent. For example, setting both to `true` produces a span name such
+as `GET http://localhost:8080/greet/Joe`.
+
+Earlier Helidon 4 releases used OpenTelemetry semantic conventions which did
+not include the HTTP method in automatic incoming REST span names. Setting
+`telemetry.span.name-includes-method` to `true` selects the current convention,
+which includes the method. Leaving it unset or setting it to `false` preserves
+the older span names for compatibility and causes Helidon to log a warning. The
+setting is deprecated because a future major release will use the current span
+naming convention unconditionally.
+
+When `telemetry.span.includes-response-write` is `false`, Helidon ends the
+span before serializing the response entity, preserving the behavior of earlier
+Helidon 4 releases. When it is `true`, Helidon keeps the span open until response
+serialization and encoding have populated Helidon's response stream and Jersey
+has finished processing the response. If an asynchronous resource method is
+still executing at that point, the span ends when the resource method returns.
+The span remains open during response
+filtering, but Helidon makes it current only during discrete, thread-owned
+phases: request filtering, resource-method execution, exception mapping, and
+entity materialization. This includes asynchronous JAX-RS responses. Spans
+started by exception mappers, writer interceptors, message-body writers, or
+streaming output are therefore children of the automatic span, without leaving
+its scope attached to a thread between phases. Helidon does not force the
+automatic span to be current across arbitrary response filters because a
+request filter can establish a nested scope which its paired response filter
+must close in nesting order. The automatic span still remains open during that
+work. If response processing or writing fails, Helidon records the available
+failure and ends the automatic span after Jersey finishes processing the failed
+request and any still-running asynchronous resource method returns. An
+application exception which Jersey successfully maps to a response
+is not itself treated as a response-writing failure; the resulting HTTP status
+determines the automatic span status.
+
+This setting controls only automatic spans created by Helidon. When the
+OpenTelemetry Java Agent is present, the agent owns the automatic server span,
+so `telemetry.span.includes-response-write` has no effect.
+
+This setting is deprecated for removal in a future major release. After its
+removal, automatic incoming REST spans will always include response preparation
+through the end of Jersey response processing.
+
+For `telemetry.span.includes-response-write`, `true` measures the
+server-side work of preparing the response. It does not measure the later
+WebServer socket commit, network delivery, or wait for the client to receive or
+acknowledge the response. A downstream transport failure after JAX-RS processing
+has finished might therefore not be recorded on the span, but it cannot leave
+the span unfinished. For long-lived `ChunkedOutput` and server-sent event
+responses, the span covers initial JAX-RS response processing but not the later
+serialization and transmission of individual chunks or events.
 
 ### OpenTelemetry Java Agent
 
