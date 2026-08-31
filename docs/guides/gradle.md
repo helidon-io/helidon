@@ -37,4 +37,4 @@ dependencies {
 }
 ```
 
-[quickstart-examp]: https://github.com/helidon-io/helidon-examples/tree/main/examples/quickstarts/helidon-quickstart-se
+[quickstart-examp]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/quickstarts/helidon-quickstart-se

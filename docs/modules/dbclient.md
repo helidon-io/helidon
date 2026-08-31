@@ -280,4 +280,4 @@ Execution of a query statement will always return `Stream<DbRow>>`.
 Now that you understand how to build and execute statements, try it for
 yourself. [DB Client Examples][db-client-exampl].
 
-[db-client-exampl]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/dbclient
+[db-client-exampl]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/dbclient

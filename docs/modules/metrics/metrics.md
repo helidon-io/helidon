@@ -1081,8 +1081,8 @@ server:
 [wrapper]: https://helidon.io/docs/v27/apidocs/io.helidon.common/io/helidon/common/Wrapper.html
 [autohttpmetricsc]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md
 [helidon-opentele]: ../telemetry/opentelemetry.md#maven-coordinates
-[enabling-disabli]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/filtering/se
-[controlling-key]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/kpi
+[enabling-disabli]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/metrics/filtering/se
+[controlling-key]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/metrics/kpi
 [micrometer-metri]: https://docs.micrometer.io/micrometer/reference/concepts
 [io-helidon-metri]: ../../config/io.helidon.metrics.providers.micrometer.OtlpPublisher.md#configuration-options
 [io-helidon-metri-2]: ../../config/io.helidon.metrics.providers.micrometer.PrometheusPublisher.md#configuration-options

@@ -149,4 +149,4 @@ here:
 
 [json-rpc-2-0]: https://www.jsonrpc.org/specification
 [enabling-code-ge]: ../json/json.md#enabling-code-generation
-[json-rpc-machine]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/jsonrpc
+[json-rpc-machine]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/webserver/jsonrpc

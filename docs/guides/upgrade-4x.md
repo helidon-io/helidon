@@ -527,5 +527,5 @@ update it and add the following dependency:
 
 [changelog]: https://github.com/helidon-io/helidon/blob/main/CHANGELOG.md
 [semantic-version]: https://semver.org/spec/v2.0.0.html
-[examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/
+[examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/
 [media-types-supp]: ../modules/webserver/webserver.md#media-types-support

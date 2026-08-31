@@ -425,12 +425,12 @@ The following gRPC examples for Helidon are available:
 - [Helidon gRPC Example][grpc-se-example]
 - [Multiple protocols on a single WebServer][multiple-protoco]
 
-[grpc-se-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc
+[grpc-se-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/webserver/grpc
 [instructions]: https://grpc.io/docs/quickstart/java.html
-[pom-xml]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc/pom.xml
+[pom-xml]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/webserver/grpc/pom.xml
 [here]: https://helidon.io/docs/v27/apidocs/io.helidon.grpc.core/io/helidon/grpc/core/ResponseHelper.html
 [grpc-opentelemet]: https://grpc.io/docs/guides/opentelemetry-metrics/
 [grpc-reflection]: https://grpc.io/docs/guides/reflection/
-[multiple-protoco]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/protocols
+[multiple-protoco]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/webserver/protocols
 [grpc-config]: ../../config/io.helidon.webserver.grpc.GrpcConfig.md
 [grpc-security-config]: ../../config/io.helidon.webserver.grpc.security.GrpcSecurityConfig.md

@@ -736,4 +736,4 @@ you want to learn more, see the Helidon DB Client samples in [GitHub][github].
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [http-localhost-8]: http://localhost:8080/library/{book-name}
-[github]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/dbclient
+[github]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/dbclient

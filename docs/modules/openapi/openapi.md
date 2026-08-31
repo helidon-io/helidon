@@ -168,5 +168,5 @@ with it, then invoke the builder’s `build` method and pass the resulting
 [openapifeature]: https://helidon.io/docs/v27/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html
 [builder]: https://helidon.io/docs/v27/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
 [example-below]: #register-openapifeature-explicitly
-[complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/openapi
+[complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/openapi
 [io-helidon-opena]: ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options

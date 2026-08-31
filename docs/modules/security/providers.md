@@ -7,19 +7,19 @@ description: "Helidon Security providers"
 
 Helidon provides the following security providers for endpoint protection:
 
-| Provider                                       | Type           | Outbound supported | Description                                                       |
-|------------------------------------------------|----------------|--------------------|-------------------------------------------------------------------|
-| [OIDC Provider][oidc-provider]                 | Authentication | ✅                  | Open ID Connect supporting JWT, Scopes, Groups and OIDC code flow |
-| [HTTP Basic Authentication][http-basic-authe]  | Authentication | ✅                  | HTTP Basic authentication for local testing and demos             |
-| [Header Assertion][header-assertion]           | Authentication | ✅                  | Asserting a user based on a header value                          |
-| [HTTP Signatures][http-signatures]             | Authentication | ✅                  | Protecting service to service communication through signatures    |
-| [ABAC Authorization][abac-authorizati]         | Authorization  | 🚫                 | Attribute based access control authorization policies             |
+| Provider                                      | Type           | Outbound supported | Description                                                       |
+|-----------------------------------------------|----------------|--------------------|-------------------------------------------------------------------|
+| [OIDC Provider][oidc-provider]                | Authentication | ✅                 | Open ID Connect supporting JWT, Scopes, Groups and OIDC code flow |
+| [HTTP Basic Authentication][http-basic-authe] | Authentication | ✅                 | HTTP Basic authentication for local testing and demos             |
+| [Header Assertion][header-assertion]          | Authentication | ✅                 | Asserting a user based on a header value                          |
+| [HTTP Signatures][http-signatures]            | Authentication | ✅                 | Protecting service to service communication through signatures    |
+| [ABAC Authorization][abac-authorizati]        | Authorization  | 🚫                 | Attribute based access control authorization policies             |
 
 The following providers are no longer evolved:
 
-| Provider                     | Type           | Outbound supported | Description                                                               |
-|------------------------------|----------------|--------------------|---------------------------------------------------------------------------|
-| [JWT Provider][jwt-provider] | Authentication | ✅                  | JWT tokens passed from frontend                                           |
+| Provider                     | Type           | Outbound supported | Description                     |
+|------------------------------|----------------|--------------------|---------------------------------|
+| [JWT Provider][jwt-provider] | Authentication | ✅                 | JWT tokens passed from frontend |
 
 ## OIDC Provider
 
@@ -74,10 +74,6 @@ security:
           outbound-token:
             header: "X-Internal-Auth"
 ```
-
-### Example
-
-See the [example][example] on GitHub.
 
 ### How does it work?
 
@@ -584,10 +580,6 @@ security:
     - abac:
 ```
 
-### Example
-
-See the [example][example-5] on GitHub.
-
 ### How does it work?
 
 ABAC uses available validators and validates them against attributes of the
@@ -823,12 +815,10 @@ configuration of this provider.
 [http-signatures]: #http-signatures-provider
 [abac-authorizati]: #abac-provider
 [jwt-provider]: #jwt-provider
-[example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/idcs-login
-[example-2]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/outbound-override
-[example-3]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/webserver-signatures
-[example-5]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/attribute-based-access-control
+[example-2]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/security/outbound-override
+[example-3]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/security/webserver-signatures
 [el-policy]: #expression-language-policy-validator
-[helidon-security]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security
+[helidon-security]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/security
 [helidon-oidc-jav]: https://helidon.io/docs/v27/apidocs/io.helidon.security.providers.oidc/module-summary.html
 [helidon-http-aut]: https://helidon.io/docs/v27/apidocs/io.helidon.security.providers.httpauth/module-summary.html
 [helidon-header-a]: https://helidon.io/docs/v27/apidocs/io.helidon.security.providers.header/module-summary.html

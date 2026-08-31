@@ -413,8 +413,6 @@ described earlier in this page for:
 - [the OpenTelemetry tracing provider][otel-provider-section]
 - [the OTLP exporter dependency](#additional-dependencies)
 
-For a complete example, see the [Oracle APM example application][apm-example].
-
 ### OTLP Retry Policy
 
 You can control how each exporter retries if a transmission to a backend fails.
@@ -910,7 +908,6 @@ telemetry:
 [otlp]: https://opentelemetry.io/docs/languages/java/configuration/#properties-logs
 [opentelemetry-ja]: https://opentelemetry.io/docs/languages/java/sdk
 [intro-to-opentel]: https://opentelemetry.io/docs/languages/java/intro/
-[apm-example]: https://github.com/helidon-io/helidon-examples/tree/main/examples/telemetry/apm
 [oracle-apm]: https://docs.oracle.com/en-us/iaas/application-performance-monitoring/doc/configure-open-source-tracing-systems.html
 [io-helidon-telem]: ../../config/io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md#configuration-options
 [io-helidon-telem-2]: ../../config/io.helidon.telemetry.otelconfig.TypedAttributes.md#configuration-options

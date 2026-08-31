@@ -230,8 +230,7 @@ public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryCo
      *
      * <p>A minimal example of (YAML) configuration follows:</p>
      *
-     * <blockquote style="background-color: var(--snippet-background-color);"><pre>client: # see the <a
-     * href="https://helidon.io/docs/latest/config/io_helidon_webclient_api_WebClient">Helidon Configuration Reference for WebClient</a>
+     * <blockquote style="background-color: var(--snippet-background-color);"><pre>client:
      *  services:
      *    {@linkplain WebClientDiscoveryConfig discovery}:
      *      {@linkplain WebClientDiscoveryConfig#prefixUris() prefix-uris}:
@@ -297,7 +296,6 @@ public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryCo
      *
      * @return a non-{@code null} {@link WebClientDiscoveryConfig.Builder}
      * @see WebClientDiscoveryConfig#builder()
-     * @see <a href="https://helidon.io/docs/latest/modules/builder#creating-a-runtime-type">Helidon Builder</a>
      */
     static WebClientDiscoveryConfig.Builder builder() {
         return WebClientDiscoveryConfig.builder();
@@ -314,7 +312,6 @@ public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryCo
      * @see #builder()
      * @see WebClientDiscoveryConfig.Builder#update(Consumer)
      * @see WebClientDiscoveryConfig.Builder#build()
-     * @see <a href="https://helidon.io/docs/latest/modules/builder#creating-a-runtime-type">Helidon Builder</a>
      */
     static WebClientDiscovery create(Consumer<WebClientDiscoveryConfig.Builder> consumer) {
         return builder().update(consumer).build();
@@ -332,7 +329,6 @@ public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryCo
      * @exception NullPointerException if {@code prototype} is {@code null}
      * @see WebClientDiscoveryConfig.Builder#build()
      * @see WebClientDiscoveryConfig.Builder#buildPrototype()
-     * @see <a href="https://helidon.io/docs/latest/modules/builder#creating-a-runtime-type">Helidon Builder</a>
      */
     static WebClientDiscovery create(WebClientDiscoveryConfig prototype) {
         return new DefaultWebClientDiscovery(prototype);

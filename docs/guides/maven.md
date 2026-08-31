@@ -29,9 +29,6 @@ If you want to use your own parent POM, then take a look at the [standalone
 quickstart example][standalone-quick]. This example has a standalone POM that
 you can pattern your own application POM after.
 
-For more details on Helidon application POMs see the [Helidon’s Application
-POMS][helidon-s-applic]
-
 ## Dependency Management
 
 In Maven, you use Dependency Management to manage the versions of the
@@ -148,7 +145,6 @@ image:
 </build>
 ```
 
-[standalone-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-standalone-quickstart-se
-[helidon-s-applic]: https://github.com/helidon-io/helidon/tree/helidon-4.x/docs-internal/application-pom.md
+[standalone-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/quickstarts/helidon-standalone-quickstart-se
 [maven-plugin-for]: https://graalvm.github.io/native-build-tools/latest/maven-plugin.html
 [helidon-maven-pl]: https://github.com/helidon-io/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin

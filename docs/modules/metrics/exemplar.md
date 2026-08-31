@@ -130,5 +130,5 @@ update occurred expressed as seconds in the UNIX epoch (`1696889651.779`).
 Brief discussion of [exemplars in the OpenMetrics spec][exemplars-in-the]
 
 [exemplar]: https://www.merriam-webster.com/dictionary/exemplar
-[example-applicat]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/exemplar
+[example-applicat]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/metrics/exemplar
 [exemplars-in-the]: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars

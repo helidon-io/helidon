@@ -4,5 +4,5 @@
 
 # Helidon Examples
 
-Helidon examples have moved to the [helidon-examples](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x) repository.
+Helidon examples have moved to the [helidon-examples](https://github.com/helidon-io/helidon-examples/tree/helidon-27.x) repository.
 

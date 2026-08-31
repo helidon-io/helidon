@@ -336,9 +336,9 @@ content-length: 461
 
 [corsfeature]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsFeature.html
 [corspathconfig]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsPathConfig.html
-[helidon-se-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-se
+[helidon-se-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/quickstarts/helidon-quickstart-se
 [routing]: webserver/webserver.md#routing
-[helidon-se-cors]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/cors
+[helidon-se-cors]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/cors
 [requested-uri-di]: webserver/webserver.md#requested-uri-discovery
 [cross-origin-res]: https://www.w3.org/TR/cors
 [io-helidon-webse]: ../config/io.helidon.webserver.cors.CorsFeature.md#configuration-options
