@@ -1918,8 +1918,11 @@ classpath):
 
 HTTP compression negotiation is controlled by clients using the
 `Accept-Encoding` header. The value of this header is a comma-separated list of
-encodings. The WebServer will select one of these encodings for compression
-purposes; it currently supports `gzip` and `deflate`.
+acceptable encodings and optional preferences. The WebServer selects the
+highest-priority available encoding, including implicit `identity` when
+acceptable; it currently supports `gzip` and `deflate` compression. If none of
+the available representations is acceptable, the WebServer responds with
+`406 Not Acceptable`.
 
 When automatic response encoding is enabled, malformed `Accept-Encoding`
 values, such as invalid coding tokens, unsupported parameters, or invalid `q`
