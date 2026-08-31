@@ -146,7 +146,55 @@ class StaticContentFeatureTest {
         }
     }
 
+    @Test
+    void testFileSystemSingleFileRequiresHandlerOptIn(@TempDir Path tempDir) throws Exception {
+        Path resource = Files.writeString(tempDir.resolve("resource.txt"), "Content");
+        Files.writeString(tempDir.resolve("resource.txt.br"), "Brotli content");
+
+        StaticContentFeature feature = StaticContentFeature.create(builder -> builder
+                .preCompressedEnabled(true)
+                .addPath(path -> path
+                        .context("/directory")
+                        .location(tempDir))
+                .addPath(path -> path
+                        .context("/default")
+                        .location(resource))
+                .addPath(path -> path
+                        .context("/enabled")
+                        .location(resource)
+                        .preCompressedEnabled(true)));
+
+        ServerFeatureContext featureContext = mock(ServerFeatureContext.class);
+        SocketBuilders socketBuilders = mock(SocketBuilders.class);
+        HttpRouting.Builder routing = mock(HttpRouting.Builder.class);
+        when(featureContext.sockets()).thenReturn(Set.of());
+        when(featureContext.socketExists(WebServer.DEFAULT_SOCKET_NAME)).thenReturn(true);
+        when(featureContext.socket(WebServer.DEFAULT_SOCKET_NAME)).thenReturn(socketBuilders);
+        when(socketBuilders.httpRouting()).thenReturn(routing);
+
+        feature.setup(featureContext);
+
+        ArgumentCaptor<HttpService> directoryService = ArgumentCaptor.forClass(HttpService.class);
+        verify(routing).register(eq("/directory"), directoryService.capture());
+        assertResponse(directoryService.getValue(), "br", "Brotli content");
+
+        ArgumentCaptor<HttpService> defaultService = ArgumentCaptor.forClass(HttpService.class);
+        verify(routing).register(eq("/default"), defaultService.capture());
+        assertResponse(defaultService.getValue(), "/", null, "Content");
+
+        ArgumentCaptor<HttpService> enabledService = ArgumentCaptor.forClass(HttpService.class);
+        verify(routing).register(eq("/enabled"), enabledService.capture());
+        assertResponse(enabledService.getValue(), "/", "br", "Brotli content");
+    }
+
     private static void assertResponse(HttpService service, String contentEncoding, String expectedBody) throws Exception {
+        assertResponse(service, "/resource.txt", contentEncoding, expectedBody);
+    }
+
+    private static void assertResponse(HttpService service,
+                                       String requestPath,
+                                       String contentEncoding,
+                                       String expectedBody) throws Exception {
         HttpRules rules = mock(HttpRules.class);
         ArgumentCaptor<Handler> handler = ArgumentCaptor.forClass(Handler.class);
         service.routing(rules);
@@ -155,7 +203,7 @@ class StaticContentFeatureTest {
         WritableHeaders<?> requestHeaders = WritableHeaders.create();
         requestHeaders.add(HeaderNames.ACCEPT_ENCODING, "br");
         RoutedPath path = mock(RoutedPath.class);
-        when(path.rawPathNoParams()).thenReturn("/resource.txt");
+        when(path.rawPathNoParams()).thenReturn(requestPath);
         ServerRequest request = mock(ServerRequest.class);
         when(request.headers()).thenReturn(ServerRequestHeaders.create(requestHeaders));
         when(request.path()).thenReturn(path);
@@ -163,7 +211,7 @@ class StaticContentFeatureTest {
                                                                 "http",
                                                                 "1.1",
                                                                 Method.GET,
-                                                                "/resource.txt",
+                                                                requestPath,
                                                                 false));
 
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();

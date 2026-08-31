@@ -1571,6 +1571,7 @@ class CachedHandlerTest {
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
                 FileSystemHandlerConfig.builder()
                         .location(resource)
+                        .preCompressedEnabled(true)
                         .build());
 
         ServerResponseHeaders missHeaders = ServerResponseHeaders.create();
@@ -1617,6 +1618,7 @@ class CachedHandlerTest {
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
                 FileSystemHandlerConfig.builder()
                         .location(resource)
+                        .preCompressedEnabled(true)
                         .build());
 
         ServerResponseHeaders hitHeaders = ServerResponseHeaders.create();
@@ -1655,6 +1657,7 @@ class CachedHandlerTest {
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
                 FileSystemHandlerConfig.builder()
                         .location(resource)
+                        .preCompressedEnabled(true)
                         .build());
 
         ServerResponseHeaders headers = ServerResponseHeaders.create();
@@ -1681,6 +1684,7 @@ class CachedHandlerTest {
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
                 FileSystemHandlerConfig.builder()
                         .location(resource)
+                        .preCompressedEnabled(true)
                         .build());
 
         ByteArrayOutputStream body = new ByteArrayOutputStream();
@@ -1711,6 +1715,7 @@ class CachedHandlerTest {
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
                 FileSystemHandlerConfig.builder()
                         .location(resource)
+                        .preCompressedEnabled(true)
                         .build());
 
         ServerResponseHeaders hitHeaders = ServerResponseHeaders.create();
@@ -1745,6 +1750,7 @@ class CachedHandlerTest {
         SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
                 FileSystemHandlerConfig.builder()
                         .location(resource)
+                        .preCompressedEnabled(true)
                         .build());
 
         ServerResponseHeaders headers = ServerResponseHeaders.create();
@@ -2145,8 +2151,7 @@ class CachedHandlerTest {
                         .location(link)
                         .build());
         handler.beforeStart();
-        ServerRequest req = mock(ServerRequest.class);
-        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+        ServerRequest req = request(Method.HEAD, "/link.txt", ServerRequestHeaders.create());
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(ServerResponseHeaders.create());
@@ -2163,8 +2168,7 @@ class CachedHandlerTest {
                 FileSystemHandlerConfig.create(file));
         handler.beforeStart();
 
-        ServerRequest req = mock(ServerRequest.class);
-        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+        ServerRequest req = request(Method.HEAD, "/added-after-miss.txt", ServerRequestHeaders.create());
 
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         ServerResponse res = mock(ServerResponse.class);
@@ -2191,8 +2195,7 @@ class CachedHandlerTest {
                 FileSystemHandlerConfig.create(file));
         handler.beforeStart();
 
-        ServerRequest req = mock(ServerRequest.class);
-        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+        ServerRequest req = request(Method.HEAD, "/removed-and-readded.txt", ServerRequestHeaders.create());
 
         ServerResponse initialResponse = mock(ServerResponse.class);
         ServerResponseHeaders initialHeaders = ServerResponseHeaders.create();
@@ -2322,8 +2325,7 @@ class CachedHandlerTest {
                    handler.cacheInMemory("."),
                    optionalEmpty());
 
-        ServerRequest req = mock(ServerRequest.class);
-        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+        ServerRequest req = request(Method.HEAD, "/link.txt", ServerRequestHeaders.create());
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(ServerResponseHeaders.create());
@@ -2508,8 +2510,7 @@ class CachedHandlerTest {
                 FileSystemHandlerConfig.create(file));
         handler.beforeStart();
 
-        ServerRequest request = mock(ServerRequest.class);
-        when(request.headers()).thenReturn(ServerRequestHeaders.create());
+        ServerRequest request = request(method, "/resource.txt", ServerRequestHeaders.create());
 
         ByteArrayOutputStream initialOutput = new ByteArrayOutputStream();
         ServerResponse initialResponse = mock(ServerResponse.class);
@@ -2569,8 +2570,7 @@ class CachedHandlerTest {
                 FileSystemHandlerConfig.create(file));
         handler.beforeStart();
 
-        ServerRequest request = mock(ServerRequest.class);
-        when(request.headers()).thenReturn(ServerRequestHeaders.create());
+        ServerRequest request = request(method, "/resource.txt", ServerRequestHeaders.create());
 
         ServerResponse initialResponse = mock(ServerResponse.class);
         when(initialResponse.headers()).thenReturn(ServerResponseHeaders.create());

@@ -146,7 +146,10 @@ class StaticContentTest {
         }
         singleSidecarLink = tempDir.resolve("current-sidecar-file");
         if (createSymbolicLink(singleSidecarLink, resource)) {
-            builder.register("/single-sidecar-link", createService(FileSystemHandlerConfig.create(singleSidecarLink)));
+            builder.register("/single-sidecar-link", createService(FileSystemHandlerConfig.builder()
+                                                                            .location(singleSidecarLink)
+                                                                            .preCompressedEnabled(true)
+                                                                            .build()));
         } else {
             singleSidecarLink = null;
         }
@@ -913,6 +916,18 @@ class StaticContentTest {
 
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testFileSystemSingleFilePreCompressedDisabledByDefault() {
+        try (Http1ClientResponse response = testClient.get("/singlepath")
+                .header(HeaderNames.ACCEPT_ENCODING, "br")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
             assertThat(response.as(String.class), is("Content"));
         }
     }

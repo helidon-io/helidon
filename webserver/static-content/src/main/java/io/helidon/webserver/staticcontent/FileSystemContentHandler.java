@@ -55,12 +55,19 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     }
 
     static HttpService create(FileSystemHandlerConfig config) {
+        return create(config, true);
+    }
+
+    static HttpService create(FileSystemHandlerConfig config, boolean preCompressedEnabledDefault) {
         Path location = config.location();
-        if (Files.isDirectory(location)) {
-            return new FileSystemContentHandler(config);
-        } else {
-            return new SingleFileContentHandler(config);
+        boolean directory = Files.isDirectory(location);
+        if (config.preCompressedEnabled().isEmpty()) {
+            config = FileSystemHandlerConfig.builder()
+                    .from(config)
+                    .preCompressedEnabled(directory && preCompressedEnabledDefault)
+                    .build();
         }
+        return directory ? new FileSystemContentHandler(config) : new SingleFileContentHandler(config);
     }
 
     @Override

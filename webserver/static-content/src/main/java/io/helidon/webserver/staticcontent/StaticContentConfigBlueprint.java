@@ -152,7 +152,9 @@ interface StaticContentConfigBlueprint extends Prototype.Factory<StaticContentFe
     Set<String> sockets();
 
     /**
-     * Whether pre-compressed sidecar resources should be selected by default for feature-registered handlers.
+     * Whether pre-compressed sidecar resources should be selected by default for feature-registered directory and
+     * classpath handlers. This setting does not apply to file system handlers configured with a single file, which require
+     * handler-level opt-in.
      *
      * @return whether pre-compressed sidecar resources should be used
      */

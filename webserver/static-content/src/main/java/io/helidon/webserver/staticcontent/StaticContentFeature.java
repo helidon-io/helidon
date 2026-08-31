@@ -254,13 +254,12 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                 handlerConfig = FileSystemHandlerConfig.builder()
                         .from(sourceConfig)
                         .memoryCache(handlerCache)
-                        .preCompressedEnabled(sourceConfig.preCompressedEnabled().orElse(preCompressedEnabled))
                         .preCompressedEncodings(sourceConfig.preCompressedEncodings()
                                 .orElse(preCompressedEncodings))
                         .contentTypes(contentTypeMap)
                         .build();
 
-                HttpService service = createService(handlerConfig);
+                HttpService service = FileSystemContentHandler.create(handlerConfig, preCompressedEnabled);
                 featureContext.socket(handlerSocket)
                         .httpRouting()
                         .register(handlerConfig.context(), service);

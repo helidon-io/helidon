@@ -1492,9 +1492,12 @@ coding other than `identity` or `*`, and must be a valid HTTP token. The value
 identifies the corresponding sidecar file suffix; Helidon ignores leading dots
 and rejects suffixes that contain path separators.
 
-For a static-content handler configured with a single filesystem file, a
-sidecar must resolve to the derived sibling path itself. Helidon ignores
-sidecars reached through symbolic links or other filesystem redirection.
+Pre-compressed lookup is disabled by default for a static-content handler
+configured with a single filesystem file, even when it is enabled at the
+feature level. Set `pre-compressed-enabled` to `true` on that individual handler
+to authorize serving sibling sidecar files. A sidecar must resolve to the
+derived sibling path itself; Helidon ignores sidecars reached through symbolic
+links or other filesystem redirection.
 
 When pre-compressed negotiation runs, Helidon merges `Vary: Accept-Encoding`.
 When a sidecar is selected, Helidon sends the logical resource media type and
