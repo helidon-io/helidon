@@ -31,16 +31,20 @@ import java.util.stream.Stream;
 
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
+import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webclient.grpc.GrpcClientMethodDescriptor;
 import io.helidon.webclient.grpc.GrpcServiceClient;
 import io.helidon.webclient.grpc.GrpcServiceDescriptor;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.grpc.GrpcStreams;
+import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -91,6 +95,7 @@ class GrpcTeTrailersTest {
             Metadata.Key.of("grpc-message", Metadata.ASCII_STRING_MARSHALLER);
     private static final int FLOOD_MESSAGE_COUNT = 128;
     private static final int BIDI_MESSAGE_COUNT = 128;
+    private static final int BACKPRESSURE_REQUEST_TEXT_SIZE = 2 * 1024;
     private static final Duration BIDI_RELEASE_TIMEOUT = Duration.ofMinutes(1);
     private static final Duration BIDI_COMPLETION_TIMEOUT = Duration.ofMinutes(2);
     private static final Duration BIDI_PROGRESS_TIMEOUT = Duration.ofSeconds(30);
@@ -158,6 +163,13 @@ class GrpcTeTrailersTest {
                                 .responseType(Strings.StringMessage.class)
                                 .build())
                 .build();
+    }
+
+    @SetUpServer
+    static void setUpServer(WebServerConfig.Builder server) {
+        server.addProtocol(Http2Config.builder()
+                                   .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE)
+                                   .build());
     }
 
     @SetUpRoute
@@ -410,7 +422,7 @@ class GrpcTeTrailersTest {
     @Test
     void bidirectionalRequestsStopWithoutServerDemand() throws InterruptedException {
         Strings.StringMessage request = Strings.StringMessage.newBuilder()
-                .setText("x".repeat(32 * 1024))
+                .setText("x".repeat(BACKPRESSURE_REQUEST_TEXT_SIZE))
                 .build();
         AtomicInteger requestsProduced = new AtomicInteger();
         AtomicInteger responsesReceived = new AtomicInteger();
