@@ -1111,7 +1111,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private boolean claimResetStreamSent() {
         resetCompletionLock.lock();
         try {
-            if (resetStreamSent) {
+            if (remoteResetReceived || resetStreamSent) {
                 return false;
             }
             resetStreamSent = true;
