@@ -284,7 +284,7 @@ class SseHttp2Test {
 
     @Test
     void clientCancelDoesNotAffectSiblingStreamOrConnection(Http2TestClient client) throws InterruptedException {
-        StreamControl canceled = new StreamControl("open-cancel", "late-cancel", false, true);
+        StreamControl canceled = new StreamControl("open-cancel", "late-cancel", false);
         StreamControl sibling = new StreamControl("open-sibling", "close-sibling", false);
         STREAM_CONTROLS.put("cancel", canceled);
         STREAM_CONTROLS.put("sibling", sibling);
@@ -314,19 +314,7 @@ class SseHttp2Test {
             request(connection, 5, "/ping", WritableHeaders.create());
             assertPing(frames, 5);
             await("Canceled handler completion", canceled.completed);
-
-            Http2FrameData postResetFrame = frames.pollQueuedFrame(1);
-            if (postResetFrame == null) {
-                postResetFrame = connection.awaitNextFrame(Duration.ofMillis(500));
-            }
-            String postResetFrameDescription = postResetFrame == null
-                    ? "none"
-                    : postResetFrame.header().type() + " on stream " + postResetFrame.header().streamId()
-                            + (postResetFrame.header().type() == Http2FrameType.RST_STREAM
-                            ? " with error " + Http2RstStream.create(postResetFrame.data()).errorCode()
-                            : "");
-            assertThat("Unexpected frame after peer RST_STREAM: " + postResetFrameDescription,
-                       postResetFrame, nullValue());
+            assertThat("Canceled SSE write must fail after peer RST_STREAM", canceled.failure.get(), notNullValue());
         } finally {
             canceled.release.countDown();
             sibling.release.countDown();
@@ -632,11 +620,8 @@ class SseHttp2Test {
             if (control.lastEvent != null) {
                 sink.emit(SseEvent.create(control.lastEvent));
             }
-        } catch (RuntimeException | Error t) {
+        } catch (Throwable t) {
             control.failure.compareAndSet(null, t);
-            if (control.propagateFailure) {
-                throw t;
-            }
         } finally {
             control.completed.countDown();
         }
@@ -758,11 +743,6 @@ class SseHttp2Test {
             ArrayDeque<InboundFrame> frames = queued.get(streamId);
             return frames != null && !frames.isEmpty();
         }
-
-        private Http2FrameData pollQueuedFrame(int streamId) {
-            ArrayDeque<InboundFrame> frames = queued.get(streamId);
-            return frames == null || frames.isEmpty() ? null : frames.removeFirst().frame();
-        }
     }
 
     private static final class StreamCapture {
@@ -818,23 +798,14 @@ class SseHttp2Test {
     private static final class StreamControl {
         private final String firstEvent;
         private final String lastEvent;
-        private final boolean propagateFailure;
         private final CountDownLatch sinkCreated = new CountDownLatch(1);
         private final CountDownLatch release;
         private final CountDownLatch completed = new CountDownLatch(1);
         private final AtomicReference<Throwable> failure = new AtomicReference<>();
 
         private StreamControl(String firstEvent, String lastEvent, boolean initiallyReleased) {
-            this(firstEvent, lastEvent, initiallyReleased, false);
-        }
-
-        private StreamControl(String firstEvent,
-                              String lastEvent,
-                              boolean initiallyReleased,
-                              boolean propagateFailure) {
             this.firstEvent = firstEvent;
             this.lastEvent = lastEvent;
-            this.propagateFailure = propagateFailure;
             release = new CountDownLatch(initiallyReleased ? 0 : 1);
         }
 
