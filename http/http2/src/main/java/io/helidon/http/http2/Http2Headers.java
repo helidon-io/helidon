@@ -558,6 +558,9 @@ public class Http2Headers {
     }
 
     private static boolean authoritiesMatch(String scheme, String authority, String host) {
+        if (scheme == null && authority.equals(host)) {
+            return true;
+        }
         try {
             int defaultPort = scheme == null ? UriAuthority.UNDEFINED_PORT : defaultPort(scheme);
             UriAuthority authorityValue = UriAuthority.create(authority);

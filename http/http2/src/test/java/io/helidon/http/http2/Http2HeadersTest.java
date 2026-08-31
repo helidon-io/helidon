@@ -29,6 +29,8 @@ import io.helidon.http.http2.Http2Headers.DynamicTable;
 import io.helidon.http.http2.Http2Headers.HeaderRecord;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -218,6 +220,18 @@ class Http2HeadersTest {
 
         assertThat(http2Headers.method(), is(Method.CONNECT));
         assertThat(http2Headers.authority(), is("proxy.example:443"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[Vf.foo-bar]:443", "service+name:443", "service%2Dname:443"})
+    void testRequestAcceptsMatchingUriHostOnOrdinaryConnect(String authority) {
+        String hexEncoded = connectRequestHeaders(authority, authority);
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        http2Headers.validateRequest();
+
+        assertThat(http2Headers.authority(), is(authority));
     }
 
     @Test

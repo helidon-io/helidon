@@ -455,6 +455,31 @@ public class HeadersServerTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"[Vf.foo-bar]:443", "service+name:443", "service%2Dname:443"})
+    void ordinaryConnectWithMatchingHostReturnsNotImplementedAndKeepsConnectionOpen(String authority,
+                                                                                     Http2TestClient testClient) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            WritableHeaders<?> headers = WritableHeaders.create();
+            Http2Headers connectHeaders = Http2Headers.create(headers);
+            headers.add(HeaderNames.HOST, authority);
+            connectHeaders.method(Method.CONNECT);
+            connectHeaders.authority(authority);
+            connection.writer()
+                    .writeHeaders(connectHeaders,
+                                  1,
+                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                  FlowControl.Outbound.NOOP);
+
+            connection.assertSettings(TIMEOUT);
+            connection.assertWindowsUpdate(0, TIMEOUT);
+            connection.assertSettings(TIMEOUT);
+
+            assertThat(connection.assertHeaders(1, TIMEOUT).status(), is(Status.NOT_IMPLEMENTED_501));
+            assertConnectionReusable(connection);
+        }
+    }
+
     @Test
     void connectWithPathResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
         assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, Method.CONNECT, "/");
