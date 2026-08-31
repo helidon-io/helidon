@@ -24,5 +24,5 @@ module io.helidon.data.jdbc.codegen {
     requires io.helidon.data.jdbc.lexical;
 
     provides io.helidon.data.codegen.common.spi.PersistenceGeneratorProvider
-            with io.helidon.data.jdbc.codegen.JdbcPersistenceGeneratorProvider;
+            with io.helidon.data.jdbc.codegen.JdbcRepositoryGeneratorProvider;
 }

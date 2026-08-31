@@ -23,8 +23,6 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
-import io.helidon.data.Data;
-import io.helidon.data.DataException;
 import io.helidon.service.registry.Service;
 
 /**
@@ -41,7 +39,7 @@ import io.helidon.service.registry.Service;
  * a transaction established by a transaction annotation on its caller.
  * <p>
  * Annotation based applications inject a registry managed client with the
- * {@code jdbc} {@link Data.ProviderType} and a {@link Service.Named}
+ * {@code jdbc} {@link io.helidon.data.Data.ProviderType} and a {@link Service.Named}
  * qualifier. A registry managed client uses Helidon's local transaction
  * support and participates in the transaction surrounding the intercepted
  * service invocation.
@@ -65,7 +63,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * @param config JDBC client configuration
      * @return configured JDBC client
      * @throws NullPointerException if the configuration is {@code null}
-     * @throws DataException if the configuration cannot create a direct client
+     * @throws io.helidon.data.DataException if the configuration cannot create a direct client
      */
     static JdbcClient create(JdbcClientConfig config) {
         Objects.requireNonNull(config, "The JDBC client configuration must not be null.");
@@ -78,7 +76,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * @param consumer builder updates
      * @return configured JDBC client
      * @throws NullPointerException if the consumer is {@code null}
-     * @throws DataException if the configuration cannot create a direct client
+     * @throws io.helidon.data.DataException if the configuration cannot create a direct client
      */
     static JdbcClient create(Consumer<JdbcClientConfig.Builder> consumer) {
         Objects.requireNonNull(consumer, "The JDBC client builder consumer must not be null.");
@@ -203,7 +201,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * Executes an update and returns its large update count.
          *
          * @return update count
-         * @throws DataException if JDBC execution fails
+         * @throws io.helidon.data.DataException if JDBC execution fails
          * @throws IllegalStateException if a bind is missing or a terminal operation has started
          */
         long execute();
@@ -301,7 +299,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @return mapped row
          * @throws io.helidon.data.NoResultException if no row is returned
          * @throws io.helidon.data.NonUniqueResultException if more than one row is returned
-         * @throws DataException if JDBC execution or provider mapping fails
+         * @throws io.helidon.data.DataException if JDBC execution or provider mapping fails
          * @throws IllegalStateException if a terminal operation has started
          */
         T one();
@@ -320,7 +318,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          *         by {@link Statement#map(Class)}, if one row contains SQL
          *         {@code NULL} in column one; otherwise the mapped row
          * @throws io.helidon.data.NonUniqueResultException if more than one row is returned
-         * @throws DataException if JDBC execution or provider mapping fails
+         * @throws io.helidon.data.DataException if JDBC execution or provider mapping fails
          * @throws IllegalStateException if a terminal operation has started
          */
         Optional<T> optional();
@@ -329,7 +327,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * Returns all rows in JDBC encounter order.
          *
          * @return materialized rows
-         * @throws DataException if JDBC execution or provider mapping fails
+         * @throws io.helidon.data.DataException if JDBC execution or provider mapping fails
          * @throws IllegalStateException if a terminal operation has started
          */
         List<T> list();
@@ -387,7 +385,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param type requested scalar type
          * @param <T> scalar type
          * @return optional value
-         * @throws DataException if the column cannot be read
+         * @throws io.helidon.data.DataException if the column cannot be read
          * @throws IllegalArgumentException if the index or type is invalid
          * @throws IllegalStateException if the row is no longer active or the
          *                                  caller is not the callback thread
@@ -401,7 +399,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param type requested scalar type
          * @param <T> scalar type
          * @return optional value
-         * @throws DataException if the label is absent or ambiguous, or the column cannot be read
+         * @throws io.helidon.data.DataException if the label is absent or ambiguous, or the column cannot be read
          * @throws NullPointerException if the label or type is {@code null}
          * @throws IllegalArgumentException if the label or type is invalid
          * @throws IllegalStateException if the row is no longer active or the
@@ -416,7 +414,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param type requested scalar type
          * @param <T> scalar type
          * @return non-null value
-         * @throws DataException if the column contains SQL {@code NULL} or cannot be read
+         * @throws io.helidon.data.DataException if the column contains SQL {@code NULL} or cannot be read
          * @throws IllegalArgumentException if the index or type is invalid
          * @throws IllegalStateException if the row is no longer active or the
          *                                  caller is not the callback thread
@@ -430,7 +428,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param type requested scalar type
          * @param <T> scalar type
          * @return non-null value
-         * @throws DataException if the column contains SQL {@code NULL} or cannot be read
+         * @throws io.helidon.data.DataException if the column contains SQL {@code NULL} or cannot be read
          * @throws NullPointerException if the label or type is {@code null}
          * @throws IllegalArgumentException if the label or type is invalid
          * @throws IllegalStateException if the row is no longer active or the

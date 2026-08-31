@@ -20,6 +20,7 @@ import io.helidon.data.jdbc.tests.contract.AbstractJdbcTransactionContract;
 import io.helidon.data.jdbc.tests.declarative.DeclarativeTransactionMatrixOperations;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
+import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -29,7 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class MySqlDeclarativeJdbcTransactionTest extends AbstractJdbcTransactionContract {
     @Container
-    static final org.testcontainers.containers.MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
+    static final MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
 
     @Override
     protected void beforeStartApplication() {

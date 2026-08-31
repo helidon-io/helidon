@@ -25,7 +25,7 @@ import io.helidon.service.registry.Service;
  */
 @Data.Repository
 @Data.Provider("jdbc")
-@Data.PersistenceUnit(value = "mapper-name-collision", required = false)
+@Jdbc.Client("mapper-name-collision")
 public interface MapperNameCollisionRepository {
 
     /**
@@ -38,7 +38,7 @@ public interface MapperNameCollisionRepository {
     String keywordMapper();
 
     /**
-     * Uses a mapper whose lower-camel simple name overlaps the optional named-client parameter.
+     * Uses a mapper whose lower-camel simple name overlaps the removed optional named-client parameter.
      *
      * @return mapped value
      */

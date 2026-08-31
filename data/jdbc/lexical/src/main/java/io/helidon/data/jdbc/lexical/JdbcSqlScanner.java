@@ -109,9 +109,12 @@ public final class JdbcSqlScanner {
                 ordinary();
                 blockComment();
                 protectedRegion(RegionKind.BLOCK_COMMENT, start);
-            } else if ((current == 'q' || current == 'Q')
+            } else if ((current == 'q' || current == 'Q' || current == 'n' || current == 'N')
                     && profile.qQuotedStrings()
                     && JdbcSqlLexicalRules.qQuoteClosingDelimiter(source, index) != '\0') {
+                // Oracle prefixes are case-insensitive. Starting at n lets the lexical rule test the boundary before
+                // the complete nq prefix; starting at q would incorrectly treat the prefix's n as identifier text.
+                // It also keeps the n inside the protected region so handlers preserve the complete Oracle literal.
                 int start = index;
                 ordinary();
                 alternativeQuoted();
@@ -266,10 +269,27 @@ public final class JdbcSqlScanner {
         throw malformed("Unterminated block comment");
     }
 
+    /**
+     * Advances over one complete Oracle alternative-quoted literal.
+     * <p>
+     * The caller has already verified that {@link #index} begins a valid
+     * {@code q} or {@code nq} opener. On success this method leaves the index
+     * immediately after the closing delimiter and apostrophe, allowing the
+     * outer scan to resume with ordinary SQL. Apostrophes, question marks, and
+     * named-marker-shaped text inside the literal remain opaque to marker
+     * recognition. An opener without its matching delimiter and apostrophe is
+     * rejected instead of allowing the scanner to reinterpret part of the
+     * literal as ordinary SQL.
+     *
+     * @throws IllegalArgumentException when the alternative-quoted literal is unterminated
+     */
     private void alternativeQuoted() {
         char closing = JdbcSqlLexicalRules.qQuoteClosingDelimiter(source, index);
-        index += 3;
+        boolean national = source.charAt(index) == 'n' || source.charAt(index) == 'N';
+        // Skip q'<delimiter> or nq'<delimiter> so the search begins with the literal's content.
+        index += national ? 4 : 3;
         while (index + 1 < length) {
+            // Oracle closes the literal only when the matching delimiter is immediately followed by an apostrophe.
             if (source.charAt(index) == closing && source.charAt(index + 1) == '\'') {
                 index += 2;
                 return;

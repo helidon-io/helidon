@@ -36,7 +36,7 @@ public final class ImperativeContactOperations implements ContactOperations {
     private final JdbcClient client;
 
     /**
-     * Creates a contact store for the default JDBC persistence unit.
+     * Creates a contact store for the default registry-managed JDBC client.
      *
      * @param client qualified JDBC client
      */

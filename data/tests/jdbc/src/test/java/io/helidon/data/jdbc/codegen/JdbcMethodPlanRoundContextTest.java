@@ -62,7 +62,7 @@ class JdbcMethodPlanRoundContextTest {
     @Test
     void acceptsAnExplicitMapperAvailableOnlyFromTheCurrentRound() {
         TypeName mapperType = TypeName.create("example.GeneratedStringMapper");
-        TypeName mapperContract = TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
+        TypeName mapperContract = TypeName.builder(JdbcCodegenTypes.ROW_MAPPER)
                 .addTypeArgument(TypeNames.STRING)
                 .build();
         TypeInfo mapperInfo = TypeInfo.builder()
@@ -83,7 +83,7 @@ class JdbcMethodPlanRoundContextTest {
     @Test
     void treatsTheRawMapperContractAsMarkerSelection() {
         JdbcMethodPlan plan = JdbcMethodPlan.create(
-                repositoryMethod("mappedValue", TypeNames.STRING, JdbcPersistenceTypes.ROW_MAPPER),
+                repositoryMethod("mappedValue", TypeNames.STRING, JdbcCodegenTypes.ROW_MAPPER),
                 new TypesRoundContext(Map.of()));
 
         assertThat(plan.mappingKind(), is(JdbcMethodPlan.MappingKind.SERVICE));
@@ -103,7 +103,7 @@ class JdbcMethodPlanRoundContextTest {
                 .addTypeArgument(TypeNames.BOXED_INT)
                 .build();
         TypeName mapperType = TypeName.create("example.GeneratedIntegerBoxMapper");
-        TypeName mapperContract = TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
+        TypeName mapperContract = TypeName.builder(JdbcCodegenTypes.ROW_MAPPER)
                 .addTypeArgument(integerBoxType)
                 .build();
         TypeInfo mapperInfo = TypeInfo.builder()
@@ -139,7 +139,7 @@ class JdbcMethodPlanRoundContextTest {
                                       .build())
                 .kind(ElementKind.CLASS)
                 .addInterfaceTypeInfo(interfaceInfo -> interfaceInfo
-                        .typeName(TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
+                        .typeName(TypeName.builder(JdbcCodegenTypes.ROW_MAPPER)
                                           .addTypeArgument(variable)
                                           .build())
                         .kind(ElementKind.INTERFACE))
@@ -198,12 +198,12 @@ class JdbcMethodPlanRoundContextTest {
                 .typeName(returnType)
                 .enclosingType(TypeName.create("example.Repository"))
                 .addAnnotation(Annotation.builder()
-                                       .typeName(JdbcPersistenceTypes.JDBC_STATEMENT)
+                                       .typeName(JdbcCodegenTypes.JDBC_STATEMENT)
                                        .value(sql)
                                        .build());
         if (mapperType != null) {
             builder.addAnnotation(Annotation.builder()
-                                          .typeName(JdbcPersistenceTypes.JDBC_ROW_MAPPER)
+                                          .typeName(JdbcCodegenTypes.JDBC_ROW_MAPPER)
                                           .property("value", mapperType)
                                           .build());
         }

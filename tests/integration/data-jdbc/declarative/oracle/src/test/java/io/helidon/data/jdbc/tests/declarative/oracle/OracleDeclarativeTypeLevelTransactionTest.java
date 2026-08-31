@@ -18,6 +18,7 @@ package io.helidon.data.jdbc.tests.declarative.oracle;
 import io.helidon.data.jdbc.tests.contract.AbstractJdbcTypeLevelTransactionContract;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -27,7 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class OracleDeclarativeTypeLevelTransactionTest extends AbstractJdbcTypeLevelTransactionContract {
     @Container
-    static final org.testcontainers.containers.GenericContainer<?> ORACLE = OracleDeclarativeTestSupport.ORACLE;
+    static final GenericContainer<?> ORACLE = OracleDeclarativeTestSupport.ORACLE;
 
     @Override
     protected void beforeStartApplication() {

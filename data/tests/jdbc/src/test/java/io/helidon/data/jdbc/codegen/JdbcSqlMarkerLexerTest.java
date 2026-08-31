@@ -171,6 +171,22 @@ class JdbcSqlMarkerLexerTest {
         assertThat(result.sql(), is(sql.replace("ID = :id", "ID = ?")));
     }
 
+    /**
+     * Verifies declarative rewriting preserves an Oracle national
+     * alternative-quoted literal while rewriting only the active named
+     * marker outside it.
+     */
+    @Test
+    void protectsOracleNationalAlternativeQuotedLiterals() {
+        String sql = "select nq'[Oracle's :ignored and ?]' from T where ID = :id";
+
+        JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql);
+
+        assertThat(result.markers(), is(List.of("id")));
+        assertThat(result.sql(), is(sql.replace(":id", "?")));
+        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+    }
+
     @Test
     void preservesSqlOutsideMarkerSyntax() {
         String sql = "select <name> from #contacts where ID = :id";
@@ -204,6 +220,11 @@ class JdbcSqlMarkerLexerTest {
         assertThat(identifier.markers(), is(List.of("id")));
     }
 
+    /**
+     * Verifies incompatible marker styles and malformed protected regions,
+     * including Oracle national alternative quotes, fail before generated SQL
+     * can be used.
+     */
     @Test
     void rejectsMixedMarkersAndMalformedRegions() {
         IllegalArgumentException mixed = assertThrows(IllegalArgumentException.class,
@@ -226,6 +247,7 @@ class JdbcSqlMarkerLexerTest {
                      () -> JdbcSqlMarkerLexer.parse("select /* outer /* nested */ outer */"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select $tag$unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select q'[unterminated"));
+        assertThrows(IllegalArgumentException.class, () -> JdbcSqlMarkerLexer.parse("select nq'[unterminated"));
     }
 
     @Test

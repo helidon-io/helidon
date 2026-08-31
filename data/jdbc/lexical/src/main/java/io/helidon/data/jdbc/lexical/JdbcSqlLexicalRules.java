@@ -87,26 +87,54 @@ public final class JdbcSqlLexicalRules {
     }
 
     /**
-     * Recognizes an Oracle alternative quote opening delimiter at a token
-     * boundary.
+     * Recognizes an Oracle alternative-quoted literal opener at a token
+     * boundary and returns the delimiter which closes its content.
+     * <p>
+     * Oracle accepts both the ordinary {@code q'<delimiter>} prefix and the
+     * national-character {@code nq'<delimiter>} prefix without regard to
+     * letter case. The {@code start} offset identifies the beginning of that
+     * complete prefix: {@code q} for the ordinary form or {@code n} for the
+     * national form. Checking the boundary there prevents an embedded
+     * identifier sequence such as {@code identifiernq} from becoming a quote
+     * opener while allowing the {@code n} in a valid {@code nq} prefix.
+     * Paired opening delimiters use their matching closing character; every
+     * other valid delimiter closes with itself.
      *
      * @param source SQL source
-     * @param start candidate {@code q} or {@code Q} offset
+     * @param start candidate {@code q} or {@code nq} prefix offset, case-insensitive
      * @return closing delimiter, or NUL when the candidate is not a valid opener
      */
     public static char qQuoteClosingDelimiter(String source, int start) {
+        // An incomplete candidate at end-of-input cannot contain q, the apostrophe, and an opening delimiter.
+        if (start >= source.length()) {
+            return '\0';
+        }
+
+        // Apply the boundary to the complete q/nq token. Testing at q would mistake the valid nq prefix's n for an
+        // identifier continuation; ignoring the boundary would instead accept nq embedded in an identifier.
         if (start > 0 && identifierContinuation(source.charAt(start - 1))) {
             return '\0';
         }
-        if (start + 2 >= source.length()
-                || (source.charAt(start) != 'q' && source.charAt(start) != 'Q')
-                || source.charAt(start + 1) != '\'') {
+
+        // Normalize both prefix forms to the q position because their apostrophe and delimiter grammar is identical.
+        int qOffset = start;
+        char prefix = source.charAt(start);
+        if (prefix == 'n' || prefix == 'N') {
+            qOffset++;
+        }
+
+        // A complete opener is q, an apostrophe, and one non-whitespace delimiter character.
+        if (qOffset + 2 >= source.length()
+                || (source.charAt(qOffset) != 'q' && source.charAt(qOffset) != 'Q')
+                || source.charAt(qOffset + 1) != '\'') {
             return '\0';
         }
-        char opening = source.charAt(start + 2);
+        char opening = source.charAt(qOffset + 2);
         if (opening == '\'' || Character.isWhitespace(opening) || Character.isISOControl(opening)) {
             return '\0';
         }
+
+        // Oracle pairs the four bracket-like delimiters; any other valid delimiter closes with the same character.
         return switch (opening) {
         case '[' -> ']';
         case '(' -> ')';
@@ -116,6 +144,13 @@ public final class JdbcSqlLexicalRules {
         };
     }
 
+    /**
+     * Tests whether a character can continue the SQL token immediately before
+     * a vendor-specific quote opener.
+     *
+     * @param character character before the candidate opener
+     * @return whether the candidate is embedded in an existing token
+     */
     private static boolean identifierContinuation(char character) {
         return Character.isLetterOrDigit(character) || character == '_' || character == '$';
     }

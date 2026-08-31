@@ -144,6 +144,46 @@ class JdbcSqlScannerTest {
     }
 
     /**
+     * Verifies every case variant of Oracle's national alternative-quote
+     * prefix protects embedded apostrophes and marker-shaped text as part of
+     * one complete region.
+     */
+    @Test
+    void protectsOracleNationalAlternativeQuotedValues() {
+        String sql = "select nq'[Oracle's ? :lower]', NQ'{Oracle's ? :upper}', "
+                + "nQ'<Oracle's ? :mixed>', Nq'!Oracle's ? :mixed!', ?";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+
+        assertThat(handler.source(), is(sql));
+        assertThat(handler.namedMarkers(), is(List.of()));
+        assertThat(handler.positionalMarkers(), is(List.of(sql.lastIndexOf('?'))));
+        assertThat(handler.protectedRegions(),
+                   is(List.of(JdbcSqlScanHandler.RegionKind.ALTERNATIVE_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.ALTERNATIVE_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.ALTERNATIVE_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.ALTERNATIVE_QUOTE)));
+    }
+
+    /**
+     * Verifies an {@code nq} sequence embedded in an identifier is not
+     * promoted to an Oracle alternative-quote opener.
+     */
+    @Test
+    void appliesTokenBoundaryToOracleNationalAlternativeQuotes() {
+        String sql = "select identifiernq'[first' ? 'second]'";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+
+        assertThat(handler.positionalMarkers(), is(List.of(sql.indexOf('?'))));
+        assertThat(handler.protectedRegions(),
+                   is(List.of(JdbcSqlScanHandler.RegionKind.SINGLE_QUOTE,
+                              JdbcSqlScanHandler.RegionKind.SINGLE_QUOTE)));
+    }
+
+    /**
      * Verifies that casts and assignment operators remain ordinary SQL while a
      * Java identifier after a colon is reported as a named marker.
      */

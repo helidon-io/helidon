@@ -572,7 +572,7 @@ final class JdbcExceptionTranslator {
             Throwable cause;
             try {
                 cause = node.source().getCause();
-            } catch (RuntimeException traversalFailure) {
+            } catch (RuntimeException _) {
                 return;
             }
             if (cause == null) {
@@ -595,7 +595,7 @@ final class JdbcExceptionTranslator {
             SQLException next;
             try {
                 next = node.source().getNextException();
-            } catch (RuntimeException traversalFailure) {
+            } catch (RuntimeException _) {
                 return;
             }
             if (next == null) {

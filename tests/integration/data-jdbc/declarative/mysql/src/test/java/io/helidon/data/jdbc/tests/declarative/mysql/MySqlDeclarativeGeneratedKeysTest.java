@@ -25,6 +25,7 @@ import io.helidon.data.jdbc.tests.declarative.DeclarativeGeneratedKeyOperations;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -37,7 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Testcontainers(disabledWithoutDocker = true)
 class MySqlDeclarativeGeneratedKeysTest extends AbstractJdbcGeneratedKeysContract {
     @Container
-    static final org.testcontainers.containers.MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
+    static final MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
 
     @Override
     protected void beforeStartApplication() {

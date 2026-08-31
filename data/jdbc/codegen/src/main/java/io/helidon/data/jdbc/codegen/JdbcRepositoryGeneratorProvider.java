@@ -23,21 +23,21 @@ import io.helidon.data.codegen.common.spi.PersistenceGeneratorProvider;
  * Service-loader provider for JDBC repository code generation.
  */
 @Api.Internal
-public final class JdbcPersistenceGeneratorProvider implements PersistenceGeneratorProvider {
+public final class JdbcRepositoryGeneratorProvider implements PersistenceGeneratorProvider {
 
     /**
-     * Creates the JDBC persistence-generator provider.
+     * Creates the JDBC repository-generator provider.
      */
-    public JdbcPersistenceGeneratorProvider() {
+    public JdbcRepositoryGeneratorProvider() {
     }
 
     /**
-     * Creates a new stateless JDBC persistence generator for one code-generation environment.
+     * Creates a new stateless JDBC repository generator for one code-generation environment.
      *
-     * @return JDBC persistence generator
+     * @return JDBC repository generator
      */
     @Override
     public PersistenceGenerator create() {
-        return new JdbcPersistenceGenerator();
+        return new JdbcRepositoryGenerator();
     }
 }

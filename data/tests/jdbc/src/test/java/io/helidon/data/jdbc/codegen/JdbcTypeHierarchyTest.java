@@ -99,7 +99,7 @@ class JdbcTypeHierarchyTest {
 
         assertThat(methods.size(), is(1));
         assertThat(methods.getFirst()
-                           .findAnnotation(JdbcPersistenceTypes.JDBC_STATEMENT)
+                           .findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)
                            .flatMap(Annotation::stringValue)
                            .orElseThrow(),
                    is("select NEW_VALUE from ITEM"));
@@ -161,7 +161,7 @@ class JdbcTypeHierarchyTest {
                 .typeName(returnType)
                 .addElementModifier(Modifier.ABSTRACT)
                 .addAnnotation(Annotation.builder()
-                                       .typeName(JdbcPersistenceTypes.JDBC_STATEMENT)
+                                       .typeName(JdbcCodegenTypes.JDBC_STATEMENT)
                                        .value(sql)
                                        .build());
         for (String parameter : parameters) {

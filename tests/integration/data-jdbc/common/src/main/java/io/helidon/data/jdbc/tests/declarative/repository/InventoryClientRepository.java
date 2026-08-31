@@ -23,7 +23,7 @@ import io.helidon.data.jdbc.Jdbc;
  */
 @Data.Repository
 @Data.Provider("jdbc")
-@Data.PersistenceUnit("inventory")
+@Jdbc.Client("inventory")
 public interface InventoryClientRepository {
 
     /**

@@ -399,7 +399,7 @@ class JdbcTxSupportTest {
             Thread thread = Thread.ofVirtual().start(() -> {
                 try {
                     support.transaction(Tx.Type.MANDATORY, () -> null);
-                } catch (TxException expected) {
+                } catch (TxException _) {
                     mandatoryRejected.set(true);
                 } catch (Throwable failure) {
                     virtualThreadFailure.set(failure);
@@ -432,7 +432,7 @@ class JdbcTxSupportTest {
                 try {
                     support.transaction(Tx.Type.MANDATORY, () -> null);
                     return false;
-                } catch (TxException expected) {
+                } catch (TxException _) {
                     return true;
                 }
             }).get(), is(true));

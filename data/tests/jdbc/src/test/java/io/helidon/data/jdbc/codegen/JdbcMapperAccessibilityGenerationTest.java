@@ -57,7 +57,7 @@ class JdbcMapperAccessibilityGenerationTest {
                                       TypeName.class,
                                       DataGeneratorProvider.class,
                                       RepositoryCodegenProvider.class,
-                                      JdbcPersistenceGeneratorProvider.class))
+                                      JdbcRepositoryGeneratorProvider.class))
                 .addSource("InvalidMapperRepository.java", """
                         package example;
 
@@ -96,7 +96,7 @@ class JdbcMapperAccessibilityGenerationTest {
                                       TypeName.class,
                                       DataGeneratorProvider.class,
                                       RepositoryCodegenProvider.class,
-                                      JdbcPersistenceGeneratorProvider.class))
+                                      JdbcRepositoryGeneratorProvider.class))
                 .addSource("InaccessibleMapperContainer.java", """
                         package example;
 

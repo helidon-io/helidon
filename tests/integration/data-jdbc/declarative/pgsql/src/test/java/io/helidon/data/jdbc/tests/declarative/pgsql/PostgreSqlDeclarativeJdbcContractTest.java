@@ -20,6 +20,7 @@ import io.helidon.data.jdbc.tests.contract.AbstractJdbcApplicationContract;
 import io.helidon.data.jdbc.tests.declarative.DeclarativeContactOperations;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
+import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -29,7 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class PostgreSqlDeclarativeJdbcContractTest extends AbstractJdbcApplicationContract {
     @Container
-    static final org.testcontainers.containers.JdbcDatabaseContainer<?> POSTGRESQL =
+    static final JdbcDatabaseContainer<?> POSTGRESQL =
             PostgreSqlDeclarativeTestSupport.POSTGRESQL;
 
     @Override

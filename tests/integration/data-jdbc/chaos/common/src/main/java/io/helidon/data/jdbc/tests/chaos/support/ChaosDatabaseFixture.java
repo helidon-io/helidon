@@ -29,7 +29,7 @@ public final class ChaosDatabaseFixture {
     private final JdbcClient client;
 
     /**
-     * Creates the chaos database fixture for the default JDBC persistence unit.
+     * Creates the chaos database fixture for the default registry-managed JDBC client.
      *
      * @param client qualified JDBC client
      */

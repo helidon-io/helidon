@@ -18,6 +18,7 @@ package io.helidon.data.jdbc.tests.declarative.mysql;
 import io.helidon.data.jdbc.tests.contract.AbstractJdbcTypeLevelTransactionContract;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
+import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -27,7 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class MySqlDeclarativeTypeLevelTransactionTest extends AbstractJdbcTypeLevelTransactionContract {
     @Container
-    static final org.testcontainers.containers.MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
+    static final MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
 
     @Override
     protected void beforeStartApplication() {
