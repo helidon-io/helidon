@@ -30,7 +30,7 @@ import io.helidon.http.PathMatcher;
  * matches one of the entry's methods. If there no {@code methods} list for the entry, then all HTTP methods match the entry.
  * <p>
  * If a request matches an entry, then the entry's {@code enabled} value (which defaults to {@code}) determines the entry's vote
- * whether the request should be measured. If a request matches multiple entries, the vote of the last matched entry wins.
+ * whether the request should be measured. If a request matches multiple entries, the vote of the first matched entry wins.
  *
  */
 @Prototype.Configured
