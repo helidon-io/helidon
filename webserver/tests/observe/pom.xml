@@ -35,6 +35,7 @@
 
     <modules>
         <module>health</module>
+        <module>log4j</module>
         <module>observe</module>
         <module>security</module>
         <module>weighted</module>

@@ -24,6 +24,9 @@ import io.helidon.webserver.observe.spi.Observer;
 /**
  * {@link java.util.ServiceLoader} provider implementation for logging observe provider.
  * <p>
+ * Log observability delegates runtime level management to logging backend providers when available, with a Java Util
+ * Logging fallback.
+ * <p>
  * Java Util Logging uses weak references to loggers (and does not support adding level configuration to LogManager at runtime),
  *  so changing a log level for a logger may be temporary (in case a garbage collector runs and the reference is not kept
  *  anywhere).
