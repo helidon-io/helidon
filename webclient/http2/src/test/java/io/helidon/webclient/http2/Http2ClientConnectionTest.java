@@ -1822,6 +1822,17 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void discardedStreamBufferPublishesFailure() {
+        StreamBuffer buffer = new StreamBuffer(mock(Http2ClientStream.class), 1);
+        byte[] entity = "hello".getBytes(StandardCharsets.UTF_8);
+        buffer.push(dataFrame(1, entity, false));
+        Http2Exception failure = new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid trailers");
+
+        assertThat(buffer.failAndDiscard(failure), is(entity.length));
+        assertThat(assertThrows(Http2Exception.class, () -> buffer.poll(Duration.ZERO)), is(failure));
+    }
+
+    @Test
     void createWaitsForInitialSettingsAndHonorsPeerMaxConcurrentStreams() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             CompletableFuture<Http2ClientConnection> connectionFuture = new CompletableFuture<>();

@@ -103,14 +103,18 @@ class StreamBuffer {
         }
     }
 
-    int discard() {
+    int failAndDiscard(RuntimeException failure) {
         int discardedDataLength;
         try {
             streamLock.lock();
+            if (this.failure == null) {
+                this.failure = failure;
+            }
             discardedDataLength = unprocessedDataLength.getAndSet(0);
             buffer.clear();
         } finally {
             streamLock.unlock();
+            dequeSemaphore.release();
         }
         return discardedDataLength;
     }
