@@ -196,6 +196,7 @@ class Http2HeadersTest {
         Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
 
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+        assertThat(exception.requestTarget(), is(false));
     }
 
     @Test
@@ -208,6 +209,7 @@ class Http2HeadersTest {
         Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
 
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+        assertThat(exception.requestTarget(), is(true));
     }
 
     @Test

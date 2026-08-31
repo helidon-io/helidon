@@ -396,10 +396,10 @@ public class Http2Headers {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :scheme pseudo header");
             }
             if (!pseudoHeaders.hasPath()) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :path pseudo header");
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :path pseudo header", true);
             }
             if (pseudoHeaders.path().isEmpty()) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":path pseudo header has empty value");
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":path pseudo header has empty value", true);
             }
         }
         List<String> hostValues = headers.all(HeaderNames.HOST, List::of);

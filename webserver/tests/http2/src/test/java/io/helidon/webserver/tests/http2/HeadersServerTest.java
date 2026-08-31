@@ -399,6 +399,16 @@ public class HeadersServerTest {
     }
 
     @Test
+    void malformedContentLengthWithMissingRequestTargetClosesConnection(Http2TestClient testClient) {
+        assertMalformedContentLengthClosesConnection(testClient, false);
+    }
+
+    @Test
+    void malformedContentLengthWithEmptyRequestTargetClosesConnection(Http2TestClient testClient) {
+        assertMalformedContentLengthClosesConnection(testClient, true);
+    }
+
+    @Test
     void relativeRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
         assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, GET, "boards/");
     }
@@ -562,6 +572,32 @@ public class HeadersServerTest {
             Http2RstStream rstStream = connection.assertRstStream(1, TIMEOUT);
             assertThat(rstStream.errorCode(), is(Http2ErrorCode.PROTOCOL));
             assertConnectionReusable(connection);
+        }
+    }
+
+    private static void assertMalformedContentLengthClosesConnection(Http2TestClient testClient,
+                                                                      boolean emptyRequestTarget) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            WritableHeaders<?> headers = WritableHeaders.create();
+            headers.add(HeaderNames.CONTENT_LENGTH, "+5");
+            Http2Headers invalidHeaders = Http2Headers.create(headers);
+            invalidHeaders.method(GET);
+            if (emptyRequestTarget) {
+                invalidHeaders.path("");
+            }
+            invalidHeaders.scheme(connection.clientUri().scheme());
+            invalidHeaders.authority(connection.clientUri().authority());
+
+            connection.completeHandshake(TIMEOUT);
+            connection.writer()
+                    .writeHeaders(invalidHeaders,
+                                  1,
+                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                  FlowControl.Outbound.NOOP);
+
+            connection.assertGoAway(Http2ErrorCode.PROTOCOL,
+                                    "Content-Length header must be a number.",
+                                    TIMEOUT);
         }
     }
 
