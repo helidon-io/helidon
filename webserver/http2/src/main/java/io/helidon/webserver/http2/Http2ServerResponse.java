@@ -347,6 +347,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
     }
 
+    void flushHeaders() {
+        if (outputStream != null) {
+            outputStream.flushHeaders();
+        }
+    }
+
     private static boolean sendTrailers(ServerResponseHeaders headers) {
         return headers.contains(HeaderNames.TRAILER);
     }
@@ -380,12 +386,6 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
         headers.remove(HeaderNames.TRANSFER_ENCODING);
         headers.remove(HeaderNames.TRAILER);
-    }
-
-    void flushHeaders() {
-        if (outputStream != null) {
-            outputStream.flushHeaders();
-        }
     }
 
     private static class BlockingOutputStream extends OutputStream {
