@@ -90,7 +90,9 @@ class SchemaCodegen implements CodegenExtension {
                         .accessModifier(AccessModifier.PRIVATE)
                         .name("STRING_SCHEMA")
                         .type(String.class)
-                        .defaultValueContent("\"\"\"\n" + generateSchemaString(helidonSchema) + "\"\"\""))
+                        .defaultValueContent("\"\"\"\n"
+                                                     + generateSchemaString(helidonSchema).replace("\\", "\\\\")
+                                                     + "\"\"\""))
                 .addField(fieldBuilder -> fieldBuilder.isStatic(true)
                         .accessModifier(AccessModifier.PRIVATE)
                         .isFinal(true)

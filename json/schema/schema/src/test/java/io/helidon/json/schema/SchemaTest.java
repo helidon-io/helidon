@@ -16,6 +16,9 @@
 
 package io.helidon.json.schema;
 
+import java.util.Optional;
+
+import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonString;
 
@@ -26,6 +29,19 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SchemaTest {
+
+    @Test
+    void testDefaultValueBackwardCompatibility() {
+        SchemaItem schemaItem = new LegacySchemaItem();
+        JsonObject.Builder builder = JsonObject.builder();
+
+        schemaItem.generate(builder);
+        JsonObject generated = builder.build();
+
+        assertThat(schemaItem.defaultValue(), is(Optional.empty()));
+        assertThat(generated.containsKey("default"), is(false));
+        assertThat(generated.stringValue("type").orElseThrow(), is("string"));
+    }
 
     @Test
     void testDefaultValue() {
@@ -61,6 +77,29 @@ class SchemaTest {
                 .rootInteger(builder -> builder.multipleOf(1))
                 .rootNumber(builder -> builder.multipleOf(1))
                 .build());
+    }
+
+    private static class LegacySchemaItem implements SchemaItem {
+
+        @Override
+        public Optional<String> title() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<String> description() {
+            return Optional.empty();
+        }
+
+        @Override
+        public boolean required() {
+            return false;
+        }
+
+        @Override
+        public SchemaType schemaType() {
+            return SchemaType.STRING;
+        }
     }
 
 }
