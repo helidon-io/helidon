@@ -15,6 +15,7 @@
  */
 package io.helidon.common;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -62,14 +63,32 @@ public interface LruCache<K, V> {
      *
      * @param key key to retrieve
      * @return value if present or empty
+     * @throws NullPointerException if {@code key} is {@code null}
      */
     Optional<V> get(K key);
+
+    /**
+     * Get a value from the cache without marking it as recently used.
+     * Custom implementations may not support this operation.
+     *
+     * @param key          key to retrieve
+     * @param defaultValue value to return if the key is not present
+     * @return cached value if present, otherwise {@code defaultValue}
+     * @throws NullPointerException if {@code key} or {@code defaultValue} is {@code null}
+     * @throws UnsupportedOperationException if this cache does not support peeking
+     */
+    default V peek(K key, V defaultValue) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(defaultValue);
+        throw new UnsupportedOperationException("Peeking is not supported by this cache");
+    }
 
     /**
      * Remove a value from the cache.
      *
      * @param key key of the record to remove
      * @return the value that was mapped to the key, or empty if none was
+     * @throws NullPointerException if {@code key} is {@code null}
      */
     Optional<V> remove(K key);
 
@@ -79,6 +98,7 @@ public interface LruCache<K, V> {
      * @param key   key to add
      * @param value value to add
      * @return value that was already mapped or empty if the value was not mapped
+     * @throws NullPointerException if {@code key} or {@code value} is {@code null}
      */
     Optional<V> put(K key, V value);
 
@@ -92,6 +112,7 @@ public interface LruCache<K, V> {
      * @param key           key to check/insert value for
      * @param valueSupplier supplier called if the value is not yet cached, or is invalid
      * @return current value from the cache, or computed value from the supplier
+     * @throws NullPointerException if {@code key} or {@code valueSupplier} is {@code null}
      */
     Optional<V> computeValue(K key, Supplier<Optional<V>> valueSupplier);
 

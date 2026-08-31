@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link io.helidon.common.LruCache}.
@@ -63,6 +65,39 @@ class LruCacheTest {
         assertThat(res, is(Optional.of(value)));
         res = theCache.get(key);
         assertThat(res, is(Optional.empty()));
+    }
+
+    @Test
+    void testPeek() {
+        LruCache<String, String> cache = LruCache.create(3);
+        cache.put("first", "first-value");
+        cache.put("second", "second-value");
+        cache.put("third", "third-value");
+
+        assertThat(cache.peek("first", "default"), is("first-value"));
+
+        Object defaultValue = new Object();
+        LruCache<String, Object> objectCache = LruCache.create();
+        assertThat(objectCache.peek("missing", defaultValue), sameInstance(defaultValue));
+
+        cache.put("fourth", "fourth-value");
+        assertThat(cache.get("first"), is(Optional.empty()));
+        assertThat(cache.get("second"), is(Optional.of("second-value")));
+    }
+
+    @Test
+    void testNullParameters() {
+        LruCache<String, String> cache = LruCache.create();
+
+        assertThrows(NullPointerException.class, () -> cache.get(null));
+        assertThrows(NullPointerException.class, () -> cache.peek(null, "default"));
+        assertThrows(NullPointerException.class, () -> cache.peek("key", null));
+        assertThrows(NullPointerException.class, () -> cache.remove(null));
+        assertThrows(NullPointerException.class, () -> cache.put(null, "value"));
+        assertThrows(NullPointerException.class, () -> cache.put("key", null));
+        assertThrows(NullPointerException.class, () -> cache.computeValue(null, Optional::empty));
+        cache.put("key", "value");
+        assertThrows(NullPointerException.class, () -> cache.computeValue("key", null));
     }
 
     @Test
