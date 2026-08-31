@@ -137,9 +137,9 @@ interface BaseHandlerConfigBlueprint {
     Optional<Integer> recordCacheCapacity();
 
     /**
-     * Whether pre-compressed sidecar resources should be selected for this handler. File system handlers configured with
-     * a single file require this option to be explicitly enabled. Other feature-registered handlers inherit the feature
-     * value when absent; all other directly created handlers default to enabled.
+     * Whether pre-compressed sidecar resources should be selected for this handler; file system handlers configured with
+     * a single file require explicit enablement, other feature-registered handlers inherit the feature value when absent,
+     * and all other directly created handlers default to enabled.
      *
      * @return whether pre-compressed sidecar resources should be used
      */
