@@ -65,7 +65,7 @@ public final class JdbcSqlScanner {
             char current = source.charAt(index);
             if ((current == 'e' || current == 'E')
                     && peek(1) == '\''
-                    && (index == 0 || !Character.isJavaIdentifierPart(source.charAt(index - 1)))) {
+                    && (index == 0 || !Character.isJavaIdentifierPart(source.codePointBefore(index)))) {
                 int start = index;
                 ordinary();
                 // PostgreSQL makes backslash significant only when E prefixes the literal. Keeping that decision at
@@ -146,14 +146,29 @@ public final class JdbcSqlScanner {
             index += 2;
             return;
         }
-        if (!Character.isJavaIdentifierStart(next)) {
+
+        int start = index;
+        int nameStart = start + 1;
+        if (nameStart >= length) {
             index++;
             return;
         }
-        int start = index;
-        int end = index + 2;
-        while (end < length && Character.isJavaIdentifierPart(source.charAt(end))) {
-            end++;
+
+        // Handler offsets are UTF-16 String indices. Classify complete Unicode code points but advance by their
+        // UTF-16 width, preserving the source spelling and callback contract without normalization. The accepted
+        // identifier set intentionally follows the Java identifier rules of the JDK
+        int codePoint = source.codePointAt(nameStart);
+        if (!Character.isJavaIdentifierStart(codePoint)) {
+            index++;
+            return;
+        }
+        int end = nameStart + Character.charCount(codePoint);
+        while (end < length) {
+            codePoint = source.codePointAt(end);
+            if (!Character.isJavaIdentifierPart(codePoint)) {
+                break;
+            }
+            end += Character.charCount(codePoint);
         }
         ordinary();
         handler.namedMarker(start, end);

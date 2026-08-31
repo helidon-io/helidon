@@ -88,10 +88,20 @@ interface JdbcConnectionLease extends AutoCloseable {
 
         /**
          * Acquires and validates a physically owned connection. Operations that
-         * own their connection require auto-commit so an ordinary lease close cannot leave
-         * transaction completion to driver-specific {@link Connection#close()}
-         * behavior. A rejected connection is closed, or invalidated after a failed close, before the acquisition
-         * failure is rethrown.
+         * own their connection require auto-commit so an ordinary lease close
+         * cannot leave transaction completion to driver-specific
+         * {@link Connection#close()} behavior. A rejected connection is
+         * invalidated before the acquisition failure is rethrown because an
+         * ordinary close cannot prove that a pooled physical connection is safe
+         * for another borrower.
+         * <p>
+         * This conservative policy may discard a physical connection that a
+         * pool could have reset, and aborting it can cost more than returning it
+         * to the pool. Persistent datasource misconfiguration can therefore
+         * cause connection churn while operations continue to fail. A
+         * datasource that returns a proxy connection remains responsible for
+         * applying {@link Connection#abort(java.util.concurrent.Executor)} to
+         * the underlying physical connection as required by its JDBC contract.
          *
          * @param dataSource source of the owned connection
          * @return validated connection lease
@@ -107,17 +117,7 @@ interface JdbcConnectionLease extends AutoCloseable {
                 }
                 return new Owned(connection);
             } catch (SQLException | RuntimeException | Error failure) {
-                Throwable reportedFailure = failure;
-                try {
-                    connection.close();
-                } catch (SQLException | RuntimeException | Error closeFailure) {
-                    // A failed close does not prove that a pooled or physical connection was released. Preserve the
-                    // validation failure, record a safe close diagnostic, and invalidate while the reference is held.
-                    reportedFailure = JdbcExceptionTranslator.suppress(reportedFailure,
-                                                                       "closing a rejected connection",
-                                                                       closeFailure);
-                    reportedFailure = JdbcConnectionInvalidator.invalidate(connection, reportedFailure);
-                }
+                Throwable reportedFailure = JdbcConnectionInvalidator.invalidate(connection, failure);
                 throw rethrow(reportedFailure);
             }
         }

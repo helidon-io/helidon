@@ -88,36 +88,64 @@ The imperative and declarative database leaves add the appropriate
 database-specific setup in the database leaf or `common/src/<db>`; keep portable
 test contracts in `common/src/main/java`.
 
+## Maven profiles
+
+The MySQL, PostgreSQL, and Oracle Database modules are in the `long-tests`
+Maven profile. This profile is enabled by default so the complete integration
+suite continues to run without additional command-line options.
+
+The Maven options have different meanings:
+
+| Option | Meaning in this reactor |
+| --- | --- |
+| `-Plong-tests` | Explicitly activates the `long-tests` Maven profile and includes the MySQL, PostgreSQL, and Oracle Database modules. |
+| `-P-long-tests` | Explicitly deactivates the `long-tests` Maven profile and leaves only the H2 modules enabled. |
+| `-Dlong-tests` | Defines a Maven property. Because the profile is automatically activated only when this property is absent (`!long-tests`), defining it also excludes the external database modules. It does not enable them. |
+
+The commands below use explicit profile activation or deactivation to avoid
+depending on the `!long-tests` automatic-activation rule.
+
 ## Regular integration tests
 
-Run the normal JDBC integration suite:
+### Run every test against every supported database
+
+Start Docker, make sure the configured container registries are reachable, and
+run:
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml verify
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests verify
 ```
 
-Run only H2 style tests:
+This command runs the provider-level H2 tests and the imperative and declarative
+test suites for H2, MySQL, PostgreSQL, and Oracle Database. The external database
+tests use Testcontainers. They are skipped when Docker is unavailable, so a
+successful Maven build does not by itself prove that those database tests ran.
+
+### Run only H2 tests
+
+Explicitly deactivate the profile to run the provider-level, imperative, and
+declarative H2 tests without Docker:
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml -pl imperative/h2,declarative/h2 -am verify
+mvn -f tests/integration/data-jdbc/pom.xml -P-long-tests verify
 ```
 
-Run one external database across both styles:
+### Run one external database across both styles
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml -pl imperative/mysql,declarative/mysql -am verify
-mvn -f tests/integration/data-jdbc/pom.xml -pl imperative/pgsql,declarative/pgsql -am verify
-mvn -f tests/integration/data-jdbc/pom.xml -pl imperative/oracle,declarative/oracle -am verify
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/mysql,declarative/mysql -am verify
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/pgsql,declarative/pgsql -am verify
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/oracle,declarative/oracle -am verify
 ```
 
-Run one style across all configured databases:
+### Run one style across all configured databases
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml -pl imperative -am verify
-mvn -f tests/integration/data-jdbc/pom.xml -pl declarative -am verify
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/h2,imperative/mysql,imperative/pgsql,imperative/oracle -am verify
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl declarative/h2,declarative/mysql,declarative/pgsql,declarative/oracle -am verify
 ```
 
-Run provider-level H2 tests:
+### Run only the provider-level H2 tests
 
 ```bash
 mvn -f tests/integration/data-jdbc/pom.xml -pl h2 -am verify
