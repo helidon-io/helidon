@@ -1008,6 +1008,30 @@ class Http2AltSvcCacheTest {
     }
 
     @Test
+    void newerAdvertisementWinsOverDelayedWithdrawal() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "origin.example");
+        Instant withdrawalObservedAt = START.plusSeconds(5);
+        AltSvcHeader delayedWithdrawal = header(withdrawalObservedAt, "clear");
+        Instant advertisementObservedAt = START.plusSeconds(10);
+
+        cache.record(target,
+                     header(advertisementObservedAt, "h2=\":9443\"; ma=60"),
+                     true,
+                     false,
+                     advertisementObservedAt);
+        Http2AltSvcCache.Selection selection = cache.select(target, false, _ -> false);
+        cache.record(target, delayedWithdrawal, true, false, withdrawalObservedAt);
+
+        assertThat(cache.select(target, false, _ -> false), sameInstance(selection));
+        assertThat(selection.port(), is(9443));
+        assertThat(cache.current(selection), is(true));
+
+        cache.close();
+    }
+
+    @Test
     void withdrawalWinsTiesAndRejectsDelayedAdvertisement() {
         MutableClock clock = new MutableClock(START);
         Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });

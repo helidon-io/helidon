@@ -234,11 +234,17 @@ final class Http2AltSvcCache implements AutoCloseable {
             }
             boolean withdrawal = alternative == null;
             Instant latestObservation = previous == null ? tombstones.get(routeKey) : previous.observedAt;
-            // Withdrawals always win; advertisements must be strictly newer than state and network barriers.
-            if (!withdrawal
-                    && (!observedAt.isAfter(networkChangedAt)
-                            || (latestObservation != null && !observedAt.isAfter(latestObservation)))) {
-                return;
+            if (withdrawal) {
+                // Withdrawals win ties but cannot discard a newer advertisement.
+                if (previous != null && observedAt.isBefore(previous.alternativeObservedAt)) {
+                    return;
+                }
+            } else {
+                // Advertisements must be strictly newer than state and network barriers.
+                if (!observedAt.isAfter(networkChangedAt)
+                        || (latestObservation != null && !observedAt.isAfter(latestObservation))) {
+                    return;
+                }
             }
             if (alternative != null
                     && previous != null
@@ -273,6 +279,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                                                                 : previous.advertisedHost,
                                                         routeKey,
                                                         alternative,
+                                                        observedAt,
                                                         observedAt,
                                                         generation,
                                                         selection(target, routeKey, alternative, generation),
@@ -316,6 +323,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                                                     selection.routeKey,
                                                     state.alternative,
                                                     eventAt,
+                                                    state.alternativeObservedAt,
                                                     generation,
                                                     selection(selection.originTarget,
                                                               selection.routeKey,
@@ -375,10 +383,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                     RouteState state = entry.getValue();
                     invalidate(state, invalidations);
                     if (state.alternative.persist && routeKey.originKey.currentTlsGeneration()) {
-                        RouteState updated = routeState(routeKey,
-                                                        state.originHost,
-                                                        state.advertisedHost,
-                                                        state.alternative,
+                        RouteState updated = routeState(state,
                                                         latest(state.observedAt, networkChangedAt),
                                                         nextGeneration(state.alternative.expirationTime),
                                                         null);
@@ -731,18 +736,16 @@ final class Http2AltSvcCache implements AutoCloseable {
         invalidations.add(state.generation);
     }
 
-    private RouteState routeState(OriginRouteKey routeKey,
-                                  String originHost,
-                                  String advertisedHost,
-                                  Alternative alternative,
+    private RouteState routeState(RouteState state,
                                   Instant observedAt,
                                   Generation generation,
                                   Instant negativeUntil) {
-        return new RouteState(originHost,
-                              advertisedHost,
-                              routeKey,
-                              alternative,
+        return new RouteState(state.originHost,
+                              state.advertisedHost,
+                              state.routeKey,
+                              state.alternative,
                               observedAt,
+                              state.alternativeObservedAt,
                               generation,
                               negativeUntil);
     }
@@ -1072,6 +1075,7 @@ final class Http2AltSvcCache implements AutoCloseable {
         private List<Selection> selections;
         private Alternative alternative;
         private Instant observedAt;
+        private Instant alternativeObservedAt;
         private Instant negativeUntil;
 
         private RouteState(String originHost,
@@ -1079,6 +1083,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                            OriginRouteKey routeKey,
                            Alternative alternative,
                            Instant observedAt,
+                           Instant alternativeObservedAt,
                            Generation generation,
                            Selection selection,
                            Instant negativeUntil) {
@@ -1087,6 +1092,7 @@ final class Http2AltSvcCache implements AutoCloseable {
             this.routeKey = Objects.requireNonNull(routeKey, "routeKey");
             this.alternative = Objects.requireNonNull(alternative, "alternative");
             this.observedAt = Objects.requireNonNull(observedAt, "observedAt");
+            this.alternativeObservedAt = Objects.requireNonNull(alternativeObservedAt, "alternativeObservedAt");
             this.generation = Objects.requireNonNull(generation, "generation");
             this.candidate = new Candidate(routeKey, generation);
             this.selections = List.of(Objects.requireNonNull(selection, "selection"));
@@ -1098,6 +1104,7 @@ final class Http2AltSvcCache implements AutoCloseable {
                            OriginRouteKey routeKey,
                            Alternative alternative,
                            Instant observedAt,
+                           Instant alternativeObservedAt,
                            Generation generation,
                            Instant negativeUntil) {
             this.originHost = Objects.requireNonNull(originHost, "originHost");
@@ -1105,6 +1112,7 @@ final class Http2AltSvcCache implements AutoCloseable {
             this.routeKey = Objects.requireNonNull(routeKey, "routeKey");
             this.alternative = Objects.requireNonNull(alternative, "alternative");
             this.observedAt = Objects.requireNonNull(observedAt, "observedAt");
+            this.alternativeObservedAt = Objects.requireNonNull(alternativeObservedAt, "alternativeObservedAt");
             this.generation = Objects.requireNonNull(generation, "generation");
             this.candidate = new Candidate(routeKey, generation);
             this.selections = List.of();
@@ -1149,6 +1157,7 @@ final class Http2AltSvcCache implements AutoCloseable {
         private void refresh(Alternative alternative, Instant observedAt) {
             this.alternative = alternative;
             this.observedAt = observedAt;
+            this.alternativeObservedAt = observedAt;
             generation.establishUntil = alternative.expirationTime;
         }
     }
