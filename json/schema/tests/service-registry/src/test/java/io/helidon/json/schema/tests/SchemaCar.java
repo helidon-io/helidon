@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,6 @@ import io.helidon.json.schema.JsonSchema;
 
 @JsonSchema.Schema
 @JsonSchema.Description("My super car")
-public record SchemaCar(@JsonSchema.Description("The color of my car") String color,
+public record SchemaCar(@JsonSchema.Description("The color of my car") @JsonSchema.Default("\"red\"") String color,
                         @JsonSchema.Required String spz) {
 }

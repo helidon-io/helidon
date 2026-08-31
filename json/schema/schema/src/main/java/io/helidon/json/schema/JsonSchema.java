@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,26 @@ public final class JsonSchema {
          * JSON schema description.
          *
          * @return schema description
+         */
+        java.lang.String value();
+    }
+
+    /**
+     * Default JSON value associated with a JSON schema.
+     * <p>
+     * The annotation value must contain JSON text. For example, a JSON string default can be declared as
+     * {@code @JsonSchema.Default("\"value\"")}. Any JSON value is supported, including {@code null}, arrays, and objects.
+     * A value that validates against the associated schema is recommended, but not required. The value is annotation metadata
+     * and is not used to fill in missing instance values.
+     */
+    @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Default {
+
+        /**
+         * Default value as JSON text.
+         *
+         * @return default value as JSON text
          */
         java.lang.String value();
     }

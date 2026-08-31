@@ -158,6 +158,7 @@ final class SchemaSupport {
         private static void parseCommon(SchemaItem.BuilderBase<?, ?> itemBuilder, JsonObject jsonObject) {
             jsonObject.stringValue("description").ifPresent(itemBuilder::description);
             jsonObject.stringValue("title").ifPresent(itemBuilder::title);
+            jsonObject.value("default").ifPresent(itemBuilder::defaultValue);
         }
 
         private static void parseString(SchemaString.Builder stringBuilder, JsonObject jsonObject) {

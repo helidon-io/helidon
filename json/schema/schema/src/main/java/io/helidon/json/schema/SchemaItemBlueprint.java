@@ -21,6 +21,7 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 /**
  * Common interface for all Json Schema items.
@@ -41,6 +42,15 @@ interface SchemaItemBlueprint {
      * @return item description
      */
     Optional<String> description();
+
+    /**
+     * Default JSON value associated with this schema item.
+     * Any JSON value is supported, although a value that validates against this schema item is recommended.
+     * The value is metadata and is not used to fill in missing instance values.
+     *
+     * @return default JSON value
+     */
+    Optional<JsonValue> defaultValue();
 
     /**
      * Used in the object properties to mark required property.
@@ -67,6 +77,7 @@ interface SchemaItemBlueprint {
     default void generate(JsonObject.Builder builder) {
         title().ifPresent(title -> builder.set("title", title));
         description().ifPresent(description -> builder.set("description", description));
+        defaultValue().ifPresent(defaultValue -> builder.set("default", defaultValue));
         builder.set("type", schemaType().name().toLowerCase());
     }
 
