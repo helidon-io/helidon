@@ -353,9 +353,9 @@ public class Http2Headers {
     }
 
     /**
-     * Validate request or response trailers.
+     * Validate that request or response trailers do not contain pseudo-headers.
      *
-     * @throws Http2Exception in case the trailers are invalid
+     * @throws Http2Exception if the trailers contain a pseudo-header
      */
     public void validateTrailers() throws Http2Exception {
         if (pseudoHeaders.size() != 0) {
