@@ -371,6 +371,34 @@ public class HeadersServerTest {
     }
 
     @Test
+    void missingRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            Http2Headers invalidHeaders = Http2Headers.create(WritableHeaders.create());
+            invalidHeaders.method(GET);
+            invalidHeaders.scheme(connection.clientUri().scheme());
+            invalidHeaders.authority(connection.clientUri().authority());
+            connection.writer()
+                    .writeHeaders(invalidHeaders,
+                                  1,
+                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                  FlowControl.Outbound.NOOP);
+
+            connection.assertSettings(TIMEOUT);
+            connection.assertWindowsUpdate(0, TIMEOUT);
+            connection.assertSettings(TIMEOUT);
+
+            Http2RstStream rstStream = connection.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.PROTOCOL));
+            assertConnectionReusable(connection);
+        }
+    }
+
+    @Test
+    void emptyRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
+        assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, GET, "");
+    }
+
+    @Test
     void relativeRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
         assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, GET, "boards/");
     }

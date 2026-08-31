@@ -398,6 +398,9 @@ public class Http2Headers {
             if (!pseudoHeaders.hasPath()) {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :path pseudo header");
             }
+            if (pseudoHeaders.path().isEmpty()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":path pseudo header has empty value");
+            }
         }
         List<String> hostValues = headers.all(HeaderNames.HOST, List::of);
         if (hostValues.size() > 1) {
@@ -647,9 +650,6 @@ public class Http2Headers {
             if (isPseudoHeader) {
                 if (value == null) {
                     throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Value of a pseudo header must not be null");
-                }
-                if (headerName.equals(PATH_NAME) && value.length() == 0) {
-                    throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":path pseudo header has empty value");
                 }
                 if (headerName.equals(PATH_NAME)) {
                     validateAndSetPseudoHeader(headerName, pseudoHeaders::hasPath, pseudoHeaders::path, value);
