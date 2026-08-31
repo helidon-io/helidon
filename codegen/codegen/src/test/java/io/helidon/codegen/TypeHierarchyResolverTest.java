@@ -15,6 +15,7 @@
  */
 package io.helidon.codegen;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -252,7 +253,7 @@ class TypeHierarchyResolverTest {
     @Test
     void retainsCompatibleCheckedExceptions() {
         TypeName exceptionType = TypeName.create(Exception.class);
-        TypeName ioExceptionType = TypeName.create(java.io.IOException.class);
+        TypeName ioExceptionType = TypeName.create(IOException.class);
         TypeInfo exceptionInfo = TypeInfo.builder()
                 .typeName(exceptionType)
                 .kind(ElementKind.CLASS)

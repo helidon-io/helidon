@@ -107,6 +107,23 @@ class JdbcSqlScannerTest {
     }
 
     /**
+     * Verifies that an escape-string prefix following a supplementary Java
+     * identifier character remains ordinary token content.
+     */
+    @Test
+    void appliesCodePointBoundaryToPostgreSqlEscapeStrings() {
+        String supplementaryLetter = Character.toString(0x10400);
+        String sql = "select " + supplementaryLetter + "E'ends with \\', :id";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+
+        assertThat(handler.source(), is(sql));
+        assertThat(handler.namedMarkers(), is(List.of("id")));
+        assertThat(handler.protectedRegions(), is(List.of(JdbcSqlScanHandler.RegionKind.SINGLE_QUOTE)));
+    }
+
+    /**
      * Verifies that dialect-dependent double-dash input fails at its source
      * offset without exposing the SQL text to the diagnostic.
      */
@@ -195,6 +212,24 @@ class JdbcSqlScannerTest {
         JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
 
         assertThat(handler.namedMarkers(), is(List.of("value", "id")));
+        assertThat(handler.source(), is(sql));
+    }
+
+    /**
+     * Verifies that named markers accept supplementary Java identifier code
+     * points while preserving UTF-16 source offsets for scan handlers.
+     */
+    @Test
+    void recognizesSupplementaryJavaIdentifierCodePoints() {
+        String supplementaryLetter = Character.toString(0x10400);
+        String firstSupplementary = supplementaryLetter + "name";
+        String embeddedSupplementary = "name" + supplementaryLetter;
+        String sql = "select :" + firstSupplementary + ", :" + embeddedSupplementary + "::text";
+        RecordingHandler handler = new RecordingHandler(sql);
+
+        JdbcSqlScanner.scan(sql, JdbcSqlLexicalProfile.PORTABLE, handler);
+
+        assertThat(handler.namedMarkers(), is(List.of(firstSupplementary, embeddedSupplementary)));
         assertThat(handler.source(), is(sql));
     }
 

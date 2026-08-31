@@ -50,4 +50,27 @@ class JdbcSqlParameterPlanTest {
         assertThat(plan.binds(), is(List.of(bind)));
         assertThrows(UnsupportedOperationException.class, () -> plan.binds().clear());
     }
+
+    /**
+     * Verifies that a supplementary Java parameter name matches its named SQL
+     * marker and produces one positional JDBC binding.
+     */
+    @Test
+    void matchesSupplementaryJavaParameterName() {
+        String parameterName = Character.toString(0x10400) + "name";
+        TypedElementInfo parameter = TypedElementInfo.builder()
+                .kind(ElementKind.PARAMETER)
+                .elementName(parameterName)
+                .typeName(TypeNames.STRING)
+                .build();
+
+        JdbcSqlParameterPlan plan = JdbcSqlParameterPlan.create(
+                "UPDATE TEST_VALUE SET VALUE = :" + parameterName,
+                List.of(parameter),
+                parameter);
+
+        assertThat(plan.sql(), is("UPDATE TEST_VALUE SET VALUE = ?"));
+        assertThat(plan.parameterCount(), is(1));
+        assertThat(plan.binds().getFirst().parameter(), is(parameter));
+    }
 }

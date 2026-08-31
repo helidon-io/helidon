@@ -127,6 +127,10 @@ class JdbcRunnerFailureTest {
         verify(statement, never()).execute();
     }
 
+    /**
+     * Verifies that every owned execution channel rejects a non-auto-commit
+     * connection before preparing a statement and invalidates the connection.
+     */
     @Test
     void rejectsOwnedConnectionsWithoutAutoCommitBeforeEveryExecutionChannel() throws Exception {
         when(connection.getAutoCommit()).thenReturn(false);
@@ -153,8 +157,12 @@ class JdbcRunnerFailureTest {
                                                      Statement.RETURN_GENERATED_KEYS);
     }
 
+    /**
+     * Verifies that an owned connection whose auto-commit state cannot be
+     * inspected is invalidated rather than returned for possible pool reuse.
+     */
     @Test
-    void closesTheOwnedConnectionWhenAutoCommitInspectionFails() throws Exception {
+    void invalidatesTheOwnedConnectionWhenAutoCommitInspectionFails() throws Exception {
         SQLException inspectionFailure = new SQLException("auto-commit inspection failed", "08000", 96);
         when(connection.getAutoCommit()).thenThrow(inspectionFailure);
 
@@ -162,16 +170,24 @@ class JdbcRunnerFailureTest {
                                              () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
 
         assertSafeSqlCause(failure.getCause(), inspectionFailure);
-        verify(connection).close();
+        InOrder cleanup = inOrder(connection);
+        cleanup.verify(connection).abort(any());
+        cleanup.verify(connection).close();
         verify(connection, never()).prepareStatement("UPDATE TEST_VALUE SET VALUE = 1");
         verify(statement, never()).execute();
     }
 
+    /**
+     * Verifies that invalidation cleanup cannot replace the auto-commit
+     * invariant failure when abort and fallback connection close both fail.
+     */
     @Test
-    void keepsTheAutoCommitInvariantFailurePrimaryWhenConnectionCloseFails() throws Exception {
-        SQLException closeFailure = new SQLException("connection close failed");
+    void keepsTheAutoCommitInvariantFailurePrimaryWhenInvalidationFails() throws Exception {
+        IllegalStateException abortFailure = driverRuntimeFailure("private abort failure");
+        SQLException closeFailure = new SQLException("private connection close failure", "08006", 97);
         when(connection.getAutoCommit()).thenReturn(false);
-        doThrow(closeFailure).doNothing().when(connection).close();
+        doThrow(abortFailure).when(connection).abort(any());
+        doThrow(closeFailure).when(connection).close();
 
         DataException failure = assertThrows(DataException.class,
                                              () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
@@ -179,10 +195,16 @@ class JdbcRunnerFailureTest {
         assertThat(failure.getCause(), instanceOf(SQLException.class));
         assertThat(failure.getCause().getMessage(),
                    is("Datasources used for JDBC operations must provide connections with auto-commit enabled."));
-        assertThat(failure.getCause().getSuppressed().length, is(1));
-        assertSafeSqlCause(failure.getCause().getSuppressed()[0], closeFailure);
-        verify(connection).abort(any());
-        verify(connection, times(2)).close();
+        assertThat(failure.getCause().getSuppressed().length, is(2));
+        Throwable safeAbort = failure.getCause().getSuppressed()[0];
+        assertThat(safeAbort.getMessage(),
+                   is("The JDBC provider encountered an exception of type 'java.lang.IllegalStateException' "
+                              + "while aborting a connection."));
+        assertThat(safeAbort.getCause(), nullValue());
+        assertSafeSqlCause(failure.getCause().getSuppressed()[1], closeFailure);
+        InOrder cleanup = inOrder(connection);
+        cleanup.verify(connection).abort(any());
+        cleanup.verify(connection).close();
         verify(connection, never()).prepareStatement("UPDATE TEST_VALUE SET VALUE = 1");
         verify(statement, never()).execute();
     }
@@ -721,6 +743,10 @@ class JdbcRunnerFailureTest {
         verify(connection).close();
     }
 
+    /**
+     * Verifies that unchecked auto-commit inspection failures are sanitized
+     * and that the acquired connection is invalidated before reporting them.
+     */
     @Test
     void sanitizesRuntimeFailuresFromConnectionAcquisitionAndInspection() throws Exception {
         IllegalStateException acquisitionFailure = driverRuntimeFailure("private acquisition URL");
@@ -737,7 +763,9 @@ class JdbcRunnerFailureTest {
         assertSanitizedRuntimeFailure(() -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute(),
                                       inspectionFailure,
                                       "inspecting automatic commit mode");
-        verify(connection).close();
+        InOrder cleanup = inOrder(connection);
+        cleanup.verify(connection).abort(any());
+        cleanup.verify(connection).close();
     }
 
     @Test
@@ -1011,8 +1039,10 @@ class JdbcRunnerFailureTest {
         assertThat(failure.getCause(), instanceOf(SQLException.class));
         assertThat(failure.getCause().getMessage(),
                    is("Datasources used for JDBC operations must provide connections with auto-commit enabled."));
-        verify(connection).getAutoCommit();
-        verify(connection).close();
+        InOrder cleanup = inOrder(connection);
+        cleanup.verify(connection).getAutoCommit();
+        cleanup.verify(connection).abort(any());
+        cleanup.verify(connection).close();
         verify(connection, never()).clearWarnings();
         verify(statement, never()).execute();
     }
