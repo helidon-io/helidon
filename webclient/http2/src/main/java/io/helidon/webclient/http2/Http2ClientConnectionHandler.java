@@ -273,20 +273,6 @@ class Http2ClientConnectionHandler {
         toRetire.forEach(Http2ClientConnection::retire);
     }
 
-    private boolean containsGeneration(Http2AltSvcCache.Generation generation) {
-        lifecycleLock.lock();
-        try {
-            for (ConnectionRoute route : allConnections.values()) {
-                if (route.matches(generation)) {
-                    return true;
-                }
-            }
-            return false;
-        } finally {
-            lifecycleLock.unlock();
-        }
-    }
-
     void close() {
         // this is to prevent concurrent modification (connections remove themselves from the map)
         Set<Http2ClientConnection> toClose = new HashSet<>();
@@ -562,6 +548,20 @@ class Http2ClientConnectionHandler {
         if (!clientConnection.helidonSocket().protocolNegotiated()
                 || !Http2Client.PROTOCOL_ID.equals(clientConnection.helidonSocket().protocol())) {
             throw new IllegalStateException("HTTP/2 alternative did not negotiate h2");
+        }
+    }
+
+    private boolean containsGeneration(Http2AltSvcCache.Generation generation) {
+        lifecycleLock.lock();
+        try {
+            for (ConnectionRoute route : allConnections.values()) {
+                if (route.matches(generation)) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            lifecycleLock.unlock();
         }
     }
 
