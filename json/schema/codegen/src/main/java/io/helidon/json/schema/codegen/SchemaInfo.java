@@ -35,8 +35,10 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValue;
 
 import static java.util.function.Predicate.not;
 
@@ -90,10 +92,23 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
                 .ifPresent(it -> builder.set("description", it));
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_DEFAULT)
                 .flatMap(it -> it.stringValue())
-                .map(JsonParser::create)
-                .map(JsonParser::readJsonValue)
+                .map(it -> parseDefaultValue(annotatedType, it))
                 .ifPresent(it -> builder.set("default", it));
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_REQUIRED).ifPresent(it -> required.set(true));
+    }
+
+    private static JsonValue parseDefaultValue(Annotated annotated, String value) {
+        JsonParser parser = JsonParser.create(value);
+        JsonValue result = parser.readJsonValue();
+        if (!parser.hasNext()) {
+            return result;
+        }
+        try {
+            parser.nextToken();
+        } catch (JsonException _) {
+            return result;
+        }
+        throw new CodegenException("JsonSchema.Default value must contain exactly one JSON value", annotated);
     }
 
     private static void processIntegerAnnotations(JsonObject.Builder builder, Annotated annotatedType, AtomicBoolean required) {

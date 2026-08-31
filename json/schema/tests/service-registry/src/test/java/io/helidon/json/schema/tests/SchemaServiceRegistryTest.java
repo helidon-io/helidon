@@ -19,6 +19,7 @@ package io.helidon.json.schema.tests;
 import java.util.Optional;
 
 import io.helidon.json.schema.Schema;
+import io.helidon.json.schema.SchemaObject;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,20 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SchemaServiceRegistryTest {
+
+    @Test
+    public void testEscapedDefaultFromGeneratedProvider() {
+        Schema schema = Schema.find(EscapedDefaultSchema.class).orElseThrow();
+        SchemaObject root = schema.rootObject().orElseThrow();
+
+        assertThat(root.stringProperties()
+                           .get("value")
+                           .defaultValue()
+                           .orElseThrow()
+                           .asString()
+                           .value(),
+                   is("quote: \"; backslash: \\; newline: \n; triple: \"\"\""));
+    }
 
     @Test
     public void testSchemaFromServiceRegistry() {

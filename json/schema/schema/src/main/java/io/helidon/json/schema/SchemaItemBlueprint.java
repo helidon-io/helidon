@@ -27,6 +27,7 @@ import io.helidon.json.JsonValue;
  * Common interface for all Json Schema items.
  */
 @Prototype.Blueprint
+@Prototype.IncludeDefaultMethods("defaultValue")
 interface SchemaItemBlueprint {
 
     /**
@@ -50,7 +51,9 @@ interface SchemaItemBlueprint {
      *
      * @return default JSON value
      */
-    Optional<JsonValue> defaultValue();
+    default Optional<JsonValue> defaultValue() {
+        return Optional.empty();
+    }
 
     /**
      * Used in the object properties to mark required property.
