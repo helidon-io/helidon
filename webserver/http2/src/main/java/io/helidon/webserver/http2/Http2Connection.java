@@ -1000,7 +1000,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             headers.validateRequest();
             return true;
         } catch (Http2Exception e) {
-            if (e.code() != Http2ErrorCode.PROTOCOL) {
+            Method method = headers.method();
+            boolean connect = Method.CONNECT.equals(method);
+            String path = headers.path();
+            boolean invalidPath = method != null && !connect && (path == null || path.isEmpty());
+            if (e.code() != Http2ErrorCode.PROTOCOL || (!connect && !invalidPath)) {
                 throw e;
             }
             if (newStream) {
