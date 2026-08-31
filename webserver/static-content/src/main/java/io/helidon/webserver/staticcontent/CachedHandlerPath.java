@@ -160,12 +160,6 @@ record CachedHandlerPath(Path sourcePath,
                                                bodySource));
     }
 
-    private boolean matchesSnapshot(BasicFileAttributes attributes) {
-        return attributes.size() == metadata.contentLength()
-                && attributes.lastModifiedTime().toInstant().equals(metadata.lastModified())
-                && Objects.equals(attributes.fileKey(), fileKey);
-    }
-
     private static void closeAfterFailure(SeekableByteChannel channel, Throwable failure) {
         if (channel == null) {
             return;
@@ -175,5 +169,11 @@ record CachedHandlerPath(Path sourcePath,
         } catch (IOException e) {
             failure.addSuppressed(e);
         }
+    }
+
+    private boolean matchesSnapshot(BasicFileAttributes attributes) {
+        return attributes.size() == metadata.contentLength()
+                && attributes.lastModifiedTime().toInstant().equals(metadata.lastModified())
+                && Objects.equals(attributes.fileKey(), fileKey);
     }
 }

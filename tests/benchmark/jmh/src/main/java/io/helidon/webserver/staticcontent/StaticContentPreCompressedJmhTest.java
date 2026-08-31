@@ -297,6 +297,29 @@ public class StaticContentPreCompressedJmhTest {
         return selectAndHandle(handler, brRequest);
     }
 
+    private static CachedHandlerInMemory inMemoryHandler(String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        return new CachedHandlerInMemory(StaticContentMetadata.create(MediaTypes.TEXT_PLAIN, bytes.length), bytes);
+    }
+
+    private static ServerRequest request(String acceptEncoding, ContentEncodingContext contentEncodingContext) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        if (acceptEncoding != null) {
+            headers.add(HeaderNames.ACCEPT_ENCODING, acceptEncoding);
+        }
+        return new RequestStub(ServerRequestHeaders.create(headers), new ListenerContextStub(contentEncodingContext));
+    }
+
+    private static ContentEncodingContext runtimeContentEncodingContext() {
+        return ContentEncodingContext.builder()
+                .addContentEncoding(new TestEncoding())
+                .build();
+    }
+
+    private static UnsupportedOperationException unsupported() {
+        return new UnsupportedOperationException("Not needed by this benchmark");
+    }
+
     private ServerResponse selectAndHandle(StaticContentHandler staticContentHandler, ServerRequest request)
             throws IOException, URISyntaxException {
         CachedHandler selected = staticContentHandler.selectHandler(fileIdentityHandler, request, fileSidecarResolver);
@@ -318,25 +341,6 @@ public class StaticContentPreCompressedJmhTest {
         }
     }
 
-    private static CachedHandlerInMemory inMemoryHandler(String value) {
-        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-        return new CachedHandlerInMemory(StaticContentMetadata.create(MediaTypes.TEXT_PLAIN, bytes.length), bytes);
-    }
-
-    private static ServerRequest request(String acceptEncoding, ContentEncodingContext contentEncodingContext) {
-        WritableHeaders<?> headers = WritableHeaders.create();
-        if (acceptEncoding != null) {
-            headers.add(HeaderNames.ACCEPT_ENCODING, acceptEncoding);
-        }
-        return new RequestStub(ServerRequestHeaders.create(headers), new ListenerContextStub(contentEncodingContext));
-    }
-
-    private static ContentEncodingContext runtimeContentEncodingContext() {
-        return ContentEncodingContext.builder()
-                .addContentEncoding(new TestEncoding())
-                .build();
-    }
-
     @State(Scope.Thread)
     public static class MissingSidecarRequestState {
         private ServerRequest request;
@@ -345,10 +349,6 @@ public class StaticContentPreCompressedJmhTest {
         public void setup() {
             request = request("gzip, identity;q=0.5", ContentEncodingContext.create());
         }
-    }
-
-    private static UnsupportedOperationException unsupported() {
-        return new UnsupportedOperationException("Not needed by this benchmark");
     }
 
     private static final class BenchmarkStaticContentHandler extends StaticContentHandler {

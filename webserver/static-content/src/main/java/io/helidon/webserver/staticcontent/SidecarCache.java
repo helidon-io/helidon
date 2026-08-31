@@ -97,10 +97,6 @@ final class SidecarCache {
         }
     }
 
-    private CachedHandler reusable(String coding) {
-        return entries.get(coding);
-    }
-
     private static Optional<CachedHandler> await(CompletableFuture<Optional<CachedHandler>> resolution)
             throws IOException, URISyntaxException {
         try {
@@ -121,6 +117,10 @@ final class SidecarCache {
             }
             throw new IllegalStateException("Unexpected sidecar resolution failure", cause);
         }
+    }
+
+    private CachedHandler reusable(String coding) {
+        return entries.get(coding);
     }
 
     @FunctionalInterface
