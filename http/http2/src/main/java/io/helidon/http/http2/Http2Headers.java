@@ -353,6 +353,17 @@ public class Http2Headers {
     }
 
     /**
+     * Validate request or response trailers.
+     *
+     * @throws Http2Exception in case the trailers are invalid
+     */
+    public void validateTrailers() throws Http2Exception {
+        if (pseudoHeaders.size() != 0) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Pseudo header in trailers");
+        }
+    }
+
+    /**
      * Validate client or server request.
      *
      * @throws Http2Exception in case the request is invalid

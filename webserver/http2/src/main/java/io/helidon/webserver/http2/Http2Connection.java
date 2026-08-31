@@ -998,7 +998,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         if (!endOfStream) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received trailers without endOfStream flag " + streamId);
         }
-        if ("".equals(headers.path())) {
+        try {
+            headers.validateTrailers();
+        } catch (Http2Exception e) {
+            if (e.code() != Http2ErrorCode.PROTOCOL) {
+                throw e;
+            }
             stream.resetProtocolError(0, true);
             state = State.READ_FRAME;
             return false;

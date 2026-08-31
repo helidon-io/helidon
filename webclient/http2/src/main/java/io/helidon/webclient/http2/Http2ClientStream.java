@@ -731,17 +731,24 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             if (closed) {
                 return;
             }
-            if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
-                try {
+            boolean trailerBlock = readState == ReadState.DATA || readState == ReadState.TRAILERS;
+            try {
+                if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
                     headers.validateResponse();
                     if (protocolConfig().validateResponseHeaders()) {
                         validateRegularHeaders(headers.httpHeaders());
                     }
-                } catch (Http2Exception e) {
-                    failInboundLocked(e);
-                    inboundStateChanged.signalAll();
-                    return;
+                } else if (trailerBlock) {
+                    headers.validateTrailers();
                 }
+            } catch (Http2Exception e) {
+                if (trailerBlock) {
+                    buffer.fail(e);
+                    trailers.completeExceptionally(e);
+                }
+                failInboundLocked(e);
+                inboundStateChanged.signalAll();
+                return;
             }
             switch (readState) {
             case CONTINUE_100_HEADERS -> continue100Locked(headers, endOfStream);

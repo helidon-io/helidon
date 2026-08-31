@@ -24,6 +24,7 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers.DynamicTable;
 import io.helidon.http.http2.Http2Headers.HeaderRecord;
@@ -210,6 +211,25 @@ class Http2HeadersTest {
 
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
         assertThat(exception.requestTarget(), is(true));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"authority", "method", "path", "empty-path", "scheme", "status"})
+    void testTrailersRejectPseudoHeaders(String pseudoHeader) {
+        Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create());
+        switch (pseudoHeader) {
+        case "authority" -> http2Headers.authority("www.example.com");
+        case "method" -> http2Headers.method(Method.GET);
+        case "path" -> http2Headers.path("/forbidden");
+        case "empty-path" -> http2Headers.path("");
+        case "scheme" -> http2Headers.scheme("https");
+        case "status" -> http2Headers.status(Status.OK_200);
+        default -> throw new AssertionError("Unexpected pseudo header: " + pseudoHeader);
+        }
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateTrailers);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
     }
 
     @Test

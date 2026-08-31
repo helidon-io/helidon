@@ -1670,6 +1670,51 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void pseudoHeaderInTrailersFailsStream() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+            stream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(stream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(stream.readHeaders().status(), is(Status.OK_200));
+
+            CountDownLatch entityReadStarted = new CountDownLatch(1);
+            CompletableFuture<BufferData> entity = CompletableFuture.supplyAsync(() -> {
+                entityReadStarted.countDown();
+                return stream.read();
+            });
+            assertThat(entityReadStarted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(true));
+            assertThrows(TimeoutException.class, () -> entity.get(200, TimeUnit.MILLISECONDS));
+
+            Http2Headers trailers = encodedTrailers().path("/forbidden");
+            test.offerInbound(encodedHeaderFrame(stream.streamId(), trailers, inboundTable, huffman, true));
+
+            ExecutionException entityFailure = assertThrows(
+                    ExecutionException.class,
+                    () -> entity.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            assertThat(entityFailure.getCause(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) entityFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+
+            ExecutionException trailersFailure = assertThrows(
+                    ExecutionException.class,
+                    () -> stream.trailers().get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+            assertThat(trailersFailure.getCause(), instanceOf(Http2Exception.class));
+            assertThat(((Http2Exception) trailersFailure.getCause()).code(), is(Http2ErrorCode.PROTOCOL));
+
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
     void createWaitsForInitialSettingsAndHonorsPeerMaxConcurrentStreams() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             CompletableFuture<Http2ClientConnection> connectionFuture = new CompletableFuture<>();
