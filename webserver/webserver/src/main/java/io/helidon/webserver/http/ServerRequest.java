@@ -149,7 +149,7 @@ public interface ServerRequest extends HttpRequest {
     /**
      * The pattern used to match this request. Such as "/foo/{bar}".
      *
-     * @return matching pattern or {@code ""} if not available
+     * @return matching pattern or {@link Optional#empty()} if not available
      */
     default Optional<String> matchingPattern() {
         return Optional.empty();
