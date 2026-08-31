@@ -224,6 +224,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             updateState(Http2StreamState.checkAndGetState(this.state, header.type(), false, endOfStream, false));
             readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
             incrementInboundWindowSizeLocked(header.length());
+            buffer.dataProcessed(header.length());
         } finally {
             inboundStateLock.unlock();
         }

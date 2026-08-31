@@ -21,6 +21,7 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -34,6 +35,7 @@ class StreamBuffer {
     private final Queue<InboundItem> buffer = new ArrayDeque<>();
     private final Http2ClientStream stream;
     private final int streamId;
+    private final AtomicInteger unprocessedDataLength = new AtomicInteger();
     private volatile RuntimeException failure;
 
     StreamBuffer(Http2ClientStream stream, int streamId) {
@@ -79,6 +81,9 @@ class StreamBuffer {
         try {
             streamLock.lock();
             buffer.add(item);
+            if (item instanceof InboundData inboundData) {
+                unprocessedDataLength.addAndGet(inboundData.frameData().header().length());
+            }
         } finally {
             streamLock.unlock();
             // Release deque threads
@@ -99,19 +104,19 @@ class StreamBuffer {
     }
 
     int discard() {
-        int discardedDataLength = 0;
+        int discardedDataLength;
         try {
             streamLock.lock();
-            for (InboundItem item : buffer) {
-                if (item instanceof InboundData inboundData) {
-                    discardedDataLength += inboundData.frameData().header().length();
-                }
-            }
+            discardedDataLength = unprocessedDataLength.getAndSet(0);
             buffer.clear();
         } finally {
             streamLock.unlock();
         }
         return discardedDataLength;
+    }
+
+    void dataProcessed(int dataLength) {
+        unprocessedDataLength.addAndGet(-dataLength);
     }
 
     sealed interface InboundItem permits InboundData, InboundTrailers {
