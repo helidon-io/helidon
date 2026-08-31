@@ -71,6 +71,70 @@ import static org.mockito.Mockito.when;
 class OpenTelemetryMetricsHttpSemanticConventionsTest {
 
     @Test
+    void knownStandardHttpMethodUsesMethodMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set)
+                .filter(mock(FilterChain.class), request(Method.GET), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(methodAttribute(recordedAttributes.get()), is("GET"));
+    }
+
+    @Test
+    void knownExtensionHttpMethodUsesMethodMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set)
+                .filter(mock(FilterChain.class), request(Method.create("LIST")), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(methodAttribute(recordedAttributes.get()), is("LIST"));
+    }
+
+    @Test
+    void unknownHttpMethodUsesOtherMetricAttribute() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter(recordedAttributes::set)
+                .filter(mock(FilterChain.class), request(Method.create("UNIQUE_METHOD")), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(methodAttribute(recordedAttributes.get()), is("_OTHER"));
+    }
+
+    @Test
+    void deprecatedFalseSettingDoesNotDisableMethodNormalization() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filterWithDeprecatedSetting(recordedAttributes::set, false)
+                .filter(mock(FilterChain.class), request(Method.create("UNIQUE_METHOD")), response(whenSent));
+        whenSent.get().run();
+
+        assertThat(methodAttribute(recordedAttributes.get()), is("_OTHER"));
+    }
+
+    @Test
+    void knownMethodsConfigFullyOverridesDefaults() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        Filter filter = filter(recordedAttributes::set, List.of("list"));
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+
+        filter.filter(mock(FilterChain.class), request(Method.GET), response(whenSent));
+        whenSent.get().run();
+        assertThat(methodAttribute(recordedAttributes.get()), is("_OTHER"));
+
+        whenSent.set(null);
+        filter.filter(mock(FilterChain.class), request(Method.create("LIST")), response(whenSent));
+        whenSent.get().run();
+        assertThat(methodAttribute(recordedAttributes.get()), is("LIST"));
+    }
+
+    @Test
     void measuredRequestUsesMatchingPatternAtResponseCompletion() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
         Filter filter = filter(recordedAttributes::set);
@@ -137,6 +201,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         when(metricsConfig.autoHttpMetrics()).thenReturn(Optional.of(autoConfig));
         when(autoConfig.enabled()).thenReturn(true);
         when(autoConfig.isMeasured(any(), any())).thenReturn(false);
+        when(autoConfig.knownMethods()).thenReturn(List.of("GET"));
         when(autoConfig.optIn()).thenReturn(List.of());
         when(request.matchingPattern()).thenAnswer(invocation -> {
             routeInvocations.incrementAndGet();
@@ -298,6 +363,12 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
                 .build());
     }
 
+    private static Filter filter(Consumer<Attributes> recorder, List<String> knownMethods) {
+        return filter(recorder, AutoHttpMetricsConfig.builder()
+                .knownMethods(knownMethods)
+                .build());
+    }
+
     private static Filter filter(Consumer<Attributes> recorder, AutoHttpMetricsConfig autoHttpMetricsConfig) {
         DoubleHistogram histogram = mock(DoubleHistogram.class);
         doAnswer(invocation -> {
@@ -334,6 +405,10 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     private static RoutingRequest request() {
+        return request(Method.GET);
+    }
+
+    private static RoutingRequest request(Method method) {
         RoutingRequest request = mock(RoutingRequest.class);
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
         ListenerContext listenerContext = mock(ListenerContext.class);
@@ -341,7 +416,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         when(request.prologue()).thenReturn(HttpPrologue.create("HTTP/1.1",
                                                                 "HTTP",
                                                                 "1.1",
-                                                                Method.GET,
+                                                                method,
                                                                 "/test",
                                                                 false));
         when(request.matchingPattern()).thenReturn(Optional.empty());
@@ -360,6 +435,10 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
             return response;
         });
         return response;
+    }
+
+    private static String methodAttribute(Attributes attributes) {
+        return attributes.get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_METHOD));
     }
 
     private static final class TestLogHandler extends Handler implements AutoCloseable {

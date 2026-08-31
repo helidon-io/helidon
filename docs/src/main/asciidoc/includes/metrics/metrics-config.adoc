@@ -113,6 +113,36 @@ Helidon decides whether to measure incoming requests as follows:
 
 The `auto-http-metrics.sockets` setting controls which sockets are included in the measurements; if not set, Helidon measures requests on all sockets.
 
+ifdef::se-flavor[]
+[[auto-http-known-methods]]
+===== Controlling HTTP Method Attribute Values
+
+For the OpenTelemetry `http.server.request.duration` metric, the `auto-http-metrics.known-methods` setting controls the
+values Helidon records for the `http.request.method` attribute. This setting does not control which requests Helidon
+measures; use the `methods` setting in a `paths` entry for that purpose.
+
+By default, Helidon records `CONNECT`, `DELETE`, `GET`, `HEAD`, `LIST`, `OPTIONS`, `PATCH`, `POST`, `PUT`, and `TRACE`
+as their canonical method names. Helidon records any other method as `_OTHER`. Method names in the configuration are
+canonicalized using Helidon's HTTP method model; for example, `propfind` becomes `PROPFIND`.
+
+Assigning `known-methods` replaces the entire default list. Include every default method you want to retain.
+
+[source,yaml]
+.Configuring HTTP Method Attribute Values
+----
+server:
+  features:
+    observe:
+      observers:
+        metrics:
+          auto-http-metrics:
+            known-methods: ["GET", "HEAD", "POST", "PROPFIND"]
+----
+
+With this configuration, Helidon records the four listed methods using their canonical names and records every other
+HTTP method, including default methods omitted from the list, as `_OTHER`.
+endif::se-flavor[]
+
 [NOTE]
 ====
 The `auto-http-metrics.use-updated-http-metrics` setting is deprecated and retained only for configuration compatibility
