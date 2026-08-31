@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -54,6 +55,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.Test;
 
@@ -481,6 +483,9 @@ class GrpcTeTrailersTest {
                                    + requestsProduced.get(),
                            requestsProduced.get() < BIDI_MESSAGE_COUNT,
                            is(true));
+                assertThat("server consumed requests before demand resumed",
+                           pausedConsumed.get(),
+                           is(0));
             } finally {
                 release.countDown();
             }
@@ -601,22 +606,78 @@ class GrpcTeTrailersTest {
     }
 
     private static StreamObserver<Strings.StringMessage> pausedRequests(StreamObserver<Strings.StringMessage> observer) {
-        return GrpcStreams.bidirectional(requests -> {
-            pausedStarted.get().countDown();
+        if (!(observer instanceof ServerCallStreamObserver<?> serverObserver)) {
+            throw new IllegalStateException("Manual gRPC request flow control is unavailable");
+        }
+        serverObserver.disableAutoRequest();
+        pausedStarted.get().countDown();
+        AtomicBoolean terminal = new AtomicBoolean();
+        Thread releaseWaiter = Thread.ofVirtual().unstarted(() -> {
             try {
                 if (!pausedRelease.get().await(BIDI_RELEASE_TIMEOUT.toNanos(), TimeUnit.NANOSECONDS)) {
-                    throw new IllegalStateException("Timed out waiting to release paused gRPC request stream");
+                    if (terminal.compareAndSet(false, true)) {
+                        var failure = new IllegalStateException("Timed out waiting to release paused gRPC request stream");
+                        observer.onError(failure);
+                    }
+                    return;
+                }
+                if (!terminal.get() && !serverObserver.isCancelled()) {
+                    // Restore all application demand at once; transport flow control remains the only request limiter.
+                    serverObserver.request(BIDI_MESSAGE_COUNT);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new IllegalStateException("Interrupted while waiting to release paused gRPC request stream", e);
+                if (terminal.compareAndSet(false, true)) {
+                    var failure = new IllegalStateException("Interrupted while waiting to release paused gRPC request stream",
+                                                            e);
+                    observer.onError(failure);
+                }
+            } catch (RuntimeException | Error t) {
+                if (terminal.compareAndSet(false, true)) {
+                    observer.onError(t);
+                }
             }
-            // Consume every request before producing responses so response demand and flow control
-            // cannot pace request consumption.
-            requests.forEach(_ -> pausedConsumed.incrementAndGet());
-            return Stream.generate(Strings.StringMessage::getDefaultInstance)
-                    .limit(BIDI_MESSAGE_COUNT);
-        }, observer);
+        });
+        serverObserver.setOnCancelHandler(() -> {
+            terminal.set(true);
+            releaseWaiter.interrupt();
+        });
+        releaseWaiter.start();
+        return new StreamObserver<>() {
+            @Override
+            public void onNext(Strings.StringMessage ignored) {
+                pausedConsumed.incrementAndGet();
+            }
+
+            @Override
+            public void onError(Throwable ignored) {
+                if (terminal.compareAndSet(false, true)) {
+                    releaseWaiter.interrupt();
+                }
+            }
+
+            @Override
+            public void onCompleted() {
+                if (!terminal.compareAndSet(false, true)) {
+                    return;
+                }
+                int consumed = pausedConsumed.get();
+                if (consumed != BIDI_MESSAGE_COUNT) {
+                    var failure = new IllegalStateException("Incomplete paused gRPC request stream: consumed=" + consumed);
+                    observer.onError(failure);
+                    return;
+                }
+                for (int i = 0; i < BIDI_MESSAGE_COUNT; i++) {
+                    if (serverObserver.isCancelled()) {
+                        return;
+                    }
+                    observer.onNext(Strings.StringMessage.getDefaultInstance());
+                }
+                if (!serverObserver.isCancelled()) {
+                    observer.onCompleted();
+                }
+            }
+        };
     }
 
     private static class MetadataCapturingInterceptor implements ServerInterceptor {
