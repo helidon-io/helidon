@@ -57,6 +57,17 @@ class JdbcParameterCountTest {
     }
 
     /**
+     * Verifies imperative marker counting ignores embedded apostrophes and
+     * marker-shaped text in an Oracle national alternative-quoted literal.
+     */
+    @Test
+    void protectsOracleNationalAlternativeQuotedLiterals() {
+        String sql = "select nq'[Oracle's ? :ignored]' from T where ID = ?";
+
+        assertThat(JdbcOperation.parameterCount(sql), is(1));
+    }
+
+    /**
      * Verifies that imperative statement creation rejects a no-whitespace
      * double dash through the shared safe lexical diagnostic.
      */
@@ -90,6 +101,11 @@ class JdbcParameterCountTest {
         assertThat(JdbcOperation.parameterCount("select identifier$tag$ from T where ID = ?"), is(1));
     }
 
+    /**
+     * Verifies runtime named markers and malformed protected regions,
+     * including Oracle national alternative quotes, fail during statement
+     * creation.
+     */
     @Test
     void rejectsRuntimeNamedMarkersAndEveryMalformedProtectedRegion() {
         IllegalArgumentException named = assertThrows(IllegalArgumentException.class,
@@ -105,6 +121,7 @@ class JdbcParameterCountTest {
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select /* unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select $tag$unterminated"));
         assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select q'[unterminated"));
+        assertThrows(IllegalArgumentException.class, () -> JdbcOperation.parameterCount("select nq'[unterminated"));
     }
 
     @Test

@@ -30,10 +30,23 @@
 
     <modules>
         <module>h2</module>
-        <module>mysql</module>
-        <module>oracle</module>
-        <module>pgsql</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>long-tests</id>
+            <activation>
+                <property>
+                    <name>!long-tests</name>
+                </property>
+            </activation>
+            <modules>
+                <module>mysql</module>
+                <module>oracle</module>
+                <module>pgsql</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>

@@ -158,15 +158,14 @@ final class JdbcMethodGenerator {
         }
 
         Set<String> dependencyNames = new HashSet<>();
-        // Mapper fields and their constructor parameters intentionally share one name. Reserve every client
+        // Mapper fields and their constructor parameters intentionally share one name. Reserve the client
         // parameter name so a mapper can never replace client selection infrastructure.
         dependencyNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
-        dependencyNames.add(JdbcCodegenConstants.NAMED_JDBC_CLIENT_NAME);
         List<MapperDependency> dependencies = new ArrayList<>(groupedPlans.size());
         for (Map.Entry<MapperDependencyKey, List<JdbcMethodPlan>> entry : groupedPlans.entrySet()) {
             MapperDependencyKey key = entry.getKey();
             List<JdbcMethodPlan> mappedPlans = entry.getValue();
-            TypeName mapperContract = TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
+            TypeName mapperContract = TypeName.builder(JdbcCodegenTypes.ROW_MAPPER)
                     .addTypeArgument(key.mappedType().type())
                     .build();
             // An explicit mapper type already describes its role when its simple name ends in Mapper. For service
@@ -232,11 +231,11 @@ final class JdbcMethodGenerator {
         while (parameterNames.contains(statementName)) {
             statementName = JdbcCodegenConstants.JDBC_STATEMENT_NAME + statementNameSuffix++;
         }
-        method.addContent(JdbcPersistenceTypes.JDBC_CLIENT_STATEMENT)
+        method.addContent(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT)
                 .addContent(" ")
                 .addContent(statementName)
                 .addContent(" = ")
-                .addContent(JdbcPersistenceTypes.JDBC_CLIENT)
+                .addContent(JdbcCodegenTypes.JDBC_CLIENT)
                 .addContent(".createGenerated(")
                 .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
                 .addContent(", ")
@@ -283,7 +282,7 @@ final class JdbcMethodGenerator {
                     .addContent(", ")
                     .addContent(parameterName)
                     .addContent(", ")
-                    .addContent(JdbcPersistenceTypes.JDBC_TYPE)
+                    .addContent(JdbcCodegenTypes.JDBC_TYPE)
                     .addContent(".")
                     .addContent(bind.nullJdbcTypeConstant())
                     .addContentLine(");");
@@ -292,13 +291,13 @@ final class JdbcMethodGenerator {
         method.addContent("if (")
                 .addContent(parameterName)
                 .addContentLine(" == null) {")
-                .addContent(JdbcPersistenceTypes.JDBC_CLIENT)
+                .addContent(JdbcCodegenTypes.JDBC_CLIENT)
                 .addContent(".bindNull(")
                 .addContent(statementName)
                 .addContent(", ")
                 .addContent(String.valueOf(bind.position()))
                 .addContent(", ")
-                .addContent(JdbcPersistenceTypes.JDBC_TYPE)
+                .addContent(JdbcCodegenTypes.JDBC_TYPE)
                 .addContent(".")
                 .addContent(bind.nullJdbcTypeConstant())
                 .addContentLine(");")
@@ -324,15 +323,15 @@ final class JdbcMethodGenerator {
         method.name(methodName)
                 .accessModifier(AccessModifier.PRIVATE)
                 .addParameter(parameter -> parameter.name("statement")
-                        .type(JdbcPersistenceTypes.JDBC_CLIENT_STATEMENT))
+                        .type(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT))
                 .addParameter(parameter -> parameter.name("index")
                         .type(TypeNames.PRIMITIVE_INT))
                 .addParameter(parameter -> parameter.name("value")
                         .type(TypeNames.OBJECT))
                 .addParameter(parameter -> parameter.name("nullType")
-                        .type(JdbcPersistenceTypes.JDBC_TYPE))
+                        .type(JdbcCodegenTypes.JDBC_TYPE))
                 .addContentLine("if (value == null) {")
-                .addContent(JdbcPersistenceTypes.JDBC_CLIENT)
+                .addContent(JdbcCodegenTypes.JDBC_CLIENT)
                 .addContentLine(".bindNull(statement, index, nullType);")
                 .decreaseContentPadding()
                 .addContentLine("} else {")

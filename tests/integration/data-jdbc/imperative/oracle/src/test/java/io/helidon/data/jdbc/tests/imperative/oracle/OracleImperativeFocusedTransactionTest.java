@@ -20,6 +20,7 @@ import io.helidon.data.jdbc.tests.contract.AbstractJdbcFocusedTransactionContrac
 import io.helidon.data.jdbc.tests.imperative.ImperativeFocusedTransactionOperations;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -29,7 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class OracleImperativeFocusedTransactionTest extends AbstractJdbcFocusedTransactionContract {
     @Container
-    static final org.testcontainers.containers.GenericContainer<?> ORACLE = OracleImperativeTestSupport.ORACLE;
+    static final GenericContainer<?> ORACLE = OracleImperativeTestSupport.ORACLE;
 
     @Override
     protected void beforeStartApplication() {

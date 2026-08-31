@@ -198,7 +198,7 @@ final class JdbcRunner {
         }
         try {
             statement.setMaxRows(options.maxRows());
-        } catch (SQLFeatureNotSupportedException unsupported) {
+        } catch (SQLFeatureNotSupportedException _) {
             // The result cursor still reads at most two rows before reporting cardinality.
         } catch (RuntimeException runtimeException) {
             throw (RuntimeException) JdbcExceptionTranslator.sanitize("setting the maximum row count for a query",
@@ -529,7 +529,7 @@ final class JdbcRunner {
             }
             try {
                 return statement.getLargeUpdateCount();
-            } catch (SQLFeatureNotSupportedException | UnsupportedOperationException unsupported) {
+            } catch (SQLFeatureNotSupportedException | UnsupportedOperationException _) {
                 largeUpdateCountsUnsupported = true;
                 return JdbcExceptionTranslator.invoke("reading a JDBC update count", statement::getUpdateCount);
             } catch (RuntimeException runtimeException) {

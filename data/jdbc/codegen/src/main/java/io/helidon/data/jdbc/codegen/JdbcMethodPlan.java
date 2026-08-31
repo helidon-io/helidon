@@ -98,7 +98,7 @@ final class JdbcMethodPlan {
      */
     static JdbcMethodPlan create(TypedElementInfo method,
                                  RoundContext roundContext) {
-        Annotation statement = method.findAnnotation(JdbcPersistenceTypes.JDBC_STATEMENT)
+        Annotation statement = method.findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)
                 .orElseThrow(() -> failure(method,
                                            "An abstract JDBC repository method must declare @Jdbc.Statement."));
         String sql = statement.stringValue()
@@ -108,13 +108,13 @@ final class JdbcMethodPlan {
         }
 
         Return result = returnPlan(method);
-        boolean generatedKeys = method.hasAnnotation(JdbcPersistenceTypes.JDBC_GENERATED_KEYS);
-        Annotation rowMapperAnnotation = method.findAnnotation(JdbcPersistenceTypes.JDBC_ROW_MAPPER).orElse(null);
+        boolean generatedKeys = method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS);
+        Annotation rowMapperAnnotation = method.findAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER).orElse(null);
         boolean rowMapperRequested = rowMapperAnnotation != null;
         TypeName explicitMapper = rowMapperAnnotation == null
                 ? null
                 : rowMapperAnnotation.typeValue()
-                        .filter(type -> !JdbcPersistenceTypes.ROW_MAPPER.equals(type))
+                        .filter(type -> !JdbcCodegenTypes.ROW_MAPPER.equals(type))
                         .orElse(null);
         Operation operation = operation(method, result, generatedKeys, rowMapperRequested);
         if (generatedKeys) {
@@ -269,12 +269,12 @@ final class JdbcMethodPlan {
      * @return requested execution
      */
     private static ExecutionSelection executionSelection(TypedElementInfo method) {
-        String value = method.findAnnotation(JdbcPersistenceTypes.JDBC_EXECUTION)
+        String value = method.findAnnotation(JdbcCodegenTypes.JDBC_EXECUTION)
                 .flatMap(Annotation::stringValue)
                 .orElse(ExecutionSelection.AUTO.name());
         try {
             return ExecutionSelection.valueOf(value);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             throw failure(method, "@Jdbc.Execution does not support the value '" + value + "'.");
         }
     }
@@ -395,7 +395,7 @@ final class JdbcMethodPlan {
         if (!generatedKeys) {
             return List.of();
         }
-        List<String> columns = method.annotation(JdbcPersistenceTypes.JDBC_GENERATED_KEYS)
+        List<String> columns = method.annotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS)
                 .stringValues()
                 .orElse(List.of());
         Set<String> unique = new HashSet<>();
@@ -495,7 +495,7 @@ final class JdbcMethodPlan {
                     + "' must not be a nonstatic nested class.");
         }
         TypeName mapperInterface = roundContext.typeHierarchyResolver()
-                .resolveSupertype(mapperType, JdbcPersistenceTypes.ROW_MAPPER)
+                .resolveSupertype(mapperType, JdbcCodegenTypes.ROW_MAPPER)
                 .orElse(null);
         // ResolvedType keeps parameterized result types exact, so a mapper for List<Foo> cannot satisfy List<Bar>.
         if (mapperInterface == null

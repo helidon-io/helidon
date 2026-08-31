@@ -43,6 +43,26 @@ public final class Jdbc {
     }
 
     /**
+     * Selects the JDBC client managed by registry, used by a repository.
+     * <p>
+     * The value names the required {@link JdbcClient} qualified with
+     * {@link io.helidon.service.registry.Service.Named}. When this annotation
+     * is absent, code generation selects the client named
+     * {@link io.helidon.service.registry.Service.Named#DEFAULT_NAME}.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Client {
+
+        /**
+         * Returns the required JDBC client name.
+         *
+         * @return JDBC client name
+         */
+        String value();
+    }
+
+    /**
      * Declares the SQL statement executed by a repository method.
      * <p>
      * SQL statement may use named markers matching Java parameter names or

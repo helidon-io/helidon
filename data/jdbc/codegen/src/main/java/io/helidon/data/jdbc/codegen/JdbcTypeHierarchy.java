@@ -84,7 +84,7 @@ final class JdbcTypeHierarchy {
             return;
         }
         Optional<String> sql = declarations.getFirst()
-                .findAnnotation(JdbcPersistenceTypes.JDBC_STATEMENT)
+                .findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)
                 .flatMap(Annotation::stringValue);
         if (sql.isEmpty() || sql.get().isBlank()) {
             return;
@@ -136,12 +136,12 @@ final class JdbcTypeHierarchy {
     }
 
     private static List<TypeName> methodAnnotations() {
-        List<TypeName> annotations = new ArrayList<>(4 + JdbcPersistenceTypes.TX_ANNOTATIONS.size());
-        annotations.add(JdbcPersistenceTypes.JDBC_STATEMENT);
-        annotations.add(JdbcPersistenceTypes.JDBC_EXECUTION);
-        annotations.add(JdbcPersistenceTypes.JDBC_GENERATED_KEYS);
-        annotations.add(JdbcPersistenceTypes.JDBC_ROW_MAPPER);
-        annotations.addAll(JdbcPersistenceTypes.TX_ANNOTATIONS);
+        List<TypeName> annotations = new ArrayList<>(4 + JdbcCodegenTypes.TX_ANNOTATIONS.size());
+        annotations.add(JdbcCodegenTypes.JDBC_STATEMENT);
+        annotations.add(JdbcCodegenTypes.JDBC_EXECUTION);
+        annotations.add(JdbcCodegenTypes.JDBC_GENERATED_KEYS);
+        annotations.add(JdbcCodegenTypes.JDBC_ROW_MAPPER);
+        annotations.addAll(JdbcCodegenTypes.TX_ANNOTATIONS);
         return List.copyOf(annotations);
     }
 

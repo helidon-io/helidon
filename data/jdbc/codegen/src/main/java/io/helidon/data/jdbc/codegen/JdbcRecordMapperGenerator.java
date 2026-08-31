@@ -44,7 +44,7 @@ final class JdbcRecordMapperGenerator {
                          String fieldName,
                          ClassModel.Builder classModel) {
 
-        TypeName mapperType = TypeName.builder(JdbcPersistenceTypes.ROW_MAPPER)
+        TypeName mapperType = TypeName.builder(JdbcCodegenTypes.ROW_MAPPER)
                 .addTypeArgument(plan.mappedType())
                 .build();
         classModel.addField(field -> {

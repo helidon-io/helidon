@@ -147,7 +147,7 @@ public abstract class AbstractJdbcGeneratedKeysContract {
 
     /**
      * Proves an invalid generated-key column request fails as a sanitized data
-     * access error and does not poison the persistence unit. Drivers may report
+     * access error and does not poison the JDBC client. Drivers may report
      * this at different phases, so the portable assertion is failure category,
      * canary secrecy, and successful recovery through the next operation.
      */

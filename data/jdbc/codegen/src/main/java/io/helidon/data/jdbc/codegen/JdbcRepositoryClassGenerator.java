@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc.codegen;
 
 import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
@@ -56,11 +57,11 @@ final class JdbcRepositoryClassGenerator {
                          ClassModel.Builder classModel) {
         TypeName repositoryType = repositoryInfo.interfaceInfo().typeName();
         classModel.type(className)
-                .copyright(CodegenUtil.copyright(JdbcPersistenceGenerator.GENERATOR,
+                .copyright(CodegenUtil.copyright(JdbcRepositoryGenerator.GENERATOR,
                                                  repositoryType,
                                                  className))
-                .addAnnotation(Annotation.create(JdbcPersistenceTypes.SERVICE_SINGLETON))
-                .addAnnotation(CodegenUtil.generatedAnnotation(JdbcPersistenceGenerator.GENERATOR,
+                .addAnnotation(Annotation.create(JdbcCodegenTypes.SERVICE_SINGLETON))
+                .addAnnotation(CodegenUtil.generatedAnnotation(JdbcRepositoryGenerator.GENERATOR,
                                                                repositoryType,
                                                                className,
                                                                JdbcCodegenConstants.GENERATED_VERSION,
@@ -72,7 +73,7 @@ final class JdbcRepositoryClassGenerator {
                 .addInterface(repositoryType)
                 .addField(field -> field.name(JdbcCodegenConstants.JDBC_CLIENT_NAME)
                         .isFinal(true)
-                        .type(JdbcPersistenceTypes.JDBC_CLIENT));
+                        .type(JdbcCodegenTypes.JDBC_CLIENT));
 
         JdbcMethodGenerator.generate(codegenContext,
                                      roundContext,
@@ -94,82 +95,42 @@ final class JdbcRepositoryClassGenerator {
         Constructor.Builder constructor = Constructor.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
         Annotation provider = Annotation.builder()
-                .typeName(JdbcPersistenceTypes.DATA_PROVIDER_TYPE)
+                .typeName(JdbcCodegenTypes.DATA_PROVIDER_TYPE)
                 .property(JdbcCodegenConstants.ANNOTATION_VALUE_PROPERTY, JdbcCodegenConstants.PROVIDER)
                 .build();
-        Annotation defaultNamed = Annotation.builder()
-                .typeName(JdbcPersistenceTypes.SERVICE_NAMED)
-                .property(JdbcCodegenConstants.ANNOTATION_VALUE_PROPERTY,
-                          JdbcCodegenConstants.DEFAULT_CLIENT_NAME)
+        if (repositoryInfo.interfaceInfo().hasAnnotation(JdbcCodegenTypes.DATA_PERSISTENCE_UNIT)) {
+            throw new CodegenException("JDBC repositories do not use @Data.PersistenceUnit. Use @Jdbc.Client to "
+                                               + "select a named JDBC client from data.clients.jdbc.",
+                                       repositoryInfo.interfaceInfo().originatingElementValue());
+        }
+
+        String name = JdbcCodegenConstants.DEFAULT_CLIENT_NAME;
+        Annotation client = repositoryInfo.interfaceInfo()
+                .findAnnotation(JdbcCodegenTypes.JDBC_CLIENT_ANNOTATION)
+                .orElse(null);
+        if (client != null) {
+            name = client.stringValue().orElse("");
+            if (name.isBlank()) {
+                throw new CodegenException("A JDBC repository @Jdbc.Client value must not be blank.",
+                                           repositoryInfo.interfaceInfo().originatingElementValue());
+            }
+        }
+        Annotation named = Annotation.builder()
+                .typeName(JdbcCodegenTypes.SERVICE_NAMED)
+                .property(JdbcCodegenConstants.ANNOTATION_VALUE_PROPERTY, name)
                 .build();
 
-        Annotation persistenceUnit = repositoryInfo.interfaceInfo()
-                .findAnnotation(JdbcPersistenceTypes.DATA_PERSISTENCE_UNIT)
-                .orElse(null);
-        String name = persistenceUnit == null
-                ? JdbcCodegenConstants.DEFAULT_CLIENT_NAME
-                : persistenceUnit.stringValue().orElse(JdbcCodegenConstants.DEFAULT_CLIENT_NAME);
-        boolean required = persistenceUnit == null
-                || persistenceUnit.booleanValue(JdbcCodegenConstants.PERSISTENCE_UNIT_REQUIRED_PROPERTY).orElse(true);
-
-        if (!JdbcCodegenConstants.DEFAULT_CLIENT_NAME.equals(name)) {
-            Annotation named = Annotation.builder()
-                    .typeName(JdbcPersistenceTypes.SERVICE_NAMED)
-                    .property(JdbcCodegenConstants.ANNOTATION_VALUE_PROPERTY, name)
-                    .build();
-            if (required) {
-                constructor.addParameter(Parameter.builder()
-                                                 .name(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                                                 .type(JdbcPersistenceTypes.JDBC_CLIENT)
-                                                 .addAnnotation(named)
-                                                 .addAnnotation(provider)
-                                                 .build())
-                        .addContent("this.")
-                        .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                        .addContent(" = ")
-                        .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                        .addContentLine(";");
-            } else {
-                // Resolve the default lazily so it is activated only when the optional named client is absent.
-                TypeName optionalClient = TypeName.builder(JdbcPersistenceTypes.OPTIONAL)
-                        .addTypeArgument(JdbcPersistenceTypes.JDBC_CLIENT)
-                        .build();
-                TypeName clientSupplier = TypeName.builder(JdbcPersistenceTypes.SUPPLIER)
-                        .addTypeArgument(JdbcPersistenceTypes.JDBC_CLIENT)
-                        .build();
-                constructor.addParameter(Parameter.builder()
-                                                 .name(JdbcCodegenConstants.NAMED_JDBC_CLIENT_NAME)
-                                                 .type(optionalClient)
-                                                 .addAnnotation(named)
-                                                 .addAnnotation(provider)
-                                                 .build())
-                        .addParameter(Parameter.builder()
-                                              .name(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                                              .type(clientSupplier)
-                                              .addAnnotation(defaultNamed)
-                                              .addAnnotation(provider)
-                                              .build())
-                        .addContent("this.")
-                        .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                        .addContent(" = ")
-                        .addContent(JdbcCodegenConstants.NAMED_JDBC_CLIENT_NAME)
-                        .addContent(".orElseGet(")
-                        .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                        .addContentLine(");");
-            }
-        } else {
-            constructor.addParameter(Parameter.builder()
-                                             .name(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                                             .type(JdbcPersistenceTypes.JDBC_CLIENT)
-                                             .addAnnotation(defaultNamed)
-                                             .addAnnotation(provider)
-                                             .build())
-                    .addContent("this.")
-                    .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                    .addContent(" = ")
-                    .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                    .addContentLine(";");
-        }
+        constructor.addParameter(Parameter.builder()
+                                         .name(JdbcCodegenConstants.JDBC_CLIENT_NAME)
+                                         .type(JdbcCodegenTypes.JDBC_CLIENT)
+                                         .addAnnotation(named)
+                                         .addAnnotation(provider)
+                                         .build())
+                .addContent("this.")
+                .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
+                .addContent(" = ")
+                .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
+                .addContentLine(";");
         for (JdbcMethodGenerator.MapperDependency dependency : mapperDependencies) {
             constructor.addParameter(Parameter.builder()
                                              .name(dependency.parameterName())

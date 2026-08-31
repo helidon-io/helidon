@@ -27,10 +27,11 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import javax.sql.DataSource;
@@ -54,6 +55,9 @@ import static org.hamcrest.number.OrderingComparison.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JdbcTransactionConnectionManagerTest {
+
+    // Bounds every wait in the concurrency harness so a regression fails this test instead of stalling the build.
+    private static final long CONCURRENT_TEST_TIMEOUT_SECONDS = 10;
 
     /**
      * Proves invalid lifecycle notifications do not poison later ordinary
@@ -529,7 +533,7 @@ class JdbcTransactionConnectionManagerTest {
 
     /**
      * Proves concurrent platform and virtual threads keep local transaction
-     * associations isolated.
+     * associations isolated, with bounded failure and cleanup paths.
      */
     @Test
     void isolatesLocalTransactionsOnPlatformAndVirtualThreads() throws Exception {
@@ -538,18 +542,21 @@ class JdbcTransactionConnectionManagerTest {
             TxSupport support = registryManager.registry().get(TxSupport.class);
             JdbcTransactionConnectionManager manager =
                     registryManager.registry().get(JdbcTransactionConnectionManager.class);
-            try (ExecutorService platformThreads = Executors.newFixedThreadPool(2)) {
-                assertConcurrentIsolation(support,
-                                          manager,
-                                          initializedDataSource("tx_platform_isolation"),
-                                          platformThreads);
-            }
-            try (ExecutorService virtualThreads = Executors.newVirtualThreadPerTaskExecutor()) {
-                assertConcurrentIsolation(support,
-                                          manager,
-                                          initializedDataSource("tx_virtual_isolation"),
-                                          virtualThreads);
-            }
+            assertConcurrentIsolation(
+                    support,
+                    manager,
+                    initializedDataSource("tx_platform_isolation"),
+                    Executors.newFixedThreadPool(
+                            2,
+                            Thread.ofPlatform()
+                                    .daemon(true)
+                                    .name("jdbc-tx-isolation-", 0)
+                                    .factory()));
+            assertConcurrentIsolation(
+                    support,
+                    manager,
+                    initializedDataSource("tx_virtual_isolation"),
+                    Executors.newVirtualThreadPerTaskExecutor());
         } finally {
             registryManager.shutdown();
         }
@@ -602,6 +609,17 @@ class JdbcTransactionConnectionManagerTest {
         }
     }
 
+    /**
+     * Executes the isolation scenario and owns bounded shutdown of its executor.
+     * Completion-order observation reports an early worker failure before a
+     * peer waiting at a barrier can obscure its cause.
+     *
+     * @param support transaction support
+     * @param manager JDBC transaction connection manager
+     * @param dataSource datasource dedicated to this scenario
+     * @param executor executor owned by this invocation
+     * @throws Exception when transaction work, coordination, or cleanup fails
+     */
     private static void assertConcurrentIsolation(TxSupport support,
                                                   JdbcTransactionConnectionManager manager,
                                                   JdbcDataSource dataSource,
@@ -612,22 +630,70 @@ class JdbcTransactionConnectionManagerTest {
         Callable<Long> task = () -> {
             support.transaction(Tx.Type.REQUIRED, () -> {
                 client.create("INSERT INTO ITEMS DEFAULT VALUES").execute();
+                // Neither transaction may commit before both transaction-scoped connections have performed work.
                 entered.countDown();
-                entered.await();
+                assertThat("Both transactions must reach the execution barrier.",
+                           entered.await(CONCURRENT_TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+                           is(true));
                 return null;
             });
+            // The fresh read transaction must start only after both writes have committed.
             committed.countDown();
-            committed.await();
+            assertThat("Both transactions must reach the commit barrier.",
+                       committed.await(CONCURRENT_TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+                       is(true));
             return support.transaction(Tx.Type.REQUIRED,
                                        () -> client.create("SELECT COUNT(*) FROM ITEMS").map(Long.class).one());
         };
 
-        Future<Long> first = executor.submit(task);
-        Future<Long> second = executor.submit(task);
+        // Observe completion order so an early worker exception remains the primary test failure.
+        ExecutorCompletionService<Long> completion = new ExecutorCompletionService<>(executor);
+        Future<Long> first = null;
+        Future<Long> second = null;
+        Throwable primaryFailure = null;
+        try {
+            first = completion.submit(task);
+            second = completion.submit(task);
 
-        assertThat(first.get(), is(2L));
-        assertThat(second.get(), is(2L));
-        assertThat(count(dataSource), is(2));
+            for (int remaining = 2; remaining > 0; remaining--) {
+                Future<Long> completed =
+                        completion.poll(CONCURRENT_TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                if (completed == null) {
+                    throw new AssertionError("Timed out waiting for a concurrent transaction task.");
+                }
+                assertThat(completed.get(CONCURRENT_TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS), is(2L));
+            }
+
+            assertThat(count(dataSource), is(2));
+        } catch (Throwable failure) {
+            primaryFailure = failure;
+            throw failure;
+        } finally {
+            if (first != null) {
+                first.cancel(true);
+            }
+            if (second != null) {
+                second.cancel(true);
+            }
+            // ExecutorService.close waits without a bound, cancel explicitly and bound termination instead.
+            executor.shutdownNow();
+            try {
+                if (!executor.awaitTermination(CONCURRENT_TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    AssertionError cleanupFailure =
+                            new AssertionError("Timed out terminating the concurrent transaction executor.");
+                    if (primaryFailure == null) {
+                        throw cleanupFailure;
+                    }
+                    primaryFailure.addSuppressed(cleanupFailure);
+                }
+            } catch (InterruptedException cleanupFailure) {
+                Thread.currentThread().interrupt();
+                if (primaryFailure == null) {
+                    throw cleanupFailure;
+                }
+                primaryFailure.addSuppressed(cleanupFailure);
+            }
+        }
     }
 
     /**

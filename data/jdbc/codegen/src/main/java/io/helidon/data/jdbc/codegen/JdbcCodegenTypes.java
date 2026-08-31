@@ -18,16 +18,16 @@ package io.helidon.data.jdbc.codegen;
 import java.util.List;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 
 /**
- * Type names referenced by JDBC persistence code generation without a runtime dependency.
+ * Type names referenced by JDBC repository code generation without a runtime dependency.
  */
-final class JdbcPersistenceTypes {
+final class JdbcCodegenTypes {
 
     static final TypeName JDBC_CLIENT = TypeName.create("io.helidon.data.jdbc.JdbcClient");
     static final TypeName JDBC_CLIENT_STATEMENT = TypeName.create("io.helidon.data.jdbc.JdbcClient.Statement");
     static final TypeName ROW_MAPPER = TypeName.create("io.helidon.data.jdbc.JdbcClient.RowMapper");
+    static final TypeName JDBC_CLIENT_ANNOTATION = TypeName.create("io.helidon.data.jdbc.Jdbc.Client");
     static final TypeName JDBC_STATEMENT = TypeName.create("io.helidon.data.jdbc.Jdbc.Statement");
     static final TypeName JDBC_EXECUTION = TypeName.create("io.helidon.data.jdbc.Jdbc.Execution");
     static final TypeName JDBC_GENERATED_KEYS = TypeName.create("io.helidon.data.jdbc.Jdbc.GeneratedKeys");
@@ -36,9 +36,7 @@ final class JdbcPersistenceTypes {
     static final TypeName DATA_PROVIDER_TYPE = TypeName.create("io.helidon.data.Data.ProviderType");
     static final TypeName SERVICE_SINGLETON = TypeName.create("io.helidon.service.registry.Service.Singleton");
     static final TypeName SERVICE_NAMED = TypeName.create("io.helidon.service.registry.Service.Named");
-    static final TypeName OPTIONAL = TypeNames.OPTIONAL;
     static final TypeName JDBC_TYPE = TypeName.create("java.sql.JDBCType");
-    static final TypeName SUPPLIER = TypeNames.SUPPLIER;
     static final TypeName TX_MANDATORY = TypeName.create("io.helidon.transaction.Tx.Mandatory");
     static final TypeName TX_NEW = TypeName.create("io.helidon.transaction.Tx.New");
     static final TypeName TX_NEVER = TypeName.create("io.helidon.transaction.Tx.Never");
@@ -58,6 +56,6 @@ final class JdbcPersistenceTypes {
     /**
      * Prevents construction of the constants holder.
      */
-    private JdbcPersistenceTypes() {
+    private JdbcCodegenTypes() {
     }
 }

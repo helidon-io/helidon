@@ -20,6 +20,7 @@ import io.helidon.data.jdbc.tests.contract.AbstractJdbcFocusedTransactionContrac
 import io.helidon.data.jdbc.tests.declarative.DeclarativeFocusedTransactionOperations;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
+import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -29,7 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class MySqlDeclarativeFocusedTransactionTest extends AbstractJdbcFocusedTransactionContract {
     @Container
-    static final org.testcontainers.containers.MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
+    static final MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
 
     @Override
     protected void beforeStartApplication() {

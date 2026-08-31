@@ -53,7 +53,7 @@ class GeneratedRepositoryTest {
 
     /**
      * Proves application mapper names cannot become Java keywords or replace
-     * constructor parameters owned by JDBC persistence-unit selection.
+     * constructor parameters owned by JDBC client selection.
      *
      * @throws Exception when the compiler output cannot be inspected
      */
@@ -70,8 +70,10 @@ class GeneratedRepositoryTest {
                                                   + "boxRowMapper;"));
         assertThat(source, containsString("JdbcClient.RowMapper<MapperNameCollisionRepository.Box<Integer>> "
                                                   + "boxRowMapper2;"));
-        assertThat(source, containsString("Optional<JdbcClient> namedJdbcClient"));
-        assertThat(source, containsString("Supplier<JdbcClient> jdbcClient"));
+        assertThat(source, containsString("@Service.Named(\"mapper-name-collision\")"));
+        assertThat(source, not(containsString("Optional<JdbcClient>")));
+        assertThat(source, not(containsString("Supplier<JdbcClient>")));
+        assertThat(source, not(containsString(".orElseGet(")));
     }
 
     /**
