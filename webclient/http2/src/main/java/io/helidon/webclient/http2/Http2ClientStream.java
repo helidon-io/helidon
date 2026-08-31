@@ -743,10 +743,14 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 }
             } catch (Http2Exception e) {
                 if (trailerBlock) {
+                    int discardedDataLength = buffer.discard();
+                    failInboundLocked(e);
+                    incrementInboundWindowSizeLocked(discardedDataLength);
                     buffer.fail(e);
                     trailers.completeExceptionally(e);
+                } else {
+                    failInboundLocked(e);
                 }
-                failInboundLocked(e);
                 inboundStateChanged.signalAll();
                 return;
             }

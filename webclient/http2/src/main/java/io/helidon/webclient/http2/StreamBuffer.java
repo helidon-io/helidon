@@ -98,6 +98,22 @@ class StreamBuffer {
         }
     }
 
+    int discard() {
+        int discardedDataLength = 0;
+        try {
+            streamLock.lock();
+            for (InboundItem item : buffer) {
+                if (item instanceof InboundData inboundData) {
+                    discardedDataLength += inboundData.frameData().header().length();
+                }
+            }
+            buffer.clear();
+        } finally {
+            streamLock.unlock();
+        }
+        return discardedDataLength;
+    }
+
     sealed interface InboundItem permits InboundData, InboundTrailers {
     }
 
