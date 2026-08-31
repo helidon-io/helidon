@@ -65,7 +65,7 @@ final class JdbcRepositoryGenerator extends BasePersistenceGenerator {
                                            RepositoryInfo repositoryInfo,
                                            TypeName className,
                                            ClassModel.Builder classModel) {
-        // Entity repository parents request derived persistence operations.
+        // Entity repository parents request derived entity operations.
         // JDBC repositories support explicit SQL only.
         if (!repositoryInfo.interfacesInfo().isEmpty()) {
             throw new CodegenException("JDBC repositories must use explicitly annotated SQL methods and must not "
