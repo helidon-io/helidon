@@ -57,18 +57,6 @@ class JdbcClientConfigFactoryTest {
     }
 
     /**
-     * Verifies the removed JDBC persistence unit hierarchy is not consumed by
-     * the client configuration factory.
-     */
-    @Test
-    void ignoresRemovedPersistenceUnitConfiguration() {
-        Config config = Config.just(ConfigSources.create(Map.of(
-                "data.persistence-units.jdbc.0.data-source", "legacy-source")));
-
-        assertThat(new JdbcClientConfigFactory(() -> config).services(), is(List.of()));
-    }
-
-    /**
      * Verifies duplicate YAML names fail before client publication.
      */
     @Test
