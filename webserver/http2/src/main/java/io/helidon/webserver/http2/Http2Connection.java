@@ -942,8 +942,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
 
         if (trailers) {
-            if (!endOfStream) {
-                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received trailers without endOfStream flag " + streamId);
+            if (!validateRequestTrailers(headers, stream, streamId, endOfStream)) {
+                return;
             }
             stream.closeFromRemote();
             state = State.READ_FRAME;
@@ -989,6 +989,21 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // we now have all information needed to execute
         ctx.executor()
                 .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
+    }
+
+    private boolean validateRequestTrailers(Http2Headers headers,
+                                            Http2ServerStream stream,
+                                            int streamId,
+                                            boolean endOfStream) {
+        if (!endOfStream) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received trailers without endOfStream flag " + streamId);
+        }
+        if ("".equals(headers.path())) {
+            stream.resetProtocolError(0, true);
+            state = State.READ_FRAME;
+            return false;
+        }
+        return true;
     }
 
     private boolean validateRequestHeaders(Http2Headers headers,
