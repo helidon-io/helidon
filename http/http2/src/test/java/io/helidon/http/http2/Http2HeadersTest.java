@@ -233,6 +233,17 @@ class Http2HeadersTest {
     }
 
     @Test
+    void testTrailersRejectUnknownPseudoHeader() {
+        WritableHeaders<?> trailers = WritableHeaders.create()
+                .add(HeaderNames.create(":unknown"), "value");
+        Http2Headers http2Headers = Http2Headers.create(trailers);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateTrailers);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
     void testRequestAcceptsOrdinaryConnect() {
         String hexEncoded = connectRequestHeaders("proxy.example:443", "proxy.example:443");
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());

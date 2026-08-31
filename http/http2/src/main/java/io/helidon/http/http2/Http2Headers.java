@@ -361,6 +361,11 @@ public class Http2Headers {
         if (pseudoHeaders.size() != 0) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Pseudo header in trailers");
         }
+        for (Header header : headers) {
+            if (header.headerName().isPseudoHeader()) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Pseudo header in trailers");
+            }
+        }
     }
 
     /**
