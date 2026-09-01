@@ -22,12 +22,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -37,6 +39,9 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
+import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.webclient.api.ClientResponseTyped;
@@ -498,6 +503,31 @@ public class HeadersServerTest {
     }
 
     @Test
+    void ordinaryConnectRejectsUnicodeCaseFoldedHostAndKeepsConnectionOpen(Http2TestClient testClient) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            BufferData headerBlock = BufferData.growing(128);
+            writeLiteralWithIndexedName(headerBlock, 2, "CONNECT");
+            writeLiteralWithIndexedName(headerBlock, 1, "service%2Di.example:443");
+            writeLiteralWithNewName(headerBlock, "host", "service%2D\u0131.example:443");
+            connection.writer()
+                    .write(new Http2FrameData(Http2FrameHeader.create(headerBlock.available(),
+                                                                     Http2FrameTypes.HEADERS,
+                                                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS
+                                                                                                          | Http2Flag.END_OF_STREAM),
+                                                                     1),
+                                                  headerBlock));
+
+            connection.assertSettings(TIMEOUT);
+            connection.assertWindowsUpdate(0, TIMEOUT);
+            connection.assertSettings(TIMEOUT);
+
+            Http2RstStream rstStream = connection.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.PROTOCOL));
+            assertConnectionReusable(connection);
+        }
+    }
+
+    @Test
     void connectWithPathResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
         assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, Method.CONNECT, "/");
     }
@@ -621,6 +651,23 @@ public class HeadersServerTest {
                               FlowControl.Outbound.NOOP);
 
         assertThat(connection.assertHeaders(3, TIMEOUT).status(), is(Status.OK_200));
+    }
+
+    private static void writeLiteralWithIndexedName(BufferData target, int index, String value) {
+        target.write(0x40 | index);
+        writeRawString(target, value);
+    }
+
+    private static void writeLiteralWithNewName(BufferData target, String name, String value) {
+        target.write(0x40);
+        writeRawString(target, name);
+        writeRawString(target, value);
+    }
+
+    private static void writeRawString(BufferData target, String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        target.write(bytes.length);
+        target.write(bytes);
     }
 
     private HttpClient http2Client(URI base) throws IOException, InterruptedException {

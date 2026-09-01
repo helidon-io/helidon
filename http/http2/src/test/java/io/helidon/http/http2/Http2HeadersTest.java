@@ -274,6 +274,19 @@ class Http2HeadersTest {
     }
 
     @Test
+    void testRequestRejectsUnicodeCaseFoldedHostOnOrdinaryConnect() {
+        String hexEncoded = literalWithIndexedName(2, "CONNECT")
+                + " " + literalWithIndexedName(1, "service%2Di.example:443")
+                + " " + literalWithNewNameUtf8("host", "service%2D\u0131.example:443");
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
     void testRequestRejectsConnectWithScheme() {
         Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create())
                 .method(Method.CONNECT)
@@ -596,6 +609,12 @@ class Http2HeadersTest {
 
     private static String literalWithNewName(String name, String value) {
         return "40 " + lengthAndValue(name) + " " + lengthAndValue(value);
+    }
+
+    private static String literalWithNewNameUtf8(String name, String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        return "40 " + lengthAndValue(name) + " "
+                + String.format("%02x %s", bytes.length, HexFormat.of().formatHex(bytes));
     }
 
     private static String lengthAndValue(String value) {

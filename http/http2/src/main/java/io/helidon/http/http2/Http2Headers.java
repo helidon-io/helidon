@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.buffers.Ascii;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriAuthority;
 import io.helidon.http.Header;
@@ -574,7 +575,7 @@ public class Http2Headers {
     }
 
     private static boolean authoritiesMatch(String scheme, String authority, String host) {
-        if (scheme == null && authority.equalsIgnoreCase(host)) {
+        if (scheme == null && Ascii.toLowerCase(authority).equals(Ascii.toLowerCase(host))) {
             return true;
         }
         try {
