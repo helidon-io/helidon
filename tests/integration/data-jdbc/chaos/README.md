@@ -4,18 +4,20 @@ This Maven reactor tests how Helidon Data JDBC handles failures and recovers
 from them. It runs the same scenarios through the public `JdbcClient` API and
 through a generated `@Data.Repository`.
 
-The tests deliberately cause SQL, constraint, conversion, and transaction
-failures against H2, MySQL, PostgreSQL, and Oracle Database. They verify that
-the provider remains usable after each failure. They also verify that the
-provider releases connections back to the pool, rolls back failed transaction work,
-and does not reveal test canaries in errors that an application can observe.
+The tests deliberately cause SQL, constraint, conversion, transaction,
+physical-session, JDBC lifecycle, lock, and pool-acquisition failures. They
+verify that the provider remains usable after each failure. They also verify
+that the provider releases connections back to the pool, rolls back failed
+transaction work, and does not reveal test canaries in errors that an
+application can observe.
 
 ## Current test matrix
 
-Every concrete test class inherits six tests from
-`AbstractJdbcChaosSmokeContract`. The contract runs for each combination of
-database and application style. The complete suite has eight combinations and
-48 test invocations when Docker is available.
+The default smoke profile runs six tests from
+`AbstractJdbcChaosSmokeContract` for each database and application style. The
+bounded real-chaos profile adds lifecycle, physical-session disruption, lock,
+and pool-contention contracts. The complete profile has 76 test invocations
+when Docker is available and all container-backed classes run.
 
 | Database | Imperative module | Declarative module | Test runtime |
 | --- | --- | --- | --- |
@@ -24,11 +26,32 @@ database and application style. The complete suite has eight combinations and
 | PostgreSQL | `imperative/pgsql` | `declarative/pgsql` | Testcontainers builds the local image and starts PostgreSQL. |
 | Oracle Database | `imperative/oracle` | `declarative/oracle` | Testcontainers starts Oracle Database Free. |
 
-The H2 tests do not require a container runtime. The other six concrete test
-classes use `@Testcontainers(disabledWithoutDocker = true)`. JUnit skips these
-classes when Docker is unavailable instead of reporting failures.
+The H2 tests do not require a container runtime. Every container-backed
+concrete class uses `@Testcontainers(disabledWithoutDocker = true)`. JUnit
+skips these classes when Docker is unavailable instead of reporting failures.
 
-## Tests in the shared contract
+| Contract | H2 | MySQL | PostgreSQL | Oracle Database | Tests per style and database |
+| --- | --- | --- | --- | --- | --- |
+| Portable database-failure smoke | Yes | Yes | Yes | Yes | 6 |
+| Injected JDBC lifecycle failures | Yes | No | No | No | 8 |
+| Native physical-session termination | Yes | Yes | Yes | Yes | 1 |
+| Lock and pool-acquisition timeouts | Yes | No | No | No | 2 |
+
+The lifecycle contract uses real H2 JDBC connections behind a deterministic,
+one-shot test datasource. It does not use a mocked connection. The native
+disruption contract acquires the database's session identifier from the
+application transaction, waits until the transaction is observably blocked on
+a database lock, and terminates that exact session from an independent control
+connection. MySQL uses `KILL CONNECTION`, PostgreSQL uses
+`pg_terminate_backend`, Oracle Database uses `ALTER SYSTEM KILL SESSION`, and
+H2 uses `ABORT_SESSION`.
+
+No scenario relies on random delays. Every asynchronous wait has a bounded
+deadline and observes database or pool state before proceeding. Each disruption
+or concurrency scenario uses an isolated one-connection application pool so a
+leaked or poisoned lease cannot be hidden by another connection.
+
+## Portable smoke contract
 
 Before every test, the fixture restores two contacts. Contact `1` is named
 `alpha`, and contact `2` is named `beta`. The fixture also clears the table
@@ -107,11 +130,44 @@ The fixture reads the database through its own `JdbcClient` calls outside the
 application adapter. These reads confirm provider recovery without repeating
 the application operation that is under test.
 
+## Lifecycle, disruption, and concurrency contracts
+
+`AbstractJdbcLifecycleChaosContract` injects one-shot failures from
+`getAutoCommit`, `setAutoCommit(false)`, `commit`, `rollback`,
+`setAutoCommit(true)`, `abort`, `Connection.close`, and
+`PreparedStatement.close`. It verifies primary and suppressed failure
+semantics, invalidation, transaction outcomes where knowable, committed state,
+and recovery through a newly created live-driver connection.
+
+`AbstractJdbcConnectionLossChaosContract` terminates a physical database
+session while its transaction is blocked in statement execution. It verifies
+the transaction failure, sanitization, lease return, rollback of the gate
+update, creation of a different session, and a subsequent application query.
+The recovery assertions are intentional: the test must fail if the provider or
+pool returns a dead physical connection after termination.
+
+`AbstractJdbcConcurrencyChaosContract` creates a real H2 row-lock timeout and
+an exhausted one-connection HikariCP pool. It verifies bounded failure,
+rollback, lease accounting, committed state, and recovery after the lock or
+held lease is released.
+
+### Known product finding
+
+`DATA-JDBC-CHAOS-001` is currently exposed by both H2 connection-loss tests.
+After the database terminates an in-flight physical session, the next operation
+receives that dead H2 connection and fails from
+`JdbcConnectionLease.Owned.acquire` with SQLSTATE `90121`. The imperative and
+declarative H2 connection-loss tests are disabled while this finding remains
+unresolved. The equivalent MySQL, PostgreSQL, and Oracle Database tests remain
+enabled and continue to require immediate recovery with a replacement session.
+Do not add a test retry or weaken the recovery assertion when re-enabling the
+H2 tests.
+
 ## Directory layout
 
 | Path | Purpose |
 | --- | --- |
-| `pom.xml` | This file defines the reactor and selects the smoke test tag. |
+| `pom.xml` | This file defines the reactor, the default smoke tag, and the opt-in real-chaos profile. |
 | `common/pom.xml` | This module builds the shared contract and application adapters. |
 | `common/src/main/java` | This directory contains the shared test code. |
 | `common/src/h2` | This directory contains the H2 configuration, pool support, and schema. |
@@ -140,17 +196,25 @@ provides configuration, manages the container, and checks the HikariCP pool.
 
 The parent `tests/integration/data-jdbc/pom.xml` does not include the chaos
 reactor in its normal module list. The `-Ddata.jdbc.chaos=true` property
-activates the `data-jdbc-chaos` Maven profile and adds this reactor. This
-property is required when Maven starts from the JDBC integration parent. It is
-not required when Maven starts from `chaos/pom.xml`.
+activates the smoke-only `data-jdbc-chaos` Maven profile and adds this reactor.
+The `data-jdbc-chaos-real` Maven profile also adds the reactor and selects all
+four contracts. Neither activation is required when Maven starts directly from
+`chaos/pom.xml`.
 
-The shared contract has the `data-jdbc-chaos` and
-`data-jdbc-chaos-smoke` JUnit tags. The first tag identifies the current chaos
-suite. The second tag identifies its portable smoke contract.
+Every contract has the `data-jdbc-chaos` JUnit tag. Individual contracts also
+have one of these selection tags:
 
-The `data.jdbc.chaos.groups` property in the POM passes the smoke tag to
-Failsafe. This property is part of the internal Maven configuration. Users
-only need to activate the chaos reactor.
+| Tag | Contract |
+| --- | --- |
+| `data-jdbc-chaos-smoke` | Portable database-failure smoke coverage |
+| `data-jdbc-chaos-lifecycle` | Deterministic live-driver JDBC lifecycle failure injection |
+| `data-jdbc-chaos-disruption` | Native physical-session termination during execution |
+| `data-jdbc-chaos-concurrency` | Real lock and one-connection-pool timeout coverage |
+
+The default `data.jdbc.chaos.groups` value selects only the smoke contract.
+The `data-jdbc-chaos-real` Maven profile selects all four tags. A developer can
+override `data.jdbc.chaos.groups` to run one contract while diagnosing a
+failure.
 
 Surefire excludes classes whose names end in `Test`. Failsafe explicitly
 includes the chaos test packages and runs its `integration-test` and `verify`
@@ -162,7 +226,8 @@ these tests.
 The following commands assume that the repository root is the current working
 directory.
 
-Use this command to run the smoke suite from the JDBC integration reactor.
+Use this command to run the default smoke suite from the JDBC integration
+reactor.
 
 ```bash
 mvn -f tests/integration/data-jdbc/pom.xml -Ddata.jdbc.chaos=true verify
@@ -174,14 +239,60 @@ Use this command to run the same suite directly from the chaos reactor.
 mvn -f tests/integration/data-jdbc/chaos/pom.xml verify
 ```
 
-Use this command to run both H2 application styles without Docker.
+Use this command to run every chaos contract, in both application styles,
+against every applicable database. `-Plong-tests` explicitly includes MySQL,
+PostgreSQL, and Oracle Database. `-Pdata-jdbc-chaos-real` selects the lifecycle,
+disruption, and concurrency contracts in addition to smoke coverage.
+
+```bash
+mvn -f tests/integration/data-jdbc/pom.xml \
+    -Plong-tests,data-jdbc-chaos-real verify
+```
+
+The equivalent command starting directly from the chaos reactor is:
+
+```bash
+mvn -f tests/integration/data-jdbc/chaos/pom.xml \
+    -Plong-tests,data-jdbc-chaos-real verify
+```
+
+If Docker is absent, both commands skip the MySQL, PostgreSQL, and Oracle
+Database classes. Missing Docker does not fail the build. Review the Failsafe
+summary to distinguish executed tests from skipped tests.
+
+Use this command to run all H2 chaos contracts without Docker.
+
+```bash
+mvn -f tests/integration/data-jdbc/chaos/pom.xml \
+    -P-long-tests,data-jdbc-chaos-real \
+    -pl imperative/h2,declarative/h2 -am verify
+```
+
+Use these commands to select one bounded contract for diagnosis.
+
+```bash
+mvn -f tests/integration/data-jdbc/chaos/pom.xml \
+    -P-long-tests \
+    -Ddata.jdbc.chaos.groups=data-jdbc-chaos-lifecycle \
+    -pl imperative/h2,declarative/h2 -am verify
+mvn -f tests/integration/data-jdbc/chaos/pom.xml \
+    -Plong-tests \
+    -Ddata.jdbc.chaos.groups=data-jdbc-chaos-disruption verify
+mvn -f tests/integration/data-jdbc/chaos/pom.xml \
+    -P-long-tests \
+    -Ddata.jdbc.chaos.groups=data-jdbc-chaos-concurrency \
+    -pl imperative/h2,declarative/h2 -am verify
+```
+
+Use this command to run only the H2 smoke contract in both application styles.
 
 ```bash
 mvn -f tests/integration/data-jdbc/chaos/pom.xml \
     -pl imperative/h2,declarative/h2 -am verify
 ```
 
-Use these commands to run one database through both application styles.
+Use these commands to run only the smoke contract for one database through
+both application styles.
 
 ```bash
 mvn -f tests/integration/data-jdbc/chaos/pom.xml \
@@ -254,5 +365,6 @@ support creates a dedicated user and schema after the database starts.
 The PostgreSQL tests build an image named `data-jdbc-chaos-pgsql` from
 `common/src/pgsql/docker`. The Dockerfile defines its base image.
 
-Every database uses its own schema script. Each script creates the same two
-logical tables and inserts the same original rows.
+Every database uses its own schema script. Each schema creates the same contact,
+generated-key, and gate tables, inserts the same baseline rows, and exposes a
+database-specific session identifier through the same logical view.

@@ -53,4 +53,18 @@ public interface ChaosContactOperations {
      * @return committed row count
      */
     long countContacts();
+
+    /**
+     * Returns the physical database session identifier used by the current transaction.
+     *
+     * @return database session identifier
+     */
+    long currentSessionId();
+
+    /**
+     * Updates the gate row used to synchronize a physical connection disruption.
+     *
+     * @param id gate row identifier
+     */
+    void updateGate(long id);
 }

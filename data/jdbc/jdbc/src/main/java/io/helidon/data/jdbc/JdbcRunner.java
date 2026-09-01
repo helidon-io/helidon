@@ -246,12 +246,14 @@ final class JdbcRunner {
                 JdbcExceptionTranslator.invokeVoid("binding a typed null JDBC parameter",
                                                    () -> statement.setNull(position,
                                                                            bind.type().getVendorTypeNumber()));
-            } else if (bind.value() instanceof byte[] bytes) {
-                JdbcExceptionTranslator.invokeVoid("binding a binary JDBC parameter",
-                                                   () -> statement.setBytes(position, bytes));
             } else {
-                JdbcExceptionTranslator.invokeVoid("binding a JDBC parameter",
-                                                   () -> statement.setObject(position, bind.value()));
+                String bindingOperation = bind.value() instanceof byte[]
+                        ? "binding a binary JDBC parameter"
+                        : "binding a JDBC parameter";
+                JdbcExceptionTranslator.invokeVoid(bindingOperation,
+                                                   () -> JdbcScalarAccess.bind(statement,
+                                                                              position,
+                                                                              bind.value()));
             }
         }
     }

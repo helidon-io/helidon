@@ -81,6 +81,10 @@ class JdbcBindSnapshotTest {
         assertThat(captured.getValue(), not(sameInstance(value)));
     }
 
+    /**
+     * Proves that binding snapshots a mutable JDBC date before application
+     * mutation and supplies the detached value through {@code setDate}.
+     */
     @Test
     void capturesDateWhenBound() throws Exception {
         Date value = Date.valueOf("2026-07-27");
@@ -90,9 +94,16 @@ class JdbcBindSnapshotTest {
         value.setTime(Date.valueOf("2030-01-01").getTime());
         statement.execute();
 
-        assertCapturedObject(expected, value, Date.class);
+        ArgumentCaptor<Date> captured = ArgumentCaptor.forClass(Date.class);
+        verify(preparedStatement).setDate(eq(1), captured.capture());
+        assertThat(captured.getValue(), is(expected));
+        assertThat(captured.getValue(), not(sameInstance(value)));
     }
 
+    /**
+     * Proves that binding snapshots a mutable JDBC time before application
+     * mutation and supplies the detached value through {@code setTime}.
+     */
     @Test
     void capturesTimeWhenBound() throws Exception {
         Time value = Time.valueOf("10:11:12");
@@ -102,9 +113,16 @@ class JdbcBindSnapshotTest {
         value.setTime(Time.valueOf("20:21:22").getTime());
         statement.execute();
 
-        assertCapturedObject(expected, value, Time.class);
+        ArgumentCaptor<Time> captured = ArgumentCaptor.forClass(Time.class);
+        verify(preparedStatement).setTime(eq(1), captured.capture());
+        assertThat(captured.getValue(), is(expected));
+        assertThat(captured.getValue(), not(sameInstance(value)));
     }
 
+    /**
+     * Proves that binding snapshots a mutable JDBC timestamp before application
+     * mutation and preserves its nanosecond precision through {@code setTimestamp}.
+     */
     @Test
     void capturesTimestampAndNanosecondsWhenBound() throws Exception {
         Timestamp value = Timestamp.valueOf("2026-07-27 10:11:12.123456789");
@@ -115,24 +133,33 @@ class JdbcBindSnapshotTest {
         value.setNanos(987654321);
         statement.execute();
 
-        Timestamp captured = assertCapturedObject(expected, value, Timestamp.class);
-        assertThat(captured.getNanos(), is(123456789));
+        ArgumentCaptor<Timestamp> captured = ArgumentCaptor.forClass(Timestamp.class);
+        verify(preparedStatement).setTimestamp(eq(1), captured.capture());
+        assertThat(captured.getValue(), is(expected));
+        assertThat(captured.getValue(), not(sameInstance(value)));
+        assertThat(captured.getValue().getNanos(), is(123456789));
     }
 
+    /**
+     * Proves that a known immutable scalar is retained by reference and reaches
+     * the driver through its dedicated string setter.
+     */
     @Test
     void retainsKnownImmutableScalarByReference() throws Exception {
         String value = "stable";
 
         client.create(UPDATE_SQL).bind(1, value).execute();
 
-        assertThat(capturedObject(String.class), sameInstance(value));
+        ArgumentCaptor<String> captured = ArgumentCaptor.forClass(String.class);
+        verify(preparedStatement).setString(eq(1), captured.capture());
+        assertThat(captured.getValue(), sameInstance(value));
     }
 
     @Test
     void terminalExecutionCannotObserveConcurrentSourceMutation() throws Exception {
         CountDownLatch acquisitionStarted = new CountDownLatch(1);
         CountDownLatch continueAcquisition = new CountDownLatch(1);
-        when(dataSource.getConnection()).thenAnswer(invocation -> {
+        when(dataSource.getConnection()).thenAnswer(_ -> {
             acquisitionStarted.countDown();
             if (!continueAcquisition.await(10, TimeUnit.SECONDS)) {
                 throw new AssertionError("Timed out waiting to continue JDBC connection acquisition");
@@ -168,34 +195,4 @@ class JdbcBindSnapshotTest {
         verify(preparedStatement, never()).setBytes(anyInt(), any());
     }
 
-    /**
-     * Verifies a copied temporal value passed to {@code setObject}.
-     *
-     * @param expected value captured before application mutation
-     * @param applicationValue mutated application-owned value
-     * @param type value type
-     * @param <T> value type
-     * @return captured value
-     * @throws Exception when Mockito verification fails
-     */
-    private <T> T assertCapturedObject(T expected, T applicationValue, Class<T> type) throws Exception {
-        T captured = capturedObject(type);
-        assertThat(captured, is(expected));
-        assertThat(captured, not(sameInstance(applicationValue)));
-        return captured;
-    }
-
-    /**
-     * Captures the value supplied to {@code PreparedStatement.setObject}.
-     *
-     * @param type expected value type
-     * @param <T> value type
-     * @return captured value
-     * @throws Exception when Mockito verification fails
-     */
-    private <T> T capturedObject(Class<T> type) throws Exception {
-        ArgumentCaptor<Object> captured = ArgumentCaptor.forClass(Object.class);
-        verify(preparedStatement).setObject(eq(1), captured.capture());
-        return type.cast(captured.getValue());
-    }
 }

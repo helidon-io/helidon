@@ -44,6 +44,7 @@ public final class ChaosDatabaseFixture {
      */
     public void resetContacts() {
         client.create(ChaosSql.RESET_GENERATED).execute();
+        client.create(ChaosSql.RESET_GATE).execute();
         client.create(ChaosSql.RESET_CONTACTS).execute();
         client.create(ChaosSql.RESTORE_CONTACT)
                 .bind(1, 1L)
@@ -88,5 +89,14 @@ public final class ChaosDatabaseFixture {
                 .bind(1, name)
                 .map(Long.class)
                 .one();
+    }
+
+    /**
+     * Reads the committed gate value outside the disrupted application transaction.
+     *
+     * @return committed gate value
+     */
+    public long committedGateValue() {
+        return client.create(ChaosSql.READ_GATE).map(Long.class).one();
     }
 }
