@@ -509,11 +509,12 @@ public class HeadersServerTest {
             writeLiteralWithIndexedName(headerBlock, 2, "CONNECT");
             writeLiteralWithIndexedName(headerBlock, 1, "service%2Di.example:443");
             writeLiteralWithNewName(headerBlock, "host", "service%2D\u0131.example:443");
+            Http2Flag.HeaderFlags flags =
+                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
             connection.writer()
                     .write(new Http2FrameData(Http2FrameHeader.create(headerBlock.available(),
                                                                      Http2FrameTypes.HEADERS,
-                                                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS
-                                                                                                          | Http2Flag.END_OF_STREAM),
+                                                                     flags,
                                                                      1),
                                                   headerBlock));
 
