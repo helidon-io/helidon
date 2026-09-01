@@ -592,6 +592,13 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         return it -> filterFunction.apply(current.apply(it));
     }
 
+    private static boolean statusAllowsEntity(Status status) {
+        int statusCode = status.code();
+        return statusCode != Status.NO_CONTENT_204.code()
+                && statusCode != Status.RESET_CONTENT_205.code()
+                && statusCode != Status.NOT_MODIFIED_304.code();
+    }
+
     private ContentEncoder responseContentEncoder(boolean allowAutomaticEncoding) {
         if (selectedContentEncoder != null) {
             return selectedContentEncoder;
@@ -616,13 +623,6 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         }
         selectedContentEncoder = encoder;
         return selectedContentEncoder;
-    }
-
-    private static boolean statusAllowsEntity(Status status) {
-        int statusCode = status.code();
-        return statusCode != Status.NO_CONTENT_204.code()
-                && statusCode != Status.RESET_CONTENT_205.code()
-                && statusCode != Status.NOT_MODIFIED_304.code();
     }
 
     private OutputStream applyContentEncoder(ContentEncoder encoder, OutputStream outputStream) {
