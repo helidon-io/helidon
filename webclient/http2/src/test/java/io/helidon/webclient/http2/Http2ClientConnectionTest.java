@@ -891,7 +891,7 @@ class Http2ClientConnectionTest {
             assertThat(blockedReset.awaitEntered(), is(true));
 
             try {
-                test.offerInbound(dataFrame(stream.streamId(), "invalid".getBytes(StandardCharsets.UTF_8), false));
+                test.offerInbound(dataFrame(0, "invalid".getBytes(StandardCharsets.UTF_8), false));
                 Http2ClientProtocolConfig noPing = Http2ClientProtocolConfig.builder()
                         .ping(false)
                         .buildPrototype();
@@ -1461,6 +1461,119 @@ class Http2ClientConnectionTest {
 
             secondStream.close();
             connection.close();
+        }
+    }
+
+    @Test
+    void lateDataDuringCancelDoesNotCloseConnection() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream canceledStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream siblingStream = connection.createStream(STREAM_CONFIG);
+
+            canceledStream.writeHeaders(requestHeaders(), true);
+            siblingStream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(canceledStream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(canceledStream.readHeaders().status(), is(Status.OK_200));
+
+            clearInvocations(test.dataWriter);
+            MockedConnectionTestContext.BlockedWrite resetWrite = test.blockNextWriteNow();
+            CompletableFuture<Void> cancel = CompletableFuture.runAsync(canceledStream::cancel);
+            try {
+                assertThat(resetWrite.awaitEntered(), is(true));
+                byte[] maxDataFrame = new byte[WindowSize.DEFAULT_MAX_FRAME_SIZE];
+                test.offerInbound(dataFrame(canceledStream.streamId(), maxDataFrame, false),
+                                  dataFrame(canceledStream.streamId(), maxDataFrame, false),
+                                  dataFrame(canceledStream.streamId(), BufferData.EMPTY_BYTES, true),
+                                  encodedHeaderFrame(siblingStream.streamId(),
+                                                     encodedResponseHeaders(false),
+                                                     inboundTable,
+                                                     huffman,
+                                                     true));
+
+                assertThat(siblingStream.readHeaders().status(), is(Status.OK_200));
+                verify(test.clientConnection, never()).closeResource();
+
+                resetWrite.release();
+                cancel.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                ArgumentCaptor<BufferData> writes = ArgumentCaptor.forClass(BufferData.class);
+                verify(test.dataWriter, timeout(TEST_WAIT_TIMEOUT.toMillis()).times(2)).writeNow(writes.capture());
+                Http2FrameHeader resetHeader = Http2FrameHeader.create(writes.getAllValues().get(0).copy());
+                BufferData windowUpdateData = writes.getAllValues().get(1).copy();
+                Http2FrameHeader windowUpdateHeader = Http2FrameHeader.create(windowUpdateData);
+                Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(windowUpdateData);
+                assertThat(resetHeader.type(), is(Http2FrameType.RST_STREAM));
+                assertThat(windowUpdateHeader.type(), is(Http2FrameType.WINDOW_UPDATE));
+                assertThat(windowUpdateHeader.streamId(), is(0));
+                assertThat(windowUpdate.windowSizeIncrement(), is(2 * WindowSize.DEFAULT_MAX_FRAME_SIZE));
+            } finally {
+                resetWrite.release();
+                try {
+                    cancel.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                } finally {
+                    canceledStream.close();
+                    siblingStream.close();
+                    connection.close();
+                }
+            }
+        }
+    }
+
+    @Test
+    void lateHeadersDuringCancelDoNotCloseConnection() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream canceledStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream siblingStream = connection.createStream(STREAM_CONFIG);
+
+            canceledStream.writeHeaders(requestHeaders(), true);
+            siblingStream.writeHeaders(requestHeaders(), true);
+
+            Http2Headers.DynamicTable inboundTable =
+                    Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
+            test.offerInbound(encodedHeaderFrame(canceledStream.streamId(),
+                                                 encodedResponseHeaders(false),
+                                                 inboundTable,
+                                                 huffman));
+            assertThat(canceledStream.readHeaders().status(), is(Status.OK_200));
+
+            MockedConnectionTestContext.BlockedWrite resetWrite = test.blockNextWriteNow();
+            CompletableFuture<Void> cancel = CompletableFuture.runAsync(canceledStream::cancel);
+            try {
+                assertThat(resetWrite.awaitEntered(), is(true));
+                test.offerInbound(encodedHeaderFrame(canceledStream.streamId(),
+                                                     encodedTrailers(),
+                                                     inboundTable,
+                                                     huffman,
+                                                     true),
+                                  encodedHeaderFrame(siblingStream.streamId(),
+                                                     encodedResponseHeaders(true),
+                                                     inboundTable,
+                                                     huffman,
+                                                     true));
+
+                Http2Headers siblingHeaders = siblingStream.readHeaders();
+                assertThat(siblingHeaders.status(), is(Status.OK_200));
+                assertThat(siblingHeaders.httpHeaders().get(SHARED_HEADER).get(), is("shared-value"));
+                assertThat(siblingHeaders.httpHeaders().get(HeaderNames.CACHE_CONTROL).get(), is("no-cache"));
+                verify(test.clientConnection, never()).closeResource();
+            } finally {
+                resetWrite.release();
+                cancel.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                canceledStream.close();
+                siblingStream.close();
+                connection.close();
+            }
         }
     }
 

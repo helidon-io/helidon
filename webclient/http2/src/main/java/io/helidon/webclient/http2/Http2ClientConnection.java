@@ -1096,13 +1096,14 @@ public class Http2ClientConnection {
         Http2ClientStream stream = stream(streamId);
         if (stream == null) {
             validateKnownAbandonedClientStream(streamId, Http2FrameType.DATA);
-            connectionFlowControl.decrementInboundConnectionWindowSize(frameHeader.length());
-            connectionFlowControl.incrementInboundConnectionWindowSize(frameHeader.length());
+            restoreDiscardedConnectionCredit(frameHeader);
             logDroppedFrame(Http2FrameType.DATA, streamId);
             return;
         }
         Http2FrameData frameData = new Http2FrameData(frameHeader, data);
         if (!stream.prepareInboundData(frameData)) {
+            restoreDiscardedConnectionCredit(frameHeader);
+            logDroppedFrame(Http2FrameType.DATA, streamId);
             return;
         }
         stream.flowControl().inbound().decrementWindowSize(frameHeader.length());
@@ -1110,6 +1111,11 @@ public class Http2ClientConnection {
             ctx.log(LOGGER, DEBUG, "%d: received data for stream %d", 0, streamId);
         }
         stream.push(frameData);
+    }
+
+    private void restoreDiscardedConnectionCredit(Http2FrameHeader frameHeader) {
+        connectionFlowControl.decrementInboundConnectionWindowSize(frameHeader.length());
+        connectionFlowControl.incrementInboundConnectionWindowSize(frameHeader.length());
     }
 
     private boolean handleHeadersFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
@@ -1173,7 +1179,7 @@ public class Http2ClientConnection {
 
     private void logDroppedFrame(Http2FrameType frameType, int streamId) {
         if (LOGGER.isLoggable(DEBUG)) {
-            ctx.log(LOGGER, DEBUG, "%d: received %s for stream %d, which does not exist",
+            ctx.log(LOGGER, DEBUG, "%d: discarded %s for inactive stream %d",
                     0, frameType, streamId);
         }
     }
