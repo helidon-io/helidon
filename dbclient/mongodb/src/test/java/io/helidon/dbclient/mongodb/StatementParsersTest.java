@@ -15,9 +15,13 @@
  */
 package io.helidon.dbclient.mongodb;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.DoubleAccumulator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.dbclient.mongodb.StatementParsers.NamedParser;
 import io.helidon.json.JsonArray;
@@ -29,12 +33,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 /**
  * Unit test for {@link StatementParsers}.
  */
 @SuppressWarnings("SpellCheckingInspection")
 public class StatementParsersTest {
+
+    private static final String EXPONENT_NUMBER = "1e0";
+    private static final String PRECISE_NUMBER = "12345678901234567890.123456789";
+    private static final String STRUCTURAL_VALUE = "0,\"unexpected\":true";
 
     /**
      * Test simple MongoDb statement with parameters and mapping.
@@ -73,6 +82,74 @@ public class StatementParsersTest {
         String stmtOut = StatementParsers.indexedParser("{ team: ? }", List.of(team)).convert();
 
         assertThat(stmtOut, is("{ team: [\"Bulbasaur\",4] }"));
+    }
+
+    @Test
+    void testNonNumericNumberIsString() {
+        assertThat(StatementParsers.toJson(number(STRUCTURAL_VALUE)), is("\"0,\\\"unexpected\\\":true\""));
+    }
+
+    @Test
+    void testBigIntegerSubclassTextIsValidated() {
+        Number number = new BigInteger("0") {
+            @Override
+            public String toString() {
+                return STRUCTURAL_VALUE;
+            }
+        };
+
+        assertThat(StatementParsers.toJson(number), is("\"0,\\\"unexpected\\\":true\""));
+    }
+
+    @Test
+    void testValidNumberRemainsNumeric() {
+        assertThat(StatementParsers.toJson(new AtomicInteger(42)), is("42"));
+    }
+
+    @Test
+    void testNegativeZeroRemainsSigned() {
+        DoubleAccumulator number = new DoubleAccumulator(Double::sum, -0.0);
+
+        assertThat(StatementParsers.toJson(number), is("-0.0"));
+    }
+
+    @Test
+    void testArbitraryPrecisionNumberRemainsExact() {
+        assertThat(StatementParsers.toJson(number(PRECISE_NUMBER)), is(PRECISE_NUMBER));
+    }
+
+    @Test
+    void testExponentNumberRemainsExact() {
+        assertThat(StatementParsers.toJson(number(EXPONENT_NUMBER)), is(EXPONENT_NUMBER));
+    }
+
+    @Test
+    void testInvalidJsonNumbersAreStrings() {
+        for (String value : List.of("+1", ".5", "1.", "01", "1e+")) {
+            assertThat("Number text " + value, StatementParsers.toJson(number(value)), is('"' + value + '"'));
+        }
+    }
+
+    @Test
+    void testNestedNonNumericNumbersAreStrings() {
+        String quoted = "\"0,\\\"unexpected\\\":true\"";
+
+        assertAll(
+                () -> assertThat(StatementParsers.toJson(Map.of("number", number(STRUCTURAL_VALUE))),
+                                 is("{\"number\":" + quoted + '}')),
+                () -> assertThat(StatementParsers.toJson(List.of(number(STRUCTURAL_VALUE))),
+                                 is('[' + quoted + ']')),
+                () -> assertThat(StatementParsers.toJson(new Object[]{number(STRUCTURAL_VALUE)}),
+                                 is('[' + quoted + ']')));
+    }
+
+    private static Number number(String value) {
+        return new BigDecimal(0) {
+            @Override
+            public String toString() {
+                return value;
+            }
+        };
     }
 
 }

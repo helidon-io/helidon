@@ -40,6 +40,9 @@ final class StatementParsers {
      */
     private static final System.Logger LOGGER = System.getLogger(StatementParsers.class.getName());
 
+    private StatementParsers() {
+    }
+
     /**
      * Create a JSON representation of a value.
      *
@@ -53,6 +56,9 @@ final class StatementParsers {
         if (value instanceof JsonValue jsonValue) {
             return jsonValue.toString();
         }
+        if (value instanceof Number number) {
+            return numberToJson(number);
+        }
         if (value instanceof Map<?, ?> map) {
             return toJsonObject(map);
         }
@@ -62,30 +68,105 @@ final class StatementParsers {
         if (value.getClass().isArray()) {
             return toJsonArray(value);
         }
-        if ((value instanceof Integer) || (value instanceof Short) || (value instanceof Byte)) {
-            return JsonNumber.create(((Number) value).longValue()).toString();
-        }
-        if (value instanceof Long) {
-            return JsonNumber.create((Long) value).toString();
-        }
-        if ((value instanceof Double) || (value instanceof Float)) {
-            return JsonNumber.create(((Number) value).doubleValue()).toString();
-        }
-        if (value instanceof BigInteger) {
-            return value.toString();
-        }
-        if (value instanceof BigDecimal) {
-            return value.toString();
-        }
         if (value instanceof Boolean) {
             return value.toString();
         }
-        // Check instanceof Number is more expensive than final types, it shall be at the end
-        if (value instanceof Number) {
-            return value.toString();
-        }
+
         // String.valueOf handles null value
         return JsonString.create(String.valueOf(value)).toString();
+    }
+
+    static StatementParser indexedParser(String statement, List<Object> indexedParams) {
+        return new IndexedParser(statement, indexedParams);
+    }
+
+    static StatementParser namedParser(String statement, Map<String, Object> indexedParams) {
+        return new NamedParser(statement, indexedParams);
+    }
+
+    private static String numberToJson(Number value) {
+        if ((value instanceof Integer) || (value instanceof Short) || (value instanceof Byte)) {
+            return JsonNumber.create(value.longValue()).toString();
+        }
+        if (value instanceof Long) {
+            return JsonNumber.create(value.longValue()).toString();
+        }
+        if ((value instanceof Double) || (value instanceof Float)) {
+            return JsonNumber.create(value.doubleValue()).toString();
+        }
+        // BigInteger and BigDecimal subclasses may override toString(), so validate them through the generic path below.
+        if (value instanceof BigInteger && value.getClass() == BigInteger.class) {
+            return value.toString();
+        }
+        if (value instanceof BigDecimal && value.getClass() == BigDecimal.class) {
+            return value.toString();
+        }
+        // Number implementations may return non-numeric text, so validate the representation before writing it as JSON.
+        String numberValue = value.toString();
+        if (isJsonNumber(numberValue)) {
+            return numberValue;
+        }
+        return JsonString.create(numberValue).toString();
+    }
+
+    private static boolean isJsonNumber(String numberValue) {
+        int length = numberValue.length();
+        if (length == 0) {
+            return false;
+        }
+
+        int index = 0;
+        if (numberValue.charAt(index) == '-') {
+            index++;
+            if (index == length) {
+                return false;
+            }
+        }
+
+        char firstDigit = numberValue.charAt(index);
+        if (firstDigit == '0') {
+            index++;
+        } else if (firstDigit >= '1' && firstDigit <= '9') {
+            index++;
+            while (index < length
+                    && numberValue.charAt(index) >= '0'
+                    && numberValue.charAt(index) <= '9') {
+                index++;
+            }
+        } else {
+            return false;
+        }
+
+        if (index < length && numberValue.charAt(index) == '.') {
+            index++;
+            int fractionStart = index;
+            while (index < length
+                    && numberValue.charAt(index) >= '0'
+                    && numberValue.charAt(index) <= '9') {
+                index++;
+            }
+            if (index == fractionStart) {
+                return false;
+            }
+        }
+
+        if (index < length && (numberValue.charAt(index) == 'e' || numberValue.charAt(index) == 'E')) {
+            index++;
+            if (index < length && (numberValue.charAt(index) == '+' || numberValue.charAt(index) == '-')) {
+                index++;
+            }
+            int exponentStart = index;
+            while (index < length
+                    && numberValue.charAt(index) >= '0'
+                    && numberValue.charAt(index) <= '9') {
+                index++;
+            }
+            if (index == exponentStart) {
+                return false;
+            }
+        }
+
+        return index == length;
     }
 
     private static String toJsonObject(Map<?, ?> value) {
@@ -125,17 +206,6 @@ final class StatementParsers {
             }
         }
         return builder.append(']').toString();
-    }
-
-    private StatementParsers() {
-    }
-
-    static StatementParser indexedParser(String statement, List<Object> indexedParams) {
-        return new IndexedParser(statement, indexedParams);
-    }
-
-    static StatementParser namedParser(String statement, Map<String, Object> indexedParams) {
-        return new NamedParser(statement, indexedParams);
     }
 
     @FunctionalInterface
