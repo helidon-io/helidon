@@ -26,9 +26,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 
+import io.helidon.http.HeaderValues;
+import io.helidon.http.sse.SseEvent;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
@@ -40,6 +44,7 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2ConnectionSelector;
+import io.helidon.webserver.sse.SseSink;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -65,11 +70,16 @@ public class ResponseFilterJmhBenchmark {
     private static final String STREAM_ENTITY = "/stream-entity";
     private static final String STREAM_NONE = "/stream-none";
     private static final String STREAM_PUBLIC = "/stream-public";
+    private static final String SSE = "/sse";
+    private static final String SSE_SUSTAINED = "/sse-sustained";
     private static final int REQUESTS_PER_INVOCATION = 16;
+    private static final int SSE_STREAMS_PER_INVOCATION = 4;
+    private static final int SSE_EVENTS_PER_STREAM = 256;
     private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.UTF_8);
     private static final Runnable BEFORE_SEND = () -> { };
     private static final UnaryOperator<OutputStream> OUTPUT_FILTER = PassthroughOutputStream::new;
 
+    private final AtomicReference<String> http2SseSocketId = new AtomicReference<>();
     private WebServer server;
     private HttpClient http1Client;
     private Http2Client http2Client;
@@ -81,6 +91,7 @@ public class ResponseFilterJmhBenchmark {
     private HttpRequest http1StreamNone;
     private HttpRequest http1StreamEntity;
     private HttpRequest http1StreamPublic;
+    private HttpRequest http1Sse;
 
     @Setup
     public void setup() {
@@ -101,7 +112,9 @@ public class ResponseFilterJmhBenchmark {
                         .get(DIRECT_ENTITY_BEFORE_SEND, ResponseFilterJmhBenchmark::sendDirect)
                         .get(STREAM_NONE, ResponseFilterJmhBenchmark::sendStream)
                         .get(STREAM_ENTITY, ResponseFilterJmhBenchmark::sendStream)
-                        .get(STREAM_PUBLIC, ResponseFilterJmhBenchmark::sendStream))
+                        .get(STREAM_PUBLIC, ResponseFilterJmhBenchmark::sendStream)
+                        .get(SSE, ResponseFilterJmhBenchmark::sendSse)
+                        .get(SSE_SUSTAINED, this::sendSustainedSse))
                 .build()
                 .start();
 
@@ -123,6 +136,11 @@ public class ResponseFilterJmhBenchmark {
         http1StreamNone = request(baseUri, STREAM_NONE);
         http1StreamEntity = request(baseUri, STREAM_ENTITY);
         http1StreamPublic = request(baseUri, STREAM_PUBLIC);
+        http1Sse = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(baseUri + SSE))
+                .header(HeaderValues.ACCEPT_EVENT_STREAM.name(), HeaderValues.ACCEPT_EVENT_STREAM.get())
+                .build();
     }
 
     @TearDown
@@ -181,6 +199,12 @@ public class ResponseFilterJmhBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http1SseSink(Blackhole blackhole) throws IOException, InterruptedException {
+        http1(http1Sse, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
     public void http2DirectNoFilter(Blackhole blackhole) {
         http2(DIRECT_NONE, blackhole);
     }
@@ -227,6 +251,18 @@ public class ResponseFilterJmhBenchmark {
         http2(STREAM_PUBLIC, blackhole);
     }
 
+    @Benchmark
+    @OperationsPerInvocation(REQUESTS_PER_INVOCATION)
+    public void http2SseSink(Blackhole blackhole) {
+        http2Sse(SSE, REQUESTS_PER_INVOCATION, blackhole);
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(SSE_STREAMS_PER_INVOCATION * SSE_EVENTS_PER_STREAM)
+    public void http2SseSustained(Blackhole blackhole) {
+        http2Sse(SSE_SUSTAINED, SSE_STREAMS_PER_INVOCATION, blackhole);
+    }
+
     private static HttpRequest request(String baseUri, String path) {
         return HttpRequest.newBuilder()
                 .GET()
@@ -258,6 +294,33 @@ public class ResponseFilterJmhBenchmark {
         }
     }
 
+    private static void sendSse(ServerRequest request, ServerResponse response) {
+        sendSse(response, 1);
+    }
+
+    private static void sendSse(ServerResponse response, int eventCount) {
+        try (SseSink sink = response.sink(SseSink.TYPE)) {
+            SseEvent event = SseEvent.create(RESPONSE_BYTES);
+            for (int i = 0; i < eventCount; i++) {
+                sink.emit(event);
+            }
+        }
+    }
+
+    private void sendSustainedSse(ServerRequest request, ServerResponse response) {
+        String socketId = request.socketId();
+        String expectedSocketId = http2SseSocketId.get();
+        if (expectedSocketId == null) {
+            http2SseSocketId.compareAndSet(null, socketId);
+            expectedSocketId = http2SseSocketId.get();
+        }
+        if (!Objects.equals(expectedSocketId, socketId)) {
+            throw new IllegalStateException("HTTP/2 SSE benchmark expected one physical connection, but observed socket IDs "
+                                                    + expectedSocketId + " and " + socketId);
+        }
+        sendSse(response, SSE_EVENTS_PER_STREAM);
+    }
+
     private void http1(HttpRequest request, Blackhole blackhole) throws IOException, InterruptedException {
         for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
             HttpResponse<byte[]> response = http1Client.send(request, HttpResponse.BodyHandlers.ofByteArray());
@@ -270,6 +333,21 @@ public class ResponseFilterJmhBenchmark {
         for (int i = 0; i < REQUESTS_PER_INVOCATION; i++) {
             try (Http2ClientResponse response = http2Client.get(path).request()) {
                 blackhole.consume(response.status());
+                blackhole.consume(response.entity().as(byte[].class));
+            }
+        }
+    }
+
+    private void http2Sse(String path, int requestCount, Blackhole blackhole) {
+        for (int i = 0; i < requestCount; i++) {
+            try (Http2ClientResponse response = http2Client.get(path)
+                    .header(HeaderValues.ACCEPT_EVENT_STREAM)
+                    .request()) {
+                int status = response.status().code();
+                if (status != 200) {
+                    throw new IllegalStateException("HTTP/2 SSE benchmark request failed with status " + status);
+                }
+                blackhole.consume(status);
                 blackhole.consume(response.entity().as(byte[].class));
             }
         }

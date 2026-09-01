@@ -46,7 +46,7 @@ the WebServer.
 Sending events is accomplished by obtaining an `SseSink` instance from a
 `ServerResponse` using the `SseSink.TYPE` constant. The following example
 converts the response into an `SseSink`, emits two string messages and then
-closes the connection.
+closes the SSE response stream.
 
 ```java
 try (SseSink sseSink = res.sink(SseSink.TYPE)) {
@@ -59,6 +59,10 @@ Once an `SseSink` is obtained from a `ServerResponse`, the latter is no longer
 usable to send additional data to the client given that response `Content-Type`
 will be automatically set to `text/event-stream`. Note that an `SseSink` is auto
 closeable, so it can be part of a try-with-resources block as shown above.
+The server-side `SseSink` supports both HTTP/1.1 and HTTP/2 when HTTP/2 is enabled
+for the WebServer. Closing the sink completes the SSE response stream, while the
+underlying connection can remain available for later HTTP/1.1 requests or other
+HTTP/2 streams.
 
 Events can be created using any of the static `create` methods in `SseEvent` as
 well as via a builder obtained by calling `SseEvent.builder()`. For more
@@ -153,8 +157,10 @@ try (Http1ClientResponse r = client.get("/sseJson")
 
 The `SseSource` type defines other methods such as `onOpen`, `onClose` and
 `onError`. The following example waits for zero or more string events until the
-connection is closed. A `CountDownLatch` is a convenient way to asynchronously
-wait until all the events are received.
+event stream is closed. A `CountDownLatch` is a convenient way to asynchronously
+wait until all the events are received. The server-side HTTP/2 support described
+above does not extend the WebClient `SseSource` to HTTP/2; this example continues
+to use an `Http1ClientResponse`.
 
 ```java
 try (Http1ClientResponse r = client.get("/sseString")

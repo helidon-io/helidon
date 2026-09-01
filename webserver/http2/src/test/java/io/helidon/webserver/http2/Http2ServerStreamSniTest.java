@@ -994,6 +994,56 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
+    void peerResetBeforeHandlerFailureSuppressesServerReset() throws InterruptedException {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        CountDownLatch initEntered = new CountDownLatch(1);
+        CountDownLatch initRelease = new CountDownLatch(1);
+        CountDownLatch workerExited = new CountDownLatch(1);
+        Http2SubProtocolSelector.SubProtocolHandler handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        doAnswer(_ -> {
+            initEntered.countDown();
+            if (!initRelease.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Timed out waiting for peer reset");
+            }
+            throw new ServerConnectionException("Handler failed after peer reset",
+                                                new Http2Exception(Http2ErrorCode.STREAM_CLOSED, "Stream closed"));
+        }).when(handler).init();
+        doAnswer(_ -> {
+            initRelease.countDown();
+            return null;
+        }).when(handler).rstStream(any(Http2RstStream.class));
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> new SubProtocolResult(true, handler);
+        Http2ServerStream stream = stream(streams,
+                                          writer,
+                                          new ArrayList<>(),
+                                          sniContext(),
+                                          List.of(selector),
+                                          new Http2ServerStream.InboundDataBudget(1, 1),
+                                          _ -> { });
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithAuthority("api.example.com"), false);
+        Thread worker = Thread.ofVirtual().start(() -> {
+            try {
+                stream.run();
+            } finally {
+                workerExited.countDown();
+            }
+        });
+        assertThat("subprotocol init entered", initEntered.await(5, TimeUnit.SECONDS), is(true));
+
+        stream.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+
+        assertThat("worker exited", workerExited.await(5, TimeUnit.SECONDS), is(true));
+        worker.join();
+        verify(handler, times(1)).rstStream(any(Http2RstStream.class));
+        assertThat(writer.rstStreamCodes, is(List.of()));
+        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+    }
+
+    @Test
     void concurrentLocalFailuresSendSingleReset() throws InterruptedException {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingStreamWriter writer = new RecordingStreamWriter();

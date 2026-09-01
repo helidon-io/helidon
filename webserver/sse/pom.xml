@@ -46,6 +46,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http-http2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>

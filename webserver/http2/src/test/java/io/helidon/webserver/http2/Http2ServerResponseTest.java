@@ -38,6 +38,8 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.encoding.gzip.GzipEncoding;
+import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
@@ -52,6 +54,7 @@ import org.mockito.ArgumentCaptor;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -115,6 +118,129 @@ class Http2ServerResponseTest {
                 () -> assertThat(responseHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(6L)),
                 () -> assertThat(new String(responseEntity.getValue().readBytes(), StandardCharsets.UTF_8), is("xerror"))
         );
+    }
+
+    @Test
+    void failedStreamingWriteDiscardsEncoderCloseBytes() throws IOException {
+        AtomicInteger dataWrites = new AtomicInteger();
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder(() -> { }, true));
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        when(stream.writeData(any(BufferData.class), eq(false))).thenAnswer(_ -> {
+            dataWrites.incrementAndGet();
+            throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait time-out.");
+        });
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        OutputStream outputStream = response.outputStream();
+        response.flushHeaders();
+
+        Http2Exception failure = assertThrows(Http2Exception.class,
+                                              () -> outputStream.write("hello".getBytes(StandardCharsets.UTF_8)));
+        Http2Exception repeatedFailure = assertThrows(Http2Exception.class, () -> outputStream.write('y'));
+        outputStream.close();
+        Http2Exception commitFailure = assertThrows(Http2Exception.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure.code(), is(Http2ErrorCode.FLOW_CONTROL)),
+                () -> assertThat(repeatedFailure, sameInstance(failure)),
+                () -> assertThat(commitFailure, sameInstance(failure)),
+                () -> assertThat(dataWrites.get(), is(1))
+        );
+        verify(stream, never()).writeData(any(BufferData.class), eq(true));
+    }
+
+    @Test
+    void failedFilterWriteDiscardsEncoderCloseBytes() throws IOException {
+        AtomicInteger dataWrites = new AtomicInteger();
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(testEncoder(() -> { }, true));
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        when(stream.writeData(any(BufferData.class), eq(false))).thenAnswer(_ -> dataWrites.incrementAndGet());
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        Http2Exception filterFailure = new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Filter write failed.");
+        response.streamFilter(delegate -> new FilterOutputStream(delegate) {
+            @Override
+            public void write(int value) {
+                throw filterFailure;
+            }
+
+            @Override
+            public void write(byte[] bytes, int offset, int length) {
+                throw filterFailure;
+            }
+        });
+        OutputStream outputStream = response.outputStream();
+        response.flushHeaders();
+
+        Http2Exception failure = assertThrows(Http2Exception.class,
+                                              () -> outputStream.write("hello".getBytes(StandardCharsets.UTF_8)));
+        outputStream.close();
+        Http2Exception commitFailure = assertThrows(Http2Exception.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure, sameInstance(filterFailure)),
+                () -> assertThat(commitFailure, sameInstance(filterFailure)),
+                () -> assertThat(dataWrites.get(), is(0))
+        );
+        verify(stream, never()).writeData(any(BufferData.class), anyBoolean());
+    }
+
+    @Test
+    void failedFilterCloseDoesNotCompleteResponse() throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+        Http2Exception filterFailure = new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Filter close failed.");
+        response.streamFilter(delegate -> new FilterOutputStream(delegate) {
+            @Override
+            public void close() {
+                throw filterFailure;
+            }
+        });
+        OutputStream outputStream = response.outputStream();
+        response.flushHeaders();
+
+        Http2Exception failure = assertThrows(Http2Exception.class, outputStream::close);
+        Http2Exception commitFailure = assertThrows(Http2Exception.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure, sameInstance(filterFailure)),
+                () -> assertThat(commitFailure, sameInstance(filterFailure))
+        );
+        verify(stream, never()).writeData(any(BufferData.class), anyBoolean());
+        verify(stream, never()).writeTrailers(any());
+    }
+
+    @Test
+    void failedEagerGzipFlushDoesNotCompleteResponse() {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.builder()
+                .addContentEncoding(GzipEncoding.create())
+                .build();
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.set(HeaderNames.ACCEPT_ENCODING, "gzip");
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        Http2Exception flowControlFailure =
+                new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait time-out.");
+        when(stream.writeData(any(BufferData.class), eq(false))).thenThrow(flowControlFailure);
+        Http2ServerResponse response = createResponse(stream,
+                                                      Method.GET,
+                                                      contentEncodingContext,
+                                                      ServerRequestHeaders.create(requestHeaders));
+        response.outputStream();
+
+        Http2Exception failure = assertThrows(Http2Exception.class, response::flushHeaders);
+        Http2Exception commitFailure = assertThrows(Http2Exception.class, response::commit);
+
+        assertAll(
+                () -> assertThat(failure, sameInstance(flowControlFailure)),
+                () -> assertThat(commitFailure, sameInstance(flowControlFailure))
+        );
+        verify(stream).writeData(any(BufferData.class), eq(false));
+        verify(stream, never()).writeData(any(BufferData.class), eq(true));
+        verify(stream, never()).writeTrailers(any());
     }
 
     @Test
@@ -345,6 +471,34 @@ class Http2ServerResponseTest {
                                      is(status.code() == Status.NOT_MODIFIED_304.code())),
                     () -> assertThat(sentHttpHeaders.contains(HeaderNames.TRANSFER_ENCODING), is(false)),
                     () -> assertThat(sentHttpHeaders.contains(HeaderNames.TRAILER), is(false))
+            );
+        }
+    }
+
+    @Test
+    void eagerlyFlushedNoEntityStatusIsSentOnce() {
+        for (Status status : NO_ENTITY_STATUSES) {
+            ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+            when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+            Http2ServerStream stream = mock(Http2ServerStream.class);
+            Http2ServerResponse response = createResponse(stream, Method.GET, contentEncodingContext);
+            response.status(status);
+            response.contentLength(23);
+            response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
+
+            response.outputStream();
+            response.flushHeaders();
+            response.commit();
+
+            var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+            verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
+            verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+            verify(stream, never()).writeData(any(), anyBoolean());
+            verify(stream, never()).writeTrailers(any());
+            assertAll(
+                    () -> assertThat(responseHeaders.getValue().status(), is(status)),
+                    () -> assertNoEntityContentLength(status, responseHeaders.getValue().httpHeaders())
             );
         }
     }
@@ -739,6 +893,10 @@ class Http2ServerResponseTest {
     }
 
     private static ContentEncoder testEncoder(Runnable onWrite) {
+        return testEncoder(onWrite, false);
+    }
+
+    private static ContentEncoder testEncoder(Runnable onWrite, boolean writeOnClose) {
         return new ContentEncoder() {
             @Override
             public OutputStream apply(OutputStream network) {
@@ -758,7 +916,15 @@ class Http2ServerResponseTest {
                     }
 
                     @Override
+                    public void flush() throws IOException {
+                        network.flush();
+                    }
+
+                    @Override
                     public void close() throws IOException {
+                        if (writeOnClose) {
+                            network.write('z');
+                        }
                         network.close();
                     }
                 };

@@ -108,6 +108,14 @@ public interface FlowControl {
         }
 
         /**
+         * Notify flow control that the stream has closed.
+         * <p>
+         * Releases threads blocked waiting for a window update on this stream without closing the connection flow control.
+         */
+        default void streamClosed() {
+        }
+
+        /**
          * MAX_FRAME_SIZE setting last received from the other side or default.
          * @return MAX_FRAME_SIZE
          */

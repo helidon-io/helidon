@@ -15,11 +15,14 @@
  */
 package io.helidon.http.http2;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -135,6 +138,8 @@ abstract class WindowSizeImpl implements WindowSize {
         private final int streamId;
         private final long timeoutMillis;
         private boolean connectionClosed;
+        private volatile boolean streamClosed;
+        private Set<ConnectionWindowWaiter> connectionWindowWaiters;
 
         Outbound(ConnectionFlowControl.Type type, int streamId, ConnectionFlowControl connectionFlowControl) {
             super(type, streamId, connectionFlowControl.initialWindowSize());
@@ -150,6 +155,7 @@ abstract class WindowSizeImpl implements WindowSize {
             try {
                 remaining = super.incrementWindowSize(increment);
                 updated.signalAll();
+                signalConnectionWindowWaiters();
             } finally {
                 updateLock.unlock();
             }
@@ -166,6 +172,7 @@ abstract class WindowSizeImpl implements WindowSize {
             try {
                 super.resetWindowSize(size);
                 updated.signalAll();
+                signalConnectionWindowWaiters();
             } finally {
                 updateLock.unlock();
             }
@@ -181,6 +188,7 @@ abstract class WindowSizeImpl implements WindowSize {
             updateLock.lock();
             try {
                 updated.signalAll();
+                signalConnectionWindowWaiters();
             } finally {
                 updateLock.unlock();
             }
@@ -191,6 +199,34 @@ abstract class WindowSizeImpl implements WindowSize {
             try {
                 connectionClosed = true;
                 updated.signalAll();
+                signalConnectionWindowWaiters();
+            } finally {
+                updateLock.unlock();
+            }
+        }
+
+        void streamClosed() {
+            updateLock.lock();
+            try {
+                streamClosed = true;
+                updated.signalAll();
+            } finally {
+                updateLock.unlock();
+            }
+        }
+
+        boolean isStreamClosed() {
+            return streamClosed;
+        }
+
+        ConnectionWindowWaiter createConnectionWindowWaiter(BooleanSupplier streamClosed) {
+            return new ConnectionWindowWaiter(updateLock.newCondition(), streamClosed);
+        }
+
+        void triggerUpdate(ConnectionWindowWaiter waiter) {
+            updateLock.lock();
+            try {
+                waiter.updated.signalAll();
             } finally {
                 updateLock.unlock();
             }
@@ -198,6 +234,10 @@ abstract class WindowSizeImpl implements WindowSize {
 
         @Override
         public void blockTillUpdate() {
+            blockTillUpdate(null);
+        }
+
+        void blockTillUpdate(ConnectionWindowWaiter connectionWindowWaiter) {
             var startTime = System.nanoTime();
             long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
             try {
@@ -210,6 +250,12 @@ abstract class WindowSizeImpl implements WindowSize {
                             throw new Http2Exception(Http2ErrorCode.CANCEL,
                                                      "Connection closed while waiting for a flow control update.");
                         }
+                        if (streamClosed
+                                || (connectionWindowWaiter != null
+                                && connectionWindowWaiter.streamClosed.getAsBoolean())) {
+                            throw new Http2Exception(Http2ErrorCode.CANCEL,
+                                                     "Stream closed while waiting for a flow control update.");
+                        }
                         // Updates acquire this lock, so the predicate check and await enrollment are atomic.
                         int remainingWindowSize = getRemainingWindowSize();
                         long elapsedNanos = System.nanoTime() - startTime;
@@ -221,7 +267,18 @@ abstract class WindowSizeImpl implements WindowSize {
                         } else {
                             timedOut = false;
                             long remainingNanos = timeoutNanos - elapsedNanos;
-                            var _ = updated.await(remainingNanos, TimeUnit.NANOSECONDS);
+                            Condition waitCondition = updated;
+                            if (connectionWindowWaiter != null) {
+                                register(connectionWindowWaiter);
+                                waitCondition = connectionWindowWaiter.updated;
+                            }
+                            try {
+                                var _ = waitCondition.await(remainingNanos, TimeUnit.NANOSECONDS);
+                            } finally {
+                                if (connectionWindowWaiter != null) {
+                                    unregister(connectionWindowWaiter);
+                                }
+                            }
                             waiting = getRemainingWindowSize() < 1;
                         }
                     } finally {
@@ -241,6 +298,27 @@ abstract class WindowSizeImpl implements WindowSize {
             }
         }
 
+        private void register(ConnectionWindowWaiter waiter) {
+            if (waiter.activeBlocks++ == 0) {
+                if (connectionWindowWaiters == null) {
+                    connectionWindowWaiters = new HashSet<>();
+                }
+                connectionWindowWaiters.add(waiter);
+            }
+        }
+
+        private void unregister(ConnectionWindowWaiter waiter) {
+            if (--waiter.activeBlocks == 0) {
+                connectionWindowWaiters.remove(waiter);
+            }
+        }
+
+        private void signalConnectionWindowWaiters() {
+            if (connectionWindowWaiters != null) {
+                connectionWindowWaiters.forEach(waiter -> waiter.updated.signalAll());
+            }
+        }
+
         private void debugLog(String message, Exception e) {
             if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
                 if (e != null) {
@@ -248,6 +326,17 @@ abstract class WindowSizeImpl implements WindowSize {
                 } else {
                     LOGGER_OUTBOUND.log(DEBUG, String.format(message, type, streamId));
                 }
+            }
+        }
+
+        static final class ConnectionWindowWaiter {
+            private final Condition updated;
+            private final BooleanSupplier streamClosed;
+            private int activeBlocks;
+
+            private ConnectionWindowWaiter(Condition updated, BooleanSupplier streamClosed) {
+                this.updated = updated;
+                this.streamClosed = streamClosed;
             }
         }
     }

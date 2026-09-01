@@ -21,15 +21,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.MediaType;
@@ -40,7 +37,6 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.HttpException;
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
@@ -50,12 +46,9 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProvider;
-import io.helidon.webserver.http.spi.SinkProviderContext;
 import io.helidon.webserver.http1.spi.Http1UpgradeResponse;
 
 /**
@@ -69,9 +62,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] TERMINATING_CHUNK_TRAILERS = "0\r\n".getBytes(StandardCharsets.UTF_8);
 
-    @SuppressWarnings("rawtypes")
-    private static final List<SinkProvider> SINK_PROVIDERS
-            = HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final ConnectionContext ctx;
@@ -373,53 +363,37 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     }
 
     final SinkProvider<?> findSinkProvider(GenericType<? extends Sink<?>> sinkType) {
-        for (SinkProvider<?> p : SINK_PROVIDERS) {
-            if (p.supports(sinkType, request)) {
-                return p;
-            }
-        }
-        // Request not acceptable if provider not found
-        throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
+        return findSinkProvider(sinkType, request);
     }
 
-    @SuppressWarnings("unchecked")
     final <X extends Sink<?>> X createSink(SinkProvider<?> provider) {
-        return (X) provider.create(new SinkProviderContext() {
-            @Override
-            public ServerResponse serverResponse() {
-                return Http1ServerResponse.this;
-            }
-
-            @Override
-            public ServerRequest serverRequest() {
-                return Http1ServerResponse.this.request;
-            }
-
-            @Override
-            public ConnectionContext connectionContext() {
-                return Http1ServerResponse.this.ctx;
-            }
-
-            @Override
-            public Optional<OutputStream> entityOutputStream(Runnable responsePreparation) {
-                return Http1ServerResponse.this.sinkEntityOutputStream(responsePreparation);
-            }
-
-            @Override
-            public Runnable closeRunnable() {
-                return () -> {
-                    Http1ServerResponse.this.isSent = true;
-                    afterSend();
-                    request.reset();
-                };
-            }
-        });
+        return createSink(provider,
+                          request,
+                          ctx,
+                          this::sinkEntityOutputStream,
+                          () -> {
+                              if (outputStream == null) {
+                                  this.isSent = true;
+                                  afterSend();
+                                  request.reset();
+                              } else {
+                                  commit();
+                              }
+                          },
+                          this::flushHeaders);
     }
 
     protected Optional<OutputStream> sinkEntityOutputStream(Runnable responsePreparation) {
         Objects.requireNonNull(responsePreparation);
         beforeSend();
-        return Optional.empty();
+        responsePreparation.run();
+        return Optional.of(outputStream(false));
+    }
+
+    void flushHeaders() {
+        if (outputStream != null) {
+            outputStream.flushHeaders();
+        }
     }
 
     private void handleSinkData(Object data, MediaType mediaType) {
@@ -557,7 +531,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             outputStream.applicationFacing();
             return outputStream;
         }
-        return new ApplicationOutputStream(applicationOutputStream, bos);
+        return new ApplicationOutputStream(applicationOutputStream, outputStream);
     }
 
     boolean keepConnectionOpen() {
@@ -746,13 +720,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                 || headers.contains(HeaderNames.TRAILER));
 
             if (noEntityResponse && !headResponseSent) {
-                sendListener.status(ctx, usedStatus);
-                sendListener.headers(ctx, headers);
-                BufferData bufferData = BufferData.growing(256);
-                nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
-                sendListener.data(ctx, bufferData);
-                responseBytesTotal += bufferData.available();
-                writeResponse(dataWriter, bufferData, "Failed to write response");
+                sendNoEntityResponse(usedStatus);
             } else if (headRequest) {
                 if (!headResponseSent) {
                     if (sendTrailers && beforeTrailers != null) {
@@ -793,6 +761,62 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             } catch (IOException e) {
                 throw new ServerConnectionException("Failed to close server response stream.", e);
             }
+        }
+
+        /**
+         * Emits the HTTP/1.1 status line and headers while keeping the response stream open.
+         * <p>
+         * If the first body chunk was already buffered, this delegates to the normal first-write
+         * path so header emission and chunk framing stay identical to the regular streaming logic.
+         * Otherwise it sends only the headers and leaves payload writes for later.
+         */
+        void flushHeaders() {
+            if (closed) {
+                return;
+            }
+            if (!firstByte) {
+                responseSentRunnable.run();
+                return;
+            }
+            if (headRequest) {
+                sendHeadResponse(false);
+                firstByte = false;
+                return;
+            }
+            Status usedStatus = status.get();
+            if (isNoEntityStatus(usedStatus)) {
+                normalizeNoEntityHeaders(headers, usedStatus);
+                sendNoEntityResponse(usedStatus);
+                firstByte = false;
+                responseSentRunnable.run();
+                return;
+            }
+            if (firstBuffer != null) {
+                try {
+                    write(BufferData.empty());
+                } catch (IOException e) {
+                    throw new ServerConnectionException("Failed to flush server response headers.", e);
+                }
+                responseSentRunnable.run();
+                return;
+            }
+            if (request.headers().containsToken(HeaderValues.TE_TRAILERS)) {
+                headers.add(STREAM_TRAILERS);
+            }
+            sendHeadersAndPrepare();
+            firstByte = false;
+            responseSentRunnable.run();
+        }
+
+        private void sendNoEntityResponse(Status usedStatus) {
+            sendListener.status(ctx, usedStatus);
+            sendListener.headers(ctx, headers);
+            BufferData bufferData = BufferData.growing(256);
+            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
+            sendListener.data(ctx, bufferData);
+            responseBytesTotal += bufferData.available();
+            writeResponse(dataWriter, bufferData, "Failed to write response");
+            headResponseSent = true;
         }
 
         long totalBytesWritten() {
@@ -994,6 +1018,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         private void writeChunked(BufferData buffer) {
             int available = buffer.available();
+            if (available == 0) {
+                return;
+            }
             byte[] hex = Integer.toHexString(available).getBytes(StandardCharsets.US_ASCII);
 
             BufferData toWrite = BufferData.create(available + hex.length + 4); // \r\n after size, another after chunk
@@ -1040,6 +1067,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private final BlockingOutputStream closingDelegate;
         private final OutputStream delegate;
         private boolean applicationFacing;
+        private boolean discardWrites;
+        private RuntimeException writeFailure;
 
         ClosingBufferedOutputStream(BlockingOutputStream out, int size) {
             this.closingDelegate = out;
@@ -1048,34 +1077,94 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         @Override
         public void write(int b) throws IOException {
-            checkApplicationWrite(1);
-            delegate.write(b);
+            if (applicationFacing) {
+                checkApplicationWrite(1);
+            }
+            if (discardWrites) {
+                return;
+            }
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b) throws IOException {
-            checkApplicationWrite(b.length);
-            delegate.write(b);
+            if (applicationFacing) {
+                checkApplicationWrite(b.length);
+            }
+            if (discardWrites) {
+                return;
+            }
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            checkApplicationWrite(len);
-            delegate.write(b, off, len);
+            if (applicationFacing) {
+                checkApplicationWrite(len);
+            }
+            if (discardWrites) {
+                return;
+            }
+            try {
+                delegate.write(b, off, len);
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void flush() throws IOException {
-            delegate.flush();
+            if (applicationFacing) {
+                checkApplicationWrite(0);
+            }
+            if (discardWrites) {
+                return;
+            }
+            try {
+                delegate.flush();
+            } catch (IOException e) {
+                failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void close() {
             closingDelegate.closing();     // inform of imminent call to close for last flush
+            if (discardWrites) {
+                closingDelegate.close();
+                return;
+            }
             try {
                 delegate.close();
             } catch (IOException | UncheckedIOException | SocketWriterException e) {
-                throw new ServerConnectionException("Failed to close server output stream", e);
+                ServerConnectionException failure =
+                        new ServerConnectionException("Failed to close server output stream", e);
+                failedWrite(failure);
+                throw failure;
             }
         }
 
@@ -1092,57 +1181,132 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         private void checkApplicationWrite(int length) throws IOException {
-            if (applicationFacing) {
-                closingDelegate.checkWriteAllowed(length);
+            if (writeFailure != null) {
+                throw writeFailure;
+            }
+            closingDelegate.checkWriteAllowed(length);
+        }
+
+        private void failedWrite(IOException e) {
+            if (!discardWrites) {
+                discardWrites = true;
+                writeFailure = new UncheckedIOException(e);
+            }
+        }
+
+        private void failedWrite(RuntimeException e) {
+            if (!discardWrites) {
+                discardWrites = true;
+                writeFailure = e;
             }
         }
 
         void commit() {
+            if (discardWrites) {
+                closingDelegate.close();
+                if (writeFailure != null) {
+                    throw writeFailure;
+                }
+                return;
+            }
             closingDelegate.committing();
             try {
                 flush();
                 closingDelegate.commit();
             } catch (IOException | UncheckedIOException | SocketWriterException e) {
-                throw new ServerConnectionException("Failed to flush server output stream", e);
+                ServerConnectionException failure =
+                        new ServerConnectionException("Failed to flush server output stream", e);
+                failedWrite(failure);
+                throw failure;
+            }
+        }
+
+        void flushHeaders() {
+            try {
+                flush();
+                closingDelegate.flushHeaders();
+            } catch (IOException | UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to flush server response headers", e);
             }
         }
     }
 
     private static class ApplicationOutputStream extends OutputStream {
         private final OutputStream delegate;
-        private final BlockingOutputStream blockingOutputStream;
+        private final ClosingBufferedOutputStream responseOutputStream;
 
-        private ApplicationOutputStream(OutputStream delegate, BlockingOutputStream blockingOutputStream) {
+        private ApplicationOutputStream(OutputStream delegate, ClosingBufferedOutputStream responseOutputStream) {
             this.delegate = delegate;
-            this.blockingOutputStream = blockingOutputStream;
+            this.responseOutputStream = responseOutputStream;
         }
 
         @Override
         public void write(int b) throws IOException {
-            blockingOutputStream.checkWriteAllowed(1);
-            delegate.write(b);
+            responseOutputStream.checkApplicationWrite(1);
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b) throws IOException {
-            blockingOutputStream.checkWriteAllowed(b.length);
-            delegate.write(b);
+            responseOutputStream.checkApplicationWrite(b.length);
+            try {
+                delegate.write(b);
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            blockingOutputStream.checkWriteAllowed(len);
-            delegate.write(b, off, len);
+            responseOutputStream.checkApplicationWrite(len);
+            try {
+                delegate.write(b, off, len);
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void flush() throws IOException {
-            delegate.flush();
+            responseOutputStream.checkApplicationWrite(0);
+            try {
+                delegate.flush();
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
 
         @Override
         public void close() throws IOException {
-            delegate.close();
+            try {
+                delegate.close();
+            } catch (IOException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            } catch (RuntimeException e) {
+                responseOutputStream.failedWrite(e);
+                throw e;
+            }
         }
     }
 }
