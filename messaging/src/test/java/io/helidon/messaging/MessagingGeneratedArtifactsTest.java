@@ -69,6 +69,10 @@ class MessagingGeneratedArtifactsTest {
         try (var input = Files.newInputStream(CONFIG_METADATA)) {
             model = CmModel.fromJson(input);
         }
+        assertThat(model.modules().stream()
+                           .flatMap(module -> module.types().stream())
+                           .noneMatch(type -> type.typeName().equals(MessageBatchConfig.class.getName())),
+                   is(true));
 
         CmType connector = type(model, ConnectorConfig.class);
         assertThat(connector.standalone(), is(false));

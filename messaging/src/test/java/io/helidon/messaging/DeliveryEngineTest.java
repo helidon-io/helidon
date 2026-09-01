@@ -1729,9 +1729,7 @@ class DeliveryEngineTest {
     }
 
     private static MessageBatch<Object> batch(List<? extends Message<?>> messages) {
-        return MessageBatch.builder()
-                .messages(messages)
-                .build();
+        return MessageBatch.create(messages);
     }
 
     private static Message<String> message(long id) {

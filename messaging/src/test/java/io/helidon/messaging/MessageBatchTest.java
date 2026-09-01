@@ -18,6 +18,7 @@ package io.helidon.messaging;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,61 @@ class MessageBatchTest {
         assertThat(toList(batch), is(batch.messages()));
         assertThrows(UnsupportedOperationException.class, () -> batch.messages().clear());
         assertThrows(UnsupportedOperationException.class, () -> batch.payloads().clear());
+    }
+
+    @Test
+    void generatedBuilderCreatesIndependentImmutableBatches() {
+        Message<String> first = Message.create("one");
+        Message<String> second = Message.create("two");
+        Message<String> third = Message.create("three");
+        List<Message<String>> appendedMessages = List.of(second);
+        MessageBatchConfig.Builder<String> builder = MessageBatch.<String>builder()
+                .id("batch-1")
+                .add(first)
+                .addMessages(appendedMessages);
+
+        MessageBatchConfig<String> config = builder.buildPrototype();
+        MessageBatch<String> firstBatch = config.build();
+        MessageBatch<String> secondBatch = config.build();
+
+        assertThat(config.id(), is("batch-1"));
+        assertThat(config.messages(), is(List.of(first, second)));
+        assertThrows(UnsupportedOperationException.class, () -> config.messages().clear());
+        assertThat(firstBatch.payloads(), is(List.of("one", "two")));
+        assertThat(secondBatch.payloads(), is(List.of("one", "two")));
+        assertThat(firstBatch.sameDelivery(secondBatch), is(false));
+
+        List<Message<String>> replacementMessages = List.of(third);
+        MessageBatch<String> replacement = builder.messages(replacementMessages).build();
+        assertThat(replacement.id(), is("batch-1"));
+        assertThat(replacement.payloads(), is(List.of("three")));
+        assertThat(firstBatch.payloads(), is(List.of("one", "two")));
+    }
+
+    @Test
+    void generatedBuilderUsesStableDefaultId() {
+        Message<String> message = Message.create("one");
+        MessageBatchConfig.Builder<String> builder = MessageBatch.<String>builder().add(message);
+
+        MessageBatch<String> first = builder.build();
+        MessageBatch<String> second = builder.build();
+        MessageBatch<String> other = MessageBatch.<String>builder().add(message).build();
+
+        assertThat(UUID.fromString(first.id()).toString(), is(first.id()));
+        assertThat(first.id().length() <= MessageBatch.MAX_ID_LENGTH, is(true));
+        assertThat(second.id(), is(first.id()));
+        assertThat(first.sameDelivery(second), is(false));
+        assertThat(other.id().equals(first.id()), is(false));
+    }
+
+    @Test
+    void createAcceptsCovariantMessages() {
+        Message<Integer> message = Message.create(42);
+
+        MessageBatch<Number> batch = MessageBatch.<Number>create(List.of(message));
+
+        assertThat(batch.get(0), sameInstance(message));
+        assertThat(batch.payloads(), is(List.of(42)));
     }
 
     @Test
@@ -175,6 +231,7 @@ class MessageBatchTest {
     @Test
     void rejectsInvalidConstruction() {
         assertThrows(IllegalArgumentException.class, () -> MessageBatch.create(List.of()));
+        assertThrows(IllegalArgumentException.class, () -> MessageBatch.builder().build());
         assertThrows(IllegalArgumentException.class,
                      () -> MessageBatch.<String>builder().id(" ").add(Message.create("one")).build());
         assertThrows(IllegalArgumentException.class,

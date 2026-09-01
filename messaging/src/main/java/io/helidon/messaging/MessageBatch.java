@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 import io.helidon.common.Api;
 
@@ -36,6 +35,7 @@ import io.helidon.common.Api;
  * outcomes be mapped without relying on message-envelope object identity.
  *
  * @param <T> payload type
+ * @see MessageBatchConfig
  */
 @Api.Preview
 public final class MessageBatch<T> implements Iterable<Message<T>> {
@@ -50,9 +50,10 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
     private final List<Integer> lineage;
     private volatile List<T> payloads;
 
+    @SuppressWarnings("unchecked")
     private MessageBatch(Object deliveryToken,
                          String id,
-                         List<Message<T>> messages,
+                         List<? extends Message<? extends T>> messages,
                          List<Integer> lineage) {
         this.deliveryToken = Objects.requireNonNull(deliveryToken);
         this.id = validateId(id);
@@ -63,16 +64,16 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
             throw new IllegalArgumentException("Message batch lineage must contain one entry per message");
         }
 
-        ArrayList<Message<T>> messageSnapshot = new ArrayList<>(messages.size());
-        ArrayList<Integer> lineageSnapshot = new ArrayList<>(lineage.size());
+        List<Message<T>> messageSnapshot = new ArrayList<>(messages.size());
+        List<Integer> lineageSnapshot = new ArrayList<>(lineage.size());
         int previous = -1;
         for (int i = 0; i < messages.size(); i++) {
-            Message<T> message = Objects.requireNonNull(messages.get(i));
+            Message<? extends T> message = Objects.requireNonNull(messages.get(i));
             int item = Objects.requireNonNull(lineage.get(i));
             if (item < 0 || item <= previous) {
                 throw new IllegalArgumentException("Message batch lineage must be non-negative and strictly increasing");
             }
-            messageSnapshot.add(message);
+            messageSnapshot.add((Message<T>) message);
             lineageSnapshot.add(item);
             previous = item;
         }
@@ -88,7 +89,7 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
      * @return immutable batch
      */
     public static <T> MessageBatch<T> create(List<? extends Message<? extends T>> messages) {
-        return MessageBatch.<T>builder().messages(messages).build();
+        return createRoot(MessageBatchConfigSupport.defaultId(), messages);
     }
 
     /**
@@ -99,17 +100,43 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
      * @return singleton batch
      */
     public static <T> MessageBatch<T> create(Message<? extends T> message) {
-        return MessageBatch.<T>builder().add(message).build();
+        return createRoot(MessageBatchConfigSupport.defaultId(), List.of(Objects.requireNonNull(message)));
     }
 
     /**
      * Create a batch builder.
      *
      * @param <T> payload type
-     * @return builder
+     * @return builder for batch construction options
      */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> MessageBatchConfig.Builder<T> builder() {
+        return MessageBatchConfig.builder();
+    }
+
+    static <T> MessageBatch<T> create(MessageBatchConfig<T> config) {
+        MessageBatchConfig<T> actualConfig = Objects.requireNonNull(config);
+        return createRoot(actualConfig.id(), actualConfig.messages());
+    }
+
+    static String validateId(String id) {
+        String actualId = Objects.requireNonNull(id);
+        if (actualId.isBlank()) {
+            throw new IllegalArgumentException("Message batch identity must not be blank");
+        }
+        if (actualId.length() > MAX_ID_LENGTH) {
+            throw new IllegalArgumentException("Message batch identity must not exceed " + MAX_ID_LENGTH + " characters");
+        }
+        return actualId;
+    }
+
+    private static <T> MessageBatch<T> createRoot(String id,
+                                                   List<? extends Message<? extends T>> messages) {
+        List<? extends Message<? extends T>> actualMessages = Objects.requireNonNull(messages);
+        List<Integer> lineage = new ArrayList<>(actualMessages.size());
+        for (int i = 0; i < actualMessages.size(); i++) {
+            lineage.add(i);
+        }
+        return new MessageBatch<>(new Object(), id, actualMessages, lineage);
     }
 
     /**
@@ -145,7 +172,7 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
             synchronized (this) {
                 result = payloads;
                 if (result == null) {
-                    ArrayList<T> snapshot = new ArrayList<>(messages.size());
+                    List<T> snapshot = new ArrayList<>(messages.size());
                     for (Message<T> message : messages) {
                         snapshot.add(Objects.requireNonNull(message.entity(), "Message entity"));
                     }
@@ -174,6 +201,60 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
      */
     public Message<T> get(int index) {
         return messages.get(index);
+    }
+
+    /**
+     * Create an ordered retry or routing subset while preserving delivery identity and item lineage.
+     *
+     * @param indexes strictly increasing local indexes
+     * @return derived subset
+     */
+    public MessageBatch<T> subset(List<Integer> indexes) {
+        List<Integer> actualIndexes = List.copyOf(Objects.requireNonNull(indexes));
+        if (actualIndexes.isEmpty()) {
+            throw new IllegalArgumentException("Message batch subset must contain at least one item");
+        }
+        List<Message<T>> selectedMessages = new ArrayList<>(actualIndexes.size());
+        List<Integer> selectedLineage = new ArrayList<>(actualIndexes.size());
+        int previous = -1;
+        for (int index : actualIndexes) {
+            if (index < 0 || index >= size()) {
+                throw new IndexOutOfBoundsException(index);
+            }
+            if (index <= previous) {
+                throw new IllegalArgumentException("Message batch subset indexes must be strictly increasing");
+            }
+            selectedMessages.add(messages.get(index));
+            selectedLineage.add(lineage.get(index));
+            previous = index;
+        }
+        return new MessageBatch<>(deliveryToken, id, selectedMessages, selectedLineage);
+    }
+
+    /**
+     * Create a one-to-one transformed batch while preserving delivery identity and item lineage.
+     *
+     * @param derivedMessages one derived message for every current item
+     * @param <R> derived payload type
+     * @return derived batch
+     */
+    @SuppressWarnings("unchecked")
+    @Api.Internal
+    public <R> MessageBatch<R> derive(List<? extends Message<? extends R>> derivedMessages) {
+        List<? extends Message<? extends R>> actualMessages = List.copyOf(Objects.requireNonNull(derivedMessages));
+        if (actualMessages.size() != size()) {
+            throw new IllegalArgumentException("Derived message batch must contain one message per source item");
+        }
+        List<Message<R>> typedMessages = new ArrayList<>(actualMessages.size());
+        for (Message<? extends R> message : actualMessages) {
+            typedMessages.add((Message<R>) Objects.requireNonNull(message));
+        }
+        return new MessageBatch<>(deliveryToken, id, typedMessages, lineage);
+    }
+
+    @Override
+    public Iterator<Message<T>> iterator() {
+        return messages.iterator();
     }
 
     /**
@@ -217,130 +298,4 @@ public final class MessageBatch<T> implements Iterable<Message<T>> {
         return Collections.binarySearch(ancestor.lineage, itemLineage);
     }
 
-    /**
-     * Create an ordered retry or routing subset while preserving delivery identity and item lineage.
-     *
-     * @param indexes strictly increasing local indexes
-     * @return derived subset
-     */
-    public MessageBatch<T> subset(List<Integer> indexes) {
-        List<Integer> actualIndexes = List.copyOf(Objects.requireNonNull(indexes));
-        if (actualIndexes.isEmpty()) {
-            throw new IllegalArgumentException("Message batch subset must contain at least one item");
-        }
-        ArrayList<Message<T>> selectedMessages = new ArrayList<>(actualIndexes.size());
-        ArrayList<Integer> selectedLineage = new ArrayList<>(actualIndexes.size());
-        int previous = -1;
-        for (int index : actualIndexes) {
-            if (index < 0 || index >= size()) {
-                throw new IndexOutOfBoundsException(index);
-            }
-            if (index <= previous) {
-                throw new IllegalArgumentException("Message batch subset indexes must be strictly increasing");
-            }
-            selectedMessages.add(messages.get(index));
-            selectedLineage.add(lineage.get(index));
-            previous = index;
-        }
-        return new MessageBatch<>(deliveryToken, id, selectedMessages, selectedLineage);
-    }
-
-    /**
-     * Create a one-to-one transformed batch while preserving delivery identity and item lineage.
-     *
-     * @param derivedMessages one derived message for every current item
-     * @param <R> derived payload type
-     * @return derived batch
-     */
-    @SuppressWarnings("unchecked")
-    @Api.Internal
-    public <R> MessageBatch<R> derive(List<? extends Message<? extends R>> derivedMessages) {
-        List<? extends Message<? extends R>> actualMessages = List.copyOf(Objects.requireNonNull(derivedMessages));
-        if (actualMessages.size() != size()) {
-            throw new IllegalArgumentException("Derived message batch must contain one message per source item");
-        }
-        ArrayList<Message<R>> typedMessages = new ArrayList<>(actualMessages.size());
-        for (Message<? extends R> message : actualMessages) {
-            typedMessages.add((Message<R>) Objects.requireNonNull(message));
-        }
-        return new MessageBatch<>(deliveryToken, id, typedMessages, lineage);
-    }
-
-    @Override
-    public Iterator<Message<T>> iterator() {
-        return messages.iterator();
-    }
-
-    private static String validateId(String id) {
-        String actualId = Objects.requireNonNull(id);
-        if (actualId.isBlank()) {
-            throw new IllegalArgumentException("Message batch identity must not be blank");
-        }
-        if (actualId.length() > MAX_ID_LENGTH) {
-            throw new IllegalArgumentException("Message batch identity must not exceed " + MAX_ID_LENGTH + " characters");
-        }
-        return actualId;
-    }
-
-    /**
-     * Message batch builder.
-     *
-     * @param <T> payload type
-     */
-    public static final class Builder<T> {
-        private final List<Message<T>> messages = new ArrayList<>();
-        private String id = UUID.randomUUID().toString();
-
-        private Builder() {
-        }
-
-        /**
-         * Set the opaque delivery correlation ID.
-         * <p>
-         * Reusing an ID does not make independently built batches part of the same delivery lineage.
-         *
-         * @param id identity
-         * @return updated builder
-         */
-        public Builder<T> id(String id) {
-            this.id = validateId(id);
-            return this;
-        }
-
-        /**
-         * Add a message while preserving its exact envelope instance.
-         *
-         * @param message message
-         * @return updated builder
-         */
-        @SuppressWarnings("unchecked")
-        public Builder<T> add(Message<? extends T> message) {
-            messages.add((Message<T>) Objects.requireNonNull(message));
-            return this;
-        }
-
-        /**
-         * Add messages by copying the supplied list.
-         *
-         * @param messages messages
-         * @return updated builder
-         */
-        public Builder<T> messages(List<? extends Message<? extends T>> messages) {
-            Objects.requireNonNull(messages).forEach(this::add);
-            return this;
-        }
-
-        /**
-         * Build an immutable batch.
-         *
-         * @return batch
-         */
-        public MessageBatch<T> build() {
-            ArrayList<Integer> lineage = new ArrayList<>(messages.size());
-            for (int i = 0; i < messages.size(); i++) {
-                lineage.add(i);
-            }
-            return new MessageBatch<>(new Object(), id, messages, lineage);
-        }
-    }
 }
