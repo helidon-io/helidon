@@ -36,6 +36,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
@@ -89,6 +91,7 @@ import static java.lang.System.Logger.Level.WARNING;
 public class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
+    private static final int SETTINGS_ENTRY_LENGTH = Short.BYTES + Integer.BYTES;
     private static final int MAX_QUEUED_HEADER_FRAMES = 8192;
     private static final long ERROR_GO_AWAY_WRITE_TIMEOUT_MILLIS = 500;
     private static final long MIN_HEADER_BLOCK_SIZE = 64 * 1024;
@@ -509,7 +512,9 @@ public class Http2ClientConnection {
 
         return switch (frameHeader.type()) {
         case GO_AWAY -> handleGoAwayFrame(streamId, frameHeader, data);
-        case SETTINGS -> handleSettingsFrame(streamId, frameHeader, data);
+        case SETTINGS -> handleSettingsFrame(streamId,
+                                             frameHeader,
+                                             () -> readSettings(data.available(), () -> data.read() & 0xFF));
         case WINDOW_UPDATE -> handleWindowUpdateFrame(streamId, frameHeader, data);
         case PING -> handlePingFrame(streamId, frameHeader, data);
         case RST_STREAM -> {
@@ -935,12 +940,19 @@ public class Http2ClientConnection {
         try {
             BufferData frameHeaderBuffer = this.reader.readBuffer(FRAME_HEADER_LENGTH);
             Http2FrameHeader frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
-            if ((frameHeader.type() == Http2FrameType.HEADERS || frameHeader.type() == Http2FrameType.CONTINUATION)
-                    && frameHeader.length() > protocolConfig.maxFrameSize()) {
+            if (frameHeader.length() > protocolConfig.maxFrameSize()) {
                 throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
                                          "Frame size " + frameHeader.length() + " is too big");
             }
             frameHeader.type().checkLength(frameHeader.length());
+            if (frameHeader.type() == Http2FrameType.SETTINGS) {
+                int streamId = frameHeader.streamId();
+                validateFrameStreamId(frameHeader, streamId);
+                validateHeaderContinuation(frameHeader, streamId);
+                return handleSettingsFrame(streamId,
+                                           frameHeader,
+                                           () -> readSettings(frameHeader.length(), () -> reader.read() & 0xFF));
+            }
             BufferData data = readFrameData(frameHeader);
             return handle(frameHeader, data);
         } catch (DataReader.InsufficientDataAvailableException e) {
@@ -1035,6 +1047,44 @@ public class Http2ClientConnection {
         return decodeInboundHeaders(stream, stream.inboundHeaderDecodeBasis(), headerFrames);
     }
 
+    private static ParsedSettings readSettings(int length, IntSupplier nextByte) {
+        if (length % SETTINGS_ENTRY_LENGTH != 0) {
+            throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
+                                     "Each setting must be 6 bytes, but frame size is " + length);
+        }
+
+        Http2Settings.Builder builder = Http2Settings.builder();
+        BufferData settingData = BufferData.create(SETTINGS_ENTRY_LENGTH);
+        long minimumHeaderTableSize = Long.MAX_VALUE;
+        int settingCount = length / SETTINGS_ENTRY_LENGTH;
+        for (int i = 0; i < settingCount; i++) {
+            settingData.clear();
+            for (int j = 0; j < SETTINGS_ENTRY_LENGTH; j++) {
+                settingData.write(nextByte.getAsInt());
+            }
+
+            int identifier = settingData.readInt16();
+            Http2Setting<?> setting = Http2Setting.BY_ID.get(identifier);
+            if (setting == null) {
+                continue;
+            }
+
+            Object value = readSetting(builder, setting, settingData);
+            if (setting == Http2Setting.HEADER_TABLE_SIZE) {
+                minimumHeaderTableSize = Math.min(minimumHeaderTableSize, (long) value);
+            }
+        }
+        return new ParsedSettings(builder.build(), minimumHeaderTableSize);
+    }
+
+    private static <T> T readSetting(Http2Settings.Builder builder,
+                                     Http2Setting<T> setting,
+                                     BufferData data) {
+        T value = setting.read(data);
+        builder.add(setting, value);
+        return value;
+    }
+
     /**
      * Decodes and discards an inbound header block that no longer has a live stream consumer.
      * Even abandoned streams can carry HPACK dynamic-table mutations, so the connection must
@@ -1063,7 +1113,9 @@ public class Http2ClientConnection {
         return false;
     }
 
-    private boolean handleSettingsFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
+    private boolean handleSettingsFrame(int streamId,
+                                        Http2FrameHeader frameHeader,
+                                        Supplier<ParsedSettings> settingsSupplier) {
         Http2Flag.SettingsFlags flags = frameHeader.flags(Http2FrameTypes.SETTINGS);
         if (flags.ack()) {
             if (frameHeader.length() > 0) {
@@ -1073,27 +1125,28 @@ public class Http2ClientConnection {
             return true;
         }
 
-        Http2Settings receivedSettings = Http2Settings.create(data);
+        ParsedSettings parsedSettings = settingsSupplier.get();
+        Http2Settings receivedSettings = parsedSettings.settings();
         recvListener.frameHeader(ctx, streamId, frameHeader);
         recvListener.frame(ctx, streamId, receivedSettings);
         serverSettings = mergeSettings(serverSettings, receivedSettings);
-        updatePeerSettings(receivedSettings);
+        updatePeerSettings(receivedSettings, parsedSettings.minimumHeaderTableSize());
         if (!initialSettingsReceived && clearReadTimeoutAfterInitialSettings) {
             // Preserve the HTTP/1.1 request timeout through the upgrade handshake. Once the peer's initial
             // SETTINGS arrive, HTTP/2 owns a permanent connection reader and applies timeouts to individual
             // streams, so the inherited socket timeout must be cleared before the next connection read.
             connection.readTimeout(Duration.ZERO);
         }
+        ackSettings();
         if (!initialSettingsReceived && transportObservation != null) {
             transportObservation.protocolSelected(HttpTransportObserver.PROTOCOL_HTTP_2);
         }
         initialSettingsReceived = true;
         initialSettingsLatch.countDown();
-        ackSettings();
         return true;
     }
 
-    private void updatePeerSettings(Http2Settings receivedSettings) {
+    private void updatePeerSettings(Http2Settings receivedSettings, long minimumHeaderTableSize) {
         if (receivedSettings.hasValue(Http2Setting.MAX_CONCURRENT_STREAMS) || !initialSettingsReceived) {
             reservedStreamsLock.lock();
             try {
@@ -1103,7 +1156,16 @@ public class Http2ClientConnection {
             }
         }
         if (receivedSettings.hasValue(Http2Setting.HEADER_TABLE_SIZE)) {
-            inboundDynamicTable.protocolMaxTableSize(serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
+            long finalHeaderTableSize = receivedSettings.value(Http2Setting.HEADER_TABLE_SIZE);
+            try {
+                writer.updateHeaderTableSize(minimumHeaderTableSize);
+                if (minimumHeaderTableSize != finalHeaderTableSize) {
+                    writer.updateHeaderTableSize(finalHeaderTableSize);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted while updating header table size", e);
+            }
         }
         if (receivedSettings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
             connectionFlowControl.resetMaxFrameSize(serverSettings.value(Http2Setting.MAX_FRAME_SIZE).intValue());
@@ -1394,6 +1456,9 @@ public class Http2ClientConnection {
         boolean goAway() {
             return this == GO_AWAY || this == RETIREMENT_GO_AWAY;
         }
+    }
+
+    private record ParsedSettings(Http2Settings settings, long minimumHeaderTableSize) {
     }
 
     /**

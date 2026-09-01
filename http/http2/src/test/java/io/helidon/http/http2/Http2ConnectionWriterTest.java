@@ -16,6 +16,8 @@
 
 package io.helidon.http.http2;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -30,7 +32,9 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
@@ -49,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -56,6 +61,171 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionWriterTest {
+
+    @Test
+    void headerTableSizeChangesWaitForAcknowledgmentAndAreWrittenOnce() throws InterruptedException {
+        DataWriter dataWriter = mock(DataWriter.class);
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+
+        writer.updateHeaderTableSize(4096);
+        writer.updateHeaderTableSize(0);
+        writer.updateHeaderTableSize(2048);
+        writer.writeHeaders(requestHeaders(),
+                            1,
+                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                            FlowControl.Outbound.NOOP);
+
+        BufferData beforeAcknowledgment = capturedHeaderBlock(dataWriter);
+        byte[] beforeAcknowledgmentBytes = new byte[beforeAcknowledgment.available()];
+        beforeAcknowledgment.read(beforeAcknowledgmentBytes);
+        assertThat(beforeAcknowledgmentBytes[0] & 0xff, is(0x82));
+        Http2Headers.DynamicTable peerTable =
+                Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+        decodeHeaderBlock(BufferData.create(beforeAcknowledgmentBytes), peerTable, 1);
+
+        clearInvocations(dataWriter);
+        writer.write(settingsAckFrame());
+
+        HeaderName headerName = HeaderNames.create("x-custom");
+        WritableHeaders<?> httpHeaders = WritableHeaders.create();
+        httpHeaders.set(headerName, "custom-value");
+        Http2Headers headers = Http2Headers.create(httpHeaders)
+                .method(Method.GET)
+                .scheme("https")
+                .path("/")
+                .authority("www.example.com");
+
+        clearInvocations(dataWriter);
+        writer.writeHeaders(headers,
+                            5,
+                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                            FlowControl.Outbound.NOOP);
+
+        BufferData firstHeaderBlock = capturedHeaderBlock(dataWriter);
+        byte[] firstHeaderBlockBytes = new byte[firstHeaderBlock.available()];
+        firstHeaderBlock.read(firstHeaderBlockBytes);
+        BufferData headerTableUpdates = BufferData.create(firstHeaderBlockBytes);
+        int firstUpdate = headerTableUpdates.read();
+        assertThat(firstUpdate & 0b11100000, is(0b00100000));
+        assertThat(headerTableUpdates.readHpackInt(firstUpdate, 5), is(0));
+        int finalUpdate = headerTableUpdates.read();
+        assertThat(finalUpdate & 0b11100000, is(0b00100000));
+        assertThat(headerTableUpdates.readHpackInt(finalUpdate, 5), is(2048));
+        Http2Headers decoded = decodeHeaderBlock(BufferData.create(firstHeaderBlockBytes), peerTable, 5);
+        assertThat(decoded.httpHeaders().get(headerName).get(), is("custom-value"));
+
+        clearInvocations(dataWriter);
+        writer.writeHeaders(requestHeaders(),
+                            7,
+                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                            FlowControl.Outbound.NOOP);
+
+        BufferData secondHeaderBlock = capturedHeaderBlock(dataWriter);
+        assertThat(secondHeaderBlock.read(), is(0x82));
+    }
+
+    @Test
+    void pendingHeaderTableSizeWriteFailureTerminatesWriter() throws InterruptedException {
+        DataWriter dataWriter = mock(DataWriter.class);
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+        writer.updateHeaderTableSize(0);
+        writer.updateHeaderTableSize(2048);
+        writer.write(settingsAckFrame());
+        clearInvocations(dataWriter);
+        UncheckedIOException writeFailure = new UncheckedIOException(new IOException("expected test write failure"));
+        doAnswer(_ -> {
+            throw writeFailure;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+
+        UncheckedIOException thrown = assertThrows(UncheckedIOException.class,
+                                                   () -> writer.writeHeaders(requestHeaders(),
+                                                                             1,
+                                                                             Http2Flag.HeaderFlags.create(
+                                                                                     Http2Flag.END_OF_HEADERS),
+                                                                             FlowControl.Outbound.NOOP));
+        IllegalStateException terminal = assertThrows(IllegalStateException.class,
+                                                      () -> writer.writeHeaders(requestHeaders(),
+                                                                                3,
+                                                                                Http2Flag.HeaderFlags.create(
+                                                                                        Http2Flag.END_OF_HEADERS),
+                                                                                FlowControl.Outbound.NOOP));
+
+        assertThat(thrown, is(writeFailure));
+        assertThat(terminal.getCause(), is(writeFailure));
+        BufferData attemptedHeaderBlock = capturedHeaderBlock(dataWriter);
+        int minimumUpdate = attemptedHeaderBlock.read();
+        assertThat(minimumUpdate & 0b11100000, is(0b00100000));
+        assertThat(attemptedHeaderBlock.readHpackInt(minimumUpdate, 5), is(0));
+        int finalUpdate = attemptedHeaderBlock.read();
+        assertThat(finalUpdate & 0b11100000, is(0b00100000));
+        assertThat(attemptedHeaderBlock.readHpackInt(finalUpdate, 5), is(2048));
+        verify(dataWriter).close();
+    }
+
+    @Test
+    void batchedHeadersWritePendingHeaderTableSizesOnce() throws InterruptedException {
+        RecordingDataWriter dataWriter = new RecordingDataWriter();
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+        writer.updateHeaderTableSize(0);
+        writer.updateHeaderTableSize(2048);
+        writer.write(settingsAckFrame());
+        dataWriter.writes.clear();
+        byte[] payload = "payload".getBytes(StandardCharsets.UTF_8);
+
+        int written = writer.writeHeaders(requestHeaders(),
+                                          1,
+                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                          terminalDataFrame(payload),
+                                          flowControl());
+
+        assertThat(dataWriter.writes.size(), is(1));
+        assertThat(written, is(dataWriter.writes.getFirst().length));
+        List<CapturedFrame> frames = parseFrames(dataWriter.writes.getFirst());
+        assertThat(frames.stream().map(frame -> frame.header().type()).toList(),
+                   is(List.of(Http2FrameType.HEADERS, Http2FrameType.DATA)));
+        BufferData headerBlock = BufferData.create(frames.getFirst().data());
+        int minimumUpdate = headerBlock.read();
+        assertThat(minimumUpdate & 0b11100000, is(0b00100000));
+        assertThat(headerBlock.readHpackInt(minimumUpdate, 5), is(0));
+        int finalUpdate = headerBlock.read();
+        assertThat(finalUpdate & 0b11100000, is(0b00100000));
+        assertThat(headerBlock.readHpackInt(finalUpdate, 5), is(2048));
+        Http2Headers.DynamicTable peerTable =
+                Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+        Http2Headers decoded = decodeHeaderBlock(BufferData.create(frames.getFirst().data()), peerTable, 1);
+        assertThat(decoded.authority(), is("www.example.com"));
+        assertThat(frames.getLast().data(), is(payload));
+        assertThat(frames.getLast().header().flags(Http2FrameTypes.DATA).endOfStream(), is(true));
+
+        dataWriter.writes.clear();
+        writer.writeHeaders(requestHeaders(),
+                            3,
+                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                            FlowControl.Outbound.NOOP);
+
+        assertThat(dataWriter.writes.size(), is(1));
+        BufferData secondHeaderBlock = BufferData.create(parseFrames(dataWriter.writes.getFirst()).getFirst().data());
+        assertThat(secondHeaderBlock.get(0) & 0xff, is(0x82));
+        assertThat(decodeHeaderBlock(secondHeaderBlock, peerTable, 3).authority(), is("www.example.com"));
+    }
+
+    @Test
+    void headerTableSizeDoesNotGrowBeyondLocalDefault() throws InterruptedException {
+        DataWriter dataWriter = mock(DataWriter.class);
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(mock(SocketContext.class), dataWriter, List.of());
+
+        writer.updateHeaderTableSize(8192);
+        writer.write(settingsAckFrame());
+
+        clearInvocations(dataWriter);
+        writer.writeHeaders(requestHeaders(),
+                            1,
+                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                            FlowControl.Outbound.NOOP);
+
+        BufferData headerBlock = capturedHeaderBlock(dataWriter);
+        assertThat(headerBlock.read(), is(0x82));
+    }
 
     @Test
     void closesWriterWhenSynchronousWindowUpdateWriteFails() {
@@ -1765,6 +1935,44 @@ class Http2ConnectionWriterTest {
         assertThrows(NullPointerException.class, () -> writer.writeData(null, FlowControl.Outbound.NOOP, () -> { }));
         assertThrows(NullPointerException.class, () -> writer.writeData(frame, null, () -> { }));
         assertThrows(NullPointerException.class, () -> writer.writeData(frame, FlowControl.Outbound.NOOP, null));
+    }
+
+    private static BufferData capturedHeaderBlock(DataWriter dataWriter) {
+        ArgumentCaptor<BufferData> frameCaptor = ArgumentCaptor.forClass(BufferData.class);
+        verify(dataWriter).writeNow(frameCaptor.capture());
+        BufferData frameData = frameCaptor.getValue().copy();
+        Http2FrameHeader frameHeader = Http2FrameHeader.create(frameData);
+        assertThat(frameHeader.type(), is(Http2FrameType.HEADERS));
+        return frameData;
+    }
+
+    private static Http2Headers requestHeaders() {
+        return Http2Headers.create(WritableHeaders.create())
+                .method(Method.GET)
+                .scheme("https")
+                .path("/")
+                .authority("www.example.com");
+    }
+
+    private static Http2Headers decodeHeaderBlock(BufferData data,
+                                                  Http2Headers.DynamicTable table,
+                                                  int streamId) {
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.HEADERS,
+                                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                                          streamId);
+        return Http2Headers.create(mock(Http2Stream.class),
+                                   table,
+                                   Http2HuffmanDecoder.create(),
+                                   new Http2FrameData(header, data));
+    }
+
+    private static Http2FrameData settingsAckFrame() {
+        Http2FrameHeader header = Http2FrameHeader.create(0,
+                                                          Http2FrameTypes.SETTINGS,
+                                                          Http2Flag.SettingsFlags.create(Http2Flag.ACK),
+                                                          0);
+        return new Http2FrameData(header, BufferData.empty());
     }
 
     private static Http2Headers headers() {

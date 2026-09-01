@@ -101,6 +101,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -829,6 +830,74 @@ class Http2ClientConnectionTest {
                 stream.close();
                 connection.close();
             }
+        }
+    }
+
+    @Test
+    void oversizedSettingsFrameIsRejectedBeforePayloadRead() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            int maxFrameSize = test.clientConfig.protocolConfig().maxFrameSize();
+            int oversizedFrameSize = maxFrameSize + 6 - maxFrameSize % 6;
+            Http2FrameHeader oversizedSettings = Http2FrameHeader.create(oversizedFrameSize,
+                                                                          Http2FrameTypes.SETTINGS,
+                                                                          Http2Flag.SettingsFlags.create(0),
+                                                                          0);
+            assertSettingsError(test,
+                                new Http2FrameData(oversizedSettings, BufferData.empty()),
+                                Http2ErrorCode.FRAME_SIZE,
+                                0);
+        }
+    }
+
+    @Test
+    void incompleteSettingsEntryIsRejected() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            BufferData data = BufferData.create(1).write(0);
+            Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                              Http2FrameTypes.SETTINGS,
+                                                              Http2Flag.SettingsFlags.create(0),
+                                                              0);
+            assertSettingsError(test, new Http2FrameData(header, data), Http2ErrorCode.FRAME_SIZE, 0);
+        }
+    }
+
+    @Test
+    void invalidBooleanSettingIsRejected() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            assertSettingsError(test,
+                                rawSettingsFrame(Http2Setting.ENABLE_PUSH.identifier(), 2),
+                                Http2ErrorCode.PROTOCOL,
+                                6);
+        }
+    }
+
+    @Test
+    void settingsAckWithPayloadIsRejectedBeforePayloadRead() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            Http2FrameData settings = rawSettingsFrame(Http2Setting.HEADER_TABLE_SIZE.identifier(), 1024);
+            Http2FrameHeader header = Http2FrameHeader.create(settings.header().length(),
+                                                              Http2FrameTypes.SETTINGS,
+                                                              Http2Flag.SettingsFlags.create(Http2Flag.ACK),
+                                                              0);
+            assertSettingsError(test,
+                                new Http2FrameData(header, settings.data()),
+                                Http2ErrorCode.FRAME_SIZE,
+                                0);
+        }
+    }
+
+    @Test
+    void settingsOnStreamIsRejectedBeforePayloadRead() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            Http2FrameData settings = rawSettingsFrame(Http2Setting.HEADER_TABLE_SIZE.identifier(), 1024);
+            Http2FrameHeader header = Http2FrameHeader.create(settings.header().length(),
+                                                              Http2FrameTypes.SETTINGS,
+                                                              Http2Flag.SettingsFlags.create(0),
+                                                              1);
+            assertSettingsError(test,
+                                new Http2FrameData(header, settings.data()),
+                                Http2ErrorCode.PROTOCOL,
+                                0);
         }
     }
 
@@ -3158,6 +3227,87 @@ class Http2ClientConnectionTest {
     }
 
     @Test
+    void peerHeaderTableSizeUpdatesOutboundEncoder() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            Http2Settings settings = Http2Settings.builder()
+                    .add(Http2Setting.HEADER_TABLE_SIZE, 1024L)
+                    .add(Http2Setting.MAX_CONCURRENT_STREAMS, 10L)
+                    .build();
+            test.offerInbound(settings.toFrameData(null, 0, Http2Flag.SettingsFlags.create(0)));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            assertThat(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
+            clearInvocations(test.dataWriter);
+            stream.writeHeaders(requestHeaders(), true);
+
+            BufferData frameData = capturedHeaderBlock(test.dataWriter);
+            int tableSizeUpdate = frameData.read();
+            assertThat(tableSizeUpdate & 0b11100000, is(0b00100000));
+            assertThat(frameData.readHpackInt(tableSizeUpdate, 5), is(1024));
+
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void fragmentedPeerSettingsAreParsedWithoutCompositePayload() throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            Http2FrameData settings = rawSettingsFrame(Http2Setting.HEADER_TABLE_SIZE.identifier(), 4096,
+                                                       0xF001, 0x00010000,
+                                                       Http2Setting.HEADER_TABLE_SIZE.identifier(), 0,
+                                                       Http2Setting.HEADER_TABLE_SIZE.identifier(), 2048);
+            test.offerInboundFragmented(settings);
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            verify(test.dataReader, times(settings.header().length())).read();
+            verify(test.dataReader, never()).readBuffer(settings.header().length());
+
+            assertThat(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
+            clearInvocations(test.dataWriter);
+            stream.writeHeaders(requestHeaders(), true);
+
+            BufferData frameData = capturedHeaderBlock(test.dataWriter);
+            int minimumTableSizeUpdate = frameData.read();
+            assertThat(minimumTableSizeUpdate & 0b11100000, is(0b00100000));
+            assertThat(frameData.readHpackInt(minimumTableSizeUpdate, 5), is(0));
+            int finalTableSizeUpdate = frameData.read();
+            assertThat(finalTableSizeUpdate & 0b11100000, is(0b00100000));
+            assertThat(frameData.readHpackInt(finalTableSizeUpdate, 5), is(2048));
+
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
+    void peerHeaderTableSizeDoesNotRaiseInboundDecoderLimit() {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            Http2Settings settings = Http2Settings.builder()
+                    .add(Http2Setting.HEADER_TABLE_SIZE, 8192L)
+                    .add(Http2Setting.MAX_CONCURRENT_STREAMS, 10L)
+                    .build();
+            test.offerInbound(settings.toFrameData(null, 0, Http2Flag.SettingsFlags.create(0)));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+            stream.writeHeaders(requestHeaders(), true);
+            test.offerInbound(headerTableSizeUpdateFrame(stream.streamId(), 8192));
+
+            Http2Exception exception = assertThrows(Http2Exception.class, stream::readHeaders);
+            assertThat(exception.code(), is(Http2ErrorCode.COMPRESSION));
+            assertThat(exception.getMessage(), is("Attempt to set larger size than protocol max"));
+
+            stream.close();
+            connection.close();
+        }
+    }
+
+    @Test
     void writeHeadersFailureClosesConnection() throws Exception {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             CompletableFuture<Http2ClientConnection> connectionFuture = new CompletableFuture<>();
@@ -3320,6 +3470,66 @@ class Http2ClientConnectionTest {
         }
     }
 
+    private static BufferData capturedHeaderBlock(DataWriter dataWriter) {
+        ArgumentCaptor<BufferData> frameCaptor = ArgumentCaptor.forClass(BufferData.class);
+        verify(dataWriter).writeNow(frameCaptor.capture());
+        BufferData frameData = frameCaptor.getValue().copy();
+        assertThat(Http2FrameHeader.create(frameData).type(), is(Http2FrameType.HEADERS));
+        return frameData;
+    }
+
+    private static Http2FrameData headerTableSizeUpdateFrame(int streamId, int tableSize) {
+        BufferData data = BufferData.create(8);
+        data.writeHpackInt(tableSize, 0b00100000, 5);
+        data.write(0x88);
+        data.rewind();
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.HEADERS,
+                                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS
+                                                                                               | Http2Flag.END_OF_STREAM),
+                                                          streamId);
+        return new Http2FrameData(header, data);
+    }
+
+    private static Http2FrameData rawSettingsFrame(long... identifierValues) {
+        BufferData data = BufferData.create(identifierValues.length / 2 * 6);
+        for (int i = 0; i < identifierValues.length; i += 2) {
+            data.writeInt16((int) identifierValues[i]);
+            data.writeUnsignedInt32(identifierValues[i + 1]);
+        }
+        data.rewind();
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.SETTINGS,
+                                                          Http2Flag.SettingsFlags.create(0),
+                                                          0);
+        return new Http2FrameData(header, data);
+    }
+
+    private static void assertSettingsError(MockedConnectionTestContext test,
+                                            Http2FrameData invalidSettings,
+                                            Http2ErrorCode expectedError,
+                                            int expectedPayloadReads) {
+        test.offerInbound(settingsFrame(10));
+        Http2ClientConnection connection = test.createConnection(false);
+        Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
+
+        try {
+            stream.writeHeaders(requestHeaders(), false);
+            clearInvocations(test.dataReader);
+            test.offerInbound(invalidSettings);
+
+            test.assertConnectionClosed();
+            Http2Exception exception = assertThrows(Http2Exception.class,
+                                                    () -> stream.readHeaders(TEST_WAIT_TIMEOUT));
+            assertThat(exception.code(), is(expectedError));
+            verify(test.dataReader, times(expectedPayloadReads)).read();
+            verify(test.dataReader, never()).readBuffer(invalidSettings.header().length());
+        } finally {
+            stream.close();
+            connection.close();
+        }
+    }
+
     @FunctionalInterface
     private interface ConnectionFactory<T extends Http2ClientConnection> {
         T create(Http2ClientImpl client, ClientConnection clientConnection);
@@ -3338,6 +3548,7 @@ class Http2ClientConnectionTest {
         private final AtomicReference<BlockedWrite> blockedWrite = new AtomicReference<>();
         private final AtomicReference<BlockedWrite> activeBlockedWrite = new AtomicReference<>();
         private final DataWriter dataWriter = mock(DataWriter.class);
+        private final DataReader dataReader;
         private final io.helidon.common.socket.HelidonSocket socket = mock(io.helidon.common.socket.HelidonSocket.class);
         private final Http2ClientConfig clientConfig;
         private final Http2ClientImpl client;
@@ -3385,6 +3596,7 @@ class Http2ClientConnectionTest {
 
             this.client = mock(Http2ClientImpl.class);
             this.clientConnection = clientConnection;
+            this.dataReader = spy(DataReader.create(this::nextInboundFrame));
             WebClient webClient = mock(WebClient.class);
 
             doAnswer(invocation -> {
@@ -3420,7 +3632,7 @@ class Http2ClientConnectionTest {
             when(client.recvListener()).thenReturn(Http2FrameListener.create(List.of()));
             when(client.webClient()).thenReturn(webClient);
             when(webClient.executor()).thenReturn(connectionExecutor);
-            when(clientConnection.reader()).thenReturn(DataReader.create(this::nextInboundFrame));
+            when(clientConnection.reader()).thenReturn(dataReader);
             when(clientConnection.writer()).thenReturn(dataWriter);
             when(clientConnection.helidonSocket()).thenReturn(socket);
             doAnswer(_ -> {
@@ -3444,6 +3656,13 @@ class Http2ClientConnectionTest {
         private void offerInbound(Http2FrameData... frameData) {
             for (Http2FrameData oneFrame : frameData) {
                 inboundFrames.add(serializeFrame(oneFrame));
+            }
+        }
+
+        private void offerInboundFragmented(Http2FrameData frameData) {
+            byte[] serialized = serializeFrame(frameData);
+            for (byte value : serialized) {
+                inboundFrames.add(new byte[] {value});
             }
         }
 

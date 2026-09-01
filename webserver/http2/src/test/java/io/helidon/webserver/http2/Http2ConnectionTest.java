@@ -52,6 +52,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.FlowControl;
@@ -91,6 +92,7 @@ import org.junit.jupiter.api.Test;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
@@ -112,6 +114,162 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionTest {
+
+    @Test
+    void duplicateHeaderTableSettingsPreserveMinimumAndFinal() throws InterruptedException {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(Http2Util.prefaceData().readBytes());
+        input.add(frameBytes(settingsFrame(Http2Setting.HEADER_TABLE_SIZE.identifier(), 4096,
+                                           Http2Setting.HEADER_TABLE_SIZE.identifier(), 0,
+                                           Http2Setting.HEADER_TABLE_SIZE.identifier(), 2048)));
+        Http2Headers requestHeaders = Http2Headers.create(WritableHeaders.create())
+                .method(Method.GET)
+                .scheme("https")
+                .path("/")
+                .authority("www.example.com");
+        BufferData requestHeaderBlock = BufferData.growing(512);
+        requestHeaders.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                             Http2HuffmanEncoder.create(),
+                             requestHeaderBlock);
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(requestHeaderBlock.available(),
+                                                                        Http2FrameTypes.HEADERS,
+                                                                        Http2Flag.HeaderFlags.create(
+                                                                                Http2Flag.END_OF_HEADERS
+                                                                                        | Http2Flag.END_OF_STREAM),
+                                                                        1),
+                                                requestHeaderBlock)));
+
+        List<BufferData> writtenFrames = new ArrayList<>();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            writtenFrames.add(data.copy());
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+
+        ExecutorService executor = mock(ExecutorService.class);
+        doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return mock(Future.class);
+        }).when(executor).submit(any(Runnable.class));
+        Http2SubProtocolSelector selector = (_, _, _, streamWriter, streamId, _, _, streamFlowControl, _, _) -> {
+            var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+            when(handler.streamState()).thenReturn(Http2StreamState.CLOSED);
+            doAnswer(_ -> {
+                Http2Headers responseHeaders = Http2Headers.create(WritableHeaders.create())
+                        .status(Status.OK_200);
+                streamWriter.writeHeaders(responseHeaders,
+                                          streamId,
+                                          Http2Flag.HeaderFlags.create(
+                                                  Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                          streamFlowControl.outbound());
+                return null;
+            }).when(handler).init();
+            return new SubProtocolResult(true, handler);
+        };
+        ConnectionContext ctx = http2Context(dataWriter, DataReader.create(input::poll));
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of(selector));
+        connection.expectPreface();
+
+        assertThrows(CloseConnectionException.class,
+                     () -> connection.handle(FixedLimit.create()));
+
+        List<Http2FrameHeader> frameHeaders = new ArrayList<>();
+        BufferData responseHeaderBlock = null;
+        for (BufferData writtenFrame : writtenFrames) {
+            BufferData frame = writtenFrame.copy();
+            Http2FrameHeader frameHeader = Http2FrameHeader.create(frame);
+            frameHeaders.add(frameHeader);
+            if (frameHeader.type() == Http2FrameType.HEADERS) {
+                responseHeaderBlock = frame;
+            }
+        }
+        BufferData capturedHeaderBlock = responseHeaderBlock;
+        assertThat(capturedHeaderBlock, notNullValue());
+        int minimumTableSizeByte = capturedHeaderBlock.read();
+        int minimumTableSize = capturedHeaderBlock.readHpackInt(minimumTableSizeByte, 5);
+        int finalTableSizeByte = capturedHeaderBlock.read();
+        int finalTableSize = capturedHeaderBlock.readHpackInt(finalTableSizeByte, 5);
+        List<Http2FrameHeader> settingsAndHeaders = frameHeaders.stream()
+                .filter(it -> it.type() == Http2FrameType.SETTINGS || it.type() == Http2FrameType.HEADERS)
+                .toList();
+        List<Http2FrameType> frameTypes = settingsAndHeaders.stream()
+                .map(Http2FrameHeader::type)
+                .toList();
+
+        assertAll(
+                () -> assertThat(frameTypes,
+                                 contains(Http2FrameType.SETTINGS, Http2FrameType.SETTINGS, Http2FrameType.HEADERS)),
+                () -> assertThat(settingsAndHeaders.get(1).flags(Http2FrameTypes.SETTINGS).ack(), is(true)),
+                () -> assertThat(minimumTableSizeByte & 0b11100000, is(0b00100000)),
+                () -> assertThat(minimumTableSize, is(0)),
+                () -> assertThat(finalTableSizeByte & 0b11100000, is(0b00100000)),
+                () -> assertThat(finalTableSize, is(2048))
+        );
+    }
+
+    @Test
+    void interruptedHeaderTableUpdateRestoresInterruptStatus() throws InterruptedException {
+        CountDownLatch writeStarted = new CountDownLatch(1);
+        CountDownLatch releaseWrite = new CountDownLatch(1);
+        AtomicReference<Throwable> writeFailure = new AtomicReference<>();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(_ -> {
+            writeStarted.countDown();
+            releaseWrite.await();
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        Http2Connection connection = new Http2Connection(http2Context(dataWriter), Http2Config.create(), List.of());
+        Thread writerThread = Thread.ofVirtual().start(() -> {
+            try {
+                connection.writeConnectionFrame(Http2Ping.create().toFrameData());
+            } catch (Throwable t) {
+                writeFailure.set(t);
+            }
+        });
+
+        assertThat(writeStarted.await(1, TimeUnit.SECONDS), is(true));
+        AtomicReference<Throwable> settingsFailure = new AtomicReference<>();
+        AtomicBoolean interrupted = new AtomicBoolean();
+        Thread settingsThread = Thread.ofVirtual().start(() -> {
+            try {
+                connection.clientSettings(Http2Settings.builder()
+                                                  .add(Http2Setting.HEADER_TABLE_SIZE, 1024L)
+                                                  .build());
+                settingsFailure.set(new AssertionError("Header table update was not interrupted"));
+            } catch (Throwable t) {
+                settingsFailure.set(t);
+                interrupted.set(Thread.currentThread().isInterrupted());
+            }
+        });
+
+        try {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+            while (settingsThread.getState() != Thread.State.WAITING && System.nanoTime() < deadline) {
+                Thread.onSpinWait();
+            }
+            assertThat(settingsThread.getState(), is(Thread.State.WAITING));
+            settingsThread.interrupt();
+            settingsThread.join(TimeUnit.SECONDS.toMillis(2));
+        } finally {
+            releaseWrite.countDown();
+        }
+
+        writerThread.join(TimeUnit.SECONDS.toMillis(2));
+        assertAll(
+                () -> assertThat(writerThread.isAlive(), is(false)),
+                () -> assertThat(settingsThread.isAlive(), is(false)),
+                () -> assertThat(writeFailure.get(), is(nullValue())),
+                () -> assertThat(settingsFailure.get(), instanceOf(CloseConnectionException.class)),
+                () -> assertThat(interrupted.get(), is(true))
+        );
+    }
 
     @Test
     void zeroInitialWindowStillCreatesConnection() {
@@ -1211,6 +1369,24 @@ class Http2ConnectionTest {
         connection.close(interrupt);
 
         assertThat(connection.canInterrupt(), is(true));
+    }
+
+    private static BufferData settingsData(long... identifierValues) {
+        BufferData data = BufferData.create(identifierValues.length / 2 * 6);
+        for (int i = 0; i < identifierValues.length; i += 2) {
+            data.writeInt16((int) identifierValues[i]);
+            data.writeUnsignedInt32(identifierValues[i + 1]);
+        }
+        return data;
+    }
+
+    private static Http2FrameData settingsFrame(long... identifierValues) {
+        BufferData data = settingsData(identifierValues);
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.SETTINGS,
+                                                          Http2Flag.SettingsFlags.create(0),
+                                                          0);
+        return new Http2FrameData(header, data);
     }
 
     private static ConnectionContext http2Context(DataWriter writer) {
