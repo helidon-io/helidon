@@ -86,6 +86,8 @@ public class StaticContentPreCompressedJmhTest {
     private FileSystemContentHandler disabledFileSystemMissingSidecarHandler;
     private ClassPathContentHandler classpathHandler;
     private ClassPathContentHandler disabledClasspathHandler;
+    private ClassPathContentHandler classpathMemoryLookupHandler;
+    private ClassPathContentHandler classpathRecordLookupHandler;
     private SidecarCache.Resolver sidecarResolver;
     private SidecarCache.Resolver fileSidecarResolver;
     private CachedHandler identityHandler;
@@ -153,6 +155,16 @@ public class StaticContentPreCompressedJmhTest {
                                                                        .classLoader(classpathClassLoader)
                                                                        .preCompressedEnabled(false)
                                                                        .build());
+        classpathMemoryLookupHandler = new ClassPathContentHandler(ClasspathHandlerConfig.builder()
+                                                                           .location("benchmark")
+                                                                           .classLoader(classpathClassLoader)
+                                                                           .preCompressedEnabled(true)
+                                                                           .build());
+        classpathRecordLookupHandler = new ClassPathContentHandler(ClasspathHandlerConfig.builder()
+                                                                           .location("benchmark")
+                                                                           .classLoader(classpathClassLoader)
+                                                                           .preCompressedEnabled(true)
+                                                                           .build());
         identityHandler = inMemoryHandler("Content");
         CachedHandler brHandler = inMemoryHandler("Brotli content")
                 .withRepresentation(ResponseRepresentation.encoded("br"));
@@ -168,6 +180,16 @@ public class StaticContentPreCompressedJmhTest {
                 new ClassPathContentHandler.CachedClassPathHandler(inMemoryHandler("Content"),
                                                                    CLASSPATH_RESOURCE,
                                                                    classpathIdentityUrl);
+        CachedHandlerInMemory classpathMemoryIdentityHandler = inMemoryHandler("Content");
+        classpathMemoryLookupHandler.cacheInMemory(CLASSPATH_RESOURCE, classpathMemoryIdentityHandler);
+        classpathMemoryLookupHandler.cacheClassPathHandler(CLASSPATH_RESOURCE,
+                                                           CLASSPATH_RESOURCE,
+                                                           classpathIdentityUrl,
+                                                           classpathMemoryIdentityHandler);
+        classpathRecordLookupHandler.cacheClassPathHandler(CLASSPATH_RESOURCE,
+                                                           CLASSPATH_RESOURCE,
+                                                           classpathIdentityUrl,
+                                                           fileIdentityHandler);
         CachedHandler fileBrHandler = CachedHandlerPath.create(sidecarPath,
                                                                sidecarPath,
                                                                MediaTypes.TEXT_PLAIN,
@@ -278,6 +300,30 @@ public class StaticContentPreCompressedJmhTest {
         return disabledClasspathHandler.selectCachedClassPathHandler(CLASSPATH_RESOURCE,
                                                                      disabledClasspathIdentityHandler,
                                                                      state.request);
+    }
+
+    @Benchmark
+    @Threads(4)
+    public Optional<CachedHandler> classpathMemoryMetadataLookup() {
+        return classpathMemoryLookupHandler.cachedClassPathHandler(CLASSPATH_RESOURCE);
+    }
+
+    @Benchmark
+    @Threads(4)
+    public Optional<CachedHandler> classpathMemoryCacheLookupControl() {
+        return classpathMemoryLookupHandler.cacheHandler(CLASSPATH_RESOURCE);
+    }
+
+    @Benchmark
+    @Threads(4)
+    public Optional<CachedHandler> classpathRecordMetadataLookup() {
+        return classpathRecordLookupHandler.cachedClassPathHandler(CLASSPATH_RESOURCE);
+    }
+
+    @Benchmark
+    @Threads(4)
+    public Optional<CachedHandler> classpathRecordCacheLookupControl() {
+        return classpathRecordLookupHandler.handlerCache().get(CLASSPATH_RESOURCE);
     }
 
     @Benchmark
