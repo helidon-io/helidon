@@ -87,6 +87,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     private boolean hasEntity;
     private boolean continue100Received;
     private volatile boolean inboundEndQueued;
+    private volatile boolean locallyReset;
 
     // streamId and buffer can only be created when we are locked in the stream id sequence
     private int streamId;
@@ -332,6 +333,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                           true,
                                                           false,
                                                           false);
+            locallyReset = true;
             this.state = nextState;
         } finally {
             inboundStateLock.unlock();
@@ -411,7 +413,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         boolean endOfStream = (flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM;
         ReadState currentReadState = readState;
 
-        if (closed) {
+        if (closed || locallyReset) {
             return false;
         }
         if (inboundEndQueued || currentReadState != ReadState.DATA) {
@@ -423,7 +425,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
         inboundStateLock.lock();
         try {
-            if (closed) {
+            if (closed || locallyReset) {
                 return false;
             }
             currentReadState = readState;
@@ -726,9 +728,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     void inboundHeaders(Http2Headers headers, boolean endOfStream) {
         inboundStateLock.lock();
         try {
-            // A locally closed stream must not publish late headers, but the connection
+            // A locally closed or reset stream must not publish late headers, but the connection
             // thread still decodes them to keep HPACK state aligned for other streams.
-            if (closed) {
+            if (closed || locallyReset) {
                 return;
             }
             if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
