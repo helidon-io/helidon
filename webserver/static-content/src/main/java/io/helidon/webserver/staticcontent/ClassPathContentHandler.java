@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
+import java.lang.ref.WeakReference;
 import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -323,7 +324,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                         CachedHandler delegate) {
         CachedClassPathHandler handler = new CachedClassPathHandler(delegate, logicalResource, identityUrl);
         if (delegate instanceof CachedHandlerInMemory) {
-            inMemoryMetadata.put(requestedResource, new CachedClassPathMetadata(logicalResource, identityUrl));
+            inMemoryMetadata.put(requestedResource, new CachedClassPathMetadata(logicalResource, identityUrl, handler));
         } else {
             cacheHandler(requestedResource, handler);
         }
@@ -335,9 +336,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         if (metadata != null) {
             Optional<CachedHandlerInMemory> inMemoryHandler = cacheInMemory(requestedResource);
             if (inMemoryHandler.isPresent()) {
-                return Optional.of(new CachedClassPathHandler(inMemoryHandler.get(),
-                                                              metadata.logicalResource(),
-                                                              metadata.identityUrl()));
+                return Optional.of(metadata.cachedHandler(inMemoryHandler.get()));
             }
             inMemoryMetadata.remove(requestedResource, metadata);
         }
@@ -563,7 +562,28 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return lastModified(Paths.get(path));
     }
 
-    private record CachedClassPathMetadata(String logicalResource, URL identityUrl) {
+    private static final class CachedClassPathMetadata {
+        private final String logicalResource;
+        private final URL identityUrl;
+        private volatile WeakReference<CachedClassPathHandler> cachedHandler;
+
+        private CachedClassPathMetadata(String logicalResource,
+                                        URL identityUrl,
+                                        CachedClassPathHandler cachedHandler) {
+            this.logicalResource = logicalResource;
+            this.identityUrl = identityUrl;
+            this.cachedHandler = new WeakReference<>(cachedHandler);
+        }
+
+        private CachedClassPathHandler cachedHandler(CachedHandlerInMemory currentHandler) {
+            CachedClassPathHandler handler = cachedHandler.get();
+            if (handler != null && handler.delegate() == currentHandler) {
+                return handler;
+            }
+            handler = new CachedClassPathHandler(currentHandler, logicalResource, identityUrl);
+            cachedHandler = new WeakReference<>(handler);
+            return handler;
+        }
     }
 
     record CachedClassPathHandler(CachedHandler delegate,

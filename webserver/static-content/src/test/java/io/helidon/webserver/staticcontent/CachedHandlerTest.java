@@ -255,12 +255,24 @@ class CachedHandlerTest {
                 StaticContentMetadata.create(MediaTypes.TEXT_PLAIN, currentBytes.length), currentBytes);
 
         handler.cacheInMemory(resource, first);
-        handler.cacheClassPathHandler(resource, resource, tempDir.resolve("cached.txt").toUri().toURL(), first);
+        CachedHandler firstWrapper = handler.cacheClassPathHandler(resource,
+                                                                   resource,
+                                                                   tempDir.resolve("cached.txt").toUri().toURL(),
+                                                                   first);
+        Optional<CachedHandler> firstLookup = handler.cachedClassPathHandler(resource);
+        assertThat(firstLookup, optionalPresent());
+        assertThat(firstLookup.get(), sameInstance(firstWrapper));
+
         handler.cacheInMemory(resource, current);
 
         Optional<CachedHandler> cached = handler.cachedClassPathHandler(resource);
         assertThat(cached, optionalPresent());
+        assertThat(cached.get(), not(sameInstance(firstWrapper)));
         assertThat(((ClassPathContentHandler.CachedClassPathHandler) cached.get()).delegate(), sameInstance(current));
+
+        Optional<CachedHandler> repeated = handler.cachedClassPathHandler(resource);
+        assertThat(repeated, optionalPresent());
+        assertThat(repeated.get(), sameInstance(cached.get()));
     }
 
     @Test
