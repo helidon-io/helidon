@@ -268,12 +268,12 @@ class MessagingExtension implements RegistryCodegenExtension {
         classModel.addMethod(method -> method
                 .addAnnotation(Annotations.OVERRIDE)
                 .accessModifier(AccessModifier.PUBLIC)
-                .returnType(TypeName.builder(MessagingTypes.OPTIONAL)
+                .returnType(TypeName.builder(TypeNames.OPTIONAL)
                                     .addTypeArgument(MessagingTypes.FAILURE_POLICY)
                                     .build())
                 .name("declaredFailurePolicy")
                 .addContent("return ")
-                .addContent(MessagingTypes.OPTIONAL)
+                .addContent(TypeNames.OPTIONAL)
                 .addContentLine(".of(DECLARED_FAILURE_POLICY);"));
     }
 
@@ -521,7 +521,7 @@ class MessagingExtension implements RegistryCodegenExtension {
                     .decreaseContentPadding()
                     .decreaseContentPadding()
                     .addContent("return ")
-                    .addContent(MessagingTypes.OPTIONAL)
+                    .addContent(TypeNames.OPTIONAL)
                     .addContent(".of(");
             if (consumerMethod.returnsEnvelope()) {
                 invoke.addContent("result");
@@ -533,7 +533,7 @@ class MessagingExtension implements RegistryCodegenExtension {
         } else {
             invoke.addContentLine(");")
                     .addContent("return ")
-                    .addContent(MessagingTypes.OPTIONAL)
+                    .addContent(TypeNames.OPTIONAL)
                     .addContentLine(".empty();");
         }
         addInvocationThrowableBoundary(invoke, handlerId(typeInfo, element));
@@ -815,7 +815,7 @@ class MessagingExtension implements RegistryCodegenExtension {
         TypeName typeName = argument.typeName();
         if (typeName.array()
                 || typeName.vararg()
-                || !typeName.genericTypeName().equals(MessagingTypes.LIST)) {
+                || !typeName.genericTypeName().equals(TypeNames.LIST)) {
             return;
         }
         if (typeName.typeArguments().isEmpty()) {
@@ -1173,7 +1173,7 @@ class MessagingExtension implements RegistryCodegenExtension {
     }
 
     private TypeName optionalMessageWildcardType() {
-        return TypeName.builder(MessagingTypes.OPTIONAL)
+        return TypeName.builder(TypeNames.OPTIONAL)
                 .addTypeArgument(messageWildcardType())
                 .build();
     }
@@ -1185,16 +1185,16 @@ class MessagingExtension implements RegistryCodegenExtension {
         if (typeName.equals(TypeNames.STRING)) {
             return HeaderParameterKind.REQUIRED_TEXT;
         }
-        if (hasSingleTypeArgument(typeName, MessagingTypes.OPTIONAL, TypeNames.STRING)) {
+        if (hasSingleTypeArgument(typeName, TypeNames.OPTIONAL, TypeNames.STRING)) {
             return HeaderParameterKind.OPTIONAL_TEXT;
         }
         if (typeName.equals(MessagingTypes.HEADER_VALUE)) {
             return HeaderParameterKind.REQUIRED_VALUE;
         }
-        if (hasSingleTypeArgument(typeName, MessagingTypes.OPTIONAL, MessagingTypes.HEADER_VALUE)) {
+        if (hasSingleTypeArgument(typeName, TypeNames.OPTIONAL, MessagingTypes.HEADER_VALUE)) {
             return HeaderParameterKind.OPTIONAL_VALUE;
         }
-        if (hasSingleTypeArgument(typeName, MessagingTypes.LIST, MessagingTypes.HEADER_VALUE)) {
+        if (hasSingleTypeArgument(typeName, TypeNames.LIST, MessagingTypes.HEADER_VALUE)) {
             return HeaderParameterKind.ALL_VALUES;
         }
         return null;
@@ -1221,7 +1221,7 @@ class MessagingExtension implements RegistryCodegenExtension {
 
     private TypeName genericType(TypeName typeArgument) {
         return TypeName.builder()
-                .from(MessagingTypes.GENERIC_TYPE)
+                .from(TypeNames.GENERIC_TYPE)
                 .addTypeArgument(typeArgument)
                 .build();
     }

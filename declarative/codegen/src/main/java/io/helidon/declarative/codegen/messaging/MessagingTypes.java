@@ -19,7 +19,6 @@ package io.helidon.declarative.codegen.messaging;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 
 final class MessagingTypes {
     static final TypeName ARRAY_LIST = TypeName.create("java.util.ArrayList");
@@ -42,11 +41,9 @@ final class MessagingTypes {
     static final TypeName FAILURE_DISPOSITION =
             TypeName.create("io.helidon.messaging.FailureDisposition");
     static final TypeName FAILURE_POLICY = TypeName.create("io.helidon.messaging.FailurePolicy");
-    static final TypeName GENERIC_TYPE = TypeName.create("io.helidon.common.GenericType");
     static final TypeName HEADER_PARAM =
             TypeName.create("io.helidon.messaging.Messaging.HeaderParam");
     static final TypeName HEADER_VALUE = TypeName.create("io.helidon.messaging.HeaderValue");
-    static final TypeName LIST = TypeNames.LIST;
     static final TypeName MESSAGE = TypeName.create("io.helidon.messaging.Message");
     static final TypeName MESSAGE_BATCH = TypeName.create("io.helidon.messaging.MessageBatch");
     static final TypeName MESSAGING_ENTRY_POINT_BATCH_HANDLER =
@@ -61,7 +58,6 @@ final class MessagingTypes {
     static final TypeName OBJECTS = TypeName.create("java.util.Objects");
     static final TypeName ON_FAILURE = TypeName.create("io.helidon.messaging.Messaging.OnFailure");
     static final TypeName RECEIVE_FROM = TypeName.create("io.helidon.messaging.Messaging.ReceiveFrom");
-    static final TypeName OPTIONAL = TypeNames.OPTIONAL;
     static final TypeName SEND_TO = TypeName.create("io.helidon.messaging.Messaging.SendTo");
     static final TypeName PROCESSOR_REGISTRATION =
             TypeName.create("io.helidon.messaging.ProcessorRegistration");

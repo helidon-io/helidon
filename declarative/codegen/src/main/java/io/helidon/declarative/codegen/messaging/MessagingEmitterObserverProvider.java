@@ -220,7 +220,7 @@ public class MessagingEmitterObserverProvider implements InjectCodegenObserverPr
         }
 
         private TypeName genericType(TypeName type) {
-            return TypeName.builder(MessagingTypes.GENERIC_TYPE)
+            return TypeName.builder(TypeNames.GENERIC_TYPE)
                     .addTypeArgument(type)
                     .build();
         }
