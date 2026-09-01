@@ -105,6 +105,18 @@ HTTP/2 server configuration
 </tr>
 <tr>
 <td>
+<code>max-<wbr>headers-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>16384</code>
+</td>
+<td>Configure the maximum allowed headers size, which must be greater than <code>0</code></td>
+</tr>
+<tr>
+<td>
 <code>max-<wbr>empty-<wbr>frames</code>
 </td>
 <td>
