@@ -24,7 +24,7 @@ This type is an enumeration.
 </tr>
 <tr>
 <td><code>ratio</code></td>
-<td>Sampling of a proportion of spans</td>
+<td>Sampling of a proportion [0.0, 1.0] of spans</td>
 </tr>
 </tbody>
 </table>
