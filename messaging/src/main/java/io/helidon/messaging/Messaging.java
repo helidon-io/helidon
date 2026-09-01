@@ -121,7 +121,8 @@ public final class Messaging {
      * </ul>
      * A missing required value or a non-text value selected for a text parameter fails delivery. An explicit
      * {@link HeaderValue.NullValue} is a present header value, including in {@code Optional<HeaderValue>}. No automatic
-     * header-value conversion is performed. A handler may declare at most one header parameter for each exact name.
+     * header-value conversion is performed. Local metadata is not visible through this annotation. A handler may
+     * declare at most one header parameter for each exact name.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)

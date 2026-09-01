@@ -708,6 +708,10 @@ class DeclarativeMessagingTest {
 
         runtime.emit(ChannelMessagingTypes.OPTIONAL_HEADER_CHANNEL, Message.create("missing header"));
         runtime.emit(ChannelMessagingTypes.OPTIONAL_HEADER_CHANNEL,
+                     Message.builder("local metadata only")
+                             .localMetadata("trace-id", "must-not-be-injected")
+                             .build());
+        runtime.emit(ChannelMessagingTypes.OPTIONAL_HEADER_CHANNEL,
                      Message.builder("present header")
                              .header("trace-id", "trace-123")
                              .build());
@@ -715,6 +719,7 @@ class DeclarativeMessagingTest {
         var consumer = registry.get(OptionalHeaderConsumer.class);
         assertThat(consumer.deliveries(),
                    is(List.of(new OptionalHeaderDelivery("missing header", Optional.empty()),
+                              new OptionalHeaderDelivery("local metadata only", Optional.empty()),
                               new OptionalHeaderDelivery("present header", Optional.of("trace-123")))));
     }
 

@@ -22,13 +22,15 @@ import java.util.Optional;
 import io.helidon.common.Api;
 
 /**
- * Message envelope with a payload and portable headers.
+ * Message envelope with a payload, portable headers, and optional local metadata.
  * <p>
  * Ordinary messages expose a non-null payload. A connector-specific immutable metadata envelope created after transport
  * mapping fails may instead throw {@link MessagingException} from {@link #entity()}; such an envelope is only valid in
  * the batch passed to {@link ConnectorDeliveryReservation#startFailed(MessageBatch, RuntimeException)}. Portable headers
  * retain global order, duplicate exact case-sensitive names, and immutable typed values. Implementations must be
- * immutable snapshots. Connector-specific message subtypes may expose richer native metadata separately.
+ * immutable snapshots. {@link #localMetadata()} follows the same in-process envelope but is never part of portable
+ * headers or generic connector mapping. Connector-specific message subtypes may expose richer native metadata
+ * separately.
  *
  * @param <T> payload type
  */
@@ -78,6 +80,19 @@ public interface Message<T> {
     MessageHeaders headers();
 
     /**
+     * Metadata local to this message envelope.
+     * <p>
+     * Local metadata follows the same envelope while it is used in-process. Connectors and generic message mappers
+     * must never serialize or map it to a transport. A local value must be explicitly promoted to a portable header
+     * before it can be sent, including any necessary redaction and size limit.
+     *
+     * @return immutable local metadata
+     */
+    default MessageMetadata localMetadata() {
+        return MessageMetadata.empty();
+    }
+
+    /**
      * Last portable header value with an exact name.
      *
      * @param name header name
@@ -116,6 +131,7 @@ public interface Message<T> {
     final class Builder<T> {
         private final T entity;
         private final MessageHeaders.Builder headers = MessageHeaders.builder();
+        private final MessageMetadata.Builder localMetadata = MessageMetadata.builder();
 
         private Builder(T entity) {
             this.entity = Objects.requireNonNull(entity, "entity");
@@ -193,12 +209,50 @@ public interface Message<T> {
         }
 
         /**
+         * Set a local text metadata value, replacing the value with the same exact name.
+         *
+         * @param name exact metadata name
+         * @param value text value
+         * @return updated builder
+         */
+        public Builder<T> localMetadata(String name, String value) {
+            localMetadata.set(name, value);
+            return this;
+        }
+
+        /**
+         * Set a local typed metadata value, replacing the value with the same exact name.
+         *
+         * @param name exact metadata name
+         * @param value metadata value
+         * @return updated builder
+         */
+        public Builder<T> localMetadata(String name, HeaderValue value) {
+            localMetadata.set(name, value);
+            return this;
+        }
+
+        /**
+         * Replace all local metadata with an immutable snapshot.
+         * <p>
+         * Local metadata remains in-process and is not part of portable headers or generic connector mapping.
+         *
+         * @param localMetadata local metadata
+         * @return updated builder
+         */
+        public Builder<T> localMetadata(MessageMetadata localMetadata) {
+            MessageMetadata actualMetadata = Objects.requireNonNull(localMetadata);
+            this.localMetadata.clear().addAll(actualMetadata);
+            return this;
+        }
+
+        /**
          * Create the message.
          *
          * @return immutable message
          */
         public Message<T> build() {
-            return new DefaultMessage<>(entity, headers.build());
+            return new DefaultMessage<>(entity, headers.build(), localMetadata.build());
         }
     }
 }

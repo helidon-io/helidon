@@ -20,6 +20,13 @@ import io.helidon.common.Api;
 
 /**
  * Immutable message routed to a logical dead-letter channel.
+ * <p>
+ * The failure type and message are local diagnostic data in {@link #localMetadata()}. Connectors must never map local
+ * metadata to a transport. Applications that intentionally publish failure diagnostics must first redact and bound
+ * them, then explicitly promote them to {@link #headers() portable headers}.
+ * <p>
+ * Every implementation must provide text values under {@link #FAILURE_TYPE_METADATA} and
+ * {@link #FAILURE_MESSAGE_METADATA} in its local metadata.
  *
  * @param <T> payload type
  */
@@ -36,14 +43,18 @@ public interface DeadLetterMessage<T> extends Message<T> {
     String ATTEMPTS_HEADER = "helidon_messaging_dead_letter_attempts";
 
     /**
-     * Reserved common header containing the processing failure class.
+     * Required reserved local metadata containing the processing failure class.
+     * <p>
+     * Local metadata is never transported implicitly by a connector.
      */
-    String FAILURE_TYPE_HEADER = "helidon_messaging_dead_letter_failure_type";
+    String FAILURE_TYPE_METADATA = "helidon.messaging.dead-letter.failure.type";
 
     /**
-     * Reserved common header containing the processing failure message.
+     * Required reserved local metadata containing the processing failure message.
+     * <p>
+     * Local metadata is never transported implicitly by a connector.
      */
-    String FAILURE_MESSAGE_HEADER = "helidon_messaging_dead_letter_failure_message";
+    String FAILURE_MESSAGE_METADATA = "helidon.messaging.dead-letter.failure.message";
 
     /**
      * Create a dead-letter message.
@@ -85,15 +96,33 @@ public interface DeadLetterMessage<T> extends Message<T> {
 
     /**
      * Processing failure class name.
+     * <p>
+     * This local diagnostic is stored under {@link #FAILURE_TYPE_METADATA} in {@link #localMetadata()}. It may expose
+     * implementation details and must be explicitly sanitized before publication.
      *
      * @return failure class name
+     * @throws IllegalStateException if the required local metadata is missing or is not a text value
      */
-    String failureType();
+    default String failureType() {
+        return localMetadata().text(FAILURE_TYPE_METADATA)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Dead-letter message is missing required local metadata '" + FAILURE_TYPE_METADATA + "'"));
+    }
 
     /**
-     * Processing failure message, or an empty string when absent.
+     * Processing failure message.
+     * <p>
+     * This local diagnostic is stored under {@link #FAILURE_MESSAGE_METADATA} in {@link #localMetadata()}. It may
+     * contain sensitive data and may be arbitrarily long, so it must be explicitly redacted and bounded before
+     * publication. A message returned by {@link #create(Message, String, int, RuntimeException)} stores an empty
+     * string when the processing exception has no message.
      *
-     * @return failure message
+     * @return failure message, or an empty string when the processing exception had no message
+     * @throws IllegalStateException if the required local metadata is missing or is not a text value
      */
-    String failureMessage();
+    default String failureMessage() {
+        return localMetadata().text(FAILURE_MESSAGE_METADATA)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Dead-letter message is missing required local metadata '" + FAILURE_MESSAGE_METADATA + "'"));
+    }
 }

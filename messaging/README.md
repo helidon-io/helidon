@@ -200,6 +200,20 @@ ordering. The closed `HeaderValue` model supports null, text, immutable binary, 
 32/64-bit floating point, timestamp, UUID, and opaque connector-encoded values. `Message.header(name)` remains a
 last-valued text convenience and never stringifies a typed value.
 
+`localMetadata()` is a separate, immutable, exact-name map for values that follow the message envelope only inside the
+current process. It uses the same closed `HeaderValue` value model, but it is single-valued and is never exposed through
+`@Messaging.HeaderParam` or generically mapped by an outgoing connector:
+
+```java
+Message<Order> local = Message.builder(order)
+        .localMetadata("application.processing.started", HeaderValue.timestamp(Instant.now()))
+        .build();
+```
+
+A new message starts with empty local metadata unless its builder or implementation explicitly copies a snapshot. To
+publish a value, the application must explicitly redact and bound it and then add it as a portable header or payload
+field.
+
 Every delivery is a non-empty, ordered `MessageBatch<T>`. Payload and message receivers are called once per item,
 while a batch receiver is called once for the whole delivery:
 
@@ -299,8 +313,8 @@ void receive(Order order) {
 
 @Messaging.ReceiveFrom("orders-dlq")
 void deadLetter(DeadLetterMessage<Order> failed) {
-    System.err.printf("Order failed after %d attempts: %s%n",
-                      failed.attempts(), failed.failureMessage());
+    System.err.printf("Order from %s failed after %d attempts%n",
+                      failed.sourceChannel(), failed.attempts());
 }
 ```
 
@@ -311,6 +325,13 @@ actual output.
 A dead-letter target must use the source payload type. Its local receivers must accept `DeadLetterMessage<T>` or a
 compatible `Message<T>` envelope, and dead-letter routes cannot form cycles. These constraints are validated before
 the messaging graph starts.
+
+Portable dead-letter headers contain the source channel and attempt count. Failure type and message are stored in the
+dead-letter envelope's `localMetadata()` under `FAILURE_TYPE_METADATA` and `FAILURE_MESSAGE_METADATA`; the convenience
+accessors `failureType()` and `failureMessage()` read those values. The original message's other local metadata is
+retained, but a connector never maps local metadata to the wire. Failure diagnostics may expose sensitive implementation
+details or unbounded exception text. To publish them, a local dead-letter consumer must create a new message with
+explicitly redacted and bounded application headers.
 
 The policy belongs to the incoming channel and retained delivery, not only to the annotated method call. It covers
 sibling receivers and downstream outputs reached by that delivery. If several receivers on one channel declare a
@@ -340,8 +361,8 @@ Exhaustion has these results:
 
 - `FAIL` propagates the failure and leaves the transport delivery unsettled.
 - `DROP` logs the failure and settles the transport delivery without forwarding it.
-- `DEAD_LETTER` routes a `DeadLetterMessage<T>` with the original envelope, source channel, attempt count, and failure
-  details. The source is settled only after dead-letter delivery succeeds.
+- `DEAD_LETTER` routes a `DeadLetterMessage<T>` with the original envelope, source channel, attempt count, and local
+  failure diagnostics. The source is settled only after dead-letter delivery succeeds.
 
 `@Messaging.OnFailure` does not retry calls made through a local `Emitter`; an emitter returns its delivery exception
 directly.
@@ -980,6 +1001,10 @@ concurrently with an active send.
 
 ### 7. Map transport messages and enforce limits
 
+- Treat `headers()` as the portable, wire-eligible data plane. `localMetadata()` belongs only to the in-process message
+  envelope: it may be retained when the runtime derives another local envelope, but a connector must never generically
+  map or serialize it. Publishing a local metadata value requires an explicit application decision to redact, bound,
+  and promote it to a portable header.
 - Convert each incoming transport record to an immutable `Message<T>` and copy portable headers into globally ordered
   `MessageHeader` entries. Preserve duplicate names, exact spelling, typed values, and immutable binary snapshots when
   the transport exposes them.

@@ -26,10 +26,16 @@ import java.util.Objects;
 final class DefaultMessage<T> implements Message<T> {
     private final T entity;
     private final MessageHeaders headers;
+    private final MessageMetadata localMetadata;
 
     DefaultMessage(T entity, MessageHeaders headers) {
+        this(entity, headers, MessageMetadata.empty());
+    }
+
+    DefaultMessage(T entity, MessageHeaders headers, MessageMetadata localMetadata) {
         this.entity = Objects.requireNonNull(entity, "entity");
         this.headers = Objects.requireNonNull(headers);
+        this.localMetadata = Objects.requireNonNull(localMetadata);
     }
 
     @Override
@@ -40,5 +46,10 @@ final class DefaultMessage<T> implements Message<T> {
     @Override
     public MessageHeaders headers() {
         return headers;
+    }
+
+    @Override
+    public MessageMetadata localMetadata() {
+        return localMetadata;
     }
 }

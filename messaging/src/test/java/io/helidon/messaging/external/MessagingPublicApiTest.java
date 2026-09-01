@@ -28,6 +28,7 @@ import io.helidon.messaging.HeaderValue;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessageBatch;
 import io.helidon.messaging.MessageHeader;
+import io.helidon.messaging.MessageMetadata;
 import io.helidon.messaging.MessagingEntryPoint;
 
 import org.junit.jupiter.api.Test;
@@ -75,6 +76,18 @@ class MessagingPublicApiTest {
         MessageHeader header = MessageHeader.create("trace", HeaderValue.text("value"));
         assertThat(header.name(), is("trace"));
         assertThat(header.value(), is(HeaderValue.text("value")));
+    }
+
+    @Test
+    void localMetadataIsUsableOutsideItsPackage() {
+        MessageMetadata metadata = MessageMetadata.builder()
+                .set("application.local", HeaderValue.text("value"))
+                .build();
+        Message<String> message = Message.builder("payload").localMetadata(metadata).build();
+
+        assertThat(message.localMetadata(), is(metadata));
+        assertThat(message.localMetadata().text("application.local").orElseThrow(), is("value"));
+        assertThat(message.headers().isEmpty(), is(true));
     }
 
     private static void assertNoDeclaredExceptions(Method method) {

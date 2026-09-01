@@ -26,11 +26,13 @@ import java.util.UUID;
 import io.helidon.common.Api;
 
 /**
- * Immutable portable messaging header value.
+ * Immutable value used by portable messaging headers and local message metadata.
  * <p>
- * The closed value model preserves values without retaining arbitrary application objects. A connector that must
- * preserve a transport-specific value which does not have a portable representation can use {@link NativeValue} or
- * expose the value through a connector-specific message subtype.
+ * The closed value model preserves values without retaining arbitrary application objects. Values in
+ * {@link Message#headers() portable headers} are subject to connector mapping rules; values in
+ * {@link Message#localMetadata() local metadata} are never generically mapped. A connector that must preserve a
+ * transport-specific value which does not have a portable representation can use {@link NativeValue} in a portable
+ * header or expose the value through a connector-specific message subtype.
  */
 @Api.Preview
 public sealed interface HeaderValue permits HeaderValue.NullValue,
@@ -169,7 +171,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * Explicit null header value.
+     * Explicit null messaging value.
      */
     final class NullValue implements HeaderValue {
         private static final NullValue INSTANCE = new NullValue();
@@ -184,7 +186,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * Text header value.
+     * Text messaging value.
      */
     final class TextValue implements HeaderValue {
         private final String value;
@@ -219,7 +221,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * Boolean header value.
+     * Boolean messaging value.
      */
     final class BooleanValue implements HeaderValue {
         private final boolean value;
@@ -254,7 +256,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * Arbitrary-precision integer header value.
+     * Arbitrary-precision integer messaging value.
      * <p>
      * The portable representation intentionally does not retain a transport's signedness or encoded integer width.
      * A connector requiring exact wire-type identity can use {@link NativeValue}.
@@ -292,7 +294,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * Arbitrary-precision decimal header value.
+     * Arbitrary-precision decimal messaging value.
      */
     final class DecimalValue implements HeaderValue {
         private final BigDecimal value;
@@ -327,7 +329,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * 32-bit IEEE 754 floating-point header value.
+     * 32-bit IEEE 754 floating-point messaging value.
      */
     final class Float32Value implements HeaderValue {
         private final float value;
@@ -362,7 +364,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * 64-bit IEEE 754 floating-point header value.
+     * 64-bit IEEE 754 floating-point messaging value.
      */
     final class Float64Value implements HeaderValue {
         private final double value;
@@ -397,7 +399,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * Timestamp header value.
+     * Timestamp messaging value.
      */
     final class TimestampValue implements HeaderValue {
         private final Instant value;
@@ -432,7 +434,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * UUID header value.
+     * UUID messaging value.
      */
     final class UuidValue implements HeaderValue {
         private final UUID value;
@@ -467,7 +469,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * Immutable binary header value.
+     * Immutable binary messaging value.
      */
     final class BinaryValue implements HeaderValue {
         private final byte[] value;
@@ -511,7 +513,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
     }
 
     /**
-     * Immutable transport-specific encoded header value.
+     * Immutable transport-specific encoded messaging value.
      */
     final class NativeValue implements HeaderValue {
         private final String typeId;
@@ -520,7 +522,7 @@ public sealed interface HeaderValue permits HeaderValue.NullValue,
         private NativeValue(String typeId, byte[] value) {
             this.typeId = Objects.requireNonNull(typeId);
             if (typeId.isBlank()) {
-                throw new IllegalArgumentException("Native header value type identifier must not be blank");
+                throw new IllegalArgumentException("Native messaging value type identifier must not be blank");
             }
             this.value = Objects.requireNonNull(value).clone();
         }

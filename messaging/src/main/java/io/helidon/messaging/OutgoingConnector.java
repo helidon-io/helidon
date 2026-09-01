@@ -25,6 +25,10 @@ import io.helidon.common.Api;
  * that success point is reached. It must throw if sending failed or its outcome is indeterminate, preserving the
  * underlying cause when one is available.
  * <p>
+ * Generic outbound mapping uses the message entity and {@link Message#headers() portable headers}. A connector must
+ * never serialize or map {@link Message#localMetadata() local metadata}. A connector-specific message subtype may
+ * expose separately documented native fields which its owning connector recognizes explicitly.
+ * <p>
  * Runtime-invoked sends execute with the current delivery's Helidon context bound to the calling thread.
  */
 @Api.Preview

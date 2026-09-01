@@ -47,6 +47,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ChannelRegistryFailurePolicyTest {
+    private static final String NON_PORTABLE_FAILURE_TYPE_HEADER =
+            "helidon_messaging_dead_letter_failure_type";
+    private static final String NON_PORTABLE_FAILURE_MESSAGE_HEADER =
+            "helidon_messaging_dead_letter_failure_message";
+
     private final List<ChannelRegistry> startedRegistries = new ArrayList<>();
 
     @AfterEach
@@ -395,17 +400,25 @@ class ChannelRegistryFailurePolicyTest {
     }
 
     @Test
-    void testCoordinatorRetriesThenDeadLettersAndStripsPolicyProperties() throws InterruptedException {
+    void testCoordinatorKeepsLargeFailureDiagnosticsLocalAndSettlesDeadLetter() throws InterruptedException {
+        int maxPortableHeaderLength = 64;
+        String failureMessage = "credential=top-secret\r\nforged-header=true\n" + "x".repeat(4096);
         TestIncomingConnector incoming = new TestIncomingConnector();
-        TestOutgoingConnector outgoing = new TestOutgoingConnector();
+        TestOutgoingConnector outgoing = new TestOutgoingConnector(maxPortableHeaderLength);
         AtomicInteger attempts = new AtomicInteger();
         ChannelRegistry registry = new ChannelRegistry(List.of(registration("orders", ignored -> {
                                 attempts.incrementAndGet();
-                                throw new IllegalStateException("handler failed");
+                                throw new IllegalStateException(failureMessage);
                             })),
                             yaml("""
                                     helidon:
                                       messaging:
+                                        channel:
+                                          orders:
+                                            execution:
+                                              queue-capacity: 0
+                                              max-pending-messages: 1
+                                              max-in-flight-messages: 1
                                         incoming:
                                           orders:
                                             connector: test-in
@@ -422,20 +435,46 @@ class ChannelRegistryFailurePolicyTest {
                                     """),
                             List.of(incoming, outgoing));
         start(registry);
-        Message<String> original = Message.builder("order-1").header("trace-id", "trace-1").build();
+        Message<String> original = Message.builder("order-1")
+                .header("trace-id", "trace-1")
+                .localMetadata(MessageMetadata.builder()
+                                       .set("application.local.delivery", "delivery-1")
+                                       .set(DeadLetterMessage.FAILURE_TYPE_METADATA, "spoofed-type")
+                                       .set(DeadLetterMessage.FAILURE_MESSAGE_METADATA, "spoofed-message")
+                                       .build())
+                .build();
 
         deliver(incoming.context("orders"), MessageBatch.create(original));
+        deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-2")));
 
         TestConnectorConfig connectorConfig = incoming.config("orders");
         assertThat(connectorConfig.properties().keySet().stream()
                            .noneMatch(key -> key.equals("failure") || key.startsWith("failure.")), is(true));
-        assertThat(attempts.get(), is(2));
-        assertThat(outgoing.messages().size(), is(1));
+        assertThat(attempts.get(), is(4));
+        assertThat(outgoing.sendCount(), is(2));
+        assertThat(outgoing.messages().size(), is(2));
         DeadLetterMessage<?> deadLetter = (DeadLetterMessage<?>) outgoing.messages().getFirst();
         assertThat(deadLetter.originalMessage(), sameInstance(original));
         assertThat(deadLetter.attempts(), is(2));
         assertThat(deadLetter.failureType(), is(IllegalStateException.class.getName()));
-        assertThat(deadLetter.failureMessage(), is("handler failed"));
+        assertThat(deadLetter.failureMessage(), is(failureMessage));
+        assertThat(deadLetter.localMetadata().text("application.local.delivery").orElseThrow(), is("delivery-1"));
+        assertThat(deadLetter.localMetadata().text(DeadLetterMessage.FAILURE_TYPE_METADATA).orElseThrow(),
+                   is(IllegalStateException.class.getName()));
+        assertThat(deadLetter.localMetadata().text(DeadLetterMessage.FAILURE_MESSAGE_METADATA).orElseThrow(),
+                   is(failureMessage));
+        assertThat(deadLetter.headers().contains(NON_PORTABLE_FAILURE_TYPE_HEADER), is(false));
+        assertThat(deadLetter.headers().contains(NON_PORTABLE_FAILURE_MESSAGE_HEADER), is(false));
+        assertThat(deadLetter.headers().entries().stream()
+                           .map(MessageHeader::value)
+                           .filter(HeaderValue.TextValue.class::isInstance)
+                           .map(HeaderValue.TextValue.class::cast)
+                           .allMatch(value -> value.value().length() <= maxPortableHeaderLength), is(true));
+        assertThat(deadLetter.headers().entries().stream()
+                           .map(MessageHeader::value)
+                           .filter(HeaderValue.TextValue.class::isInstance)
+                           .map(HeaderValue.TextValue.class::cast)
+                           .noneMatch(value -> value.value().contains("top-secret")), is(true));
     }
 
     @Test
@@ -2227,13 +2266,23 @@ class ChannelRegistryFailurePolicyTest {
         private final AtomicInteger created = new AtomicInteger();
         private final AtomicInteger sends = new AtomicInteger();
         private final RuntimeException failure;
+        private final int maxTextHeaderLength;
 
         private TestOutgoingConnector() {
-            this(null);
+            this(null, Integer.MAX_VALUE);
         }
 
         private TestOutgoingConnector(RuntimeException failure) {
+            this(failure, Integer.MAX_VALUE);
+        }
+
+        private TestOutgoingConnector(int maxTextHeaderLength) {
+            this(null, maxTextHeaderLength);
+        }
+
+        private TestOutgoingConnector(RuntimeException failure, int maxTextHeaderLength) {
             this.failure = failure;
+            this.maxTextHeaderLength = maxTextHeaderLength;
         }
 
         @Override
@@ -2256,6 +2305,14 @@ class ChannelRegistryFailurePolicyTest {
                     sends.addAndGet(batch.size());
                     if (failure != null) {
                         throw failure;
+                    }
+                    for (Message<?> message : batch) {
+                        for (MessageHeader header : message.headers()) {
+                            if (header.value() instanceof HeaderValue.TextValue textValue
+                                    && textValue.value().length() > maxTextHeaderLength) {
+                                throw new MessagingException("Test connector header exceeds transport limit");
+                            }
+                        }
                     }
                     messages.addAll(batch.messages());
                 }

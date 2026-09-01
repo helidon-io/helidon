@@ -133,12 +133,36 @@ class MessagingGraphBuilderTest {
         try (MessagingGraph graph = builder.build()) {
             graph.start();
             graph.emitter(payloadInput).emit("four");
-            graph.emitter(messageInput).emit(Message.builder("hello").header("trace", "123").build());
+            graph.emitter(messageInput).emit(Message.builder("hello")
+                                                       .header("trace", "123")
+                                                       .localMetadata("local-only", "not-propagated")
+                                                       .build());
         }
 
         assertThat(deliveredLengths, is(List.of(4)));
         assertThat(deliveredMessage.get().entity(), is("HELLO"));
         assertThat(deliveredMessage.get().header("trace").orElseThrow(), is("123"));
+        assertThat(deliveredMessage.get().localMetadata(), sameInstance(MessageMetadata.empty()));
+    }
+
+    @Test
+    void routesRetainLocalMetadataWithTheMessageEnvelope() {
+        MessagingGraph.Builder builder = MessagingGraph.builder();
+        MessagingChannel<String> source = builder.channel("local-metadata-source", String.class);
+        MessagingChannel<String> target = builder.channel("local-metadata-target", String.class);
+        AtomicReference<Message<String>> delivered = new AtomicReference<>();
+        builder.route(source, target).messageSink(target, delivered::set);
+        Message<String> message = Message.builder("payload")
+                .localMetadata("local-only", "retained")
+                .build();
+
+        try (MessagingGraph graph = builder.build()) {
+            graph.start();
+            graph.emitter(source).emit(message);
+        }
+
+        assertThat(delivered.get(), sameInstance(message));
+        assertThat(delivered.get().localMetadata().text("local-only").orElseThrow(), is("retained"));
     }
 
     @Test

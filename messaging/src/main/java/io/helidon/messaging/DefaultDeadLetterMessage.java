@@ -24,12 +24,16 @@ import java.util.Objects;
  * @param <T> payload type
  */
 final class DefaultDeadLetterMessage<T> implements DeadLetterMessage<T> {
+    private static final String NON_PORTABLE_FAILURE_TYPE_HEADER =
+            "helidon_messaging_dead_letter_failure_type";
+    private static final String NON_PORTABLE_FAILURE_MESSAGE_HEADER =
+            "helidon_messaging_dead_letter_failure_message";
+
     private final Message<T> originalMessage;
     private final String sourceChannel;
     private final int attempts;
-    private final String failureType;
-    private final String failureMessage;
     private final MessageHeaders headers;
+    private final MessageMetadata localMetadata;
 
     DefaultDeadLetterMessage(Message<T> originalMessage,
                              String sourceChannel,
@@ -45,15 +49,18 @@ final class DefaultDeadLetterMessage<T> implements DeadLetterMessage<T> {
         }
         this.attempts = attempts;
         RuntimeException actualFailure = Objects.requireNonNull(failure);
-        this.failureType = actualFailure.getClass().getName();
-        this.failureMessage = Objects.toString(actualFailure.getMessage(), "");
 
         this.headers = MessageHeaders.builder()
                 .addAll(originalMessage.headers())
+                .remove(NON_PORTABLE_FAILURE_TYPE_HEADER)
+                .remove(NON_PORTABLE_FAILURE_MESSAGE_HEADER)
                 .set(SOURCE_CHANNEL_HEADER, sourceChannel)
                 .set(ATTEMPTS_HEADER, Integer.toString(attempts))
-                .set(FAILURE_TYPE_HEADER, failureType)
-                .set(FAILURE_MESSAGE_HEADER, failureMessage)
+                .build();
+        this.localMetadata = MessageMetadata.builder()
+                .addAll(originalMessage.localMetadata())
+                .set(FAILURE_TYPE_METADATA, actualFailure.getClass().getName())
+                .set(FAILURE_MESSAGE_METADATA, Objects.toString(actualFailure.getMessage(), ""))
                 .build();
     }
 
@@ -73,16 +80,6 @@ final class DefaultDeadLetterMessage<T> implements DeadLetterMessage<T> {
     }
 
     @Override
-    public String failureType() {
-        return failureType;
-    }
-
-    @Override
-    public String failureMessage() {
-        return failureMessage;
-    }
-
-    @Override
     public T entity() {
         return originalMessage.entity();
     }
@@ -90,5 +87,10 @@ final class DefaultDeadLetterMessage<T> implements DeadLetterMessage<T> {
     @Override
     public MessageHeaders headers() {
         return headers;
+    }
+
+    @Override
+    public MessageMetadata localMetadata() {
+        return localMetadata;
     }
 }
