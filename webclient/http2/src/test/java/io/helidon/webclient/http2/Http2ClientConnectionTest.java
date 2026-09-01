@@ -1507,10 +1507,13 @@ class Http2ClientConnectionTest {
                 ArgumentCaptor<BufferData> writes = ArgumentCaptor.forClass(BufferData.class);
                 verify(test.dataWriter, timeout(TEST_WAIT_TIMEOUT.toMillis()).times(2)).writeNow(writes.capture());
                 Http2FrameHeader resetHeader = Http2FrameHeader.create(writes.getAllValues().get(0).copy());
-                Http2FrameHeader windowUpdateHeader = Http2FrameHeader.create(writes.getAllValues().get(1).copy());
+                BufferData windowUpdateData = writes.getAllValues().get(1).copy();
+                Http2FrameHeader windowUpdateHeader = Http2FrameHeader.create(windowUpdateData);
+                Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(windowUpdateData);
                 assertThat(resetHeader.type(), is(Http2FrameType.RST_STREAM));
                 assertThat(windowUpdateHeader.type(), is(Http2FrameType.WINDOW_UPDATE));
                 assertThat(windowUpdateHeader.streamId(), is(0));
+                assertThat(windowUpdate.windowSizeIncrement(), is(2 * WindowSize.DEFAULT_MAX_FRAME_SIZE));
             } finally {
                 resetWrite.release();
                 try {
