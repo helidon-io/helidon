@@ -92,7 +92,7 @@ Settings for OpenTelemetry tracer configuration under the <code>Open<wbr>Telemet
 <code>Sampler<wbr>Type</code>
 </td>
 <td>
-<code>CONSTANT</code>
+<code>constant</code>
 </td>
 <td>Type of sampler for collecting spans</td>
 </tr>

@@ -15,12 +15,16 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>CONSTANT</code></td>
+<td><code>constant</code></td>
 <td>Sampling of every span</td>
 </tr>
 <tr>
-<td><code>RATIO</code></td>
-<td>Sampling of a proportion [0.0, 1.0] of spans</td>
+<td><code>const</code></td>
+<td>Deprecated. Use constant instead</td>
+</tr>
+<tr>
+<td><code>ratio</code></td>
+<td>Sampling of a proportion of spans</td>
 </tr>
 </tbody>
 </table>
