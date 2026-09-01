@@ -46,7 +46,9 @@ customization is required.
 ```java
 Schema.builder()
         .rootObject(builder -> builder.description("Example JSON Schema")
-                .addIntegerProperty("exampleProperty", intBuilder -> intBuilder.minimum(0)))
+                .addIntegerProperty("exampleProperty", intBuilder -> intBuilder
+                        .minimum(0)
+                        .defaultValue(JsonNumber.create(0))))
         .build();
 ```
 
@@ -60,12 +62,24 @@ as a String. The result looks like this:
     "type": "object",
     "properties": {
         "exampleProperty": {
+            "default": 0,
             "type": "integer",
             "minimum": 0
         }
     }
 }
 ```
+
+The JSON Schema 2020-12
+[`default` keyword](https://json-schema.org/draft/2020-12/draft-bhutton-json-schema-validation-01#section-9.2)
+is metadata associated with a schema. Helidon preserves the value in the
+generated schema, but does not use it to populate a missing value in a JSON
+instance or change whether a property is required. A default can be any JSON
+value, including `null`, arrays, and objects. The specification recommends, but
+does not require, that the default validate against its schema.
+
+With the imperative API, pass an appropriate [`JsonValue`][jsonvalue] to the
+`defaultValue` builder method.
 
 ### Declarative Schema Creation
 
@@ -80,12 +94,17 @@ automatically without manual coding.
 ```java
 @JsonSchema.Schema // <1>
 @JsonSchema.Description("Example JSON Schema")
-public record ExampleSchema(@JsonSchema.Integer.Minimum(0) int exampleProperty) {
+public record ExampleSchema(@JsonSchema.Default("0") @JsonSchema.Integer.Minimum(0) int exampleProperty) {
 }
 ```
 1. Schema defining annotation. Without this annotation the class/record will not
    be processed as a JSON schema
 <!--@mdc :: -->
+
+The `@JsonSchema.Default` value must contain exactly one JSON value encoded as
+text. For example, `@JsonSchema.Default("0")` produces a numeric default, while
+a JSON string requires escaped JSON quotes, such as
+`@JsonSchema.Default("\"draft\"")`.
 
 In addition, the following section must be added to the `build` of the Maven
 `pom.xml` to enable annotation processors that generate the necessary code:
@@ -130,5 +149,6 @@ Schema.find(MyClass.class);
 ```
 
 [jsonschema]: https://helidon.io/docs/v4/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html
+[jsonvalue]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonValue.html
 [schema]: https://helidon.io/docs/v4/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html
 [service-named]: https://helidon.io/docs/v4/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html
