@@ -515,7 +515,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     protected OutputStream contentEncode(OutputStream outputStream, boolean allowAutomaticEncoding) {
         if (!statusAllowsEntity()) {
             if (explicitContentEncoder != null) {
-                responseContentEncoder(false);
+                return responseContentEncoder(false).apply(outputStream);
             }
             return outputStream;
         }

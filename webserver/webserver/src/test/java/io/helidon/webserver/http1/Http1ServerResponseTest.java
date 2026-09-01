@@ -413,6 +413,31 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void lateEntityStatusUsesExplicitEncoder() throws IOException {
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.contentEncoder(testEncoder());
+        response.status(Status.NO_CONTENT_204);
+
+        OutputStream output = response.outputStream();
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, containsString("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: test\r\n")),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, containsString("\r\nxentity\r\n")),
+                () -> assertThat(responseText, endsWith("0\r\n\r\n"))
+        );
+    }
+
+    @Test
     void flushedFixedLengthResponseRejectsStatusChange() throws IOException {
         assertFlushedResponseRejectsStatusChange(true);
     }
